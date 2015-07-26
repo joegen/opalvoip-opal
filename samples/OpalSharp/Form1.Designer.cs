@@ -46,6 +46,7 @@
             this.host = new System.Windows.Forms.TextBox();
             this.RegisterStatus = new System.Windows.Forms.Label();
             this.CallStatus = new System.Windows.Forms.Label();
+            this.RFC5626 = new System.Windows.Forms.CheckBox();
             ((System.ComponentModel.ISupportInitialize)(this.VideoDisplay)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.VideoPreview)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.LogLevel)).BeginInit();
@@ -119,7 +120,7 @@
             // Answer
             // 
             this.Answer.Enabled = false;
-            this.Answer.Location = new System.Drawing.Point(128, 172);
+            this.Answer.Location = new System.Drawing.Point(30, 201);
             this.Answer.Name = "Answer";
             this.Answer.Size = new System.Drawing.Size(75, 23);
             this.Answer.TabIndex = 13;
@@ -129,7 +130,7 @@
             // VideoDisplay
             // 
             this.VideoDisplay.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.VideoDisplay.Location = new System.Drawing.Point(53, 218);
+            this.VideoDisplay.Location = new System.Drawing.Point(53, 243);
             this.VideoDisplay.Name = "VideoDisplay";
             this.VideoDisplay.Size = new System.Drawing.Size(352, 288);
             this.VideoDisplay.TabIndex = 14;
@@ -138,7 +139,7 @@
             // VideoPreview
             // 
             this.VideoPreview.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.VideoPreview.Location = new System.Drawing.Point(63, 424);
+            this.VideoPreview.Location = new System.Drawing.Point(63, 449);
             this.VideoPreview.Name = "VideoPreview";
             this.VideoPreview.Size = new System.Drawing.Size(88, 72);
             this.VideoPreview.TabIndex = 15;
@@ -211,27 +212,40 @@
             // 
             // RegisterStatus
             // 
-            this.RegisterStatus.Location = new System.Drawing.Point(128, 108);
+            this.RegisterStatus.Location = new System.Drawing.Point(128, 103);
             this.RegisterStatus.Name = "RegisterStatus";
-            this.RegisterStatus.Size = new System.Drawing.Size(327, 23);
+            this.RegisterStatus.Size = new System.Drawing.Size(327, 37);
             this.RegisterStatus.TabIndex = 16;
             this.RegisterStatus.Text = "Unregistered";
-            this.RegisterStatus.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.RegisterStatus.TextAlign = System.Drawing.ContentAlignment.TopCenter;
             // 
             // CallStatus
             // 
-            this.CallStatus.Location = new System.Drawing.Point(209, 172);
+            this.CallStatus.Location = new System.Drawing.Point(125, 172);
             this.CallStatus.Name = "CallStatus";
-            this.CallStatus.Size = new System.Drawing.Size(246, 23);
+            this.CallStatus.Size = new System.Drawing.Size(330, 52);
             this.CallStatus.TabIndex = 17;
             this.CallStatus.Text = "No call in progress";
-            this.CallStatus.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.CallStatus.TextAlign = System.Drawing.ContentAlignment.TopCenter;
+            // 
+            // RFC5626
+            // 
+            this.RFC5626.AutoSize = true;
+            this.RFC5626.Checked = global::OpalSharp.Properties.Settings.Default.RFC5626;
+            this.RFC5626.DataBindings.Add(new System.Windows.Forms.Binding("Checked", global::OpalSharp.Properties.Settings.Default, "RFC5626", true, System.Windows.Forms.DataSourceUpdateMode.OnPropertyChanged));
+            this.RFC5626.Location = new System.Drawing.Point(389, 77);
+            this.RFC5626.Name = "RFC5626";
+            this.RFC5626.Size = new System.Drawing.Size(71, 17);
+            this.RFC5626.TabIndex = 18;
+            this.RFC5626.Text = "RFC5626";
+            this.RFC5626.UseVisualStyleBackColor = true;
             // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(467, 518);
+            this.ClientSize = new System.Drawing.Size(467, 543);
+            this.Controls.Add(this.RFC5626);
             this.Controls.Add(this.CallStatus);
             this.Controls.Add(this.RegisterStatus);
             this.Controls.Add(this.VideoPreview);
@@ -282,6 +296,7 @@
         private System.Windows.Forms.PictureBox VideoPreview;
         private System.Windows.Forms.Label RegisterStatus;
         private System.Windows.Forms.Label CallStatus;
+        private System.Windows.Forms.CheckBox RFC5626;
     }
 }
 
