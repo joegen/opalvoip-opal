@@ -1705,7 +1705,15 @@ bool SIPConnection::SendDelayedACK(bool force)
 
 void SIPConnection::UpdateRemoteAddresses()
 {
-  SIPURL remote = !m_remoteIdentity.IsEmpty() ? m_remoteIdentity : !m_ciscoRemotePartyID.IsEmpty() ? m_ciscoRemotePartyID : m_dialog.GetRemoteURI();
+  SIPURL remote = m_remoteIdentity;
+  if (remote.IsEmpty())
+    remote = m_ciscoRemotePartyID;
+  else
+    remote.SetParamVars(m_ciscoRemotePartyID.GetParamVars(), true);
+  if (remote.IsEmpty())
+    remote = m_dialog.GetRemoteURI();
+  else
+    remote.SetParamVars(m_dialog.GetRemoteURI().GetParamVars(), true);
   remote.Sanitise(SIPURL::ExternalURI);
 
   remotePartyNumber = remote.GetUserName();
