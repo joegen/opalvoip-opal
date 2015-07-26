@@ -296,28 +296,40 @@ struct OpalKeyFrameDetectorVP8 : OpalKeyFrameDetector
 
 struct OpalKeyFrameDetectorH264 : OpalKeyFrameDetector
 {
+  bool m_gotSPS;
+  bool m_gotPPS;
+
   virtual OpalVideoFormat::VideoFrameType GetVideoFrameType(const BYTE * rtp, PINDEX size)
   {
     if (size > 2) {
       switch ((*rtp++) & 0x1f) {
         case 1: // Coded slice of a non-IDR picture
-        case 2: //  	Coded slice data partition A
+        case 2: // Coded slice data partition A
+          m_gotSPS = m_gotPPS = false;
           if ((*rtp & 0x80) != 0)
             return OpalVideoFormat::e_InterFrame;
           break;
 
         case 5: // Coded slice of an IDR picture
-        case 7: // Sequence parameter set
-        case 8: // Picture parameter set
-          if ((*rtp & 0x80) != 0)
+          if (m_gotSPS && m_gotPPS)
             return OpalVideoFormat::e_IntraFrame;
           break;
+
+        case 7: // Sequence parameter set
+          m_gotSPS = true;
+          return OpalVideoFormat::e_NonFrameBoundary;
+
+        case 8: // Picture parameter set
+          m_gotPPS = true;
+          return OpalVideoFormat::e_NonFrameBoundary;
 
         case 28: // Fragment
           if ((*rtp & 0x80) != 0)
             return GetVideoFrameType(rtp, size - 1);
       }
     }
+
+    m_gotSPS = m_gotPPS = false;
     return OpalVideoFormat::e_NonFrameBoundary;
   }
 };
