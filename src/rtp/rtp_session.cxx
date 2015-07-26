@@ -532,6 +532,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnSendData(RTP_Dat
     frame.SetSyncSource(m_sourceIdentifier);
 
   if (m_packets == 0) {
+    m_firstPacketTime.SetCurrentTime();
     if (rewrite == e_RewriteHeader)
       frame.SetSequenceNumber(m_lastSequenceNumber = (RTP_SequenceNumber)PRandom::Number(1, 65535));
     PTRACE(3, &m_session, m_session << "first sent data: "
@@ -1455,6 +1456,8 @@ void OpalRTPSession::GetStatistics(OpalMediaStatistics & statistics, Direction d
         statistics.m_averagePacketTime += ssrcStats.m_averagePacketTime;
         statistics.m_maximumPacketTime += ssrcStats.m_maximumPacketTime;
         statistics.m_averageJitter     += ssrcStats.m_averageJitter;
+        if (!statistics.m_startTime.IsValid() || statistics.m_startTime > ssrcStats.m_startTime)
+          statistics.m_startTime = ssrcStats.m_startTime;
         if (statistics.m_lastPacketTime < ssrcStats.m_lastPacketTime)
           statistics.m_lastPacketTime = ssrcStats.m_lastPacketTime;
         if (statistics.m_lastReportTime < ssrcStats.m_lastReportTime)
