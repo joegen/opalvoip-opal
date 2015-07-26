@@ -490,8 +490,10 @@ public:
 
 /* SIP requires two completely independent media formats for packetisation
    modes zero and one. */
-static H264_PluginMediaFormat const MyMediaFormatInfo_Mode0("Open"OPAL_H264_MODE0, MyOptionTable_0);
-static H264_PluginMediaFormat const MyMediaFormatInfo_Mode1("Open"OPAL_H264_MODE1, MyOptionTable_1);
+static H264_PluginMediaFormat const MyMediaFormatInfo_Mode0(OPAL_H264_MODE0, MyOptionTable_0);
+static H264_PluginMediaFormat const MyMediaFormatInfo_Mode1(OPAL_H264_MODE1, MyOptionTable_1);
+static H264_PluginMediaFormat const MyMediaFormatInfo_Open0("Open"OPAL_H264_MODE0, MyOptionTable_0);
+static H264_PluginMediaFormat const MyMediaFormatInfo_Open1("Open"OPAL_H264_MODE1, MyOptionTable_1);
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -506,10 +508,8 @@ static void TraceCallback(void*, int welsLevel, const char* string)
   else if (welsLevel <= WELS_LOG_WARNING)
     ptraceLevel = 2;
   else if (welsLevel <= WELS_LOG_INFO)
-    ptraceLevel = 3;
-  else if (welsLevel <= WELS_LOG_DEBUG)
     ptraceLevel = 4;
-  else if (welsLevel <= WELS_LOG_DETAIL)
+  else if (welsLevel <= WELS_LOG_DEBUG)
     ptraceLevel = 5;
   else
     ptraceLevel = 6;
@@ -927,12 +927,11 @@ class H264_Decoder : public PluginVideoDecoder<MY_CODEC>
       if (!from.GetMarker())
         return true;
 
-      if (from.GetPayloadSize() > 0 || m_encapsulation.GetLength() > 0) {
+      if (m_encapsulation.GetLength() > 0) {
         DECODING_STATE status = m_decoder->DecodeFrame2(m_encapsulation.GetBuffer(),
                                                         (int)m_encapsulation.GetLength(),
                                                         m_bufferData,
                                                         &m_bufferInfo);
-        m_encapsulation.Reset();
 
         if (status != dsErrorFree) {
           if (status >= dsInvalidArgument) {
@@ -961,6 +960,8 @@ class H264_Decoder : public PluginVideoDecoder<MY_CODEC>
           if (status != dsDataErrorConcealed)
             flags = PluginCodec_ReturnCoderRequestIFrame;
         }
+
+        m_encapsulation.Reset();
       }
 
       if (m_bufferInfo.iBufferStatus != 0) {
@@ -1001,6 +1002,8 @@ static struct PluginCodec_Definition CodecDefinition[] =
 {
   PLUGINCODEC_VIDEO_CODEC_CXX(MyMediaFormatInfo_Mode0, H264_Encoder, H264_Decoder),
   PLUGINCODEC_VIDEO_CODEC_CXX(MyMediaFormatInfo_Mode1, H264_Encoder, H264_Decoder),
+  PLUGINCODEC_VIDEO_CODEC_CXX(MyMediaFormatInfo_Open0, H264_Encoder, H264_Decoder),
+  PLUGINCODEC_VIDEO_CODEC_CXX(MyMediaFormatInfo_Open1, H264_Encoder, H264_Decoder),
 };
 
 
