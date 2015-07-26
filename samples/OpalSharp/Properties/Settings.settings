@@ -23,5 +23,8 @@
     <Setting Name="URLtoCall" Type="System.String" Scope="User">
       <Value Profile="(Default)">sip:500@ekiga.net</Value>
     </Setting>
+    <Setting Name="RFC5626" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">False</Value>
+    </Setting>
   </Settings>
 </SettingsFile>
