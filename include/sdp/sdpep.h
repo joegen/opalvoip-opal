@@ -54,23 +54,6 @@ class OpalSDPHTTPConnection;
 */
 #define OPAL_OPT_AV_GROUPING "AV-Grouping"
 
-/**OpalConnection::StringOption key to a string for a regular expression to
-   match the product information, which if matching the remote system, will
-   indicate the remote does not support asymmetric hold as required by the
-   standard.
-   
-   This fault is when SDP sendonly is sent (us putting them on hold), and
-   they reply inactive, which implies them putting us on hold. When we
-   subsequently send recvonly to release our hold to them, they continue to
-   send inactive, and hold is never released.
-
-   Note the OpalProductInfo vendor, name & version strings are concatenated
-   before comparison with the regular expression.
-
-   Defaults to empty string.
-  */
-#define OPAL_OPT_SYMMETRIC_HOLD_PRODUCT "Symmetric-Hold-Product"
-
 
 /**Base class for endpoint types that use SDP for media transport.
    Protocols such as SIP, RTSP or WebRTC.
