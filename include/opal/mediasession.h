@@ -39,6 +39,7 @@
 
 #include <opal/transports.h>
 #include <opal/mediatype.h>
+#include <ptlib/notifier_ext.h>
 
 
 class OpalConnection;
@@ -48,6 +49,7 @@ class OpalMediaFormatList;
 class OpalMediaCryptoSuite;
 class H235SecurityCapability;
 class H323Capability;
+class PSTUNClient;
 
 
 #if OPAL_STATISTICS
@@ -301,9 +303,274 @@ class OpalMediaCryptoSuite : public PObject
 typedef PFactory<OpalMediaCryptoSuite, PCaselessString> OpalMediaCryptoSuiteFactory;
 
 
+struct OpalMediaTransportChannelTypes
+{
+  enum SubChannels
+  {
+    e_AllSubChannels = -1,
+    e_Media,
+    e_Data = e_Media, // for backward compatibility
+    e_Control,
+    eSubChannelA,
+    eSubChannelB,
+    eSubChannelC,
+    eSubChannelD // 6 subchannels should be enough!
+  };
+};
+#if PTRACING
+ostream & operator<<(ostream & strm, OpalMediaTransportChannelTypes::SubChannels channel);
+#endif
+
+
+/** Class for low level transport of media
+  */
+class OpalMediaTransport : public PSafeObject, public OpalMediaTransportChannelTypes
+{
+    PCLASSINFO(OpalMediaTransport, PSafeObject);
+public:
+    OpalMediaTransport(const PString & name);
+    ~OpalMediaTransport() { InternalStop(); }
+
+    virtual void PrintOn(ostream & strm) const;
+
+    /**Open the media transport.
+      */
+    virtual bool Open(
+      OpalMediaSession & session,
+      PINDEX count,
+      const PString & localInterface,
+      const OpalTransportAddress & remoteAddress
+    ) = 0;
+
+    /**Indicate transport is open.
+      */
+    virtual bool IsOpen() const;
+
+    /**Start threads to read from transport subchannels.
+      */
+    virtual void Start();
+
+    /**Indicate session has completed any initial negotiations.
+      */
+    virtual bool IsEstablished() const;
+
+    /**Get the local transport address used by this media session.
+       The \p subchannel can get an optional secondary channel address
+       when false.
+      */
+    virtual OpalTransportAddress GetLocalAddress(SubChannels subchannel = e_Media) const;
+
+    /**Get the remote transport address used by this media session.
+       The \p subchannel can get an optional secondary channel address
+       when false.
+      */
+    virtual OpalTransportAddress GetRemoteAddress(SubChannels subchannel = e_Media) const;
+
+    /**Set the remote transport address used by this media session.
+       The \p subchannel can get an optional secondary channel address
+       when false.
+      */
+    virtual bool SetRemoteAddress(const OpalTransportAddress & remoteAddress, SubChannels subchannel = e_Media);
+
+    /**Set the candidates for use in this media transport.
+      */
+    virtual void SetCandidates(
+      const PString & user,
+      const PString & pass,
+      const PNatCandidateList & candidates
+    );
+
+    /**Get the candidates for use in this media transport.
+      */
+    virtual bool GetCandidates(
+      PString & user,
+      PString & pass,
+      PNatCandidateList & candidates
+    );
+
+    /**Write to media transport.
+      */
+    virtual bool Write(
+      const void * data,
+      PINDEX length,
+      SubChannels subchannel = e_Media,
+      const PIPSocketAddressAndPort * remote = NULL
+    );
+
+#if OPAL_SRTP
+    /**Get encryption keys.
+      */
+    virtual bool GetKeyInfo(
+      OpalMediaCryptoKeyInfo * keyInfo[2]
+    );
+#endif
+
+    /**Read data notification.
+       If PBYEArray is empty, then the transport has had an error and has been closed.
+      */
+    typedef PNotifierTemplate<PBYTEArray> ReadNotifier;
+    #define PDECLARE_MediaReadNotifier(cls, fn) PDECLARE_NOTIFIER2(OpalMediaTransport, cls, fn, PBYTEArray)
+
+    /** Set the notifier for read data.
+      */
+    void AddReadNotifier(
+      const ReadNotifier & notifier,
+      SubChannels subchannel = e_Media
+    );
+
+    /// Remove the read notifier
+    void RemoveReadNotifier(
+      const ReadNotifier & notifier,
+      SubChannels subchannel = e_Media
+    );
+    void RemoveReadNotifier(
+      PObject * target,
+      SubChannels subchannel = e_Media
+    );
+
+    /**Get channel object for subchannel index.
+      */
+    PChannel * GetChannel(SubChannels subchannel = e_Media) const { return (size_t)subchannel < m_subchannels.size() ? m_subchannels[subchannel].m_channel : NULL; }
+
+  protected:
+    virtual void InternalStop();
+
+    PString m_name;
+    bool    m_remoteBehindNAT;
+    PINDEX  m_packetSize;
+    bool    m_started;
+
+    struct Transport
+    {
+      Transport(PChannel * chan = NULL) : m_channel(chan), m_thread(NULL) { }
+
+      PChannel * m_channel;
+      PThread  * m_thread;
+      PNotifierListTemplate<PBYTEArray> m_notifiers;
+      PTRACE_THROTTLE(m_throttleReadPacket,4,60000);
+      void ThreadMain(OpalMediaTransport & mediaTransport, SubChannels subchannel);
+    };
+    friend struct Transport;
+    vector<Transport> m_subchannels;
+    virtual void InternalOnStart(SubChannels subchannel);
+    virtual void InternalRxData(SubChannels subchannel, const PBYTEArray & data);
+};
+
+typedef PSafePtr<OpalMediaTransport, PSafePtrMultiThreaded> OpalMediaTransportPtr;
+
+
+class OpalTCPMediaTransport : public OpalMediaTransport
+{
+  public:
+    OpalTCPMediaTransport(const PString & name);
+    ~OpalTCPMediaTransport() { InternalStop(); }
+
+    virtual bool Open(OpalMediaSession & session, PINDEX count, const PString & localInterface, const OpalTransportAddress & remoteAddress);
+    virtual bool SetRemoteAddress(const OpalTransportAddress & remoteAddress, PINDEX = e_Media);
+};
+
+
+/** Class for low level transport of media that uses UDP
+  */
+class OpalUDPMediaTransport : public OpalMediaTransport
+{
+    PCLASSINFO(OpalUDPMediaTransport, OpalMediaTransport);
+  public:
+    OpalUDPMediaTransport(const PString & name);
+    ~OpalUDPMediaTransport() { InternalStop(); }
+
+    virtual bool Open(OpalMediaSession & session, PINDEX count, const PString & localInterface, const OpalTransportAddress & remoteAddress);
+    virtual OpalTransportAddress GetLocalAddress(SubChannels subchannel = e_Media) const;
+    virtual OpalTransportAddress GetRemoteAddress(SubChannels subchannel = e_Media) const;
+    virtual bool SetRemoteAddress(const OpalTransportAddress & remoteAddress, SubChannels subchannel = e_Media);
+    virtual bool Write(const void * data, PINDEX length, SubChannels = e_Media, const PIPSocketAddressAndPort * = NULL);
+
+    PUDPSocket * GetSocket(SubChannels subchannel = e_Media) const;
+
+  protected:
+    virtual void InternalRxData(SubChannels subchannel, const PBYTEArray & data);
+    virtual bool InternalSetRemoteAddress(const PIPSocket::AddressAndPort & ap, SubChannels subchannel, bool dontOverride PTRACE_PARAM(, const char * source));
+
+    bool m_localHasRestrictedNAT;
+};
+
+
+#if OPAL_ICE
+/** Class for low level transport of media that uses ICE
+  */
+class OpalICEMediaTransport : public OpalUDPMediaTransport
+{
+    PCLASSINFO(OpalICEMediaTransport, OpalUDPMediaTransport);
+  public:
+    OpalICEMediaTransport(const PString & name);
+    ~OpalICEMediaTransport();
+
+    virtual bool IsEstablished() const;
+    virtual void SetCandidates(const PString & user, const PString & pass, const PNatCandidateList & candidates);
+    virtual bool GetCandidates(PString & user, PString & pass, PNatCandidateList & candidates);
+
+    const PTimeInterval & GetICESetUpTime() const { return m_maxICESetUpTime; }
+    void SetICESetUpTime(const PTimeInterval & t) { m_maxICESetUpTime = t; }
+
+  protected:
+    class ICEChannel : public PIndirectChannel
+    {
+        PCLASSINFO(ICEChannel, PIndirectChannel);
+      public:
+        ICEChannel(OpalICEMediaTransport & transport, SubChannels subchannel, PChannel * channel);
+        virtual PBoolean Read(void * buf, PINDEX len);
+      protected:
+        OpalICEMediaTransport & m_transport;
+        SubChannels             m_subchannel;
+    };
+    bool InternalHandleICE(SubChannels subchannel, const void * buf, PINDEX len);
+
+    PString       m_localUsername;    // ICE username sent to remote
+    PString       m_localPassword;    // ICE password sent to remote
+    PString       m_remoteUsername;   // ICE username expected from remote
+    PString       m_remotePassword;   // ICE password expected from remote
+    PTimeInterval m_maxICESetUpTime;
+
+    enum CandidateStates
+    {
+      e_CandidateInProgress,
+      e_CandidateWaiting,
+      e_CandidateFrozen,
+      e_CandidateFailed,
+      e_CandidateSucceeded
+    };
+    struct CandidateState : PNatCandidate {
+      CandidateStates m_state;
+      // Not sure what else might be necessary here. Work in progress!
+
+      CandidateState(const PNatCandidate & cand)
+        : PNatCandidate(cand)
+        , m_state(e_CandidateInProgress)
+      {
+      }
+    };
+    typedef std::list<CandidateState> CandidateStateList;
+
+    CandidateStateList m_candidates[2];
+    enum {
+      e_UnknownCandidates,
+      e_LocalCandidates,
+      e_RemoteCandidates
+    } m_candidateType;
+
+    class Server;
+    Server      * m_server;
+    PSTUNClient * m_client;
+
+    PTRACE_THROTTLE(m_throttleNotYet,3,60000,5);
+    PTRACE_THROTTLE(m_throttleUseCandidate,3,60000);
+};
+#endif // OPAL_ICE
+
+
 /** Class for carrying media session information
   */
-class OpalMediaSession : public PSafeObject
+class OpalMediaSession : public PSafeObject, public OpalMediaTransportChannelTypes
 {
     PCLASSINFO(OpalMediaSession, PSafeObject);
   public:
@@ -339,11 +606,22 @@ class OpalMediaSession : public PSafeObject
 
     /**Open the media session.
       */
-    virtual bool Open(const PString & localInterface, const OpalTransportAddress & remoteAddress, bool isMediaAddress);
+    virtual bool Open(
+      const PString & localInterface,
+      const OpalTransportAddress & remoteAddress
+    ) = 0;
 
     /**Indicate if media session is open.
       */
     virtual bool IsOpen() const;
+
+    /**Start reading thread.
+      */
+    virtual void Start();
+
+    /**Indicate session has completed any initial negotiations.
+      */
+    virtual bool IsEstablished() const;
 
     /**Close the media session.
       */
@@ -367,11 +645,9 @@ class OpalMediaSession : public PSafeObject
       */
     virtual bool SetRemoteAddress(const OpalTransportAddress & remoteAddress, bool isMediaAddress = true);
 
-    typedef PList<PChannel> Transport;
-
     /**Attach an existing set of transport channels to media session.
       */
-    virtual void AttachTransport(Transport & transport);
+    virtual void AttachTransport(const OpalMediaTransportPtr & transport);
 
     /**Detach the transport channels from the media session.
        Note that while the channels are not closed, the media session will be.
@@ -379,7 +655,12 @@ class OpalMediaSession : public PSafeObject
        so care must be take when removing them in such a way they are not
        deleted unexpectedly.
       */
-    virtual Transport DetachTransport();
+    virtual OpalMediaTransportPtr DetachTransport();
+
+    /**Get transport channels for the media session.
+       This does not detach the tranpsort from the session.
+      */
+    OpalMediaTransportPtr GetTransport() const { return m_transport; }
 
     /**Update media stream with media options contained in the media format.
       */
@@ -388,6 +669,8 @@ class OpalMediaSession : public PSafeObject
     );
 
 #if OPAL_SDP
+    static const PString & GetBundleGroupId();
+
     /**Get the "group" id for the RTP session.
        This is typically a mechanism for connecting audio and video together via BUNDLE.
     */
@@ -430,6 +713,7 @@ class OpalMediaSession : public PSafeObject
 
     /// Indicate remote is behind NAT
     void SetRemoteBehindNAT() { m_remoteBehindNAT = true; }
+    bool IsRemoteBehindNAT() const { return m_remoteBehindNAT; }
 
     /**Create internal crypto keys for the suite.
       */
@@ -463,40 +747,17 @@ class OpalMediaSession : public PSafeObject
       */
     const OpalMediaType & GetMediaType() const { return m_mediaType; }
 
-#if OPAL_ICE
-    /**Set the ICE parameters for use in this media session.
-      */
-    virtual void SetICE(
-      const PString & user,
-      const PString & pass,
-      const PNatCandidateList & candidates
-    );
-
-    /**Get the ICE parameters for use in this media session.
-      */
-    virtual bool GetICE(
-      PString & user,
-      PString & pass,
-      PNatCandidateList & candidates
-    );
-#endif
-
   protected:
     OpalConnection & m_connection;
     unsigned         m_sessionId;  // unique session ID
     OpalMediaType    m_mediaType;  // media type for session
+    bool             m_remoteBehindNAT;
 #if OPAL_SDP
     PString          m_groupId;
     PString          m_groupMediaId;
-#endif
-    bool             m_remoteBehindNAT;
-#if OPAL_ICE
-    PString          m_localUsername;    // ICE username sent to remote
-    PString          m_localPassword;    // ICE password sent to remote
-    PString          m_remoteUsername;   // ICE username expected from remote
-    PString          m_remotePassword;   // ICE password expected from remote
-#endif
+#endif    
 
+    OpalMediaTransportPtr  m_transport;
     OpalMediaCryptoKeyList m_offeredCryptokeys;
 
   private:
@@ -524,14 +785,17 @@ class OpalDummySession : public OpalMediaSession
 {
     PCLASSINFO(OpalDummySession, OpalMediaSession)
   public:
-    OpalDummySession(const Init & init, const OpalTransportAddressArray & transports = OpalTransportAddressArray());
+    OpalDummySession(const Init & init);
+    OpalDummySession(const Init & init, const OpalTransportAddressArray & transports);
     static const PCaselessString & SessionType();
     virtual const PCaselessString & GetSessionType() const;
-    virtual bool Open(const PString & localInterface, const OpalTransportAddress & remoteAddress, bool isMediaAddress);
+    virtual bool Open(const PString & localInterface, const OpalTransportAddress & remoteAddress);
     virtual bool IsOpen() const;
     virtual OpalTransportAddress GetLocalAddress(bool isMediaAddress = true) const;
     virtual OpalTransportAddress GetRemoteAddress(bool isMediaAddress = true) const;
     virtual bool SetRemoteAddress(const OpalTransportAddress & remoteAddress, bool isMediaAddress = true);
+    virtual void AttachTransport(const OpalMediaTransportPtr &);
+    virtual OpalMediaTransportPtr DetachTransport();
 #if OPAL_SDP
     virtual SDPMediaDescription * CreateSDPMediaDescription();
 #endif
