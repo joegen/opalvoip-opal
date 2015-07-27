@@ -133,6 +133,13 @@ bool OpalRTPMediaStream::IsEstablished() const
 }
 
 
+PBoolean OpalRTPMediaStream::Start()
+{
+  m_rtpSession.Start();
+  return OpalMediaStream::Start();
+}
+
+
 void OpalRTPMediaStream::OnStartMediaPatch()
 {
   // Make sure a RTCP packet goes out as early as possible, helps with issues
