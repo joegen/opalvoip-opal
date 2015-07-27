@@ -510,6 +510,7 @@ class SDPRTPAVPMediaDescription : public SDPMediaDescription
 
     PCaselessString               m_transportType;
     SsrcInfo                      m_ssrcInfo;
+    PString                       m_msid;
     SyncSourceArray               m_temporaryFlowSSRC;
     MediaStreamMap                m_mediaStreams;
     OpalMediaFormat::RTCPFeedback m_rtcp_fb;
@@ -644,7 +645,7 @@ class SDPSessionDescription : public PObject, public SDPCommonAttributes
     PINDEX GetMediaDescriptionIndexByType(const OpalMediaType & rtpMediaType) const;
     SDPMediaDescription * GetMediaDescriptionByType(const OpalMediaType & rtpMediaType) const;
     SDPMediaDescription * GetMediaDescriptionByIndex(PINDEX i) const;
-    void AddMediaDescription(SDPMediaDescription * md) { mediaDescriptions.Append(PAssertNULL(md)); }
+    void AddMediaDescription(SDPMediaDescription * md);
     
     virtual SDPMediaDescription::Direction GetDirection(unsigned) const;
     bool IsHold() const;

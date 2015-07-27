@@ -1189,18 +1189,19 @@ void OpalSkinnyConnection::OpenMediaChannel(const MediaInfo & info)
     return;
   }
 
+  PSafePtr<OpalConnection> con = info.m_receiver ? this : GetOtherPartyConnection();
+  if (con == NULL)
+    return;
+
   if (mediaSession->IsOpen()) {
     if (!info.m_receiver)
       mediaSession->SetRemoteAddress(info.m_mediaAddress);
   }
-  else if (!mediaSession->Open(m_phoneDevice.m_transport.GetInterface(), info.m_receiver ? m_phoneDevice.m_transport.GetRemoteAddress() : info.m_mediaAddress, true)) {
+  else if (!mediaSession->Open(m_phoneDevice.m_transport.GetInterface(),
+                               info.m_receiver ? m_phoneDevice.m_transport.GetRemoteAddress() : info.m_mediaAddress)) {
     PTRACE(2, "Could not open session " << info.m_sessionId << " for " << mediaFormat);
     return;
   }
-
-  PSafePtr<OpalConnection> con = info.m_receiver ? this : GetOtherPartyConnection();
-  if (con == NULL)
-    return;
 
   bool canSimulate = !info.m_receiver && !m_endpoint.GetSimulatedAudioFile().IsEmpty() && mediaType == OpalMediaType::Audio();
 
@@ -1246,7 +1247,7 @@ void OpalSkinnyConnection::OpenSimulatedMediaChannel(unsigned sessionId, const O
   if (dynamic_cast<OpalRTPSession *>(mediaSession) == NULL) {
     OpalTransportAddress mediaAddress = mediaSession->GetRemoteAddress();
     mediaSession = new OpalRTPSession(OpalMediaSession::Init(*this, sessionId, mediaFormat.GetMediaType(), false));
-    if (!mediaSession->Open(m_phoneDevice.m_transport.GetInterface(), mediaAddress, true)) {
+    if (!mediaSession->Open(m_phoneDevice.m_transport.GetInterface(), mediaAddress)) {
       PTRACE(2, "Could not open RTP session " << sessionId << " for " << mediaFormat << " using " << mediaAddress);
       delete mediaSession;
       return;
