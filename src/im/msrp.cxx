@@ -321,14 +321,12 @@ OpalMSRPMediaSession::~OpalMSRPMediaSession()
 }
 
 
-bool OpalMSRPMediaSession::Open(const PString & localInterface, const OpalTransportAddress & remoteAddress, bool isMediaAddress)
+bool OpalMSRPMediaSession::Open(const PString & localInterface, const OpalTransportAddress & remoteAddress)
 {
-  if (!OpalMediaSession::Open(localInterface, remoteAddress, isMediaAddress))
-    return false;
-
   m_isOriginating = m_connection.IsOriginating();
   m_localMSRPSessionId = m_manager.CreateSessionID();
   m_localUrl = m_manager.SessionIDToURL(localInterface, m_localMSRPSessionId);
+  m_remoteAddress = remoteAddress;
   return true;
 }
 

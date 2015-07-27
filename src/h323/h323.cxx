@@ -4952,14 +4952,12 @@ H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability 
   if (ownerCall.IsSwitchingT38()) {
     OpalMediaSession * otherSession = GetMediaSession(sessionID == H323Capability::DefaultAudioSessionID
                           ? H323Capability::DefaultDataSessionID : H323Capability::DefaultAudioSessionID);
-    if (otherSession != NULL && otherSession->IsOpen()) {
-      OpalMediaSession::Transport transport = otherSession->DetachTransport();
-      session->AttachTransport(transport);
-    }
+    if (otherSession != NULL && otherSession->IsOpen())
+      session->AttachTransport(otherSession->DetachTransport());
   }
 #endif // OPAL_T38_CAPABILITY
 
-  if (!session->Open(transport.GetInterface(), remoteControlAddress, false)) {
+  if (!session->Open(transport.GetInterface(), remoteControlAddress)) {
     ReleaseMediaSession(sessionID);
     OnFailedMediaStream(dir == H323Channel::IsReceiver, "Could not open session transports");
     return NULL;

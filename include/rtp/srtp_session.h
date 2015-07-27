@@ -138,8 +138,11 @@ class OpalSRTPSession : public OpalRTPSession
 
   protected:
     virtual bool ResequenceOutOfOrderPackets(SyncSource & ssrc) const;
-    virtual bool ApplyKeyToSRTP(OpalSRTPKeyInfo & keyInfo, Direction dir);
+    virtual bool ApplyKeysToSRTP(OpalMediaTransport & transport);
+    virtual bool ApplyKeyToSRTP(const OpalMediaCryptoKeyInfo & keyInfo, Direction dir);
     virtual bool AddStreamToSRTP(RTP_SyncSourceId ssrc, Direction dir);
+    virtual void OnRxDataPacket(OpalMediaTransport & transport, PBYTEArray data);
+    virtual void OnRxControlPacket(OpalMediaTransport & transport, PBYTEArray data);
 
     struct srtp_ctx_t * m_context;
     OpalSRTPKeyInfo   * m_keyInfo[2]; // rx & tx
@@ -147,7 +150,10 @@ class OpalSRTPSession : public OpalRTPSession
 
 #if PTRACING
     map< uint64_t, PTrace::Throttle<3> > m_throttle;
-    __inline PTrace::Throttle<3> & GetThrottle(Direction dir, Channel chan, RTP_SyncSourceId ssrc) { return m_throttle[dir|(chan<<2)|((uint64_t)ssrc<<4)]; }
+    __inline PTrace::Throttle<3> & GetThrottle(Direction dir, SubChannels subchannel, RTP_SyncSourceId ssrc)
+    {
+      return m_throttle[dir|(subchannel<<2)|((uint64_t)ssrc<<4)];
+    }
 #endif
 };
 

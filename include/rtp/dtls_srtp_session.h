@@ -48,6 +48,46 @@
 #include <ptclib/qchannel.h>
 
 
+#if OPAL_ICE
+typedef OpalICEMediaTransport OpalDTLSMediaTransportParent;
+#else
+typedef OpalUDPMediaStransport OpalDTLSMediaTransportParent;
+#endif
+
+class OpalDTLSMediaTransport : public OpalDTLSMediaTransportParent
+{
+    PCLASSINFO(OpalDTLSMediaTransport, OpalDTLSMediaTransportParent);
+  public:
+    OpalDTLSMediaTransport(const PString & name, bool passiveMode, const PSSLCertificateFingerprint& fp);
+    ~OpalDTLSMediaTransport() { InternalStop(); }
+
+    virtual bool IsEstablished() const;
+    virtual bool GetKeyInfo(OpalMediaCryptoKeyInfo * keyInfo[2]);
+
+    void SetPassiveMode(bool passive) { m_passiveMode = passive; }
+
+    class DTLSChannel : public PSSLChannelDTLS
+    {
+        PCLASSINFO(DTLSChannel, PSSLChannelDTLS);
+      public:
+        DTLSChannel();
+#if PTRACING
+        virtual int BioRead(char * buf, int len);
+        virtual int BioWrite(const char * buf, int len);
+#endif
+    };
+
+  protected:
+    virtual void InternalOnStart(SubChannels subchannel);
+    virtual DTLSChannel * CreateDTLSChannel();
+    PDECLARE_SSLVerifyNotifier(OpalDTLSMediaTransport, OnVerify);
+
+    bool m_passiveMode;
+    PSSLCertificateFingerprint m_remoteFingerprint;
+    std::auto_ptr<OpalMediaCryptoKeyInfo> m_keyInfo[2];
+};
+
+
 class OpalDTLSSRTPSession : public OpalSRTPSession
 {
     PCLASSINFO(OpalDTLSSRTPSession, OpalSRTPSession);
@@ -60,35 +100,19 @@ class OpalDTLSSRTPSession : public OpalSRTPSession
 
     virtual const PCaselessString & GetSessionType() const { return RTP_DTLS_SAVP(); }
 
-    // OVerrides from OpalRTPSession
-    virtual bool Open(const PString & localInterface, const OpalTransportAddress & remoteAddress, bool mediaAddress);
-    virtual bool IsEstablished() const;
-    virtual SendReceiveStatus OnSendData(RTP_DataFrame & frame, RewriteMode rewrite);
-    virtual SendReceiveStatus OnSendControl(RTP_ControlFrame & frame);
-
     // New members
     void SetPassiveMode(bool passive);
     bool IsPassiveMode() const { return m_passiveMode; }
 
     const PSSLCertificateFingerprint & GetLocalFingerprint(PSSLCertificateFingerprint::HashType preferredHashType) const;
-    const PSSLCertificateFingerprint & GetRemoteFingerprint() const;
     void SetRemoteFingerprint(const PSSLCertificateFingerprint& fp);
 
   protected:
-    class SSLChannel;
-
-    virtual void ThreadMain();
-    virtual void InternalClose();
-    virtual bool ExecuteHandshake(Channel channel);
-    PDECLARE_SSLVerifyNotifier(OpalDTLSSRTPSession, OnVerify);
-
+    virtual OpalMediaTransport * CreateMediaTransport(const PString & name);
 
     bool                       m_passiveMode;
     PSSLCertificateFingerprint m_localFingerprint;
     PSSLCertificateFingerprint m_remoteFingerprint;
-
-    // One each for Media and Control channels
-    SSLChannel  * m_sslChannel[2];
 };
 
 

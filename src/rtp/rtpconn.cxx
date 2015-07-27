@@ -401,8 +401,7 @@ void OpalRTPConnection::ReplaceMediaSession(unsigned sessionId, OpalMediaSession
     OpalTransportAddress remoteMedia = it->second->GetRemoteAddress(true);
     OpalTransportAddress remoteCtrl = it->second->GetRemoteAddress(false);
 
-    OpalMediaSession::Transport transport = it->second->DetachTransport();
-    mediaSession->AttachTransport(transport);
+    mediaSession->AttachTransport(it->second->DetachTransport());
 
     mediaSession->SetRemoteAddress(remoteMedia, true);
     mediaSession->SetRemoteAddress(remoteCtrl, false);
