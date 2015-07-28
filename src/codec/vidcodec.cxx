@@ -305,18 +305,17 @@ struct OpalKeyFrameDetectorH264 : OpalKeyFrameDetector
       switch ((*rtp++) & 0x1f) {
         case 1: // Coded slice of a non-IDR picture
         case 2: // Coded slice data partition A
-          m_gotSPS = m_gotPPS = false;
-          if ((*rtp & 0x80) != 0)
+          if ((*rtp & 0x80) != 0) // High bit 1 indicates MB zero
             return OpalVideoFormat::e_InterFrame;
           break;
 
         case 5: // Coded slice of an IDR picture
-          if (m_gotSPS && m_gotPPS)
+          if (m_gotSPS && m_gotPPS && (*rtp & 0x80) != 0) // High bit 1 indicates MB zero
             return OpalVideoFormat::e_IntraFrame;
           break;
 
         case 7: // Sequence parameter set
-          m_gotSPS = true;
+          m_gotSPS = *rtp == 66 || *rtp == 77 || *rtp == *rtp == 88 || *rtp == 100;
           return OpalVideoFormat::e_NonFrameBoundary;
 
         case 8: // Picture parameter set
@@ -329,7 +328,6 @@ struct OpalKeyFrameDetectorH264 : OpalKeyFrameDetector
       }
     }
 
-    m_gotSPS = m_gotPPS = false;
     return OpalVideoFormat::e_NonFrameBoundary;
   }
 };
