@@ -315,7 +315,7 @@ struct OpalKeyFrameDetectorH264 : OpalKeyFrameDetector
           break;
 
         case 7: // Sequence parameter set
-          m_gotSPS = *rtp == 66 || *rtp == 77 || *rtp == *rtp == 88 || *rtp == 100;
+          m_gotSPS = *rtp == 66 || *rtp == 77 || *rtp == 88 || *rtp == 100;
           return OpalVideoFormat::e_NonFrameBoundary;
 
         case 8: // Picture parameter set
