@@ -1056,14 +1056,18 @@ bool OpalUDPMediaTransport::Write(const void * data, PINDEX length, SubChannels 
   if (!lock.IsLocked())
     return false;
 
-  PUDPSocket * socket = GetSocket(subchannel);
-  if (socket == NULL)
-    return false;
+  PUDPSocket * socket;
+  if (dest == NULL || (socket = GetSocket(subchannel)) == NULL)
+    return OpalMediaTransport::Write(data, length, subchannel, dest);
 
-  if (dest != NULL ? socket->WriteTo(data, length, *dest) : socket->Write(data, length))
+  if (socket->WriteTo(data, length, *dest))
     return true;
 
-  return socket->GetErrorCode(PChannel::LastWriteError) == PChannel::Unavailable;
+  PTRACE(1, *this << "write (" << length << " bytes) error"
+            " on " << subchannel << " subchannel to " << *dest <<
+            " (" << socket->GetErrorNumber(PChannel::LastWriteError) << "):"
+            " " << socket->GetErrorText(PChannel::LastWriteError));
+  return false;
 }
 
 
