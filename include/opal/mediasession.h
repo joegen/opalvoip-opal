@@ -435,20 +435,32 @@ public:
   protected:
     virtual void InternalStop();
 
-    PString m_name;
-    bool    m_remoteBehindNAT;
-    PINDEX  m_packetSize;
-    bool    m_started;
+    PString       m_name;
+    bool          m_remoteBehindNAT;
+    PINDEX        m_packetSize;
+    PTimeInterval m_maxNoTransmitTime;
+    bool          m_started;
 
     struct Transport
     {
-      Transport(PChannel * chan = NULL) : m_channel(chan), m_thread(NULL) { }
+      Transport(
+        OpalMediaTransport * owner = NULL,
+        SubChannels subchannel = e_AllSubChannels,
+        PChannel * channel = NULL
+      );
+      void ThreadMain();
+      bool HandleUnavailableError();
 
-      PChannel * m_channel;
-      PThread  * m_thread;
       PNotifierListTemplate<PBYTEArray> m_notifiers;
+
+      OpalMediaTransport * m_owner;
+      SubChannels          m_subchannel;
+      PChannel           * m_channel;
+      PThread            * m_thread;
+      unsigned             m_consecutiveUnavailableErrors;
+      PSimpleTimer         m_timeForUnavailableErrors;
+
       PTRACE_THROTTLE(m_throttleReadPacket,4,60000);
-      void ThreadMain(OpalMediaTransport & mediaTransport, SubChannels subchannel);
     };
     friend struct Transport;
     vector<Transport> m_subchannels;
@@ -747,11 +759,33 @@ class OpalMediaSession : public PSafeObject, public OpalMediaTransportChannelTyp
       */
     const OpalMediaType & GetMediaType() const { return m_mediaType; }
 
+    /**Get the maximum time we wait for packets from remote.
+      */
+    const PTimeInterval & GetMaxNoReceiveTime() const { return m_maxNoReceiveTime; }
+
+    /**Set the maximum time we wait for packets from remote.
+      */
+    void SetMaxNoReceiveTime(
+      const PTimeInterval & interval ///<  New time interval for reports.
+    ) { m_maxNoReceiveTime = interval; }
+
+    /**Get the maximum time we wait for remote to start accepting out packets.
+      */
+    const PTimeInterval & GetMaxNoTransmitTime() const { return m_maxNoTransmitTime; }
+
+    /**Set the maximum time we wait for remote to start accepting out packets.
+      */
+    void SetMaxNoTransmitTime(
+      const PTimeInterval & interval ///<  New time interval for reports.
+    ) { m_maxNoTransmitTime = interval; }
+
   protected:
     OpalConnection & m_connection;
     unsigned         m_sessionId;  // unique session ID
     OpalMediaType    m_mediaType;  // media type for session
     bool             m_remoteBehindNAT;
+    PTimeInterval    m_maxNoReceiveTime;
+    PTimeInterval    m_maxNoTransmitTime;
 #if OPAL_SDP
     PString          m_groupId;
     PString          m_groupMediaId;
