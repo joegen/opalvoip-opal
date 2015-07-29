@@ -606,6 +606,7 @@ class OpalRTPSession : public OpalMediaSession
 
   protected:
     virtual OpalMediaTransport * CreateMediaTransport(const PString & name);
+    void InternalAttachTransport(const OpalMediaTransportPtr & transport PTRACE_PARAM(, const char * from));
 
     bool SetQoS(const PIPSocket::QoS & qos);
 

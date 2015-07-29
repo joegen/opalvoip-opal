@@ -234,7 +234,7 @@ RTP_SyncSourceArray OpalRTPSession::GetSyncSources(Direction dir) const
   RTP_SyncSourceArray ssrcs;
 
   for (SyncSourceMap::const_iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
-    if (it->second->m_direction == dir && it->first != 1)
+    if (it->second->m_direction == dir && it->first != 1) // SSRC=1 is a Google Chrome WebRTC hack
       ssrcs.push_back(it->first);
   }
 
@@ -731,16 +731,44 @@ bool OpalRTPSession::SyncSource::HandlePendingFrames()
 
 void OpalRTPSession::AttachTransport(const OpalMediaTransportPtr & newTransport)
 {
+  InternalAttachTransport(newTransport PTRACE_PARAM(, "attached"));
+}
+
+
+void OpalRTPSession::InternalAttachTransport(const OpalMediaTransportPtr & newTransport PTRACE_PARAM(, const char * from))
+{
   OpalMediaSession::AttachTransport(newTransport);
 
-  OpalMediaTransportPtr transport = m_transport; // This way avoids races
-  if (transport != NULL) {
-    transport->AddReadNotifier(PCREATE_NOTIFIER(OnRxDataPacket), e_Data);
-    if (!m_singlePortRx)
-      transport->AddReadNotifier(PCREATE_NOTIFIER(OnRxControlPacket), e_Control);
+  newTransport->AddReadNotifier(PCREATE_NOTIFIER(OnRxDataPacket), e_Data);
+  if (!m_singlePortRx)
+    newTransport->AddReadNotifier(PCREATE_NOTIFIER(OnRxControlPacket), e_Control);
+
+  m_rtcpPacketsReceived = 0;
+
+  PIPAddress localAddress(0);
+  GetDataSocket().GetLocalAddress(localAddress);
+  m_packetOverhead = localAddress.GetVersion() == 4 ? (20 + 8 + 12) : (40 + 8 + 12);
+
+  SetQoS(m_qos);
+
+  m_reportTimer.RunContinuous(m_reportTimer.GetResetTime());
+
+  RTP_SyncSourceId ssrc = GetSyncSourceOut();
+  if (ssrc == 0)
+    ssrc = AddSyncSource(0, e_Sender); // Add default sender SSRC
+
+  // Google Chrome WebRTC hack, always have SSRC=1
+  if (m_sessionId == 1 || m_groupId != GetBundleGroupId()) {
+    AddSyncSource(1, e_Receiver);
+    PTRACE(4, *this << "added Chome WebRTC SSRC=1, group=\"" << m_groupId << '"');
   }
 
   m_endpoint.RegisterLocalRTP(this, false);
+
+  PTRACE(3, *this << from << ": "
+            " local=" << GetLocalAddress() << '-' << GetLocalControlPort()
+         << " remote=" << GetRemoteAddress()
+         << " added default sender SSRC=" << RTP_TRACE_SRC(ssrc));
 }
 
 
@@ -2143,39 +2171,13 @@ bool OpalRTPSession::Open(const PString & localInterface, const OpalTransportAdd
     transportName.sprintf("Session %u", m_sessionId);
   else
     transportName += "bundle";
-  m_transport = CreateMediaTransport(transportName);
-  PTRACE_CONTEXT_ID_TO(*m_transport);
+  OpalMediaTransportPtr transport = CreateMediaTransport(transportName);
+  PTRACE_CONTEXT_ID_TO(*transport);
 
-  if (!m_transport->Open(*this, m_singlePortRx ? 1 : 2, localInterface, remoteAddress))
+  if (!transport->Open(*this, m_singlePortRx ? 1 : 2, localInterface, remoteAddress))
     return false;
 
-  m_transport->AddReadNotifier(PCREATE_NOTIFIER(OnRxDataPacket), e_Data);
-  if (!m_singlePortRx)
-    m_transport->AddReadNotifier(PCREATE_NOTIFIER(OnRxControlPacket), e_Control);
-
-  m_rtcpPacketsReceived = 0;
-
-  PIPAddress localAddress(0);
-  GetDataSocket().GetLocalAddress(localAddress);
-  m_packetOverhead = localAddress.GetVersion() == 4 ? (20 + 8 + 12) : (40 + 8 + 12);
-
-  SetQoS(m_qos);
-
-  m_reportTimer.RunContinuous(m_reportTimer.GetResetTime());
-
-  RTP_SyncSourceId ssrc = GetSyncSourceOut();
-  if (ssrc == 0)
-    ssrc = AddSyncSource(0, e_Sender); // Add default sender SSRC
-
-  // Google WebRTC hack, always have SSRC=1
-  if (m_sessionId == 1 || m_groupId != GetBundleGroupId())
-    AddSyncSource(1, e_Receiver);
-
-  PTRACE(3, *this << "opened: "
-            " local=" << GetLocalAddress() << '-' << GetLocalControlPort()
-         << " remote=" << GetRemoteAddress()
-         << " added default sender SSRC=" << RTP_TRACE_SRC(ssrc));
-
+  InternalAttachTransport(transport PTRACE_PARAM(, "opened"));
   return true;
 }
 
