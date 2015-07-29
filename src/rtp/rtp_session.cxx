@@ -2305,6 +2305,21 @@ OpalTransportAddress OpalRTPSession::GetLocalAddress(bool isMediaAddress) const
 }
 
 
+OpalTransportAddress OpalRTPSession::GetRemoteAddress(bool isMediaAddress) const
+{
+  if (!m_singlePortRx)
+    return OpalMediaSession::GetRemoteAddress(isMediaAddress);
+
+  if (m_singlePortTx || m_remoteControlPort == 0)
+    return OpalMediaSession::GetRemoteAddress(true);
+
+  PIPSocketAddressAndPort remote;
+  OpalMediaSession::GetRemoteAddress().GetIpAndPort(remote);
+  remote.SetPort(m_remoteControlPort);
+  return OpalTransportAddress(remote, OpalTransportAddress::UdpPrefix());
+}
+
+
 bool OpalRTPSession::SetRemoteAddress(const OpalTransportAddress & remoteAddress, bool isMediaAddress)
 {
   if (!OpalMediaSession::SetRemoteAddress(remoteAddress, isMediaAddress))
@@ -2335,7 +2350,7 @@ bool OpalRTPSession::SetRemoteAddress(const OpalTransportAddress & remoteAddress
 bool OpalRTPSession::HandleUnreachable(PTRACE_PARAM(SubChannels subchannel))
 {
   if (++m_noTransmitErrors == 1) {
-    PTRACE(2, *this << subchannel << " port on remote not ready.");
+    PTRACE(2, *this << subchannel << " port on remote not ready: " << GetRemoteAddress(subchannel));
     m_noTransmitTimer = m_maxNoTransmitTime;
     return true;
   }
@@ -2343,7 +2358,7 @@ bool OpalRTPSession::HandleUnreachable(PTRACE_PARAM(SubChannels subchannel))
   if (m_noTransmitErrors < 10 || m_noTransmitTimer.IsRunning())
     return true;
 
-  PTRACE(2, *this << subchannel << ' ' << m_maxNoTransmitTime << " seconds of transmit fails");
+  PTRACE(2, *this << subchannel << ' ' << m_maxNoTransmitTime << " seconds of transmit fails to " << GetRemoteAddress(subchannel));
   if (m_connection.OnMediaFailed(m_sessionId, false))
     return false;
 
@@ -2430,8 +2445,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::WriteControl(RTP_ControlFrame 
 
   PIPSocketAddressAndPort remoteRTCP;
   if (remote == NULL && m_singlePortRx && !m_singlePortTx) {
-    GetRemoteAddress().GetIpAndPort(remoteRTCP);
-    remoteRTCP.SetPort(m_remoteControlPort);
+    GetRemoteAddress(false).GetIpAndPort(remoteRTCP);
     remote = &remoteRTCP;
   }
 

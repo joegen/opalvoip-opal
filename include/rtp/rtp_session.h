@@ -90,6 +90,7 @@ class OpalRTPSession : public OpalMediaSession
     virtual bool Open(const PString & localInterface, const OpalTransportAddress & remoteAddress);
     virtual bool Close();
     virtual OpalTransportAddress GetLocalAddress(bool isMediaAddress = true) const;
+    virtual OpalTransportAddress GetRemoteAddress(bool isMediaAddress = true) const;
     virtual bool SetRemoteAddress(const OpalTransportAddress & remoteAddress, bool isMediaAddress = true);
     virtual void AttachTransport(const OpalMediaTransportPtr & transport);
     virtual OpalMediaTransportPtr DetachTransport();
