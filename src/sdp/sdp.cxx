@@ -816,7 +816,8 @@ bool SDPMediaDescription::ToSession(OpalMediaSession * session) const
   if (rtpSession != NULL) {
     // Set single port or disjoint RTCP port, must be done before Open()
     rtpSession->SetSinglePortTx(m_controlAddress == m_mediaAddress);
-    rtpSession->SetSinglePortRx(m_stringOptions.GetBoolean(OPAL_OPT_RTCP_MUX));
+    if (m_stringOptions.GetBoolean(OPAL_OPT_RTCP_MUX))
+      rtpSession->SetSinglePortRx();
 #if OPAL_ICE
     OpalMediaTransportPtr transport = rtpSession->GetTransport();
     if (transport == NULL) {
