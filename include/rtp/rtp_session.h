@@ -367,26 +367,6 @@ class OpalRTPSession : public OpalMediaSession
     ) { m_allowAnySyncSource = allow; }
 
 
-    /**Get the maximum time we wait for packets from remote.
-      */
-    const PTimeInterval & GetMaxNoReceiveTime() { return m_maxNoReceiveTime; }
-
-    /**Set the maximum time we wait for packets from remote.
-      */
-    void SetMaxNoReceiveTime(
-      const PTimeInterval & interval ///<  New time interval for reports.
-    )  { m_maxNoReceiveTime = interval; }
-
-    /**Get the maximum time we wait for remote to start accepting out packets.
-      */
-    const PTimeInterval & GetMaxNoTransmitTime() { return m_maxNoTransmitTime; }
-
-    /**Set the maximum time we wait for remote to start accepting out packets.
-      */
-    void SetMaxNoTransmitTime(
-      const PTimeInterval & interval ///<  New time interval for reports.
-    )  { m_maxNoTransmitTime = interval; }
-
     /**Get the maximum out of order packets before flagging it missing.
       */
     PINDEX GetMaxOutOfOrderPackets() { return m_maxOutOfOrderPackets; }
@@ -613,7 +593,6 @@ class OpalRTPSession : public OpalMediaSession
 
     PDECLARE_MediaReadNotifier(OpalRTPSession, OnRxDataPacket);
     PDECLARE_MediaReadNotifier(OpalRTPSession, OnRxControlPacket);
-    virtual bool HandleUnreachable(PTRACE_PARAM(SubChannels subchannel));
 
     virtual SendReceiveStatus WriteRawPDU(
       const BYTE * framePtr,
@@ -631,8 +610,6 @@ class OpalRTPSession : public OpalMediaSession
     PString             m_toolName;
     RTPExtensionHeaders m_extensionHeaders;
     bool                m_allowAnySyncSource;
-    PTimeInterval       m_maxNoReceiveTime;
-    PTimeInterval       m_maxNoTransmitTime;
     PINDEX              m_maxOutOfOrderPackets; // Number of packets before we give up waiting for an out of order packet
     PTimeInterval       m_waitOutOfOrderTime;   // Milliseconds before we give up on an out of order packet
     unsigned            m_txStatisticsInterval;
@@ -798,8 +775,6 @@ class OpalRTPSession : public OpalMediaSession
     unsigned       m_packetOverhead;
     WORD           m_remoteControlPort;
     bool           m_sendEstablished;
-    unsigned       m_noTransmitErrors;
-    PSimpleTimer   m_noTransmitTimer;
 
     OpalMediaTransport::ReadNotifier m_dataNotifier;
     OpalMediaTransport::ReadNotifier m_controlNotifier;

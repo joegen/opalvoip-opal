@@ -107,8 +107,6 @@ OpalRTPSession::OpalRTPSession(const Init & init)
   , m_timeUnits(m_isAudio ? 8 : 90)
   , m_toolName(PProcess::Current().GetName())
   , m_allowAnySyncSource(true)
-  , m_maxNoReceiveTime(m_manager.GetNoMediaTimeout())
-  , m_maxNoTransmitTime(0, 10)          // Sending data for 10 seconds, ICMP says still not there
   , m_maxOutOfOrderPackets(20)
   , m_waitOutOfOrderTime(GetDefaultOutOfOrderWaitTime(m_isAudio))
   , m_txStatisticsInterval(100)
@@ -128,7 +126,6 @@ OpalRTPSession::OpalRTPSession(const Init & init)
   , m_packetOverhead(0)
   , m_remoteControlPort(0)
   , m_sendEstablished(true)
-  , m_noTransmitErrors(0)
   , m_dataNotifier(PCREATE_NOTIFIER(OnRxDataPacket))
   , m_controlNotifier(PCREATE_NOTIFIER(OnRxControlPacket))
 {
@@ -776,6 +773,7 @@ void OpalRTPSession::InternalAttachTransport(const OpalMediaTransportPtr & newTr
 
 OpalMediaTransportPtr OpalRTPSession::DetachTransport()
 {
+  PTRACE(4, *this << "detaching transport " << m_transport);
   m_endpoint.RegisterLocalRTP(this, true);
   return OpalMediaSession::DetachTransport();
 }
@@ -2347,26 +2345,6 @@ bool OpalRTPSession::SetRemoteAddress(const OpalTransportAddress & remoteAddress
 }
 
 
-bool OpalRTPSession::HandleUnreachable(PTRACE_PARAM(SubChannels subchannel))
-{
-  if (++m_noTransmitErrors == 1) {
-    PTRACE(2, *this << subchannel << " port on remote not ready: " << GetRemoteAddress(subchannel));
-    m_noTransmitTimer = m_maxNoTransmitTime;
-    return true;
-  }
-
-  if (m_noTransmitErrors < 10 || m_noTransmitTimer.IsRunning())
-    return true;
-
-  PTRACE(2, *this << subchannel << ' ' << m_maxNoTransmitTime << " seconds of transmit fails to " << GetRemoteAddress(subchannel));
-  if (m_connection.OnMediaFailed(m_sessionId, false))
-    return false;
-
-  m_noTransmitErrors = 0;
-  return true;
-}
-
-
 void OpalRTPSession::OnRxDataPacket(OpalMediaTransport &, PBYTEArray data)
 {
   PSafeLockReadWrite lock(*this);
@@ -2410,7 +2388,7 @@ void OpalRTPSession::OnRxControlPacket(OpalMediaTransport &, PBYTEArray data)
     return;
 
   if (data.IsEmpty()) {
-    HandleUnreachable(PTRACE_PARAM(e_Control));
+    m_connection.OnMediaFailed(m_sessionId, false);
     return;
   }
 
@@ -2465,10 +2443,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::WriteRawPDU(const BYTE * frame
   if (!transport->IsEstablished())
     return e_IgnorePacket;
 
-  if (transport->Write(framePtr, frameSize, subchannel, remote))
-    return e_ProcessPacket;
-
-  return HandleUnreachable(PTRACE_PARAM(subchannel)) ? e_IgnorePacket : e_AbortTransport;
+  return transport->Write(framePtr, frameSize, subchannel, remote) ? e_ProcessPacket : e_AbortTransport;
 }
 
 
