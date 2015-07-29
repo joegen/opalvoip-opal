@@ -496,6 +496,7 @@ OpalMediaTransport::OpalMediaTransport(const PString & name)
   : m_name(name)
   , m_remoteBehindNAT(false)
   , m_packetSize(2048)
+  , m_maxNoTransmitTime(0, 10)          // Sending data for 10 seconds, ICMP says still not there
   , m_started(false)
 {
 }
@@ -571,6 +572,9 @@ bool OpalMediaTransport::Write(const void * data, PINDEX length, SubChannels sub
   if (channel->Write(data, length))
     return true;
 
+  if (channel->GetErrorCode(PChannel::LastWriteError) == PChannel::Unavailable && m_subchannels[subchannel].HandleUnavailableError())
+    return true;
+
   PTRACE(1, *this << "write (" << length << " bytes) error"
             " on " << subchannel << " subchannel"
             " (" << channel->GetErrorNumber(PChannel::LastWriteError) << "):"
@@ -623,50 +627,60 @@ void OpalMediaTransport::RemoveReadNotifier(PObject * target, SubChannels subcha
 }
 
 
-void OpalMediaTransport::Transport::ThreadMain(OpalMediaTransport & mediaTransport, SubChannels subchannel)
+OpalMediaTransport::Transport::Transport(OpalMediaTransport * owner, SubChannels subchannel, PChannel * chan)
+  : m_owner(owner)
+  , m_subchannel(subchannel)
+  , m_channel(chan)
+  , m_thread(NULL)
+  , m_consecutiveUnavailableErrors(0)
 {
-  PTRACE(4, &mediaTransport, "Media transport read thread starting");
+}
 
-  mediaTransport.InternalOnStart(subchannel);
+
+void OpalMediaTransport::Transport::ThreadMain()
+{
+  PTRACE(4, m_owner, *m_owner << m_subchannel << " media transport read thread starting");
+
+  m_owner->InternalOnStart(m_subchannel);
 
   while (m_channel->IsOpen()) {
-    PBYTEArray data(mediaTransport.m_packetSize);
+    PBYTEArray data(m_owner->m_packetSize);
 
-    PTRACE(m_throttleReadPacket, &mediaTransport,
-           "Read packet: sz=" << data.GetSize() << " timeout=" << m_channel->GetReadTimeout());
+    PTRACE(m_throttleReadPacket, m_owner, *m_owner << m_subchannel <<
+           " read packet: sz=" << data.GetSize() << " timeout=" << m_channel->GetReadTimeout());
 
     if (m_channel->Read(data.GetPointer(), data.GetSize())) {
       data.SetSize(m_channel->GetLastReadCount());
 
-      mediaTransport.InternalRxData(subchannel, data);
+      m_owner->InternalRxData(m_subchannel, data);
     }
     else {
-      PSafeLockReadWrite lock(mediaTransport);
+      PSafeLockReadWrite lock(m_owner);
       switch (m_channel->GetErrorCode(PChannel::LastReadError)) {
         case PChannel::Unavailable:
-          m_channel->Close();
+          HandleUnavailableError();
           break;
 
         case PChannel::BufferTooSmall:
-          PTRACE(2, &mediaTransport, subchannel << " read packet too large for buffer of " << data.GetSize() << " bytes.");
+          PTRACE(2, m_owner, *m_owner << m_subchannel << " read packet too large for buffer of " << data.GetSize() << " bytes.");
           break;
 
         case PChannel::Interrupted:
-          PTRACE(4, &mediaTransport, subchannel << " read packet interrupted.");
+          PTRACE(4, m_owner, *m_owner << m_subchannel << " read packet interrupted.");
           // Shouldn't happen, but it does.
           break;
 
         case PChannel::NoError:
-          PTRACE(3, &mediaTransport, subchannel << " received UDP packet with no payload.");
+          PTRACE(3, m_owner, *m_owner << m_subchannel << " received UDP packet with no payload.");
           break;
 
         case PChannel::Timeout:
-          PTRACE(1, &mediaTransport, "Timeout (" << m_channel->GetReadTimeout() << "s) receiving " << subchannel << " packets");
+          PTRACE(1, m_owner, *m_owner << m_subchannel << " timed out (" << m_channel->GetReadTimeout() << "s)");
           m_channel->Close();
           break;
 
         default:
-          PTRACE(1, &mediaTransport, subchannel
+          PTRACE(1, m_owner, *m_owner << m_subchannel
                  << " read error (" << m_channel->GetErrorNumber(PChannel::LastReadError) << "): "
                  << m_channel->GetErrorText(PChannel::LastReadError));
           m_channel->Close();
@@ -675,7 +689,30 @@ void OpalMediaTransport::Transport::ThreadMain(OpalMediaTransport & mediaTranspo
     }
   }
 
-  PTRACE(4, &mediaTransport, "Media transport read thread ended");
+  PTRACE(4, m_owner, *m_owner << m_subchannel << " media transport read thread ended");
+}
+
+
+bool OpalMediaTransport::Transport::HandleUnavailableError()
+{
+  if (++m_consecutiveUnavailableErrors == 1) {
+    PTRACE(2, m_owner, *m_owner << m_subchannel << " port on remote not ready: " << m_owner->GetRemoteAddress(m_subchannel));
+    m_timeForUnavailableErrors = m_owner->m_maxNoTransmitTime;
+    return true;
+  }
+
+  if (m_timeForUnavailableErrors.HasExpired()) {
+    m_consecutiveUnavailableErrors = 0;
+    return true;
+  }
+
+  if (m_consecutiveUnavailableErrors < 10)
+    return true;
+
+  PTRACE(2, m_owner, *m_owner << m_subchannel << ' ' << m_owner->m_maxNoTransmitTime
+         << " seconds of transmit fails to " << m_owner->GetRemoteAddress(m_subchannel));
+  m_channel->Close();
+  return false;
 }
 
 
@@ -706,8 +743,8 @@ void OpalMediaTransport::Start()
       threadName.Replace(" bundle", "-B");
       if (m_subchannels.size() > 1)
         threadName << '-' << subchannel;
-      m_subchannels[subchannel].m_thread = new PThreadObj2Arg<OpalMediaTransport::Transport, OpalMediaTransport &, SubChannels>
-              (m_subchannels[subchannel], *this, (SubChannels)subchannel, &OpalMediaTransport::Transport::ThreadMain, false, threadName, PThread::HighPriority);
+      m_subchannels[subchannel].m_thread = new PThreadObj<OpalMediaTransport::Transport>
+              (m_subchannels[subchannel], &OpalMediaTransport::Transport::ThreadMain, false, threadName, PThread::HighPriority);
       PTRACE_CONTEXT_ID_TO(m_subchannels[subchannel].m_thread);
     }
   }
@@ -850,7 +887,7 @@ bool OpalUDPMediaTransport::InternalSetRemoteAddress(const PIPSocket::AddressAnd
   PIPSocketAddressAndPort oldAP;
   socket->GetLocalAddress(oldAP);
   if (newAP == oldAP) {
-    PTRACE(2, "Cannot set remote address/port to same as local: " << oldAP);
+    PTRACE(2, *this << source << " cannot set remote address/port to same as local: " << oldAP);
     return false;
   }
 
@@ -859,7 +896,7 @@ bool OpalUDPMediaTransport::InternalSetRemoteAddress(const PIPSocket::AddressAnd
     return true;
 
   if (dontOverride && oldAP.IsValid()) {
-    PTRACE(2, "Cannot set remote address/port to " << newAP << ", already set to " << oldAP);
+    PTRACE(2, *this << source << " cannot set remote address/port to " << newAP << ", already set to " << oldAP);
     return false;
   }
 
@@ -953,8 +990,9 @@ bool OpalUDPMediaTransport::Open(OpalMediaSession & session,
 {
   OpalManager & manager = session.GetConnection().GetEndPoint().GetManager();
 
-  m_packetSize = session.GetConnection().GetEndPoint().GetManager().GetMaxRtpPacketSize();
+  m_packetSize = manager.GetMaxRtpPacketSize();
   m_remoteBehindNAT = session.IsRemoteBehindNAT();
+  m_maxNoTransmitTime = session.GetMaxNoTransmitTime();
 
   PIPAddress bindingIP(localInterface);
   PIPAddress remoteIP;
@@ -984,8 +1022,8 @@ bool OpalUDPMediaTransport::Open(OpalMediaSession & session,
             PUDPSocket * dataSocket = NULL;
             PUDPSocket * controlSocket = NULL;
             if (natMethod->CreateSocketPair(dataSocket, controlSocket, bindingIP, &session)) {
-              m_subchannels.push_back(dataSocket);
-              m_subchannels.push_back(controlSocket);
+              m_subchannels.push_back(Transport(this, e_Data, dataSocket));
+              m_subchannels.push_back(Transport(this, e_Control, controlSocket));
               PTRACE(4, session << natMethod->GetMethodName() << " created NAT RTP/RTCP socket pair.");
               break;
             }
@@ -997,7 +1035,7 @@ bool OpalUDPMediaTransport::Open(OpalMediaSession & session,
           for (PINDEX i = 0; i < subchannelCount; ++i) {
             PUDPSocket * socket = NULL;
             if (natMethod->CreateSocket(socket, bindingIP))
-              m_subchannels.push_back(socket);
+              m_subchannels.push_back(Transport(this, (SubChannels)i, socket));
             else {
               delete socket;
               PTRACE(2, session << natMethod->GetMethodName()
@@ -1007,11 +1045,11 @@ bool OpalUDPMediaTransport::Open(OpalMediaSession & session,
           break;
 
         default :
-          /* We canot use NAT traversal method (e.g. STUN) to create sockets
-              in the remaining modes as the NAT router will then not let us
-              talk to the real RTP destination. All we can so is bind to the
-              local interface the NAT is on and hope the NAT router is doing
-              something sneaky like symmetric port forwarding. */
+          /* We cannot use NAT traversal method (e.g. STUN) to create sockets
+             in the remaining modes as the NAT router will then not let us
+             talk to the real RTP destination. All we can so is bind to the
+             local interface the NAT is on and hope the NAT router is doing
+             something sneaky like symmetric port forwarding. */
           break;
       }
     }
@@ -1033,13 +1071,13 @@ bool OpalUDPMediaTransport::Open(OpalMediaSession & session,
       return false; // Used up all the available ports!
     }
     for (PINDEX i = 0; i < extraSockets; ++i)
-      m_subchannels.push_back(sockets[i]);
+      m_subchannels.push_back(Transport(this, (SubChannels)m_subchannels.size(), sockets[i]));
   }
 
   for (size_t subchannel = 0; subchannel < m_subchannels.size(); ++subchannel) {
     PUDPSocket & socket = *GetSocket((SubChannels)subchannel);
     PTRACE_CONTEXT_ID_TO(socket);
-    socket.SetReadTimeout(manager.GetNoMediaTimeout());
+    socket.SetReadTimeout(session.GetMaxNoReceiveTime());
 
     // Increase internal buffer size on media UDP sockets
     SetMinBufferSize(socket, SO_RCVBUF, session.GetMediaType() == OpalMediaType::Audio() ? 0x4000 : 0x100000);
@@ -1367,6 +1405,8 @@ OpalMediaSession::OpalMediaSession(const Init & init)
   , m_sessionId(init.m_sessionId)
   , m_mediaType(init.m_mediaType)
   , m_remoteBehindNAT(init.m_remoteBehindNAT)
+  , m_maxNoReceiveTime(init.m_connection.GetEndPoint().GetManager().GetNoMediaTimeout())
+  , m_maxNoTransmitTime(0, 10)          // Sending data for 10 seconds, ICMP says still not there
 {
   PTRACE_CONTEXT_ID_FROM(init.m_connection);
   PTRACE(5, *this << "created for " << m_mediaType);
