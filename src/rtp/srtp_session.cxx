@@ -72,12 +72,20 @@ static const unsigned MaxConsecutiveErrors = 100;
 ///////////////////////////////////////////////////////
 
 #if PTRACING
-static bool CheckError(err_status_t err, const char * fn, const char * file, int line, RTP_SyncSourceId ssrc = 0, RTP_SequenceNumber sn = 0)
+static bool CheckError(err_status_t err,
+                       const char * fn,
+                       const char * file,
+                       int line,
+                       const OpalMediaSession * session = NULL,
+                       RTP_SyncSourceId ssrc = 0,
+                       RTP_SequenceNumber sn = 0)
 {
   if (err == err_status_ok)
     return true;
 
   ostream & trace = PTrace::Begin(2, file, line, NULL, PTraceModule());
+  if (session != NULL)
+      trace << *session;
   trace << "Library error " << err << " from " << fn << "() - ";
   switch (err) {
     case err_status_fail :
@@ -570,7 +578,7 @@ bool OpalSRTPSession::AddStreamToSRTP(RTP_SyncSourceId ssrc, Direction dir)
 
   policy.key = m_keyInfo[dir]->m_key_salt;
 
-  if (!CHECK_ERROR(srtp_add_stream, (m_context, &policy), ssrc))
+  if (!CHECK_ERROR(srtp_add_stream, (m_context, &policy), this, ssrc))
     return false;
 
   PTRACE(4, *this << "added " << dir << " SRTP stream for SSRC=" << RTP_TRACE_SRC(ssrc));
@@ -632,7 +640,7 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnSendData(RTP_DataFrame & fr
   frame.MakeUnique();
   frame.SetMinSize(len + SRTP_MAX_TRAILER_LEN);
 
-  if (!CHECK_ERROR(srtp_protect, (m_context, frame.GetPointer(), &len), frame.GetSyncSource(), frame.GetSequenceNumber()))
+  if (!CHECK_ERROR(srtp_protect, (m_context, frame.GetPointer(), &len), this, frame.GetSyncSource(), frame.GetSequenceNumber()))
     return ++m_consecutiveErrors[e_Sender][e_Data] > MaxConsecutiveErrors ? e_AbortTransport : e_IgnorePacket;
 
   m_consecutiveErrors[e_Sender][e_Data] = 0;
@@ -668,7 +676,7 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnSendControl(RTP_ControlFram
   frame.MakeUnique();
   frame.SetMinSize(len + SRTP_MAX_TRAILER_LEN);
 
-  if (!CHECK_ERROR(srtp_protect_rtcp, (m_context, frame.GetPointer(), &len), frame.GetSenderSyncSource()))
+  if (!CHECK_ERROR(srtp_protect_rtcp, (m_context, frame.GetPointer(), &len), this, frame.GetSenderSyncSource()))
     return ++m_consecutiveErrors[e_Sender][e_Control] > MaxConsecutiveErrors ? e_AbortTransport : e_IgnorePacket;
 
   m_consecutiveErrors[e_Sender][e_Control] = 0;
@@ -695,19 +703,25 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveData(RTP_DataFrame &
     return OpalRTPSession::e_IgnorePacket;
   }
 
+  /* Need to have a receiver SSRC (their sender) even if we have never been
+      told about it, or we can't decrypt the RTCP packet. */
+  RTP_SyncSourceId ssrc = frame.GetSyncSource();
+  if (UseSyncSource(ssrc, e_Receiver, false) == NULL)
+    return e_IgnorePacket;
+
   int len = frame.GetPacketSize();
 
   frame.MakeUnique();
 
-  if (!CHECK_ERROR(srtp_unprotect, (m_context, frame.GetPointer(), &len), frame.GetSyncSource(), frame.GetSequenceNumber()))
+  if (!CHECK_ERROR(srtp_unprotect, (m_context, frame.GetPointer(), &len), this, ssrc, frame.GetSequenceNumber()))
     return ++m_consecutiveErrors[e_Receiver][e_Data] > MaxConsecutiveErrors ? e_AbortTransport : e_IgnorePacket;
 
   m_consecutiveErrors[e_Receiver][e_Data] = 0;
 
-  PTRACE(GetThrottle(e_Receiver, e_Data, frame.GetSyncSource()),
+  PTRACE(GetThrottle(e_Receiver, e_Data, ssrc),
          *this << "unprotected RTP packet: " << frame.GetPacketSize()
-         << "->" << len << " SSRC=" << frame.GetSyncSource()
-         << GetThrottle(e_Receiver, e_Data, frame.GetSyncSource()));
+         << "->" << len << " SSRC=" << ssrc
+         << GetThrottle(e_Receiver, e_Data, ssrc));
 
   frame.SetPayloadSize(len - frame.GetHeaderSize());
 
@@ -736,7 +750,7 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveControl(RTP_ControlF
 
   int len = frame.GetSize();
 
-  if (!CHECK_ERROR(srtp_unprotect_rtcp, (m_context, frame.GetPointer(), &len), ssrc))
+  if (!CHECK_ERROR(srtp_unprotect_rtcp, (m_context, frame.GetPointer(), &len), this, ssrc))
     return ++m_consecutiveErrors[e_Receiver][e_Control] > MaxConsecutiveErrors ? e_AbortTransport : e_IgnorePacket;
 
   m_consecutiveErrors[e_Receiver][e_Control] = 0;
