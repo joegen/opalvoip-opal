@@ -129,6 +129,8 @@ OpalRTPSession::OpalRTPSession(const Init & init)
   , m_remoteControlPort(0)
   , m_sendEstablished(true)
   , m_noTransmitErrors(0)
+  , m_dataNotifier(PCREATE_NOTIFIER(OnRxDataPacket))
+  , m_controlNotifier(PCREATE_NOTIFIER(OnRxControlPacket))
 {
   PTRACE_CONTEXT_ID_TO(m_reportTimer);
   m_reportTimer.SetNotifier(PCREATE_NOTIFIER(TimedSendReport));
@@ -739,9 +741,9 @@ void OpalRTPSession::InternalAttachTransport(const OpalMediaTransportPtr & newTr
 {
   OpalMediaSession::AttachTransport(newTransport);
 
-  newTransport->AddReadNotifier(PCREATE_NOTIFIER(OnRxDataPacket), e_Data);
+  newTransport->AddReadNotifier(m_dataNotifier, e_Data);
   if (!m_singlePortRx)
-    newTransport->AddReadNotifier(PCREATE_NOTIFIER(OnRxControlPacket), e_Control);
+    newTransport->AddReadNotifier(m_controlNotifier, e_Control);
 
   m_rtcpPacketsReceived = 0;
 
@@ -760,7 +762,7 @@ void OpalRTPSession::InternalAttachTransport(const OpalMediaTransportPtr & newTr
   // Google Chrome WebRTC hack, always have SSRC=1
   if (m_sessionId == 1 || m_groupId != GetBundleGroupId()) {
     AddSyncSource(1, e_Receiver);
-    PTRACE(4, *this << "added Chome WebRTC SSRC=1, group=\"" << m_groupId << '"');
+    PTRACE(4, *this << "added Chrome WebRTC SSRC=1, group=\"" << m_groupId << '"');
   }
 
   m_endpoint.RegisterLocalRTP(this, false);
