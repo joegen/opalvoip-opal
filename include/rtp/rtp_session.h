@@ -800,6 +800,9 @@ class OpalRTPSession : public OpalMediaSession
     unsigned       m_noTransmitErrors;
     PSimpleTimer   m_noTransmitTimer;
 
+    OpalMediaTransport::ReadNotifier m_dataNotifier;
+    OpalMediaTransport::ReadNotifier m_controlNotifier;
+
     ApplDefinedNotifierList m_applDefinedNotifiers;
 
     PTRACE_THROTTLE(m_throttleTxReport,3,60000,5);
