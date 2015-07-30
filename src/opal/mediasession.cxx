@@ -1244,15 +1244,22 @@ void OpalICEMediaTransport::SetCandidates(const PString & user, const PString & 
       m_subchannels[subchannel].m_channel = new ICEChannel(*this, (SubChannels)subchannel, socket);
   }
 
-  if (m_state == e_AnsweringCandidates)
-    PTRACE(3, *this << "configured for ICE with remote candidates: "
-              "data=" << m_candidates[e_Data].size() << ", "
-              "control=" << m_candidates[e_Control].size());
-  else
-    PTRACE(3, *this << "remote response for ICE with candidates: "
-              "data=" << m_candidates[e_Data].size() << ", "
-              "control=" << m_candidates[e_Control].size() << ", "
-              "response=" << newCandidates.size());
+#if PTRACING
+  if (PTrace::CanTrace(3)) {
+    ostream & trace = PTRACE_BEGIN(3);
+    trace << *this << "ICE ";
+    if (m_state == e_AnsweringCandidates)
+      trace << "configured from remote";
+    else
+      trace << "response to local";
+    trace << " candidates: ";
+    for (PINDEX i = 0; i < m_candidates.GetSize(); ++i)
+      trace << (SubChannels)i << '=' << m_candidates[i].size();
+    if (m_state == e_OfferringCandidates)
+      trace << " response=" << newCandidates.size();
+    trace << PTrace::End;
+  }
+#endif
 }
 
 
@@ -1303,15 +1310,22 @@ bool OpalICEMediaTransport::GetCandidates(PString & user, PString & pass, PNatCa
       m_candidates[subchannel].push_back(candidate);
   }
 
-  if (m_state == e_OfferringCandidates)
-    PTRACE(3, *this << "configured for ICE with offerred candidates: "
-              "data=" << m_candidates[e_Data].size() << ", "
-              "control=" << m_candidates[e_Control].size());
-  else
-    PTRACE(3, *this << "responding for ICE with received candidates: "
-              "data=" << m_candidates[e_Data].size() << ", "
-              "control=" << m_candidates[e_Control].size() << ", "
-              "response=" << candidates.size());
+#if PTRACING
+  if (PTrace::CanTrace(3)) {
+    ostream & trace = PTRACE_BEGIN(3);
+    trace << *this << "ICE ";
+    if (m_state == e_OfferringCandidates)
+      trace << "configured with offerred";
+    else
+      trace << "responding to received";
+    trace << " candidates: ";
+    for (PINDEX i = 0; i < m_candidates.GetSize(); ++i)
+      trace << (SubChannels)i << '=' << m_candidates[i].size();
+    if (m_state == e_AnsweringCandidates)
+      trace << " response=" << candidates.size();
+    trace << PTrace::End;
+  }
+#endif
 
   return !candidates.empty();
 }
