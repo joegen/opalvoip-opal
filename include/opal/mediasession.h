@@ -314,7 +314,8 @@ struct OpalMediaTransportChannelTypes
     eSubChannelA,
     eSubChannelB,
     eSubChannelC,
-    eSubChannelD // 6 subchannels should be enough!
+    eSubChannelD,
+    eMaxSubChannels // Should be enough!
   };
 };
 #if PTRACING
@@ -552,6 +553,7 @@ class OpalICEMediaTransport : public OpalUDPMediaTransport
       e_CandidateFailed,
       e_CandidateSucceeded
     };
+
     struct CandidateState : PNatCandidate {
       CandidateStates m_state;
       // Not sure what else might be necessary here. Work in progress!
@@ -562,14 +564,15 @@ class OpalICEMediaTransport : public OpalUDPMediaTransport
       {
       }
     };
-    typedef std::list<CandidateState> CandidateStateList;
+    typedef PList<CandidateState> CandidateStateList;
+    PArray<CandidateStateList> m_candidates;
 
-    CandidateStateList m_candidates[2];
     enum {
-      e_Disabled = -1, // Note order of first two is important
-      e_Completed,
+      e_Disabled, // Note order of first two is important
       e_OfferringCandidates,
-      e_ReceivedCandidates
+      e_AnsweringCandidates,
+      e_CompletedOffer = -e_OfferringCandidates,
+      e_CompletedAnswer = -e_AnsweringCandidates,
     } m_state;
 
     class Server;
