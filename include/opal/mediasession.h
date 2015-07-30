@@ -517,6 +517,7 @@ class OpalICEMediaTransport : public OpalUDPMediaTransport
     OpalICEMediaTransport(const PString & name);
     ~OpalICEMediaTransport();
 
+    virtual bool Open(OpalMediaSession & session, PINDEX count, const PString & localInterface, const OpalTransportAddress & remoteAddress);
     virtual bool IsEstablished() const;
     virtual void SetCandidates(const PString & user, const PString & pass, const PNatCandidateList & candidates);
     virtual bool GetCandidates(PString & user, PString & pass, PNatCandidateList & candidates);
@@ -529,10 +530,10 @@ class OpalICEMediaTransport : public OpalUDPMediaTransport
     {
         PCLASSINFO(ICEChannel, PIndirectChannel);
       public:
-        ICEChannel(OpalICEMediaTransport & transport, SubChannels subchannel, PChannel * channel);
+        ICEChannel(OpalICEMediaTransport & owner, SubChannels subchannel, PChannel * channel);
         virtual PBoolean Read(void * buf, PINDEX len);
       protected:
-        OpalICEMediaTransport & m_transport;
+        OpalICEMediaTransport & m_owner;
         SubChannels             m_subchannel;
     };
     bool InternalHandleICE(SubChannels subchannel, const void * buf, PINDEX len);
@@ -565,10 +566,11 @@ class OpalICEMediaTransport : public OpalUDPMediaTransport
 
     CandidateStateList m_candidates[2];
     enum {
-      e_UnknownCandidates,
-      e_LocalCandidates,
-      e_RemoteCandidates
-    } m_candidateType;
+      e_Disabled = -1, // Note order of first two is important
+      e_Completed,
+      e_OfferringCandidates,
+      e_ReceivedCandidates
+    } m_state;
 
     class Server;
     Server      * m_server;
@@ -776,8 +778,20 @@ class OpalMediaSession : public PSafeObject, public OpalMediaTransportChannelTyp
     /**Set the maximum time we wait for remote to start accepting out packets.
       */
     void SetMaxNoTransmitTime(
-      const PTimeInterval & interval ///<  New time interval for reports.
+      const PTimeInterval & interval ///<  New time interval.
     ) { m_maxNoTransmitTime = interval; }
+
+#if OPAL_ICE
+    /**Get the maximum time we wait for remote to start ICE negotiations.
+      */
+    const PTimeInterval & GetMaxICESetUpTime() const { return m_maxICESetUpTime; }
+
+    /**Set the maximum time we wait for remote to start ICE negotiations.
+      */
+    void SetMaxICESetUpTime(
+      const PTimeInterval & interval ///<  New time interval.
+    ) { m_maxICESetUpTime = interval; }
+#endif
 
   protected:
     OpalConnection & m_connection;
@@ -786,6 +800,9 @@ class OpalMediaSession : public PSafeObject, public OpalMediaTransportChannelTyp
     bool             m_remoteBehindNAT;
     PTimeInterval    m_maxNoReceiveTime;
     PTimeInterval    m_maxNoTransmitTime;
+#if OPAL_ICE
+    PTimeInterval    m_maxICESetUpTime;
+#endif
 #if OPAL_SDP
     PString          m_groupId;
     PString          m_groupMediaId;
