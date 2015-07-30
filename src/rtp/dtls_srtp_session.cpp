@@ -161,8 +161,19 @@ int OpalDTLSMediaTransport::DTLSChannel::BioWrite(const char * buf, int len)
 OpalDTLSMediaTransport::OpalDTLSMediaTransport(const PString & name, bool passiveMode, const PSSLCertificateFingerprint& fp)
   : OpalDTLSMediaTransportParent(name)
   , m_passiveMode(passiveMode)
+  , m_handshakeTimeout(0, 2)
   , m_remoteFingerprint(fp)
 {
+}
+
+
+bool OpalDTLSMediaTransport::Open(OpalMediaSession & session,
+                                  PINDEX count,
+                                  const PString & localInterface,
+                                  const OpalTransportAddress & remoteAddress)
+{
+  m_handshakeTimeout = dynamic_cast<OpalDTLSSRTPSession &>(session).GetHandshakeTimeout();
+  return OpalDTLSMediaTransportParent::Open(session, count, localInterface, remoteAddress);
 }
 
 
@@ -220,7 +231,7 @@ void OpalDTLSMediaTransport::InternalOnStart(SubChannels subchannel)
   }
 
   PTimeInterval oldTimeout = sslChannel->GetReadTimeout();
-  sslChannel->SetReadTimeout(2000);
+  sslChannel->SetReadTimeout(m_handshakeTimeout);
 
   if (!sslChannel->ExecuteHandshake()) {
     PTRACE(2, *this << "error in DTLS handshake.");
@@ -286,6 +297,7 @@ bool OpalRegisteredSAVPF = OpalMediaSessionFactory::RegisterAs(OpalDTLSSRTPSessi
 OpalDTLSSRTPSession::OpalDTLSSRTPSession(const Init & init)
   : OpalSRTPSession(init)
   , m_passiveMode(false)
+  , m_handshakeTimeout(0, 2)
 {
 }
 
