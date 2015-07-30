@@ -988,6 +988,8 @@ bool OpalUDPMediaTransport::Open(OpalMediaSession & session,
                                  const PString & localInterface,
                                  const OpalTransportAddress & remoteAddress)
 {
+  PTRACE_CONTEXT_ID_FROM(session);
+
   OpalManager & manager = session.GetConnection().GetEndPoint().GetManager();
 
   m_packetSize = manager.GetMaxRtpPacketSize();
@@ -1137,7 +1139,7 @@ OpalICEMediaTransport::OpalICEMediaTransport(const PString & name)
   , m_localUsername(PBase64::Encode(PRandom::Octets(12)))
   , m_localPassword(PBase64::Encode(PRandom::Octets(18)))
   , m_maxICESetUpTime(0, 5)
-  , m_candidateType(e_UnknownCandidates)
+  , m_state(e_Disabled)
   , m_server(NULL)
   , m_client(NULL)
 {
@@ -1152,21 +1154,19 @@ OpalICEMediaTransport::~OpalICEMediaTransport()
 }
 
 
+bool OpalICEMediaTransport::Open(OpalMediaSession & session,
+                                 PINDEX count,
+                                 const PString & localInterface,
+                                 const OpalTransportAddress & remoteAddress)
+{
+  m_maxICESetUpTime  = session.GetMaxICESetUpTime();
+  return OpalUDPMediaTransport::Open(session, count, localInterface, remoteAddress);
+}
+
+
 bool OpalICEMediaTransport::IsEstablished() const
 {
-  PSafeLockReadOnly lock(*this);
-  if (!lock.IsLocked())
-    return false;
-
-  if (!OpalUDPMediaTransport::IsEstablished())
-    return false;
-
-  for (size_t subchannel = 0; subchannel < m_subchannels.size(); ++subchannel) {
-    if (GetSocket((SubChannels)subchannel)->GetSendAddress().IsEmpty())
-      return false;
-  }
-
-  return true;
+  return m_state <= e_Completed && OpalUDPMediaTransport::IsEstablished();
 }
 
 
@@ -1176,28 +1176,28 @@ void OpalICEMediaTransport::SetCandidates(const PString & user, const PString & 
   if (!lock.IsLocked())
     return;
 
-  if (user == m_remoteUsername && pass == m_remotePassword) {
-    PTRACE(3, *this << "ICE username/password not changed");
-    return;
+  if (m_state == e_Completed) {
+    if (user == m_remoteUsername && pass == m_remotePassword) {
+      PTRACE(4, *this << "ICE username/password not changed");
+      return;
+    }
+
+    PTRACE(3, *this << "ICE username/password changed, restarting");
+    m_state = e_Disabled;
   }
-
-  delete m_server;
-  m_server = NULL;
-
-  delete m_client;
-  m_client = NULL;
 
   m_remoteUsername = user;
   m_remotePassword = pass;
   if (user.IsEmpty() || pass.IsEmpty()) {
     PTRACE(3, *this << "ICE disabled");
+    m_state = e_Disabled;
     return;
   }
 
-  if (m_candidateType == e_UnknownCandidates)
-    m_candidateType = e_RemoteCandidates;
+  if (m_state == e_Disabled)
+    m_state = e_ReceivedCandidates;
 
-  if (m_candidateType == e_RemoteCandidates) {
+  if (m_state == e_ReceivedCandidates) {
     for (int subchannel = 0; subchannel < 2; ++subchannel)
       m_candidates[subchannel].clear();
 
@@ -1231,13 +1231,12 @@ void OpalICEMediaTransport::SetCandidates(const PString & user, const PString & 
 
   for (size_t subchannel = 0; subchannel < m_subchannels.size(); ++subchannel) {
     PUDPSocket * socket = GetSocket((SubChannels)subchannel);
-    socket->SetReadTimeout(m_maxICESetUpTime);
     socket->SetSendAddress(PIPAddressAndPort());
     m_subchannels[subchannel].m_channel = new ICEChannel(*this, (SubChannels)subchannel, socket);
   }
 
   PTRACE(3, *this << "configured by remote for ICE with "
-         << (m_candidateType == e_RemoteCandidates ? "remote" : "local") << " candidates: "
+         << (m_state == e_ReceivedCandidates ? "received" : "offerred") << " candidates: "
             "data=" << m_candidates[e_Data].size() << ", " "control=" << m_candidates[e_Control].size());
 }
 
@@ -1254,11 +1253,11 @@ bool OpalICEMediaTransport::GetCandidates(PString & user, PString & pass, PNatCa
   if (m_subchannels.empty())
     return false;
 
-  if (m_candidateType == e_UnknownCandidates)
-    m_candidateType = e_LocalCandidates;
+  if (m_state == e_Disabled)
+    m_state = e_OfferringCandidates;
 
   for (size_t subchannel = 0; subchannel < m_subchannels.size(); ++subchannel) {
-    if (m_candidateType == e_LocalCandidates)
+    if (m_state == e_OfferringCandidates)
       m_candidates[subchannel].clear();
 
     // Only do ICE-Lite right now so just offer "host" type using local address.
@@ -1283,20 +1282,20 @@ bool OpalICEMediaTransport::GetCandidates(PString & user, PString & pass, PNatCa
 
     candidates.Append(new PNatCandidate(candidate));
 
-    if (m_candidateType == e_LocalCandidates)
+    if (m_state == e_OfferringCandidates)
       m_candidates[subchannel].push_back(candidate);
   }
 
   PTRACE(3, *this << "configured locally for ICE with "
-         << (m_candidateType == e_RemoteCandidates ? "remote" : "local") << " candidates: "
+         << (m_state == e_ReceivedCandidates ? "received" : "offerred") << " candidates: "
             "data=" << m_candidates[e_Data].size() << ", " "control=" << m_candidates[e_Control].size());
 
   return !candidates.empty();
 }
 
 
-OpalICEMediaTransport::ICEChannel::ICEChannel(OpalICEMediaTransport & transport, SubChannels subchannel, PChannel * channel)
-  : m_transport(transport)
+OpalICEMediaTransport::ICEChannel::ICEChannel(OpalICEMediaTransport & owner, SubChannels subchannel, PChannel * channel)
+  : m_owner(owner)
   , m_subchannel(subchannel)
 {
   Open(channel);
@@ -1305,9 +1304,15 @@ OpalICEMediaTransport::ICEChannel::ICEChannel(OpalICEMediaTransport & transport,
 
 PBoolean OpalICEMediaTransport::ICEChannel::Read(void * data, PINDEX size)
 {
+  PTimeInterval oldTimeout = GetReadTimeout();
+  if (m_owner.m_state > e_Completed)
+    SetReadTimeout(m_owner.m_maxICESetUpTime);
+
   while (PIndirectChannel::Read(data, size)) {
-    if (m_transport.InternalHandleICE(m_subchannel, data, GetLastReadCount()))
+    if (m_owner.InternalHandleICE(m_subchannel, data, GetLastReadCount())) {
+      SetReadTimeout(oldTimeout);
       return true;
+    }
   }
   return false;
 }
@@ -1319,28 +1324,24 @@ bool OpalICEMediaTransport::InternalHandleICE(SubChannels subchannel, const void
   if (!lock.IsLocked())
     return true;
 
-  if (m_server == NULL) {
-    if (m_candidates[subchannel].empty())
-      return true; // No ICE enabled
-
-    PTRACE(m_throttleNotYet, *this << "ICE not yet received remote candidates" << m_throttleNotYet);
-    return false;
-  }
+  if (m_state == e_Disabled)
+    return true;
 
   PUDPSocket * socket = GetSocket(subchannel);
   PIPAddressAndPort ap;
   socket->GetLastReceiveAddress(ap);
+
   PSTUNMessage message((BYTE *)data, length, ap);
   if (!message.IsValid()) {
-    if (!socket->GetSendAddress().IsEmpty())
-      return true; // Are established
+    if (m_state == e_Completed)
+      return true;
 
     PTRACE(5, *this << "invalid STUN message or data before ICE completed");
     return false;
   }
 
   if (message.IsRequest()) {
-    if (!m_server->OnReceiveMessage(message, PSTUNServer::SocketInfo(socket)))
+    if (!PAssertNULL(m_server)->OnReceiveMessage(message, PSTUNServer::SocketInfo(socket)))
       return false;
 
     if (message.FindAttribute(PSTUNAttribute::USE_CANDIDATE) == NULL) {
@@ -1351,10 +1352,10 @@ bool OpalICEMediaTransport::InternalHandleICE(SubChannels subchannel, const void
     PTRACE(m_throttleUseCandidate, *this << "USE-CANDIDATE found" << m_throttleUseCandidate);
   }
   else {
-    if (!m_client->ValidateMessageIntegrity(message))
+    if (!PAssertNULL(m_client)->ValidateMessageIntegrity(message))
       return false;
 
-    if (m_candidateType != e_LocalCandidates) {
+    if (m_state != e_OfferringCandidates) {
       PTRACE(3, *this << "Unexpected STUN response received.");
       return false;
     }
@@ -1369,7 +1370,10 @@ bool OpalICEMediaTransport::InternalHandleICE(SubChannels subchannel, const void
       return false;
   }
 
-  InternalSetRemoteAddress(ap, subchannel, true PTRACE_PARAM(, "ICE"));
+  if (m_state != e_Completed) {
+    InternalSetRemoteAddress(ap, subchannel, true PTRACE_PARAM(, "ICE"));
+    m_state = e_Completed;
+  }
 
   return true;
 }
@@ -1407,6 +1411,9 @@ OpalMediaSession::OpalMediaSession(const Init & init)
   , m_remoteBehindNAT(init.m_remoteBehindNAT)
   , m_maxNoReceiveTime(init.m_connection.GetEndPoint().GetManager().GetNoMediaTimeout())
   , m_maxNoTransmitTime(0, 10)          // Sending data for 10 seconds, ICMP says still not there
+#if OPAL_ICE
+  , m_maxICESetUpTime(0, 5)
+#endif
 {
   PTRACE_CONTEXT_ID_FROM(init.m_connection);
   PTRACE(5, *this << "created for " << m_mediaType);
