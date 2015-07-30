@@ -1184,11 +1184,12 @@ void OpalICEMediaTransport::SetCandidates(const PString & user, const PString & 
     return;
   }
 
-  PArray<CandidateStateList> newCandidates(1);
+  PArray<CandidateStateList> newCandidates;
   for (PNatCandidateList::const_iterator it = remoteCandidates.begin(); it != remoteCandidates.end(); ++it) {
     PTRACE(4, "Checking candidate: " << *it);
-    if (it->m_protocol == "udp" && it->m_component > 0 && it->m_component < eMaxSubChannels) {
-      newCandidates.SetMinSize(it->m_component);
+    if (it->m_protocol == "udp" && it->m_component > 0 && (int)it->m_component < (int)eMaxSubChannels) {
+      while (newCandidates.GetSize() < it->m_component)
+        newCandidates.Append(new CandidateStateList);
       newCandidates[it->m_component-1].push_back(*it);
     }
   }
@@ -1270,7 +1271,9 @@ bool OpalICEMediaTransport::GetCandidates(PString & user, PString & pass, PNatCa
   if (m_state != e_AnsweringCandidates)
     m_state = e_OfferringCandidates;
 
-  m_candidates.SetSize(m_subchannels.size());
+  while (m_candidates.GetSize() < m_subchannels.size())
+    m_candidates.Append(new CandidateStateList);
+
   for (size_t subchannel = 0; subchannel < m_subchannels.size(); ++subchannel) {
     m_candidates[subchannel].clear();
 
