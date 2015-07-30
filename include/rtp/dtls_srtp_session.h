@@ -61,6 +61,7 @@ class OpalDTLSMediaTransport : public OpalDTLSMediaTransportParent
     OpalDTLSMediaTransport(const PString & name, bool passiveMode, const PSSLCertificateFingerprint& fp);
     ~OpalDTLSMediaTransport() { InternalStop(); }
 
+    virtual bool Open(OpalMediaSession & session, PINDEX count, const PString & localInterface, const OpalTransportAddress & remoteAddress);
     virtual bool IsEstablished() const;
     virtual bool GetKeyInfo(OpalMediaCryptoKeyInfo * keyInfo[2]);
 
@@ -83,6 +84,7 @@ class OpalDTLSMediaTransport : public OpalDTLSMediaTransportParent
     PDECLARE_SSLVerifyNotifier(OpalDTLSMediaTransport, OnVerify);
 
     bool m_passiveMode;
+    PTimeInterval m_handshakeTimeout;
     PSSLCertificateFingerprint m_remoteFingerprint;
     std::auto_ptr<OpalMediaCryptoKeyInfo> m_keyInfo[2];
 };
@@ -104,6 +106,16 @@ class OpalDTLSSRTPSession : public OpalSRTPSession
     void SetPassiveMode(bool passive);
     bool IsPassiveMode() const { return m_passiveMode; }
 
+    /**Get the maximum time we wait for packets from remote.
+      */
+    const PTimeInterval & GetHandshakeTimeout() const { return m_handshakeTimeout; }
+
+    /**Set the maximum time we wait for packets from remote.
+      */
+    void SetHandshakeTimeout(
+      const PTimeInterval & interval ///<  New time interval for reports.
+    ) { m_handshakeTimeout = interval; }
+
     const PSSLCertificateFingerprint & GetLocalFingerprint(PSSLCertificateFingerprint::HashType preferredHashType) const;
     void SetRemoteFingerprint(const PSSLCertificateFingerprint& fp);
 
@@ -111,6 +123,7 @@ class OpalDTLSSRTPSession : public OpalSRTPSession
     virtual OpalMediaTransport * CreateMediaTransport(const PString & name);
 
     bool                       m_passiveMode;
+    PTimeInterval              m_handshakeTimeout;
     PSSLCertificateFingerprint m_localFingerprint;
     PSSLCertificateFingerprint m_remoteFingerprint;
 };
