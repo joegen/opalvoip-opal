@@ -2073,7 +2073,7 @@ void SDPAudioMediaDescription::OutputAttributes(ostream & strm) const
      what should be rare cases.
     */
 
-  if (m_stringOptions.GetBoolean(OPAL_OPT_OFFER_SDP_PTIME)) {
+  if (m_stringOptions.GetBoolean(OPAL_OPT_OFFER_SDP_PTIME, true)) {
     unsigned ptime = 0;
     for (SDPMediaFormatList::const_iterator format = m_formats.begin(); format != m_formats.end(); ++format) {
       const OpalMediaFormat & mediaFormat = format->GetMediaFormat();

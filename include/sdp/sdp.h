@@ -48,7 +48,7 @@
 
 
 /**OpalConnection::StringOption key to a boolean indicating the SDP ptime
-   parameter should be included in audio session streams. Default false.
+   parameter should be included in audio session streams. Default true.
   */
 #define OPAL_OPT_OFFER_SDP_PTIME "Offer-SDP-PTime"
 
