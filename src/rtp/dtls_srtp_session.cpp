@@ -137,6 +137,7 @@ public:
     , m_channel(channel)
     , m_socket(socket)
   {
+    SetMTU(session.GetConnection().GetMaxRtpPayloadSize());
     SetVerifyMode(PSSLContext::VerifyPeerMandatory, PCREATE_NOTIFIER2_EXT(session, OpalDTLSSRTPSession, OnVerify, PSSLChannel::VerifyInfo &));
 
     Open(socket);
