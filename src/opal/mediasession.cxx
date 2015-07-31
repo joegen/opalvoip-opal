@@ -1203,26 +1203,37 @@ void OpalICEMediaTransport::SetCandidates(const PString & user, const PString & 
   }
 
   if (m_state != e_OfferingCandidates) {
-    bool restart = m_state == e_Disabled;
-    PTRACE_IF(3, restart, *this << "ICE initial start");
-
-    if (!restart && (user != m_remoteUsername || pass != m_remotePassword)) {
+    if (m_state == e_Disabled) {
+      PTRACE(3, *this << "ICE initial start");
+    }
+    else if (user != m_remoteUsername || pass != m_remotePassword) {
       PTRACE(3, *this << "ICE restart (username/password changed)");
-      restart = true;
     }
 
     /* My undersanding is that an ICE restart is only when user/pass changes.
        However, Firefox changes the candidates without changing the user/pass
        so include that in test for restart. */
-    if (!restart && m_state == e_CompletedAnswer && newCandidates != m_remoteCandidates) {
+    else if (m_state == e_CompletedAnswer && newCandidates != m_remoteCandidates) {
       PTRACE(4, *this << "ICE restart (candidates changed)");
-      restart = true;
     }
-
-    if (!restart)
-      return;
+    else
+      return; // No change, do nothing
 
     m_state = e_AnsweringCandidates;
+  }
+  else if (!m_remoteCandidates.IsEmpty()) {
+#if PTRACING
+    if (newCandidates.IsEmpty()) {
+      PTRACE(4, *this << "ICE offer already in progress for bundle, no candidates");
+    }
+    else if (newCandidates == m_remoteCandidates) {
+      PTRACE(4, *this << "ICE offer already in progress for bundle, duplicate candidates");
+    }
+    else {
+      PTRACE(2, *this << "ICE offer already in progress for bundle, remote candidates changed");
+    }
+#endif
+    return;
   }
 
   m_remoteUsername = user;
