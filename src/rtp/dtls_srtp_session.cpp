@@ -162,6 +162,7 @@ OpalDTLSMediaTransport::OpalDTLSMediaTransport(const PString & name, bool passiv
   : OpalDTLSMediaTransportParent(name)
   , m_passiveMode(passiveMode)
   , m_handshakeTimeout(0, 2)
+  , m_MTU(1400)
   , m_remoteFingerprint(fp)
 {
 }
@@ -173,6 +174,7 @@ bool OpalDTLSMediaTransport::Open(OpalMediaSession & session,
                                   const OpalTransportAddress & remoteAddress)
 {
   m_handshakeTimeout = dynamic_cast<OpalDTLSSRTPSession &>(session).GetHandshakeTimeout();
+  m_MTU = session.GetConnection().GetMaxRtpPayloadSize();
   return OpalDTLSMediaTransportParent::Open(session, count, localInterface, remoteAddress);
 }
 
@@ -218,6 +220,7 @@ void OpalDTLSMediaTransport::InternalOnStart(SubChannels subchannel)
     return;
   }
 
+  sslChannel->SetMTU(m_MTU);
   sslChannel->SetVerifyMode(PSSLContext::VerifyPeerMandatory, PCREATE_NOTIFIER2_EXT(*this, OpalDTLSMediaTransport, OnVerify, PSSLChannel::VerifyInfo &));
 
   if (!sslChannel->Open(baseChannel, false)) {
