@@ -2427,7 +2427,7 @@ PBoolean H323Connection::SendFastStartAcknowledge(H225_ArrayOf_PASN_OctetString 
 
   if (m_fastStartChannels.IsEmpty()) {
     // If we are capable of ANY of the fast start channels, don't do fast start
-    PTRACE(4, "H323\tNo fast connect offerred");
+    PTRACE(4, "H323\tNo fast connect offered");
     m_fastStartState = FastStartDisabled;
     return false;
   }
@@ -2450,7 +2450,7 @@ PBoolean H323Connection::SendFastStartAcknowledge(H225_ArrayOf_PASN_OctetString 
 
   // None left, so didn't open any channels fast
   if (m_fastStartChannels.IsEmpty()) {
-    PTRACE(4, "H323\tCould not use any offerred fast connect channels");
+    PTRACE(4, "H323\tCould not use any offered fast connect channels");
     m_fastStartState = FastStartDisabled;
     return false;
   }

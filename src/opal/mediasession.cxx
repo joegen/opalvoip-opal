@@ -1315,7 +1315,7 @@ bool OpalICEMediaTransport::GetCandidates(PString & user, PString & pass, PNatCa
     ostream & trace = PTRACE_BEGIN(3);
     trace << *this << "ICE ";
     if (m_state == e_OfferringCandidates)
-      trace << "configured with offerred";
+      trace << "configured with offered";
     else
       trace << "responding to received";
     trace << " candidates: ";

@@ -681,7 +681,7 @@ OpalMediaFormatList SIPConnection::GetMediaFormats() const
   /* This executed only before or during OnIncomingConnection on receipt of an
      INVITE. In other cases the m_remoteFormatList member should be set. As
      some things, e.g. Instant Messaging, may need to route the call based on
-     what was offerred by the remote, we need to return something. So,
+     what was offered by the remote, we need to return something. So,
      calculate a media list based on ANYTHING we know about. A later call
      after OnIncomingConnection() will fill m_remoteFormatList appropriately
      adjusted by AdjustMediaFormats() */

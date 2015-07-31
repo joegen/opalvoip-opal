@@ -306,7 +306,7 @@ bool OpalSDPConnection::SetActiveMediaFormats(const OpalMediaFormatList & format
   // get the remote media formats
   m_activeFormatList = formats;
 
-  // Remove anything we never offerred
+  // Remove anything we never offered
   while (!m_activeFormatList.IsEmpty() && m_localMediaFormats.FindFormat(m_activeFormatList.front()) == m_localMediaFormats.end())
     m_activeFormatList.RemoveHead();
 
