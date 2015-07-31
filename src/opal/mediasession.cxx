@@ -1161,13 +1161,6 @@ bool OpalICEMediaTransport::Open(OpalMediaSession & session,
 {
   m_maxICESetUpTime  = session.GetMaxICESetUpTime();
 
-  m_localCandidates.SetSize(count);
-  m_remoteCandidates.SetSize(count);
-  for (PINDEX i = 0; i < count; ++i) {
-    m_localCandidates.SetAt(i, new CandidateStateList);
-    m_remoteCandidates.SetAt(i, new CandidateStateList);
-  }
-
   return OpalUDPMediaTransport::Open(session, count, localInterface, remoteAddress);
 }
 
@@ -1192,7 +1185,7 @@ void OpalICEMediaTransport::SetCandidates(const PString & user, const PString & 
     return;
   }
 
-  CandidatesArray newCandidates(m_remoteCandidates.GetSize());
+  CandidatesArray newCandidates(m_subchannels.size());
   for (PINDEX i = 0; i < newCandidates.GetSize(); ++i)
     newCandidates.SetAt(i, new CandidateStateList);
 
@@ -1299,8 +1292,9 @@ bool OpalICEMediaTransport::GetCandidates(PString & user, PString & pass, PNatCa
   if (m_state != e_AnsweringCandidates)
     m_state = e_OfferingCandidates;
 
+  m_localCandidates.SetSize(m_subchannels.size());
   for (size_t subchannel = 0; subchannel < m_subchannels.size(); ++subchannel) {
-    m_localCandidates[subchannel].clear();
+    m_localCandidates.SetAt(subchannel, new CandidateStateList);
 
     // Only do ICE-Lite right now so just offer "host" type using local address.
     static const PNatMethod::Component ComponentId[2] = { PNatMethod::eComponent_RTP, PNatMethod::eComponent_RTCP };
