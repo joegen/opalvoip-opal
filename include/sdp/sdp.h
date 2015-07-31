@@ -71,7 +71,7 @@
 #define OPAL_OPT_FORCE_RTCP_FB  "Force-RTCP-FB"
 
 /**Enable offer of RTP/RTCP "single port" mode.
-   While if offerred by the remote, we always honour the SDP a=rtcp-mux
+   While if offered by the remote, we always honour the SDP a=rtcp-mux
    attribute, we only offer it if this string option is set to true.
 
    Defaults to false.
@@ -86,7 +86,7 @@
 */
 #define OPAL_OPT_SUPPRESS_UDP_TLS "Suppress-UDP-TLS"
 
-/**Enable ICE offerred in SDP.
+/**Enable ICE offered in SDP.
    Defaults to false.
 */
 #define OPAL_OPT_OFFER_ICE "Offer-ICE"
