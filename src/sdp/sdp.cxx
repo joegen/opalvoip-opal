@@ -2280,7 +2280,7 @@ bool SDPVideoMediaDescription::PreEncode()
         m_bandwidth.SetMax(name.Mid(sizeof(SDPBandwidthPrefix)-1), option.AsString().AsUnsigned());
     }
 
-    /**We set the bandwidth parameter to the largest of all the formats offerred.
+    /**We set the bandwidth parameter to the largest of all the formats offered.
        And individual format may be able to further retrict the bandwidth in it's
        FMTP line, e.g. H.264 can use a max-br=XXX option.
       */

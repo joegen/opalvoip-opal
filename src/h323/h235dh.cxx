@@ -280,7 +280,7 @@ bool H235DiffieHellman::FromTokens(const H225_ArrayOf_ClearToken & tokens)
             SetAt(oid, dh);
           }
           else {
-            PTRACE(4, "Found offerred Diffie-Hellman group " << oid);
+            PTRACE(4, "Found offered Diffie-Hellman group " << oid);
             PTRACE_IF(3, !modSize.IsEmpty() && dh->GetModulus() != modSize,
                         "Reply Diffie-Hellman group has different modulus to offer");
           }
