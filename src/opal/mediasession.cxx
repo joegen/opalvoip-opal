@@ -1160,6 +1160,14 @@ bool OpalICEMediaTransport::Open(OpalMediaSession & session,
                                  const OpalTransportAddress & remoteAddress)
 {
   m_maxICESetUpTime  = session.GetMaxICESetUpTime();
+
+  m_localCandidates.SetSize(count);
+  m_remoteCandidates.SetSize(count);
+  for (PINDEX i = 0; i < count; ++i) {
+    m_localCandidates.SetAt(i, new CandidateStateList);
+    m_remoteCandidates.SetAt(i, new CandidateStateList);
+  }
+
   return OpalUDPMediaTransport::Open(session, count, localInterface, remoteAddress);
 }
 
@@ -1184,17 +1192,17 @@ void OpalICEMediaTransport::SetCandidates(const PString & user, const PString & 
     return;
   }
 
-  PArray<CandidateStateList> newCandidates;
+  CandidatesArray newCandidates(m_remoteCandidates.GetSize());
+  for (PINDEX i = 0; i < newCandidates.GetSize(); ++i)
+    newCandidates.SetAt(i, new CandidateStateList);
+
   for (PNatCandidateList::const_iterator it = remoteCandidates.begin(); it != remoteCandidates.end(); ++it) {
     PTRACE(4, "Checking candidate: " << *it);
-    if (it->m_protocol == "udp" && it->m_component > 0 && (int)it->m_component < (int)eMaxSubChannels) {
-      while (newCandidates.GetSize() < it->m_component)
-        newCandidates.Append(new CandidateStateList);
+    if (it->m_protocol == "udp" && it->m_component > 0 && (PINDEX)it->m_component <= newCandidates.GetSize())
       newCandidates[it->m_component-1].push_back(*it);
-    }
   }
 
-  if (m_state != e_OfferringCandidates) {
+  if (m_state != e_OfferingCandidates) {
     bool restart = m_state == e_Disabled;
     PTRACE_IF(3, restart, *this << "ICE initial start");
 
@@ -1206,7 +1214,7 @@ void OpalICEMediaTransport::SetCandidates(const PString & user, const PString & 
     /* My undersanding is that an ICE restart is only when user/pass changes.
        However, Firefox changes the candidates without changing the user/pass
        so include that in test for restart. */
-    if (!restart && m_state == e_CompletedAnswer && newCandidates != m_candidates) {
+    if (!restart && m_state == e_CompletedAnswer && newCandidates != m_remoteCandidates) {
       PTRACE(4, *this << "ICE restart (candidates changed)");
       restart = true;
     }
@@ -1219,7 +1227,7 @@ void OpalICEMediaTransport::SetCandidates(const PString & user, const PString & 
 
   m_remoteUsername = user;
   m_remotePassword = pass;
-  m_candidates = newCandidates;
+  m_remoteCandidates = newCandidates;
 
   if (m_server == NULL) {
       m_server = new Server();
@@ -1248,15 +1256,17 @@ void OpalICEMediaTransport::SetCandidates(const PString & user, const PString & 
   if (PTrace::CanTrace(3)) {
     ostream & trace = PTRACE_BEGIN(3);
     trace << *this << "ICE ";
-    if (m_state == e_AnsweringCandidates)
-      trace << "configured from remote";
-    else
+    if (m_state == e_OfferingCandidates)
       trace << "response to local";
+    else
+      trace << "configured from remote";
     trace << " candidates: ";
-    for (PINDEX i = 0; i < m_candidates.GetSize(); ++i)
-      trace << (SubChannels)i << '=' << m_candidates[i].size();
-    if (m_state == e_OfferringCandidates)
-      trace << " response=" << newCandidates.size();
+    if (m_state == e_OfferingCandidates) {
+      for (PINDEX i = 0; i < m_localCandidates.GetSize(); ++i)
+        trace << "local-" << (SubChannels)i << '=' << m_localCandidates[i].size();
+    }
+    for (PINDEX i = 0; i < m_remoteCandidates.GetSize(); ++i)
+      trace << "remote-" << (SubChannels)i << '=' << m_remoteCandidates[i].size();
     trace << PTrace::End;
   }
 #endif
@@ -1276,13 +1286,10 @@ bool OpalICEMediaTransport::GetCandidates(PString & user, PString & pass, PNatCa
     return false;
 
   if (m_state != e_AnsweringCandidates)
-    m_state = e_OfferringCandidates;
-
-  while (m_candidates.GetSize() < m_subchannels.size())
-    m_candidates.Append(new CandidateStateList);
+    m_state = e_OfferingCandidates;
 
   for (size_t subchannel = 0; subchannel < m_subchannels.size(); ++subchannel) {
-    m_candidates[subchannel].clear();
+    m_localCandidates[subchannel].clear();
 
     // Only do ICE-Lite right now so just offer "host" type using local address.
     static const PNatMethod::Component ComponentId[2] = { PNatMethod::eComponent_RTP, PNatMethod::eComponent_RTCP };
@@ -1305,24 +1312,24 @@ bool OpalICEMediaTransport::GetCandidates(PString & user, PString & pass, PNatCa
     }
 
     candidates.push_back(candidate);
-
-    if (m_state == e_OfferringCandidates)
-      m_candidates[subchannel].push_back(candidate);
+    m_localCandidates[subchannel].push_back(candidate);
   }
 
 #if PTRACING
   if (PTrace::CanTrace(3)) {
     ostream & trace = PTRACE_BEGIN(3);
     trace << *this << "ICE ";
-    if (m_state == e_OfferringCandidates)
-      trace << "configured with offered";
-    else
-      trace << "responding to received";
-    trace << " candidates: ";
-    for (PINDEX i = 0; i < m_candidates.GetSize(); ++i)
-      trace << (SubChannels)i << '=' << m_candidates[i].size();
     if (m_state == e_AnsweringCandidates)
-      trace << " response=" << candidates.size();
+      trace << "responding to received";
+    else
+      trace << "configured with offered";
+    trace << " candidates: ";
+    for (PINDEX i = 0; i < m_localCandidates.GetSize(); ++i)
+      trace << "local-" << (SubChannels)i << '=' << m_localCandidates[i].size();
+    if (m_state == e_AnsweringCandidates) {
+      for (PINDEX i = 0; i < m_remoteCandidates.GetSize(); ++i)
+        trace << "remote-" << (SubChannels)i << '=' << m_remoteCandidates[i].size();
+    }
     trace << PTrace::End;
   }
 #endif
@@ -1386,29 +1393,31 @@ bool OpalICEMediaTransport::InternalHandleICE(SubChannels subchannel, const void
       return false;
     }
 
+    // Really should check here if STUN message came from one of the offered candidates ....
+
     PTRACE(m_throttleUseCandidate, *this << "USE-CANDIDATE found" << m_throttleUseCandidate);
   }
   else {
     if (!PAssertNULL(m_client)->ValidateMessageIntegrity(message))
       return false;
 
-    if (m_state != e_OfferringCandidates) {
+    if (m_state != e_OfferingCandidates) {
       PTRACE(3, *this << "Unexpected STUN response received.");
       return false;
     }
 
     PTRACE(4, *this << "trying to match STUN answer to candidates");
     CandidateStateList::iterator it;
-    for (it = m_candidates[subchannel].begin(); it != m_candidates[subchannel].end(); ++it) {
+    for (it = m_localCandidates[subchannel].begin(); it != m_localCandidates[subchannel].end(); ++it) {
       if (it->m_baseTransportAddress == ap)
         break;
     }
-    if (it == m_candidates[subchannel].end())
+    if (it == m_localCandidates[subchannel].end())
       return false;
   }
 
   if (m_state > e_Disabled) {
-    m_state = m_state == e_OfferringCandidates ? e_CompletedOffer : e_CompletedAnswer;
+    m_state = m_state == e_OfferingCandidates ? e_CompletedOffer : e_CompletedAnswer;
     InternalSetRemoteAddress(ap, subchannel, false PTRACE_PARAM(, "ICE"));
   }
 

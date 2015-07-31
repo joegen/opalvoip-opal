@@ -565,13 +565,15 @@ class OpalICEMediaTransport : public OpalUDPMediaTransport
       }
     };
     typedef PList<CandidateState> CandidateStateList;
-    PArray<CandidateStateList> m_candidates;
+    typedef PArray<CandidateStateList> CandidatesArray;
+    CandidatesArray m_localCandidates;
+    CandidatesArray m_remoteCandidates;
 
     enum {
-      e_Disabled, // Note order of first two is important
-      e_OfferringCandidates,
+      e_Disabled, // Note order is important
+      e_OfferingCandidates,
       e_AnsweringCandidates,
-      e_CompletedOffer = -e_OfferringCandidates,
+      e_CompletedOffer = -e_OfferingCandidates,
       e_CompletedAnswer = -e_AnsweringCandidates,
     } m_state;
 
