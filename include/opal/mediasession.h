@@ -570,19 +570,16 @@ class OpalICEMediaTransport : public OpalUDPMediaTransport
     CandidatesArray m_remoteCandidates;
 
     enum {
-      e_Disabled, // Note order is important
-      e_OfferingCandidates,
-      e_AnsweringCandidates,
-      e_CompletedOffer = -e_OfferingCandidates,
-      e_CompletedAnswer = -e_AnsweringCandidates,
+      e_Disabled, // Note values and order are important
+      e_Completed,
+      e_Offering,
+      e_OfferAnswered,
+      e_Answering
     } m_state;
 
     class Server;
     Server      * m_server;
     PSTUNClient * m_client;
-
-    PTRACE_THROTTLE(m_throttleNotYet,3,60000,5);
-    PTRACE_THROTTLE(m_throttleUseCandidate,3,60000);
 };
 #endif // OPAL_ICE
 
