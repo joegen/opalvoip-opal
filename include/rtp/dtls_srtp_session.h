@@ -85,6 +85,7 @@ class OpalDTLSMediaTransport : public OpalDTLSMediaTransportParent
 
     bool m_passiveMode;
     PTimeInterval m_handshakeTimeout;
+    unsigned m_MTU;
     PSSLCertificateFingerprint m_remoteFingerprint;
     std::auto_ptr<OpalMediaCryptoKeyInfo> m_keyInfo[2];
 };
