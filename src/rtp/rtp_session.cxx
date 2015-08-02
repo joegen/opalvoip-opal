@@ -233,7 +233,7 @@ RTP_SyncSourceArray OpalRTPSession::GetSyncSources(Direction dir) const
   RTP_SyncSourceArray ssrcs;
 
   for (SyncSourceMap::const_iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
-    if (it->second->m_direction == dir && it->first != 1) // SSRC=1 is a Google Chrome WebRTC hack
+    if (it->second->m_direction == dir)
       ssrcs.push_back(it->first);
   }
 
@@ -755,12 +755,6 @@ void OpalRTPSession::InternalAttachTransport(const OpalMediaTransportPtr & newTr
   RTP_SyncSourceId ssrc = GetSyncSourceOut();
   if (ssrc == 0)
     ssrc = AddSyncSource(0, e_Sender); // Add default sender SSRC
-
-  // Google Chrome WebRTC hack, always have SSRC=1
-  if (m_sessionId == 1 || m_groupId != GetBundleGroupId()) {
-    AddSyncSource(1, e_Receiver);
-    PTRACE(4, *this << "added Chrome WebRTC SSRC=1, group=\"" << m_groupId << '"');
-  }
 
   m_endpoint.RegisterLocalRTP(this, false);
 
