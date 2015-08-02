@@ -7960,147 +7960,64 @@ void StatisticsField::Update(const OpalConnection & connection, const OpalMediaS
 #define STATISTICS_FIELD_END(type, name) \
     } } Static##type##name##StatisticsField;
 
+#define STATISTICS_FIELD_BANDWIDTH(type, name, field) \
+  STATISTICS_FIELD_BEG(type, name) \
+    value.sprintf(m_printFormat, CalculateBandwidth(statistics.field)); \
+  STATISTICS_FIELD_END(type, name)
+
+#define STATISTICS_FIELD_SPRINTF(type, name, field) \
+  STATISTICS_FIELD_BEG(type, name) \
+    value.sprintf(m_printFormat, statistics.field); \
+  STATISTICS_FIELD_END(type, name)
+
+#define STATISTICS_FIELD_SPRINTF_NZ(type, name, field) \
+  STATISTICS_FIELD_BEG(type, name) \
+    if (statistics.field > 0) \
+      value.sprintf(m_printFormat, statistics.field); \
+    else \
+      value.clear(); \
+  STATISTICS_FIELD_END(type, name)
+
 #ifdef _MSC_VER
 #pragma warning(disable:4100)
 #else
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 #endif
 
-STATISTICS_FIELD_BEG(RxAudio, Bandwidth)
-  value.sprintf(m_printFormat, CalculateBandwidth(statistics.m_totalBytes));
-STATISTICS_FIELD_END(RxAudio, Bandwidth)
-
-STATISTICS_FIELD_BEG(RxAudio, MinTime)
-  value.sprintf(m_printFormat, statistics.m_minimumPacketTime);
-STATISTICS_FIELD_END(RxAudio, MinTime)
-
-STATISTICS_FIELD_BEG(RxAudio, Bytes)
-  value.sprintf(m_printFormat, statistics.m_totalBytes);
-STATISTICS_FIELD_END(RxAudio, Bytes)
-
-STATISTICS_FIELD_BEG(RxAudio, AvgTime)
-  value.sprintf(m_printFormat, statistics.m_averagePacketTime);
-STATISTICS_FIELD_END(RxAudio, AvgTime)
-
-STATISTICS_FIELD_BEG(RxAudio, Packets)
-  value.sprintf(m_printFormat, statistics.m_totalPackets);
-STATISTICS_FIELD_END(RxAudio, Packets)
-
-STATISTICS_FIELD_BEG(RxAudio, MaxTime)
-  value.sprintf(m_printFormat, statistics.m_maximumPacketTime);
-STATISTICS_FIELD_END(RxAudio, MaxTime)
-
-STATISTICS_FIELD_BEG(RxAudio, Lost)
-  value.sprintf(m_printFormat, statistics.m_packetsLost);
-STATISTICS_FIELD_END(RxAudio, Lost)
-
-STATISTICS_FIELD_BEG(RxAudio, AvgJitter)
-  value.sprintf(m_printFormat, statistics.m_averageJitter);
-STATISTICS_FIELD_END(RxAudio, AvgJitter)
-
-STATISTICS_FIELD_BEG(RxAudio, OutOfOrder)
-  value.sprintf(m_printFormat, statistics.m_packetsOutOfOrder);
-STATISTICS_FIELD_END(RxAudio, OutOfOrder)
-
-STATISTICS_FIELD_BEG(RxAudio, MaxJitter)
-  value.sprintf(m_printFormat, statistics.m_maximumJitter);
-STATISTICS_FIELD_END(RxAudio, MaxJitter)
-
-STATISTICS_FIELD_BEG(RxAudio, TooLate)
-  value.sprintf(m_printFormat, statistics.m_packetsTooLate);
-STATISTICS_FIELD_END(RxAudio, TooLate)
-
-STATISTICS_FIELD_BEG(RxAudio, Overruns)
-  value.sprintf(m_printFormat, statistics.m_packetOverruns);
-STATISTICS_FIELD_END(RxAudio, Overruns)
-
-STATISTICS_FIELD_BEG(RxAudio, JitterDelay)
-  value.sprintf(m_printFormat, statistics.m_jitterBufferDelay);
-STATISTICS_FIELD_END(RxAudio, JitterDelay)
-
-STATISTICS_FIELD_BEG(TxAudio, Bandwidth)
-  value.sprintf(m_printFormat, CalculateBandwidth(statistics.m_totalBytes));
-STATISTICS_FIELD_END(TxAudio, Bandwidth)
-
-STATISTICS_FIELD_BEG(TxAudio, MinTime)
-  value.sprintf(m_printFormat, statistics.m_minimumPacketTime);
-STATISTICS_FIELD_END(TxAudio, MinTime)
-
-STATISTICS_FIELD_BEG(TxAudio, Bytes)
-  value.sprintf(m_printFormat, statistics.m_totalBytes);
-STATISTICS_FIELD_END(TxAudio, Bytes)
-
-STATISTICS_FIELD_BEG(TxAudio, AvgTime)
-  value.sprintf(m_printFormat, statistics.m_averagePacketTime);
-STATISTICS_FIELD_END(TxAudio, AvgTime)
-
-STATISTICS_FIELD_BEG(TxAudio, Packets)
-  value.sprintf(m_printFormat, statistics.m_totalPackets);
-STATISTICS_FIELD_END(TxAudio, Packets)
-
-STATISTICS_FIELD_BEG(TxAudio, MaxTime)
-  value.sprintf(m_printFormat, statistics.m_maximumPacketTime);
-STATISTICS_FIELD_END(TxAudio, MaxTime)
-
-STATISTICS_FIELD_BEG(TxAudio, Lost)
-  value.sprintf(m_printFormat, statistics.m_packetsLost);
-STATISTICS_FIELD_END(TxAudio, Lost)
-
-STATISTICS_FIELD_BEG(TxAudio, AvgJitter)
-  value.sprintf(m_printFormat, statistics.m_averageJitter);
-STATISTICS_FIELD_END(TxAudio, AvgJitter)
-
-STATISTICS_FIELD_BEG(TxAudio, RoundTripTime)
-  value.sprintf(m_printFormat, statistics.m_roundTripTime);
-STATISTICS_FIELD_END(TxAudio, RoundTripTime)
-
-STATISTICS_FIELD_BEG(RxVideo, Bandwidth)
-  value.sprintf(m_printFormat, CalculateBandwidth(statistics.m_totalBytes));
-STATISTICS_FIELD_END(RxVideo, Bandwidth)
-
-STATISTICS_FIELD_BEG(RxVideo, MinTime)
-  value.sprintf(m_printFormat, statistics.m_minimumPacketTime);
-STATISTICS_FIELD_END(RxVideo, MinTime)
-
-STATISTICS_FIELD_BEG(RxVideo, Bytes)
-  value.sprintf(m_printFormat, statistics.m_totalBytes);
-STATISTICS_FIELD_END(RxVideo, Bytes)
-
-STATISTICS_FIELD_BEG(RxVideo, AvgTime)
-  value.sprintf(m_printFormat, statistics.m_averagePacketTime);
-STATISTICS_FIELD_END(RxVideo, AvgTime)
-
-STATISTICS_FIELD_BEG(RxVideo, Packets)
-  value.sprintf(m_printFormat, statistics.m_totalPackets);
-STATISTICS_FIELD_END(RxVideo, Packets)
-
-STATISTICS_FIELD_BEG(RxVideo, MaxTime)
-  value.sprintf(m_printFormat, statistics.m_maximumPacketTime);
-STATISTICS_FIELD_END(RxVideo, MaxTime)
-
-STATISTICS_FIELD_BEG(RxVideo, Lost)
-  value.sprintf(m_printFormat, statistics.m_packetsLost);
-STATISTICS_FIELD_END(RxVideo, Lost)
-
-STATISTICS_FIELD_BEG(RxVideo, AvgJitter)
-  value.sprintf(m_printFormat, statistics.m_averageJitter);
-STATISTICS_FIELD_END(RxVideo, AvgJitter)
-
-STATISTICS_FIELD_BEG(RxVideo, OutOfOrder)
-  value.sprintf(m_printFormat, statistics.m_packetsOutOfOrder);
-STATISTICS_FIELD_END(RxVideo, OutOfOrder)
-
-STATISTICS_FIELD_BEG(RxVideo, MaxJitter)
-  value.sprintf(m_printFormat, statistics.m_maximumJitter);
-STATISTICS_FIELD_END(RxVideo, MaxJitter)
-
-STATISTICS_FIELD_BEG(RxVideo, Frames)
-  value.sprintf(m_printFormat, statistics.m_totalFrames);
-STATISTICS_FIELD_END(RxVideo, Frames)
-
-STATISTICS_FIELD_BEG(RxVideo, KeyFrames)
-  value.sprintf(m_printFormat, statistics.m_keyFrames);
-STATISTICS_FIELD_END(RxVideo, KeyFrames)
+STATISTICS_FIELD_BANDWIDTH(RxAudio, Bandwidth, m_totalBytes)
+STATISTICS_FIELD_SPRINTF(RxAudio, MinTime, m_minimumPacketTime)
+STATISTICS_FIELD_SPRINTF(RxAudio, Bytes, m_totalBytes)
+STATISTICS_FIELD_SPRINTF(RxAudio, AvgTime, m_averagePacketTime)
+STATISTICS_FIELD_SPRINTF(RxAudio, Packets, m_totalPackets)
+STATISTICS_FIELD_SPRINTF(RxAudio, MaxTime, m_maximumPacketTime)
+STATISTICS_FIELD_SPRINTF(RxAudio, Lost, m_packetsLost)
+STATISTICS_FIELD_SPRINTF_NZ(RxAudio, AvgJitter, m_averageJitter)
+STATISTICS_FIELD_SPRINTF(RxAudio, OutOfOrder, m_packetsOutOfOrder)
+STATISTICS_FIELD_SPRINTF_NZ(RxAudio, MaxJitter, m_maximumJitter)
+STATISTICS_FIELD_SPRINTF(RxAudio, TooLate, m_packetsTooLate)
+STATISTICS_FIELD_SPRINTF(RxAudio, Overruns, m_packetOverruns)
+STATISTICS_FIELD_SPRINTF_NZ(RxAudio, JitterDelay, m_jitterBufferDelay)
+STATISTICS_FIELD_BANDWIDTH(TxAudio, Bandwidth, m_totalBytes)
+STATISTICS_FIELD_SPRINTF(TxAudio, MinTime, m_minimumPacketTime)
+STATISTICS_FIELD_SPRINTF(TxAudio, Bytes, m_totalBytes)
+STATISTICS_FIELD_SPRINTF(TxAudio, AvgTime, m_averagePacketTime)
+STATISTICS_FIELD_SPRINTF(TxAudio, Packets, m_totalPackets)
+STATISTICS_FIELD_SPRINTF(TxAudio, MaxTime, m_maximumPacketTime)
+STATISTICS_FIELD_SPRINTF(TxAudio, Lost, m_packetsLost)
+STATISTICS_FIELD_SPRINTF(TxAudio, AvgJitter, m_averageJitter)
+STATISTICS_FIELD_SPRINTF_NZ(TxAudio, RoundTripTime, m_roundTripTime)
+STATISTICS_FIELD_BANDWIDTH(RxVideo, Bandwidth, m_totalBytes)
+STATISTICS_FIELD_SPRINTF(RxVideo, MinTime, m_minimumPacketTime)
+STATISTICS_FIELD_SPRINTF(RxVideo, Bytes, m_totalBytes)
+STATISTICS_FIELD_SPRINTF(RxVideo, AvgTime, m_averagePacketTime)
+STATISTICS_FIELD_SPRINTF(RxVideo, Packets, m_totalPackets)
+STATISTICS_FIELD_SPRINTF(RxVideo, MaxTime, m_maximumPacketTime)
+STATISTICS_FIELD_SPRINTF(RxVideo, Lost, m_packetsLost)
+STATISTICS_FIELD_SPRINTF_NZ(RxVideo, AvgJitter, m_averageJitter)
+STATISTICS_FIELD_SPRINTF(RxVideo, OutOfOrder, m_packetsOutOfOrder)
+STATISTICS_FIELD_SPRINTF(RxVideo, MaxJitter, m_maximumJitter)
+STATISTICS_FIELD_SPRINTF(RxVideo, Frames, m_totalFrames)
+STATISTICS_FIELD_SPRINTF(RxVideo, KeyFrames, m_keyFrames)
 
 STATISTICS_FIELD_BEG(RxVideo, FrameRate)
   value.sprintf(m_printFormat, CalculateFrameRate(statistics.m_totalFrames));
@@ -8120,45 +8037,16 @@ STATISTICS_FIELD_BEG(RxVideo, Quality)
     value.sprintf(wxT("%i"), statistics.m_videoQuality);
 STATISTICS_FIELD_END(RxVideo, Quality)
 
-STATISTICS_FIELD_BEG(TxVideo, Bandwidth)
-  value.sprintf(m_printFormat, CalculateBandwidth(statistics.m_totalBytes));
-STATISTICS_FIELD_END(TxVideo, Bandwidth)
-
-STATISTICS_FIELD_BEG(TxVideo, MinTime)
-  value.sprintf(m_printFormat, statistics.m_minimumPacketTime);
-STATISTICS_FIELD_END(TxVideo, MinTime)
-
-STATISTICS_FIELD_BEG(TxVideo, Bytes)
-  value.sprintf(m_printFormat, statistics.m_totalBytes);
-STATISTICS_FIELD_END(TxVideo, Bytes)
-
-STATISTICS_FIELD_BEG(TxVideo, AvgTime)
-  value.sprintf(m_printFormat, statistics.m_averagePacketTime);
-STATISTICS_FIELD_END(TxVideo, AvgTime)
-
-STATISTICS_FIELD_BEG(TxVideo, Packets)
-  value.sprintf(m_printFormat, statistics.m_totalPackets);
-STATISTICS_FIELD_END(TxVideo, Packets)
-
-STATISTICS_FIELD_BEG(TxVideo, Lost)
-  value.sprintf(m_printFormat, statistics.m_packetsLost);
-STATISTICS_FIELD_END(TxVideo, Lost)
-
-STATISTICS_FIELD_BEG(TxVideo, MaxTime)
-  value.sprintf(m_printFormat, statistics.m_maximumPacketTime);
-STATISTICS_FIELD_END(TxVideo, MaxTime)
-
-STATISTICS_FIELD_BEG(TxVideo, RoundTripTime)
-  value.sprintf(m_printFormat, statistics.m_roundTripTime);
-STATISTICS_FIELD_END(TxVideo, RoundTripTime)
-
-STATISTICS_FIELD_BEG(TxVideo, Frames)
-  value.sprintf(m_printFormat, statistics.m_totalFrames);
-STATISTICS_FIELD_END(TxVideo, Frames)
-
-STATISTICS_FIELD_BEG(TxVideo, KeyFrames)
-  value.sprintf(m_printFormat, statistics.m_keyFrames);
-STATISTICS_FIELD_END(TxVideo, KeyFrames)
+STATISTICS_FIELD_BANDWIDTH(TxVideo, Bandwidth, m_totalBytes)
+STATISTICS_FIELD_SPRINTF(TxVideo, MinTime, m_minimumPacketTime)
+STATISTICS_FIELD_SPRINTF(TxVideo, Bytes, m_totalBytes)
+STATISTICS_FIELD_SPRINTF(TxVideo, AvgTime, m_averagePacketTime)
+STATISTICS_FIELD_SPRINTF(TxVideo, Packets, m_totalPackets)
+STATISTICS_FIELD_SPRINTF(TxVideo, Lost, m_packetsLost)
+STATISTICS_FIELD_SPRINTF(TxVideo, MaxTime, m_maximumPacketTime)
+STATISTICS_FIELD_SPRINTF_NZ(TxVideo, RoundTripTime, m_roundTripTime)
+STATISTICS_FIELD_SPRINTF(TxVideo, Frames, m_totalFrames)
+STATISTICS_FIELD_SPRINTF(TxVideo, KeyFrames, m_keyFrames)
 
 STATISTICS_FIELD_BEG(TxVideo, FrameRate)
   value.sprintf(m_printFormat, CalculateFrameRate(statistics.m_totalFrames));
@@ -8178,17 +8066,9 @@ STATISTICS_FIELD_BEG(TxVideo, Quality)
     value.sprintf(wxT("%i"), statistics.m_videoQuality);
 STATISTICS_FIELD_END(TxVideo, Quality)
 
-STATISTICS_FIELD_BEG(RxFax, Bandwidth)
-  value.sprintf(m_printFormat, CalculateBandwidth(statistics.m_totalBytes));
-STATISTICS_FIELD_END(RxFax, Bandwidth)
-
-STATISTICS_FIELD_BEG(RxFax, Bytes)
-  value.sprintf(m_printFormat, statistics.m_totalBytes);
-STATISTICS_FIELD_END(RxFax, Bytes)
-
-STATISTICS_FIELD_BEG(RxFax, Packets)
-  value.sprintf(m_printFormat, statistics.m_totalPackets);
-STATISTICS_FIELD_END(RxFax, Packets)
+STATISTICS_FIELD_BANDWIDTH(RxFax, Bandwidth, m_totalBytes)
+STATISTICS_FIELD_SPRINTF(RxFax, Bytes, m_totalBytes)
+STATISTICS_FIELD_SPRINTF(RxFax, Packets, m_totalPackets)
 
 #if OPAL_FAX
 STATISTICS_FIELD_BEG(RxFax, Pages)
@@ -8208,17 +8088,9 @@ STATISTICS_FIELD_BEG(RxFax, Pages)
   }
 STATISTICS_FIELD_END(RxFax, Pages)
 
-STATISTICS_FIELD_BEG(TxFax, Bandwidth)
-  value.sprintf(m_printFormat, CalculateBandwidth(statistics.m_totalBytes));
-STATISTICS_FIELD_END(TxFax, Bandwidth)
-
-STATISTICS_FIELD_BEG(TxFax, Bytes)
-  value.sprintf(m_printFormat, statistics.m_totalBytes);
-STATISTICS_FIELD_END(TxFax, Bytes)
-
-STATISTICS_FIELD_BEG(TxFax, Packets)
-  value.sprintf(m_printFormat, statistics.m_totalPackets);
-STATISTICS_FIELD_END(TxFax, Packets)
+STATISTICS_FIELD_BANDWIDTH(TxFax, Bandwidth, m_totalBytes)
+STATISTICS_FIELD_SPRINTF(TxFax, Bytes, m_totalBytes)
+STATISTICS_FIELD_SPRINTF(TxFax, Packets, m_totalPackets)
 
 STATISTICS_FIELD_BEG(TxFax, Pages)
   if (statistics.m_fax.m_txPages < 0)
