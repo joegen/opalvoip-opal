@@ -73,6 +73,8 @@ OpalNetworkStatistics::OpalNetworkStatistics()
   , m_maximumPacketTime(0)
   , m_averageJitter(0)
   , m_maximumJitter(0)
+  , m_jitterBufferDelay(0)
+  , m_roundTripTime(0)
   , m_lastPacketTime(0)
   , m_lastReportTime(0)
   , m_targetBitRate(0)
@@ -356,6 +358,9 @@ void OpalMediaStatistics::PrintOn(ostream & strm) const
        << setw(indent) <<            "Packets lost" << " = " << m_packetsLost << '\n'
        << setw(indent) <<    "Packets out of order" << " = " << m_packetsOutOfOrder << '\n'
        << setw(indent) <<        "Packets too late" << " = " << m_packetsTooLate << '\n';
+
+  if (m_roundTripTime > 0)
+    strm << setw(indent) <<       "Round Trip Time" << " = " << m_roundTripTime << '\n';
 
   if (m_mediaType == OpalMediaType::Audio()) {
     strm << setw(indent) <<       "Packet overruns" << " = " << m_packetOverruns << '\n';
