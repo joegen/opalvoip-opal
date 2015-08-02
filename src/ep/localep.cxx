@@ -407,7 +407,7 @@ OpalMediaStream * OpalLocalConnection::CreateMediaStream(const OpalMediaFormat &
       if (CreateVideoInputDevice(mediaFormat, videoDevice, autoDeleteGrabber))
         PTRACE(4, "OpalCon\tCreated video input device \"" << videoDevice->GetDeviceName() << '"');
       else {
-        PTRACE(2, "OpalCon\tCould not create video input device \"" << videoDevice->GetDeviceName() << '"');
+        PTRACE(3, "OpalCon\tCreating fake text video input");
         PVideoDevice::OpenArgs args;
         args.deviceName = P_FAKE_VIDEO_TEXT "=No Video Input";
         mediaFormat.AdjustVideoArgs(args);
