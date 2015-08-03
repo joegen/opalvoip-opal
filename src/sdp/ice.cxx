@@ -212,11 +212,11 @@ void OpalICEMediaTransport::SetCandidates(const PString & user, const PString & 
       trace << "remote response to local";
     else
       trace << "configured from remote";
-    trace << " candidates: ";
+    trace << " candidates:";
     for (PINDEX i = 0; i < m_localCandidates.GetSize(); ++i)
-      trace << "local-" << (SubChannels)i << '=' << m_localCandidates[i].size();
+      trace << " local-" << (SubChannels)i << '=' << m_localCandidates[i].size();
     for (PINDEX i = 0; i < m_remoteCandidates.GetSize(); ++i)
-      trace << "remote-" << (SubChannels)i << '=' << m_remoteCandidates[i].size();
+      trace << " remote-" << (SubChannels)i << '=' << m_remoteCandidates[i].size();
     trace << PTrace::End;
   }
 #endif
@@ -276,11 +276,11 @@ bool OpalICEMediaTransport::GetCandidates(PString & user, PString & pass, PNatCa
       trace << "responding to received";
     else
       trace << "configured with offered";
-    trace << " candidates: ";
+    trace << " candidates:";
     for (PINDEX i = 0; i < m_localCandidates.GetSize(); ++i)
-      trace << "local-" << (SubChannels)i << '=' << m_localCandidates[i].size();
+      trace << " local-" << (SubChannels)i << '=' << m_localCandidates[i].size();
     for (PINDEX i = 0; i < m_remoteCandidates.GetSize(); ++i)
-      trace << "remote-" << (SubChannels)i << '=' << m_remoteCandidates[i].size();
+      trace << " remote-" << (SubChannels)i << '=' << m_remoteCandidates[i].size();
     trace << PTrace::End;
   }
 #endif
@@ -343,10 +343,8 @@ bool OpalICEMediaTransport::InternalHandleICE(SubChannels subchannel, const void
     }
   }
   if (candidate == NULL) {
-    m_remoteCandidates[subchannel].push_back(PNatCandidate(PNatCandidate::HostType, (PNatMethod::Component)(subchannel+1)));
-    candidate = &m_remoteCandidates[subchannel].back();
-    candidate->m_baseTransportAddress = ap;
-    PTRACE(2, *this << subchannel << ", added ICE candidate: " << ap);
+    PTRACE(2, *this << subchannel << ", received STUN message for unknown ICE candidate: " << ap);
+    return false;
   }
 
   if (message.IsRequest()) {
