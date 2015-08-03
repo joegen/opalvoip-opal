@@ -40,6 +40,7 @@
 #include <rtp/rtp_session.h>
 
 #include <opal/endpoint.h>
+#include <sdp/ice.h>
 #include <rtp/rtpep.h>
 #include <rtp/rtpconn.h>
 #include <rtp/rtp_stream.h>
@@ -47,12 +48,9 @@
 #include <codec/vidcodec.h>
 
 #include <ptclib/random.h>
-#include <ptclib/pnat.h>
 #include <ptclib/cypher.h>
 
 #include <algorithm>
-
-#include <h323/h323con.h>
 
 
 static const uint16_t SequenceReorderThreshold = (1<<16)-100;  // As per RFC3550 RTP_SEQ_MOD - MAX_MISORDER

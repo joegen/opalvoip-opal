@@ -349,6 +349,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\codec\speexmf.cxx" />
+    <ClCompile Include="..\sdp\ice.cxx" />
     <ClCompile Include="..\sdp\sdphttpep.cxx" />
     <ClCompile Include="..\rtp\rtp_stream.cxx" />
     <ClCompile Include="..\rtp\rtp_fec.cxx" />
@@ -1421,6 +1422,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\include\sdp\ice.h" />
     <ClInclude Include="..\..\include\sdp\sdphttpep.h" />
     <ClInclude Include="..\..\include\rtp\rtp_stream.h" />
     <ClInclude Include="..\..\include\ep\skinnyep.h" />
