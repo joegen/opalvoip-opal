@@ -520,6 +520,7 @@ class OpalICEMediaTransport : public OpalUDPMediaTransport
 
     virtual bool Open(OpalMediaSession & session, PINDEX count, const PString & localInterface, const OpalTransportAddress & remoteAddress);
     virtual bool IsEstablished() const;
+    virtual void InternalRxData(SubChannels subchannel, const PBYTEArray & data);
     virtual void SetCandidates(const PString & user, const PString & pass, const PNatCandidateList & candidates);
     virtual bool GetCandidates(PString & user, PString & pass, PNatCandidateList & candidates);
 
