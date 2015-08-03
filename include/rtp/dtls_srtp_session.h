@@ -40,6 +40,7 @@
 #endif
 
 #include <opal_config.h>
+#include <sdp/ice.h>
 #include <rtp/srtp_session.h>
 
 #if OPAL_SRTP
