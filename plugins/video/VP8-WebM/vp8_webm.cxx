@@ -511,6 +511,11 @@ class VP8Encoder : public PluginVideoEncoder<VP8_CODEC>
       if (m_config.g_w == m_width && m_config.g_h == m_height)
         return !IS_ERROR(vpx_codec_enc_config_set, (&m_codec, &m_config));
 
+      if (((m_width|m_height) & 1) != 0) {
+        PTRACE(1, MY_CODEC_LOG, "Odd width or height provided: " << m_width << 'x' << m_height);
+        return false;
+      }
+
       m_config.g_w = m_width;
       m_config.g_h = m_height;
       vpx_codec_destroy(&m_codec);
@@ -565,11 +570,12 @@ class VP8Encoder : public PluginVideoEncoder<VP8_CODEC>
                  m_width << 'x' << m_height << " to " << video->width << 'x' << video->height);
           m_width = video->width;
           m_height = video->height;
-          OnChangedOptions();
+          if (!OnChangedOptions())
+            return false;
         }
 
         vpx_image_t image;
-        vpx_img_wrap(&image, VPX_IMG_FMT_I420, video->width, video->height, 4, srcRTP.GetVideoFrameData());
+        vpx_img_wrap(&image, VPX_IMG_FMT_I420, video->width, video->height, 2, srcRTP.GetVideoFrameData());
 
         WaitAndSignal lock(m_mutex);
 
