@@ -1344,6 +1344,9 @@ const PCaselessString & OpalDummySession::GetSessionType() const
 
 bool OpalDummySession::Open(const PString &, const OpalTransportAddress &)
 {
+  if (!LockReadWrite())
+    return false;
+
   PSafePtr<OpalConnection> otherParty = m_connection.GetOtherPartyConnection();
   if (otherParty != NULL) {
     OpalTransportAddressArray transports;
@@ -1357,7 +1360,9 @@ bool OpalDummySession::Open(const PString &, const OpalTransportAddress &)
     }
   }
 
-  PTRACE(5, *this << "dummy opened at local media address " << GetLocalAddress());
+  PTRACE(4, *this << "dummy opened at local media address " << m_localTransportAddress[e_Media]);
+
+  UnlockReadWrite();
 
   return true;
 }
@@ -1365,24 +1370,30 @@ bool OpalDummySession::Open(const PString &, const OpalTransportAddress &)
 
 bool OpalDummySession::IsOpen() const
 {
-  return !m_localTransportAddress[e_Media].IsEmpty() && !m_remoteTransportAddress[e_Media].IsEmpty();
+  PSafeLockReadOnly lock(*this);
+  return lock.IsLocked() && !m_localTransportAddress[e_Media].IsEmpty() && !m_remoteTransportAddress[e_Media].IsEmpty();
 }
 
 
 OpalTransportAddress OpalDummySession::GetLocalAddress(bool isMediaAddress) const
 {
-  return m_localTransportAddress[isMediaAddress ? e_Media : e_Control];
+  PSafeLockReadOnly lock(*this);
+  return lock.IsLocked() ? m_localTransportAddress[isMediaAddress ? e_Media : e_Control] : OpalTransportAddress();
 }
 
 
 OpalTransportAddress OpalDummySession::GetRemoteAddress(bool isMediaAddress) const
 {
-  return m_remoteTransportAddress[isMediaAddress ? e_Media : e_Control];
+  PSafeLockReadOnly lock(*this);
+  return lock.IsLocked() ? m_remoteTransportAddress[isMediaAddress ? e_Media : e_Control] : OpalTransportAddress();
 }
 
 
 bool OpalDummySession::SetRemoteAddress(const OpalTransportAddress & remoteAddress, bool isMediaAddress)
 {
+  if (!LockReadWrite())
+    return false;
+
   // Some code to keep the port if new one does not have it but old did.
   PIPSocket::Address ip;
   WORD port = 0;
@@ -1392,9 +1403,11 @@ bool OpalDummySession::SetRemoteAddress(const OpalTransportAddress & remoteAddre
   else
     m_remoteTransportAddress[subchannel] = remoteAddress;
 
-  PTRACE(5, *this << "dummy remote "
+  PTRACE(4, *this << "dummy remote "
          << (isMediaAddress ? "media" : "control") << " address set to "
          << m_remoteTransportAddress[subchannel]);
+
+  UnlockReadWrite();
 
   return true;
 }
