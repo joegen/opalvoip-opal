@@ -1240,6 +1240,7 @@ void OpalICEMediaTransport::SetCandidates(const PString & user, const PString & 
       else {
         if (newCandidates == m_remoteCandidates) {
           PTRACE(4, *this << "ICE answer to offer unchanged");
+          m_state = e_Completed;
           return;
         }
 
