@@ -1176,6 +1176,15 @@ bool OpalICEMediaTransport::IsEstablished() const
 }
 
 
+void OpalICEMediaTransport::InternalRxData(SubChannels subchannel, const PBYTEArray & data)
+{
+  if (m_state == e_Disabled)
+    OpalUDPMediaTransport::InternalRxData(subchannel, data);
+  else
+    OpalMediaTransport::InternalRxData(subchannel, data);
+}
+
+
 void OpalICEMediaTransport::SetCandidates(const PString & user, const PString & pass, const PNatCandidateList & remoteCandidates)
 {
   PSafeLockReadWrite lock(*this);
@@ -1185,6 +1194,11 @@ void OpalICEMediaTransport::SetCandidates(const PString & user, const PString & 
   if (user.IsEmpty() || pass.IsEmpty()) {
     PTRACE(3, *this << "ICE disabled");
     m_state = e_Disabled;
+    return;
+  }
+
+  if (remoteCandidates.IsEmpty()) {
+    PTRACE(4, *this << "no ICE candidates from remote");
     return;
   }
 
@@ -1300,19 +1314,8 @@ bool OpalICEMediaTransport::GetCandidates(PString & user, PString & pass, PNatCa
     return false;
   }
 
-  switch (m_state) {
-    case e_Disabled :
-    case e_Completed :
-      m_state = e_Offering;
-      break;
-
-    case e_Answering :
-      break;
-
-    default :
-      PTRACE(5, *this << "ICE answer not required in bundled session");
-      return false;
-  }
+  if (m_state != e_Answering)
+    m_state = e_Offering;
 
   user = m_localUsername;
   pass = m_localPassword;
@@ -1408,52 +1411,49 @@ bool OpalICEMediaTransport::InternalHandleICE(SubChannels subchannel, const void
     if (m_state == e_Completed)
       return true;
 
-    PTRACE(5, *this << "invalid STUN message or data before ICE completed");
+    PTRACE(5, *this << subchannel << ", invalid STUN message or data before ICE completed");
     return false;
+  }
+
+  CandidateState * candidate = NULL;
+  for (CandidateStateList::iterator it = m_remoteCandidates[subchannel].begin(); it != m_remoteCandidates[subchannel].end(); ++it) {
+    if (it->m_baseTransportAddress == ap) {
+      candidate = &*it;
+      break;
+    }
+  }
+  if (candidate == NULL) {
+    m_remoteCandidates[subchannel].push_back(PNatCandidate(PNatCandidate::HostType, (PNatMethod::Component)(subchannel+1)));
+    candidate = &m_remoteCandidates[subchannel].back();
+    candidate->m_baseTransportAddress = ap;
+    PTRACE(2, *this << subchannel << ", added ICE candidate: " << ap);
   }
 
   if (message.IsRequest()) {
     if (!PAssertNULL(m_server)->OnReceiveMessage(message, PSTUNServer::SocketInfo(socket)))
       return false;
 
-    if (m_state == e_Completed)
+    if (m_state != e_OfferAnswered) {
+      PTRACE_IF(3, m_state != e_Completed, *this << subchannel << ", unexpected STUN request in ICE");
       return false; // Just eat the STUN packet
+    }
 
     if (message.FindAttribute(PSTUNAttribute::USE_CANDIDATE) == NULL) {
-      PTRACE(4, *this << "awaiting USE-CANDIDATE for " << subchannel);
+      PTRACE(4, *this << subchannel << ", ICE awaiting USE-CANDIDATE");
       return false;
     }
 
-    bool absent = true;
-    for (CandidateStateList::iterator it = m_remoteCandidates[subchannel].begin(); it != m_remoteCandidates[subchannel].end(); ++it) {
-      if (it->m_baseTransportAddress == ap) {
-        it->m_state = e_CandidateSucceeded;
-        absent = false;
-        break;
-      }
-    }
-    PTRACE_IF(2, absent, *this << "ICE response from unknown candidate");
-    // Really should abort ....
-
-    PTRACE(3, *this << "USE-CANDIDATE found");
+    candidate->m_state = e_CandidateSucceeded;
+    PTRACE(3, *this << subchannel << ", ICE found USE-CANDIDATE");
   }
   else {
     if (!PAssertNULL(m_client)->ValidateMessageIntegrity(message))
       return false;
 
     if (m_state != e_Offering) {
-      PTRACE(3, *this << "Unexpected STUN response received.");
+      PTRACE(3, *this << subchannel << ", unexpected STUN response in ICE");
       return false;
     }
-
-    PTRACE(4, *this << "trying to match STUN answer to candidates");
-    CandidateStateList::iterator it;
-    for (it = m_localCandidates[subchannel].begin(); it != m_localCandidates[subchannel].end(); ++it) {
-      if (it->m_baseTransportAddress == ap)
-        break;
-    }
-    if (it == m_localCandidates[subchannel].end())
-      return false;
   }
 
   InternalSetRemoteAddress(ap, subchannel, false PTRACE_PARAM(, "ICE"));
