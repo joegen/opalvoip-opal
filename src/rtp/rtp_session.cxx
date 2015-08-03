@@ -207,8 +207,8 @@ OpalRTPSession::SyncSource * OpalRTPSession::UseSyncSource(RTP_SyncSourceId ssrc
   }
 
 #if PTRACING
-  static const unsigned Level = 2;
-  if (PTrace::CanTrace(Level) && m_groupId != GetBundleGroupId()) {
+  const unsigned Level = m_groupId != GetBundleGroupId() ? 2 : 6;
+  if (PTrace::CanTrace(Level)) {
     ostream & trace = PTRACE_BEGIN(Level);
     trace << *this << "packet from SSRC=" << RTP_TRACE_SRC(ssrc) << " ignored";
     SyncSource * existing;
