@@ -160,7 +160,7 @@ RTP_SyncSourceId OpalRTPSession::AddSyncSource(RTP_SyncSourceId id, Direction di
   if (id == 0) {
     do {
       id = PRandom::Number();
-    } while (m_SSRC.find(id) != m_SSRC.end());
+    } while (id < 4 || m_SSRC.find(id) != m_SSRC.end());
   }
 
   SyncSource * ssrc = CreateSyncSource(id, dir, cname);
@@ -908,6 +908,7 @@ void OpalRTPSession::SetMediaStreamId(const PString & id, RTP_SyncSourceId ssrc,
   if (GetSyncSource(ssrc, dir, info)) {
     info->m_mediaStreamId = id;
     info->m_mediaStreamId.MakeUnique();
+    PTRACE(4, *this << "set session id for SSRC=" << RTP_TRACE_SRC(ssrc) << " to \"" << id << '"');
   }
 }
 
