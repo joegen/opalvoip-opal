@@ -1173,9 +1173,8 @@ bool OpalMediaSession::IsEstablished() const
 
 bool OpalMediaSession::Close()
 {
-  m_transport->RemoveReadNotifier(this, e_AllSubChannels);
-  m_transport.SetNULL();
-  return true;
+  // A close here is detach but don't do anything with detached transport
+  return OpalMediaSession::DetachTransport() != NULL;
 }
 
 
@@ -1209,9 +1208,13 @@ void OpalMediaSession::AttachTransport(const OpalMediaTransportPtr & transport)
 OpalMediaTransportPtr OpalMediaSession::DetachTransport()
 {
   PTRACE_IF(2, !IsOpen(), *this << "detaching transport from closed session.");
+
   OpalMediaTransportPtr transport = m_transport;
-  transport->RemoveReadNotifier(this, e_AllSubChannels);
   m_transport.SetNULL();
+
+  if (transport != NULL)
+    transport->RemoveReadNotifier(this, e_AllSubChannels);
+
   return transport;
 }
 
