@@ -1340,7 +1340,8 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SendReport(RTP_SyncSourceId ss
 #if OPAL_STATISTICS
 void OpalRTPSession::GetStatistics(OpalMediaStatistics & statistics, Direction dir) const
 {
-  statistics.m_mediaType         = m_mediaType;
+  OpalMediaSession::GetStatistics(statistics, dir);
+
   statistics.m_totalBytes        = 0;
   statistics.m_totalPackets      = 0;
   statistics.m_controlPacketsIn  = m_rtcpPacketsReceived;

@@ -1272,8 +1272,10 @@ SDPMediaDescription * OpalMediaSession::CreateSDPMediaDescription()
 #endif // OPAL_SDP
 
 #if OPAL_STATISTICS
-void OpalMediaSession::GetStatistics(OpalMediaStatistics &, bool) const
+void OpalMediaSession::GetStatistics(OpalMediaStatistics & statistics, bool) const
 {
+  statistics.m_mediaType        = m_mediaType;
+  statistics.m_transportAddress = GetRemoteAddress();
 }
 #endif
 
