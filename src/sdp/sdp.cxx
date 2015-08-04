@@ -818,14 +818,6 @@ bool SDPMediaDescription::ToSession(OpalMediaSession * session) const
     rtpSession->SetSinglePortTx(m_controlAddress == m_mediaAddress);
     if (m_stringOptions.GetBoolean(OPAL_OPT_RTCP_MUX))
       rtpSession->SetSinglePortRx();
-#if OPAL_ICE
-    OpalMediaTransportPtr transport = rtpSession->GetTransport();
-    if (transport == NULL) {
-      PTRACE(2, *session << "cannot set ICE candidates when session not open.");
-      return false;
-    }
-    transport->SetCandidates(m_username, m_password, m_candidates);
-#endif //OPAL_ICE
   }
 
   // Must be done after ICE setting above
