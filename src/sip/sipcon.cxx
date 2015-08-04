@@ -1684,9 +1684,7 @@ bool SIPConnection::SendDelayedACK(bool force)
 
     m_delayedAckInviteResponse->DecodeSDP(GetEndPoint(), GetLocalMediaFormats());
     if (OnSendAnswerSDP(*m_delayedAckInviteResponse->GetSDP(), *sdp)) {
-      if (m_delayedAckPDU->Send())
-        StartMediaStreams();
-      else
+      if (!m_delayedAckPDU->Send())
         Release(EndedByTransportFail);
     }
     else {
@@ -2334,9 +2332,7 @@ void SIPConnection::OnReceivedReINVITE(SIP_PDU & request)
   m_handlingINVITE = true;
 
   // send the 200 OK response
-  if (OnSendAnswer(SIP_PDU::Successful_OK))
-    StartMediaStreams();
-  else
+  if (!OnSendAnswer(SIP_PDU::Successful_OK))
     SendInviteResponse(SIP_PDU::Failure_NotAcceptableHere);
 
   SIPURL newRemotePartyID(request.GetMIME(), RemotePartyID);
