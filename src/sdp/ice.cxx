@@ -348,13 +348,13 @@ bool OpalICEMediaTransport::InternalHandleICE(SubChannels subchannel, const void
   }
 
   if (message.IsRequest()) {
-    if (!PAssertNULL(m_server)->OnReceiveMessage(message, PSTUNServer::SocketInfo(socket)))
-      return false;
-
-    if (m_state != e_OfferAnswered) {
+    if (m_state == e_Offering) {
       PTRACE_IF(3, m_state != e_Completed, *this << subchannel << ", unexpected STUN request in ICE");
       return false; // Just eat the STUN packet
     }
+
+    if (!PAssertNULL(m_server)->OnReceiveMessage(message, PSTUNServer::SocketInfo(socket)))
+      return false;
 
     if (message.FindAttribute(PSTUNAttribute::USE_CANDIDATE) == NULL) {
       PTRACE(4, *this << subchannel << ", ICE awaiting USE-CANDIDATE");
@@ -365,13 +365,13 @@ bool OpalICEMediaTransport::InternalHandleICE(SubChannels subchannel, const void
     PTRACE(3, *this << subchannel << ", ICE found USE-CANDIDATE");
   }
   else {
-    if (!PAssertNULL(m_client)->ValidateMessageIntegrity(message))
-      return false;
-
     if (m_state != e_Offering) {
       PTRACE(3, *this << subchannel << ", unexpected STUN response in ICE");
       return false;
     }
+
+    if (!PAssertNULL(m_client)->ValidateMessageIntegrity(message))
+      return false;
   }
 
   InternalSetRemoteAddress(ap, subchannel, false PTRACE_PARAM(, "ICE"));
