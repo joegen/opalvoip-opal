@@ -345,8 +345,12 @@ void OpalMediaStatistics::PrintOn(ostream & strm) const
        << setw(indent) <<      "Session start time" << " = " << m_startTime << '\n'
        << setw(indent) <<        "Session duration" << " = " << InternalTimeDiff(m_updateInfo.m_lastUpdateTime, m_startTime)
                                                              << " (" << InternalTimeDiff(m_updateInfo.m_lastUpdateTime, m_updateInfo.m_previousUpdateTime) << ")\n"
-       << setw(indent) <<               "CPU usage" << " = " << GetCPU() << '\n'
-       << setw(indent) <<             "Total bytes" << " = " << PString(PString::ScaleSI, m_totalBytes) << "B\n"
+       << setw(indent) <<               "CPU usage" << " = " << GetCPU() << '\n';
+  if (!m_localAddress.IsEmpty())
+    strm << setw(indent) <<         "Local address" << " = " << m_localAddress << '\n';
+  if (!m_remoteAddress.IsEmpty())
+    strm << setw(indent) <<        "Remote address" << " = " << m_remoteAddress << '\n';
+  strm << setw(indent) <<             "Total bytes" << " = " << PString(PString::ScaleSI, m_totalBytes) << "B\n"
        << setw(indent) <<        "Average bit rate" << " = " << GetAverageBitRate("bps", 2) << '\n'
        << setw(indent) <<        "Current bit rate" << " = " << GetCurrentBitRate("bps", 3) << '\n'
        << setw(indent) <<           "Total packets" << " = " << m_totalPackets << '\n'
@@ -1274,8 +1278,9 @@ SDPMediaDescription * OpalMediaSession::CreateSDPMediaDescription()
 #if OPAL_STATISTICS
 void OpalMediaSession::GetStatistics(OpalMediaStatistics & statistics, bool) const
 {
-  statistics.m_mediaType        = m_mediaType;
-  statistics.m_transportAddress = GetRemoteAddress();
+  statistics.m_mediaType     = GetMediaType();
+  statistics.m_localAddress  = GetLocalAddress();
+  statistics.m_remoteAddress = GetRemoteAddress();
 }
 #endif
 

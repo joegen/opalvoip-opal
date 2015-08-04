@@ -58,7 +58,8 @@ struct OpalNetworkStatistics
 {
   OpalNetworkStatistics();
 
-  OpalTransportAddress m_transportAddress;
+  OpalTransportAddress m_localAddress;
+  OpalTransportAddress m_remoteAddress;
 
   uint32_t m_SSRC;
   PTime    m_startTime;
