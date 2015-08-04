@@ -363,14 +363,22 @@ OpalMediaSession * OpalSDPConnection::SetUpMediaSession(const unsigned sessionId
   PTRACE_IF(3, session->IsOpen() && !remoteMediaAddress.IsEmpty() && session->GetRemoteAddress() != remoteMediaAddress,
             "Remote changed IP address: " << session->GetRemoteAddress() << " -> " << remoteMediaAddress);
 
-  if (mediaDescription.ToSession(session) && session->Open(GetMediaInterface(), remoteMediaAddress)) {
-    ((OpalRTPEndPoint &)endpoint).CheckEndLocalRTP(*this, rtpSession);
-    localAddress = session->GetLocalAddress();
-    return session;
-  }
+  if (!mediaDescription.ToSession(session))
+    return NULL;
 
-  ReleaseMediaSession(sessionId);
-  return NULL;
+  if (!session->Open(GetMediaInterface(), remoteMediaAddress))
+    return NULL;
+
+#if OPAL_ICE
+  // Must be after the Open()
+  OpalMediaTransportPtr transport = session->GetTransport();
+  if (transport != NULL)
+    transport->SetCandidates(mediaDescription.GetUsername(), mediaDescription.GetPassword(), mediaDescription.GetCandidates());
+#endif //OPAL_ICE
+
+  dynamic_cast<OpalRTPEndPoint &>(endpoint).CheckEndLocalRTP(*this, rtpSession);
+  localAddress = session->GetLocalAddress();
+  return session;
 }
 
 
