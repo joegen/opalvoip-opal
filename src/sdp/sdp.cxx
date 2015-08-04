@@ -818,6 +818,7 @@ bool SDPMediaDescription::ToSession(OpalMediaSession * session) const
     rtpSession->SetSinglePortTx(m_controlAddress == m_mediaAddress);
     if (m_stringOptions.GetBoolean(OPAL_OPT_RTCP_MUX))
       rtpSession->SetSinglePortRx();
+    rtpSession->SetExtensionHeader(GetExtensionHeaders());
   }
 
   // Must be done after ICE setting above

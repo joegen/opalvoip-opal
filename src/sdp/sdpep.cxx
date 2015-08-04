@@ -348,10 +348,6 @@ OpalMediaSession * OpalSDPConnection::SetUpMediaSession(const unsigned sessionId
   if (session == NULL)
     return NULL;
 
-  OpalRTPSession * rtpSession = dynamic_cast<OpalRTPSession *>(session);
-  if (rtpSession != NULL)
-    rtpSession->SetExtensionHeader(mediaDescription.GetExtensionHeaders());
-
 #if OPAL_ICE
   OpalTransportAddress remoteMediaAddress;
   if (!mediaDescription.HasICE())
@@ -365,6 +361,10 @@ OpalMediaSession * OpalSDPConnection::SetUpMediaSession(const unsigned sessionId
 
   if (!mediaDescription.ToSession(session))
     return NULL;
+
+  OpalRTPSession * rtpSession = dynamic_cast<OpalRTPSession *>(session);
+  if (rtpSession != NULL && m_stringOptions.GetBoolean(OPAL_OPT_RTCP_MUX))
+    rtpSession->SetSinglePortRx();
 
   if (!session->Open(GetMediaInterface(), remoteMediaAddress))
     return NULL;
