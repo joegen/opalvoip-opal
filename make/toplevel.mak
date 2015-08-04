@@ -538,8 +538,8 @@ install:
 	    $(MKDIR_P) $$dir ; \
 	    chmod 755 $$dir ; \
 	done
-	for lib in $(OPAL_OPT_SHARED_FILE) \
-	           $(OPAL_DEBUG_SHARED_FILE) \
+	for lib in $(OPAL_OPT_SHARED_FILE) $(OPAL_OPT_SHARED_FILE).$(DEBUGINFOEXT) \
+	           $(OPAL_DEBUG_SHARED_FILE) $(OPAL_DEBUG_SHARED_FILE).$(DEBUGINFOEXT) \
 	           $(OPAL_OPT_STATIC_FILE) \
 	           $(OPAL_DEBUG_STATIC_FILE) ; \
 	do \
@@ -572,9 +572,11 @@ uninstall:
                $(DESTDIR)$(datarootdir)/opal \
 	       $(DESTDIR)$(libdir)/$(notdir $(OPAL_OPT_SHARED_LINK)) \
                $(DESTDIR)$(libdir)/$(notdir $(OPAL_OPT_SHARED_FILE)) \
+               $(DESTDIR)$(libdir)/$(notdir $(OPAL_OPT_SHARED_FILE).$(DEBUGINFOEXT)) \
                $(DESTDIR)$(libdir)/$(notdir $(OPAL_OPT_STATIC_FILE)) \
                $(DESTDIR)$(libdir)/$(notdir $(OPAL_DEBUG_SHARED_LINK)) \
                $(DESTDIR)$(libdir)/$(notdir $(OPAL_DEBUG_SHARED_FILE)) \
+               $(DESTDIR)$(libdir)/$(notdir $(OPAL_DEBUG_SHARED_FILE).$(DEBUGINFOEXT)) \
                $(DESTDIR)$(libdir)/$(notdir $(OPAL_DEBUG_STATIC_FILE)) \
 	       $(DESTDIR)$(libdir)/pkgconfig/opal.pc
 ifeq ($(OPAL_PLUGINS),yes)
