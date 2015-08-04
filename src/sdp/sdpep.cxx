@@ -760,9 +760,7 @@ bool OpalSDPConnection::OnSendAnswerSDP(const SDPSessionDescription & sdpOffer, 
     OnHold(true, holdFromRemote);
   }
 
-  // In case some new streams got created.
-  if (IsEstablished())
-    StartMediaStreams();
+  StartMediaStreams();
 
   return true;
 }
