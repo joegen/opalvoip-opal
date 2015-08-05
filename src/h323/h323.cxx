@@ -4391,27 +4391,31 @@ bool H323Connection::GetMediaTransportAddresses(OpalConnection & otherConnection
   if (!OpalRTPConnection::GetMediaTransportAddresses(otherConnection, sessionId, mediaType, transports))
     return false;
 
-  if (transports.IsEmpty()) {
-    // If have fast connect, use addresses from them as won't have slow start sessions yet
-    H323LogicalChannelList::const_iterator channel;
-    for (channel = m_fastStartChannels.begin(); channel != m_fastStartChannels.end(); ++channel) {
-      if (channel->GetSessionID() == sessionId &&
-          channel->GetCapability().GetMediaFormat().GetMediaType() == mediaType)
+  if (!transports.IsEmpty())
+    return true;
+
+  // If have fast connect, use addresses from them as won't have slow start sessions yet
+  H323LogicalChannelList::const_iterator channel;
+  for (channel = m_fastStartChannels.begin(); channel != m_fastStartChannels.end(); ++channel) {
+    if (channel->GetSessionID() == sessionId &&
+        channel->GetCapability().GetMediaFormat().GetMediaType() == mediaType)
+      break;
+  }
+  if (channel == m_fastStartChannels.end()) {
+    for (H323LogicalChannelList::const_iterator channel = m_fastStartChannels.begin(); channel != m_fastStartChannels.end(); ++channel) {
+      if (channel->GetCapability().GetMediaFormat().GetMediaType() == mediaType)
         break;
     }
-    if (channel == m_fastStartChannels.end()) {
-      for (H323LogicalChannelList::const_iterator channel = m_fastStartChannels.begin(); channel != m_fastStartChannels.end(); ++channel) {
-        if (channel->GetCapability().GetMediaFormat().GetMediaType() == mediaType)
-          break;
-      }
-    }
-    if (channel != m_fastStartChannels.end()) {
-      OpalTransportAddress media, control;
-      if (channel->GetMediaTransportAddress(media, control) && transports.SetAddressPair(media, control)) {
-        PTRACE(3, "H323\tGetMediaTransportAddresses of " << mediaType << " found fast connect "
-                << setfill(',') << transports << " for " << otherConnection << " on " << *this);
-      }
-    }
+  }
+  if (channel == m_fastStartChannels.end())
+    PTRACE(3, "GetMediaTransportAddresses of " << mediaType << " had no channels for " << otherConnection << " on " << *this);
+  else {
+    OpalTransportAddress media, control;
+    if (channel->GetMediaTransportAddress(media, control) && transports.SetAddressPair(media, control))
+      PTRACE(3, "H323\tGetMediaTransportAddresses of " << mediaType << " found fast connect "
+              << setfill(',') << transports << " for " << otherConnection << " on " << *this);
+    else
+      PTRACE(4, "GetMediaTransportAddresses of " << mediaType << " had no transports in channel for " << otherConnection << " on " << *this);
   }
 
   return true;
