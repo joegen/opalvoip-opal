@@ -2755,6 +2755,7 @@ bool SDPSessionDescription::Decode(const PStringArray & lines, const OpalMediaFo
             }
             else {
               PTRACE_CONTEXT_ID_TO(currentMedia);
+              currentMedia->SetStringOptions(GetStringOptions());
               if (currentMedia->Decode(tokens))
                 atLeastOneValidMedia = true;
               else {
