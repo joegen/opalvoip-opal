@@ -1645,9 +1645,13 @@ void SDPRTPAVPMediaDescription::Format::SetMediaFormatOptions(OpalMediaFormat & 
   SDPMediaFormat::SetMediaFormatOptions(mediaFormat);
 
   // Save the RTCP feedback (RFC4585) capability.
-  if (!m_parent.GetOptionStrings().GetBoolean(OPAL_OPT_FORCE_RTCP_FB))
-    mediaFormat.SetOptionEnum(OpalMediaFormat::RTCPFeedbackOption(),
-                m_rtcp_fb * mediaFormat.GetOptionEnum(OpalMediaFormat::RTCPFeedbackOption(), OpalMediaFormat::e_NoRTCPFb));
+  OpalMediaFormat::RTCPFeedback local_rtcp_fb = mediaFormat.GetOptionEnum(OpalMediaFormat::RTCPFeedbackOption(), OpalMediaFormat::e_NoRTCPFb);
+  if (m_parent.GetStringOptions().GetBoolean(OPAL_OPT_FORCE_RTCP_FB))
+    PTRACE(4, "Forcing rtcp-fb parameters to local: " << local_rtcp_fb);
+  else {
+    mediaFormat.SetOptionEnum(OpalMediaFormat::RTCPFeedbackOption(), m_rtcp_fb * local_rtcp_fb);
+    PTRACE(4, "Setting rtcp-fb parameters to intersection: local=(" << local_rtcp_fb << "), remote=(" << m_rtcp_fb << ')');
+  }
 }
 
 

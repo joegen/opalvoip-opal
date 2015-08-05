@@ -368,8 +368,8 @@ class SDPMediaDescription : public PObject, public SDPCommonAttributes
     virtual OpalVideoFormat::ContentRole GetContentRole() const { return OpalVideoFormat::eNoRole; }
 #endif
 
-    void SetOptionStrings(const PStringOptions & options) { m_stringOptions = options; }
-    const PStringOptions & GetOptionStrings() const { return m_stringOptions; }
+    void SetStringOptions(const PStringOptions & options) { m_stringOptions = options; }
+    const PStringOptions & GetStringOptions() const { return m_stringOptions; }
 
   protected:
     virtual SDPMediaFormat * FindFormat(PString & str) const;
