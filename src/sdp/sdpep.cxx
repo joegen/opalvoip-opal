@@ -288,6 +288,8 @@ SDPSessionDescription * OpalSDPConnection::CreateSDP(const PString & sdpStr)
   SDPSessionDescription * sdpPtr = m_endpoint.CreateSDP(0, 0, OpalTransportAddress());
   PTRACE_CONTEXT_ID_TO(*sdpPtr);
 
+  sdpPtr->SetStringOptions(m_stringOptions);
+
   if (sdpPtr->Decode(sdpStr, formats))
     return sdpPtr;
 
@@ -1053,9 +1055,6 @@ bool OpalSDPConnection::OnReceivedAnswerSDP(const SDPSessionDescription & sdp, b
     SDPMediaDescription * mediaDescription = sdp.GetMediaDescriptionByIndex(index);
     if (PAssertNULL(mediaDescription) == NULL)
       return false;
-
-    // Get SDP string options through
-    mediaDescription->SetStringOptions(m_stringOptions);
 
     unsigned sessionId;
     if (mediaDescription->GetGroupId() != OpalMediaSession::GetBundleGroupId())
