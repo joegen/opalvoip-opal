@@ -599,7 +599,7 @@ bool OpalSDPConnection::OnSendOfferSDPSession(OpalMediaSession * mediaSession,
     return false;
   }
 
-  localMedia->SetOptionStrings(m_stringOptions);
+  localMedia->SetStringOptions(m_stringOptions);
   localMedia->FromSession(mediaSession, NULL, ssrc);
 
   if (offerOpenMediaStreamOnly) {
@@ -855,7 +855,7 @@ SDPMediaDescription * OpalSDPConnection::OnSendAnswerSDPSession(SDPMediaDescript
   localMedia->SetSDPTransportType(incomingMedia->GetSDPTransportType());
 
   // Get SDP string options through
-  localMedia->SetOptionStrings(m_stringOptions);
+  localMedia->SetStringOptions(m_stringOptions);
 
 #if OPAL_SRTP
   if (!keys.IsEmpty()) {// SDES
@@ -1053,6 +1053,9 @@ bool OpalSDPConnection::OnReceivedAnswerSDP(const SDPSessionDescription & sdp, b
     SDPMediaDescription * mediaDescription = sdp.GetMediaDescriptionByIndex(index);
     if (PAssertNULL(mediaDescription) == NULL)
       return false;
+
+    // Get SDP string options through
+    mediaDescription->SetStringOptions(m_stringOptions);
 
     unsigned sessionId;
     if (mediaDescription->GetGroupId() != OpalMediaSession::GetBundleGroupId())
