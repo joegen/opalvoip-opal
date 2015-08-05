@@ -634,6 +634,9 @@ bool SIPConnection::GetMediaTransportAddresses(OpalConnection & otherConnection,
   if (!OpalSDPConnection::GetMediaTransportAddresses(otherConnection, sessionId, mediaType, transports))
     return false;
 
+  if (!transports.IsEmpty())
+    return true;
+
   SDPSessionDescription * sdp = NULL;
   if (m_delayedAckInviteResponse != NULL)
     sdp = m_delayedAckInviteResponse->GetSDP();
@@ -647,10 +650,13 @@ bool SIPConnection::GetMediaTransportAddresses(OpalConnection & otherConnection,
       md = sdp->GetMediaDescriptionByType(mediaType);
   }
 
-  if (md != NULL && transports.SetAddressPair(md->GetMediaAddress(), md->GetControlAddress())) {
+  if (md == NULL)
+    PTRACE(3, "GetMediaTransportAddresses of " << mediaType << " had no SDP for " << otherConnection << " on " << *this);
+  else if (transports.SetAddressPair(md->GetMediaAddress(), md->GetControlAddress()))
     PTRACE(3, "GetMediaTransportAddresses of " << mediaType << " found remote SDP "
            << setfill(',') << transports << " for " << otherConnection << " on " << *this);
-  }
+  else
+    PTRACE(4, "GetMediaTransportAddresses of " << mediaType << " had no transports in SDP for " << otherConnection << " on " << *this);
 
   return true;
 }

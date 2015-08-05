@@ -1193,15 +1193,13 @@ void OpalSkinnyConnection::OpenMediaChannel(const MediaInfo & info)
   if (con == NULL)
     return;
 
-  if (mediaSession->IsOpen()) {
-    if (!info.m_receiver)
-      mediaSession->SetRemoteAddress(info.m_mediaAddress);
-  }
-  else if (!mediaSession->Open(m_phoneDevice.m_transport.GetInterface(),
-                               info.m_receiver ? m_phoneDevice.m_transport.GetRemoteAddress() : info.m_mediaAddress)) {
+  if (!mediaSession->Open(m_phoneDevice.m_transport.GetInterface(), m_phoneDevice.m_transport.GetRemoteAddress())) {
     PTRACE(2, "Could not open session " << info.m_sessionId << " for " << mediaFormat);
     return;
   }
+
+  if (!info.m_receiver)
+    mediaSession->SetRemoteAddress(info.m_mediaAddress);
 
   bool canSimulate = !info.m_receiver && !m_endpoint.GetSimulatedAudioFile().IsEmpty() && mediaType == OpalMediaType::Audio();
 

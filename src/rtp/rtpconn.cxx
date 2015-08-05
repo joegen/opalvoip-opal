@@ -303,14 +303,17 @@ bool OpalRTPConnection::GetMediaTransportAddresses(OpalConnection & otherConnect
       if (session->second->GetMediaType() == mediaType)
         break;
     }
-    if (session == m_sessions.end())
+    if (session == m_sessions.end()) {
+      PTRACE(4, "GetMediaTransportAddresses of " << mediaType << " had no session for " << otherConnection << " on " << *this);
       return true;
+    }
   }
 
-  if (transports.SetAddressPair(session->second->GetRemoteAddress(true), session->second->GetRemoteAddress(false))) {
-      PTRACE(3, "GetMediaTransportAddresses of " << mediaType << " found session addresses "
-              << setfill(',') << transports << " for " << otherConnection << " on " << *this);
-  }
+  if (transports.SetAddressPair(session->second->GetRemoteAddress(true), session->second->GetRemoteAddress(false)))
+    PTRACE(3, "GetMediaTransportAddresses of " << mediaType << " found session addresses "
+           << setfill(',') << transports << " for " << otherConnection << " on " << *this);
+  else
+    PTRACE(4, "GetMediaTransportAddresses of " << mediaType << " had no transports in sessions for " << otherConnection << " on " << *this);
 
   return true;
 }
