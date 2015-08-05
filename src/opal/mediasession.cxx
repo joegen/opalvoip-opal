@@ -1362,15 +1362,24 @@ bool OpalDummySession::Open(const PString &, const OpalTransportAddress &)
     OpalTransportAddressArray transports;
     if (otherParty->GetMediaTransportAddresses(m_connection, m_sessionId, m_mediaType, transports)) {
       switch (transports.GetSize()) {
-        case 2:
+        default:
           m_localTransportAddress[e_Control] = transports[e_Control];
+          PTRACE(4, *this << "dummy opened at local control address " << m_localTransportAddress[e_Control]);
         case 1:
           m_localTransportAddress[e_Media] = transports[e_Media];
+          PTRACE(4, *this << "dummy opened at local media address " << m_localTransportAddress[e_Media]);
+          break;
+        case 0 :
+          PTRACE(3, *this << "dummy could not be opened, no media transport.");
       }
     }
+    else {
+      PTRACE(3, *this << "dummy could not be opened, disabled media.");
+    }
   }
-
-  PTRACE(4, *this << "dummy opened at local media address " << m_localTransportAddress[e_Media]);
+  else {
+    PTRACE(2, *this << "dummy could not be opened, no other connection.");
+  }
 
   UnlockReadWrite();
 
