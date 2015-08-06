@@ -53,7 +53,7 @@ class PlayRTP : public PProcess
     bool m_extendedInfo;
     unsigned m_rotateExtensionId;
     bool m_noDelay;
-    bool m_writeEventLog;
+    PTimeInterval m_jitterLimit;
 
     PFile     m_payloadFile;
     PTextFile m_eventLog;
