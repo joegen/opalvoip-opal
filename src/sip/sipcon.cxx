@@ -145,7 +145,7 @@ static SIP_PDU::StatusCodes GetStatusCodeFromReason(OpalConnection::CallEndReaso
   return SIP_PDU::Failure_BadGateway;
 }
 
-static OpalConnection::CallEndReason GetCallEndReasonFromResponse(SIP_PDU & response)
+static OpalConnection::CallEndReason GetCallEndReasonFromResponse(SIP_PDU::StatusCodes statusCode)
 {
   //
   // This table comes from RFC 3398 para 8.2.6.1
@@ -196,7 +196,7 @@ static OpalConnection::CallEndReason GetCallEndReasonFromResponse(SIP_PDU & resp
   };
 
   for (PINDEX i = 0; i < PARRAYSIZE(SIPCodeToReason); i++) {
-    if (response.GetStatusCode() == SIPCodeToReason[i].sipCode)
+    if (statusCode == SIPCodeToReason[i].sipCode)
       return OpalConnection::CallEndReason(SIPCodeToReason[i].reasonCode, SIPCodeToReason[i].q931Code);
   }
 
@@ -634,6 +634,9 @@ bool SIPConnection::GetMediaTransportAddresses(OpalConnection & otherConnection,
   if (!OpalSDPConnection::GetMediaTransportAddresses(otherConnection, sessionId, mediaType, transports))
     return false;
 
+  if (!transports.IsEmpty())
+    return true;
+
   SDPSessionDescription * sdp = NULL;
   if (m_delayedAckInviteResponse != NULL)
     sdp = m_delayedAckInviteResponse->GetSDP();
@@ -647,10 +650,13 @@ bool SIPConnection::GetMediaTransportAddresses(OpalConnection & otherConnection,
       md = sdp->GetMediaDescriptionByType(mediaType);
   }
 
-  if (md != NULL && transports.SetAddressPair(md->GetMediaAddress(), md->GetControlAddress())) {
+  if (md == NULL)
+    PTRACE(3, "GetMediaTransportAddresses of " << mediaType << " had no SDP for " << otherConnection << " on " << *this);
+  else if (transports.SetAddressPair(md->GetMediaAddress(), md->GetControlAddress()))
     PTRACE(3, "GetMediaTransportAddresses of " << mediaType << " found remote SDP "
            << setfill(',') << transports << " for " << otherConnection << " on " << *this);
-  }
+  else
+    PTRACE(4, "GetMediaTransportAddresses of " << mediaType << " had no transports in SDP for " << otherConnection << " on " << *this);
 
   return true;
 }
@@ -681,12 +687,13 @@ OpalMediaFormatList SIPConnection::GetMediaFormats() const
   /* This executed only before or during OnIncomingConnection on receipt of an
      INVITE. In other cases the m_remoteFormatList member should be set. As
      some things, e.g. Instant Messaging, may need to route the call based on
-     what was offerred by the remote, we need to return something. So,
+     what was offered by the remote, we need to return something. So,
      calculate a media list based on ANYTHING we know about. A later call
      after OnIncomingConnection() will fill m_remoteFormatList appropriately
      adjusted by AdjustMediaFormats() */
   if (formats.IsEmpty() && m_lastReceivedINVITE != NULL && m_lastReceivedINVITE->IsContentSDP()) {
     std::auto_ptr<SDPSessionDescription> sdp(GetEndPoint().CreateSDP(0, 0, OpalTransportAddress()));
+    sdp->SetStringOptions(m_stringOptions);
     if (sdp->Decode(m_lastReceivedINVITE->GetEntityBody(), OpalMediaFormat::GetAllRegisteredMediaFormats()))
       formats = sdp->GetMediaFormats();
   }
@@ -703,7 +710,7 @@ int SIPConnection::SetRemoteMediaFormats(SIP_PDU & pdu)
      everything we know about, but there is no point in assuming it can do any
      more than we can, really.
      */
-  if (!pdu.DecodeSDP(GetEndPoint(), GetLocalMediaFormats()))
+  if (!pdu.DecodeSDP(*this, GetLocalMediaFormats()))
     return 0;
 
   m_remoteFormatList = pdu.GetSDP()->GetMediaFormats();
@@ -1350,7 +1357,7 @@ void SIPConnection::OnTransactionFailed(SIPTransaction & transaction)
 
   // All invitations failed, die now, with correct code
   if (allFailed && GetPhase() < ConnectedPhase)
-    Release(GetCallEndReasonFromResponse(transaction));
+    Release(GetCallEndReasonFromResponse(transaction.GetStatusCode()));
   else {
     switch (m_holdToRemote) {
       case eHoldInProgress :
@@ -1477,7 +1484,7 @@ bool SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
   // If we are in a dialog, then m_dialog needs to be updated in the 2xx/1xx
   // response for a target refresh request
   m_dialog.Update(response);
-  response.DecodeSDP(GetEndPoint(), GetLocalMediaFormats());
+  response.DecodeSDP(*this, GetLocalMediaFormats());
 
   const SIPMIMEInfo & responseMIME = response.GetMIME();
 
@@ -1682,11 +1689,9 @@ bool SIPConnection::SendDelayedACK(bool force)
     sdp->SetSessionName(m_delayedAckInviteResponse->GetMIME().GetUserAgent());
     m_delayedAckPDU->SetSDP(sdp);
 
-    m_delayedAckInviteResponse->DecodeSDP(GetEndPoint(), GetLocalMediaFormats());
+    m_delayedAckInviteResponse->DecodeSDP(*this, GetLocalMediaFormats());
     if (OnSendAnswerSDP(*m_delayedAckInviteResponse->GetSDP(), *sdp)) {
-      if (m_delayedAckPDU->Send())
-        StartMediaStreams();
-      else
+      if (!m_delayedAckPDU->Send())
         Release(EndedByTransportFail);
     }
     else {
@@ -1705,7 +1710,15 @@ bool SIPConnection::SendDelayedACK(bool force)
 
 void SIPConnection::UpdateRemoteAddresses()
 {
-  SIPURL remote = !m_remoteIdentity.IsEmpty() ? m_remoteIdentity : !m_ciscoRemotePartyID.IsEmpty() ? m_ciscoRemotePartyID : m_dialog.GetRemoteURI();
+  SIPURL remote = m_remoteIdentity;
+  if (remote.IsEmpty())
+    remote = m_ciscoRemotePartyID;
+  else
+    remote.SetParamVars(m_ciscoRemotePartyID.GetParamVars(), true);
+  if (remote.IsEmpty())
+    remote = m_dialog.GetRemoteURI();
+  else
+    remote.SetParamVars(m_dialog.GetRemoteURI().GetParamVars(), true);
   remote.Sanitise(SIPURL::ExternalURI);
 
   remotePartyNumber = remote.GetUserName();
@@ -2063,7 +2076,7 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
 
   // All other responses are errors, set Q931 code if available
   releaseMethod = ReleaseWithNothing;
-  Release(GetCallEndReasonFromResponse(response));
+  Release(GetCallEndReasonFromResponse(response.GetStatusCode()));
 }
 
 
@@ -2147,7 +2160,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
 
   // We received a Re-INVITE for a current connection
   if (isReinvite) {
-    m_lastReceivedINVITE->DecodeSDP(GetEndPoint(), GetLocalMediaFormats());
+    m_lastReceivedINVITE->DecodeSDP(*this, GetLocalMediaFormats());
     OnReceivedReINVITE(request);
     return;
   }
@@ -2326,9 +2339,7 @@ void SIPConnection::OnReceivedReINVITE(SIP_PDU & request)
   m_handlingINVITE = true;
 
   // send the 200 OK response
-  if (OnSendAnswer(SIP_PDU::Successful_OK))
-    StartMediaStreams();
-  else
+  if (!OnSendAnswer(SIP_PDU::Successful_OK))
     SendInviteResponse(SIP_PDU::Failure_NotAcceptableHere);
 
   SIPURL newRemotePartyID(request.GetMIME(), RemotePartyID);
@@ -2397,7 +2408,7 @@ void SIPConnection::OnReceivedACK(SIP_PDU & ack)
   while (!m_responsePackets.empty())
     m_responsePackets.pop();
 
-  if (ack.DecodeSDP(GetEndPoint(), GetLocalMediaFormats()) && !OnReceivedAnswer(ack, NULL)) {
+  if (ack.DecodeSDP(*this, GetLocalMediaFormats()) && !OnReceivedAnswer(ack, NULL)) {
     Release(EndedByCapabilityExchange);
     return;
   }
@@ -2639,6 +2650,33 @@ void SIPConnection::OnReceivedBYE(SIP_PDU & request)
   m_dialog.Update(request);
   UpdateRemoteAddresses();
   request.GetMIME().GetProductInfo(remoteProductInfo);
+
+  PString reason = request.GetMIME().Get("Reason").LeftTrim();
+  if (!reason.IsEmpty()) {
+    PCaselessString token = reason.Left(reason.FindSpan("ABCDEFGHIJKLMNOPQRSTUVWXZabcdefghijklmnopqrstuvwxyz0123456789-.!%*_+`'~"));
+    PStringOptions parameters;
+    PURL::SplitVars(reason.Mid(token.GetLength()).LeftTrim(), parameters, ';', '=', PURL::QuotedParameterTranslation);
+    PCaselessString text = parameters.Get("text");
+    int cause = parameters.GetInteger("cause");
+    PTRACE(4, "BYE with reason token=" << token << " cause=" << cause << " text=\"" << text << '"');
+
+    if (token ==  "Q.850") {
+      Release(CallEndReason(EndedByQ931Cause, cause));
+      return;
+    }
+
+    if (token == "SIP") {
+      if (cause == 602 && text.Find("TIMEOUT") != P_MAX_INDEX) {
+        Release(EndedByDurationLimit);
+        return;
+      }
+
+      if (cause >= 200) {
+        Release(GetCallEndReasonFromResponse((SIP_PDU::StatusCodes)cause));
+        return;
+      }
+    }
+  }
 
   Release(EndedByRemoteUser);
 }
@@ -2913,13 +2951,6 @@ bool SIPConnection::OnSendAnswer(SIP_PDU::StatusCodes response)
   else {
     // The Re-INVITE can be sent to change the RTP Session parameters,
     // the current codecs, or to put the call on hold
-    bool holdFromRemote = sdp->IsHold();
-    if (m_holdFromRemote != holdFromRemote) {
-      PTRACE(3, "Remote " << (holdFromRemote ? "" : "retrieve from ") << "hold detected");
-      m_holdFromRemote = holdFromRemote;
-      OnHold(true, holdFromRemote);
-    }
-
     ok = OnSendAnswerSDP(*sdp, *sdpOut);
   }
 
@@ -2946,15 +2977,6 @@ bool SIPConnection::OnReceivedAnswer(SIP_PDU & response, SIPTransaction * transa
     if (!SendDelayedACK(false))
       m_delayedAckTimer = m_delayedAckTimeout1;
     return true;
-  }
-
-  if (transaction == NULL || transaction->GetSDP()->HasActiveSend()) {
-    bool holdFromRemote = sdp->IsHold();
-    if (m_holdFromRemote != holdFromRemote) {
-      PTRACE(3, "Remote " << (holdFromRemote ? "" : "retrieve from ") << "hold detected");
-      m_holdFromRemote = holdFromRemote;
-      OnHold(true, holdFromRemote);
-    }
   }
 
   bool multipleFormats = false;
@@ -3159,7 +3181,7 @@ void SIPConnection::OnReceivedPRACK(SIP_PDU & request)
     m_responsePackets.front().Send();
   }
 
-  if (request.DecodeSDP(GetEndPoint(), GetLocalMediaFormats()))
+  if (request.DecodeSDP(*this, GetLocalMediaFormats()))
     OnReceivedAnswer(request, NULL);
 }
 

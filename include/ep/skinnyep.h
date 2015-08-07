@@ -807,7 +807,7 @@ template <class MSG> bool OpalSkinnyEndPoint::DelegateMsg(const PhoneDevice & ph
 {
   PSafePtr<OpalSkinnyConnection> connection = phone.m_activeConnection;
   PTRACE_CONTEXT_ID_PUSH_THREAD(connection);
-  return connection == NULL || connection->OnReceiveMsg(msg);
+  return connection == NULL || !connection.SetSafetyMode(PSafeReadWrite) || connection->OnReceiveMsg(msg);
 }
 
 

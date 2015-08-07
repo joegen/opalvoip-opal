@@ -87,22 +87,14 @@ class OpalRTPSession : public OpalMediaSession
   /**@name Overrides from class OpalMediaSession */
   //@{
     virtual const PCaselessString & GetSessionType() const { return RTP_AVP(); }
-    virtual bool Open(const PString & localInterface, const OpalTransportAddress & remoteAddress, bool isMediaAddress);
-    virtual bool IsOpen() const;
-    virtual bool IsEstablished() const;
+    virtual bool Open(const PString & localInterface, const OpalTransportAddress & remoteAddress);
     virtual bool Close();
     virtual OpalTransportAddress GetLocalAddress(bool isMediaAddress = true) const;
     virtual OpalTransportAddress GetRemoteAddress(bool isMediaAddress = true) const;
     virtual bool SetRemoteAddress(const OpalTransportAddress & remoteAddress, bool isMediaAddress = true);
-#if OPAL_ICE
-    virtual void SetICE(const PString & user, const PString & pass, const PNatCandidateList & candidates);
-    virtual bool GetICE(PString & user, PString & pass, PNatCandidateList & candidates);
-    const PTimeInterval & GetICESetUpTime() const { return m_maxICESetUpTime; }
-    void SetICESetUpTime(const PTimeInterval & t) { m_maxICESetUpTime = t; }
-#endif
-
-    virtual void AttachTransport(Transport & transport);
-    virtual Transport DetachTransport();
+    virtual void AttachTransport(const OpalMediaTransportPtr & transport);
+    virtual OpalMediaTransportPtr DetachTransport();
+    virtual void SetGroupId(const PString & id);
 
     virtual bool UpdateMediaFormat(const OpalMediaFormat & mediaFormat);
 
@@ -263,7 +255,7 @@ class OpalRTPSession : public OpalMediaSession
     /**Set flag for single port receive.
        This must be done before Open() is called to take effect.
       */
-    void SetSinglePortRx(bool v = true) { m_singlePortRx = v; }
+    void SetSinglePortRx(bool v = true);
 
     /**Get flag for single port receive.
       */
@@ -375,26 +367,6 @@ class OpalRTPSession : public OpalMediaSession
     ) { m_allowAnySyncSource = allow; }
 
 
-    /**Get the maximum time we wait for packets from remote.
-      */
-    const PTimeInterval & GetMaxNoReceiveTime() { return m_maxNoReceiveTime; }
-
-    /**Set the maximum time we wait for packets from remote.
-      */
-    void SetMaxNoReceiveTime(
-      const PTimeInterval & interval ///<  New time interval for reports.
-    )  { m_maxNoReceiveTime = interval; }
-
-    /**Get the maximum time we wait for remote to start accepting out packets.
-      */
-    const PTimeInterval & GetMaxNoTransmitTime() { return m_maxNoTransmitTime; }
-
-    /**Set the maximum time we wait for remote to start accepting out packets.
-      */
-    void SetMaxNoTransmitTime(
-      const PTimeInterval & interval ///<  New time interval for reports.
-    )  { m_maxNoTransmitTime = interval; }
-
     /**Get the maximum out of order packets before flagging it missing.
       */
     PINDEX GetMaxOutOfOrderPackets() { return m_maxOutOfOrderPackets; }
@@ -433,7 +405,7 @@ class OpalRTPSession : public OpalMediaSession
       */
     void SetTxStatisticsInterval(
       unsigned packets   ///<  Number of packets between callbacks
-    );
+    ) { m_txStatisticsInterval = packets; }
 
     /**Get the interval for receiver statistics in the session.
       */
@@ -443,31 +415,36 @@ class OpalRTPSession : public OpalMediaSession
       */
     void SetRxStatisticsInterval(
       unsigned packets   ///<  Number of packets between callbacks
-    );
+    ) { m_rxStatisticsInterval = packets; }
+
+#if OPAL_ICE
+    void SetICESetUpTime(const PTimeInterval & t);
+    PTimeInterval GetICESetUpTime() const;
+#endif
 
     /**Get local data port of session.
       */
-    virtual WORD GetLocalDataPort() const { return m_localPort[e_Data]; }
+    virtual WORD GetLocalDataPort() const;
 
     /**Get local control port of session.
       */
-    virtual WORD GetLocalControlPort() const { return m_localPort[e_Control]; }
+    virtual WORD GetLocalControlPort() const;
 
     /**Get remote data port of session.
       */
-    virtual WORD GetRemoteDataPort() const { return m_remotePort[e_Data]; }
+    //virtual WORD GetRemoteDataPort() const;
 
     /**Get remote control port of session.
       */
-    virtual WORD GetRemoteControlPort() const { return m_remotePort[e_Control]; }
+    //virtual WORD GetRemoteControlPort() const;
 
     /**Get data UDP socket of session.
       */
-    virtual PUDPSocket & GetDataSocket() { return *m_socket[e_Data]; }
+    virtual PUDPSocket & GetDataSocket();
 
     /**Get control UDP socket of session.
       */
-    virtual PUDPSocket & GetControlSocket() { return *m_socket[e_Control]; }
+    virtual PUDPSocket & GetControlSocket();
 
     /**Get total number of packets sent in session.
       */
@@ -608,41 +585,19 @@ class OpalRTPSession : public OpalMediaSession
 
     bool HasFeedback(OpalMediaFormat::RTCPFeedback feature) const { return m_feedback&feature; }
 
-#if OPAL_PERFORMANCE_CHECK_HACK
-    static unsigned m_readPerformanceCheckHack;
-    static unsigned m_writePerformanceCheckHack;
-#endif
-
   protected:
-    enum Channel
-    {
-      e_Control,
-      e_Data
-    };
-#if PTRACING
-    friend ostream & operator<<(ostream & strm, Channel channel);
-#endif
+    virtual OpalMediaTransport * CreateMediaTransport(const PString & name);
+    void InternalAttachTransport(const OpalMediaTransportPtr & transport PTRACE_PARAM(, const char * from));
 
     bool SetQoS(const PIPSocket::QoS & qos);
 
-    virtual void InternalClose();
-    virtual bool InternalSetRemoteAddress(
-        const PIPSocket::AddressAndPort & ap,
-        bool isMediaAddress,
-        bool dontOverride
-        PTRACE_PARAM(, const char * source)
-    );
-    virtual bool InternalRead();
-    virtual bool InternalReadData();
-    virtual bool InternalReadControl();
-    virtual SendReceiveStatus ReadRawPDU(BYTE * framePtr, PINDEX & frameSize, Channel channel);
-    virtual void InternalStopRead();
-    virtual bool HandleUnreachable(PTRACE_PARAM(Channel channel));
+    PDECLARE_MediaReadNotifier(OpalRTPSession, OnRxDataPacket);
+    PDECLARE_MediaReadNotifier(OpalRTPSession, OnRxControlPacket);
 
     virtual SendReceiveStatus WriteRawPDU(
       const BYTE * framePtr,
       PINDEX frameSize,
-      Channel channel,
+      SubChannels subchannel,
       const PIPSocketAddressAndPort * remote = NULL
     );
 
@@ -655,8 +610,6 @@ class OpalRTPSession : public OpalMediaSession
     PString             m_toolName;
     RTPExtensionHeaders m_extensionHeaders;
     bool                m_allowAnySyncSource;
-    PTimeInterval       m_maxNoReceiveTime;
-    PTimeInterval       m_maxNoTransmitTime;
     PINDEX              m_maxOutOfOrderPackets; // Number of packets before we give up waiting for an out of order packet
     PTimeInterval       m_waitOutOfOrderTime;   // Milliseconds before we give up on an out of order packet
     unsigned            m_txStatisticsInterval;
@@ -818,76 +771,20 @@ class OpalRTPSession : public OpalMediaSession
     PTimer m_reportTimer;
     PDECLARE_NOTIFIER(PTimer, OpalRTPSession, TimedSendReport);
 
-    PIPAddress m_localAddress;
-    WORD       m_localPort[2];
+    PIPSocket::QoS m_qos;
+    unsigned       m_packetOverhead;
+    WORD           m_remoteControlPort;
+    bool           m_sendEstablished;
 
-    PIPAddress m_remoteAddress;
-    WORD       m_remotePort[2];
-
-    PIPSocket::QoS  m_qos;
-    PUDPSocket    * m_socket[2]; // 0=control, 1=data
-
-    PThread * m_thread;
-    virtual void ThreadMain();
-
-    bool m_localHasRestrictedNAT;
-    bool m_firstControl;
-
-    unsigned     m_noTransmitErrors;
-    PSimpleTimer m_noTransmitTimer;
+    OpalMediaTransport::ReadNotifier m_dataNotifier;
+    OpalMediaTransport::ReadNotifier m_controlNotifier;
 
     ApplDefinedNotifierList m_applDefinedNotifiers;
-
-#if OPAL_ICE
-    virtual SendReceiveStatus OnReceiveICE(
-      Channel channel,
-      const BYTE * framePtr,
-      PINDEX frameSize,
-      const PIPSocket::AddressAndPort & ap
-    );
-    virtual SendReceiveStatus OnSendICE(
-      Channel channel
-    );
-
-    enum CandidateStates
-    {
-      e_CandidateInProgress,
-      e_CandidateWaiting,
-      e_CandidateFrozen,
-      e_CandidateFailed,
-      e_CandidateSucceeded
-    };
-    struct CandidateState : PNatCandidate {
-      CandidateStates m_state;
-      // Not sure what else might be necessary here. Work in progress!
-
-      CandidateState(const PNatCandidate & cand)
-        : PNatCandidate(cand)
-        , m_state(e_CandidateInProgress)
-      {
-      }
-    };
-    typedef std::list<CandidateState> CandidateStateList;
-
-    CandidateStateList m_candidates[2];
-    enum {
-      e_UnknownCandidates,
-      e_LocalCandidates,
-      e_RemoteCandidates
-    } m_candidateType;
-
-    class ICEServer;
-    ICEServer     * m_iceServer;
-    PSTUNClient   * m_stunClient;
-    PTimeInterval   m_maxICESetUpTime;
-#endif // OPAL_ICE
 
     PTRACE_THROTTLE(m_throttleTxReport,3,60000,5);
     PTRACE_THROTTLE(m_throttleRxSR,3,60000,5);
     PTRACE_THROTTLE(m_throttleRxRR,4,60000);
     PTRACE_THROTTLE(m_throttleRxSDES,4,60000);
-    PTRACE_THROTTLE(m_throttleUseCandidate,4,60000);
-    PTRACE_THROTTLE(m_throttleReadPacket,4,60000);
 
   private:
     OpalRTPSession(const OpalRTPSession &);

@@ -48,7 +48,7 @@
 
 
 /**OpalConnection::StringOption key to a boolean indicating the SDP ptime
-   parameter should be included in audio session streams. Default false.
+   parameter should be included in audio session streams. Default true.
   */
 #define OPAL_OPT_OFFER_SDP_PTIME "Offer-SDP-PTime"
 
@@ -71,7 +71,7 @@
 #define OPAL_OPT_FORCE_RTCP_FB  "Force-RTCP-FB"
 
 /**Enable offer of RTP/RTCP "single port" mode.
-   While if offerred by the remote, we always honour the SDP a=rtcp-mux
+   While if offered by the remote, we always honour the SDP a=rtcp-mux
    attribute, we only offer it if this string option is set to true.
 
    Defaults to false.
@@ -86,7 +86,7 @@
 */
 #define OPAL_OPT_SUPPRESS_UDP_TLS "Suppress-UDP-TLS"
 
-/**Enable ICE offerred in SDP.
+/**Enable ICE offered in SDP.
    Defaults to false.
 */
 #define OPAL_OPT_OFFER_ICE "Offer-ICE"
@@ -244,6 +244,9 @@ class SDPCommonAttributes
     void SetFingerprint(const PSSLCertificateFingerprint& fp) { m_fingerprint = fp; }
 #endif
 
+    void SetStringOptions(const PStringOptions & options) { m_stringOptions = options; }
+    const PStringOptions & GetStringOptions() const { return m_stringOptions; }
+
     static const PCaselessString & ConferenceTotalBandwidthType();
     static const PCaselessString & ApplicationSpecificBandwidthType();
     static const PCaselessString & TransportIndependentBandwidthType(); // RFC3890
@@ -274,6 +277,7 @@ class SDPCommonAttributes
     PString             m_username;
     PString             m_password;
 #endif //OPAL_ICE
+    PStringOptions      m_stringOptions;
 };
 
 
@@ -368,15 +372,11 @@ class SDPMediaDescription : public PObject, public SDPCommonAttributes
     virtual OpalVideoFormat::ContentRole GetContentRole() const { return OpalVideoFormat::eNoRole; }
 #endif
 
-    void SetOptionStrings(const PStringOptions & options) { m_stringOptions = options; }
-    const PStringOptions & GetOptionStrings() const { return m_stringOptions; }
-
   protected:
     virtual SDPMediaFormat * FindFormat(PString & str) const;
 
     OpalTransportAddress m_mediaAddress;
     OpalTransportAddress m_controlAddress;
-    PStringOptions       m_stringOptions;
     WORD                 m_port;
     WORD                 m_portCount;
     OpalMediaType        m_mediaType;
@@ -510,6 +510,7 @@ class SDPRTPAVPMediaDescription : public SDPMediaDescription
 
     PCaselessString               m_transportType;
     SsrcInfo                      m_ssrcInfo;
+    PString                       m_msid;
     SyncSourceArray               m_temporaryFlowSSRC;
     MediaStreamMap                m_mediaStreams;
     OpalMediaFormat::RTCPFeedback m_rtcp_fb;
@@ -644,7 +645,7 @@ class SDPSessionDescription : public PObject, public SDPCommonAttributes
     PINDEX GetMediaDescriptionIndexByType(const OpalMediaType & rtpMediaType) const;
     SDPMediaDescription * GetMediaDescriptionByType(const OpalMediaType & rtpMediaType) const;
     SDPMediaDescription * GetMediaDescriptionByIndex(PINDEX i) const;
-    void AddMediaDescription(SDPMediaDescription * md) { mediaDescriptions.Append(PAssertNULL(md)); }
+    void AddMediaDescription(SDPMediaDescription * md);
     
     virtual SDPMediaDescription::Direction GetDirection(unsigned) const;
     bool IsHold() const;

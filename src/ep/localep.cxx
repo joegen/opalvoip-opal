@@ -404,19 +404,24 @@ OpalMediaStream * OpalLocalConnection::CreateMediaStream(const OpalMediaFormat &
     if (isSource) {
       PVideoInputDevice * videoDevice;
       PBoolean autoDeleteGrabber;
-      if (CreateVideoInputDevice(mediaFormat, videoDevice, autoDeleteGrabber)) {
-        PTRACE(4, "OpalCon\tCreated capture device \"" << videoDevice->GetDeviceName() << '"');
-
-        PVideoOutputDevice * previewDevice;
-        PBoolean autoDeletePreview;
-        if (CreateVideoOutputDevice(mediaFormat, true, previewDevice, autoDeletePreview))
-          PTRACE(4, "OpalCon\tCreated preview device \"" << previewDevice->GetDeviceName() << '"');
-        else
-          previewDevice = NULL;
-
-        return new OpalVideoMediaStream(*this, mediaFormat, sessionID, videoDevice, previewDevice, autoDeleteGrabber, autoDeletePreview);
+      if (CreateVideoInputDevice(mediaFormat, videoDevice, autoDeleteGrabber))
+        PTRACE(4, "OpalCon\tCreated video input device \"" << videoDevice->GetDeviceName() << '"');
+      else {
+        PTRACE(3, "OpalCon\tCreating fake text video input");
+        PVideoDevice::OpenArgs args;
+        args.deviceName = P_FAKE_VIDEO_TEXT "=No Video Input";
+        mediaFormat.AdjustVideoArgs(args);
+        videoDevice = PVideoInputDevice::CreateOpenedDevice(args, false);
       }
-      PTRACE(2, "OpalCon\tCould not create video input device");
+
+      PVideoOutputDevice * previewDevice;
+      PBoolean autoDeletePreview;
+      if (CreateVideoOutputDevice(mediaFormat, true, previewDevice, autoDeletePreview))
+        PTRACE(4, "OpalCon\tCreated preview device \"" << previewDevice->GetDeviceName() << '"');
+      else
+        previewDevice = NULL;
+
+      return new OpalVideoMediaStream(*this, mediaFormat, sessionID, videoDevice, previewDevice, autoDeleteGrabber, autoDeletePreview);
     }
     else {
       PVideoOutputDevice * videoDevice;

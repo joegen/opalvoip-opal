@@ -79,8 +79,7 @@ OpalPCSSEndPoint::OpalPCSSEndPoint(OpalManager & mgr, const char * prefix)
          << PSoundChannel::GetDeviceNames(PSoundChannel::Recorder));
 
 #if OPAL_VIDEO
-  m_videoOnHoldDevice.deviceName = P_FAKE_VIDEO_TEXT;
-  m_videoOnRingDevice.deviceName = P_NULL_VIDEO_DEVICE;
+  m_videoOnHoldDevice.deviceName = P_FAKE_VIDEO_TEXT "=Please Hold";
 #endif
 
   SetDeferredAnswer(true);
@@ -411,7 +410,7 @@ bool OpalPCSSEndPoint::CreateVideoInputDevice(const OpalConnection & connection,
     const OpalPCSSConnection * pcss = dynamic_cast<const OpalPCSSConnection *>(&connection);
     if (pcss != NULL) {
       PVideoDevice::OpenArgs args = pcss->GetVideoOnRingDevice();
-      if (!args.deviceName.IsEmpty() && args.deviceName != P_NULL_VIDEO_DEVICE) {
+      if (!args.deviceName.IsEmpty()) {
         mediaFormat.AdjustVideoArgs(args);
         return manager.CreateVideoInputDevice(connection, args, device, autoDelete);
       }

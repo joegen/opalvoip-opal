@@ -277,7 +277,7 @@ class OpalMSRPMediaSession : public OpalMediaSession
     virtual PObject * Clone() const { return new OpalMSRPMediaSession(*this); }
 
     virtual const PCaselessString & GetSessionType() const { return TCP_MSRP(); }
-    virtual bool Open(const PString & localInterface, const OpalTransportAddress & remoteAddress, bool isMediaAddress);
+    virtual bool Open(const PString & localInterface, const OpalTransportAddress & remoteAddress);
     virtual bool Close();
     virtual OpalTransportAddress GetLocalAddress(bool isMediaAddress = true) const;
     virtual OpalTransportAddress GetRemoteAddress(bool isMediaAddress = true) const;

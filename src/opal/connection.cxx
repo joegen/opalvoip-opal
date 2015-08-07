@@ -1633,6 +1633,8 @@ void OpalConnection::SetStringOptions(const StringOptions & options, bool overwr
   if (overwrite)
     m_stringOptions = options;
   else {
+    if (options.IsEmpty())
+      return;
     for (PStringToString::const_iterator it = options.begin(); it != options.end(); ++it)
       m_stringOptions.SetAt(it->first, it->second);
   }

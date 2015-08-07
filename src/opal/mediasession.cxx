@@ -38,11 +38,14 @@
 
 #include <opal/mediasession.h>
 #include <opal/connection.h>
-#include <h323/h323caps.h>
+#include <opal/endpoint.h>
+#include <opal/manager.h>
+//#include <h323/h323caps.h>
 #include <sdp/sdp.h>
 
 #include <ptclib/random.h>
 #include <ptclib/cypher.h>
+#include <ptclib/pstunsrvr.h>
 
 
 #define PTraceModule() "Media"
@@ -70,6 +73,8 @@ OpalNetworkStatistics::OpalNetworkStatistics()
   , m_maximumPacketTime(0)
   , m_averageJitter(0)
   , m_maximumJitter(0)
+  , m_jitterBufferDelay(0)
+  , m_roundTripTime(0)
   , m_lastPacketTime(0)
   , m_lastReportTime(0)
   , m_targetBitRate(0)
@@ -340,8 +345,12 @@ void OpalMediaStatistics::PrintOn(ostream & strm) const
        << setw(indent) <<      "Session start time" << " = " << m_startTime << '\n'
        << setw(indent) <<        "Session duration" << " = " << InternalTimeDiff(m_updateInfo.m_lastUpdateTime, m_startTime)
                                                              << " (" << InternalTimeDiff(m_updateInfo.m_lastUpdateTime, m_updateInfo.m_previousUpdateTime) << ")\n"
-       << setw(indent) <<               "CPU usage" << " = " << GetCPU() << '\n'
-       << setw(indent) <<             "Total bytes" << " = " << PString(PString::ScaleSI, m_totalBytes) << "B\n"
+       << setw(indent) <<               "CPU usage" << " = " << GetCPU() << '\n';
+  if (!m_localAddress.IsEmpty())
+    strm << setw(indent) <<         "Local address" << " = " << m_localAddress << '\n';
+  if (!m_remoteAddress.IsEmpty())
+    strm << setw(indent) <<        "Remote address" << " = " << m_remoteAddress << '\n';
+  strm << setw(indent) <<             "Total bytes" << " = " << PString(PString::ScaleSI, m_totalBytes) << "B\n"
        << setw(indent) <<        "Average bit rate" << " = " << GetAverageBitRate("bps", 2) << '\n'
        << setw(indent) <<        "Current bit rate" << " = " << GetCurrentBitRate("bps", 3) << '\n'
        << setw(indent) <<           "Total packets" << " = " << m_totalPackets << '\n'
@@ -353,6 +362,9 @@ void OpalMediaStatistics::PrintOn(ostream & strm) const
        << setw(indent) <<            "Packets lost" << " = " << m_packetsLost << '\n'
        << setw(indent) <<    "Packets out of order" << " = " << m_packetsOutOfOrder << '\n'
        << setw(indent) <<        "Packets too late" << " = " << m_packetsTooLate << '\n';
+
+  if (m_roundTripTime > 0)
+    strm << setw(indent) <<       "Round Trip Time" << " = " << m_roundTripTime << '\n';
 
   if (m_mediaType == OpalMediaType::Audio()) {
     strm << setw(indent) <<       "Packet overruns" << " = " << m_packetOverruns << '\n';
@@ -472,6 +484,651 @@ class OpalMediaClearText : public OpalMediaCryptoSuite
 PFACTORY_CREATE(OpalMediaCryptoSuiteFactory, OpalMediaClearText, OpalMediaCryptoSuite::ClearText(), true);
 
 
+//////////////////////////////////////////////////////////////////////////////
+
+#if PTRACING
+ostream & operator<<(ostream & strm, OpalMediaTransportChannelTypes::SubChannels subchannel)
+{
+  switch (subchannel) {
+    case OpalMediaTransportChannelTypes::e_Media :
+      return strm << "media";
+    case OpalMediaTransportChannelTypes::e_Control :
+      return strm << "control";
+    default :
+      return strm << "chan<" << subchannel << '>';
+  }
+}
+#endif // PTRACING
+
+
+OpalMediaTransport::OpalMediaTransport(const PString & name)
+  : m_name(name)
+  , m_remoteBehindNAT(false)
+  , m_packetSize(2048)
+  , m_maxNoTransmitTime(0, 10)          // Sending data for 10 seconds, ICMP says still not there
+  , m_started(false)
+{
+}
+
+
+void OpalMediaTransport::PrintOn(ostream & strm) const
+{
+  strm << m_name << ", ";
+}
+
+
+bool OpalMediaTransport::IsOpen() const
+{
+  PSafeLockReadOnly lock(*this);
+  if (!lock.IsLocked())
+    return false;
+
+  for (vector<Transport>::const_iterator it = m_subchannels.begin(); it != m_subchannels.end(); ++it) {
+    if (it->m_channel == NULL || !it->m_channel->IsOpen())
+      return false;
+  }
+  return true;
+}
+
+
+bool OpalMediaTransport::IsEstablished() const
+{
+  return IsOpen();
+}
+
+
+OpalTransportAddress OpalMediaTransport::GetLocalAddress(SubChannels) const
+{
+  return OpalTransportAddress();
+}
+
+
+OpalTransportAddress OpalMediaTransport::GetRemoteAddress(SubChannels) const
+{
+  return OpalTransportAddress();
+}
+
+
+bool OpalMediaTransport::SetRemoteAddress(const OpalTransportAddress &, SubChannels)
+{
+  return true;
+}
+
+
+void OpalMediaTransport::SetCandidates(const PString &, const PString &, const PNatCandidateList &)
+{
+}
+
+
+bool OpalMediaTransport::GetCandidates(PString &, PString &, PNatCandidateList &)
+{
+  return true;
+}
+
+
+bool OpalMediaTransport::Write(const void * data, PINDEX length, SubChannels subchannel, const PIPSocketAddressAndPort *)
+{
+  PSafeLockReadOnly lock(*this);
+  if (!lock.IsLocked())
+    return false;
+
+  PChannel * channel;
+  if (subchannel >= (PINDEX)m_subchannels.size() || (channel = m_subchannels[subchannel].m_channel) == NULL) {
+    PTRACE(4, *this << "write to closed/unopened subchannel " << subchannel);
+    return false;
+  }
+
+  if (channel->Write(data, length))
+    return true;
+
+  if (channel->GetErrorCode(PChannel::LastWriteError) == PChannel::Unavailable && m_subchannels[subchannel].HandleUnavailableError())
+    return true;
+
+  PTRACE(1, *this << "write (" << length << " bytes) error"
+            " on " << subchannel << " subchannel"
+            " (" << channel->GetErrorNumber(PChannel::LastWriteError) << "):"
+            " " << channel->GetErrorText(PChannel::LastWriteError));
+  return false;
+}
+
+
+#if OPAL_SRTP
+bool OpalMediaTransport::GetKeyInfo(OpalMediaCryptoKeyInfo * [2])
+{
+  return false;
+}
+#endif
+
+
+void OpalMediaTransport::AddReadNotifier(const ReadNotifier & notifier, SubChannels subchannel)
+{
+  if (LockReadWrite()) {
+    if ((size_t)subchannel < m_subchannels.size())
+      m_subchannels[subchannel].m_notifiers.Add(notifier);
+    UnlockReadWrite();
+  }
+}
+
+
+void OpalMediaTransport::RemoveReadNotifier(const ReadNotifier & notifier, SubChannels subchannel)
+{
+  if (LockReadWrite()) {
+    if ((size_t)subchannel < m_subchannels.size())
+      m_subchannels[subchannel].m_notifiers.Remove(notifier);
+    UnlockReadWrite();
+  }
+}
+
+
+void OpalMediaTransport::RemoveReadNotifier(PObject * target, SubChannels subchannel)
+{
+  if (LockReadWrite()) {
+    if (subchannel != e_AllSubChannels) {
+      if ((size_t)subchannel < m_subchannels.size())
+        m_subchannels[subchannel].m_notifiers.RemoveTarget(target);
+    }
+    else {
+      for (vector<Transport>::iterator it = m_subchannels.begin(); it != m_subchannels.end(); ++it)
+        it->m_notifiers.RemoveTarget(target);
+    }
+    UnlockReadWrite();
+  }
+}
+
+
+OpalMediaTransport::Transport::Transport(OpalMediaTransport * owner, SubChannels subchannel, PChannel * chan)
+  : m_owner(owner)
+  , m_subchannel(subchannel)
+  , m_channel(chan)
+  , m_thread(NULL)
+  , m_consecutiveUnavailableErrors(0)
+{
+}
+
+
+void OpalMediaTransport::Transport::ThreadMain()
+{
+  PTRACE(4, m_owner, *m_owner << m_subchannel << " media transport read thread starting");
+
+  m_owner->InternalOnStart(m_subchannel);
+
+  while (m_channel->IsOpen()) {
+    PBYTEArray data(m_owner->m_packetSize);
+
+    PTRACE(m_throttleReadPacket, m_owner, *m_owner << m_subchannel <<
+           " read packet: sz=" << data.GetSize() << " timeout=" << m_channel->GetReadTimeout());
+
+    if (m_channel->Read(data.GetPointer(), data.GetSize())) {
+      data.SetSize(m_channel->GetLastReadCount());
+
+      m_owner->InternalRxData(m_subchannel, data);
+    }
+    else {
+      PSafeLockReadWrite lock(m_owner);
+      switch (m_channel->GetErrorCode(PChannel::LastReadError)) {
+        case PChannel::Unavailable:
+          HandleUnavailableError();
+          break;
+
+        case PChannel::BufferTooSmall:
+          PTRACE(2, m_owner, *m_owner << m_subchannel << " read packet too large for buffer of " << data.GetSize() << " bytes.");
+          break;
+
+        case PChannel::Interrupted:
+          PTRACE(4, m_owner, *m_owner << m_subchannel << " read packet interrupted.");
+          // Shouldn't happen, but it does.
+          break;
+
+        case PChannel::NoError:
+          PTRACE(3, m_owner, *m_owner << m_subchannel << " received UDP packet with no payload.");
+          break;
+
+        case PChannel::Timeout:
+          PTRACE(1, m_owner, *m_owner << m_subchannel << " timed out (" << m_channel->GetReadTimeout() << "s)");
+          m_channel->Close();
+          break;
+
+        default:
+          PTRACE(1, m_owner, *m_owner << m_subchannel
+                 << " read error (" << m_channel->GetErrorNumber(PChannel::LastReadError) << "): "
+                 << m_channel->GetErrorText(PChannel::LastReadError));
+          m_channel->Close();
+          break;
+      }
+    }
+  }
+
+  PTRACE(4, m_owner, *m_owner << m_subchannel << " media transport read thread ended");
+}
+
+
+bool OpalMediaTransport::Transport::HandleUnavailableError()
+{
+  if (++m_consecutiveUnavailableErrors == 1) {
+    PTRACE(2, m_owner, *m_owner << m_subchannel << " port on remote not ready: " << m_owner->GetRemoteAddress(m_subchannel));
+    m_timeForUnavailableErrors = m_owner->m_maxNoTransmitTime;
+    return true;
+  }
+
+  if (m_timeForUnavailableErrors.HasExpired()) {
+    m_consecutiveUnavailableErrors = 0;
+    return true;
+  }
+
+  if (m_consecutiveUnavailableErrors < 10)
+    return true;
+
+  PTRACE(2, m_owner, *m_owner << m_subchannel << ' ' << m_owner->m_maxNoTransmitTime
+         << " seconds of transmit fails to " << m_owner->GetRemoteAddress(m_subchannel));
+  m_channel->Close();
+  return false;
+}
+
+
+void OpalMediaTransport::InternalOnStart(SubChannels)
+{
+}
+
+
+void OpalMediaTransport::InternalRxData(SubChannels subchannel, const PBYTEArray & data)
+{
+  // Already locked read-only
+  m_subchannels[subchannel].m_notifiers(*this, data);
+}
+
+
+void OpalMediaTransport::Start()
+{
+  if (m_started)
+    return;
+  m_started = true;
+
+  PTRACE(4, *this << "starting read theads, " << m_subchannels.size() << " sub-channels");
+  for (size_t subchannel = 0; subchannel < m_subchannels.size(); ++subchannel) {
+    if (m_subchannels[subchannel].m_channel != NULL && m_subchannels[subchannel].m_thread == NULL) {
+      PStringStream threadName;
+      threadName << m_name;
+      threadName.Replace(" Session ", "-");
+      threadName.Replace(" bundle", "-B");
+      if (m_subchannels.size() > 1)
+        threadName << '-' << subchannel;
+      m_subchannels[subchannel].m_thread = new PThreadObj<OpalMediaTransport::Transport>
+              (m_subchannels[subchannel], &OpalMediaTransport::Transport::ThreadMain, false, threadName, PThread::HighPriority);
+      PTRACE_CONTEXT_ID_TO(m_subchannels[subchannel].m_thread);
+    }
+  }
+}
+
+
+void OpalMediaTransport::InternalStop()
+{
+  PTRACE(4, *this << "stopping");
+  for (vector<Transport>::iterator it = m_subchannels.begin(); it != m_subchannels.end(); ++it) {
+    if (it->m_channel != NULL)
+      it->m_channel->Close();
+  }
+
+  for (vector<Transport>::iterator it = m_subchannels.begin(); it != m_subchannels.end(); ++it) {
+    if (it->m_thread != NULL) {
+      PAssert(it->m_thread->WaitForTermination(2000), "RTP thread failed to terminate");
+      delete it->m_thread;
+    }
+    delete it->m_channel;
+  }
+
+  m_subchannels.clear();
+  PTRACE(4, *this << "stopped");
+}
+
+
+//////////////////////////////////////////////////////////////////////////////
+
+OpalTCPMediaTransport::OpalTCPMediaTransport(const PString & name)
+  : OpalMediaTransport(name)
+{
+  m_subchannels.resize(1);
+  m_subchannels.front().m_channel = new PTCPSocket;
+}
+
+
+bool OpalTCPMediaTransport::Open(OpalMediaSession &, PINDEX, const PString & localInterface, const OpalTransportAddress &)
+{
+  return dynamic_cast<PTCPSocket &>(*m_subchannels[0].m_channel).Listen(PIPAddress(localInterface));
+}
+
+
+bool OpalTCPMediaTransport::SetRemoteAddress(const OpalTransportAddress & remoteAddress, PINDEX)
+{
+  PIPSocketAddressAndPort ap;
+  if (!remoteAddress.GetIpAndPort(ap))
+    return false;
+
+  PTCPSocket & socket = dynamic_cast<PTCPSocket &>(*m_subchannels[0].m_channel);
+  socket.SetPort(ap.GetPort());
+  return socket.Connect(ap.GetAddress());
+}
+
+
+//////////////////////////////////////////////////////////////////////////////
+
+OpalUDPMediaTransport::OpalUDPMediaTransport(const PString & name)
+  : OpalMediaTransport(name)
+  , m_localHasRestrictedNAT(false)
+{
+}
+
+
+OpalTransportAddress OpalUDPMediaTransport::GetLocalAddress(SubChannels subchannel) const
+{
+  PSafeLockReadOnly lock(*this);
+  if (!lock.IsLocked())
+    return OpalTransportAddress();
+
+  PUDPSocket * socket = GetSocket(subchannel);
+  if (socket == NULL)
+    return OpalTransportAddress();
+
+  PIPSocketAddressAndPort ap;
+  if (!socket->GetLocalAddress(ap))
+    return OpalTransportAddress();
+
+  return OpalTransportAddress(ap, OpalTransportAddress::UdpPrefix());
+}
+
+
+OpalTransportAddress OpalUDPMediaTransport::GetRemoteAddress(SubChannels subchannel) const
+{
+  PSafeLockReadOnly lock(*this);
+  if (!lock.IsLocked())
+    return OpalTransportAddress();
+
+  PUDPSocket * socket = GetSocket(subchannel);
+  if (socket == NULL)
+    return OpalTransportAddress();
+
+  PIPSocketAddressAndPort ap;
+  socket->GetSendAddress(ap);
+  return OpalTransportAddress(ap, OpalTransportAddress::UdpPrefix());
+}
+
+
+bool OpalUDPMediaTransport::SetRemoteAddress(const OpalTransportAddress & remoteAddress, SubChannels subchannel)
+{
+  // This bool is safe, and lock is in InternalSetRemoteAddress
+  if (m_remoteBehindNAT) {
+    PTRACE(3, *this << "ignoring remote address as is behind NAT");
+    return true;
+  }
+
+  PIPAddressAndPort ap;
+  if (!remoteAddress.GetIpAndPort(ap))
+    return false;
+
+  return InternalSetRemoteAddress(ap, subchannel, false PTRACE_PARAM(, "signalling"));
+}
+
+
+void OpalUDPMediaTransport::InternalRxData(SubChannels subchannel, const PBYTEArray & data)
+{
+  // If remote address never set from higher levels, then try and figure
+  // it out from the first packet received.
+  PIPAddressAndPort ap;
+  GetSocket(subchannel)->GetLastReceiveAddress(ap);
+  InternalSetRemoteAddress(ap, subchannel, true PTRACE_PARAM(, "first PDU"));
+
+  OpalMediaTransport::InternalRxData(subchannel, data);
+}
+
+
+bool OpalUDPMediaTransport::InternalSetRemoteAddress(const PIPSocket::AddressAndPort & newAP,
+                                                     SubChannels subchannel,
+                                                     bool dontOverride
+                                                     PTRACE_PARAM(, const char * source))
+{
+  PSafeLockReadWrite lock(*this);
+  if (!lock.IsLocked())
+    return false;
+
+  PUDPSocket * socket = GetSocket(subchannel);
+  if (socket == NULL)
+    return false;
+
+  PIPSocketAddressAndPort oldAP;
+  socket->GetLocalAddress(oldAP);
+  if (newAP == oldAP) {
+    PTRACE(2, *this << source << " cannot set remote address/port to same as local: " << oldAP);
+    return false;
+  }
+
+  socket->GetSendAddress(oldAP);
+  if (newAP == oldAP)
+    return true;
+
+  if (dontOverride && oldAP.IsValid()) {
+    PTRACE(2, *this << source << " cannot set remote address/port to " << newAP << ", already set to " << oldAP);
+    return false;
+  }
+
+  socket->SetSendAddress(newAP);
+
+  if (m_localHasRestrictedNAT) {
+    // If have Port Restricted NAT on local host then send a datagram
+    // to remote to open up the port in the firewall for return data.
+    static const BYTE dummy[1] = { 0 };
+    socket->Write(dummy, sizeof(dummy));
+  }
+
+#if PTRACING
+  static const int Level = 3;
+  if (PTrace::CanTrace(Level)) {
+    ostream & trace = PTRACE_BEGIN(Level);
+    trace << *this << source << " set remote "
+          << subchannel << " address to " << newAP;
+    for (size_t sub = 0; sub < m_subchannels.size(); ++sub)
+      trace << ", " << sub << " rem=" << GetRemoteAddress((SubChannels)sub)
+                         << " local=" << GetLocalAddress((SubChannels)sub);
+    if (m_localHasRestrictedNAT)
+      trace << ", restricted NAT";
+    trace << PTrace::End;
+  }
+#endif
+
+  return true;
+}
+
+
+#if PTRACING
+#define SetMinBufferSize(sock, bufType, newSize) SetMinBufferSizeFn(sock, bufType, newSize, #bufType)
+static void SetMinBufferSizeFn(PUDPSocket & sock, int bufType, int newSize, const char * bufTypeName)
+#else
+static void SetMinBufferSize(PUDPSocket & sock, int bufType, int newSize)
+#endif
+{
+  int originalSize = 0;
+  if (!sock.GetOption(bufType, originalSize)) {
+    PTRACE(1, &sock, "GetOption(" << sock.GetHandle() << ',' << bufTypeName << ")"
+              " failed: " << sock.GetErrorText());
+    return;
+  }
+
+  // Already big enough
+  if (originalSize >= newSize) {
+    PTRACE(4, &sock, "SetOption(" << sock.GetHandle() << ',' << bufTypeName << ',' << newSize << ")"
+              " unecessary, already " << originalSize);
+    return;
+  }
+
+  for (; newSize >= 1024; newSize -= newSize/10) {
+    // Set to new size
+    if (!sock.SetOption(bufType, newSize)) {
+      PTRACE(1, &sock, "SetOption(" << sock.GetHandle() << ',' << bufTypeName << ',' << newSize << ")"
+                " failed: " << sock.GetErrorText());
+      continue;
+    }
+
+    // As some stacks lie about setting the buffer size, we double check.
+    int adjustedSize;
+    if (!sock.GetOption(bufType, adjustedSize)) {
+      PTRACE(1, &sock, "GetOption(" << sock.GetHandle() << ',' << bufTypeName << ")"
+                " failed: " << sock.GetErrorText());
+      return;
+    }
+
+    if (adjustedSize >= newSize) {
+      PTRACE(4, &sock, "SetOption(" << sock.GetHandle() << ',' << bufTypeName << ',' << newSize << ")"
+                " succeeded, actually " << adjustedSize);
+      return;
+    }
+
+    if (adjustedSize > originalSize) {
+      PTRACE(4, &sock, "SetOption(" << sock.GetHandle() << ',' << bufTypeName << ',' << newSize << ")"
+                " clamped to maximum " << adjustedSize);
+      return;
+    }
+
+    PTRACE(2, &sock, "SetOption(" << sock.GetHandle() << ',' << bufTypeName << ',' << newSize << ")"
+              " failed, even though it said it succeeded!");
+  }
+}
+
+
+bool OpalUDPMediaTransport::Open(OpalMediaSession & session,
+                                 PINDEX subchannelCount,
+                                 const PString & localInterface,
+                                 const OpalTransportAddress & remoteAddress)
+{
+  PTRACE_CONTEXT_ID_FROM(session);
+
+  OpalManager & manager = session.GetConnection().GetEndPoint().GetManager();
+
+  m_packetSize = manager.GetMaxRtpPacketSize();
+  m_remoteBehindNAT = session.IsRemoteBehindNAT();
+  m_maxNoTransmitTime = session.GetMaxNoTransmitTime();
+
+  PIPAddress bindingIP(localInterface);
+  PIPAddress remoteIP;
+  remoteAddress.GetIpAddress(remoteIP);
+
+  PTRACE(4, session << "opening: interface=\"" << localInterface << "\" local=" << bindingIP << " remote=" << remoteIP);
+
+#if OPAL_PTLIB_NAT
+  if (!manager.IsLocalAddress(remoteIP)) {
+    PNatMethod * natMethod = manager.GetNatMethods().GetMethod(bindingIP, this);
+    if (natMethod != NULL) {
+      PTRACE(4, session << "NAT Method " << natMethod->GetMethodName() << " selected for call.");
+
+      switch (natMethod->GetRTPSupport()) {
+        case PNatMethod::RTPIfSendMedia :
+          /* This NAT variant will work if we send something out through the
+              NAT port to "open" it so packets can then flow inward. We set
+              this flag to make that happen as soon as we get the remotes IP
+              address and port to send to.
+              */
+          m_localHasRestrictedNAT = true;
+          // Then do case for full cone support and create NAT sockets
+
+        case PNatMethod::RTPSupported :
+          PTRACE(4, session << "attempting natMethod: " << natMethod->GetMethodName());
+          if (subchannelCount == 2) {
+            PUDPSocket * dataSocket = NULL;
+            PUDPSocket * controlSocket = NULL;
+            if (natMethod->CreateSocketPair(dataSocket, controlSocket, bindingIP, &session)) {
+              m_subchannels.push_back(Transport(this, e_Data, dataSocket));
+              m_subchannels.push_back(Transport(this, e_Control, controlSocket));
+              PTRACE(4, session << natMethod->GetMethodName() << " created NAT RTP/RTCP socket pair.");
+              break;
+            }
+
+            PTRACE(2, session << natMethod->GetMethodName()
+                    << " could not create NAT RTP/RTCP socket pair; trying to create individual sockets.");
+          }
+
+          for (PINDEX i = 0; i < subchannelCount; ++i) {
+            PUDPSocket * socket = NULL;
+            if (natMethod->CreateSocket(socket, bindingIP))
+              m_subchannels.push_back(Transport(this, (SubChannels)i, socket));
+            else {
+              delete socket;
+              PTRACE(2, session << natMethod->GetMethodName()
+                      << " could not create NAT RTP socket, using normal sockets.");
+            }
+          }
+          break;
+
+        default :
+          /* We cannot use NAT traversal method (e.g. STUN) to create sockets
+             in the remaining modes as the NAT router will then not let us
+             talk to the real RTP destination. All we can so is bind to the
+             local interface the NAT is on and hope the NAT router is doing
+             something sneaky like symmetric port forwarding. */
+          break;
+      }
+    }
+  }
+#endif // OPAL_PTLIB_NAT
+
+  if (m_subchannels.size() < (size_t)subchannelCount) {
+    PINDEX extraSockets = subchannelCount - m_subchannels.size();
+    vector<PIPSocket*> sockets(extraSockets);
+    for (PINDEX i = 0; i < extraSockets; ++i)
+      sockets[i] = new PUDPSocket();
+    if (!manager.GetRtpIpPortRange().Listen(sockets.data(), extraSockets, bindingIP)) {
+      PTRACE(1, session << "no ports available,"
+                " base=" << manager.GetRtpIpPortBase() << ","
+                " max=" << manager.GetRtpIpPortMax() << ","
+                " bind=" << bindingIP);
+      for (PINDEX i = 0; i < extraSockets; ++i)
+        delete sockets[i];
+      return false; // Used up all the available ports!
+    }
+    for (PINDEX i = 0; i < extraSockets; ++i)
+      m_subchannels.push_back(Transport(this, (SubChannels)m_subchannels.size(), sockets[i]));
+  }
+
+  for (size_t subchannel = 0; subchannel < m_subchannels.size(); ++subchannel) {
+    PUDPSocket & socket = *GetSocket((SubChannels)subchannel);
+    PTRACE_CONTEXT_ID_TO(socket);
+    socket.SetReadTimeout(session.GetMaxNoReceiveTime());
+
+    // Increase internal buffer size on media UDP sockets
+    SetMinBufferSize(socket, SO_RCVBUF, session.GetMediaType() == OpalMediaType::Audio() ? 0x4000 : 0x100000);
+    SetMinBufferSize(socket, SO_SNDBUF, 0x2000);
+  }
+
+  return true;
+}
+
+
+bool OpalUDPMediaTransport::Write(const void * data, PINDEX length, SubChannels subchannel, const PIPSocketAddressAndPort * dest)
+{
+  PSafeLockReadOnly lock(*this);
+  if (!lock.IsLocked())
+    return false;
+
+  PUDPSocket * socket;
+  if (dest == NULL || (socket = GetSocket(subchannel)) == NULL)
+    return OpalMediaTransport::Write(data, length, subchannel, dest);
+
+  if (socket->WriteTo(data, length, *dest))
+    return true;
+
+  PTRACE(1, *this << "write (" << length << " bytes) error"
+            " on " << subchannel << " subchannel to " << *dest <<
+            " (" << socket->GetErrorNumber(PChannel::LastWriteError) << "):"
+            " " << socket->GetErrorText(PChannel::LastWriteError));
+  return false;
+}
+
+
+PUDPSocket * OpalUDPMediaTransport::GetSocket(SubChannels subchannel) const
+{
+  PChannel * chanPtr = GetChannel(subchannel);
+  if (chanPtr == NULL)
+    return NULL;
+  return dynamic_cast<PUDPSocket *>(chanPtr->GetBaseReadChannel());
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 
 OpalMediaSession::OpalMediaSession(const Init & init)
@@ -479,6 +1136,11 @@ OpalMediaSession::OpalMediaSession(const Init & init)
   , m_sessionId(init.m_sessionId)
   , m_mediaType(init.m_mediaType)
   , m_remoteBehindNAT(init.m_remoteBehindNAT)
+  , m_maxNoReceiveTime(init.m_connection.GetEndPoint().GetManager().GetNoMediaTimeout())
+  , m_maxNoTransmitTime(0, 10)          // Sending data for 10 seconds, ICMP says still not there
+#if OPAL_ICE
+  , m_maxICESetUpTime(0, 5)
+#endif
 {
   PTRACE_CONTEXT_ID_FROM(init.m_connection);
   PTRACE(5, *this << "created for " << m_mediaType);
@@ -491,54 +1153,73 @@ void OpalMediaSession::PrintOn(ostream & strm) const
 }
 
 
-bool OpalMediaSession::Open(const PString & PTRACE_PARAM(localInterface),
-                            const OpalTransportAddress & remoteAddress,
-                            bool isMediaAddress)
+bool OpalMediaSession::IsOpen() const
 {
-  PTRACE(5, *this << "opening on interface \"" << localInterface << "\" to "
-         << (isMediaAddress ? "media" : "control") << " address " << remoteAddress);
-  return SetRemoteAddress(remoteAddress, isMediaAddress);
+  OpalMediaTransportPtr transport = m_transport; // This way avoids races
+  return transport != NULL && transport->IsOpen();
 }
 
 
-bool OpalMediaSession::IsOpen() const
+void OpalMediaSession::Start()
 {
-  return true;
+  OpalMediaTransportPtr transport = m_transport; // This way avoids races
+  if (transport != NULL)
+    transport->Start();
+}
+
+
+bool OpalMediaSession::IsEstablished() const
+{
+  OpalMediaTransportPtr transport = m_transport; // This way avoids races
+  return transport != NULL && transport->IsEstablished();
 }
 
 
 bool OpalMediaSession::Close()
 {
-  return true;
+  // A close here is detach but don't do anything with detached transport
+  return OpalMediaSession::DetachTransport() != NULL;
 }
 
 
-OpalTransportAddress OpalMediaSession::GetLocalAddress(bool) const
+OpalTransportAddress OpalMediaSession::GetLocalAddress(bool isMediaAddress) const
 {
-  return OpalTransportAddress();
+  OpalMediaTransportPtr transport = m_transport; // This way avoids races
+  return transport != NULL ? transport->GetLocalAddress(isMediaAddress ? e_Media : e_Control) : OpalTransportAddress();
 }
 
 
-OpalTransportAddress OpalMediaSession::GetRemoteAddress(bool) const
+OpalTransportAddress OpalMediaSession::GetRemoteAddress(bool isMediaAddress) const
 {
-  return OpalTransportAddress();
+  OpalMediaTransportPtr transport = m_transport; // This way avoids races
+  return transport != NULL ? transport->GetRemoteAddress(isMediaAddress ? e_Media : e_Control) : OpalTransportAddress();
 }
 
 
-bool OpalMediaSession::SetRemoteAddress(const OpalTransportAddress &, bool)
+bool OpalMediaSession::SetRemoteAddress(const OpalTransportAddress & remoteAddress, bool isMediaAddress)
 {
-  return true;
+  OpalMediaTransportPtr transport = m_transport; // This way avoids races
+  return transport == NULL || transport->SetRemoteAddress(remoteAddress, isMediaAddress ? e_Media : e_Control);
 }
 
 
-void OpalMediaSession::AttachTransport(Transport &)
+void OpalMediaSession::AttachTransport(const OpalMediaTransportPtr & transport)
 {
+  m_transport = transport;
 }
 
 
-OpalMediaSession::Transport OpalMediaSession::DetachTransport()
+OpalMediaTransportPtr OpalMediaSession::DetachTransport()
 {
-  return Transport();
+  PTRACE_IF(2, !IsOpen(), *this << "detaching transport from closed session.");
+
+  OpalMediaTransportPtr transport = m_transport;
+  m_transport.SetNULL();
+
+  if (transport != NULL)
+    transport->RemoveReadNotifier(this, e_AllSubChannels);
+
+  return transport;
 }
 
 
@@ -549,6 +1230,9 @@ bool OpalMediaSession::UpdateMediaFormat(const OpalMediaFormat &)
 
 
 #if OPAL_SDP
+const PString & OpalMediaSession::GetBundleGroupId() { static PConstString const s("BUNDLE"); return s;  }
+
+
 PString OpalMediaSession::GetGroupId() const
 {
   PSafeLockReadOnly lock(*this);
@@ -592,8 +1276,11 @@ SDPMediaDescription * OpalMediaSession::CreateSDPMediaDescription()
 #endif // OPAL_SDP
 
 #if OPAL_STATISTICS
-void OpalMediaSession::GetStatistics(OpalMediaStatistics &, bool) const
+void OpalMediaSession::GetStatistics(OpalMediaStatistics & statistics, bool) const
 {
+  statistics.m_mediaType     = GetMediaType();
+  statistics.m_localAddress  = GetLocalAddress();
+  statistics.m_remoteAddress = GetRemoteAddress();
 }
 #endif
 
@@ -630,46 +1317,24 @@ bool OpalMediaSession::IsCryptoSecured(bool) const
 }
 
 
-#if OPAL_ICE
-static void InternalSetLocalUserPass(PString & user, PString & pass)
-{
-  if (user.IsEmpty())
-    user = PBase64::Encode(PRandom::Octets(12));
-
-  if (pass.IsEmpty())
-    pass = PBase64::Encode(PRandom::Octets(18));
-}
-
-void OpalMediaSession::SetICE(const PString & user, const PString & pass, const PNatCandidateList &)
-{
-  InternalSetLocalUserPass(m_localUsername, m_localPassword);
-  m_remoteUsername = user;
-  m_remotePassword = pass;
-}
-
-
-bool OpalMediaSession::GetICE(PString & user, PString & pass, PNatCandidateList &)
-{
-  InternalSetLocalUserPass(m_localUsername, m_localPassword);
-  user = m_localUsername;
-  pass = m_localPassword;
-  return true;
-}
-#endif
-
-
 //////////////////////////////////////////////////////////////////////////////
 
 PFACTORY_CREATE(OpalMediaSessionFactory, OpalDummySession, OpalDummySession::SessionType());
+
+OpalDummySession::OpalDummySession(const Init & init)
+  : OpalMediaSession(init)
+{
+}
+
 
 OpalDummySession::OpalDummySession(const Init & init, const OpalTransportAddressArray & transports)
   : OpalMediaSession(init)
 {
   switch (transports.GetSize()) {
     case 2 :
-      m_localTransportAddress[false] = transports[1]; // Control
+      m_localTransportAddress[e_Control] = transports[e_Control];
     case 1 :
-      m_localTransportAddress[true] = transports[0]; // Media
+      m_localTransportAddress[e_Media] = transports[e_Media];
   }
 }
 
@@ -687,60 +1352,95 @@ const PCaselessString & OpalDummySession::GetSessionType() const
 }
 
 
-bool OpalDummySession::Open(const PString &, const OpalTransportAddress & remoteAddress, bool isMediaAddress)
+bool OpalDummySession::Open(const PString &, const OpalTransportAddress &)
 {
+  if (!LockReadWrite())
+    return false;
+
   PSafePtr<OpalConnection> otherParty = m_connection.GetOtherPartyConnection();
   if (otherParty != NULL) {
     OpalTransportAddressArray transports;
     if (otherParty->GetMediaTransportAddresses(m_connection, m_sessionId, m_mediaType, transports)) {
       switch (transports.GetSize()) {
-        case 2:
-          m_localTransportAddress[false] = transports[1]; // Control
+        default:
+          m_localTransportAddress[e_Control] = transports[e_Control];
+          PTRACE(4, *this << "dummy opened at local control address " << m_localTransportAddress[e_Control]);
         case 1:
-          m_localTransportAddress[true] = transports[0]; // Media
+          m_localTransportAddress[e_Media] = transports[e_Media];
+          PTRACE(4, *this << "dummy opened at local media address " << m_localTransportAddress[e_Media]);
+          break;
+        case 0 :
+          PTRACE(3, *this << "dummy could not be opened, no media transport.");
       }
     }
+    else {
+      PTRACE(3, *this << "dummy could not be opened, disabled media.");
+    }
+  }
+  else {
+    PTRACE(2, *this << "dummy could not be opened, no other connection.");
   }
 
-  PTRACE(5, *this << "dummy opened at local media address " << GetLocalAddress());
+  UnlockReadWrite();
 
-  return SetRemoteAddress(remoteAddress, isMediaAddress);
+  return true;
 }
 
 
 bool OpalDummySession::IsOpen() const
 {
-  return !m_localTransportAddress[true].IsEmpty() && !m_remoteTransportAddress[true].IsEmpty();
+  PSafeLockReadOnly lock(*this);
+  return lock.IsLocked() && !m_localTransportAddress[e_Media].IsEmpty() && !m_remoteTransportAddress[e_Media].IsEmpty();
 }
 
 
 OpalTransportAddress OpalDummySession::GetLocalAddress(bool isMediaAddress) const
 {
-  return m_localTransportAddress[isMediaAddress];
+  PSafeLockReadOnly lock(*this);
+  return lock.IsLocked() ? m_localTransportAddress[isMediaAddress ? e_Media : e_Control] : OpalTransportAddress();
 }
 
 
 OpalTransportAddress OpalDummySession::GetRemoteAddress(bool isMediaAddress) const
 {
-  return m_remoteTransportAddress[isMediaAddress];
+  PSafeLockReadOnly lock(*this);
+  return lock.IsLocked() ? m_remoteTransportAddress[isMediaAddress ? e_Media : e_Control] : OpalTransportAddress();
 }
 
 
 bool OpalDummySession::SetRemoteAddress(const OpalTransportAddress & remoteAddress, bool isMediaAddress)
 {
+  if (!LockReadWrite())
+    return false;
+
   // Some code to keep the port if new one does not have it but old did.
   PIPSocket::Address ip;
   WORD port = 0;
-  if (m_remoteTransportAddress[isMediaAddress].GetIpAndPort(ip, port) && remoteAddress.GetIpAndPort(ip, port))
-    m_remoteTransportAddress[isMediaAddress] = OpalTransportAddress(ip, port, remoteAddress.GetProto());
+  PINDEX subchannel = isMediaAddress ? e_Media : e_Control;
+  if (m_remoteTransportAddress[subchannel].GetIpAndPort(ip, port) && remoteAddress.GetIpAndPort(ip, port))
+    m_remoteTransportAddress[subchannel] = OpalTransportAddress(ip, port, remoteAddress.GetProto());
   else
-    m_remoteTransportAddress[isMediaAddress] = remoteAddress;
+    m_remoteTransportAddress[subchannel] = remoteAddress;
 
-  PTRACE(5, *this << "dummy remote "
+  PTRACE(4, *this << "dummy remote "
          << (isMediaAddress ? "media" : "control") << " address set to "
-         << m_remoteTransportAddress[isMediaAddress]);
+         << m_remoteTransportAddress[subchannel]);
+
+  UnlockReadWrite();
 
   return true;
+}
+
+
+void OpalDummySession::AttachTransport(const OpalMediaTransportPtr &)
+{
+
+}
+
+
+OpalMediaTransportPtr OpalDummySession::DetachTransport()
+{
+  return NULL;
 }
 
 

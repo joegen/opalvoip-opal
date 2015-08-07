@@ -89,6 +89,7 @@ void PlayRTP::Main()
              "-session: automatically select session num\n"
              "-rotate: Rotate on RTP header extension N\n"
              "-nodelay. do not delay as per timestamps\n"
+             "j-jitter-limit: set jitter limit\n"
              PTRACE_ARGLIST
              "h-help. print this help message.\n"
              , false) || args.HasOption('h')) {
@@ -102,6 +103,7 @@ void PlayRTP::Main()
   m_extendedInfo = args.HasOption('X') || args.HasOption('T');
   m_rotateExtensionId = args.GetOptionString("rotate").AsUnsigned();
   m_noDelay      = args.HasOption("nodelay");
+  m_jitterLimit.SetInterval(args.GetOptionString("jitter-limit", "50").AsUnsigned());
 
   PStringArray options = args.GetOptionString('O').Lines();
   for (PINDEX i = 0; i < options.GetSize(); i++) {
@@ -191,10 +193,10 @@ void PlayRTP::Main()
         return;
       }
     }
-    else if (discoveredRTPMap.size() == 1 && OpalMediaFormat(discoveredRTPMap.begin()->second.m_format[0]).IsValid())
-      pcap.SetFilters(discoveredRTPMap, discoveredRTPMap.begin()->second.m_index[0], PString::Empty());
-    else if (discoveredRTPMap.size() == 1 && OpalMediaFormat(discoveredRTPMap.begin()->second.m_format[1]).IsValid())
-      pcap.SetFilters(discoveredRTPMap, discoveredRTPMap.begin()->second.m_index[1], PString::Empty());
+    else if (discoveredRTPMap.size() == 1 && OpalMediaFormat(discoveredRTPMap.begin()->second.m_direction[0].m_format).IsValid())
+      pcap.SetFilters(discoveredRTPMap, discoveredRTPMap.begin()->second.m_direction[0].m_index, PString::Empty());
+    else if (discoveredRTPMap.size() == 1 && OpalMediaFormat(discoveredRTPMap.begin()->second.m_direction[1].m_format).IsValid())
+      pcap.SetFilters(discoveredRTPMap, discoveredRTPMap.begin()->second.m_direction[1].m_index, PString::Empty());
     else {
       cout << "Select one of the following sessions (index [ format ]):\n" << discoveredRTPMap << endl;
       for (;;) {
@@ -324,7 +326,7 @@ void PlayRTP::Main()
   Play(pcap);
 
   for (PINDEX i = 1; i < args.GetCount(); i++) {
-    if (pcap.Open(args[i]))
+    if (pcap.Open(args[i], PFile::ReadOnly))
       Play(pcap);
   }
 }
@@ -361,13 +363,22 @@ void PlayRTP::Play(OpalPCAPFile & pcap)
 
   RTP_DataFrame::PayloadTypes rtpStreamPayloadType = RTP_DataFrame::IllegalPayloadType;
   RTP_DataFrame::PayloadTypes lastUnsupportedPayloadType = RTP_DataFrame::IllegalPayloadType;
-  DWORD lastTimeStamp = 0;
+  RTP_Timestamp firstTimeStamp = 0;
+  RTP_Timestamp lastTimeStamp = 0;
+  PTime firstFrameTime(0);
+  PTime lastFrameTime(0);
+  bool lastPacketMarker = true;
+  PTimeInterval frameDuration;
+  PTimeInterval minDuration(PMaxTimeInterval);
+  PTimeInterval maxDuration;
+  PTimeInterval frameTimeStampSum;
+  unsigned frameTimeStampCount = 0;
 
   PINDEX totalBytes = 0;
   unsigned intraFrames = 0;
   int qualitySum = 0;
   unsigned fragmentationCount = 0;
-  unsigned nextSequenceNumber = 0;
+  RTP_SequenceNumber nextSequenceNumber = 0;
   unsigned missingPackets = 0;
   m_packetCount = 0;
 
@@ -378,14 +389,20 @@ void PlayRTP::Play(OpalPCAPFile & pcap)
   bool isAudio = false;
   bool needInfoHeader = true;
 
-  PTimeInterval playStartTick = PTimer::Tick();
+  static PTimeInterval const progressTime(0,5);
+  PSimpleTimer progressTimer(progressTime);
 
+  PTime playStartTime;
+
+  unsigned filePacketCount = 0;
   while (!pcap.IsEndOfFile()) {
+    ++filePacketCount;
+
     RTP_DataFrame rtp;
     if (pcap.GetRTP(rtp) < 0)
       continue;
 
-    unsigned thisSequenceNumber = rtp.GetSequenceNumber();
+    RTP_SequenceNumber thisSequenceNumber = rtp.GetSequenceNumber();
     if (nextSequenceNumber != 0 && thisSequenceNumber != nextSequenceNumber) {
       cout << "Received SN=" << thisSequenceNumber << ", expected SN=" << nextSequenceNumber << endl;
       if (thisSequenceNumber > nextSequenceNumber)
@@ -421,7 +438,8 @@ void PlayRTP::Play(OpalPCAPFile & pcap)
         unsigned frame = srcFmt.GetFrameTime();
         if (frame < 160)
           frame = 160;
-        m_player->SetBuffers(frame*2, 2000/frame); // 250ms of buffering of Vista goes funny
+        m_player->SetFormat(dstFmt.GetOptionInteger(OpalAudioFormat::ChannelsOption()), dstFmt.GetClockRate());
+        m_player->SetBuffers(frame*2, 2000/frame); // 250ms of buffering or Vista goes funny
       }
       else if (srcFmt.GetMediaType() == OpalMediaType::Video()) {
         dstFmt = OpalYUV420P;
@@ -440,7 +458,9 @@ void PlayRTP::Play(OpalPCAPFile & pcap)
 
       cout << "Decoding " << srcFmt << " from file \"" << pcap.GetFilePath() << '"' << endl;
       m_transcoder->SetCommandNotifier(PCREATE_NOTIFIER(OnTranscoderCommand));
-      lastTimeStamp = rtp.GetTimestamp();
+      firstTimeStamp = lastTimeStamp = rtp.GetTimestamp();
+      firstFrameTime = lastFrameTime = pcap.GetPacketTime();
+      frameDuration = srcFmt.GetFrameTime()/srcFmt.GetTimeUnits();
     }
 
     const OpalMediaFormat & inputFmt = m_transcoder->GetInputFormat();
@@ -451,25 +471,55 @@ void PlayRTP::Play(OpalPCAPFile & pcap)
     }
     m_payloadFile.Write(rtp.GetPayloadPtr(), rtp.GetPayloadSize());
 
-    if (!m_noDelay) {
-      if (rtp.GetTimestamp() != lastTimeStamp) {
-        RTP_Timestamp delta = rtp.GetTimestamp() - lastTimeStamp;
-        unsigned msecs = delta/inputFmt.GetTimeUnits();
-        if (msecs < 3000) 
-          PThread::Sleep(msecs);
-        else {
-          cout << "Ignoring timestamp jump of ";
-          if (delta < 0x8000000)
-            cout << msecs << "ms (" << delta;
-          else {
-            delta = lastTimeStamp - rtp.GetTimestamp();
-            cout << '-' << delta/inputFmt.GetTimeUnits() << "ms (-" << delta;
-          }
-          cout << "), old=" << lastTimeStamp << ", new=" << rtp.GetTimestamp() << endl;
-        }
-        lastTimeStamp = rtp.GetTimestamp();
+    RTP_Timestamp thisTimeStamp = rtp.GetTimestamp();
+    if (thisTimeStamp != lastTimeStamp) {
+      PTime thisPacketTime = pcap.GetPacketTime();
+
+      PTimeInterval deltaTimeStamp = (thisTimeStamp - lastTimeStamp)/inputFmt.GetTimeUnits();
+      PTimeInterval deltaPacketTime = thisPacketTime - lastFrameTime;
+      if (deltaTimeStamp > deltaPacketTime+200) {
+        cout << "Timestamp jump from " << lastTimeStamp << " to " << thisTimeStamp
+             << " (" << (thisTimeStamp - lastTimeStamp) << "), "
+             << deltaTimeStamp << " > " << deltaPacketTime
+             << " SN=" << thisSequenceNumber << endl;
+        firstTimeStamp = thisTimeStamp;
+        firstFrameTime = thisPacketTime;
       }
+      else {
+        frameTimeStampSum += deltaTimeStamp;
+        frameTimeStampCount++;
+        if (minDuration > deltaTimeStamp)
+          minDuration = deltaTimeStamp;
+        if (maxDuration < deltaTimeStamp)
+          maxDuration = deltaTimeStamp;
+        if (!m_noDelay)
+          PThread::Sleep(deltaTimeStamp);
+      }
+
+      deltaTimeStamp = (thisTimeStamp - firstTimeStamp)/inputFmt.GetTimeUnits();
+      deltaPacketTime = thisPacketTime - firstFrameTime;
+      if (deltaTimeStamp < deltaPacketTime-m_jitterLimit)
+        cout << "Excessive jitter detected:"
+             << " SN=" << thisSequenceNumber << " TS=" << thisTimeStamp
+             << " norm-TS=" << deltaTimeStamp << " Duration=" << deltaPacketTime
+             << " delta=" << (deltaPacketTime - deltaTimeStamp) << endl;
+      else if (deltaTimeStamp > deltaPacketTime+5) {
+        cout << "Early packet detected:"
+             << " SN=" << thisSequenceNumber << " TS=" << thisTimeStamp
+             << " norm-TS=" << deltaTimeStamp << " Duration=" << deltaPacketTime
+             << " delta=" << (deltaPacketTime - deltaTimeStamp) << endl;
+        firstTimeStamp = thisTimeStamp;
+        firstFrameTime = thisPacketTime;
+      }
+
+      if (!lastPacketMarker && !isAudio)
+        cout << "Video frame was not correctly terminated with marker:"
+                " SN=" << thisSequenceNumber << " TS=" << thisTimeStamp << endl;
+
+      lastTimeStamp = thisTimeStamp;
+      lastFrameTime = thisPacketTime;
     }
+    lastPacketMarker = rtp.GetMarker();
 
     if (pcap.IsFragmentated())
       ++fragmentationCount;
@@ -644,8 +694,11 @@ void PlayRTP::Play(OpalPCAPFile & pcap)
 
     ++m_packetCount;
 
-    if (m_packetCount % 250 == 0)
+    if (progressTimer.HasExpired()) {
+      progressTimer = progressTime;
+      cout << "Processing packet " << m_packetCount << " ..." << endl;
       m_eventLog << "Packet " << m_packetCount << ": still processing" << endl;
+    }
   }
 
   m_eventLog << "Packet " << m_packetCount << ": completed" << endl;
@@ -653,44 +706,51 @@ void PlayRTP::Play(OpalPCAPFile & pcap)
   // Output final stats.
   cout << '\n';
 
+  const unsigned TitleWidth = 18;
+  const char Colon[] = ": ";
+
   if (m_yuvFile.IsOpen())
-    cout <<   "Written file   : " << m_yuvFile.GetFilePath() << '\n';
+    cout << setw(TitleWidth) << "Written file" << Colon << m_yuvFile.GetFilePath() << '\n';
 
-  cout <<     "Payload Type   : " << rtpStreamPayloadType;
+  cout << setw(TitleWidth) << "Payload Type" << Colon << rtpStreamPayloadType;
   if (m_transcoder != NULL)
-    cout <<   " (" << m_transcoder->GetInputFormat() << ')';
-  cout <<     "\n"
-              "Source         : " << pcap.GetFilterSrcIP() << ':' << pcap.GetFilterSrcPort() << "\n"
-              "Destination    : " << pcap.GetFilterDstIP() << ':' << pcap.GetFilterDstPort() << "\n"
-              "Total packets  : " << m_packetCount << "\n"
-              "Total bytes    : " << totalBytes << '\n';
+    cout << " (" << m_transcoder->GetInputFormat() << ')';
+  cout << '\n';
 
-  PTimeInterval playTime = PTimer::Tick() - playStartTick;
+  cout << setw(TitleWidth) << "Source"          << Colon << pcap.GetFilterSrcIP() << ':' << pcap.GetFilterSrcPort() << '\n'
+       << setw(TitleWidth) << "Destination"     << Colon << pcap.GetFilterDstIP() << ':' << pcap.GetFilterDstPort() << '\n'
+       << setw(TitleWidth) << "Total packets"   << Colon << m_packetCount << '\n'
+       << setw(TitleWidth) << "Missing packets" << Colon << missingPackets << '\n'
+       << setw(TitleWidth) << "IP fragments"    << Colon << fragmentationCount << '\n'
+       << setw(TitleWidth) << "Total bytes"     << Colon << totalBytes << '\n';
+
+  PTimeInterval playTime = PTime() - playStartTime;
   if (!m_yuvFile.IsOpen() && playTime > 0) {
-    cout <<   "Duration       : " << playTime << " seconds\n"
-         <<   "Bit rate       : "  << fixed << setprecision(1)
-           << (totalBytes*8/playTime.GetMilliSeconds()) << "kbps\n";
+    cout << setw(TitleWidth) << "Duration (real)" << Colon << playTime << " seconds\n"
+         << setw(TitleWidth) << "Duration (file)" << Colon << (lastFrameTime - firstFrameTime) << " seconds\n"
+         << setw(TitleWidth) << "Bit rate"        << Colon << fixed << setprecision(1) << (totalBytes*8/playTime.GetMilliSeconds()) << "kbps\n";
   }
 
   if (m_videoFrames > 0) {
-    cout <<   "Resolution     : " << m_yuvFile.GetFrameWidth() << "x" << m_yuvFile.GetFrameHeight() << "\n"
-              "Video frames   : " << m_videoFrames << "\n"
-              "Intra Frames   : " << intraFrames << '\n';
+    cout << setw(TitleWidth) << "Resolution"    << Colon << m_yuvFile.GetFrameWidth() << "x" << m_yuvFile.GetFrameHeight() << '\n'
+         << setw(TitleWidth) << "Video frames"  << Colon << m_videoFrames << '\n'
+         << setw(TitleWidth) << "Intra Frames"  << Colon << intraFrames << '\n';
     if (m_videoFrames > 0 && qualitySum > 0)
-      cout << "Avg quaility   : " << (qualitySum/m_videoFrames) << '\n';
+      cout << setw(TitleWidth) << "Avg quality" << Colon << (qualitySum/m_videoFrames) << '\n';
     if (!m_yuvFile.IsOpen() && playTime > 0)
-      cout << "Frame rate     : " << fixed << setprecision(1)
-           << (m_videoFrames*1000.0/playTime.GetMilliSeconds()) << "fps\n";
+      cout << setw(TitleWidth) << "Frame rate"  << Colon << fixed << setprecision(1) << (m_videoFrames*1000.0/playTime.GetMilliSeconds()) << "fps\n";
   }
   else {
     if (playTime > 0)
-      cout << "Avg frame time : " << fixed << setprecision(1)
-           << (playTime.GetMilliSeconds()/m_packetCount) << "ms\n";
+      cout << setw(TitleWidth) << "Frame time (real)" << Colon << setprecision(3) << (playTime/m_packetCount) << " seconds\n";
   }
 
-  cout <<     "Missing packets: " << missingPackets << "\n"
-              "IP fragments   : " << fragmentationCount
-       << endl;
+  if (frameTimeStampCount > 0)
+    cout << setw(TitleWidth) << "Frame TS (avg)" << Colon << setprecision(3) << (frameTimeStampSum/frameTimeStampCount) << " seconds\n"
+         << setw(TitleWidth) << "Frame TS (min)" << Colon << minDuration << " seconds\n"
+         << setw(TitleWidth) << "Frame TS (max)" << Colon << maxDuration << " seconds\n";
+
+  cout << endl;
 
   if (!m_encodedFileName.IsEmpty()) {
     PStringStream args; 

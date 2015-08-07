@@ -2427,7 +2427,7 @@ PBoolean H323Connection::SendFastStartAcknowledge(H225_ArrayOf_PASN_OctetString 
 
   if (m_fastStartChannels.IsEmpty()) {
     // If we are capable of ANY of the fast start channels, don't do fast start
-    PTRACE(4, "H323\tNo fast connect offerred");
+    PTRACE(4, "H323\tNo fast connect offered");
     m_fastStartState = FastStartDisabled;
     return false;
   }
@@ -2450,7 +2450,7 @@ PBoolean H323Connection::SendFastStartAcknowledge(H225_ArrayOf_PASN_OctetString 
 
   // None left, so didn't open any channels fast
   if (m_fastStartChannels.IsEmpty()) {
-    PTRACE(4, "H323\tCould not use any offerred fast connect channels");
+    PTRACE(4, "H323\tCould not use any offered fast connect channels");
     m_fastStartState = FastStartDisabled;
     return false;
   }
@@ -4391,27 +4391,31 @@ bool H323Connection::GetMediaTransportAddresses(OpalConnection & otherConnection
   if (!OpalRTPConnection::GetMediaTransportAddresses(otherConnection, sessionId, mediaType, transports))
     return false;
 
-  if (transports.IsEmpty()) {
-    // If have fast connect, use addresses from them as won't have slow start sessions yet
-    H323LogicalChannelList::const_iterator channel;
-    for (channel = m_fastStartChannels.begin(); channel != m_fastStartChannels.end(); ++channel) {
-      if (channel->GetSessionID() == sessionId &&
-          channel->GetCapability().GetMediaFormat().GetMediaType() == mediaType)
+  if (!transports.IsEmpty())
+    return true;
+
+  // If have fast connect, use addresses from them as won't have slow start sessions yet
+  H323LogicalChannelList::const_iterator channel;
+  for (channel = m_fastStartChannels.begin(); channel != m_fastStartChannels.end(); ++channel) {
+    if (channel->GetSessionID() == sessionId &&
+        channel->GetCapability().GetMediaFormat().GetMediaType() == mediaType)
+      break;
+  }
+  if (channel == m_fastStartChannels.end()) {
+    for (H323LogicalChannelList::const_iterator channel = m_fastStartChannels.begin(); channel != m_fastStartChannels.end(); ++channel) {
+      if (channel->GetCapability().GetMediaFormat().GetMediaType() == mediaType)
         break;
     }
-    if (channel == m_fastStartChannels.end()) {
-      for (H323LogicalChannelList::const_iterator channel = m_fastStartChannels.begin(); channel != m_fastStartChannels.end(); ++channel) {
-        if (channel->GetCapability().GetMediaFormat().GetMediaType() == mediaType)
-          break;
-      }
-    }
-    if (channel != m_fastStartChannels.end()) {
-      OpalTransportAddress media, control;
-      if (channel->GetMediaTransportAddress(media, control) && transports.SetAddressPair(media, control)) {
-        PTRACE(3, "H323\tGetMediaTransportAddresses of " << mediaType << " found fast connect "
-                << setfill(',') << transports << " for " << otherConnection << " on " << *this);
-      }
-    }
+  }
+  if (channel == m_fastStartChannels.end())
+    PTRACE(3, "GetMediaTransportAddresses of " << mediaType << " had no channels for " << otherConnection << " on " << *this);
+  else {
+    OpalTransportAddress media, control;
+    if (channel->GetMediaTransportAddress(media, control) && transports.SetAddressPair(media, control))
+      PTRACE(3, "H323\tGetMediaTransportAddresses of " << mediaType << " found fast connect "
+              << setfill(',') << transports << " for " << otherConnection << " on " << *this);
+    else
+      PTRACE(4, "GetMediaTransportAddresses of " << mediaType << " had no transports in channel for " << otherConnection << " on " << *this);
   }
 
   return true;
@@ -4952,14 +4956,12 @@ H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability 
   if (ownerCall.IsSwitchingT38()) {
     OpalMediaSession * otherSession = GetMediaSession(sessionID == H323Capability::DefaultAudioSessionID
                           ? H323Capability::DefaultDataSessionID : H323Capability::DefaultAudioSessionID);
-    if (otherSession != NULL && otherSession->IsOpen()) {
-      OpalMediaSession::Transport transport = otherSession->DetachTransport();
-      session->AttachTransport(transport);
-    }
+    if (otherSession != NULL && otherSession->IsOpen())
+      session->AttachTransport(otherSession->DetachTransport());
   }
 #endif // OPAL_T38_CAPABILITY
 
-  if (!session->Open(transport.GetInterface(), remoteControlAddress, false)) {
+  if (!session->Open(transport.GetInterface(), remoteControlAddress)) {
     ReleaseMediaSession(sessionID);
     OnFailedMediaStream(dir == H323Channel::IsReceiver, "Could not open session transports");
     return NULL;

@@ -570,7 +570,7 @@ bool H323EndPoint::InternalRestartGatekeeper(bool adjustingRegistrations)
   for (AliasToGkMap::iterator alias = allAliases.begin(); alias != allAliases.end(); ++alias)
     rotatedAliases[adjustingRegistrations && !alias->second.IsEmpty() ? alias->second : remoteAddress].AppendString(alias->first);
 
-  PTRACE(4, allAliases.size() << " aliases, to " << rotatedAliases.size() << " remotes, left to create new gatekeepers.");
+  PTRACE(4, "Creating new gatekeepers for " << allAliases.size() << " aliases at " << rotatedAliases.size() << " remotes address(es).");
 
   // Now add remaining aliases, creating new registrations as required.
   PStringList aliasSubset;
@@ -621,7 +621,7 @@ bool H323EndPoint::InternalCreateGatekeeper(const H323TransportAddress & remoteA
 
   gatekeeper->m_aliasMutex.Wait();
   for (PStringList::const_iterator alias = aliases.begin(); alias != aliases.end(); ++alias)
-    gatekeeper->m_aliases = alias->GetPointer(); // Don't make reference
+    gatekeeper->m_aliases += alias->GetPointer(); // Don't make reference
   gatekeeper->m_aliasMutex.Signal();
 
   gatekeeper->SetPassword(GetGatekeeperPassword(), GetGatekeeperUsername());

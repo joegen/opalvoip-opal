@@ -800,7 +800,7 @@ bool SDPMediaDescription::FromSession(OpalMediaSession * session,
   if (offer != NULL ? offer->HasICE() : m_stringOptions.GetBoolean(OPAL_OPT_OFFER_ICE)) {
     PString user, pass;
     PNatCandidateList candidates;
-    session->GetICE(user, pass, candidates);
+    session->GetTransport()->GetCandidates(user, pass, candidates);
     SetICE(user, pass, candidates);
   }
 #endif // OPAL_ICE
@@ -815,15 +815,10 @@ bool SDPMediaDescription::ToSession(OpalMediaSession * session) const
 
   if (rtpSession != NULL) {
     // Set single port or disjoint RTCP port, must be done before Open()
-    if (m_stringOptions.GetBoolean(OPAL_OPT_RTCP_MUX) || m_controlAddress == m_mediaAddress) {
-      PTRACE(3, "Setting single port mode for answer RTP session " << session->GetSessionID() << " for media type " << m_mediaType);
+    rtpSession->SetSinglePortTx(m_controlAddress == m_mediaAddress);
+    if (m_stringOptions.GetBoolean(OPAL_OPT_RTCP_MUX))
       rtpSession->SetSinglePortRx();
-      rtpSession->SetSinglePortTx();
-    }
-
-#if OPAL_ICE
-    rtpSession->SetICE(m_username, m_password, m_candidates);
-#endif //OPAL_ICE
+    rtpSession->SetExtensionHeader(GetExtensionHeaders());
   }
 
   // Must be done after ICE setting above
@@ -1176,6 +1171,12 @@ bool SDPMediaDescription::HasICE() const
   
   if (m_password.IsEmpty())
     return false;
+
+  /* The following is ugly and firced by Firefox not putting candidates in
+     all bundled media descriptions. We then lose the check if NONE of them
+     have any candidates. */
+  if (!GetGroupMediaId().IsEmpty())
+    return true;
 
   if (m_candidates.IsEmpty())
     return false;
@@ -1644,9 +1645,13 @@ void SDPRTPAVPMediaDescription::Format::SetMediaFormatOptions(OpalMediaFormat & 
   SDPMediaFormat::SetMediaFormatOptions(mediaFormat);
 
   // Save the RTCP feedback (RFC4585) capability.
-  if (!m_parent.GetOptionStrings().GetBoolean(OPAL_OPT_FORCE_RTCP_FB))
-    mediaFormat.SetOptionEnum(OpalMediaFormat::RTCPFeedbackOption(),
-                m_rtcp_fb * mediaFormat.GetOptionEnum(OpalMediaFormat::RTCPFeedbackOption(), OpalMediaFormat::e_NoRTCPFb));
+  OpalMediaFormat::RTCPFeedback local_rtcp_fb = mediaFormat.GetOptionEnum(OpalMediaFormat::RTCPFeedbackOption(), OpalMediaFormat::e_NoRTCPFb);
+  if (m_parent.GetStringOptions().GetBoolean(OPAL_OPT_FORCE_RTCP_FB))
+    PTRACE(4, "Forcing rtcp-fb parameters to local: " << local_rtcp_fb);
+  else {
+    mediaFormat.SetOptionEnum(OpalMediaFormat::RTCPFeedbackOption(), m_rtcp_fb * local_rtcp_fb);
+    PTRACE(4, "Setting rtcp-fb parameters to intersection: local=(" << local_rtcp_fb << "), remote=(" << m_rtcp_fb << ')');
+  }
 }
 
 
@@ -1742,9 +1747,20 @@ void SDPRTPAVPMediaDescription::OutputAttributes(ostream & strm) const
       strm << "a=rtcp:" << port << ' ' << GetConnectAddressString(m_mediaAddress) << CRLF;
   }
 
-  for (SsrcInfo::const_iterator it1 = m_ssrcInfo.begin(); it1 != m_ssrcInfo.end(); ++it1) {
-    for (PStringOptions::const_iterator it2 = it1->second.begin(); it2 != it1->second.end(); ++it2)
-      strm << "a=ssrc:" << it1->first << ' ' << it2->first << ':' << it2->second << CRLF;
+  if (m_ssrcInfo.size() == 1) {
+    SsrcInfo::const_iterator it1 = m_ssrcInfo.begin();
+    for (PStringOptions::const_iterator it2 = it1->second.begin(); it2 != it1->second.end(); ++it2) {
+      strm << "a=";
+      if (it2->first == "cname")
+        strm << "ssrc:" << it1->first << ' ';
+      strm << it2->first << ':' << it2->second << CRLF;
+    }
+  }
+  else {
+    for (SsrcInfo::const_iterator it1 = m_ssrcInfo.begin(); it1 != m_ssrcInfo.end(); ++it1) {
+      for (PStringOptions::const_iterator it2 = it1->second.begin(); it2 != it1->second.end(); ++it2)
+        strm << "a=ssrc:" << it1->first << ' ' << it2->first << ':' << it2->second << CRLF;
+    }
   }
 
   // m_rtcp_fb is set via SDPRTPAVPMediaDescription::PreEncode according to various options
@@ -1867,6 +1883,16 @@ void SDPRTPAVPMediaDescription::SetAttribute(const PString & attr, const PString
     return;
   }
 
+  if (attr *= "msid") {
+    m_msid = value;
+    for (SsrcInfo::iterator it = m_ssrcInfo.begin(); it != m_ssrcInfo.end(); ++it) {
+      it->second.SetAt("msid", value);
+      it->second.SetAt("mslabel", m_msid.Left(m_msid.Find(' ')));
+      PTRACE(2, "SSRC: " << RTP_TRACE_SRC(it->first) << " m level msid: \"" << m_msid << '"');
+    }
+    return;
+  }
+
   if (attr *= "ssrc") {
     DWORD ssrc = value.AsUnsigned();
     PINDEX space = value.Find(' ');
@@ -1875,12 +1901,20 @@ void SDPRTPAVPMediaDescription::SetAttribute(const PString & attr, const PString
       PTRACE(2, "Cannot decode ssrc attribute: \"" << value << '"');
     }
     else {
+      if (!m_msid.IsEmpty()) {
+        m_ssrcInfo[ssrc].SetAt("msid", m_msid);
+        m_ssrcInfo[ssrc].SetAt("mslabel", m_msid.Left(m_msid.Find(' ')));
+        PTRACE(2, "SSRC: " << RTP_TRACE_SRC(ssrc) << " m level msid: \"" << m_msid << '"');
+      }
+
       PCaselessString key = value(space + 1, endToken - 1);
       PString val = value.Mid(endToken + 1);
       m_ssrcInfo[ssrc].SetAt(key, val);
       PTRACE_IF(4, key == "cname", "SSRC: " << RTP_TRACE_SRC(ssrc) << " CNAME: " << val);
       if (key == "mslabel" && !m_temporaryFlowSSRC.empty())
         m_mediaStreams[val][0] = m_temporaryFlowSSRC;
+      else if (key == "msid" && m_ssrcInfo[ssrc].GetString("mslabel").IsEmpty())
+        m_ssrcInfo[ssrc].SetAt("mslabel", val.Left(val.Find(' ')));
     }
     return;
   }
@@ -1966,7 +2000,8 @@ bool SDPRTPAVPMediaDescription::ToSession(OpalMediaSession * session) const
       RTP_SyncSourceId ssrc = it->first;
       PString cname(it->second.GetString("cname"));
       if (!cname.IsEmpty()) {
-        if (rtpSession->GetCanonicalName(ssrc, OpalRTPSession::e_Receiver) != cname) {
+        PString oldCname = rtpSession->GetCanonicalName(ssrc, OpalRTPSession::e_Receiver);
+        if (!oldCname.IsEmpty() && oldCname != cname) {
           rtpSession->RemoveSyncSource(ssrc);
           PTRACE(4, "Session " << session->GetSessionID() << ", removed receiver SSRC " << RTP_TRACE_SRC(ssrc));
         }
@@ -2035,7 +2070,7 @@ void SDPAudioMediaDescription::OutputAttributes(ostream & strm) const
      what should be rare cases.
     */
 
-  if (m_stringOptions.GetBoolean(OPAL_OPT_OFFER_SDP_PTIME)) {
+  if (m_stringOptions.GetBoolean(OPAL_OPT_OFFER_SDP_PTIME, true)) {
     unsigned ptime = 0;
     for (SDPMediaFormatList::const_iterator format = m_formats.begin(); format != m_formats.end(); ++format) {
       const OpalMediaFormat & mediaFormat = format->GetMediaFormat();
@@ -2242,7 +2277,7 @@ bool SDPVideoMediaDescription::PreEncode()
         m_bandwidth.SetMax(name.Mid(sizeof(SDPBandwidthPrefix)-1), option.AsString().AsUnsigned());
     }
 
-    /**We set the bandwidth parameter to the largest of all the formats offerred.
+    /**We set the bandwidth parameter to the largest of all the formats offered.
        And individual format may be able to further retrict the bandwidth in it's
        FMTP line, e.g. H.264 can use a max-br=XXX option.
       */
@@ -2720,6 +2755,7 @@ bool SDPSessionDescription::Decode(const PStringArray & lines, const OpalMediaFo
             }
             else {
               PTRACE_CONTEXT_ID_TO(currentMedia);
+              currentMedia->SetStringOptions(GetStringOptions());
               if (currentMedia->Decode(tokens))
                 atLeastOneValidMedia = true;
               else {
@@ -2747,14 +2783,43 @@ bool SDPSessionDescription::Decode(const PStringArray & lines, const OpalMediaFo
   }
 
   if (currentMedia != NULL) {
-    PTRACE(3, "Parsed final media session with " << currentMedia->GetSDPMediaFormats().GetSize()
-                                                << " '" << currentMedia->GetSDPMediaType() << "' formats");
     if (!currentMedia->PostDecode(mediaFormats))
       ok = false;
 
     if (!defaultConnectAddressPresent && defaultConnectAddress.IsEmpty())
       defaultConnectAddress = currentMedia->GetMediaAddress();
+
+    PTRACE(3, "Parsed final media session with "
+           << currentMedia->GetSDPMediaFormats().GetSize()
+           << " '" << currentMedia->GetSDPMediaType() << "' formats,"
+              " ok=" << boolalpha << ok);
   }
+
+  // Match up groups and mid's
+  for (PINDEX i = 0; i < mediaDescriptions.GetSize(); ++i) {
+    PString mid = mediaDescriptions[i].GetGroupMediaId();
+    for (GroupDict::iterator it = m_groups.begin(); it != m_groups.end(); ++it) {
+      if (it->second.Contains(mid)) {
+        mediaDescriptions[i].SetGroupId(it->first);
+        break;
+      }
+    }
+  }
+
+  if (m_mediaStreamIds.GetSize() == 1 && m_mediaStreamIds[0] == "*") {
+    m_mediaStreamIds.RemoveAll();
+    for (PINDEX mdIdx = 1; mdIdx <= mediaDescriptions.GetSize(); ++mdIdx) {
+      const SDPRTPAVPMediaDescription * avp = dynamic_cast<const SDPRTPAVPMediaDescription *>(GetMediaDescriptionByIndex(mdIdx));
+      if (avp != NULL) {
+        for (SDPRTPAVPMediaDescription::SsrcInfo::const_iterator ssrc = avp->GetSsrcInfo().begin(); ssrc != avp->GetSsrcInfo().end(); ++ssrc) {
+          PString mslabel = ssrc->second.GetString("mslabel");
+          if (!mslabel.IsEmpty() && m_mediaStreamIds.GetValuesIndex(mslabel) == P_MAX_INDEX)
+            m_mediaStreamIds.AppendString(mslabel);
+        }
+      }
+    }
+  }
+  PTRACE(4, "Media stream identifiers: " << setfill(',') << m_mediaStreamIds);
 
 #if OPAL_SRTP
   // Reset setup flag for session...
@@ -2836,6 +2901,14 @@ SDPMediaDescription * SDPSessionDescription::GetMediaDescriptionByIndex(PINDEX i
 
   return &mediaDescriptions[index-1];
 }
+
+
+void SDPSessionDescription::AddMediaDescription(SDPMediaDescription * md)
+{
+  PTRACE_CONTEXT_ID_TO(md);
+  mediaDescriptions.Append(PAssertNULL(md));
+}
+
 
 SDPMediaDescription::Direction SDPSessionDescription::GetDirection(unsigned sessionID) const
 {

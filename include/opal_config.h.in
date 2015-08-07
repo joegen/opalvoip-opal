@@ -195,8 +195,6 @@
 
 #undef OPAL_SCRIPT
 
-#undef OPAL_PERFORMANCE_CHECK_HACK
-
 
 /////////////////////////////////////////////////
 //

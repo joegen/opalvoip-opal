@@ -47,29 +47,23 @@ class OpalSDPHTTPConnection;
 
 
 /**Enable audio/video grouping in SDP.
-   This adds various identifiers to the SDP to link the audio and video
-   media sessions together. For example, to do lip sync.
+   This flag bundles all sessions to use the same transport, e.g. UDP
+   socket.
 
    Defaults to false.
 */
-#define OPAL_OPT_AV_GROUPING "AV-Grouping"
+#define OPAL_OPT_AV_BUNDLE "AV-Bundle"
 
-/**OpalConnection::StringOption key to a string for a regular expression to
-   match the product information, which if matching the remote system, will
-   indicate the remote does not support asymmetric hold as required by the
-   standard.
-   
-   This fault is when SDP sendonly is sent (us putting them on hold), and
-   they reply inactive, which implies them putting us on hold. When we
-   subsequently send recvonly to release our hold to them, they continue to
-   send inactive, and hold is never released.
+/**Enable multiple sync sources in single session.
+   This allows multiple SSRC values to be attached to a single SDP media
+   descriptor, m= line. Each SSRC must use the same media format selected for
+   the session. If false, and multiple SSRC's are attached to the session,
+   then each SSRC will create a separate SDP media descriptor section. Note
+   in this latter case, OPAL_OPT_AV_BUNDLE must also be used.
 
-   Note the OpalProductInfo vendor, name & version strings are concatenated
-   before comparison with the regular expression.
-
-   Defaults to empty string.
-  */
-#define OPAL_OPT_SYMMETRIC_HOLD_PRODUCT "Symmetric-Hold-Product"
+   Defaults to false.
+*/
+#define OPAL_OPT_MULTI_SSRC "Multi-SSRC"
 
 
 /**Base class for endpoint types that use SDP for media transport.
@@ -129,8 +123,6 @@ class OpalSDPConnection : public OpalRTPConnection
 {
     PCLASSINFO(OpalSDPConnection, OpalRTPConnection);
   public:
-    static const PString & GetBundleGroupId();
-
   /**@name Construction */
   //@{
   /**Create a new connection.
@@ -270,6 +262,7 @@ class OpalSDPConnection : public OpalRTPConnection
     );
     virtual bool OnReceivedAnswerSDPSession(
       const SDPSessionDescription & sdp,
+      const SDPMediaDescription * mediaDescription,
       unsigned sessionId,
       bool & multipleFormats
     );
@@ -286,7 +279,7 @@ class OpalSDPConnection : public OpalRTPConnection
     );
 #if OPAL_VIDEO
     virtual void SetAudioVideoGroup(
-      const PString & id = GetBundleGroupId()
+      const PString & id = OpalMediaSession::GetBundleGroupId()
     );
 #endif
 
