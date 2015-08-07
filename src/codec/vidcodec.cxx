@@ -114,6 +114,8 @@ const OpalVideoFormat & GetOpalYUV420P()
 
 
 #define new PNEW
+#define PTraceModule() "Media"
+
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -125,7 +127,6 @@ OpalVideoTranscoder::OpalVideoTranscoder(const OpalMediaFormat & inputMediaForma
   , m_errorConcealment(false)
   , m_freezeTillIFrame(false)
   , m_frozenTillIFrame(false)
-  , m_forceIFrame(false)
   , m_lastFrameWasIFrame(false)
 {
   acceptEmptyPayload = true;
@@ -185,34 +186,8 @@ bool OpalVideoTranscoder::HandleIFrameRequest()
   if (outputMediaFormat == OpalYUV420P)
     return false;
 
-  PTimeInterval now = PTimer::Tick();
-  PTimeInterval timeSinceLast = now - m_lastReceivedIFrameRequest;
-  m_lastReceivedIFrameRequest = now;
-
-  if (m_forceIFrame) {
-    PTRACE(5, "Media\tIgnoring forced I-Frame as already in progress for " << *this);
-    return true;
-  }
-
-  if (m_throttleSendIFrameTimer.IsRunning()) {
-    PTRACE(4, "Media\tIgnoring forced I-Frame request due to throttling for " << *this);
-    return true;
-  }
-
-  static PTimeInterval const MinThrottle(500);
-  static PTimeInterval const MaxThrottle(0, 4);
-
-  if (timeSinceLast < MinThrottle && m_throttleSendIFrameTimer < MaxThrottle)
-    m_throttleSendIFrameTimer = m_throttleSendIFrameTimer*2;
-  else if (timeSinceLast > MaxThrottle && m_throttleSendIFrameTimer > MinThrottle)
-    m_throttleSendIFrameTimer = m_throttleSendIFrameTimer/2;
-  else if (m_throttleSendIFrameTimer > MinThrottle)
-    m_throttleSendIFrameTimer = m_throttleSendIFrameTimer;
-  else
-    m_throttleSendIFrameTimer = MinThrottle;
-
-  PTRACE(3, "Media\tI-Frame forced (throttle " << m_throttleSendIFrameTimer << ") in video stream " << *this);
-  m_forceIFrame = true; // Reset when I-Frame is sent
+  PTRACE_CONTEXT_ID_TO(m_encodingIntraFrameControl);
+  m_encodingIntraFrameControl.IntraFrameRequest();
   return true;
 }
 
@@ -228,18 +203,155 @@ void OpalVideoTranscoder::SendIFrameRequest(unsigned sequenceNumber, unsigned ti
 {
   m_frozenTillIFrame = m_freezeTillIFrame;
 
-  if (m_throttleRequestIFrameTimer.IsRunning()) {
-    PTRACE(4, "Media\tI-Frame requested, but not sent due to throttling.");
+  PTRACE_CONTEXT_ID_TO(m_decodingIntraFrameControl);
+  m_decodingIntraFrameControl.IntraFrameRequest();
+
+  if (!m_decodingIntraFrameControl.RequireIntraFrame())
     return;
-  }
 
   if (sequenceNumber == 0 && timestamp == 0)
     NotifyCommand(OpalVideoUpdatePicture());
   else
     NotifyCommand(OpalVideoPictureLoss(sequenceNumber, timestamp));
-  m_throttleRequestIFrameTimer.SetInterval(0, 1);
 }
 
+
+///////////////////////////////////////////////////////////////////////////////
+
+PTimeInterval const OpalIntraFrameControl::DefaultMinThrottle(500);
+PTimeInterval const OpalIntraFrameControl::DefaultMaxThrottle(0,4);
+PTimeInterval const OpalIntraFrameControl::DefaultPeriodic(0,0,1);
+
+OpalIntraFrameControl::OpalIntraFrameControl(const PTimeInterval & minThrottle,
+                                             const PTimeInterval & maxThrottle,
+                                             const PTimeInterval & periodic)
+  : m_minThrottleTime(minThrottle)
+  , m_maxThrottleTime(maxThrottle)
+  , m_periodicTime(periodic)
+  , m_retryTime(500)
+  , m_currentThrottleTime(minThrottle)
+  , m_state(e_Idle)
+  , m_lastRequest(0)
+{
+  m_requestTimer.SetNotifier(PCREATE_NOTIFIER(OnTimedRequest));
+  m_requestTimer = m_periodicTime;
+}
+
+
+void OpalIntraFrameControl::IntraFrameRequest()
+{
+  {
+    PWaitAndSignal mutex(m_mutex);
+
+    switch (m_state) {
+      case e_Idle :
+        break;
+
+      case e_Throttled :
+        // Back to requested state so when timer fires, it will do a retry for new request
+        m_state = e_Requested;
+        PTRACE(3, "Queuing I-Frame request as throttled: delay=" << m_currentThrottleTime);
+        return;
+
+      default :
+        // Don't touch timer, this request will be serviced by existing I-Frame on it's way
+        PTRACE(4, "Ignoring I-Frame request as already in progress: state=" << m_state);
+        return;
+    }
+
+    PTime now;
+    PTimeInterval timeSinceLast = now - m_lastRequest;
+    m_lastRequest = now;
+
+    if (timeSinceLast < m_minThrottleTime) {
+      m_currentThrottleTime = m_currentThrottleTime * 2;
+      if (m_currentThrottleTime > m_maxThrottleTime)
+        m_currentThrottleTime = m_maxThrottleTime;
+    }
+    else if (timeSinceLast > m_maxThrottleTime) {
+      m_currentThrottleTime = m_currentThrottleTime / 2;
+      if (m_currentThrottleTime < m_minThrottleTime)
+        m_currentThrottleTime = m_minThrottleTime;
+    }
+
+    m_state = e_Requesting;
+    PTRACE(3, "Immediate I-Frame request: retry=" << m_retryTime);
+  }
+
+  m_requestTimer = m_retryTime;
+}
+
+
+bool OpalIntraFrameControl::RequireIntraFrame()
+{
+  PWaitAndSignal mutex(m_mutex);
+
+  switch (m_state) {
+    case e_Requesting:
+      m_state = e_Requested;
+      break;
+
+    case e_Periodic:
+      m_state = e_Idle;
+      break;
+
+    default:
+      return false;
+  }
+
+  PTRACE(4, "I-Frame requested.");
+  return true;
+}
+
+
+void OpalIntraFrameControl::IntraFrameDetected()
+{
+  {
+    PWaitAndSignal mutex(m_mutex);
+    if (m_state != e_Requested)
+      return;
+
+    m_state = e_Throttled;
+    PTRACE(4, "I-Frame detected: throttle=" << m_currentThrottleTime);
+  }
+
+  m_requestTimer = m_currentThrottleTime; // Outside mutex
+}
+
+
+void OpalIntraFrameControl::OnTimedRequest(PTimer &, P_INT_PTR)
+{
+  PWaitAndSignal mutex(m_mutex);
+
+  // If idle, then this is a periodic request, restart the timer for another
+  switch (m_state) {
+    case e_Idle :
+      m_state = e_Periodic;
+      m_requestTimer = m_periodicTime;
+      PTRACE(4, "Periodic I-Frame request: next=" << m_periodicTime);
+      break;
+
+    case e_Throttled :
+      m_state = e_Idle;
+      m_requestTimer = m_periodicTime;
+      PTRACE(4, "End throttled I-Frames: next=" << m_periodicTime);
+      break;
+
+    case e_Requested :
+      m_state = e_Requesting;
+      m_requestTimer = m_retryTime;
+      PTRACE(4, "Retry I-Frame request: retry=" << m_retryTime);
+      break;
+
+    default :
+      m_requestTimer = m_requestTimer.GetResetTime();
+      PTRACE(2, "Encoder appears to be stuck, still requesting.");
+      break;
+  }
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
 
 // This should really do the key frame detection from the codec plugin, but we cheat for now
 struct OpalKeyFrameDetector
@@ -285,8 +397,8 @@ struct OpalKeyFrameDetectorVP8 : OpalKeyFrameDetector
     if (size <= headerSize)
       return OpalVideoFormat::e_NonFrameBoundary;
 
-    // Key frame is S bit == 1 && P bit == 0
-    if ((rtp[0] & 0x10) == 0)
+    // Key frame is S bit == 1 && partition == 0 && P bit == 0
+    if ((rtp[0]&0x1f) != 0x10)
       return OpalVideoFormat::e_NonFrameBoundary;
 
     return (rtp[headerSize] & 0x01) == 0 ? OpalVideoFormat::e_IntraFrame : OpalVideoFormat::e_InterFrame;
