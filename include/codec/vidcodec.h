@@ -71,6 +71,65 @@ extern const OpalVideoFormat & GetOpalYUV420P();
 
 ///////////////////////////////////////////////////////////////////////////////
 
+/**Handle logic for Intra frame control.
+    This class deals with issues of too many and too few Intra frames being
+    sent in response to requests from various sources.
+  */
+class OpalIntraFrameControl : public PObject
+{
+    PCLASSINFO(OpalIntraFrameControl, PObject);
+  public:
+    static PTimeInterval const DefaultMinThrottle;
+    static PTimeInterval const DefaultMaxThrottle;
+    static PTimeInterval const DefaultPeriodic;
+
+    OpalIntraFrameControl(
+      const PTimeInterval & minThrottle = DefaultMinThrottle, ///< Minimum time between intra frames
+      const PTimeInterval & maxThrottle = DefaultMaxThrottle, ///< If many requests, throttle period increases to this
+      const PTimeInterval & periodic = DefaultPeriodic        ///< Make sure Intra frames are at least this often
+    );
+
+    /**Handling incoming request for Intra frame.
+      */
+    void IntraFrameRequest();
+
+    /**Indicate that now is the time for an Intra frame to be generated.
+      */
+    bool RequireIntraFrame();
+
+    /**Detected Intra frame, so can cease requests.
+      */
+    void IntraFrameDetected();
+
+    /**Set retry time for if not getting Intra Frame.
+       This is typically the media round trip time, plus a bit.
+      */
+    void SetRetryTime(const PTimeInterval & t) { m_retryTime = t; }
+
+  protected:
+    PTimeInterval m_minThrottleTime;
+    PTimeInterval m_maxThrottleTime;
+    PTimeInterval m_periodicTime;
+    PTimeInterval m_retryTime;
+    PTimeInterval m_currentThrottleTime;
+
+    enum State
+    {
+      e_Idle,
+      e_Periodic,
+      e_Throttled,
+      e_Requesting,
+      e_Requested
+    } m_state;
+
+    PMutex m_mutex;
+    PTime  m_lastRequest;
+    PTimer m_requestTimer;
+    PDECLARE_NOTIFIER(PTimer, OpalIntraFrameControl, OnTimedRequest);
+};
+
+///////////////////////////////////////////////////////////////////////////////
+
 /**This class defines a transcoder implementation class that will
    encode/decode video.
 
@@ -160,7 +219,6 @@ class OpalVideoTranscoder : public OpalTranscoder
 
     virtual bool HasErrorConcealment() const  { return m_errorConcealment; }
     bool WasLastFrameIFrame() const { return m_lastFrameWasIFrame; }
-    void ForceIFrame()              { m_forceIFrame = true; }
     virtual void SendIFrameRequest(unsigned sequenceNumber, unsigned timestamp);
     virtual bool HandleIFrameRequest();
   //@}
@@ -171,12 +229,10 @@ class OpalVideoTranscoder : public OpalTranscoder
     bool   m_errorConcealment;
     bool   m_freezeTillIFrame;
     bool   m_frozenTillIFrame;
-    bool   m_forceIFrame;
     bool   m_lastFrameWasIFrame;
 
-    PSimpleTimer  m_throttleRequestIFrameTimer;
-    PSimpleTimer  m_throttleSendIFrameTimer;
-    PTimeInterval m_lastReceivedIFrameRequest;
+    OpalIntraFrameControl m_encodingIntraFrameControl;
+    OpalIntraFrameControl m_decodingIntraFrameControl;
 };
 
 
