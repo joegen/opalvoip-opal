@@ -510,7 +510,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnSendData(RTP_Dat
 
 OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveData(RTP_DataFrame & frame, bool newData)
 {
-  frame.SetBundleId(m_mediaStreamId);
+  frame.SetLipSyncId(m_mediaStreamId);
 
   RTP_SequenceNumber sequenceNumber = frame.GetSequenceNumber();
   RTP_SequenceNumber expectedSequenceNumber = m_lastSequenceNumber + 1;
@@ -1153,8 +1153,6 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveData(RTP_DataFrame & 
   SyncSource * receiver = UseSyncSource(frame.GetSyncSource(), e_Receiver, false);
   if (receiver == NULL)
       return e_IgnorePacket;
-
-  frame.SetBundleId(m_groupId);
 
   return receiver->OnReceiveData(frame, true);
 }
