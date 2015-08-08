@@ -308,7 +308,7 @@ class SIPMIMEInfo : public PMIMEInfo
     PCaselessString GetContentType(bool includeParameters = false) const;
     void SetContentType(const PString & v);
 
-    bool GetSDP(const PString & entityBody, PString & sdp) const;
+    bool GetSDP(const PString & entityBody, PString & sdp, PMultiPartList & parts) const;
 
     PCaselessString GetContentEncoding() const;
     void SetContentEncoding(const PString & v);
@@ -713,7 +713,7 @@ class SIP_PDU : public PSafeObject
           SIPMIMEInfo & GetMIME()            { return m_mime; }
     SDPSessionDescription * GetSDP()         { return m_SDP; }
     void SetSDP(SDPSessionDescription * sdp);
-    bool DecodeSDP(SIPConnection & connection, const OpalMediaFormatList & masterList);
+    bool DecodeSDP(SIPConnection & connection, PMultiPartList & parts);
     bool IsContentSDP(bool emptyOK = false) const;
 
     const PString & GetExternalTransportAddress() const { return m_externalTransportAddress; }

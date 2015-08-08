@@ -372,7 +372,14 @@ void OpalSIPIMContext::OnReceivedMESSAGE(SIPEndPoint & endpoint,
     message.m_toAddr   = request.GetTransport()->GetLastReceivedAddress();
     message.m_fromAddr = request.GetTransport()->GetRemoteAddress();
 
-    message.m_bodies.SetAt(mime.GetContentType(), request.GetEntityBody());
+    if (mime.GetContentType().NumCompare("multipart/") == PObject::EqualTo &&
+        mime.DecodeMultiPartList(message.m_bodyParts, request.GetEntityBody())) {
+      for (PMultiPartList::iterator it = message.m_bodyParts.begin(); it != message.m_bodyParts.end(); ++it)
+        message.m_bodies.SetAt(it->m_mime.GetString(PMIMEInfo::ContentTypeTag), it->m_textBody);
+    }
+    else
+      message.m_bodies.SetAt(mime.GetContentType(), request.GetEntityBody());
+
     OpalIMEndPoint * imEP = endpoint.GetManager().FindEndPointAs<OpalIMEndPoint>(OpalIMEndPoint::Prefix());
     if (imEP != NULL)
       status = imEP->OnRawMessageReceived(message, connection, errorInfo);

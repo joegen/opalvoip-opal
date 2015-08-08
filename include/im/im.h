@@ -90,6 +90,7 @@ class OpalIM : public PObject
     OpalTransportAddress  m_fromAddr; ///< Physical address for source of message
     PString               m_fromName; ///< Alias (human readable) name for source of message
     PStringToString       m_bodies;   ///< Map of MIME types to body text, e.g. "text/plain", "Hello Bob!"
+    PMultiPartList        m_bodyParts;///< More detailed information on the body data
 
     typedef uint32_t MessageID;
     MessageID m_messageId;            /**< Unique identifier for OpalIM instance for matching
