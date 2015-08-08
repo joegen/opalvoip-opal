@@ -892,6 +892,19 @@ class OpalVideoMediaStream : public OpalMediaStream
       return m_outputDevice;
     }
 
+    /** Set the watermark device
+      */
+    virtual void SetVideoWatermarkDevice(
+      PVideoInputDevice * device,
+      bool autoDelete = true
+    );
+
+    /** Get the watermark device
+      */
+    virtual PVideoInputDevice * GetVideoWatermarkDevice() const
+    {
+      return m_watermarkDevice;
+    }
   //@}
 
   protected:
@@ -899,14 +912,18 @@ class OpalVideoMediaStream : public OpalMediaStream
     virtual bool InternalUpdateMediaFormat(const OpalMediaFormat & newMediaFormat);
     virtual bool InternalExecuteCommand(const OpalMediaCommand & command);
     bool InternalAdjustDevices();
+    virtual void ApplyWatermark(unsigned width, unsigned height, BYTE * frame);
 
     PVideoInputDevice  * m_inputDevice;
+    PVideoInputDevice  * m_watermarkDevice;
     PVideoOutputDevice * m_outputDevice;
     bool                 m_autoDeleteInput;
+    bool                 m_autoDeleteWatermark;
     bool                 m_autoDeleteOutput;
     PTimeInterval        m_lastGrabTime;
     bool                 m_needKeyFrame;
     PMutex               m_devicesMutex;
+    PBYTEArray           m_watermarkData;
 };
 
 #endif // OPAL_VIDEO

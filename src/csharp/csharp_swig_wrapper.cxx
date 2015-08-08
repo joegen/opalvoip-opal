@@ -3379,6 +3379,35 @@ SWIGEXPORT int SWIGSTDCALL CSharp_OpalStatusMediaStream_volume_get(void * jarg1)
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_OpalStatusMediaStream_watermark_set(void * jarg1, char * jarg2) {
+  OpalStatusMediaStream *arg1 = (OpalStatusMediaStream *) 0 ;
+  char *arg2 = (char *) 0 ;
+  
+  arg1 = (OpalStatusMediaStream *)jarg1; 
+  arg2 = (char *)jarg2; 
+  {
+    if (arg2) {
+      arg1->m_watermark = (char const *) (new char[strlen((const char *)arg2)+1]);
+      strcpy((char *)arg1->m_watermark, (const char *)arg2);
+    } else {
+      arg1->m_watermark = 0;
+    }
+  }
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_OpalStatusMediaStream_watermark_get(void * jarg1) {
+  char * jresult ;
+  OpalStatusMediaStream *arg1 = (OpalStatusMediaStream *) 0 ;
+  char *result = 0 ;
+  
+  arg1 = (OpalStatusMediaStream *)jarg1; 
+  result = (char *) ((arg1)->m_watermark);
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
 SWIGEXPORT void * SWIGSTDCALL CSharp_new_OpalStatusMediaStream() {
   void * jresult ;
   OpalStatusMediaStream *result = 0 ;
