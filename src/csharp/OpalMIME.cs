@@ -9,20 +9,20 @@
 //------------------------------------------------------------------------------
 
 
-public class OpalMessage : global::System.IDisposable {
+public class OpalMIME : global::System.IDisposable {
   private global::System.Runtime.InteropServices.HandleRef swigCPtr;
   protected bool swigCMemOwn;
 
-  internal OpalMessage(global::System.IntPtr cPtr, bool cMemoryOwn) {
+  internal OpalMIME(global::System.IntPtr cPtr, bool cMemoryOwn) {
     swigCMemOwn = cMemoryOwn;
     swigCPtr = new global::System.Runtime.InteropServices.HandleRef(this, cPtr);
   }
 
-  internal static global::System.Runtime.InteropServices.HandleRef getCPtr(OpalMessage obj) {
+  internal static global::System.Runtime.InteropServices.HandleRef getCPtr(OpalMIME obj) {
     return (obj == null) ? new global::System.Runtime.InteropServices.HandleRef(null, global::System.IntPtr.Zero) : obj.swigCPtr;
   }
 
-  ~OpalMessage() {
+  ~OpalMIME() {
     Dispose();
   }
 
@@ -31,7 +31,7 @@ public class OpalMessage : global::System.IDisposable {
       if (swigCPtr.Handle != global::System.IntPtr.Zero) {
         if (swigCMemOwn) {
           swigCMemOwn = false;
-          OPALPINVOKE.delete_OpalMessage(swigCPtr);
+          OPALPINVOKE.delete_OpalMIME(swigCPtr);
         }
         swigCPtr = new global::System.Runtime.InteropServices.HandleRef(null, global::System.IntPtr.Zero);
       }
@@ -39,28 +39,37 @@ public class OpalMessage : global::System.IDisposable {
     }
   }
 
-  public OpalMessageType type {
+  public string type {
     set {
-      OPALPINVOKE.OpalMessage_type_set(swigCPtr, (int)value);
+      OPALPINVOKE.OpalMIME_type_set(swigCPtr, value);
     } 
     get {
-      OpalMessageType ret = (OpalMessageType)OPALPINVOKE.OpalMessage_type_get(swigCPtr);
+      string ret = OPALPINVOKE.OpalMIME_type_get(swigCPtr);
       return ret;
     } 
   }
 
-  public OpalMessageParam param {
+  public uint length {
     set {
-      OPALPINVOKE.OpalMessage_param_set(swigCPtr, OpalMessageParam.getCPtr(value));
+      OPALPINVOKE.OpalMIME_length_set(swigCPtr, value);
     } 
     get {
-      global::System.IntPtr cPtr = OPALPINVOKE.OpalMessage_param_get(swigCPtr);
-      OpalMessageParam ret = (cPtr == global::System.IntPtr.Zero) ? null : new OpalMessageParam(cPtr, false);
+      uint ret = OPALPINVOKE.OpalMIME_length_get(swigCPtr);
       return ret;
     } 
   }
 
-  public OpalMessage() : this(OPALPINVOKE.new_OpalMessage(), true) {
+  public string data {
+    set {
+      OPALPINVOKE.OpalMIME_data_set(swigCPtr, value);
+    } 
+    get {
+      string ret = OPALPINVOKE.OpalMIME_data_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public OpalMIME() : this(OPALPINVOKE.new_OpalMIME(), true) {
   }
 
 }

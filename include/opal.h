@@ -80,7 +80,7 @@ typedef struct OpalHandleStruct * OpalHandle;
 typedef struct OpalMessage OpalMessage;
 
 /// Current API version
-#define OPAL_C_API_VERSION 31
+#define OPAL_C_API_VERSION 32
 
 
 ///////////////////////////////////////
@@ -1035,6 +1035,17 @@ typedef struct OpalStatusRegistration {
 } OpalStatusRegistration;
 
 
+/**Arbitrary information identified by MIME type.
+   Commonly used for multi-part MIME data.
+  */
+typedef struct OpalMIME
+{
+  const char * m_type;      ///< MIME type for data, e.g. "text/html"
+  unsigned     m_length;    ///< Length of data, relevant mainly for if data is binary
+  const char * m_data;      ///< Pointer to data
+} OpalMIME;
+
+
 /**Set up call parameters for several command and indication messages.
 
    When establishing a new call via the OpalCmdSetUpCall command, the m_partyA and
@@ -1127,6 +1138,11 @@ typedef struct OpalParamSetUpCall {
   OpalParamProtocol m_overrides;  /**< Overrides for the default parameters for the protocol.
                                        For example, m_userName and m_displayName can be
                                        changed on a call by call basis. */
+  unsigned     m_extraCount; /**<Count of extra information items in m_extras. This fields contains any
+                                 extra information that is available about the outgoing call. It will
+                                 typically be protocol specific. For example, for SIP, this is the
+                                 multi-part MIME data that may be in the INVITE. */
+  const OpalMIME * m_extras; /**<Data for each extra piece of extra information. */
 } OpalParamSetUpCall;
 
 
@@ -1158,6 +1174,11 @@ typedef struct OpalStatusIncomingCall {
                                        Only available in version 18 and above */
   const char * m_referredByAddress; ///< This is the full address of the party doing transfer, if available.
   const char * m_redirectingNumber; ///< This is the E.164 number of the party doing transfer, if available.
+  unsigned     m_extraCount; /**<Count of extra information items in m_extras. This fields contains any
+                                 extra information that is available about the incoming call. It will
+                                 typically be protocol specific. For example, for SIP, this is the
+                                 multi-part MIME data that may be in the INVITE. */
+  const OpalMIME * m_extras; /**<Data for each extra piece of extra information. */
 } OpalStatusIncomingCall;
 
 
@@ -1386,7 +1407,8 @@ typedef struct OpalInstantMessage {
                                 in the m_bodyCount and m_bodies. */
   unsigned      m_bodyCount; /**<Count of bodies in m_mimeType and m_bodies */
   const char ** m_mimeType;  /**<MIME type for each body, e.g. "text/html" */
-  const char ** m_bodies;    /**<Body data for each MIME type */
+  const char ** m_bodies;    /**<Body data for each MIME type. Deprecated in favour
+                                of m_bodyData which supports binary data. */
   unsigned      m_messageId; /**<Identifer for this message. This can be used
                                  to match a message sent with OpalCmdSendIM with
                                  the disposition in OpalIndSentIM. It is not set
@@ -1394,6 +1416,7 @@ typedef struct OpalInstantMessage {
   const char *  m_htmlBody;  /**<HTML text body, if present. This will always
                                 be MIME type "text/html". It will also be included
                                 in the m_bodyCount and m_bodies. */
+  const OpalMIME * m_bodyData; /**<Body data. Pointer to m_bodyCount entries. */
 } OpalInstantMessage;
 
 
@@ -1499,9 +1522,7 @@ typedef struct OpalStatusCallCleared {
 } OpalStatusCallCleared;
 
 
-/**Type code for media stream status/control.
-   This is used by the OpalIndMediaStream indication and OpalCmdMediaStream command
-   in the OpalStatusMediaStream structure.
+/**Type code for the reasons a call was ended.
   */
 typedef enum OpalCallEndReason {
   OpalCallEndedByLocalUser,         /// Local endpoint application cleared call
