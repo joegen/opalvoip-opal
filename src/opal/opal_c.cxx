@@ -2404,8 +2404,27 @@ void OpalManager_C::HandleMediaStream(const OpalMessage & command, OpalMessageBu
     connection->SetAudioVolume(stream->IsSource(), volume);
   }
 
+#if OPAL_VIDEO
   if (m_apiVersion < 32)
     return;
+
+  if (IsNullString(command.m_param.m_mediaStream.m_watermark))
+    return;
+
+  OpalVideoMediaStream * videoStream = dynamic_cast<OpalVideoMediaStream *>(&*stream);
+  if (videoStream == NULL) {
+    response.SetError("Watermark can only be set on video stream.");
+    return;
+  }
+
+  PVideoInputDevice * device = PVideoInputDevice::CreateOpenedDevice(command.m_param.m_mediaStream.m_watermark, false);
+  if (device == NULL) {
+    response.SetError("Could not open watermark device.");
+    return;
+  }
+
+  videoStream->SetVideoWatermarkDevice(device);
+#endif // OPAL_VIDEO
 }
 
 
