@@ -763,6 +763,7 @@ class OptionsDialog : public wxDialog
     int       m_VideoGrabFrameRate;
     PwxString m_VideoGrabFrameSize;
     bool      m_VideoGrabPreview;
+    PwxString m_VideoWatermarkDevice;
     bool      m_VideoFlipLocal;
     bool      m_VideoAutoTransmit;
     bool      m_VideoAutoReceive;
@@ -775,6 +776,7 @@ class OptionsDialog : public wxDialog
     PwxString m_VideoOnRing;
 
     wxComboBox * m_VideoGrabDeviceCtrl;
+    wxComboBox * m_VideoWatermarkDeviceCtrl;
     wxComboBox * m_VideoOnHoldDeviceCtrl;
     wxComboBox * m_VideoOnRingDeviceCtrl;
     wxChoice   * m_VideoGrabSourceCtrl;
@@ -786,6 +788,7 @@ class OptionsDialog : public wxDialog
 
     void AdjustVideoControls();
     void ChangeVideoGrabDevice(wxCommandEvent & /*event*/);
+    void ChangeVideoWatermarkDevice(wxCommandEvent & /*event*/);
     void TestVideoCapture(wxCommandEvent & /*event*/);
     void OnTestVideoEnded(wxCommandEvent & /*event*/);
     void TestVideoThreadMain();
@@ -1332,6 +1335,8 @@ class MyManager : public wxFrame, public OpalManager, public PAsyncNotifierTarge
     int       m_VideoMaxBitRate;
     int       m_VideoTargetBitRate;
     bool AdjustVideoFormats();
+
+    PString m_VideoWatermarkDevice;
 
     enum ExtendedVideoRoles {
       e_DisabledExtendedVideoRoles,

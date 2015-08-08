@@ -937,6 +937,12 @@ class OPALPINVOKE {
   [global::System.Runtime.InteropServices.DllImport("OPAL", EntryPoint="CSharp_OpalStatusMediaStream_volume_get")]
   public static extern int OpalStatusMediaStream_volume_get(global::System.Runtime.InteropServices.HandleRef jarg1);
 
+  [global::System.Runtime.InteropServices.DllImport("OPAL", EntryPoint="CSharp_OpalStatusMediaStream_watermark_set")]
+  public static extern void OpalStatusMediaStream_watermark_set(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2);
+
+  [global::System.Runtime.InteropServices.DllImport("OPAL", EntryPoint="CSharp_OpalStatusMediaStream_watermark_get")]
+  public static extern string OpalStatusMediaStream_watermark_get(global::System.Runtime.InteropServices.HandleRef jarg1);
+
   [global::System.Runtime.InteropServices.DllImport("OPAL", EntryPoint="CSharp_new_OpalStatusMediaStream")]
   public static extern global::System.IntPtr new_OpalStatusMediaStream();
 

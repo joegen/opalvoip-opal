@@ -83,6 +83,14 @@ public class OpalStatusMediaStream {
     return OPALJNI.OpalStatusMediaStream_volume_get(swigCPtr, this);
   }
 
+  public void setWatermark(String value) {
+    OPALJNI.OpalStatusMediaStream_watermark_set(swigCPtr, this, value);
+  }
+
+  public String getWatermark() {
+    return OPALJNI.OpalStatusMediaStream_watermark_get(swigCPtr, this);
+  }
+
   public OpalStatusMediaStream() {
     this(OPALJNI.new_OpalStatusMediaStream(), true);
   }

@@ -348,6 +348,7 @@
 	</object>
 	<object class="wxPanel" name="InCallPanel" subclass="InCallPanel">
 		<style>wxSUNKEN_BORDER|wxTAB_TRAVERSAL</style>
+		<size>617,358</size>
 		<object class="wxBoxSizer">
 			<orient>wxHORIZONTAL</orient>
 			<object class="sizeritem">
@@ -489,7 +490,7 @@
 																	<border>0</border>
 																	<object class="wxStaticText" name="label_78">
 																		<label>Bandwidth:</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -499,7 +500,7 @@
 																	<object class="wxStaticText" name="RxAudioBandwidth">
 																		<style>wxST_NO_AUTORESIZE</style>
 																		<label>%.1f kbps</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -508,7 +509,7 @@
 																	<border>4</border>
 																	<object class="wxStaticText" name="label_79">
 																		<label>Min Interval:</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -518,7 +519,7 @@
 																	<object class="wxStaticText" name="RxAudioMinTime">
 																		<style>wxST_NO_AUTORESIZE</style>
 																		<label>%u ms</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -527,7 +528,7 @@
 																	<border>0</border>
 																	<object class="wxStaticText" name="label_65">
 																		<label>Total Bytes:</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -537,7 +538,7 @@
 																	<object class="wxStaticText" name="RxAudioBytes">
 																		<style>wxST_NO_AUTORESIZE</style>
 																		<label>%llu</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -546,7 +547,7 @@
 																	<border>4</border>
 																	<object class="wxStaticText" name="label_81">
 																		<label>Avg Interval:</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -556,7 +557,7 @@
 																	<object class="wxStaticText" name="RxAudioAvgTime">
 																		<style>wxST_NO_AUTORESIZE</style>
 																		<label>%u ms</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -565,7 +566,7 @@
 																	<border>0</border>
 																	<object class="wxStaticText" name="label_67">
 																		<label>Packets:</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -575,7 +576,7 @@
 																	<object class="wxStaticText" name="RxAudioPackets">
 																		<style>wxST_NO_AUTORESIZE</style>
 																		<label>%u</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -584,7 +585,7 @@
 																	<border>4</border>
 																	<object class="wxStaticText" name="label_80">
 																		<label>Max Interval:</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -594,7 +595,7 @@
 																	<object class="wxStaticText" name="RxAudioMaxTime">
 																		<style>wxST_NO_AUTORESIZE</style>
 																		<label>%u ms</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -603,7 +604,7 @@
 																	<border>0</border>
 																	<object class="wxStaticText" name="label_73">
 																		<label>Packets Lost:</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -613,7 +614,7 @@
 																	<object class="wxStaticText" name="RxAudioLost">
 																		<style>wxST_NO_AUTORESIZE</style>
 																		<label>%u</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -622,7 +623,7 @@
 																	<border>4</border>
 																	<object class="wxStaticText" name="label_77_copy">
 																		<label>Avg Jitter:</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -632,7 +633,7 @@
 																	<object class="wxStaticText" name="RxAudioAvgJitter">
 																		<style>wxST_NO_AUTORESIZE</style>
 																		<label>%u ms</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -641,7 +642,7 @@
 																	<border>0</border>
 																	<object class="wxStaticText" name="label_71">
 																		<label>Out of Order:</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -651,7 +652,7 @@
 																	<object class="wxStaticText" name="RxAudioOutOfOrder">
 																		<style>wxST_NO_AUTORESIZE</style>
 																		<label>%u</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -660,7 +661,7 @@
 																	<border>4</border>
 																	<object class="wxStaticText" name="label_77">
 																		<label>Max Jitter:</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -670,7 +671,7 @@
 																	<object class="wxStaticText" name="RxAudioMaxJitter">
 																		<style>wxST_NO_AUTORESIZE</style>
 																		<label>%u ms</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -679,7 +680,7 @@
 																	<border>0</border>
 																	<object class="wxStaticText" name="label_75">
 																		<label>Too Late:</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -688,7 +689,7 @@
 																	<border>0</border>
 																	<object class="wxStaticText" name="RxAudioTooLate">
 																		<label>%u</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -697,7 +698,7 @@
 																	<border>4</border>
 																	<object class="wxStaticText" name="label_77_copy_2">
 																		<label>Jitter Delay:</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -707,7 +708,7 @@
 																	<object class="wxStaticText" name="RxAudioJitterDelay">
 																		<style>wxST_NO_AUTORESIZE</style>
 																		<label>%u ms</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -716,7 +717,7 @@
 																	<border>0</border>
 																	<object class="wxStaticText" name="label_75_copy_27">
 																		<label>Overruns:</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -726,7 +727,7 @@
 																	<object class="wxStaticText" name="RxAudioOverruns">
 																		<style>wxST_NO_AUTORESIZE</style>
 																		<label>%u</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 															</object>
@@ -758,7 +759,7 @@
 																	<border>0</border>
 																	<object class="wxStaticText" name="label_78_copy">
 																		<label>Bandwidth:</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -768,7 +769,7 @@
 																	<object class="wxStaticText" name="TxAudioBandwidth">
 																		<style>wxST_NO_AUTORESIZE</style>
 																		<label>%.1f kbps</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -777,7 +778,7 @@
 																	<border>4</border>
 																	<object class="wxStaticText" name="label_79_copy">
 																		<label>Min Interval:</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -787,7 +788,7 @@
 																	<object class="wxStaticText" name="TxAudioMinTime">
 																		<style>wxST_NO_AUTORESIZE</style>
 																		<label>%u ms</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -796,7 +797,7 @@
 																	<border>0</border>
 																	<object class="wxStaticText" name="label_65_copy">
 																		<label>Total Bytes:</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -806,7 +807,7 @@
 																	<object class="wxStaticText" name="TxAudioBytes">
 																		<style>wxST_NO_AUTORESIZE</style>
 																		<label>%llu</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -815,7 +816,7 @@
 																	<border>4</border>
 																	<object class="wxStaticText" name="label_81_copy">
 																		<label>Avg Interval:</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -825,7 +826,7 @@
 																	<object class="wxStaticText" name="TxAudioAvgTime">
 																		<style>wxST_NO_AUTORESIZE</style>
 																		<label>%u ms</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -834,7 +835,7 @@
 																	<border>0</border>
 																	<object class="wxStaticText" name="label_67_copy_1_copy">
 																		<label>Packets:</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -844,7 +845,7 @@
 																	<object class="wxStaticText" name="TxAudioPackets">
 																		<style>wxST_NO_AUTORESIZE</style>
 																		<label>%u</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -853,7 +854,7 @@
 																	<border>4</border>
 																	<object class="wxStaticText" name="label_80_copy">
 																		<label>Max Interval:</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -863,7 +864,7 @@
 																	<object class="wxStaticText" name="TxAudioMaxTime">
 																		<style>wxST_NO_AUTORESIZE</style>
 																		<label>%u ms</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -872,7 +873,7 @@
 																	<border>0</border>
 																	<object class="wxStaticText" name="label_101">
 																		<label>Packets Lost:</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -881,7 +882,7 @@
 																	<border>0</border>
 																	<object class="wxStaticText" name="TxAudioLost">
 																		<label>%u</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -890,7 +891,7 @@
 																	<border>4</border>
 																	<object class="wxStaticText" name="label_77_copy_copy_1">
 																		<label>Round trip:</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -900,7 +901,7 @@
 																	<object class="wxStaticText" name="TxAudioRoundTripTime">
 																		<style>wxST_NO_AUTORESIZE</style>
 																		<label>%u ms</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="spacer">
@@ -921,7 +922,7 @@
 																	<border>4</border>
 																	<object class="wxStaticText" name="label_77_copy_copy_1_copy">
 																		<label>Avg Jitter:</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -931,7 +932,7 @@
 																	<object class="wxStaticText" name="TxAudioAvgJitter">
 																		<style>wxST_NO_AUTORESIZE</style>
 																		<label>%u ms</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 															</object>
@@ -963,7 +964,7 @@
 																	<border>0</border>
 																	<object class="wxStaticText" name="label_78_copy_1">
 																		<label>Bandwidth:</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -973,7 +974,7 @@
 																	<object class="wxStaticText" name="RxVideoBandwidth">
 																		<style>wxST_NO_AUTORESIZE</style>
 																		<label>%.1f kbps</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -982,7 +983,7 @@
 																	<border>4</border>
 																	<object class="wxStaticText" name="label_79_copy_1">
 																		<label>Min Interval:</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -992,7 +993,7 @@
 																	<object class="wxStaticText" name="RxVideoMinTime">
 																		<style>wxST_NO_AUTORESIZE</style>
 																		<label>%u ms</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -1001,7 +1002,7 @@
 																	<border>0</border>
 																	<object class="wxStaticText" name="label_65_copy_1">
 																		<label>Total Bytes:</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -1011,7 +1012,7 @@
 																	<object class="wxStaticText" name="RxVideoBytes">
 																		<style>wxST_NO_AUTORESIZE</style>
 																		<label>%llu</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -1020,7 +1021,7 @@
 																	<border>4</border>
 																	<object class="wxStaticText" name="label_81_copy_1">
 																		<label>Avg Interval:</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -1030,7 +1031,7 @@
 																	<object class="wxStaticText" name="RxVideoAvgTime">
 																		<style>wxST_NO_AUTORESIZE</style>
 																		<label>%u ms</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -1039,7 +1040,7 @@
 																	<border>0</border>
 																	<object class="wxStaticText" name="label_67_copy">
 																		<label>Packets:</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -1049,7 +1050,7 @@
 																	<object class="wxStaticText" name="RxVideoPackets">
 																		<style>wxST_NO_AUTORESIZE</style>
 																		<label>%u</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -1058,7 +1059,7 @@
 																	<border>4</border>
 																	<object class="wxStaticText" name="label_80_copy_1">
 																		<label>Max Interval:</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -1068,7 +1069,7 @@
 																	<object class="wxStaticText" name="RxVideoMaxTime">
 																		<style>wxST_NO_AUTORESIZE</style>
 																		<label>%u ms</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -1077,7 +1078,7 @@
 																	<border>0</border>
 																	<object class="wxStaticText" name="label_73_copy">
 																		<label>Lost:</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -1087,7 +1088,7 @@
 																	<object class="wxStaticText" name="RxVideoLost">
 																		<style>wxST_NO_AUTORESIZE</style>
 																		<label>%u</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -1096,7 +1097,7 @@
 																	<border>4</border>
 																	<object class="wxStaticText" name="label_77_copy_copy">
 																		<label>Avg Jitter:</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -1106,7 +1107,7 @@
 																	<object class="wxStaticText" name="RxVideoAvgJitter">
 																		<style>wxST_NO_AUTORESIZE</style>
 																		<label>%u ms</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -1115,7 +1116,7 @@
 																	<border>0</border>
 																	<object class="wxStaticText" name="label_71_copy">
 																		<label>Out of Order:</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -1125,7 +1126,7 @@
 																	<object class="wxStaticText" name="RxVideoOutOfOrder">
 																		<style>wxST_NO_AUTORESIZE</style>
 																		<label>%u</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -1134,7 +1135,7 @@
 																	<border>4</border>
 																	<object class="wxStaticText" name="label_77_copy_1">
 																		<label>Max Jitter:</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -1144,7 +1145,7 @@
 																	<object class="wxStaticText" name="RxVideoMaxJitter">
 																		<style>wxST_NO_AUTORESIZE</style>
 																		<label>%u ms</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -1153,7 +1154,7 @@
 																	<border>0</border>
 																	<object class="wxStaticText" name="label_66_copy">
 																		<label>Frames:</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -1162,7 +1163,7 @@
 																	<border>0</border>
 																	<object class="wxStaticText" name="RxVideoFrames">
 																		<label>%u</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -1171,7 +1172,7 @@
 																	<border>0</border>
 																	<object class="wxStaticText" name="label_68_copy">
 																		<label>Key Frames:</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -1181,7 +1182,7 @@
 																	<object class="wxStaticText" name="RxVideoKeyFrames">
 																		<style>wxST_NO_AUTORESIZE</style>
 																		<label>%u</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -1190,7 +1191,7 @@
 																	<border>0</border>
 																	<object class="wxStaticText" name="label_87">
 																		<label>Frame Rate:</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -1200,7 +1201,7 @@
 																	<object class="wxStaticText" name="RxVideoFrameRate">
 																		<style>wxST_NO_AUTORESIZE</style>
 																		<label>%.1f fps</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -1209,7 +1210,7 @@
 																	<border>0</border>
 																	<object class="wxStaticText" name="TxVideoUpdates">
 																		<label>Updates Sent:</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -1218,7 +1219,7 @@
 																	<border>0</border>
 																	<object class="wxStaticText" name="RxVideoVFU">
 																		<label>%u</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -1227,7 +1228,7 @@
 																	<border>0</border>
 																	<object class="wxStaticText" name="label_118">
 																		<label>Resolution:</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -1236,7 +1237,7 @@
 																	<border>0</border>
 																	<object class="wxStaticText" name="RxVideoResolution">
 																		<label>N/A</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -1245,7 +1246,7 @@
 																	<border>0</border>
 																	<object class="wxStaticText" name="label_119">
 																		<label>Quality:</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -1254,7 +1255,7 @@
 																	<border>0</border>
 																	<object class="wxStaticText" name="RxVideoQuality">
 																		<label>N/A</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 															</object>
@@ -1286,7 +1287,7 @@
 																	<border>0</border>
 																	<object class="wxStaticText" name="label_78_copy_copy">
 																		<label>Bandwidth:</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -1296,7 +1297,7 @@
 																	<object class="wxStaticText" name="TxVideoBandwidth">
 																		<style>wxST_NO_AUTORESIZE</style>
 																		<label>%.1f kbps</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -1305,7 +1306,7 @@
 																	<border>4</border>
 																	<object class="wxStaticText" name="label_79_copy_copy">
 																		<label>Min Interval:</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -1315,7 +1316,7 @@
 																	<object class="wxStaticText" name="TxVideoMinTime">
 																		<style>wxST_NO_AUTORESIZE</style>
 																		<label>%u ms</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -1324,7 +1325,7 @@
 																	<border>0</border>
 																	<object class="wxStaticText" name="label_65_copy_copy">
 																		<label>Total Bytes:</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -1334,7 +1335,7 @@
 																	<object class="wxStaticText" name="TxVideoBytes">
 																		<style>wxST_NO_AUTORESIZE</style>
 																		<label>%llu</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -1343,7 +1344,7 @@
 																	<border>4</border>
 																	<object class="wxStaticText" name="label_81_copy_copy">
 																		<label>Avg Interval:</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -1353,7 +1354,7 @@
 																	<object class="wxStaticText" name="TxVideoAvgTime">
 																		<style>wxST_NO_AUTORESIZE</style>
 																		<label>%u ms</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -1362,7 +1363,7 @@
 																	<border>0</border>
 																	<object class="wxStaticText" name="label_67_copy_1_copy_copy">
 																		<label>Packets:</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -1372,7 +1373,7 @@
 																	<object class="wxStaticText" name="TxVideoPackets">
 																		<style>wxST_NO_AUTORESIZE</style>
 																		<label>%u</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -1381,7 +1382,7 @@
 																	<border>4</border>
 																	<object class="wxStaticText" name="label_80_copy_copy">
 																		<label>Max Interval:</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -1391,7 +1392,7 @@
 																	<object class="wxStaticText" name="TxVideoMaxTime">
 																		<style>wxST_NO_AUTORESIZE</style>
 																		<label>%u ms</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -1400,7 +1401,7 @@
 																	<border>0</border>
 																	<object class="wxStaticText" name="label_102">
 																		<label>Packets Lost:</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -1409,7 +1410,7 @@
 																	<border>0</border>
 																	<object class="wxStaticText" name="TxVideoLost">
 																		<label>%u</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -1418,7 +1419,7 @@
 																	<border>0</border>
 																	<object class="wxStaticText" name="label_68_copy_1">
 																		<label>Round Trip:</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -1428,7 +1429,7 @@
 																	<object class="wxStaticText" name="TxVideoRoundTripTime">
 																		<style>wxST_NO_AUTORESIZE</style>
 																		<label>%u ms</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -1437,7 +1438,7 @@
 																	<border>0</border>
 																	<object class="wxStaticText" name="label_66">
 																		<label>Total Frames:</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -1446,7 +1447,7 @@
 																	<border>0</border>
 																	<object class="wxStaticText" name="TxVideoFrames">
 																		<label>%u</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -1455,7 +1456,7 @@
 																	<border>0</border>
 																	<object class="wxStaticText" name="label_68">
 																		<label>Key Frames:</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -1465,7 +1466,7 @@
 																	<object class="wxStaticText" name="TxVideoKeyFrames">
 																		<style>wxST_NO_AUTORESIZE</style>
 																		<label>%u</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -1474,7 +1475,7 @@
 																	<border>0</border>
 																	<object class="wxStaticText" name="label_88_copy">
 																		<label>Frame Rate:</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -1484,7 +1485,7 @@
 																	<object class="wxStaticText" name="TxVideoFrameRate">
 																		<style>wxST_NO_AUTORESIZE</style>
 																		<label>%.1f fps</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -1493,7 +1494,7 @@
 																	<border>0</border>
 																	<object class="wxStaticText" name="RxVideoUpdates">
 																		<label>Rx Updates:</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -1502,7 +1503,7 @@
 																	<border>0</border>
 																	<object class="wxStaticText" name="TxVideoVFU">
 																		<label>%u</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -1511,7 +1512,7 @@
 																	<border>0</border>
 																	<object class="wxStaticText" name="label_121">
 																		<label>Resolution:</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -1520,7 +1521,7 @@
 																	<border>0</border>
 																	<object class="wxStaticText" name="TxVideoResolution">
 																		<label>N/A</label>
-																		<wrap>0</wrap>
+																		<wrap>1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -1529,7 +1530,7 @@
 																	<border>0</border>
 																	<object class="wxStaticText" name="label_120">
 																		<label>Quality:</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -1538,7 +1539,7 @@
 																	<border>0</border>
 																	<object class="wxStaticText" name="TxVideoQuality">
 																		<label>N/A</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 															</object>
@@ -1548,7 +1549,7 @@
 											</object>
 											<object class="notebookpage">
 												<label>Fax</label>
-												<selected>0</selected>
+												<selected>1</selected>
 												<object class="wxPanel" name="FaxStatistics">
 													<style>wxTAB_TRAVERSAL</style>
 													<object class="wxBoxSizer">
@@ -1585,7 +1586,7 @@
 																	<border>3</border>
 																	<object class="wxStaticText" name="label_83">
 																		<label>Transmit</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -1594,7 +1595,7 @@
 																	<border>0</border>
 																	<object class="wxStaticText" name="label_84">
 																		<label>Bandwidth:</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -1604,7 +1605,7 @@
 																	<object class="wxStaticText" name="RxFaxBandwidth">
 																		<style>wxST_NO_AUTORESIZE</style>
 																		<label>%.1f kbps</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -1614,7 +1615,7 @@
 																	<object class="wxStaticText" name="TxFaxBandwidth">
 																		<style>wxST_NO_AUTORESIZE</style>
 																		<label>%.1f kbps</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -1623,7 +1624,7 @@
 																	<border>6</border>
 																	<object class="wxStaticText" name="label_85">
 																		<label>Total Bytes:</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -1633,7 +1634,7 @@
 																	<object class="wxStaticText" name="RxFaxBytes">
 																		<style>wxST_NO_AUTORESIZE</style>
 																		<label>%llu</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -1643,7 +1644,7 @@
 																	<object class="wxStaticText" name="TxFaxBytes">
 																		<style>wxST_NO_AUTORESIZE</style>
 																		<label>%llu</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -1652,7 +1653,7 @@
 																	<border>0</border>
 																	<object class="wxStaticText" name="label_86">
 																		<label>Packets:</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -1662,7 +1663,7 @@
 																	<object class="wxStaticText" name="RxFaxPackets">
 																		<style>wxST_NO_AUTORESIZE</style>
 																		<label>%u</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -1672,7 +1673,7 @@
 																	<object class="wxStaticText" name="TxFaxPackets">
 																		<style>wxST_NO_AUTORESIZE</style>
 																		<label>%u</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="spacer">
@@ -1699,7 +1700,7 @@
 																	<border>0</border>
 																	<object class="wxStaticText" name="label_96">
 																		<label>Page:</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -1709,7 +1710,7 @@
 																	<object class="wxStaticText" name="RxFaxPages">
 																		<style>wxST_NO_AUTORESIZE</style>
 																		<label>%u</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 																<object class="sizeritem">
@@ -1719,7 +1720,7 @@
 																	<object class="wxStaticText" name="TxFaxPages">
 																		<style>wxST_NO_AUTORESIZE</style>
 																		<label>%u of %u</label>
-																		<wrap>0</wrap>
+																		<wrap>-1</wrap>
 																	</object>
 																</object>
 															</object>
@@ -1742,7 +1743,7 @@
 												<object class="wxStaticText" name="CallTimeLabel">
 													<style>wxALIGN_RIGHT</style>
 													<label>Call Time:</label>
-													<wrap>0</wrap>
+													<wrap>-1</wrap>
 												</object>
 											</object>
 											<object class="sizeritem">
@@ -1758,7 +1759,7 @@
 														<underlined>0</underlined>
 													</font>
 													<label>-:--</label>
-													<wrap>0</wrap>
+													<wrap>-1</wrap>
 												</object>
 											</object>
 										</object>
@@ -1766,20 +1767,20 @@
 								</object>
 							</object>
 							<object class="sizeritem">
-								<option>1</option>
-								<flag>wxRIGHT|wxTOP|wxBOTTOM|wxEXPAND</flag>
+								<option>0</option>
+								<flag>wxBOTTOM|wxRIGHT|wxTOP</flag>
 								<border>8</border>
 								<object class="wxNotebook" name="Controls">
 									<object class="notebookpage">
 										<label>Input</label>
-										<selected>0</selected>
+										<selected>1</selected>
 										<object class="wxPanel" name="Keypad">
 											<style>wxTAB_TRAVERSAL</style>
 											<object class="wxBoxSizer">
 												<orient>wxVERTICAL</orient>
 												<object class="sizeritem">
-													<option>0</option>
-													<flag></flag>
+													<option>4</option>
+													<flag>wxEXPAND</flag>
 													<border>0</border>
 													<object class="wxGridSizer">
 														<rows>4</rows>
@@ -1787,8 +1788,8 @@
 														<vgap>0</vgap>
 														<hgap>0</hgap>
 														<object class="sizeritem">
-															<option>0</option>
-															<flag></flag>
+															<option>1</option>
+															<flag>wxEXPAND</flag>
 															<border>0</border>
 															<object class="wxButton" name="Input1">
 																<label>1</label>
@@ -1796,8 +1797,8 @@
 															</object>
 														</object>
 														<object class="sizeritem">
-															<option>0</option>
-															<flag></flag>
+															<option>1</option>
+															<flag>wxEXPAND</flag>
 															<border>0</border>
 															<object class="wxButton" name="Input2">
 																<label>2\nabc</label>
@@ -1805,8 +1806,8 @@
 															</object>
 														</object>
 														<object class="sizeritem">
-															<option>0</option>
-															<flag></flag>
+															<option>1</option>
+															<flag>wxEXPAND</flag>
 															<border>0</border>
 															<object class="wxButton" name="Input3">
 																<label>3\ndef</label>
@@ -1814,8 +1815,8 @@
 															</object>
 														</object>
 														<object class="sizeritem">
-															<option>0</option>
-															<flag></flag>
+															<option>1</option>
+															<flag>wxEXPAND</flag>
 															<border>0</border>
 															<object class="wxButton" name="Input4">
 																<label>4\nghi</label>
@@ -1823,8 +1824,8 @@
 															</object>
 														</object>
 														<object class="sizeritem">
-															<option>0</option>
-															<flag></flag>
+															<option>1</option>
+															<flag>wxEXPAND</flag>
 															<border>0</border>
 															<object class="wxButton" name="Input5">
 																<label>5\njkl</label>
@@ -1832,8 +1833,8 @@
 															</object>
 														</object>
 														<object class="sizeritem">
-															<option>0</option>
-															<flag></flag>
+															<option>1</option>
+															<flag>wxEXPAND</flag>
 															<border>0</border>
 															<object class="wxButton" name="Input6">
 																<label>6\nmno</label>
@@ -1841,8 +1842,8 @@
 															</object>
 														</object>
 														<object class="sizeritem">
-															<option>0</option>
-															<flag></flag>
+															<option>1</option>
+															<flag>wxEXPAND</flag>
 															<border>0</border>
 															<object class="wxButton" name="Input7">
 																<label>7\npqrs</label>
@@ -1850,8 +1851,8 @@
 															</object>
 														</object>
 														<object class="sizeritem">
-															<option>0</option>
-															<flag></flag>
+															<option>1</option>
+															<flag>wxEXPAND</flag>
 															<border>0</border>
 															<object class="wxButton" name="Input8">
 																<label>8\ntuv</label>
@@ -1859,8 +1860,8 @@
 															</object>
 														</object>
 														<object class="sizeritem">
-															<option>0</option>
-															<flag></flag>
+															<option>1</option>
+															<flag>wxEXPAND</flag>
 															<border>0</border>
 															<object class="wxButton" name="Input9">
 																<label>9\nwxyz</label>
@@ -1868,8 +1869,8 @@
 															</object>
 														</object>
 														<object class="sizeritem">
-															<option>0</option>
-															<flag></flag>
+															<option>1</option>
+															<flag>wxEXPAND</flag>
 															<border>0</border>
 															<object class="wxButton" name="InputStar">
 																<label>*</label>
@@ -1877,8 +1878,8 @@
 															</object>
 														</object>
 														<object class="sizeritem">
-															<option>0</option>
-															<flag></flag>
+															<option>1</option>
+															<flag>wxEXPAND</flag>
 															<border>0</border>
 															<object class="wxButton" name="Input0">
 																<label>0</label>
@@ -1886,8 +1887,8 @@
 															</object>
 														</object>
 														<object class="sizeritem">
-															<option>0</option>
-															<flag></flag>
+															<option>1</option>
+															<flag>wxEXPAND</flag>
 															<border>0</border>
 															<object class="wxButton" name="InputHash">
 																<label>#</label>
@@ -1897,7 +1898,7 @@
 													</object>
 												</object>
 												<object class="sizeritem">
-													<option>0</option>
+													<option>1</option>
 													<flag>wxEXPAND</flag>
 													<border>0</border>
 													<object class="wxButton" name="InputFlash">
@@ -1916,14 +1917,14 @@
 											<object class="wxBoxSizer">
 												<orient>wxVERTICAL</orient>
 												<object class="sizeritem">
-													<option>0</option>
+													<option>1</option>
 													<flag>wxEXPAND</flag>
 													<border>0</border>
 													<object class="wxBoxSizer">
 														<orient>wxHORIZONTAL</orient>
 														<object class="sizeritem">
-															<option>0</option>
-															<flag></flag>
+															<option>1</option>
+															<flag>wxEXPAND</flag>
 															<border>0</border>
 															<object class="wxButton" name="ZoomWide">
 																<enabled>0</enabled>
@@ -1932,8 +1933,8 @@
 															</object>
 														</object>
 														<object class="sizeritem">
-															<option>0</option>
-															<flag></flag>
+															<option>1</option>
+															<flag>wxEXPAND</flag>
 															<border>0</border>
 															<object class="wxButton" name="ZoomTight">
 																<enabled>0</enabled>
@@ -1944,7 +1945,7 @@
 													</object>
 												</object>
 												<object class="sizeritem">
-													<option>0</option>
+													<option>3</option>
 													<flag>wxEXPAND</flag>
 													<border>0</border>
 													<object class="wxFlexGridSizer">
@@ -1953,16 +1954,16 @@
 														<vgap>0</vgap>
 														<hgap>0</hgap>
 														<growablecols></growablecols>
-														<growablerows></growablerows>
+														<growablerows>0,1,2</growablerows>
 														<object class="spacer">
 															<option>1</option>
 															<flag>wxEXPAND</flag>
 															<border>0</border>
-															<size>20,20</size>
+															<size>5,5</size>
 														</object>
 														<object class="sizeritem">
-															<option>0</option>
-															<flag></flag>
+															<option>1</option>
+															<flag>wxEXPAND</flag>
 															<border>0</border>
 															<object class="wxButton" name="TiltUp">
 																<enabled>0</enabled>
@@ -1974,11 +1975,11 @@
 															<option>1</option>
 															<flag>wxEXPAND</flag>
 															<border>0</border>
-															<size>20,20</size>
+															<size>5,5</size>
 														</object>
 														<object class="sizeritem">
-															<option>0</option>
-															<flag></flag>
+															<option>1</option>
+															<flag>wxEXPAND</flag>
 															<border>0</border>
 															<object class="wxButton" name="PanLeft">
 																<enabled>0</enabled>
@@ -1990,11 +1991,11 @@
 															<option>1</option>
 															<flag>wxEXPAND</flag>
 															<border>0</border>
-															<size>20,20</size>
+															<size>5,5</size>
 														</object>
 														<object class="sizeritem">
-															<option>0</option>
-															<flag></flag>
+															<option>1</option>
+															<flag>wxEXPAND</flag>
 															<border>0</border>
 															<object class="wxButton" name="PanRight">
 																<enabled>0</enabled>
@@ -2006,11 +2007,11 @@
 															<option>1</option>
 															<flag>wxEXPAND</flag>
 															<border>0</border>
-															<size>20,20</size>
+															<size>5,5</size>
 														</object>
 														<object class="sizeritem">
-															<option>0</option>
-															<flag></flag>
+															<option>1</option>
+															<flag>wxEXPAND</flag>
 															<border>0</border>
 															<object class="wxButton" name="TiltDown">
 																<enabled>0</enabled>
@@ -2022,19 +2023,19 @@
 															<option>1</option>
 															<flag>wxEXPAND</flag>
 															<border>0</border>
-															<size>20,20</size>
+															<size>5,5</size>
 														</object>
 													</object>
 												</object>
 												<object class="sizeritem">
-													<option>0</option>
+													<option>1</option>
 													<flag>wxEXPAND</flag>
 													<border>0</border>
 													<object class="wxBoxSizer">
 														<orient>wxHORIZONTAL</orient>
 														<object class="sizeritem">
-															<option>0</option>
-															<flag></flag>
+															<option>1</option>
+															<flag>wxEXPAND</flag>
 															<border>0</border>
 															<object class="wxButton" name="FocusIn">
 																<enabled>0</enabled>
@@ -2043,8 +2044,8 @@
 															</object>
 														</object>
 														<object class="sizeritem">
-															<option>0</option>
-															<flag></flag>
+															<option>1</option>
+															<flag>wxEXPAND</flag>
 															<border>0</border>
 															<object class="wxButton" name="FocusOut">
 																<enabled>0</enabled>
@@ -2400,7 +2401,7 @@
 					</object>
 					<object class="notebookpage">
 						<label>Networking</label>
-						<selected>1</selected>
+						<selected>0</selected>
 						<object class="wxPanel" name="NetworkingOptions">
 							<style>wxTAB_TRAVERSAL</style>
 							<object class="wxBoxSizer">
@@ -3547,7 +3548,7 @@
 					</object>
 					<object class="notebookpage">
 						<label>Video</label>
-						<selected>0</selected>
+						<selected>1</selected>
 						<object class="wxPanel" name="VideoOptions">
 							<style>wxTAB_TRAVERSAL</style>
 							<object class="wxBoxSizer">
@@ -3771,7 +3772,7 @@
 													<option>1</option>
 													<flag>wxALIGN_CENTER_VERTICAL|wxBOTTOM|wxEXPAND|wxRIGHT|wxTOP</flag>
 													<border>12</border>
-													<object class="wxComboBox" name="WatermarkDevice">
+													<object class="wxComboBox" name="VideoWatermarkDevice">
 														<style>wxCB_DROPDOWN</style>
 														<value></value>
 														<content />
@@ -6474,6 +6475,11 @@
 				</object>
 				<object class="wxMenuItem" name="MenuPresentationRole">
 					<label>Presentation Role</label>
+					<help></help>
+					<checkable>1</checkable>
+				</object>
+				<object class="wxMenuItem" name="MenuWatermark">
+					<label>Watermark</label>
 					<help></help>
 					<checkable>1</checkable>
 				</object>

@@ -1243,6 +1243,10 @@ typedef struct OpalStatusMediaStream {
                                       is dependent on the stream type and may be ignored. Also, a
                                       percentage of zero does not indicate muting, it indicates no
                                       change in volume. Use -1, to mute. */
+  const char    * m_watermark;   /**< For a video transmit meda stream, this indicates a secondary
+                                      video source device place on lower right corner. It would
+                                      typically be a .BMP or .JPG file, but theoretically could be
+                                      any video source device, including another camera. */
 } OpalStatusMediaStream;
 
 
