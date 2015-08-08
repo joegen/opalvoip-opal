@@ -42,6 +42,7 @@
 #if OPAL_VIDEO
 #include <ptlib/videoio.h>
 #include <codec/vidcodec.h>
+#include <ptlib/vconvert.h>
 #endif
 
 #include <opal/patch.h>
@@ -1147,8 +1148,10 @@ OpalVideoMediaStream::OpalVideoMediaStream(OpalConnection & conn,
                                            PBoolean delOut)
   : OpalMediaStream(conn, mediaFormat, sessionID, in != NULL)
   , m_inputDevice(in)
+  , m_watermarkDevice(NULL)
   , m_outputDevice(out)
   , m_autoDeleteInput(delIn)
+  , m_autoDeleteWatermark(false)
   , m_autoDeleteOutput(delOut)
   , m_needKeyFrame(false)
 {
@@ -1216,6 +1219,24 @@ void OpalVideoMediaStream::SetVideoOutputDevice(PVideoOutputDevice * device, boo
 }
 
 
+void OpalVideoMediaStream::SetVideoWatermarkDevice(PVideoInputDevice * device, bool autoDelete)
+{
+  PWaitAndSignal mutex(m_devicesMutex);
+
+  if (m_autoDeleteWatermark)
+    delete m_watermarkDevice;
+
+  m_watermarkDevice = device;
+  m_autoDeleteWatermark = autoDelete;
+
+  InternalAdjustDevices();
+
+  if (!m_watermarkDevice->Start()) {
+    PTRACE(1, "Could not start video grabber");
+  }
+}
+
+
 bool OpalVideoMediaStream::InternalUpdateMediaFormat(const OpalMediaFormat & newMediaFormat)
 {
   PWaitAndSignal mutex(m_devicesMutex);
@@ -1238,6 +1259,14 @@ bool OpalVideoMediaStream::InternalAdjustDevices()
 
   if (m_outputDevice != NULL) {
     if (!m_outputDevice->SetFrameInfoConverter(video))
+      return false;
+  }
+
+  if (m_watermarkDevice != NULL) {
+    // Don't use SetFrameInfoConverter s do not want to change resolution
+    if (!m_watermarkDevice->SetColourFormatConverter(mediaFormat.GetName()))
+      return false;
+    if (!m_watermarkDevice->SetFrameRate(video.GetFrameRate()))
       return false;
   }
 
@@ -1327,7 +1356,8 @@ PBoolean OpalVideoMediaStream::ReadData(BYTE * data, PINDEX size, PINDEX & lengt
 
   bool keyFrame = m_needKeyFrame;
   PINDEX bytesReturned = size - sizeof(OpalVideoTranscoder::FrameHeader);
-  if (!m_inputDevice->GetFrameData((BYTE *)OPAL_VIDEO_FRAME_DATA_PTR(frame), &bytesReturned, keyFrame)) {
+  BYTE * frameData = OPAL_VIDEO_FRAME_DATA_PTR(frame);
+  if (!m_inputDevice->GetFrameData(frameData, &bytesReturned, keyFrame)) {
     PTRACE(2, "Failed to grab frame from " << m_inputDevice->GetDeviceName());
     return false;
   }
@@ -1344,6 +1374,8 @@ PBoolean OpalVideoMediaStream::ReadData(BYTE * data, PINDEX size, PINDEX & lengt
   length = bytesReturned;
   if (length > 0)
     length += sizeof(PluginCodec_Video_FrameHeader);
+
+  ApplyWatermark(width, height, frameData);
 
   if (m_outputDevice == NULL)
     return true;
@@ -1391,6 +1423,8 @@ PBoolean OpalVideoMediaStream::WriteData(const BYTE * data, PINDEX length, PINDE
     return false;
   }
 
+  ApplyWatermark(frame->width, frame->height, OPAL_VIDEO_FRAME_DATA_PTR(frame));
+
   if (!m_outputDevice->Start()) {
     PTRACE(1, "Could not start video display device");
     return false;
@@ -1415,6 +1449,36 @@ PBoolean OpalVideoMediaStream::IsSynchronous() const
   return IsSource();
 }
 
+
+void OpalVideoMediaStream::ApplyWatermark(unsigned frameWidth, unsigned frameHeight, BYTE * frameData)
+{
+  if (m_watermarkDevice == NULL)
+    return;
+
+  if (m_watermarkDevice->GetColourFormat() != OpalYUV420P)
+    return;
+
+  if (!m_watermarkDevice->GetFrameData(m_watermarkData.GetPointer(m_watermarkDevice->GetMaxFrameBytes()))) {
+    PTRACE(2, "Failed to grab frame from " << m_watermarkDevice->GetDeviceName());
+    return;
+  }
+
+  unsigned waterWidth, waterHeight;
+  m_watermarkDevice->GetFrameSize(waterWidth, waterHeight);
+
+  unsigned w,h;
+  if (waterWidth > waterHeight) {
+    w = std::min(waterWidth, frameWidth);
+    h = std::min(waterHeight, frameHeight/4)&~1; // No more than a quarter of height, and even
+  }
+  else {
+    w = std::min(waterWidth, frameWidth/4)&~1; // No more than a quarter of width, and even
+    h = std::min(waterHeight, frameHeight);
+  }
+
+  PColourConverter::CopyYUV420P(0, 0, waterWidth, waterHeight, waterWidth, waterHeight, m_watermarkData,
+                                frameWidth-w, frameHeight-h, w, h, frameWidth, frameHeight, frameData);
+}
 #endif // OPAL_VIDEO
 
 

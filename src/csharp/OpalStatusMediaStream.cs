@@ -99,6 +99,16 @@ public class OpalStatusMediaStream : global::System.IDisposable {
     } 
   }
 
+  public string watermark {
+    set {
+      OPALPINVOKE.OpalStatusMediaStream_watermark_set(swigCPtr, value);
+    } 
+    get {
+      string ret = OPALPINVOKE.OpalStatusMediaStream_watermark_get(swigCPtr);
+      return ret;
+    } 
+  }
+
   public OpalStatusMediaStream() : this(OPALPINVOKE.new_OpalStatusMediaStream(), true) {
   }
 
