@@ -4967,6 +4967,7 @@ H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability 
     return NULL;
   }
 
+  session->SetRemoteAddress(remoteControlAddress, false);
   return CreateRTPChannel(capability, dir, *session);
 }
 
