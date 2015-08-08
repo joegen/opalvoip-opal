@@ -147,6 +147,7 @@ class OpalMessageBuffer
 
     void SetString(const char * * variable, const char * value);
     void SetData(const char * * variable, const char * value, size_t len);
+    void SetMIME(unsigned & length, const OpalMIME * & variable, const PMultiPartList & mime);
     void SetError(const char * errorText);
 
     OpalMessage * Detach();
@@ -324,6 +325,7 @@ class OpalManager_C : public OpalManager
 #endif // OPAL_HAS_PRESENCE
 
     void SendIncomingCallInfo(const OpalConnection & connection);
+    void SetOutgoingCallInfo(OpalMessageType type, OpalCall & call);
 
   protected:
     void HandleSetGeneral       (const OpalMessage & message, OpalMessageBuffer & response);
@@ -506,6 +508,22 @@ void OpalMessageBuffer::SetData(const char * * variable, const char * value, siz
 }
 
 
+void OpalMessageBuffer::SetMIME(unsigned & length, const OpalMIME * & variable, const PMultiPartList & mime)
+{
+  if (mime.IsEmpty())
+    return;
+
+  length = mime.GetSize();
+  SetData((const char **)&variable, NULL, length*sizeof(OpalMIME));
+  OpalMIME * item = const_cast<OpalMIME *>(variable);
+  for (PMultiPartList::const_iterator it = mime.begin(); it != mime.end(); ++it) {
+    SetString(&item->m_type, it->m_mime.GetString(PMIMEInfo::ContentTypeTag));
+    item->m_length = it->m_textBody.GetLength();
+    SetData(&item->m_data, it->m_textBody.GetPointer(), item->m_length);
+  }
+}
+
+
 void OpalMessageBuffer::SetError(const char * errorText)
 {
   OpalMessage * message = (OpalMessage *)m_data;
@@ -544,24 +562,9 @@ OpalLocalEndPoint_C::OpalLocalEndPoint_C(OpalManager_C & mgr)
 }
 
 
-static void SetOutgoingCallInfo(OpalMessageBuffer & message, const OpalConnection & connection)
-{
-  const OpalCall & call = connection.GetCall();
-  SET_MESSAGE_STRING(message, m_param.m_callSetUp.m_partyA, call.GetPartyA());
-  SET_MESSAGE_STRING(message, m_param.m_callSetUp.m_partyB, call.GetPartyB());
-  SET_MESSAGE_STRING(message, m_param.m_callSetUp.m_callToken, call.GetToken());
-  PTRACE(4, "OnOutgoingCall:"
-            " token=\"" << message->m_param.m_callSetUp.m_callToken << "\""
-            " A=\""     << message->m_param.m_callSetUp.m_partyA << "\""
-            " B=\""     << message->m_param.m_callSetUp.m_partyB << '"');
-}
-
-
 bool OpalLocalEndPoint_C::OnOutgoingCall(const OpalLocalConnection & connection)
 {
-  OpalMessageBuffer message(OpalIndAlerting);
-  SetOutgoingCallInfo(message, connection);
-  m_manager.PostMessage(message);
+  m_manager.SetOutgoingCallInfo(OpalIndAlerting, connection.GetCall());
   return true;
 }
 
@@ -725,9 +728,7 @@ PBoolean OpalPCSSEndPoint_C::OnShowIncoming(const OpalPCSSConnection & connectio
 
 PBoolean OpalPCSSEndPoint_C::OnShowOutgoing(const OpalPCSSConnection & connection)
 {
-  OpalMessageBuffer message(OpalIndAlerting);
-  SetOutgoingCallInfo(message, connection);
-  m_manager.PostMessage(message);
+  m_manager.SetOutgoingCallInfo(OpalIndAlerting, connection.GetCall());
   return true;
 }
 
@@ -783,9 +784,7 @@ OpalGstEndPoint_C::OpalGstEndPoint_C(OpalManager_C & manager)
 
 bool OpalGstEndPoint_C::OnOutgoingCall(const OpalLocalConnection & connection)
 {
-  OpalMessageBuffer message(OpalIndAlerting);
-  SetOutgoingCallInfo(message, connection);
-  m_manager.PostMessage(message);
+  m_manager.SetOutgoingCallInfo(OpalIndAlerting, connection.GetCall());
   return true;
 }
 
@@ -812,9 +811,7 @@ OpalIVREndPoint_C::OpalIVREndPoint_C(OpalManager_C & manager)
 
 bool OpalIVREndPoint_C::OnOutgoingCall(const OpalLocalConnection & connection)
 {
-  OpalMessageBuffer message(OpalIndAlerting);
-  SetOutgoingCallInfo(message, connection);
-  m_manager.PostMessage(message);
+  m_manager.SetOutgoingCallInfo(OpalIndAlerting, connection.GetCall());
   return true;
 }
 
@@ -1214,6 +1211,11 @@ void OpalManager_C::SendIncomingCallInfo(const OpalConnection & connection)
   SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_alertingType,   network->GetAlertingType());
   SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_protocolCallId, connection.GetIdentifier());
 
+  if (m_apiVersion >= 32)
+    message.SetMIME(message->m_param.m_incomingCall.m_extraCount,
+                    message->m_param.m_incomingCall.m_extras,
+                    network->GetExtraCallInfo());
+
   PTRACE(4, "OpalIndIncomingCall: token=\""  << message->m_param.m_incomingCall.m_callToken << "\"\n"
             "  Local  - URL=\"" << message->m_param.m_incomingCall.m_localAddress << "\"\n"
             "  Remote - URL=\"" << message->m_param.m_incomingCall.m_remoteAddress << "\""
@@ -1223,6 +1225,31 @@ void OpalManager_C::SendIncomingCallInfo(const OpalConnection & connection)
                     " E.164=\"" << message->m_param.m_incomingCall.m_calledPartyNumber << "\"\n"
             "  AlertingType=\"" << message->m_param.m_incomingCall.m_alertingType << "\"\n"
             "        CallID=\"" << message->m_param.m_incomingCall.m_protocolCallId << '"');
+
+  PostMessage(message);
+}
+
+
+void OpalManager_C::SetOutgoingCallInfo(OpalMessageType type, OpalCall & call)
+{
+  OpalMessageBuffer message(OpalIndIncomingCall);
+
+  PSafePtr<OpalConnection> network = call.GetConnection(1);
+  PAssert(network != NULL, PLogicError); // Should not happen!
+
+  SET_MESSAGE_STRING(message, m_param.m_callSetUp.m_partyA, call.GetPartyA());
+  SET_MESSAGE_STRING(message, m_param.m_callSetUp.m_partyB, call.GetPartyB());
+  SET_MESSAGE_STRING(message, m_param.m_callSetUp.m_callToken, call.GetToken());
+
+  if (m_apiVersion >= 32)
+    message.SetMIME(message->m_param.m_callSetUp.m_extraCount,
+                    message->m_param.m_callSetUp.m_extras,
+                    network->GetExtraCallInfo());
+
+  PTRACE(4, (type == OpalIndAlerting ? "OnOutgoingCall:" : "OnEstablished:")
+         << " token=\"" << message->m_param.m_callSetUp.m_callToken << "\""
+            " A=\""     << message->m_param.m_callSetUp.m_partyA << "\""
+            " B=\""     << message->m_param.m_callSetUp.m_partyB << '"');
 
   PostMessage(message);
 }
@@ -2376,6 +2403,9 @@ void OpalManager_C::HandleMediaStream(const OpalMessage & command, OpalMessageBu
       volume = command.m_param.m_mediaStream.m_volume;
     connection->SetAudioVolume(stream->IsSource(), volume);
   }
+
+  if (m_apiVersion < 32)
+    return;
 }
 
 
@@ -2443,15 +2473,7 @@ void OpalManager_C::HandleSetUserData(const OpalMessage & command, OpalMessageBu
 
 void OpalManager_C::OnEstablishedCall(OpalCall & call)
 {
-  OpalMessageBuffer message(OpalIndEstablished);
-  SET_MESSAGE_STRING(message, m_param.m_callSetUp.m_partyA, call.GetPartyA());
-  SET_MESSAGE_STRING(message, m_param.m_callSetUp.m_partyB, call.GetPartyB());
-  SET_MESSAGE_STRING(message, m_param.m_callSetUp.m_callToken, call.GetToken());
-  PTRACE(4, "OnEstablishedCall:"
-            " token=\"" << message->m_param.m_callSetUp.m_callToken << "\""
-            " A=\""     << message->m_param.m_callSetUp.m_partyA << "\""
-            " B=\""     << message->m_param.m_callSetUp.m_partyB << '"');
-  PostMessage(message);
+  SetOutgoingCallInfo(OpalIndEstablished, call);
 }
 
 
@@ -2781,6 +2803,9 @@ void OpalManager_C::OnMessageReceived(const OpalIM & im)
       SET_MESSAGE_STRING(message, m_param.m_instantMessage.m_bodies[i], im.m_bodies.GetDataAt(i));
     }
   }
+
+  if (m_apiVersion >= 32)
+    message.SetMIME(message->m_param.m_instantMessage.m_bodyCount, message->m_param.m_instantMessage.m_bodyData, im.m_bodyParts);
 
   PTRACE(4, "OpalC API\tOnMessageReceived:"
             " from=\"" << message->m_param.m_instantMessage.m_from << "\""

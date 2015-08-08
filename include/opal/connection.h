@@ -1780,6 +1780,10 @@ class OpalConnection : public PSafeObject
       */
     virtual PString GetCalledPartyURL();
 
+    /**Get any extra call information.
+      */
+    virtual PMultiPartList GetExtraCallInfo() const { return PMultiPartList(); }
+
     /* Internal function to copy party names from "network" connection to
        "non-network" connection such as OpalPCSSConnection. This allows
        the non-network GetRemoteAddress() function and its ilk to return

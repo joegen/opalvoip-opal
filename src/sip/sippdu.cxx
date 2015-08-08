@@ -2530,7 +2530,7 @@ void SIP_PDU::Build(PString & pduStr, PINDEX & pduLen)
 }
 
 
-bool SIPMIMEInfo::GetSDP(const PString & entityBody, PString & sdp) const
+bool SIPMIMEInfo::GetSDP(const PString & entityBody, PString & sdp, PMultiPartList & parts) const
 {
   if (entityBody.IsEmpty()) {
     PTRACE(5, "No entity body, no SDP.");
@@ -2552,7 +2552,6 @@ bool SIPMIMEInfo::GetSDP(const PString & entityBody, PString & sdp) const
     return false;
   }
 
-  PMultiPartList parts;
   if (!DecodeMultiPartList(parts, entityBody)) {
     PTRACE(3, "Invalid multipart MIME, no SDP.");
     return false;
@@ -2572,18 +2571,19 @@ bool SIPMIMEInfo::GetSDP(const PString & entityBody, PString & sdp) const
 
 bool SIP_PDU::IsContentSDP(bool emptyOK) const
 {
-  PString dummy;
-  return m_entityBody.IsEmpty() ? emptyOK : m_mime.GetSDP(m_entityBody, dummy);
+  PString sdpText;
+  PMultiPartList parts;
+  return m_entityBody.IsEmpty() ? emptyOK : m_mime.GetSDP(m_entityBody, sdpText, parts);
 }
 
 
-bool SIP_PDU::DecodeSDP(SIPConnection & connection, const OpalMediaFormatList & localList)
+bool SIP_PDU::DecodeSDP(SIPConnection & connection, PMultiPartList & parts)
 {
   if (m_SDP != NULL)
     return true;
 
   PString sdpText;
-  if (!m_mime.GetSDP(m_entityBody, sdpText))
+  if (!m_mime.GetSDP(m_entityBody, sdpText, parts))
     return false;
 
   m_SDP = connection.GetEndPoint().CreateSDP(0, 0, OpalTransportAddress());
@@ -2592,7 +2592,12 @@ bool SIP_PDU::DecodeSDP(SIPConnection & connection, const OpalMediaFormatList & 
 
   PTRACE_CONTEXT_ID_TO(m_SDP);
   m_SDP->SetStringOptions(connection.GetStringOptions());
-  if (m_SDP->Decode(sdpText, localList.IsEmpty() ? OpalMediaFormat::GetAllRegisteredMediaFormats() : localList))
+
+  OpalMediaFormatList localList = connection.GetLocalMediaFormats();
+  if (localList.IsEmpty())
+    OpalMediaFormat::GetAllRegisteredMediaFormats(localList);
+
+  if (m_SDP->Decode(sdpText, localList))
     return true;
 
   delete m_SDP;
