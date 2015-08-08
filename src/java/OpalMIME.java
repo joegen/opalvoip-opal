@@ -8,16 +8,16 @@
 
 package org.opalvoip.opal;
 
-public class OpalMessage {
+public class OpalMIME {
   private transient long swigCPtr;
   protected transient boolean swigCMemOwn;
 
-  protected OpalMessage(long cPtr, boolean cMemoryOwn) {
+  protected OpalMIME(long cPtr, boolean cMemoryOwn) {
     swigCMemOwn = cMemoryOwn;
     swigCPtr = cPtr;
   }
 
-  protected static long getCPtr(OpalMessage obj) {
+  protected static long getCPtr(OpalMIME obj) {
     return (obj == null) ? 0 : obj.swigCPtr;
   }
 
@@ -29,31 +29,38 @@ public class OpalMessage {
     if (swigCPtr != 0) {
       if (swigCMemOwn) {
         swigCMemOwn = false;
-        OPALJNI.delete_OpalMessage(swigCPtr);
+        OPALJNI.delete_OpalMIME(swigCPtr);
       }
       swigCPtr = 0;
     }
   }
 
-  public void setType(OpalMessageType value) {
-    OPALJNI.OpalMessage_type_set(swigCPtr, value.swigValue());
+  public void setType(String value) {
+    OPALJNI.OpalMIME_type_set(swigCPtr, this, value);
   }
 
-  public OpalMessageType getType() {
-    return OpalMessageType.swigToEnum(OPALJNI.OpalMessage_type_get(swigCPtr));
+  public String getType() {
+    return OPALJNI.OpalMIME_type_get(swigCPtr, this);
   }
 
-  public void setParam(OpalMessageParam value) {
-    OPALJNI.OpalMessage_param_set(swigCPtr, OpalMessageParam.getCPtr(value), value);
+  public void setLength(long value) {
+    OPALJNI.OpalMIME_length_set(swigCPtr, this, value);
   }
 
-  public OpalMessageParam getParam() {
-    long cPtr = OPALJNI.OpalMessage_param_get(swigCPtr);
-    return (cPtr == 0) ? null : new OpalMessageParam(cPtr, false);
+  public long getLength() {
+    return OPALJNI.OpalMIME_length_get(swigCPtr, this);
   }
 
-  public OpalMessage() {
-    this(OPALJNI.new_OpalMessage(), true);
+  public void setData(String value) {
+    OPALJNI.OpalMIME_data_set(swigCPtr, this, value);
+  }
+
+  public String getData() {
+    return OPALJNI.OpalMIME_data_get(swigCPtr, this);
+  }
+
+  public OpalMIME() {
+    this(OPALJNI.new_OpalMIME(), true);
   }
 
 }

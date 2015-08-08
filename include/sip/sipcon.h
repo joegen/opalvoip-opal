@@ -206,6 +206,10 @@ class SIPConnection : public OpalSDPConnection, public SIPTransactionOwner
       */
     virtual PString GetCalledPartyURL();
 
+    /**Get any extra call information.
+      */
+    virtual PMultiPartList GetExtraCallInfo() const { return m_multiPartMIME; }
+
     /**Get the local name/alias.
       */
     virtual PString GetLocalPartyURL() const;
@@ -718,6 +722,7 @@ class SIPConnection : public OpalSDPConnection, public SIPTransactionOwner
     SIPURL                m_remoteIdentity;
     SIPURL                m_contactAddress;
     SIPURL                m_ciscoRemotePartyID;
+    PMultiPartList        m_multiPartMIME;
 
     SIP_PDU             * m_lastReceivedINVITE;
     SIP_PDU             * m_delayedAckInviteResponse;

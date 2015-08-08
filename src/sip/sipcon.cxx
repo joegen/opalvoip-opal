@@ -710,7 +710,7 @@ int SIPConnection::SetRemoteMediaFormats(SIP_PDU & pdu)
      everything we know about, but there is no point in assuming it can do any
      more than we can, really.
      */
-  if (!pdu.DecodeSDP(*this, GetLocalMediaFormats()))
+  if (!pdu.DecodeSDP(*this, m_multiPartMIME))
     return 0;
 
   m_remoteFormatList = pdu.GetSDP()->GetMediaFormats();
@@ -1484,7 +1484,7 @@ bool SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
   // If we are in a dialog, then m_dialog needs to be updated in the 2xx/1xx
   // response for a target refresh request
   m_dialog.Update(response);
-  response.DecodeSDP(*this, GetLocalMediaFormats());
+  response.DecodeSDP(*this, m_multiPartMIME);
 
   const SIPMIMEInfo & responseMIME = response.GetMIME();
 
@@ -1689,7 +1689,7 @@ bool SIPConnection::SendDelayedACK(bool force)
     sdp->SetSessionName(m_delayedAckInviteResponse->GetMIME().GetUserAgent());
     m_delayedAckPDU->SetSDP(sdp);
 
-    m_delayedAckInviteResponse->DecodeSDP(*this, GetLocalMediaFormats());
+    m_delayedAckInviteResponse->DecodeSDP(*this, m_multiPartMIME);
     if (OnSendAnswerSDP(*m_delayedAckInviteResponse->GetSDP(), *sdp)) {
       if (!m_delayedAckPDU->Send())
         Release(EndedByTransportFail);
@@ -2160,7 +2160,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
 
   // We received a Re-INVITE for a current connection
   if (isReinvite) {
-    m_lastReceivedINVITE->DecodeSDP(*this, GetLocalMediaFormats());
+    m_lastReceivedINVITE->DecodeSDP(*this, m_multiPartMIME);
     OnReceivedReINVITE(request);
     return;
   }
@@ -2408,7 +2408,7 @@ void SIPConnection::OnReceivedACK(SIP_PDU & ack)
   while (!m_responsePackets.empty())
     m_responsePackets.pop();
 
-  if (ack.DecodeSDP(*this, GetLocalMediaFormats()) && !OnReceivedAnswer(ack, NULL)) {
+  if (ack.DecodeSDP(*this, m_multiPartMIME) && !OnReceivedAnswer(ack, NULL)) {
     Release(EndedByCapabilityExchange);
     return;
   }
@@ -3181,7 +3181,7 @@ void SIPConnection::OnReceivedPRACK(SIP_PDU & request)
     m_responsePackets.front().Send();
   }
 
-  if (request.DecodeSDP(*this, GetLocalMediaFormats()))
+  if (request.DecodeSDP(*this, m_multiPartMIME))
     OnReceivedAnswer(request, NULL);
 }
 
