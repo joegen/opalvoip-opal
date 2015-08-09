@@ -1580,6 +1580,7 @@ extern const OpalVideoFormat & GetOpalH263plus();
 extern const OpalVideoFormat & GetOpalH264_MODE0();
 extern const OpalVideoFormat & GetOpalH264_MODE1();
 extern const OpalVideoFormat & GetOpalMPEG4();
+extern const OpalVideoFormat & GetOpalVP8();
 #endif // OPAL_VIDEO
 
 extern const OpalMediaFormat & GetOpalRFC2833();
@@ -1652,6 +1653,7 @@ extern const OpalMediaFormat & GetOpalT38();
 #define OpalH264_MODE0 GetOpalH264_MODE0()
 #define OpalH264_MODE1 GetOpalH264_MODE1()
 #define OpalMPEG4      GetOpalMPEG4()
+#define OpalVP8        GetOpalVP8()
 #endif
 
 #define OpalL16Mono8kHz    OpalL16_MONO_8KHZ
