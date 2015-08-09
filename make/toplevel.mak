@@ -434,6 +434,7 @@ ifeq ($(OPAL_VIDEO), yes)
              $(OPAL_SRCDIR)/codec/h261mf.cxx \
              $(OPAL_SRCDIR)/codec/h263mf.cxx \
              $(OPAL_SRCDIR)/codec/h264mf.cxx \
+             $(OPAL_SRCDIR)/codec/vp8mf.cxx \
              $(OPAL_SRCDIR)/codec/mpeg4mf.cxx
 endif
 
