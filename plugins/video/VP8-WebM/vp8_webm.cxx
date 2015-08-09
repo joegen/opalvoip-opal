@@ -27,6 +27,13 @@
  */
 
 #include "../common/platform.h"
+
+#define MY_CODEC VP8  // Name of codec (use C variable characters)
+
+#define OPAL_SIP 1
+
+#include "../../../src/codec/vp8mf_inc.cxx"
+
 #include <codec/opalplugin.hpp>
 #include "../common/critsect.h"
 
@@ -81,7 +88,6 @@
 
 #define INCLUDE_OM_CUSTOM_PACKETIZATION 1
 
-#define MY_CODEC_LOG "VP8"
 class VP8_CODEC { };
 
 PLUGINCODEC_CONTROL_LOG_FUNCTION_DEF
@@ -112,36 +118,31 @@ PLUGINCODEC_LICENSE(
 
 ///////////////////////////////////////////////////////////////////////////////
 
-const unsigned MaxBitRate = 16000000;
-#define MAX_FR_SDP 30
-#define MAX_FS_SDP 65536
-
-
 static struct PluginCodec_Option const MaxFR =
 {
   PluginCodec_IntegerOption,          // Option type
-  "max-fr",                           // User visible name
+  MaxFrameRateName,                   // User visible name
   false,                              // User Read/Only flag
   PluginCodec_MinMerge,               // Merge mode
   STRINGIZE(MAX_FR_SDP),              // Initial value
-  "max-fr",                           // FMTP option name
+  MaxFrameRateSDP,                    // FMTP option name
   STRINGIZE(MAX_FR_SDP),              // FMTP default value
   0,                                  // H.245 generic capability code and bit mask
-  "1",                                // Minimum value
+  STRINGIZE(MIN_FR_SDP),              // Minimum value
   STRINGIZE(MAX_FR_SDP)               // Maximum value
 };
 
 static struct PluginCodec_Option const MaxFS =
 {
   PluginCodec_IntegerOption,          // Option type
-  "max-fs",                           // User visible name
+  MaxFrameSizeName,                   // User visible name
   false,                              // User Read/Only flag
   PluginCodec_MinMerge,               // Merge mode
   STRINGIZE(MAX_FS_SDP),              // Initial value
-  "max-fs",                           // FMTP option name
+  MaxFrameSizeSDP,                    // FMTP option name
   STRINGIZE(MAX_FS_SDP),              // FMTP default value
   0,                                  // H.245 generic capability code and bit mask
-  "48",                               // Minimum value
+  STRINGIZE(MIN_FS_SDP),              // Minimum value
   STRINGIZE(MAX_FS_SDP)               // Maximum value
 };
 
@@ -175,11 +176,11 @@ static struct PluginCodec_Option const TemporalSpatialTradeOff =
 static struct PluginCodec_Option const SpatialResampling =
 {
   PluginCodec_BoolOption,             // Option type
-  "Spatial Resampling",               // User visible name
+  SpatialResamplingsName,             // User visible name
   false,                              // User Read/Only flag
   PluginCodec_AndMerge,               // Merge mode
   "0",                                // Initial value
-  "dynamicres",                       // FMTP option name
+  SpatialResamplingsSDP,              // FMTP option name
   "0",                                // FMTP default value
   0                                   // H.245 generic capability code and bit mask
 };
@@ -187,7 +188,7 @@ static struct PluginCodec_Option const SpatialResampling =
 static struct PluginCodec_Option const SpatialResamplingUp =
 {
   PluginCodec_IntegerOption,          // Option type
-  "Spatial Resampling Up",            // User visible name
+  SpatialResamplingUpName,            // User visible name
   false,                              // User Read/Only flag
   PluginCodec_AlwaysMerge,            // Merge mode
   "100",                              // Initial value
@@ -201,7 +202,7 @@ static struct PluginCodec_Option const SpatialResamplingUp =
 static struct PluginCodec_Option const SpatialResamplingDown =
 {
   PluginCodec_IntegerOption,          // Option type
-  "Spatial Resampling Down",          // User visible name
+  SpatialResamplingDownName,          // User visible name
   false,                              // User Read/Only flag
   PluginCodec_AlwaysMerge,            // Merge mode
   "0",                                // Initial value
@@ -212,10 +213,10 @@ static struct PluginCodec_Option const SpatialResamplingDown =
   "100"                               // Maximum value
 };
 
-static struct PluginCodec_Option const PictureID =
+static struct PluginCodec_Option const PictureIDSize =
 {
   PluginCodec_EnumOption,             // Option type
-  "Picture ID Size",                  // User visible name
+  PictureIDSizeName,                  // User visible name
   false,                              // User Read/Only flag
   PluginCodec_AlwaysMerge,            // Merge mode
   "None",                             // Initial value
@@ -242,7 +243,7 @@ static struct PluginCodec_Option const OutputPartition =
 static struct PluginCodec_Option const * OptionTableRFC[] = {
   &MaxFR,
   &MaxFS,
-  &PictureID,
+  &PictureIDSize,
 #if HAS_OUTPUT_PARTITION
   &OutputPartition,
 #endif
@@ -289,44 +290,26 @@ class VP8FormatRFC : public VP8Format
 {
   public:
     VP8FormatRFC()
-      : VP8Format("VP8-WebM", "VP8", "VP8 Video Codec (RFC)", OptionTableRFC)
+      : VP8Format(VP8FormatName, VP8EncodingName, "VP8 Video Codec (RFC)", OptionTableRFC)
     {
     }
 
 
     virtual bool IsValidForProtocol(const char * protocol) const
-		{
-			return strcasecmp(protocol, PLUGINCODEC_OPTION_PROTOCOL_SIP) == 0;
-		}
+    {
+      return strcasecmp(protocol, PLUGINCODEC_OPTION_PROTOCOL_SIP) == 0;
+    }
 
 
     virtual bool ToNormalised(OptionMap & original, OptionMap & changed) const
     {
-      OptionMap::iterator it = original.find(MaxFS.m_name);
-      if (it != original.end() && !it->second.empty()) {
-        unsigned maxFrameSize = String2Unsigned(it->second)%MAX_FS_SDP;
-				if (ClampResolution(original, changed, m_maxWidth, m_maxHeight, maxFrameSize))
-					Change(maxFrameSize,  original, changed, MaxFS.m_name);
-			}
-
-      it = original.find(MaxFR.m_name);
-      if (it != original.end() && !it->second.empty())
-        ClampMin(PLUGINCODEC_VIDEO_CLOCK/String2Unsigned(it->second), original, changed, PLUGINCODEC_OPTION_FRAME_TIME);
-
-      return true;
+      return MyToNormalised(original, changed);
     }
 
 
     virtual bool ToCustomised(OptionMap & original, OptionMap & changed) const
     {
-      Change(GetMacroBlocks(original.GetUnsigned(PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH),
-                            original.GetUnsigned(PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT)),
-             original, changed, MaxFS.m_name);
-
-      Change(PLUGINCODEC_VIDEO_CLOCK/original.GetUnsigned(PLUGINCODEC_OPTION_FRAME_TIME),
-             original, changed, MaxFR.m_name);
-
-      return true;
+      return MyToCustomised(original, changed);
     }
 };
 
@@ -347,9 +330,9 @@ class VP8FormatOM : public VP8Format
 
 
     virtual bool IsValidForProtocol(const char * protocol) const
-		{
-			return strcasecmp(protocol, PLUGINCODEC_OPTION_PROTOCOL_SIP) == 0;
-		}
+    {
+      return strcasecmp(protocol, PLUGINCODEC_OPTION_PROTOCOL_SIP) == 0;
+    }
 
 
     virtual bool ToNormalised(OptionMap & original, OptionMap & changed) const
@@ -626,7 +609,7 @@ class VP8EncoderRFC : public VP8Encoder
 
     virtual bool SetOption(const char * optionName, const char * optionValue)
     {
-      if (strcasecmp(optionName, PictureID.m_name) == 0) {
+      if (strcasecmp(optionName, PictureIDSize.m_name) == 0) {
         if (strcasecmp(optionValue, "Byte") == 0) {
           if (m_pictureIdSize != 0x80) {
             m_pictureIdSize = 0x80;
