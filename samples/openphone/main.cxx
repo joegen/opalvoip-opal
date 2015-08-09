@@ -244,7 +244,9 @@ DEF_FIELD(GatekeeperLogin);
 DEF_FIELD(GatekeeperPassword);
 DEF_FIELD(H323TerminalType);
 DEF_FIELD(DTMFSendMode);
+#if OPAL_450
 DEF_FIELD(CallIntrusionProtectionLevel);
+#endif
 DEF_FIELD(DisableFastStart);
 DEF_FIELD(DisableH245Tunneling);
 DEF_FIELD(DisableH245inSETUP);
@@ -553,8 +555,6 @@ static void FillAudioDeviceComboBox(wxItemContainer * list, PSoundChannel::Direc
 
 
 ///////////////////////////////////////////////////////////////////////////////
-
-static wxFrame * TextCtrlChannelFrame;
 
 class TextCtrlChannel : public PChannel
 {
@@ -5930,8 +5930,6 @@ void OptionsDialog::TestVideoThreadMain()
   grabberArgs.rate = m_VideoGrabFrameRate;
   PVideoFrameInfo::ParseSize(m_VideoGrabFrameSize, grabberArgs.width, grabberArgs.height);
   grabberArgs.flip = m_VideoFlipLocal;
-
-  wxRect winRect(m_manager.GetRect());
 
   PVideoDevice::OpenArgs displayArgs;
   displayArgs.deviceName = psprintf(VIDEO_WINDOW_DEVICE" TITLE=\"Video Test\" X=%i Y=%i",
