@@ -157,10 +157,14 @@ H323EndPoint::~H323EndPoint()
 
 void H323EndPoint::ShutDown()
 {
-  PTRACE(4, "H323\tShutting down: " << m_reusableTransports.size() << " maintained transports");
-  for (set<OpalTransportPtr>::iterator it = m_reusableTransports.begin(); it != m_reusableTransports.end(); ++it)
-    (*it)->CloseWait();
+  m_reusableTransportMutex.Wait();
+  set<OpalTransportPtr> reusedTransports = m_reusableTransports;
   m_reusableTransports.clear();
+  m_reusableTransportMutex.Signal();
+
+  PTRACE(4, "H323\tShutting down: " << reusedTransports.size() << " maintained transports");
+  for (set<OpalTransportPtr>::iterator it = reusedTransports.begin(); it != reusedTransports.end(); ++it)
+    (*it)->CloseWait();
 
   /* Unregister request needs/depends OpalEndpoint listeners object, so shut
      down the gatekeeper (if there was one) before cleaning up the OpalEndpoint
@@ -173,15 +177,20 @@ void H323EndPoint::ShutDown()
 
 PBoolean H323EndPoint::GarbageCollection()
 {
+  m_reusableTransportMutex.Wait();
   for (set<OpalTransportPtr>::iterator it = m_reusableTransports.begin(); it != m_reusableTransports.end(); ) {
     if ((*it)->IsOpen())
       ++it;
     else {
       PTRACE(4, "H323\tRemoving maintained transport " << **it);
-      (*it)->CloseWait();
+      OpalTransportPtr transport = *it;
       m_reusableTransports.erase(it++);
+      m_reusableTransportMutex.Signal();
+      transport->CloseWait();
+      m_reusableTransportMutex.Wait();
     }
   }
+  m_reusableTransportMutex.Signal();
 
   return OpalRTPEndPoint::GarbageCollection();
 }
@@ -778,7 +787,9 @@ void H323EndPoint::OnReleased(OpalConnection & connection)
   OpalTransportPtr signallingChannel = dynamic_cast<H323Connection &>(connection).GetSignallingChannel();
   if (signallingChannel != NULL && signallingChannel->IsOpen()) {
     PTRACE(3, "H323", "Maintaining TCP connection: " << *signallingChannel);
+    m_reusableTransportMutex.Wait();
     m_reusableTransports.insert(signallingChannel);
+    m_reusableTransportMutex.Signal();
     signallingChannel->AttachThread(new PThreadObj2Arg<H323EndPoint, OpalTransportPtr, bool>(*this,
                 signallingChannel, true, &H323EndPoint::InternalNewIncomingConnection, false, "H225 Maintain"));
   }
@@ -840,7 +851,9 @@ void H323EndPoint::InternalNewIncomingConnection(OpalTransportPtr transport, boo
 
   // Make sure transport is attached before AddConnection()
   if (connection != NULL) {
+    m_reusableTransportMutex.Wait();
     m_reusableTransports.erase(transport);
+    m_reusableTransportMutex.Signal();
     connection->AttachSignalChannel(token, transport, true);
   }
 
