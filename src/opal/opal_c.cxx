@@ -1232,7 +1232,7 @@ void OpalManager_C::SendIncomingCallInfo(const OpalConnection & connection)
 
 void OpalManager_C::SetOutgoingCallInfo(OpalMessageType type, OpalCall & call)
 {
-  OpalMessageBuffer message(OpalIndIncomingCall);
+  OpalMessageBuffer message(type);
 
   PSafePtr<OpalConnection> network = call.GetConnection(1);
   PAssert(network != NULL, PLogicError); // Should not happen!
