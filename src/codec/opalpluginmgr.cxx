@@ -940,7 +940,8 @@ bool OpalPluginVideoTranscoder::EncodeFrames(const RTP_DataFrame & src, RTP_Data
   unsigned flags;
   m_lastFrameWasIFrame = false;
 
-  PTRACE_IF(4, m_forceIFrame, "OpalPlugin\tI-Frame forced from video codec at frame " << m_totalFrames);
+  bool foreIFrame = m_encodingIntraFrameControl.RequireIntraFrame();
+  PTRACE_IF(4, foreIFrame, "OpalPlugin\tI-Frame forced from video codec at frame " << m_totalFrames);
   do {
     // Some plug ins a very rude and use more memory than we say they can, so add an extra 1k
     RTP_DataFrame * dst = new RTP_DataFrame((PINDEX)0, outputDataSize+1024);
@@ -950,7 +951,7 @@ bool OpalPluginVideoTranscoder::EncodeFrames(const RTP_DataFrame & src, RTP_Data
     // call the codec function
     unsigned int fromLen = src.GetHeaderSize() + src.GetPayloadSize();
     unsigned int toLen = dst->GetHeaderSize() + outputDataSize;
-    flags = m_forceIFrame || m_totalFrames == 0 ? PluginCodec_CoderForceIFrame : 0;
+    flags = foreIFrame || m_totalFrames == 0 ? PluginCodec_CoderForceIFrame : 0;
 
     if (!Transcode((const BYTE *)src, &fromLen, dst->GetPointer(), &toLen, &flags)) {
       delete dst;
@@ -979,7 +980,7 @@ bool OpalPluginVideoTranscoder::EncodeFrames(const RTP_DataFrame & src, RTP_Data
 #if PTRACING
   if (!m_lastFrameWasIFrame)
     m_consecutiveIntraFrames = 0;
-  else if (m_forceIFrame)
+  else if (foreIFrame)
     PTRACE(3, "OpalPlugin\tEncoder sent forced I-Frame at frame " << m_totalFrames);
   else if (++m_consecutiveIntraFrames == 1) 
     PTRACE(4, "OpalPlugin\tEncoder sending I-Frame at frame " << m_totalFrames);
@@ -1005,7 +1006,7 @@ bool OpalPluginVideoTranscoder::EncodeFrames(const RTP_DataFrame & src, RTP_Data
 #endif // PTRACING
 
   if (m_lastFrameWasIFrame)
-    m_forceIFrame = false;
+    m_encodingIntraFrameControl.IntraFrameDetected();
 
   return true;
 }
@@ -1146,9 +1147,9 @@ bool OpalPluginVideoTranscoder::DecodeFrame(const RTP_DataFrame & src, RTP_DataF
     SendIFrameRequest(sequenceNumber, src.GetTimestamp());
 
   if ((flags & PluginCodec_ReturnCoderIFrame) != 0) {
-		m_throttleRequestIFrameTimer.Stop();
+    m_decodingIntraFrameControl.IntraFrameDetected();
     m_lastFrameWasIFrame = true;
-	}
+  }
 
   if ((flags & PluginCodec_ReturnCoderLastFrame) == 0)
     return true;
