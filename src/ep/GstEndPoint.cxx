@@ -505,11 +505,14 @@ bool GstEndPoint::BuildRTPPipeline(ostream & description, const GstMediaStream &
     return false;
   }
 
-  PIPSocket::Address host;
-  if (!session->GetRemoteAddress().GetIpAddress(host)) {
+  PIPSocket::Address host,dummy;
+  WORD dataPort, controlPort;
+  if (!session->GetRemoteAddress().GetIpAndPort(host, dataPort)) {
     PTRACE(4, "No remote address for rtpbin.");
     return false;
   }
+  if (!session->GetRemoteAddress().GetIpAndPort(dummy, controlPort))
+    controlPort = dataPort;
 
   if (index == 0)
     description << SubstituteName(m_rtpbin, GstEndPoint::GetPipelineRTPName()) << ' ';
@@ -526,14 +529,14 @@ bool GstEndPoint::BuildRTPPipeline(ostream & description, const GstMediaStream &
                 << " ! "
                    "udpsink name=" << mediaType << "TxRTP "
                            "host=" << host << " "
-                           "port=" << session->GetRemoteDataPort() << ' '
+                           "port=" << dataPort << ' '
                 << GstEndPoint::GetPipelineRTPName() << ".send_rtcp_src_" << index
                 << " ! "
                    "udpsink name=" << mediaType << "TxRTCP "
                            "sync=false "
                            "async=false "
                            "host=" << host << " "
-                           "port=" << session->GetRemoteControlPort() << " "
+                           "port=" << controlPort << " "
                    "udpsrc name=" << mediaType << "RxRTCP "
                    " ! "
                    "rtpbin.recv_rtcp_sink_" << index;
@@ -556,7 +559,7 @@ bool GstEndPoint::BuildRTPPipeline(ostream & description, const GstMediaStream &
                            "sync=false "
                            "async=false "
                            "host=" << host << " "
-                           "port=" << session->GetRemoteControlPort();
+                           "port=" << controlPort;
 
   }
 

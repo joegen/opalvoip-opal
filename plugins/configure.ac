@@ -35,7 +35,7 @@ AC_SUBST(DLFCN_LIBS)
 dnl ########################################################################
 dnl Extract OPAL version number
 
-OPAL_DETERMINE_DIRECTORIES([..])
+OPAL_DETERMINE_DIRECTORIES([$srcdir/..])
 
 MY_VERSION_FILE([$VERSION_DIR/version.h], [OPAL])
 

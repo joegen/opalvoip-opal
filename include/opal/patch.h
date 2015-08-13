@@ -239,10 +239,6 @@ class OpalMediaPatch : public PSafeObject
 #endif
   //@}
 
-#if OPAL_PERFORMANCE_CHECK_HACK
-    static unsigned m_performanceCheckHack;
-#endif
-
   protected:
     PDECLARE_NOTIFIER(OpalMediaCommand, OpalMediaPatch, InternalOnMediaCommand1);
     void InternalOnMediaCommand2(OpalMediaCommand * command);

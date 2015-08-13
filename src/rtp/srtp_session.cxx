@@ -72,12 +72,20 @@ static const unsigned MaxConsecutiveErrors = 100;
 ///////////////////////////////////////////////////////
 
 #if PTRACING
-static bool CheckError(err_status_t err, const char * fn, const char * file, int line, RTP_SyncSourceId ssrc = 0, RTP_SequenceNumber sn = 0)
+static bool CheckError(err_status_t err,
+                       const char * fn,
+                       const char * file,
+                       int line,
+                       const OpalMediaSession * session = NULL,
+                       RTP_SyncSourceId ssrc = 0,
+                       RTP_SequenceNumber sn = 0)
 {
   if (err == err_status_ok)
     return true;
 
   ostream & trace = PTrace::Begin(2, file, line, NULL, PTraceModule());
+  if (session != NULL)
+      trace << *session;
   trace << "Library error " << err << " from " << fn << "() - ";
   switch (err) {
     case err_status_fail :
@@ -478,10 +486,7 @@ bool OpalSRTPSession::ApplyCryptoKey(OpalMediaCryptoKeyList & keys, Direction di
   PSafeLockReadOnly lock(*this);
 
   for (OpalMediaCryptoKeyList::iterator it = keys.begin(); it != keys.end(); ++it) {
-    OpalSRTPKeyInfo * keyInfo = dynamic_cast<OpalSRTPKeyInfo*>(&*it);
-    if (keyInfo == NULL)
-      PTRACE(2, *this << "unsuitable crypto suite " << it->GetCryptoSuite().GetDescription());
-    else if (ApplyKeyToSRTP(*keyInfo, dir)) {
+    if (ApplyKeyToSRTP(*it, dir)) {
       keys.Select(it);
       return true;
     }
@@ -490,9 +495,15 @@ bool OpalSRTPSession::ApplyCryptoKey(OpalMediaCryptoKeyList & keys, Direction di
 }
 
 
-bool OpalSRTPSession::ApplyKeyToSRTP(OpalSRTPKeyInfo & keyInfo, Direction dir)
+bool OpalSRTPSession::ApplyKeyToSRTP(const OpalMediaCryptoKeyInfo & keyInfo, Direction dir)
 {
   // Aleady locked on entry
+
+  const OpalSRTPKeyInfo * srtpKeyInfo = dynamic_cast<const OpalSRTPKeyInfo*>(&keyInfo);
+  if (srtpKeyInfo == NULL) {
+    PTRACE(2, *this << "unsuitable crypto suite " << keyInfo.GetCryptoSuite().GetDescription());
+    return false;
+  }
 
   BYTE tmp_key_salt[32];
   memcpy(tmp_key_salt, keyInfo.GetCipherKey(), std::min((PINDEX)16, keyInfo.GetCipherKey().GetSize()));
@@ -510,7 +521,7 @@ bool OpalSRTPSession::ApplyKeyToSRTP(OpalSRTPKeyInfo & keyInfo, Direction dir)
     PTRACE(3, *this << "setting crypto keys for " << dir);
   }
 
-  m_keyInfo[dir] = new OpalSRTPKeyInfo(keyInfo);
+  m_keyInfo[dir] = new OpalSRTPKeyInfo(*srtpKeyInfo);
   memcpy(m_keyInfo[dir]->m_key_salt, tmp_key_salt, 32);
 
   for (SyncSourceMap::iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
@@ -538,7 +549,7 @@ RTP_SyncSourceId OpalSRTPSession::AddSyncSource(RTP_SyncSourceId ssrc, Direction
     return 0;
 
   if (m_keyInfo[dir] == NULL) {
-    PTRACE(3, *this << "could not add stream for SSRC=" << RTP_TRACE_SRC(ssrc) << ", no " << dir << " key (yet)");
+    PTRACE(3, *this << "could not add SRTP stream for SSRC=" << RTP_TRACE_SRC(ssrc) << ", no " << dir << " key (yet)");
     return ssrc;
   }
 
@@ -567,11 +578,42 @@ bool OpalSRTPSession::AddStreamToSRTP(RTP_SyncSourceId ssrc, Direction dir)
 
   policy.key = m_keyInfo[dir]->m_key_salt;
 
-  if (!CHECK_ERROR(srtp_add_stream, (m_context, &policy), ssrc))
+  if (!CHECK_ERROR(srtp_add_stream, (m_context, &policy), this, ssrc))
     return false;
 
-  PTRACE(4, *this << "added " << dir << " stream for SSRC=" << RTP_TRACE_SRC(ssrc));
+  PTRACE(4, *this << "added " << dir << " SRTP stream for SSRC=" << RTP_TRACE_SRC(ssrc));
   return true;
+}
+
+
+bool OpalSRTPSession::ApplyKeysToSRTP(OpalMediaTransport & transport)
+{
+  if (IsCryptoSecured(e_Sender) && IsCryptoSecured(e_Receiver))
+    return true;
+
+  OpalMediaCryptoKeyInfo * keyInfo[2];
+  if (!transport.GetKeyInfo(keyInfo))
+    return false;
+
+  for (PINDEX i = 0; i < 2; ++i) {
+    if (!ApplyKeyToSRTP(*keyInfo[i], (Direction)i))
+      return false;
+  }
+  return true;
+}
+
+
+void OpalSRTPSession::OnRxDataPacket(OpalMediaTransport & transport, PBYTEArray data)
+{
+  ApplyKeysToSRTP(transport);
+  OpalRTPSession::OnRxDataPacket(transport, data);
+}
+
+
+void OpalSRTPSession::OnRxControlPacket(OpalMediaTransport & transport, PBYTEArray data)
+{
+  ApplyKeysToSRTP(transport);
+  OpalRTPSession::OnRxControlPacket(transport, data);
 }
 
 
@@ -594,14 +636,14 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnSendData(RTP_DataFrame & fr
   }
 
   int len = frame.GetPacketSize();
-  {
-    frame.MakeUnique();
 
-    frame.SetMinSize(len + SRTP_MAX_TRAILER_LEN);
-    if (!CHECK_ERROR(srtp_protect, (m_context, frame.GetPointer(), &len), frame.GetSyncSource(), frame.GetSequenceNumber()))
-      return ++m_consecutiveErrors[e_Sender][e_Data] > MaxConsecutiveErrors ? e_AbortTransport : e_IgnorePacket;
-    m_consecutiveErrors[e_Sender][e_Data] = 0;
-  }
+  frame.MakeUnique();
+  frame.SetMinSize(len + SRTP_MAX_TRAILER_LEN);
+
+  if (!CHECK_ERROR(srtp_protect, (m_context, frame.GetPointer(), &len), this, frame.GetSyncSource(), frame.GetSequenceNumber()))
+    return ++m_consecutiveErrors[e_Sender][e_Data] > MaxConsecutiveErrors ? e_AbortTransport : e_IgnorePacket;
+
+  m_consecutiveErrors[e_Sender][e_Data] = 0;
 
   PTRACE(GetThrottle(e_Sender, e_Data, frame.GetSyncSource()),
          *this << "protected RTP packet: " << frame.GetPacketSize()
@@ -609,6 +651,7 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnSendData(RTP_DataFrame & fr
          << GetThrottle(e_Sender, e_Data, frame.GetSyncSource()));
 
   frame.SetPayloadSize(len - frame.GetHeaderSize());
+
   return e_ProcessPacket;
 }
 
@@ -629,15 +672,14 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnSendControl(RTP_ControlFram
   }
 
   int len = frame.GetPacketSize();
-  {
-    frame.MakeUnique();
 
-    frame.SetMinSize(len + SRTP_MAX_TRAILER_LEN);
+  frame.MakeUnique();
+  frame.SetMinSize(len + SRTP_MAX_TRAILER_LEN);
 
-    if (!CHECK_ERROR(srtp_protect_rtcp, (m_context, frame.GetPointer(), &len), frame.GetSenderSyncSource()))
-      return ++m_consecutiveErrors[e_Sender][e_Control] > MaxConsecutiveErrors ? e_AbortTransport : e_IgnorePacket;
-    m_consecutiveErrors[e_Sender][e_Control] = 0;
-  }
+  if (!CHECK_ERROR(srtp_protect_rtcp, (m_context, frame.GetPointer(), &len), this, frame.GetSenderSyncSource()))
+    return ++m_consecutiveErrors[e_Sender][e_Control] > MaxConsecutiveErrors ? e_AbortTransport : e_IgnorePacket;
+
+  m_consecutiveErrors[e_Sender][e_Control] = 0;
 
   PTRACE(GetThrottle(e_Sender, e_Control, frame.GetSenderSyncSource()),
          *this << "protected RTCP packet: " << frame.GetPacketSize()
@@ -645,6 +687,7 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnSendControl(RTP_ControlFram
          << GetThrottle(e_Sender, e_Control, frame.GetSenderSyncSource()));
 
   frame.SetPacketSize(len);
+
   return OpalRTPSession::e_ProcessPacket;
 }
 
@@ -660,20 +703,28 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveData(RTP_DataFrame &
     return OpalRTPSession::e_IgnorePacket;
   }
 
-  int len = frame.GetPacketSize();
-  {
-    frame.MakeUnique();
-    if (!CHECK_ERROR(srtp_unprotect, (m_context, frame.GetPointer(), &len), frame.GetSyncSource(), frame.GetSequenceNumber()))
-      return ++m_consecutiveErrors[e_Receiver][e_Data] > MaxConsecutiveErrors ? e_AbortTransport : e_IgnorePacket;
-    m_consecutiveErrors[e_Receiver][e_Data] = 0;
-  }
+  /* Need to have a receiver SSRC (their sender) even if we have never been
+      told about it, or we can't decrypt the RTCP packet. */
+  RTP_SyncSourceId ssrc = frame.GetSyncSource();
+  if (UseSyncSource(ssrc, e_Receiver, false) == NULL)
+    return e_IgnorePacket;
 
-  PTRACE(GetThrottle(e_Receiver, e_Data, frame.GetSyncSource()),
+  int len = frame.GetPacketSize();
+
+  frame.MakeUnique();
+
+  if (!CHECK_ERROR(srtp_unprotect, (m_context, frame.GetPointer(), &len), this, ssrc, frame.GetSequenceNumber()))
+    return ++m_consecutiveErrors[e_Receiver][e_Data] > MaxConsecutiveErrors ? e_AbortTransport : e_IgnorePacket;
+
+  m_consecutiveErrors[e_Receiver][e_Data] = 0;
+
+  PTRACE(GetThrottle(e_Receiver, e_Data, ssrc),
          *this << "unprotected RTP packet: " << frame.GetPacketSize()
-         << "->" << len << " SSRC=" << frame.GetSyncSource()
-         << GetThrottle(e_Receiver, e_Data, frame.GetSyncSource()));
+         << "->" << len << " SSRC=" << ssrc
+         << GetThrottle(e_Receiver, e_Data, ssrc));
 
   frame.SetPayloadSize(len - frame.GetHeaderSize());
+
   return OpalRTPSession::OnReceiveData(frame);
 }
 
@@ -689,23 +740,25 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveControl(RTP_ControlF
     return OpalRTPSession::e_IgnorePacket;
   }
 
+  /* Need to have a receiver SSRC (their sender) even if we have never been
+      told about it, or we can't decrypt the RTCP packet. */
+  RTP_SyncSourceId ssrc = frame.GetSenderSyncSource();
+  if (UseSyncSource(ssrc, e_Receiver, false) == NULL)
+    return e_IgnorePacket;
+
+  frame.MakeUnique();
+
   int len = frame.GetSize();
-  {
-    frame.MakeUnique();
 
-    /* Need to guarantee a receiver SSRC (their sender) even if never been told
-       about it, or we can't decrypt the RTCP packet. */
-    UseSyncSource(frame.GetSenderSyncSource(), e_Receiver, true);
+  if (!CHECK_ERROR(srtp_unprotect_rtcp, (m_context, frame.GetPointer(), &len), this, ssrc))
+    return ++m_consecutiveErrors[e_Receiver][e_Control] > MaxConsecutiveErrors ? e_AbortTransport : e_IgnorePacket;
 
-    if (!CHECK_ERROR(srtp_unprotect_rtcp, (m_context, frame.GetPointer(), &len), frame.GetSenderSyncSource()))
-      return ++m_consecutiveErrors[e_Receiver][e_Control] > MaxConsecutiveErrors ? e_AbortTransport : e_IgnorePacket;
-    m_consecutiveErrors[e_Receiver][e_Control] = 0;
-  }
+  m_consecutiveErrors[e_Receiver][e_Control] = 0;
 
   PTRACE(GetThrottle(e_Receiver, e_Control, frame.GetSenderSyncSource()),
          *this << "unprotected RTCP packet: " << frame.GetPacketSize()
-         << "->" << len << " SSRC=" << frame.GetSenderSyncSource()
-         << GetThrottle(e_Receiver, e_Control, frame.GetSenderSyncSource()));
+         << "->" << len << " SSRC=" << ssrc
+         << GetThrottle(e_Receiver, e_Control, ssrc));
 
   frame.SetPacketSize(len);
 

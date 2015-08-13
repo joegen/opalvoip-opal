@@ -215,7 +215,9 @@ PBoolean OpalTransportAddress::GetIpAndPort(PIPSocketAddressAndPort & ipPort) co
   if (!m_transport->GetIpAndPort(*this, ip, port))
     return false;
 
-  ipPort.SetAddress(ip, port);
+  // Use 2 calls here as 2nd arg to SetAddress will not set zero
+  ipPort.SetAddress(ip);
+  ipPort.SetPort(port);
   return true;
 }
 
@@ -927,6 +929,7 @@ PBoolean OpalListenerUDP::Open(const AcceptHandler & theAcceptHandler, ThreadMod
   if (m_listenerBundle != NULL &&
       m_listenerBundle->Open(m_binding.GetPort()) &&
       OpalListenerIP::Open(theAcceptHandler, SingleThreadMode)) {
+    m_binding.SetPort(m_listenerBundle->GetPort());
     /* UDP packets need to be handled. Not so much at high speed, but must not be
        significantly delayed by media threads which are running at HighPriority.
        This, for example, helps make sure that a SIP BYE is received and processed

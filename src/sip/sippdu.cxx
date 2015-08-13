@@ -2577,7 +2577,7 @@ bool SIP_PDU::IsContentSDP(bool emptyOK) const
 }
 
 
-bool SIP_PDU::DecodeSDP(SIPEndPoint & endpoint, const OpalMediaFormatList & localList)
+bool SIP_PDU::DecodeSDP(SIPConnection & connection, const OpalMediaFormatList & localList)
 {
   if (m_SDP != NULL)
     return true;
@@ -2586,8 +2586,12 @@ bool SIP_PDU::DecodeSDP(SIPEndPoint & endpoint, const OpalMediaFormatList & loca
   if (!m_mime.GetSDP(m_entityBody, sdpText))
     return false;
 
-  m_SDP = endpoint.CreateSDP(0, 0, OpalTransportAddress());
+  m_SDP = connection.GetEndPoint().CreateSDP(0, 0, OpalTransportAddress());
+  if (m_SDP == NULL)
+    return false;
+
   PTRACE_CONTEXT_ID_TO(m_SDP);
+  m_SDP->SetStringOptions(connection.GetStringOptions());
   if (m_SDP->Decode(sdpText, localList.IsEmpty() ? OpalMediaFormat::GetAllRegisteredMediaFormats() : localList))
     return true;
 

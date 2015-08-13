@@ -86,6 +86,13 @@ class OpalRTPMediaStream : public OpalMediaStream
     */
     virtual bool IsEstablished() const;
 
+    /**Start the media stream.
+
+       The default behaviour calls Resume() on the associated OpalMediaPatch
+       thread if it was suspended.
+      */
+    virtual PBoolean Start();
+
     /**Callback that is called on the source stream once the media patch has started.
        The default behaviour calls OpalConnection::OnMediaPatchStart()
       */

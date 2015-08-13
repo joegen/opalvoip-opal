@@ -131,8 +131,6 @@ void OpalFaxMediaStream::GetStatistics(OpalMediaStatistics & statistics, bool fr
 
 OpalFaxSession::OpalFaxSession(const Init & init)
   : OpalMediaSession(init)
-  , m_dataSocket(NULL)
-  , m_shuttingDown(false)
   , m_rawUDPTL(false)
   , m_datagramSize(528)
   , m_consecutiveBadPackets(0)
@@ -160,8 +158,6 @@ OpalFaxSession::OpalFaxSession(const Init & init)
 OpalFaxSession::~OpalFaxSession()
 {
   m_timerWriteDataIdle.Stop();
-  if (m_dataSocket != NULL && m_savedTransport.GetObjectsIndex(m_dataSocket) == P_MAX_INDEX)
-    delete m_dataSocket;
   delete m_receivedPacket;
   delete m_sentPacket;
 }
@@ -233,33 +229,25 @@ void OpalFaxSession::ApplyMediaOptions(const OpalMediaFormat & mediaFormat)
 }
 
 
-bool OpalFaxSession::Open(const PString & localInterface,
-                          const OpalTransportAddress & remoteAddress,
-                          bool isMediaAddress)
+bool OpalFaxSession::Open(const PString & localInterface, const OpalTransportAddress & remoteAddress)
 {
-  m_shuttingDown = false;
-
   if (IsOpen())
     return true;
 
-  if (!isMediaAddress) {
-    PTRACE(2, "UDPTL\tDoes not have control transport.");
-    return false;
-  }
-
   // T.38 over TCP is half baked. One day someone might want it enough for it to be finished
   if (remoteAddress.IsEmpty() || remoteAddress.GetProto(true) == OpalTransportAddress::UdpPrefix())
-    m_dataSocket = new PUDPSocket();
+    m_transport = new OpalUDPMediaTransport("T.38-UDP");
   else
-    m_dataSocket = new PTCPSocket();
+    m_transport = new OpalTCPMediaTransport("T.38-TCP");
+  PTRACE_CONTEXT_ID_TO(m_transport);
 
   PIPSocket::Address localIP(localInterface);
-  if (!localIP.IsValid() || !m_dataSocket->Listen(localIP)) {
+  if (!localIP.IsValid() || !m_transport->Open(*this, 1, localIP, remoteAddress)) {
     PTRACE(2, "UDPTL\tCould listen on interface=\"" << localInterface << '"');
     return false;
   }
 
-  if (!remoteAddress.IsEmpty() && !m_dataSocket->Connect(remoteAddress.GetHostName(true))) {
+  if (!remoteAddress.IsEmpty() && !m_transport->SetRemoteAddress(remoteAddress.GetHostName(true))) {
     PTRACE(2, "UDPTL\tCould conect to " << remoteAddress);
     return false;
   }
@@ -271,115 +259,18 @@ bool OpalFaxSession::Open(const PString & localInterface,
 
 bool OpalFaxSession::IsOpen() const
 {
-  return m_dataSocket != NULL && m_dataSocket->IsOpen();
+  return m_transport != NULL && m_transport->IsOpen();
 }
 
 
 bool OpalFaxSession::Close()
 {
-  if (m_dataSocket == NULL)
+  if (m_transport == NULL)
     return false;
 
-  m_shuttingDown = true;
-
-  if (m_savedTransport.GetObjectsIndex(m_dataSocket) == P_MAX_INDEX)
-    return m_dataSocket->Close();
-
-  PUDPSocket *udp = dynamic_cast<PUDPSocket *>(m_dataSocket);
-  if (udp != NULL) {
-    PTRACE(4, "UDPTL\tBreaking UDPTL session read block.");
-    PIPSocketAddressAndPort addrPort;
-    udp->GetLocalAddress(addrPort);
-    udp->WriteTo("", 1, addrPort);
-  }
-
-  return true;
-}
-
-
-OpalTransportAddress OpalFaxSession::GetLocalAddress(bool isMediaAddress) const
-{
-  OpalTransportAddress address;
-
-  if (isMediaAddress && m_dataSocket != NULL) {
-    PIPSocket::Address ip;
-    WORD port;
-    if (m_dataSocket->GetLocalAddress(ip, port))
-      address = OpalTransportAddress(ip, port,
-                  dynamic_cast<PUDPSocket *>(m_dataSocket) != NULL ? "udp" : "tcp");
-  }
-
-  return address;
-}
-
-
-OpalTransportAddress OpalFaxSession::GetRemoteAddress(bool isMediaAddress) const
-{
-  PIPSocket * socket = NULL;
-
-  if (isMediaAddress)
-    socket = m_dataSocket;
-  else if (m_savedTransport.GetSize() > 1)
-    socket = dynamic_cast<PIPSocket *>(&m_savedTransport.back());
-
-  if (socket == NULL)
-    return OpalMediaSession::GetRemoteAddress(isMediaAddress);
-
-  PIPSocket::Address ip;
-  WORD port;
-  const char * proto;
-
-  PUDPSocket * udp = dynamic_cast<PUDPSocket *>(socket);
-  if (udp != NULL) {
-    udp->GetSendAddress(ip, port);
-    proto = "udp";
-  }
-  else {
-    socket->GetPeerAddress(ip, port);
-    proto = "tcp";
-  }
-
-  return OpalTransportAddress(ip, port, proto);
-}
-
-
-bool OpalFaxSession::SetRemoteAddress(const OpalTransportAddress & remoteAddress, bool isMediaAddress)
-{
-  if (!isMediaAddress || m_dataSocket == NULL)
-    return false;
-
-  PIPSocketAddressAndPort addrPort;
-  if (!remoteAddress.GetIpAndPort(addrPort))
-    return false;
-
-  PUDPSocket *udp = dynamic_cast<PUDPSocket *>(m_dataSocket);
-  if (udp == NULL)
-    return false;
-
-  udp->SetSendAddress(addrPort);
-  return true;
-}
-
-
-void OpalFaxSession::AttachTransport(Transport & transport)
-{
-  if (transport.IsEmpty()) {
-    PTRACE(2, "UDPTL\tTried to attach empty transport list.");
-    return;
-  }
-
-  m_savedTransport = transport;
-  m_dataSocket = dynamic_cast<PIPSocket *>(&transport.front());
-}
-
-
-OpalMediaSession::Transport OpalFaxSession::DetachTransport()
-{
-  Transport temp = m_savedTransport;
-  m_savedTransport = Transport(); // Detaches reference, do not use RemoveAll()
-  m_dataSocket = NULL;
-  PTRACE_IF(2, temp.IsEmpty(), "UDPTL\tDetaching transport from closed session.");
-  return temp;
+  m_transport->RemoveReadNotifier(this);
+  m_readQueue.Close(false);
+  return OpalMediaSession::Close();
 }
 
 
@@ -391,12 +282,12 @@ OpalMediaStream * OpalFaxSession::CreateMediaStream(const OpalMediaFormat & medi
 
 bool OpalFaxSession::WriteData(RTP_DataFrame & frame)
 {
-  if (m_dataSocket == NULL)
+  if (m_transport == NULL)
     return false;
 
   if (m_rawUDPTL) {
     PTRACE(5, "UDPTL\tSending raw UDPTL, size=" << frame.GetPayloadSize());
-    return m_dataSocket->Write(frame.GetPayloadPtr(), frame.GetPayloadSize());
+    return m_transport->Write(frame.GetPayloadPtr(), frame.GetPayloadSize());
   }
 
   PINDEX plLen = frame.GetPayloadSize();
@@ -502,7 +393,7 @@ void OpalFaxSession::DecrementSentPacketRedundancy(bool stripRedundancy)
 
 bool OpalFaxSession::WriteUDPTL()
 {
-  if (m_dataSocket == NULL || !m_dataSocket->IsOpen()) {
+  if (m_transport == NULL || !m_transport->IsOpen()) {
     PTRACE(2, "UDPTL\tWrite failed, data socket not open");
     return false;
   }
@@ -516,7 +407,7 @@ bool OpalFaxSession::WriteUDPTL()
   m_txBytes += rawData.GetSize();
   ++m_txPackets;
 
-  return m_dataSocket->Write(rawData.GetPointer(), rawData.GetSize());
+  return m_transport->Write(rawData.GetPointer(), rawData.GetSize());
 }
 
 
@@ -529,24 +420,27 @@ void OpalFaxSession::SetFrameFromIFP(RTP_DataFrame & frame, const PASN_OctetStri
 }
 
 
+void OpalFaxSession::OnReadPacket(OpalMediaTransport &, PBYTEArray data)
+{
+  m_readQueue.Enqueue(data);
+}
+
+
 bool OpalFaxSession::ReadData(RTP_DataFrame & frame)
 {
-  if (m_dataSocket == NULL)
+  PBYTEArray rawData;
+  if (!m_readQueue.Dequeue(rawData))
     return false;
 
+  if (rawData.GetSize() >= m_datagramSize) {
+    PTRACE(4, "UDPTL\tProbable RTP packet");
+    return true;
+  }
+
   if (m_rawUDPTL) {
-    frame.SetPayloadSize(m_datagramSize);
-    if (!m_dataSocket->Read(frame.GetPayloadPtr(), m_datagramSize))
-      return false;
-
-    if (m_shuttingDown) {
-      PTRACE(4, "UDPTL\tRead raw UDPTL shutting down");
-      return false;
-    }
-
-    m_rxBytes += m_dataSocket->GetLastReadCount();
+    frame.SetPayload(rawData, rawData.GetSize());
+    m_rxBytes += frame.GetPayloadSize();
     ++m_rxPackets;
-    frame.SetPayloadSize(m_dataSocket->GetLastReadCount());
     PTRACE(5, "UDPTL\tRead raw UDPTL, size " << frame.GetPayloadSize());
     return true;
   }
@@ -562,26 +456,10 @@ bool OpalFaxSession::ReadData(RTP_DataFrame & frame)
     return true;
   }
 
-  PPER_Stream rawData;
-  if (!m_dataSocket->Read(rawData.GetPointer(m_datagramSize), m_datagramSize)) {
-    if (m_dataSocket->GetErrorCode(PChannel::LastReadError) == PChannel::BufferTooSmall) {
-      PTRACE(4, "UDPTL\tProbable RTP packet");
-      return true;
-    }
-    PTRACE(2, "UDPTL\tRead socket failed: " << m_dataSocket->GetErrorText(PChannel::LastReadError));
-    return false;
-  }
-
-  if (m_shuttingDown) {
-    PTRACE(4, "UDPTL\tRead UDPTL shutting down");
-    return false;
-  }
-
-  PINDEX pduSize = m_dataSocket->GetLastReadCount();
-      
+  PPER_Stream per(rawData);
   // Decode the PDU, but not if still receiving RTP
-  if (  !m_receivedPacket->Decode(rawData) ||
-         rawData.GetPosition() < pduSize ||
+  if (  !m_receivedPacket->Decode(per) ||
+         per.GetPosition() < per.GetSize() ||
         (m_awaitingGoodPacket &&
           (
             m_receivedPacket->m_primary_ifp_packet.GetSize() == 0 ||
@@ -601,9 +479,8 @@ bool OpalFaxSession::ReadData(RTP_DataFrame & frame)
       ostream & trace = PTRACE_BEGIN(Level);
       trace << "UDPTL\t";
       if (m_awaitingGoodPacket)
-        trace << "Probable RTP packet: " << pduSize << " bytes.";
+        trace << "Probable RTP packet: " << rawData.GetSize() << " bytes.";
       else {
-        rawData.SetSize(pduSize);
         trace << "Raw data decode failure:\n  "
               << setprecision(2) << rawData << "\n  UDPTL = "
               << setprecision(2) << m_receivedPacket;
@@ -639,7 +516,7 @@ bool OpalFaxSession::ReadData(RTP_DataFrame & frame)
   SetFrameFromIFP(frame, m_receivedPacket->m_primary_ifp_packet, m_receivedPacket->m_seq_number);
   m_expectedSequenceNumber = m_receivedPacket->m_seq_number+1;
 
-  m_rxBytes += pduSize;
+  m_rxBytes += rawData.GetSize();
   ++m_rxPackets;
   m_missingPackets += missing;
 

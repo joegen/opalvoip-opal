@@ -150,6 +150,7 @@ namespace OpalSharp
                         OpalParamProtocol proto = msg.GetProtocolParams();
                         proto.prefix = OPAL.OPAL_PREFIX_SIP;
                         proto.interfaceAddresses = "0.0.0.0"; // All interfaces
+                        proto.displayName = "OPAL C# Sample";
                         if (!m_opalContext.SendMessage(msg))
                             MessageBox.Show("Could not set general parameters", "OPAL", MessageBoxButtons.OK);
                         else
@@ -207,6 +208,8 @@ namespace OpalSharp
                 reg.identifier = user.Text;
                 reg.password = password.Text;
                 reg.timeToLive = 300;
+                if (RFC5626.Checked)
+                    reg.attributes = "compatibility=RFC5626";
                 OpalMessagePtr result = new OpalMessagePtr();
                 if (m_opalContext.SendMessage(msg, result))
                 {

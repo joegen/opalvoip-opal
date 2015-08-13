@@ -643,7 +643,7 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
   {
     OpalIVREndPoint * ivrEP = FindEndPointAs<OpalIVREndPoint>(OPAL_PREFIX_IVR);
     // Set IVR protocol handler
-    ivrEP->SetDefaultVXML(rsrc->AddStringField(VXMLKey, 0, PString::Empty(),
+    ivrEP->SetDefaultVXML(rsrc->AddStringField(VXMLKey, 0, ivrEP->GetDefaultVXML(),
       "Interactive Voice Response VXML script, may be a URL or the actual VXML", 10, 80));
     ivrEP->SetCacheDir(rsrc->AddStringField(IVRCacheKey, 0, ivrEP->GetCacheDir(),
       "Interactive Voice Response directory to cache Text To Speech phrases", 1, 50));

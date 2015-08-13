@@ -713,7 +713,7 @@ class SIP_PDU : public PSafeObject
           SIPMIMEInfo & GetMIME()            { return m_mime; }
     SDPSessionDescription * GetSDP()         { return m_SDP; }
     void SetSDP(SDPSessionDescription * sdp);
-    bool DecodeSDP(SIPEndPoint & endpoint, const OpalMediaFormatList & masterList);
+    bool DecodeSDP(SIPConnection & connection, const OpalMediaFormatList & masterList);
     bool IsContentSDP(bool emptyOK = false) const;
 
     const PString & GetExternalTransportAddress() const { return m_externalTransportAddress; }

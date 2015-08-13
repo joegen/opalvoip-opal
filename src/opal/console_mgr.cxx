@@ -1919,6 +1919,8 @@ bool OpalConsoleManager::PreInitialise(PArgList & args, bool verbose)
     return false;
   }
 
+  PTRACE_INITIALISE(args);
+
   return true;
 }
 
@@ -1976,8 +1978,6 @@ bool OpalConsoleManager::Initialise(PArgList & args, bool verbose, const PString
 {
   if (!PreInitialise(args, verbose))
     return false;
-
-  PTRACE_INITIALISE(args);
 
   LockedStream lockedOutput(*this);
   ostream & output = lockedOutput;

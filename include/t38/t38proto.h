@@ -298,15 +298,9 @@ class OpalFaxSession : public OpalMediaSession
     ~OpalFaxSession();
 
     virtual const PCaselessString & GetSessionType() const { return UDPTL(); }
-    virtual bool Open(const PString & localInterface, const OpalTransportAddress & remoteAddress, bool isMediaAddress);
+    virtual bool Open(const PString & localInterface, const OpalTransportAddress & remoteAddress);
     virtual bool IsOpen() const;
     virtual bool Close();
-    virtual OpalTransportAddress GetLocalAddress(bool isMediaAddress = true) const;
-    virtual OpalTransportAddress GetRemoteAddress(bool isMediaAddress = true) const;
-    virtual bool SetRemoteAddress(const OpalTransportAddress & remoteAddress, bool isMediaAddress = true);
-
-    virtual void AttachTransport(Transport & transport);
-    virtual Transport DetachTransport();
 
     virtual OpalMediaStream * CreateMediaStream(
       const OpalMediaFormat & mediaFormat, 
@@ -326,9 +320,8 @@ class OpalFaxSession : public OpalMediaSession
     void DecrementSentPacketRedundancy(bool stripRedundancy);
     bool WriteUDPTL();
 
-    Transport          m_savedTransport;
-    PIPSocket        * m_dataSocket;
-    bool               m_shuttingDown;
+    PDECLARE_MediaReadNotifier(OpalFaxSession, OnReadPacket);
+    PSyncQueue<PBYTEArray> m_readQueue;
 
     bool               m_rawUDPTL; // Put UDPTL directly in RTP payload
     PINDEX             m_datagramSize;

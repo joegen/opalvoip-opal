@@ -477,7 +477,7 @@ void Opal_YUV420P_to_RFC4175YCbCr420::EndEncoding()
   PINDEX f= 0;
   for (RTP_DataFrameList::iterator output = m_dstFrames->begin(); output != m_dstFrames->end(); ++output,++f) {
     ScanLineHeader * hdrs = (ScanLineHeader *)(output->GetPayloadPtr() + 2);
-    register BYTE * scanLineDataPtr = output->GetPayloadPtr() + 2 + m_dstScanlineCounts[f] * sizeof(ScanLineHeader);
+    BYTE * scanLineDataPtr = output->GetPayloadPtr() + 2 + m_dstScanlineCounts[f] * sizeof(ScanLineHeader);
     for (PINDEX i = 0; i < m_dstScanlineCounts[f]; ++i) {
       ScanLineHeader & hdr = hdrs[i];
 
@@ -485,10 +485,10 @@ void Opal_YUV420P_to_RFC4175YCbCr420::EndEncoding()
       PINDEX y     = hdr.m_y & 0x7fff;
       unsigned len = (hdr.m_length / GetPgroupSize()) * GetColsPerPgroup();
 
-      register BYTE * yPlane0  = m_srcYPlane  + (m_frameWidth * y + x);
-      register BYTE * yPlane1  = yPlane0    + m_frameWidth;
-      register BYTE * cbPlane  = m_srcCbPlane + (m_frameWidth * y / 4) + x / 2;
-      register BYTE * crPlane  = m_srcCrPlane + (m_frameWidth * y / 4) + x / 2;
+      BYTE * yPlane0  = m_srcYPlane  + (m_frameWidth * y + x);
+      BYTE * yPlane1  = yPlane0    + m_frameWidth;
+      BYTE * cbPlane  = m_srcCbPlane + (m_frameWidth * y / 4) + x / 2;
+      BYTE * crPlane  = m_srcCrPlane + (m_frameWidth * y / 4) + x / 2;
 
       unsigned p;
       for (p = 0; p < len; p += 2) {

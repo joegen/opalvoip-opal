@@ -247,14 +247,20 @@ int OpalPCAPFile::GetRTP(RTP_DataFrame & rtp)
 }
 
 
-OpalPCAPFile::DiscoveredRTPInfo::DiscoveredRTPInfo()
+static const PConstString Unknown("Unknown");
+
+OpalPCAPFile::DiscoveredRTPInfo::DirInfo::DirInfo()
+  : m_found(false)
+  , m_ssrc(0)
+  , m_seq(0)
+  , m_ts(0)
+  , m_ssrc_matches(0)
+  , m_seq_matches(0)
+  , m_ts_matches(0)
+  , m_type(Unknown)
+  , m_format(Unknown)
+  , m_index(0)
 {
-  m_found[0] = m_found[1] = false;
-  m_ssrc_matches[0] = m_ssrc_matches[1] = 0;
-  m_seq_matches[0]  = m_seq_matches[1]  = 0;
-  m_ts_matches[0]   = m_ts_matches[1]   = 0;
-  m_index[0] = m_index[1] = 0;
-  m_format[0] = m_format[1] = m_type[0] = m_type[1] = "Unknown";
 }
 
 
@@ -265,14 +271,14 @@ void OpalPCAPFile::DiscoveredRTPMap::PrintOn(ostream & strm) const
   for (iter = begin(); iter != end(); ++iter) {
     const DiscoveredRTPInfo & info = iter->second;
     for (int dir = 0; dir < 2; ++dir) {
-      if (info.m_found[dir]) {
-        if (info.m_payload[dir] != info.m_firstFrame[dir].GetPayloadType())
+      if (info.m_direction[dir].m_found) {
+        if (info.m_direction[dir].m_payload != info.m_direction[dir].m_firstFrames.front().GetPayloadType())
           strm << "Mismatched payload types" << endl;
-        strm << info.m_index[dir] << " : " << info.m_addr[dir].AsString() 
-                                  << " -> " << info.m_addr[1-dir].AsString() 
-                                  << ", " << info.m_payload[dir] 
-                                  << " " << info.m_type[dir]
-                                  << " " << info.m_format[dir] << endl;
+        strm << info.m_direction[dir].m_index << " : " << info.m_direction[dir].m_addr
+                                  << " -> " << info.m_direction[1-dir].m_addr
+                                  << ", " << info.m_direction[dir].m_payload
+                                  << " " << info.m_direction[dir].m_type
+                                  << " " << info.m_direction[dir].m_format << endl;
       }
     }
   }
@@ -284,7 +290,10 @@ bool OpalPCAPFile::DiscoverRTP(DiscoveredRTPMap & discoveredRTPMap)
   if (!Restart())
     return false;
 
+  unsigned packetCount = 0;
   while (!IsEndOfFile()) {
+    ++packetCount;
+
     RTP_DataFrame rtp;
     if (GetRTP(rtp) < 0)
       continue;
@@ -301,61 +310,63 @@ bool OpalPCAPFile::DiscoverRTP(DiscoveredRTPMap & discoveredRTPMap)
     string key = keyStrm.str();
 
     // see if we have identified this potential session before
-    DiscoveredRTPMap::iterator r;
-    if ((r = discoveredRTPMap.find(key)) == discoveredRTPMap.end()) {
-      DiscoveredRTPInfo & info = discoveredRTPMap[key];
-      info.m_addr[dir].SetAddress(GetSrcIP());
-      info.m_addr[dir].SetPort(GetSrcPort());
-      info.m_addr[1 - dir].SetAddress(GetDstIP());
-      info.m_addr[1 - dir].SetPort(GetDstPort());
+    DiscoveredRTPMap::iterator iter;
+    if ((iter = discoveredRTPMap.find(key)) == discoveredRTPMap.end()) {
+      iter = discoveredRTPMap.insert(make_pair(key, DiscoveredRTPInfo())).first;
+      DiscoveredRTPInfo::DirInfo & info = iter->second.m_direction[dir];
 
-      info.m_payload[dir]  = rtp.GetPayloadType();
-      info.m_seq[dir]      = rtp.GetSequenceNumber();
-      info.m_ts[dir]       = rtp.GetTimestamp();
+      info.m_addr.SetAddress(GetSrcIP());
+      info.m_addr.SetPort(GetSrcPort());
+      iter->second.m_direction[1-dir].m_addr.SetAddress(GetDstIP());
+      iter->second.m_direction[1-dir].m_addr.SetPort(GetDstPort());
 
-      info.m_ssrc[dir]     = rtp.GetSyncSource();
-      info.m_seq[dir]      = rtp.GetSequenceNumber();
-      info.m_ts[dir]       = rtp.GetTimestamp();
+      info.m_payload  = rtp.GetPayloadType();
+      info.m_seq      = rtp.GetSequenceNumber();
+      info.m_ts       = rtp.GetTimestamp();
 
-      info.m_found[dir]    = true;
+      info.m_ssrc     = rtp.GetSyncSource();
+      info.m_seq      = rtp.GetSequenceNumber();
+      info.m_ts       = rtp.GetTimestamp();
 
-      info.m_firstFrame[dir] = rtp;
-      info.m_firstFrame[dir].MakeUnique();
+      info.m_found    = true;
+    }
+    else if (iter->second.m_direction[dir].m_found) {
+      DiscoveredRTPInfo::DirInfo & info = iter->second.m_direction[dir];
+
+      WORD seq = rtp.GetSequenceNumber();
+      DWORD ts = rtp.GetTimestamp();
+      DWORD ssrc = rtp.GetSyncSource();
+      if (info.m_ssrc == ssrc)
+        ++info.m_ssrc_matches;
+      if ((info.m_seq+1) == seq)
+        ++info.m_seq_matches;
+      info.m_seq = seq;
+      if ((info.m_ts+1) < ts)
+        ++info.m_ts_matches;
+      info.m_ts = ts;
     }
     else {
-      DiscoveredRTPInfo & info = r->second;
-      if (info.m_found[dir]) {
-        WORD seq = rtp.GetSequenceNumber();
-        DWORD ts = rtp.GetTimestamp();
-        DWORD ssrc = rtp.GetSyncSource();
-        if (info.m_ssrc[dir] == ssrc)
-          ++info.m_ssrc_matches[dir];
-        if ((info.m_seq[dir]+1) == seq)
-          ++info.m_seq_matches[dir];
-        info.m_seq[dir] = seq;
-        if ((info.m_ts[dir]+1) < ts)
-          ++info.m_ts_matches[dir];
-        info.m_ts[dir] = ts;
-      }
-      else {
-        info.m_addr[dir].SetAddress(GetSrcIP());
-        info.m_addr[dir].SetPort(GetSrcPort());
-        info.m_addr[1 - dir].SetAddress(GetDstIP());
-        info.m_addr[1 - dir].SetPort(GetDstPort());
+      DiscoveredRTPInfo::DirInfo & info = iter->second.m_direction[dir];
+      info.m_addr.SetAddress(GetSrcIP());
+      info.m_addr.SetPort(GetSrcPort());
+      iter->second.m_direction[1-dir].m_addr.SetAddress(GetDstIP());
+      iter->second.m_direction[1-dir].m_addr.SetPort(GetDstPort());
 
-        info.m_payload[dir]  = rtp.GetPayloadType();
-        info.m_seq[dir]      = rtp.GetSequenceNumber();
-        info.m_ts[dir]       = rtp.GetTimestamp();
+      info.m_payload  = rtp.GetPayloadType();
+      info.m_seq      = rtp.GetSequenceNumber();
+      info.m_ts       = rtp.GetTimestamp();
 
-        info.m_ssrc[dir]     = rtp.GetSyncSource();
-        info.m_seq[dir]      = rtp.GetSequenceNumber();
-        info.m_ts[dir]       = rtp.GetTimestamp();
+      info.m_ssrc     = rtp.GetSyncSource();
+      info.m_seq      = rtp.GetSequenceNumber();
+      info.m_ts       = rtp.GetTimestamp();
 
-        info.m_found[dir]    = true;
+      info.m_found    = true;
+    }
 
-        info.m_firstFrame[dir] = rtp;
-        info.m_firstFrame[dir].MakeUnique();
-      }
+    if (iter->second.m_direction[dir].m_firstFrames.size() < 100) {
+      RTP_DataFrame * newRTP = new RTP_DataFrame(rtp);
+      newRTP->MakeUnique();
+      iter->second.m_direction[dir].m_firstFrames.Append(newRTP);
     }
   }
 
@@ -384,38 +395,39 @@ bool OpalPCAPFile::DiscoverRTP(DiscoveredRTPMap & discoveredRTPMap)
     DiscoveredRTPInfo & info = iter->second;
     if (
           (
-            info.m_found[0]
+            info.m_direction[0].m_found
             &&
             (
-              info.m_seq_matches[0] > 5 ||
-              info.m_ts_matches[0] > 5 ||
-              info.m_ssrc_matches[0] > 5
+              info.m_direction[0].m_seq_matches > 5 ||
+              info.m_direction[0].m_ts_matches > 5 ||
+              info.m_direction[0].m_ssrc_matches > 5
             )
           ) 
           ||
           (
-            info.m_found[1]
+            info.m_direction[1].m_found
             &&
             (
-              info.m_seq_matches[1] > 5 ||
-              info.m_ts_matches[1] > 5 ||
-              info.m_ssrc_matches[1] > 5
+              info.m_direction[1].m_seq_matches > 5 ||
+              info.m_direction[1].m_ts_matches > 5 ||
+              info.m_direction[1].m_ssrc_matches > 5
             )
           )
         )
     {
       for (int dir = 0; dir < 2; ++dir) {
-        if (!info.m_firstFrame[dir].IsEmpty()) {
-          info.m_index[dir] = index++;
+        DiscoveredRTPInfo::DirInfo & dirinfo = info.m_direction[dir];
+        if (!dirinfo.m_firstFrames.IsEmpty()) {
+          dirinfo.m_index = index++;
 
-          RTP_DataFrame::PayloadTypes pt = info.m_firstFrame[dir].GetPayloadType();
+          RTP_DataFrame::PayloadTypes pt = dirinfo.m_firstFrames.front().GetPayloadType();
 
           // look for known audio types
           if (pt <= RTP_DataFrame::Cisco_CN) {
             OpalMediaFormatList::const_iterator it = formats.FindFormat(pt, OpalMediaFormat::AudioClockRate);
             if (it != formats.end()) {
-              info.m_type[dir]   = it->GetMediaType();
-              info.m_format[dir] = it->GetName();
+              dirinfo.m_type   = it->GetMediaType();
+              dirinfo.m_format = it->GetName();
             }
           }
 
@@ -424,18 +436,21 @@ bool OpalPCAPFile::DiscoverRTP(DiscoveredRTPMap & discoveredRTPMap)
           else if (pt <= RTP_DataFrame::LastKnownPayloadType) {
             OpalMediaFormatList::const_iterator r;
             if ((r = formats.FindFormat(pt, OpalMediaFormat::VideoClockRate)) != formats.end()) {
-              info.m_type[dir]   = r->GetMediaType();
-              info.m_format[dir] = r->GetName();
+              dirinfo.m_type   = r->GetMediaType();
+              dirinfo.m_format = r->GetName();
             }
           }
           else {
             // try and identify media by inspection
             for (PINDEX i = 0; i < PARRAYSIZE(VideoCodecs); ++i) {
-              if (VideoCodecs[i].m_format.GetVideoFrameType(info.m_firstFrame[dir].GetPayloadPtr(),
-                                                            info.m_firstFrame[dir].GetPayloadSize(),
-                                                            VideoCodecs[i].m_context) == OpalVideoFormat::e_IntraFrame) {
-                info.m_type[dir] = OpalMediaType::Video();
-                info.m_format[dir] = VideoCodecs[i].m_format.GetName();
+              RTP_DataFrameList::iterator rtp;
+              for (rtp = dirinfo.m_firstFrames.begin(); rtp != dirinfo.m_firstFrames.end(); ++rtp) {
+                if (VideoCodecs[i].m_format.GetVideoFrameType(rtp->GetPayloadPtr(), rtp->GetPayloadSize(), VideoCodecs[i].m_context) == OpalVideoFormat::e_IntraFrame)
+                  break;
+              }
+              if (rtp != dirinfo.m_firstFrames.end()) {
+                dirinfo.m_type = OpalMediaType::Video();
+                dirinfo.m_format = VideoCodecs[i].m_format.GetName();
                 break;
               }
             }
@@ -455,11 +470,11 @@ bool OpalPCAPFile::DiscoverRTP(DiscoveredRTPMap & discoveredRTPMap)
 
 bool OpalPCAPFile::SetFilters(const DiscoveredRTPInfo & info, int dir, const PString & format)
 {
-  if (!SetPayloadMap(info.m_payload[dir], format.IsEmpty() ? info.m_format[dir] : format))
+  if (!SetPayloadMap(info.m_direction[dir].m_payload, format.IsEmpty() ? info.m_direction[dir].m_format : format))
     return false;
 
-  m_filterSrc = info.m_addr[dir];
-  m_filterDst = info.m_addr[1 - dir];
+  m_filterSrc = info.m_direction[dir].m_addr;
+  m_filterDst = info.m_direction[1-dir].m_addr;
   return true;
 }
 
@@ -469,9 +484,9 @@ bool OpalPCAPFile::SetFilters(const DiscoveredRTPMap & discoveredRTPMap, size_t 
   for (DiscoveredRTPMap::const_iterator iter = discoveredRTPMap.begin();
                                         iter != discoveredRTPMap.end(); ++iter) {
     const OpalPCAPFile::DiscoveredRTPInfo & info = iter->second;
-    if (info.m_index[0] == index)
+    if (info.m_direction[0].m_index == index)
       return SetFilters(info, 0, format);
-    if (info.m_index[1] == index)
+    if (info.m_direction[1].m_index == index)
       return SetFilters(info, 1, format);
   }
 

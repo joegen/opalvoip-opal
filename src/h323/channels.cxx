@@ -435,7 +435,7 @@ void H323UnidirectionalChannel::InternalClose()
   PTRACE(4, "H323RTP\tCleaning up media stream on " << number);
 
   // If we have source media stream close it
-  if (m_mediaStream != NULL) {
+  if (m_mediaStream != NULL && connection.GetPhase() < OpalConnection::ReleasingPhase) {
     if (!m_mediaStream->Close())
       connection.RemoveMediaStream(*m_mediaStream);
     m_mediaStream.SetNULL();

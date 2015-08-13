@@ -106,5 +106,17 @@ namespace OpalSharp.Properties {
                 this["URLtoCall"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool RFC5626 {
+            get {
+                return ((bool)(this["RFC5626"]));
+            }
+            set {
+                this["RFC5626"] = value;
+            }
+        }
     }
 }

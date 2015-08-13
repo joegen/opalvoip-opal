@@ -726,6 +726,9 @@
     <ClCompile Include="..\sdp\sdphttpep.cxx">
       <Filter>Source Files\SDP</Filter>
     </ClCompile>
+    <ClCompile Include="..\sdp\ice.cxx">
+      <Filter>Source Files\SDP</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\codec\echocancel.h">
@@ -1296,6 +1299,9 @@
       <Filter>Header Files\SDP</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\sdp\sdphttpep.h">
+      <Filter>Header Files\SDP</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\sdp\ice.h">
       <Filter>Header Files\SDP</Filter>
     </ClInclude>
   </ItemGroup>
