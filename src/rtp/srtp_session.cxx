@@ -729,40 +729,41 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveData(RTP_DataFrame &
 }
 
 
-OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveControl(RTP_ControlFrame & frame)
+OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveControl(RTP_ControlFrame & encoded)
 {
-  // Aleady locked on entry
+  /* Aleady locked on entry */
 
   if (!IsCryptoSecured(e_Receiver)) {
-    PTRACE(GetThrottle(e_Receiver, e_Control, frame.GetSenderSyncSource()),
+    PTRACE(GetThrottle(e_Receiver, e_Control, encoded.GetSenderSyncSource()),
            *this << "keys not set, cannot protect control: "
-           << GetThrottle(e_Receiver, e_Control, frame.GetSenderSyncSource()));
+           << GetThrottle(e_Receiver, e_Control, encoded.GetSenderSyncSource()));
     return OpalRTPSession::e_IgnorePacket;
   }
 
   /* Need to have a receiver SSRC (their sender) even if we have never been
       told about it, or we can't decrypt the RTCP packet. */
-  RTP_SyncSourceId ssrc = frame.GetSenderSyncSource();
-  if (UseSyncSource(ssrc, e_Receiver, false) == NULL)
+  RTP_SyncSourceId ssrc = encoded.GetSenderSyncSource();
+  if (UseSyncSource(ssrc, e_Receiver, ssrc == 1) == NULL)
     return e_IgnorePacket;
 
-  frame.MakeUnique();
+  RTP_ControlFrame decoded(encoded);
+  decoded.MakeUnique();
 
-  int len = frame.GetSize();
+  int len = decoded.GetSize();
 
-  if (!CHECK_ERROR(srtp_unprotect_rtcp, (m_context, frame.GetPointer(), &len), this, ssrc))
+  if (!CHECK_ERROR(srtp_unprotect_rtcp, (m_context, decoded.GetPointer(), &len), this, ssrc))
     return ++m_consecutiveErrors[e_Receiver][e_Control] > MaxConsecutiveErrors ? e_AbortTransport : e_IgnorePacket;
 
   m_consecutiveErrors[e_Receiver][e_Control] = 0;
 
-  PTRACE(GetThrottle(e_Receiver, e_Control, frame.GetSenderSyncSource()),
-         *this << "unprotected RTCP packet: " << frame.GetPacketSize()
+  PTRACE(GetThrottle(e_Receiver, e_Control, ssrc),
+         *this << "unprotected RTCP packet: " << decoded.GetPacketSize()
          << "->" << len << " SSRC=" << ssrc
          << GetThrottle(e_Receiver, e_Control, ssrc));
 
-  frame.SetPacketSize(len);
+  decoded.SetPacketSize(len);
 
-  return OpalRTPSession::OnReceiveControl(frame);
+  return OpalRTPSession::OnReceiveControl(decoded);
 }
 
 
