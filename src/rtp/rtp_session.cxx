@@ -2273,7 +2273,7 @@ WORD OpalRTPSession::GetLocalControlPort() const
 {
   OpalMediaTransportPtr transport = m_transport; // This way avoids races
   OpalUDPMediaTransport * udp = transport != NULL ? dynamic_cast<OpalUDPMediaTransport *>(&*transport) : NULL;
-  PUDPSocket * socket = udp != NULL ? udp->GetSocket(e_Media) : NULL;
+  PUDPSocket * socket = udp != NULL ? udp->GetSocket(e_Control) : NULL;
   return socket != NULL ? socket->GetPort() : 0;
 }
 
