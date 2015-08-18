@@ -348,7 +348,74 @@
     <Lib />
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\codec\g7221mf_inc.cxx">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Android'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\codec\g7222mf_inc.cxx">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Android'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\codec\h263mf_inc.cxx">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Android'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\codec\h264mf_inc.cxx">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Android'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\codec\mpeg4mf_inc.cxx">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Android'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="..\codec\speexmf.cxx" />
+    <ClCompile Include="..\codec\vp8mf.cxx" />
+    <ClCompile Include="..\codec\vp8mf_inc.cxx">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Android'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="..\sdp\ice.cxx" />
     <ClCompile Include="..\sdp\sdphttpep.cxx" />
     <ClCompile Include="..\rtp\rtp_stream.cxx" />
@@ -1718,7 +1785,7 @@ exit 0
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Android'">Generating C# files</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Android'">%(RootDir)%(Directory)csharp_swig_wrapper.inc</Outputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Android'">../../include/opal.h</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">path $(ProjectDir)..\..\..\external\swigwin;%PATH%
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">path $(ProjectDir)..\..\..\external\swigwin;$(ProjectDir)..\..\..\swigwin;C:\swigwin;%PATH%
 swig -c++ -csharp -w451 "-I$(ProjectDir)..\..\include" -o "%(RootDir)%(Directory)csharp_swig_wrapper.cxx" "%(FullPath)"
 if errorlevel 2 goto missing
 if errorlevel 1 exit 1
@@ -1732,7 +1799,7 @@ exit 0
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Generating C# files</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(RootDir)%(Directory)csharp_swig_wrapper.inc</Outputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">../../include/opal.h;%(RootDir)%(Directory)csharp_swig_wrapper.cxx</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">path $(ProjectDir)..\..\..\external\swigwin;%PATH%
+      <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">path $(ProjectDir)..\..\..\external\swigwin;$(ProjectDir)..\..\..\swigwin;C:\swigwin;%PATH%
 swig -c++ -csharp -w451 "-I$(ProjectDir)..\..\include" -o "%(RootDir)%(Directory)csharp_swig_wrapper.cxx" "%(FullPath)"
 if errorlevel 2 goto missing
 if errorlevel 1 exit 1
@@ -1746,7 +1813,7 @@ exit 0
       <Message Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">Generating C# files</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">%(RootDir)%(Directory)csharp_swig_wrapper.inc</Outputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">../../include/opal.h;%(RootDir)%(Directory)csharp_swig_wrapper.cxx</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">path $(ProjectDir)..\..\..\external\swigwin;%PATH%
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">path $(ProjectDir)..\..\..\external\swigwin;$(ProjectDir)..\..\..\swigwin;C:\swigwin;%PATH%
 swig -c++ -csharp -w451 "-I$(ProjectDir)..\..\include" -o "%(RootDir)%(Directory)csharp_swig_wrapper.cxx" "%(FullPath)"
 if errorlevel 2 goto missing
 if errorlevel 1 exit 1
@@ -1760,42 +1827,42 @@ exit 0
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Generating C# files</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(RootDir)%(Directory)csharp_swig_wrapper.inc</Outputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">../../include/opal.h;%(RootDir)%(Directory)csharp_swig_wrapper.cxx</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">path $(ProjectDir)..\..\..\external\swigwin;%PATH%
-swig -c++ -csharp -w451 "-I$(ProjectDir)..\..\include" -o "%(RootDir)%(Directory)csharp_swig_wrapper.inc" "%(FullPath)"
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">path $(ProjectDir)..\..\..\external\swigwin;$(ProjectDir)..\..\..\swigwin;C:\swigwin;%PATH%
+swig -c++ -csharp -w451 "-I$(ProjectDir)..\..\include" -o "%(RootDir)%(Directory)csharp_swig_wrapper.cxx" "%(FullPath)"
 if errorlevel 2 goto missing
 if errorlevel 1 exit 1
-copy "%(RootDir)%(Directory)\csharp_swig_wrapper.inc" "%(RootDir)%(Directory)csharp_swig_wrapper.cxx" &gt; nul
-exit 0
+goto done
 :missing
-echo Ignoring missing SWIG and using pre-compiled versions.
+echo Ignoring missing SWIG and using pre-compiled version "%(RootDir)%(Directory)\csharp_swig_wrapper.cxx".
+:done
 copy "%(RootDir)%(Directory)\csharp_swig_wrapper.cxx" "%(RootDir)%(Directory)\csharp_swig_wrapper.inc" &gt; nul
 exit 0
 </Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Generating C# files</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(RootDir)%(Directory)csharp_swig_wrapper.inc</Outputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">../../include/opal.h</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">path $(ProjectDir)..\..\..\external\swigwin;%PATH%
-swig -c++ -csharp -w451 "-I$(ProjectDir)..\..\include" -o "%(RootDir)%(Directory)csharp_swig_wrapper.inc" "%(FullPath)"
+      <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">path $(ProjectDir)..\..\..\external\swigwin;$(ProjectDir)..\..\..\swigwin;C:\swigwin;%PATH%
+swig -c++ -csharp -w451 "-I$(ProjectDir)..\..\include" -o "%(RootDir)%(Directory)csharp_swig_wrapper.cxx" "%(FullPath)"
 if errorlevel 2 goto missing
 if errorlevel 1 exit 1
-copy "%(RootDir)%(Directory)\csharp_swig_wrapper.inc" "%(RootDir)%(Directory)csharp_swig_wrapper.cxx" &gt; nul
-exit 0
+goto done
 :missing
-echo Ignoring missing SWIG and using pre-compiled versions.
+echo Ignoring missing SWIG and using pre-compiled version "%(RootDir)%(Directory)\csharp_swig_wrapper.cxx".
+:done
 copy "%(RootDir)%(Directory)\csharp_swig_wrapper.cxx" "%(RootDir)%(Directory)\csharp_swig_wrapper.inc" &gt; nul
 exit 0
 </Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">Generating C# files</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">%(RootDir)%(Directory)csharp_swig_wrapper.inc</Outputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">../../include/opal.h</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">path $(ProjectDir)..\..\..\external\swigwin;%PATH%
-swig -c++ -csharp -w451 "-I$(ProjectDir)..\..\include" -o "%(RootDir)%(Directory)csharp_swig_wrapper.inc" "%(FullPath)"
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">path $(ProjectDir)..\..\..\external\swigwin;$(ProjectDir)..\..\..\swigwin;C:\swigwin;%PATH%
+swig -c++ -csharp -w451 "-I$(ProjectDir)..\..\include" -o "%(RootDir)%(Directory)csharp_swig_wrapper.cxx" "%(FullPath)"
 if errorlevel 2 goto missing
 if errorlevel 1 exit 1
-copy "%(RootDir)%(Directory)\csharp_swig_wrapper.inc" "%(RootDir)%(Directory)csharp_swig_wrapper.cxx" &gt; nul
-exit 0
+goto done
 :missing
-echo Ignoring missing SWIG and using pre-compiled versions.
+echo Ignoring missing SWIG and using pre-compiled version "%(RootDir)%(Directory)\csharp_swig_wrapper.cxx".
+:done
 copy "%(RootDir)%(Directory)\csharp_swig_wrapper.cxx" "%(RootDir)%(Directory)\csharp_swig_wrapper.inc" &gt; nul
 exit 0
 </Command>
@@ -1960,7 +2027,7 @@ exit 0
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Generating Java JNI files</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">Generating Java JNI files</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Generating Java JNI files</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">path $(ProjectDir)..\..\..\external\swigwin;%PATH%
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">path $(ProjectDir)..\..\..\external\swigwin;$(ProjectDir)..\..\..\swigwin;C:\swigwin;%PATH%
 swig -c++ -java -package org.opalvoip.opal -w451 "-I$(ProjectDir)..\..\include" -o "%(RootDir)%(Directory)java_swig_wrapper.cxx" "%(FullPath)"
 if errorlevel 2 goto missing
 if errorlevel 1 exit 1
@@ -1971,7 +2038,7 @@ echo Ignoring missing SWIG and using pre-compiled version "%(RootDir)%(Directory
 copy "%(RootDir)%(Directory)java_swig_wrapper.cxx" "%(RootDir)%(Directory)java_swig_wrapper.inc" &gt; nul
 exit 0
 </Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">path $(ProjectDir)..\..\..\external\swigwin;%PATH%
+      <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">path $(ProjectDir)..\..\..\external\swigwin;$(ProjectDir)..\..\..\swigwin;C:\swigwin;%PATH%
 swig -c++ -java -package org.opalvoip.opal -w451 "-I$(ProjectDir)..\..\include" -o "%(RootDir)%(Directory)java_swig_wrapper.cxx" "%(FullPath)"
 if errorlevel 2 goto missing
 if errorlevel 1 exit 1
@@ -1982,7 +2049,7 @@ echo Ignoring missing SWIG and using pre-compiled version "%(RootDir)%(Directory
 copy "%(RootDir)%(Directory)java_swig_wrapper.cxx" "%(RootDir)%(Directory)java_swig_wrapper.inc" &gt; nul
 exit 0
 </Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">path $(ProjectDir)..\..\..\external\swigwin;%PATH%
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">path $(ProjectDir)..\..\..\external\swigwin;$(ProjectDir)..\..\..\swigwin;C:\swigwin;%PATH%
 swig -c++ -java -package org.opalvoip.opal -w451 "-I$(ProjectDir)..\..\include" -o "%(RootDir)%(Directory)java_swig_wrapper.cxx" "%(FullPath)"
 if errorlevel 2 goto missing
 if errorlevel 1 exit 1
@@ -1993,37 +2060,37 @@ echo Ignoring missing SWIG and using pre-compiled version "%(RootDir)%(Directory
 copy "%(RootDir)%(Directory)java_swig_wrapper.cxx" "%(RootDir)%(Directory)java_swig_wrapper.inc" &gt; nul
 exit 0
 </Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">path $(ProjectDir)..\..\..\external\swigwin;%PATH%
-swig -c++ -java -package org.opalvoip.opal -w451 "-I$(ProjectDir)..\..\include" -o "%(RootDir)%(Directory)java_swig_wrapper.inc" "%(FullPath)"
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">path $(ProjectDir)..\..\..\external\swigwin;$(ProjectDir)..\..\..\swigwin;C:\swigwin;%PATH%
+swig -c++ -java -package org.opalvoip.opal -w451 "-I$(ProjectDir)..\..\include" -o "%(RootDir)%(Directory)java_swig_wrapper.cxx" "%(FullPath)"
 if errorlevel 2 goto missing
 if errorlevel 1 exit 1
-copy "%(RootDir)%(Directory)\java_swig_wrapper.inc" "%(RootDir)%(Directory)java_swig_wrapper.cxx" &gt; nul
-exit 0
+goto done
 :missing
-echo Ignoring missing SWIG and using pre-compiled versions.
-copy "%(RootDir)%(Directory)\java_swig_wrapper.cxx" "%(RootDir)%(Directory)\java_swig_wrapper.inc" &gt; nul
+echo Ignoring missing SWIG and using pre-compiled version "%(RootDir)%(Directory)java_swig_wrapper.cxx".
+:done
+copy "%(RootDir)%(Directory)java_swig_wrapper.cxx" "%(RootDir)%(Directory)java_swig_wrapper.inc" &gt; nul
 exit 0
 </Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">path $(ProjectDir)..\..\..\external\swigwin;%PATH%
-swig -c++ -java -package org.opalvoip.opal -w451 "-I$(ProjectDir)..\..\include" -o "%(RootDir)%(Directory)java_swig_wrapper.inc" "%(FullPath)"
+      <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">path $(ProjectDir)..\..\..\external\swigwin;$(ProjectDir)..\..\..\swigwin;C:\swigwin;%PATH%
+swig -c++ -java -package org.opalvoip.opal -w451 "-I$(ProjectDir)..\..\include" -o "%(RootDir)%(Directory)java_swig_wrapper.cxx" "%(FullPath)"
 if errorlevel 2 goto missing
 if errorlevel 1 exit 1
-copy "%(RootDir)%(Directory)\java_swig_wrapper.inc" "%(RootDir)%(Directory)java_swig_wrapper.cxx" &gt; nul
-exit 0
+goto done
 :missing
-echo Ignoring missing SWIG and using pre-compiled versions.
-copy "%(RootDir)%(Directory)\java_swig_wrapper.cxx" "%(RootDir)%(Directory)\java_swig_wrapper.inc" &gt; nul
+echo Ignoring missing SWIG and using pre-compiled version "%(RootDir)%(Directory)java_swig_wrapper.cxx".
+:done
+copy "%(RootDir)%(Directory)java_swig_wrapper.cxx" "%(RootDir)%(Directory)java_swig_wrapper.inc" &gt; nul
 exit 0
 </Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">path $(ProjectDir)..\..\..\external\swigwin;%PATH%
-swig -c++ -java -package org.opalvoip.opal -w451 "-I$(ProjectDir)..\..\include" -o "%(RootDir)%(Directory)java_swig_wrapper.inc" "%(FullPath)"
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">path $(ProjectDir)..\..\..\external\swigwin;$(ProjectDir)..\..\..\swigwin;C:\swigwin;%PATH%
+swig -c++ -java -package org.opalvoip.opal -w451 "-I$(ProjectDir)..\..\include" -o "%(RootDir)%(Directory)java_swig_wrapper.cxx" "%(FullPath)"
 if errorlevel 2 goto missing
 if errorlevel 1 exit 1
-copy "%(RootDir)%(Directory)\java_swig_wrapper.inc" "%(RootDir)%(Directory)java_swig_wrapper.cxx" &gt; nul
-exit 0
+goto done
 :missing
-echo Ignoring missing SWIG and using pre-compiled versions.
-copy "%(RootDir)%(Directory)\java_swig_wrapper.cxx" "%(RootDir)%(Directory)\java_swig_wrapper.inc" &gt; nul
+echo Ignoring missing SWIG and using pre-compiled version "%(RootDir)%(Directory)java_swig_wrapper.cxx".
+:done
+copy "%(RootDir)%(Directory)java_swig_wrapper.cxx" "%(RootDir)%(Directory)java_swig_wrapper.inc" &gt; nul
 exit 0
 </Command>
     </CustomBuild>

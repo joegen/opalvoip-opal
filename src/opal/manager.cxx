@@ -87,6 +87,7 @@ static const char * const DefaultMediaFormatOrder[] = {
   OPAL_H264_High,   // High profile
   OPAL_H264_MODE1,  // Packetisation mode 1
   OPAL_H264_MODE0,  // Packetisation mode 0
+  OPAL_VP8,
   OPAL_MPEG4,
   OPAL_H263plus
   OPAL_H263,

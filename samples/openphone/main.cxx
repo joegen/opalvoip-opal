@@ -204,6 +204,7 @@ DEF_FIELD(VideoGrabFrameRate);
 DEF_FIELD(VideoGrabFrameSize);
 DEF_FIELD(VideoGrabPreview);
 DEF_FIELD(VideoGrabBitRate);
+DEF_FIELD(VideoWatermarkDevice);
 DEF_FIELD(VideoMaxBitRate);
 DEF_FIELD(VideoFlipLocal);
 DEF_FIELD(VideoAutoTransmit);
@@ -243,7 +244,9 @@ DEF_FIELD(GatekeeperLogin);
 DEF_FIELD(GatekeeperPassword);
 DEF_FIELD(H323TerminalType);
 DEF_FIELD(DTMFSendMode);
+#if OPAL_450
 DEF_FIELD(CallIntrusionProtectionLevel);
+#endif
 DEF_FIELD(DisableFastStart);
 DEF_FIELD(DisableH245Tunneling);
 DEF_FIELD(DisableH245inSETUP);
@@ -552,8 +555,6 @@ static void FillAudioDeviceComboBox(wxItemContainer * list, PSoundChannel::Direc
 
 
 ///////////////////////////////////////////////////////////////////////////////
-
-static wxFrame * TextCtrlChannelFrame;
 
 class TextCtrlChannel : public PChannel
 {
@@ -1256,6 +1257,9 @@ bool MyManager::Initialise(bool startMinimised)
   config->Read(VideoFlipLocalKey, &videoArgs.flip);
   SetVideoInputDevice(videoArgs);
   m_SecondaryVideoGrabber = videoArgs;
+
+  if (config->Read(VideoWatermarkDeviceKey, &str))
+    m_VideoWatermarkDevice = str.p_str();
 
   config->Read(VideoGrabFrameSizeKey, &m_VideoGrabFrameSize,  wxT("CIF"));
   config->Read(VideoMinFrameSizeKey,  &m_VideoMinFrameSize, wxT("SQCIF"));
@@ -2929,6 +2933,14 @@ void MyManager::OnStartMediaPatch(OpalConnection & connection, OpalMediaPatch & 
                                                 OpalMediaStream::DetailAudio |
                                                 OpalMediaStream::DetailEOL);
   }
+  else {
+    OpalVideoMediaStream * videoStream = dynamic_cast<OpalVideoMediaStream *>(&patch.GetSource());
+    if (videoStream != NULL) {
+      PVideoInputDevice * device = PVideoInputDevice::CreateOpenedDevice(m_VideoWatermarkDevice, false);
+      if (device != NULL)
+        videoStream->SetVideoWatermarkDevice(device);
+    }
+  }
 
   PostEvent(wxEvtStreamsChanged, connection.GetCall().GetToken());
 }
@@ -4352,6 +4364,7 @@ BEGIN_EVENT_TABLE(OptionsDialog, wxDialog)
   ////////////////////////////////////////
   // Video fields
   EVT_COMBOBOX(XRCID("VideoGrabDevice"), OptionsDialog::ChangeVideoGrabDevice)
+  EVT_COMBOBOX(XRCID("VideoWatermarkDevice"), OptionsDialog::ChangeVideoWatermarkDevice)
   EVT_BUTTON(XRCID("TestVideoCapture"), OptionsDialog::TestVideoCapture)
   EVT_USER_COMMAND(wxEvtTestVideoEnded, OptionsDialog::OnTestVideoEnded)
   EVT_COMBOBOX(XRCID("VideoOnHold"), OptionsDialog::ChangedVideoOnHold)
@@ -4666,6 +4679,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   INIT_FIELD(VideoGrabFrameRate, m_manager.GetVideoInputDevice().rate);
   INIT_FIELD(VideoFlipLocal, m_manager.GetVideoInputDevice().flip != false);
   INIT_FIELD(VideoGrabPreview, m_manager.m_VideoGrabPreview);
+  INIT_FIELD(VideoWatermarkDevice, m_manager.m_VideoWatermarkDevice);
   INIT_FIELD(VideoAutoTransmit, m_manager.CanAutoStartTransmitVideo() != false);
   INIT_FIELD(VideoAutoReceive, m_manager.CanAutoStartReceiveVideo() != false);
   INIT_FIELD(VideoFlipRemote, m_manager.GetVideoOutputDevice().flip != false);
@@ -4694,6 +4708,11 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   devices = PVideoInputDevice::GetDriversDeviceNames("*");
   for (i = 0; i < devices.GetSize(); i++)
     m_VideoGrabDeviceCtrl->Append(PwxString(devices[i]));
+
+  FindWindowByNameAs(m_VideoWatermarkDeviceCtrl, this, wxT("VideoWatermarkDevice"));
+  devices = PVideoInputDevice::GetDriversDeviceNames("*");
+  for (i = 0; i < devices.GetSize(); i++)
+    m_VideoWatermarkDeviceCtrl->Append(PwxString(devices[i]));
 
   FindWindowByNameAs(m_VideoOnHoldDeviceCtrl, this, wxT("VideoOnHold"));
   for (i = 0; i < devices.GetSize(); i++)
@@ -5167,6 +5186,8 @@ bool OptionsDialog::TransferDataFromWindow()
   SAVE_FIELD(VideoGrabFrameSize, m_manager.m_VideoGrabFrameSize = );
   SAVE_FIELD(VideoFlipLocal, videoDevice.flip = );
   m_manager.SetVideoInputDevice(videoDevice);
+
+  SAVE_FIELD_STR(VideoWatermarkDevice, m_manager.m_VideoWatermarkDevice = );
 
   SAVE_FIELD(VideoGrabPreview, m_manager.m_VideoGrabPreview = );
   SAVE_FIELD(VideoAutoTransmit, m_manager.SetAutoStartTransmitVideo);
@@ -5848,6 +5869,12 @@ void OptionsDialog::ChangeVideoGrabDevice(wxCommandEvent & /*event*/)
 }
 
 
+void OptionsDialog::ChangeVideoWatermarkDevice(wxCommandEvent & /*event*/)
+{
+  SelectFileDevice(m_VideoWatermarkDeviceCtrl, m_VideoWatermarkDevice, wxT("Select Video File for Sending"), false);
+}
+
+
 void OptionsDialog::StopTestVideo()
 {
   if (m_TestVideoGrabber != NULL)
@@ -5903,8 +5930,6 @@ void OptionsDialog::TestVideoThreadMain()
   grabberArgs.rate = m_VideoGrabFrameRate;
   PVideoFrameInfo::ParseSize(m_VideoGrabFrameSize, grabberArgs.width, grabberArgs.height);
   grabberArgs.flip = m_VideoFlipLocal;
-
-  wxRect winRect(m_manager.GetRect());
 
   PVideoDevice::OpenArgs displayArgs;
   displayArgs.deviceName = psprintf(VIDEO_WINDOW_DEVICE" TITLE=\"Video Test\" X=%i Y=%i",

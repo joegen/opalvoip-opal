@@ -811,19 +811,13 @@ bool SDPMediaDescription::FromSession(OpalMediaSession * session,
 
 bool SDPMediaDescription::ToSession(OpalMediaSession * session) const
 {
-  OpalRTPSession * rtpSession = dynamic_cast<OpalRTPSession *>(session);
-
-  if (rtpSession != NULL) {
-    // Set single port or disjoint RTCP port, must be done before Open()
-    rtpSession->SetSinglePortTx(m_controlAddress == m_mediaAddress);
-    if (m_stringOptions.GetBoolean(OPAL_OPT_RTCP_MUX))
-      rtpSession->SetSinglePortRx();
-    rtpSession->SetExtensionHeader(GetExtensionHeaders());
-  }
-
-  // Must be done after ICE setting above
+  // Must be done after ICE setting derived class
   session->SetRemoteAddress(m_mediaAddress, true);
   session->SetRemoteAddress(m_controlAddress, false);
+
+  // Make sure on answer, "mid" values correspond to offer
+  if (session->GetGroupId() == GetGroupId() && session->GetGroupMediaId().IsEmpty())
+    session->SetGroupMediaId(GetGroupMediaId());
 
   return true;
 }
@@ -1996,6 +1990,13 @@ bool SDPRTPAVPMediaDescription::ToSession(OpalMediaSession * session) const
 {
   OpalRTPSession * rtpSession = dynamic_cast<OpalRTPSession *>(session);
   if (rtpSession != NULL) {
+    /* Set single port or disjoint RTCP port, must be done before Open()
+       and before SDPMediaDescription::ToSession() */
+    rtpSession->SetSinglePortTx(m_controlAddress == m_mediaAddress);
+    if (m_stringOptions.GetBoolean(OPAL_OPT_RTCP_MUX))
+      rtpSession->SetSinglePortRx();
+    rtpSession->SetExtensionHeader(GetExtensionHeaders());
+
     for (SsrcInfo::const_iterator it = m_ssrcInfo.begin(); it != m_ssrcInfo.end(); ++it) {
       RTP_SyncSourceId ssrc = it->first;
       PString cname(it->second.GetString("cname"));

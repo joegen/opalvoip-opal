@@ -1430,6 +1430,7 @@ class H323EndPoint : public OpalRTPEndPoint
     // Dynamic variables
     PSafeDictionary<PString, H323Connection> m_connectionsByCallId;
     std::set<OpalTransportPtr> m_reusableTransports;
+    PMutex                     m_reusableTransportMutex;
 
     H323Capabilities m_capabilities;
 
