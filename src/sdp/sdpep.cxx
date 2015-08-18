@@ -1191,6 +1191,7 @@ bool OpalSDPConnection::OnReceivedAnswerSDPSession(const SDPSessionDescription &
 #if OPAL_VIDEO
                                          mediaDescription->GetContentRole(),
 #endif
+                                         false,
                                          recvDisabled))
       recvStream = GetMediaStream(sessionId, true);
     if (!recvDisabled && recvStream == NULL)
@@ -1210,6 +1211,7 @@ bool OpalSDPConnection::OnReceivedAnswerSDPSession(const SDPSessionDescription &
 #if OPAL_VIDEO
                                           mediaDescription->GetContentRole(),
 #endif
+                                          false,
                                           sendDisabled))
       sendStream = GetMediaStream(sessionId, false);
     if (!sendDisabled && sendStream == NULL && !otherParty->IsOnHold(true))
