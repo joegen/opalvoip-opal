@@ -748,10 +748,10 @@ void OpalMediaTransport::Start()
     if (m_subchannels[subchannel].m_channel != NULL && m_subchannels[subchannel].m_thread == NULL) {
       PStringStream threadName;
       threadName << m_name;
-      threadName.Replace(" Session ", "-");
-      threadName.Replace(" bundle", "-B");
       if (m_subchannels.size() > 1)
         threadName << '-' << subchannel;
+      threadName.Replace(" Session ", "-");
+      threadName.Replace(" bundle", "-B");
       m_subchannels[subchannel].m_thread = new PThreadObj<OpalMediaTransport::Transport>
               (m_subchannels[subchannel], &OpalMediaTransport::Transport::ThreadMain, false, threadName, PThread::HighPriority);
       PTRACE_CONTEXT_ID_TO(m_subchannels[subchannel].m_thread);
