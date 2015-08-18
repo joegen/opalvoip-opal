@@ -696,6 +696,11 @@ bool OpalSDPConnection::OnSendAnswerSDP(const SDPSessionDescription & sdpOffer, 
 {
   SetActiveMediaFormats(sdpOffer.GetMediaFormats());
 
+#if OPAL_VIDEO
+  if (m_stringOptions.GetBoolean(OPAL_OPT_AV_BUNDLE))
+    SetAudioVideoGroup();
+#endif
+
   size_t sessionCount = sdpOffer.GetMediaDescriptions().GetSize();
   vector<SDPMediaDescription *> sdpMediaDescriptions(sessionCount+1);
   size_t sessionId;
@@ -718,11 +723,6 @@ bool OpalSDPConnection::OnSendAnswerSDP(const SDPSessionDescription & sdpOffer, 
       sdpMediaDescriptions[sessionId] = OnSendAnswerSDPSession(incomingMedia, sessionId, sdpOffer.GetDirection(sessionId));
   }
 #endif // OPAL_SRTP
-
-#if OPAL_VIDEO
-  if (m_stringOptions.GetBoolean(OPAL_OPT_AV_BUNDLE))
-    SetAudioVideoGroup();
-#endif
 
   // Fill in refusal for media sessions we didn't like
   bool gotNothing = true;
