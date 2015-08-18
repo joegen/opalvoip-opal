@@ -816,7 +816,7 @@ bool SDPMediaDescription::ToSession(OpalMediaSession * session) const
   session->SetRemoteAddress(m_controlAddress, false);
 
   // Make sure on answer, "mid" values correspond to offer
-  if (session->GetGroupId() == GetGroupId())
+  if (session->GetGroupId() == GetGroupId() && session->GetGroupMediaId().IsEmpty())
     session->SetGroupMediaId(GetGroupMediaId());
 
   return true;
