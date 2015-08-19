@@ -783,25 +783,6 @@ void OpalRTPSession::SetGroupId(const PString & id)
 }
 
 
-#if OPAL_ICE
-void OpalRTPSession::SetICESetUpTime(const PTimeInterval & t)
-{
-  OpalMediaTransportPtr transport = m_transport; // This way avoids races
-  OpalICEMediaTransport * ice = transport != NULL ? dynamic_cast<OpalICEMediaTransport *>(&*transport) : NULL;
-  if (ice != NULL)
-    ice->SetICESetUpTime(t);
-}
-
-
-PTimeInterval OpalRTPSession::GetICESetUpTime() const
-{
-  OpalMediaTransportPtr transport = m_transport; // This way avoids races
-  OpalICEMediaTransport * ice = transport != NULL ? dynamic_cast<OpalICEMediaTransport *>(&*transport) : NULL;
-  return ice != NULL ? ice->GetICESetUpTime() : PTimeInterval(0, 5);
-}
-#endif // OPAL_ICE
-
-
 OpalRTPSession::SendReceiveStatus OpalRTPSession::SendBYE(RTP_SyncSourceId ssrc)
 {
   if (!IsOpen())

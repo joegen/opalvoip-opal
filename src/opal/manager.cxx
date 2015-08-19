@@ -256,9 +256,16 @@ OpalManager::OpalManager()
   , mediaFormatMask(PARRAYSIZE(DefaultMediaFormatMask), DefaultMediaFormatMask)
   , disableDetectInBandDTMF(false)
   , m_noMediaTimeout(0, 0, 5)     // Minutes
+  , m_txMediaTimeout(0, 10)       // Seconds
   , m_signalingTimeout(0, 10)     // Seconds
   , m_transportIdleTime(0, 0, 1)  // Minute
   , m_natKeepAliveTime(0, 30)     // Seconds
+#if OPAL_ICE
+  , m_iceTimeout(0, 5)            // Seconds
+#endif
+#if OPAL_SRTP
+  , m_dtlsTimeout(0, 3)           // Seconds
+#endif
   , m_rtpIpPorts(5000, 5999)
 #if OPAL_PTLIB_SSL
   , m_caFiles(PProcess::Current().GetHomeDirectory() + "certificates")
