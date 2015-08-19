@@ -389,7 +389,8 @@ public:
     virtual bool GetCandidates(
       PString & user,
       PString & pass,
-      PNatCandidateList & candidates
+      PNatCandidateList & candidates,
+      bool offering
     );
 
     /**Write to media transport.
@@ -664,7 +665,7 @@ class OpalMediaSession : public PSafeObject, public OpalMediaTransportChannelTyp
       */
     void OfferCryptoSuite(const PString & cryptoSuite);
 
-    /**Get the crypto keys we are offerring to remote.
+    /**Get the crypto keys we are offering to remote.
        Note, OfferCryptoSuite() must be called beforehand.
       */
     virtual OpalMediaCryptoKeyList & GetOfferedCryptoKeys();
