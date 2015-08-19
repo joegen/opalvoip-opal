@@ -624,7 +624,7 @@ class OpalMediaSession : public PSafeObject, public OpalMediaTransportChannelTyp
     /**Set the "group" id for the RTP session.
        This is typically a mechanism for connecting audio and video together via BUNDLE.
     */
-    virtual void SetGroupId(const PString & id);
+    virtual bool SetGroupId(const PString & id, bool overwrite = true);
 
     /**Get the "group media" id for the RTP session.
        This is typically a mechanism for connecting audio and video together via BUNDLE.
@@ -635,7 +635,7 @@ class OpalMediaSession : public PSafeObject, public OpalMediaTransportChannelTyp
     /**Set the "group media" id for the RTP session.
        This is typically a mechanism for connecting audio and video together via BUNDLE.
     */
-    virtual void SetGroupMediaId(const PString & id);
+    virtual bool SetGroupMediaId(const PString & id, bool overwrite = true);
 
     /**Create an appropriate SDP media description object for this media session.
       */
