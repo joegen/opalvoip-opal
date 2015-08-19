@@ -281,6 +281,8 @@ OpalMediaSession * OpalRTPConnection::CreateMediaSession(unsigned sessionId,
     return NULL;
   }
 
+  session->SetStringOptions(GetStringOptions());
+
   PTRACE(4, "Created " << mediaType << " session " << sessionId << " using " << actualSessionType << " on " << *this);
   return session;
 }
