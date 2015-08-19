@@ -749,7 +749,7 @@ void OpalMediaTransport::Start()
       PStringStream threadName;
       threadName << m_name;
       if (m_subchannels.size() > 1)
-        threadName << '-' << subchannel;
+        threadName << '-' << (SubChannels)subchannel;
       threadName.Replace(" Session ", "-");
       threadName.Replace(" bundle", "-B");
       m_subchannels[subchannel].m_thread = new PThreadObj<OpalMediaTransport::Transport>
@@ -800,7 +800,7 @@ bool OpalTCPMediaTransport::Open(OpalMediaSession &, PINDEX, const PString & loc
 bool OpalTCPMediaTransport::SetRemoteAddress(const OpalTransportAddress & remoteAddress, PINDEX)
 {
   PIPSocketAddressAndPort ap;
-  if (!remoteAddress.GetIpAndPort(ap))
+  if (!remoteAddress.GetIpAndPort(ap) || !ap.IsValid() || ap.GetAddress().IsAny())
     return false;
 
   PTCPSocket & socket = dynamic_cast<PTCPSocket &>(*m_subchannels[0].m_channel);
@@ -925,7 +925,7 @@ bool OpalUDPMediaTransport::InternalSetRemoteAddress(const PIPSocket::AddressAnd
     trace << *this << source << " set remote "
           << subchannel << " address to " << newAP;
     for (size_t sub = 0; sub < m_subchannels.size(); ++sub)
-      trace << ", " << sub << " rem=" << GetRemoteAddress((SubChannels)sub)
+      trace << ", " << (SubChannels)sub << " rem=" << GetRemoteAddress((SubChannels)sub)
                          << " local=" << GetLocalAddress((SubChannels)sub);
     if (m_localHasRestrictedNAT)
       trace << ", restricted NAT";

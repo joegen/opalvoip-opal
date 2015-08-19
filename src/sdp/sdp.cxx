@@ -811,7 +811,13 @@ bool SDPMediaDescription::FromSession(OpalMediaSession * session,
 
 bool SDPMediaDescription::ToSession(OpalMediaSession * session) const
 {
-  // Must be done after ICE setting derived class
+#if OPAL_ICE
+  OpalMediaTransportPtr transport = session->GetTransport();
+  if (transport != NULL)
+    transport->SetCandidates(GetUsername(), GetPassword(), GetCandidates());
+#endif //OPAL_ICE
+
+  // Must be done after ICE
   session->SetRemoteAddress(m_mediaAddress, true);
   session->SetRemoteAddress(m_controlAddress, false);
 
