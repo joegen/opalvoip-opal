@@ -149,7 +149,7 @@ vector<bool> OpalRTPConnection::CreateAllMediaSessions()
       continue;
 
     if (GetAutoStart(mediaType) == OpalMediaType::DontOffer) {
-      PTRACE(4, "Not offerring " << mediaType);
+      PTRACE(4, "Not offering " << mediaType);
       continue;
     }
 

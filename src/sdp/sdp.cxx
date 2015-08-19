@@ -800,7 +800,7 @@ bool SDPMediaDescription::FromSession(OpalMediaSession * session,
   if (offer != NULL ? offer->HasICE() : m_stringOptions.GetBoolean(OPAL_OPT_OFFER_ICE)) {
     PString user, pass;
     PNatCandidateList candidates;
-    session->GetTransport()->GetCandidates(user, pass, candidates);
+    session->GetTransport()->GetCandidates(user, pass, candidates, offer == NULL);
     SetICE(user, pass, candidates);
   }
 #endif // OPAL_ICE
