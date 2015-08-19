@@ -1708,18 +1708,42 @@ bool SIPConnection::SendDelayedACK(bool force)
 }
 
 
+static void MergeIdentityURL(SIPURL & out, const SIPURL & in)
+{
+  if (in.IsEmpty())
+    return;
+
+  if (out.IsEmpty()) {
+    out = in;
+    return;
+  }
+
+  if (out.GetDisplayName().IsEmpty())
+    out.SetDisplayName(in.GetDisplayName());
+
+  if (out.GetUserName().IsEmpty())
+    out.SetUserName(in.GetUserName());
+
+  if (in.GetHostName().Find(".invalid") == P_MAX_INDEX && PIPSocket::Address(out.GetHostName()).IsValid())
+    out.SetHostName(in.GetHostName());
+
+  out.SetParamVars(in.GetParamVars(), true);
+}
+
+
 void SIPConnection::UpdateRemoteAddresses()
 {
+  /* We work our way through the various "identity" headers to get as full a
+     view of the remote entity as we can. This involves using the first
+     username, display name and domain name, as well as a union of all
+     paramaters. A domain name will be used in preference to an IP
+     address in higher priority URLs.  */
   SIPURL remote = m_remoteIdentity;
-  if (remote.IsEmpty())
-    remote = m_ciscoRemotePartyID;
-  else
-    remote.SetParamVars(m_ciscoRemotePartyID.GetParamVars(), true);
-  if (remote.IsEmpty())
-    remote = m_dialog.GetRemoteURI();
-  else
-    remote.SetParamVars(m_dialog.GetRemoteURI().GetParamVars(), true);
+  MergeIdentityURL(remote, m_ciscoRemotePartyID);
+  MergeIdentityURL(remote, m_dialog.GetRemoteURI());
   remote.Sanitise(SIPURL::ExternalURI);
+
+  m_remotePartyURL = remote.AsString();
 
   remotePartyNumber = remote.GetUserName();
   if (!OpalIsE164(remotePartyNumber))
@@ -1728,9 +1752,6 @@ void SIPConnection::UpdateRemoteAddresses()
   remotePartyName = remote.GetDisplayName();
   if (remotePartyName.IsEmpty())
     remotePartyName = remotePartyNumber.IsEmpty() ? remote.GetUserName() : remote.AsString();
-
-  // This is the address to use to call the remote
-  m_remotePartyURL = PIPSocket::Address(remote.GetHostName()).IsValid() ? m_dialog.GetRequestURI().AsString() : remote.AsString();
 
   // If no local name, then use what the remote thinks we are
   if (localPartyName.IsEmpty())
