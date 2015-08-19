@@ -350,33 +350,32 @@ OpalMediaSession * OpalSDPConnection::SetUpMediaSession(const unsigned sessionId
   if (session == NULL)
     return NULL;
 
-#if OPAL_ICE
-  OpalTransportAddress remoteMediaAddress;
-  if (!mediaDescription.HasICE())
-    remoteMediaAddress = mediaDescription.GetMediaAddress();
-#else
-  OpalTransportAddress remoteMediaAddress = mediaDescription.GetMediaAddress();
-#endif
-
-  PTRACE_IF(3, session->IsOpen() && !remoteMediaAddress.IsEmpty() && session->GetRemoteAddress() != remoteMediaAddress,
-            "Remote changed IP address: " << session->GetRemoteAddress() << " -> " << remoteMediaAddress);
-
-  if (!mediaDescription.ToSession(session))
-    return NULL;
-
   OpalRTPSession * rtpSession = dynamic_cast<OpalRTPSession *>(session);
   if (rtpSession != NULL && m_stringOptions.GetBoolean(OPAL_OPT_RTCP_MUX))
     rtpSession->SetSinglePortRx();
 
+  OpalTransportAddress remoteMediaAddress;
+#if OPAL_ICE
+  if (mediaDescription.HasICE())
+    remoteMediaAddress = GetRemoteMediaAddress();
+  else
+#endif
+  {
+    remoteMediaAddress = mediaDescription.GetMediaAddress();
+    PTRACE_IF(3, session->IsOpen() && session->GetRemoteAddress() != remoteMediaAddress,
+            "Remote changed IP address: " << session->GetRemoteAddress() << " -> " << remoteMediaAddress);
+  }
+
+  // Once before opening
+  if (!mediaDescription.ToSession(session))
+    return NULL;
+
   if (!session->Open(GetMediaInterface(), remoteMediaAddress))
     return NULL;
 
-#if OPAL_ICE
-  // Must be after the Open()
-  OpalMediaTransportPtr transport = session->GetTransport();
-  if (transport != NULL)
-    transport->SetCandidates(mediaDescription.GetUsername(), mediaDescription.GetPassword(), mediaDescription.GetCandidates());
-#endif //OPAL_ICE
+  // And again after
+  if (!mediaDescription.ToSession(session))
+    return NULL;
 
   dynamic_cast<OpalRTPEndPoint &>(endpoint).CheckEndLocalRTP(*this, rtpSession);
   localAddress = session->GetLocalAddress();
