@@ -52,6 +52,17 @@ class H323Capability;
 class PSTUNClient;
 
 
+/**String option key to an integer indicating the time in seconds to
+   wait for received media. Default 300.
+  */
+#define OPAL_OPT_MEDIA_RX_TIMEOUT "Media-Rx-Timeout"
+
+/**String option key to an integer indicating the time in seconds to
+   count transmit (ICMP) errors. Default 10.
+  */
+#define OPAL_OPT_MEDIA_TX_TIMEOUT "Media-Tx-Timeout"
+
+
 #if OPAL_STATISTICS
 
 struct OpalNetworkStatistics
@@ -389,7 +400,8 @@ public:
     virtual bool GetCandidates(
       PString & user,
       PString & pass,
-      PNatCandidateList & candidates
+      PNatCandidateList & candidates,
+      bool offering
     );
 
     /**Write to media transport.
@@ -664,7 +676,7 @@ class OpalMediaSession : public PSafeObject, public OpalMediaTransportChannelTyp
       */
     void OfferCryptoSuite(const PString & cryptoSuite);
 
-    /**Get the crypto keys we are offerring to remote.
+    /**Get the crypto keys we are offering to remote.
        Note, OfferCryptoSuite() must be called beforehand.
       */
     virtual OpalMediaCryptoKeyList & GetOfferedCryptoKeys();
@@ -692,48 +704,20 @@ class OpalMediaSession : public PSafeObject, public OpalMediaTransportChannelTyp
       */
     const OpalMediaType & GetMediaType() const { return m_mediaType; }
 
-    /**Get the maximum time we wait for packets from remote.
+    /**Get the string options for the media session.
       */
-    const PTimeInterval & GetMaxNoReceiveTime() const { return m_maxNoReceiveTime; }
+    const PStringOptions & GetStringOptions() const { return m_stringOptions; }
 
-    /**Set the maximum time we wait for packets from remote.
+    /**Set the string options for the media session.
       */
-    void SetMaxNoReceiveTime(
-      const PTimeInterval & interval ///<  New time interval for reports.
-    ) { m_maxNoReceiveTime = interval; }
-
-    /**Get the maximum time we wait for remote to start accepting out packets.
-      */
-    const PTimeInterval & GetMaxNoTransmitTime() const { return m_maxNoTransmitTime; }
-
-    /**Set the maximum time we wait for remote to start accepting out packets.
-      */
-    void SetMaxNoTransmitTime(
-      const PTimeInterval & interval ///<  New time interval.
-    ) { m_maxNoTransmitTime = interval; }
-
-#if OPAL_ICE
-    /**Get the maximum time we wait for remote to start ICE negotiations.
-      */
-    const PTimeInterval & GetMaxICESetUpTime() const { return m_maxICESetUpTime; }
-
-    /**Set the maximum time we wait for remote to start ICE negotiations.
-      */
-    void SetMaxICESetUpTime(
-      const PTimeInterval & interval ///<  New time interval.
-    ) { m_maxICESetUpTime = interval; }
-#endif
+    void SetStringOptions(const PStringOptions & options) { m_stringOptions = options; }
 
   protected:
     OpalConnection & m_connection;
     unsigned         m_sessionId;  // unique session ID
     OpalMediaType    m_mediaType;  // media type for session
     bool             m_remoteBehindNAT;
-    PTimeInterval    m_maxNoReceiveTime;
-    PTimeInterval    m_maxNoTransmitTime;
-#if OPAL_ICE
-    PTimeInterval    m_maxICESetUpTime;
-#endif
+    PStringOptions   m_stringOptions;
 #if OPAL_SDP
     PString          m_groupId;
     PString          m_groupMediaId;

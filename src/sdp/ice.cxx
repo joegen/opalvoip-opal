@@ -40,6 +40,9 @@
 
 #include <ptclib/random.h>
 #include <ptclib/pstunsrvr.h>
+#include <opal/connection.h>
+#include <opal/endpoint.h>
+#include <opal/manager.h>
 
 
 #define PTraceModule() "ICE"
@@ -62,7 +65,7 @@ OpalICEMediaTransport::OpalICEMediaTransport(const PString & name)
   : OpalUDPMediaTransport(name)
   , m_localUsername(PBase64::Encode(PRandom::Octets(12)))
   , m_localPassword(PBase64::Encode(PRandom::Octets(18)))
-  , m_maxICESetUpTime(0, 5)
+  , m_promiscuous(false)
   , m_state(e_Disabled)
   , m_server(NULL)
   , m_client(NULL)
@@ -83,7 +86,8 @@ bool OpalICEMediaTransport::Open(OpalMediaSession & session,
                                  const PString & localInterface,
                                  const OpalTransportAddress & remoteAddress)
 {
-  m_maxICESetUpTime  = session.GetMaxICESetUpTime();
+  m_readTimeout = session.GetStringOptions().GetVar(OPAL_OPT_ICE_TIMEOUT, session.GetConnection().GetEndPoint().GetManager().GetICETimeout());
+  m_promiscuous = session.GetStringOptions().GetBoolean(OPAL_OPT_ICE_PROMISCUOUS);
 
   return OpalUDPMediaTransport::Open(session, count, localInterface, remoteAddress);
 }
@@ -147,8 +151,10 @@ void OpalICEMediaTransport::SetCandidates(const PString & user, const PString & 
       break;
 
     case e_Completed :
-      if (user == m_remoteUsername && pass == m_remotePassword)
+      if (user == m_remoteUsername && pass == m_remotePassword) {
+        PTRACE(4, *this << "ICE username/password unchanged");
         return;
+      }
       PTRACE(2, *this << "ICE restart (username/password changed)");
       m_state = e_Answering;
       break;
@@ -223,7 +229,7 @@ void OpalICEMediaTransport::SetCandidates(const PString & user, const PString & 
 }
 
 
-bool OpalICEMediaTransport::GetCandidates(PString & user, PString & pass, PNatCandidateList & candidates)
+bool OpalICEMediaTransport::GetCandidates(PString & user, PString & pass, PNatCandidateList & candidates, bool offering)
 {
   PSafeLockReadWrite lock(*this);
   if (!lock.IsLocked())
@@ -234,8 +240,10 @@ bool OpalICEMediaTransport::GetCandidates(PString & user, PString & pass, PNatCa
     return false;
   }
 
-  if (m_state != e_Answering)
+  if (offering) {
+    PTRACE_IF(2, m_state == e_Answering, *this << "ICE state error, making local offer when answering remote offer");
     m_state = e_Offering;
+  }
 
   user = m_localUsername;
   pass = m_localPassword;
@@ -301,7 +309,7 @@ PBoolean OpalICEMediaTransport::ICEChannel::Read(void * data, PINDEX size)
 {
   PTimeInterval oldTimeout = GetReadTimeout();
   if (m_owner.m_state > e_Completed)
-    SetReadTimeout(m_owner.m_maxICESetUpTime);
+    SetReadTimeout(m_owner.m_readTimeout);
 
   while (PIndirectChannel::Read(data, size)) {
     if (m_owner.InternalHandleICE(m_subchannel, data, GetLastReadCount())) {
@@ -343,14 +351,15 @@ bool OpalICEMediaTransport::InternalHandleICE(SubChannels subchannel, const void
     }
   }
   if (candidate == NULL) {
-    PTRACE(2, *this << subchannel << ", received STUN message for unknown ICE candidate: " << ap);
-#if 0
-    return false;
-#else
+    if (!m_promiscuous) {
+      PTRACE(2, *this << subchannel << ", ignoring STUN message for unknown ICE candidate: " << ap);
+      return false;
+    }
+
     m_remoteCandidates[subchannel].push_back(PNatCandidate(PNatCandidate::HostType, (PNatMethod::Component)(subchannel+1)));
     candidate = &m_remoteCandidates[subchannel].back();
     candidate->m_baseTransportAddress = ap;
-#endif
+    PTRACE(2, *this << subchannel << ", received STUN message for unknown ICE candidate, adding: " << ap);
   }
 
   if (message.IsRequest()) {

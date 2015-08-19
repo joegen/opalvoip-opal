@@ -560,7 +560,7 @@ void OpalMediaTransport::SetCandidates(const PString &, const PString &, const P
 }
 
 
-bool OpalMediaTransport::GetCandidates(PString &, PString &, PNatCandidateList &)
+bool OpalMediaTransport::GetCandidates(PString &, PString &, PNatCandidateList &, bool)
 {
   return true;
 }
@@ -1003,7 +1003,7 @@ bool OpalUDPMediaTransport::Open(OpalMediaSession & session,
 
   m_packetSize = manager.GetMaxRtpPacketSize();
   m_remoteBehindNAT = session.IsRemoteBehindNAT();
-  m_maxNoTransmitTime = session.GetMaxNoTransmitTime();
+  m_maxNoTransmitTime = session.GetStringOptions().GetVar(OPAL_OPT_MEDIA_TX_TIMEOUT, manager.GetTxMediaTimeout());
 
   PIPAddress bindingIP(localInterface);
   PIPAddress remoteIP;
@@ -1088,7 +1088,7 @@ bool OpalUDPMediaTransport::Open(OpalMediaSession & session,
   for (size_t subchannel = 0; subchannel < m_subchannels.size(); ++subchannel) {
     PUDPSocket & socket = *GetSocket((SubChannels)subchannel);
     PTRACE_CONTEXT_ID_TO(socket);
-    socket.SetReadTimeout(session.GetMaxNoReceiveTime());
+    socket.SetReadTimeout(session.GetStringOptions().GetVar(OPAL_OPT_MEDIA_RX_TIMEOUT, manager.GetNoMediaTimeout()));
 
     // Increase internal buffer size on media UDP sockets
     SetMinBufferSize(socket, SO_RCVBUF, session.GetMediaType() == OpalMediaType::Audio() ? 0x4000 : 0x100000);
@@ -1136,11 +1136,6 @@ OpalMediaSession::OpalMediaSession(const Init & init)
   , m_sessionId(init.m_sessionId)
   , m_mediaType(init.m_mediaType)
   , m_remoteBehindNAT(init.m_remoteBehindNAT)
-  , m_maxNoReceiveTime(init.m_connection.GetEndPoint().GetManager().GetNoMediaTimeout())
-  , m_maxNoTransmitTime(0, 10)          // Sending data for 10 seconds, ICMP says still not there
-#if OPAL_ICE
-  , m_maxICESetUpTime(0, 5)
-#endif
 {
   PTRACE_CONTEXT_ID_FROM(init.m_connection);
   PTRACE(5, *this << "created for " << m_mediaType);
