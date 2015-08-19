@@ -2805,12 +2805,20 @@ bool SDPSessionDescription::Decode(const PStringArray & lines, const OpalMediaFo
   // Match up groups and mid's
   for (PINDEX i = 0; i < mediaDescriptions.GetSize(); ++i) {
     PString mid = mediaDescriptions[i].GetGroupMediaId();
-    for (GroupDict::iterator it = m_groups.begin(); it != m_groups.end(); ++it) {
+    if (mid.IsEmpty())
+      continue;
+
+    GroupDict::iterator it;
+    for (it = m_groups.begin(); it != m_groups.end(); ++it) {
       if (it->second.Contains(mid)) {
         mediaDescriptions[i].SetGroupId(it->first);
         break;
       }
     }
+
+    // Had a "mid" but no "group", assume a BUNDLE (naughty system!)
+    if (it == m_groups.end())
+      mediaDescriptions[i].SetGroupId(OpalMediaSession::GetBundleGroupId());
   }
 
   if (m_mediaStreamIds.GetSize() == 1 && m_mediaStreamIds[0] == "*") {
