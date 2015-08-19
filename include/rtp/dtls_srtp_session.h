@@ -49,6 +49,12 @@
 #include <ptclib/qchannel.h>
 
 
+/**String option key to an integer indicating the time in seconds to
+   wait for any DTLS messages. Default 2.
+  */
+#define OPAL_OPT_DTLS_TIMEOUT "DTLS-Timeout"
+
+
 #if OPAL_ICE
 typedef OpalICEMediaTransport OpalDTLSMediaTransportParent;
 #else
@@ -108,16 +114,6 @@ class OpalDTLSSRTPSession : public OpalSRTPSession
     void SetPassiveMode(bool passive);
     bool IsPassiveMode() const { return m_passiveMode; }
 
-    /**Get the maximum time we wait for packets from remote.
-      */
-    const PTimeInterval & GetHandshakeTimeout() const { return m_handshakeTimeout; }
-
-    /**Set the maximum time we wait for packets from remote.
-      */
-    void SetHandshakeTimeout(
-      const PTimeInterval & interval ///<  New time interval for reports.
-    ) { m_handshakeTimeout = interval; }
-
     const PSSLCertificateFingerprint & GetLocalFingerprint(PSSLCertificateFingerprint::HashType preferredHashType) const;
     void SetRemoteFingerprint(const PSSLCertificateFingerprint& fp);
 
@@ -125,7 +121,6 @@ class OpalDTLSSRTPSession : public OpalSRTPSession
     virtual OpalMediaTransport * CreateMediaTransport(const PString & name);
 
     bool                       m_passiveMode;
-    PTimeInterval              m_handshakeTimeout;
     PSSLCertificateFingerprint m_localFingerprint;
     PSSLCertificateFingerprint m_remoteFingerprint;
 };

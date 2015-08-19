@@ -417,11 +417,6 @@ class OpalRTPSession : public OpalMediaSession
       unsigned packets   ///<  Number of packets between callbacks
     ) { m_rxStatisticsInterval = packets; }
 
-#if OPAL_ICE
-    void SetICESetUpTime(const PTimeInterval & t);
-    PTimeInterval GetICESetUpTime() const;
-#endif
-
     /**Get local data port of session.
       */
     virtual WORD GetLocalDataPort() const;

@@ -1915,6 +1915,16 @@ class OpalManager : public PObject
       const PTimeInterval & newInterval  ///<  New timeout for media
     ) { m_noMediaTimeout = newInterval; }
 
+    /**Get the amount of time with tx media errors (ICMP) that will cause a call to clear
+     */
+    const PTimeInterval & GetTxMediaTimeout() const { return m_txMediaTimeout; }
+
+    /**Set the amount of time with tx media errors (ICMP) that will cause a call to clear
+     */
+    void SetTxMediaTimeout(
+      const PTimeInterval & newInterval  ///<  New timeout for media
+    ) { m_txMediaTimeout = newInterval; }
+
     /**Get the amount of time to wait on signaling channel
      */
     const PTimeInterval & GetSignalingTimeout() const { return m_signalingTimeout; }
@@ -1932,7 +1942,7 @@ class OpalManager : public PObject
     /**Set the amount of time a transport can be idle before it is closed
      */
     void SetTransportIdleTime(
-      const PTimeInterval & newInterval  ///<  New timeout for signaling
+      const PTimeInterval & newInterval  ///<  New timeout
     ) { m_transportIdleTime = newInterval; }
 
     /**Get the amount of time between "keep-alive" packets to maintain NAT pin-hole.
@@ -1942,8 +1952,32 @@ class OpalManager : public PObject
     /**Set the amount of time between "keep-alive" packets to maintain NAT pin-hole.
     */
     void SetNatKeepAliveTime(
-      const PTimeInterval & newInterval  ///<  New timeout for signaling
+      const PTimeInterval & newInterval  ///<  New timeout
     ) { m_natKeepAliveTime = newInterval; }
+
+#if OPAL_ICE
+    /**Get the amount of time to wait for ICE/STUN packets.
+    */
+    const PTimeInterval & GetICETimeout() const { return m_iceTimeout; }
+
+    /**Set the amount of time to wait for ICE/STUN packets.
+    */
+    void SetICETimeout(
+      const PTimeInterval & newInterval  ///<  New timeout
+    ) { m_iceTimeout = newInterval; }
+#endif // OPAL_ICE
+
+#if OPAL_SRTP
+    /**Get the amount of time to wait for DTLS handshake.
+    */
+    const PTimeInterval & GetDTLSTimeout() const { return m_dtlsTimeout; }
+
+    /**Set the amount of time to wait for DTLS handshake.
+    */
+    void SetDTLSTimeout(
+      const PTimeInterval & newInterval  ///<  New timeout
+    ) { m_dtlsTimeout = newInterval; }
+#endif // OPAL_SRTP
 
     /**Get the default ILS server to use for user lookup.
       */
@@ -2038,9 +2072,16 @@ class OpalManager : public PObject
     PStringArray  mediaFormatMask;
     bool          disableDetectInBandDTMF;
     PTimeInterval m_noMediaTimeout;
+    PTimeInterval m_txMediaTimeout;
     PTimeInterval m_signalingTimeout;
     PTimeInterval m_transportIdleTime;
     PTimeInterval m_natKeepAliveTime;
+#if OPAL_ICE
+    PTimeInterval m_iceTimeout;
+#endif
+#if OPAL_SRTP
+    PTimeInterval m_dtlsTimeout;
+#endif
     PString       ilsServer;
 
     OpalSilenceDetector::Params silenceDetectParams;

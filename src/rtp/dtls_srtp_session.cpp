@@ -173,7 +173,7 @@ bool OpalDTLSMediaTransport::Open(OpalMediaSession & session,
                                   const PString & localInterface,
                                   const OpalTransportAddress & remoteAddress)
 {
-  m_handshakeTimeout = dynamic_cast<OpalDTLSSRTPSession &>(session).GetHandshakeTimeout();
+  m_handshakeTimeout = session.GetStringOptions().GetVar(OPAL_OPT_DTLS_TIMEOUT, session.GetConnection().GetEndPoint().GetManager().GetDTLSTimeout());
   m_MTU = session.GetConnection().GetMaxRtpPayloadSize();
   return OpalDTLSMediaTransportParent::Open(session, count, localInterface, remoteAddress);
 }
@@ -300,7 +300,6 @@ bool OpalRegisteredSAVPF = OpalMediaSessionFactory::RegisterAs(OpalDTLSSRTPSessi
 OpalDTLSSRTPSession::OpalDTLSSRTPSession(const Init & init)
   : OpalSRTPSession(init)
   , m_passiveMode(false)
-  , m_handshakeTimeout(0, 2)
 {
 }
 
