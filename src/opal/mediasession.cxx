@@ -560,7 +560,7 @@ void OpalMediaTransport::SetCandidates(const PString &, const PString &, const P
 }
 
 
-bool OpalMediaTransport::GetCandidates(PString &, PString &, PNatCandidateList &)
+bool OpalMediaTransport::GetCandidates(PString &, PString &, PNatCandidateList &, bool)
 {
   return true;
 }

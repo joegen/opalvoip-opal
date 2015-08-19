@@ -58,7 +58,7 @@ class OpalICEMediaTransport : public OpalUDPMediaTransport
     virtual bool IsEstablished() const;
     virtual void InternalRxData(SubChannels subchannel, const PBYTEArray & data);
     virtual void SetCandidates(const PString & user, const PString & pass, const PNatCandidateList & candidates);
-    virtual bool GetCandidates(PString & user, PString & pass, PNatCandidateList & candidates);
+    virtual bool GetCandidates(PString & user, PString & pass, PNatCandidateList & candidates, bool offering);
 
     const PTimeInterval & GetICESetUpTime() const { return m_maxICESetUpTime; }
     void SetICESetUpTime(const PTimeInterval & t) { m_maxICESetUpTime = t; }

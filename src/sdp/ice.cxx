@@ -147,8 +147,10 @@ void OpalICEMediaTransport::SetCandidates(const PString & user, const PString & 
       break;
 
     case e_Completed :
-      if (user == m_remoteUsername && pass == m_remotePassword)
+      if (user == m_remoteUsername && pass == m_remotePassword) {
+        PTRACE(4, *this << "ICE username/password unchanged");
         return;
+      }
       PTRACE(2, *this << "ICE restart (username/password changed)");
       m_state = e_Answering;
       break;
@@ -223,7 +225,7 @@ void OpalICEMediaTransport::SetCandidates(const PString & user, const PString & 
 }
 
 
-bool OpalICEMediaTransport::GetCandidates(PString & user, PString & pass, PNatCandidateList & candidates)
+bool OpalICEMediaTransport::GetCandidates(PString & user, PString & pass, PNatCandidateList & candidates, bool offering)
 {
   PSafeLockReadWrite lock(*this);
   if (!lock.IsLocked())
@@ -234,8 +236,10 @@ bool OpalICEMediaTransport::GetCandidates(PString & user, PString & pass, PNatCa
     return false;
   }
 
-  if (m_state != e_Answering)
+  if (offering) {
+    PTRACE_IF(2, m_state == e_Answering, *this << "ICE state error, making local offer when answering remote offer");
     m_state = e_Offering;
+  }
 
   user = m_localUsername;
   pass = m_localPassword;
