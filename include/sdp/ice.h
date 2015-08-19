@@ -45,6 +45,18 @@
 class PSTUNClient;
 
 
+/**String option key to an integer indicating the time in seconds to
+   wait for any ICE/STUN messages. Default 5.
+  */
+#define OPAL_OPT_ICE_TIMEOUT "ICE-Timeout"
+
+/**String option key to a boolean indicating that ICE will accept STUN
+   messages not in candidate list, provided has correct user/pass
+   credentials. Work around for non trickle ICE systems. Default false.
+  */
+#define OPAL_OPT_ICE_PROMISCUOUS "ICE-Promiscuous"
+
+
 /** Class for low level transport of media that uses ICE
   */
 class OpalICEMediaTransport : public OpalUDPMediaTransport
@@ -59,9 +71,6 @@ class OpalICEMediaTransport : public OpalUDPMediaTransport
     virtual void InternalRxData(SubChannels subchannel, const PBYTEArray & data);
     virtual void SetCandidates(const PString & user, const PString & pass, const PNatCandidateList & candidates);
     virtual bool GetCandidates(PString & user, PString & pass, PNatCandidateList & candidates, bool offering);
-
-    const PTimeInterval & GetICESetUpTime() const { return m_maxICESetUpTime; }
-    void SetICESetUpTime(const PTimeInterval & t) { m_maxICESetUpTime = t; }
 
   protected:
     class ICEChannel : public PIndirectChannel
@@ -80,7 +89,8 @@ class OpalICEMediaTransport : public OpalUDPMediaTransport
     PString       m_localPassword;    // ICE password sent to remote
     PString       m_remoteUsername;   // ICE username expected from remote
     PString       m_remotePassword;   // ICE password expected from remote
-    PTimeInterval m_maxICESetUpTime;
+    PTimeInterval m_readTimeout;
+    bool          m_promiscuous;
 
     enum CandidateStates
     {
