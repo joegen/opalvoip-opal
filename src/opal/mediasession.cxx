@@ -748,10 +748,10 @@ void OpalMediaTransport::Start()
     if (m_subchannels[subchannel].m_channel != NULL && m_subchannels[subchannel].m_thread == NULL) {
       PStringStream threadName;
       threadName << m_name;
+      if (m_subchannels.size() > 1)
+        threadName << '-' << (SubChannels)subchannel;
       threadName.Replace(" Session ", "-");
       threadName.Replace(" bundle", "-B");
-      if (m_subchannels.size() > 1)
-        threadName << '-' << subchannel;
       m_subchannels[subchannel].m_thread = new PThreadObj<OpalMediaTransport::Transport>
               (m_subchannels[subchannel], &OpalMediaTransport::Transport::ThreadMain, false, threadName, PThread::HighPriority);
       PTRACE_CONTEXT_ID_TO(m_subchannels[subchannel].m_thread);
@@ -800,7 +800,7 @@ bool OpalTCPMediaTransport::Open(OpalMediaSession &, PINDEX, const PString & loc
 bool OpalTCPMediaTransport::SetRemoteAddress(const OpalTransportAddress & remoteAddress, PINDEX)
 {
   PIPSocketAddressAndPort ap;
-  if (!remoteAddress.GetIpAndPort(ap))
+  if (!remoteAddress.GetIpAndPort(ap) || !ap.IsValid() || ap.GetAddress().IsAny())
     return false;
 
   PTCPSocket & socket = dynamic_cast<PTCPSocket &>(*m_subchannels[0].m_channel);
@@ -925,7 +925,7 @@ bool OpalUDPMediaTransport::InternalSetRemoteAddress(const PIPSocket::AddressAnd
     trace << *this << source << " set remote "
           << subchannel << " address to " << newAP;
     for (size_t sub = 0; sub < m_subchannels.size(); ++sub)
-      trace << ", " << sub << " rem=" << GetRemoteAddress((SubChannels)sub)
+      trace << ", " << (SubChannels)sub << " rem=" << GetRemoteAddress((SubChannels)sub)
                          << " local=" << GetLocalAddress((SubChannels)sub);
     if (m_localHasRestrictedNAT)
       trace << ", restricted NAT";
@@ -1242,30 +1242,48 @@ PString OpalMediaSession::GetGroupId() const
 }
 
 
-void OpalMediaSession::SetGroupId(const PString & id)
+bool OpalMediaSession::SetGroupId(const PString & id, bool overwrite)
 {
   PSafeLockReadWrite lock(*this);
-  m_groupId = id;
-  m_groupId.MakeUnique();
+
+  if (overwrite || m_groupId.IsEmpty()) {
+    m_groupId = id;
+    m_groupId.MakeUnique();
+    PTRACE(4, *this << "set group id to \"" << id << '"');
+  }
+
+  if (m_groupId == id)
+    return true;
+
+  PTRACE(3, *this << "could not set group id to \"" << id << "\", already set to \"" << m_groupId << '"');
+  return false;
 }
 
 
 PString OpalMediaSession::GetGroupMediaId() const
 {
   PSafeLockReadOnly lock(*this);
-  if (m_groupMediaId.IsEmpty())
-    return m_mediaType;
   PString s = m_groupMediaId;
   s.MakeUnique();
   return s;
 }
 
 
-void OpalMediaSession::SetGroupMediaId(const PString & id)
+bool OpalMediaSession::SetGroupMediaId(const PString & id, bool overwrite)
 {
   PSafeLockReadWrite lock(*this);
-  m_groupMediaId = id;
-  m_groupMediaId.MakeUnique();
+
+  if (overwrite || m_groupMediaId.IsEmpty()) {
+    m_groupMediaId = id;
+    m_groupMediaId.MakeUnique();
+    PTRACE(4, *this << "set group media id to \"" << id << '"');
+  }
+
+  if (m_groupMediaId == id)
+    return true;
+
+  PTRACE(3, *this << "could not set group media id to \"" << id << "\", already set to \"" << m_groupMediaId << '"');
+  return false;
 }
 
 

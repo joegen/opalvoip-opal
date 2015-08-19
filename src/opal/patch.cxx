@@ -905,7 +905,6 @@ bool OpalMediaPatch::DispatchFrame(RTP_DataFrame & frame)
 
   if (patch->m_transcoderChanged) {
     patch->m_transcoderChanged = false;
-    UnlockReadOnly();
     PTRACE(3, "Ignoring source data with transcoder change on " << *this);
     return true;
   }

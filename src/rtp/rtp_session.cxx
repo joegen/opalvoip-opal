@@ -2273,7 +2273,7 @@ WORD OpalRTPSession::GetLocalControlPort() const
 {
   OpalMediaTransportPtr transport = m_transport; // This way avoids races
   OpalUDPMediaTransport * udp = transport != NULL ? dynamic_cast<OpalUDPMediaTransport *>(&*transport) : NULL;
-  PUDPSocket * socket = udp != NULL ? udp->GetSocket(e_Media) : NULL;
+  PUDPSocket * socket = udp != NULL ? udp->GetSocket(e_Control) : NULL;
   return socket != NULL ? socket->GetPort() : 0;
 }
 
@@ -2326,6 +2326,8 @@ bool OpalRTPSession::SetRemoteAddress(const OpalTransportAddress & remoteAddress
 
   SubChannels otherChannel = isMediaAddress ? e_Control : e_Data;
   if (transport->GetRemoteAddress(otherChannel).IsEmpty()) {
+    PTRACE(3, *this << "set remote " << otherChannel << " port: "
+           "singlePortTx=" << boolalpha << m_singlePortTx << " other=" << remoteAddress);
     if (m_singlePortTx)
       transport->SetRemoteAddress(remoteAddress, otherChannel);
     else {

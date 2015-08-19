@@ -811,13 +811,24 @@ bool SDPMediaDescription::FromSession(OpalMediaSession * session,
 
 bool SDPMediaDescription::ToSession(OpalMediaSession * session) const
 {
-  // Must be done after ICE setting derived class
+#if OPAL_ICE
+  OpalMediaTransportPtr transport = session->GetTransport();
+  if (transport != NULL)
+    transport->SetCandidates(GetUsername(), GetPassword(), GetCandidates());
+#endif //OPAL_ICE
+
+  // Must be done after ICE
   session->SetRemoteAddress(m_mediaAddress, true);
   session->SetRemoteAddress(m_controlAddress, false);
 
+  // If no group yet in session, set to SDP version
+  session->SetGroupId(GetGroupId(), false);
+
   // Make sure on answer, "mid" values correspond to offer
-  if (session->GetGroupId() == GetGroupId() && session->GetGroupMediaId().IsEmpty())
-    session->SetGroupMediaId(GetGroupMediaId());
+  if (session->GetGroupId() == GetGroupId())
+    session->SetGroupMediaId(GetGroupMediaId(), false);
+  else
+    PTRACE(4, *session << "group id \"" << session->GetGroupId() << "\", not same as SDP \"" << GetGroupId() << '"');
 
   return true;
 }
@@ -2799,11 +2810,21 @@ bool SDPSessionDescription::Decode(const PStringArray & lines, const OpalMediaFo
   // Match up groups and mid's
   for (PINDEX i = 0; i < mediaDescriptions.GetSize(); ++i) {
     PString mid = mediaDescriptions[i].GetGroupMediaId();
-    for (GroupDict::iterator it = m_groups.begin(); it != m_groups.end(); ++it) {
+    if (mid.IsEmpty())
+      continue;
+
+    GroupDict::iterator it;
+    for (it = m_groups.begin(); it != m_groups.end(); ++it) {
       if (it->second.Contains(mid)) {
         mediaDescriptions[i].SetGroupId(it->first);
         break;
       }
+    }
+
+    // Had a "mid" but no "group", assume a BUNDLE (naughty system!)
+    if (it == m_groups.end()) {
+      mediaDescriptions[i].SetGroupId(OpalMediaSession::GetBundleGroupId());
+      PTRACE(4, "No group attribute, assuming BUNDLE for session " << i+1);
     }
   }
 
