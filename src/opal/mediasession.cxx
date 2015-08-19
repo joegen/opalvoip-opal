@@ -1242,30 +1242,48 @@ PString OpalMediaSession::GetGroupId() const
 }
 
 
-void OpalMediaSession::SetGroupId(const PString & id)
+bool OpalMediaSession::SetGroupId(const PString & id, bool overwrite)
 {
   PSafeLockReadWrite lock(*this);
-  m_groupId = id;
-  m_groupId.MakeUnique();
+
+  if (overwrite || m_groupId.IsEmpty()) {
+    m_groupId = id;
+    m_groupId.MakeUnique();
+    PTRACE(4, *this << "set group id to \"" << id << '"');
+  }
+
+  if (m_groupId == id)
+    return true;
+
+  PTRACE(3, *this << "could not set group id to \"" << id << "\", already set to \"" << m_groupId << '"');
+  return false;
 }
 
 
 PString OpalMediaSession::GetGroupMediaId() const
 {
   PSafeLockReadOnly lock(*this);
-  if (m_groupMediaId.IsEmpty())
-    return m_mediaType;
   PString s = m_groupMediaId;
   s.MakeUnique();
   return s;
 }
 
 
-void OpalMediaSession::SetGroupMediaId(const PString & id)
+bool OpalMediaSession::SetGroupMediaId(const PString & id, bool overwrite)
 {
   PSafeLockReadWrite lock(*this);
-  m_groupMediaId = id;
-  m_groupMediaId.MakeUnique();
+
+  if (overwrite || m_groupMediaId.IsEmpty()) {
+    m_groupMediaId = id;
+    m_groupMediaId.MakeUnique();
+    PTRACE(4, *this << "set group media id to \"" << id << '"');
+  }
+
+  if (m_groupMediaId == id)
+    return true;
+
+  PTRACE(3, *this << "could not set group media id to \"" << id << "\", already set to \"" << m_groupMediaId << '"');
+  return false;
 }
 
 

@@ -516,8 +516,10 @@ bool OpalSDPConnection::OnSendOfferSDP(SDPSessionDescription & sdpOut, bool offe
 void OpalSDPConnection::SetAudioVideoGroup(const PString & id)
 {
   for (SessionMap::iterator it = m_sessions.begin(); it != m_sessions.end(); ++it) {
-    if (it->second->GetMediaType() == OpalMediaType::Audio() || it->second->GetMediaType() == OpalMediaType::Video())
+    if (it->second->GetMediaType() == OpalMediaType::Audio() || it->second->GetMediaType() == OpalMediaType::Video()) {
       it->second->SetGroupId(id);
+      it->second->SetGroupMediaId(it->second->GetMediaType(), false);
+    }
   }
 }
 #endif // OPAL_VIDEO
@@ -694,11 +696,6 @@ bool OpalSDPConnection::OnSendOfferSDPSession(OpalMediaSession * mediaSession,
 bool OpalSDPConnection::OnSendAnswerSDP(const SDPSessionDescription & sdpOffer, SDPSessionDescription & sdpOut)
 {
   SetActiveMediaFormats(sdpOffer.GetMediaFormats());
-
-#if OPAL_VIDEO
-  if (m_stringOptions.GetBoolean(OPAL_OPT_AV_BUNDLE))
-    SetAudioVideoGroup();
-#endif
 
   size_t sessionCount = sdpOffer.GetMediaDescriptions().GetSize();
   vector<SDPMediaDescription *> sdpMediaDescriptions(sessionCount+1);

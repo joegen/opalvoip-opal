@@ -821,9 +821,14 @@ bool SDPMediaDescription::ToSession(OpalMediaSession * session) const
   session->SetRemoteAddress(m_mediaAddress, true);
   session->SetRemoteAddress(m_controlAddress, false);
 
+  // If no group yet in session, set to SDP version
+  session->SetGroupId(GetGroupId(), false);
+
   // Make sure on answer, "mid" values correspond to offer
-  if (session->GetGroupId() == GetGroupId() && session->GetGroupMediaId().IsEmpty())
-    session->SetGroupMediaId(GetGroupMediaId());
+  if (session->GetGroupId() == GetGroupId())
+    session->SetGroupMediaId(GetGroupMediaId(), false);
+  else
+    PTRACE(4, *session << "group id \"" << session->GetGroupId() << "\", not same as SDP \"" << GetGroupId() << '"');
 
   return true;
 }
@@ -2817,8 +2822,10 @@ bool SDPSessionDescription::Decode(const PStringArray & lines, const OpalMediaFo
     }
 
     // Had a "mid" but no "group", assume a BUNDLE (naughty system!)
-    if (it == m_groups.end())
+    if (it == m_groups.end()) {
       mediaDescriptions[i].SetGroupId(OpalMediaSession::GetBundleGroupId());
+      PTRACE(4, "No group attribute, assuming BUNDLE for session " << i+1);
+    }
   }
 
   if (m_mediaStreamIds.GetSize() == 1 && m_mediaStreamIds[0] == "*") {
