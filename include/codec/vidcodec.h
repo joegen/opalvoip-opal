@@ -101,10 +101,15 @@ class OpalIntraFrameControl : public PObject
       */
     void IntraFrameDetected();
 
-    /**Set retry time for if not getting Intra Frame.
-       This is typically the media round trip time, plus a bit.
+    /**Set throttle times for controlling Intra Frame.
+       This is 
       */
-    void SetRetryTime(const PTimeInterval & t) { m_retryTime = t; }
+    void SetTimes(
+      const PTimeInterval & minThrottle, ///< Minimum time between intra frames
+      const PTimeInterval & maxThrottle, ///< If many requests, throttle period increases to this
+      const PTimeInterval & periodic,    ///< Make sure Intra frames are at least this often
+      const PTimeInterval & retry        ///< Retry request, typically the media round trip time, plus a bit.
+    );
 
   protected:
     PTimeInterval m_minThrottleTime;
@@ -223,6 +228,20 @@ class OpalVideoTranscoder : public OpalTranscoder
     bool WasLastFrameIFrame() const { return m_lastFrameWasIFrame; }
     virtual void SendIFrameRequest(unsigned sequenceNumber, unsigned timestamp);
     virtual bool HandleIFrameRequest();
+
+    void SetEncodingIntraFrameControlTimes(
+      const PTimeInterval & minThrottle, ///< Minimum time between intra frames
+      const PTimeInterval & maxThrottle, ///< If many requests, throttle period increases to this
+      const PTimeInterval & periodic,    ///< Make sure Intra frames are at least this often
+      const PTimeInterval & retry        ///< Retry request, typically the media round trip time, plus a bit.
+    ) { m_encodingIntraFrameControl.SetTimes(minThrottle, maxThrottle, periodic, retry); }
+
+    void SetDecodingIntraFrameControlTimes(
+      const PTimeInterval & minThrottle, ///< Minimum time between intra frames
+      const PTimeInterval & maxThrottle, ///< If many requests, throttle period increases to this
+      const PTimeInterval & periodic,    ///< Make sure Intra frames are at least this often
+      const PTimeInterval & retry        ///< Retry request, typically the media round trip time, plus a bit.
+    ) { m_decodingIntraFrameControl.SetTimes(minThrottle, maxThrottle, periodic, retry); }
   //@}
 
   protected:

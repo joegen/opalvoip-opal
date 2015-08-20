@@ -235,8 +235,20 @@ OpalIntraFrameControl::OpalIntraFrameControl(const PTimeInterval & minThrottle,
   , m_lastRequest(0)
 {
   m_requestTimer.SetNotifier(PCREATE_NOTIFIER(OnTimedRequest));
-  m_requestTimer = m_periodicTime;
-  PTRACE(4, "Constructed I-Frame request control: delay=" << m_periodicTime << " this=" << this);
+  PTRACE(4, "Constructed I-Frame request control: this=" << this);
+}
+
+
+void OpalIntraFrameControl::SetTimes(const PTimeInterval & minThrottle,
+                                     const PTimeInterval & maxThrottle,
+                                     const PTimeInterval & periodic,
+                                     const PTimeInterval & retry)
+{
+  PWaitAndSignal mutex(m_mutex);
+  m_minThrottleTime = minThrottle;
+  m_maxThrottleTime = maxThrottle;
+  m_periodicTime = periodic;
+  m_retryTime = retry;
 }
 
 
