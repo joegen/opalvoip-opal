@@ -1884,7 +1884,7 @@ PBoolean OpalManager::IsLocalAddress(const PIPSocket::Address & ip) const
 }
 
 
-PBoolean OpalManager::IsRTPNATEnabled(OpalConnection & /*conn*/, 
+PBoolean OpalManager::IsRTPNATEnabled(OpalConnection & /*conn*/,
                                       const PIPSocket::Address & localAddr,
                                       const PIPSocket::Address & peerAddr,
                                       const PIPSocket::Address & sigAddr,
@@ -1912,7 +1912,7 @@ PBoolean OpalManager::IsRTPNATEnabled(OpalConnection & /*conn*/,
      assume the other guy is public or LAN/VPN and either no NAT is involved,
      or we leave them in charge of any NAT traversal as he has the ability to
      do it. In either case we don't do anything.
-   */
+     */
 
   if (peerAddr == sigAddr)
     return false;
@@ -1928,14 +1928,14 @@ PBoolean OpalManager::IsRTPNATEnabled(OpalConnection & /*conn*/,
   /* So now we have a remote that is confused in some way, so needs help. Our
      next test is for cases of where we are on a multi-homed machine and we
      ended up with a call from interface to another. No NAT needed.
-   */
+     */
   if (PIPSocket::IsLocalHost(peerAddr))
     return false;
 
   /* So, call is from a remote host somewhere and is still confused. We now
      need to check if we are actually ABLE to help. We test if the local end
      of the connection is public, i.e. no NAT at this end so we can help.
-   */
+     */
   if (!localAddr.IsRFC1918())
     return true;
 
@@ -1943,9 +1943,16 @@ PBoolean OpalManager::IsRTPNATEnabled(OpalConnection & /*conn*/,
      provided information so we can compensate for it, i.e. we "know" about the
      NAT. We determine this by translating the localAddr and seing if it gets
      changed to the NAT router address. If so, we can help.
-   */
+     */
   PIPSocket::Address natAddr = localAddr;
   if (TranslateIPAddress(natAddr, peerAddr))
+    return true;
+
+  /* This looks for seriously confused systems were NAT is between two private
+      networks. Unfortunately, we don't have a netmask so we can only guess based
+      on the IP address class. */
+  if ( peerAddr.IsRFC1918() && sigAddr.IsRFC1918() &&
+      !peerAddr.IsSubNet(sigAddr, PIPAddress::GetAny(peerAddr.GetVersion())))
     return true;
 
   /* If we get here, we appear to be in a situation which, if we tried to do the
