@@ -461,6 +461,11 @@ bool OpalRTPConnection::SetSessionQoS(OpalRTPSession * /*session*/)
 
 void OpalRTPConnection::DetermineRTPNAT(const OpalTransport & transport, const OpalTransportAddress & signalAddr)
 {
+  if (m_remoteBehindNAT) {
+    PTRACE(4, "Already determined is behind NAT");
+    return;
+  }
+
   PIPSocket::Address localAddr, peerAddr, sigAddr;
 
   transport.GetLocalAddress().GetIpAddress(localAddr);
@@ -468,6 +473,7 @@ void OpalRTPConnection::DetermineRTPNAT(const OpalTransport & transport, const O
   signalAddr.GetIpAddress(sigAddr);
 
   if (dynamic_cast<OpalRTPEndPoint &>(endpoint).IsRTPNATEnabled(*this, localAddr, peerAddr, sigAddr, !IsOriginating())) {
+    PTRACE(4, "Determined is behind NAT");
     m_remoteBehindNAT = true;
     for (SessionMap::const_iterator it = m_sessions.begin(); it != m_sessions.end(); ++it)
       it->second->SetRemoteBehindNAT();
