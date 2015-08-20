@@ -448,6 +448,8 @@ public:
       */
     PChannel * GetChannel(SubChannels subchannel = e_Media) const { return (size_t)subchannel < m_subchannels.size() ? m_subchannels[subchannel].m_channel : NULL; }
 
+    void SetRemoteBehindNAT() { m_remoteBehindNAT = true; }
+
   protected:
     virtual void InternalStop();
 
@@ -669,7 +671,7 @@ class OpalMediaSession : public PSafeObject, public OpalMediaTransportChannelTyp
 #endif
 
     /// Indicate remote is behind NAT
-    void SetRemoteBehindNAT() { m_remoteBehindNAT = true; }
+    void SetRemoteBehindNAT();
     bool IsRemoteBehindNAT() const { return m_remoteBehindNAT; }
 
     /**Create internal crypto keys for the suite.

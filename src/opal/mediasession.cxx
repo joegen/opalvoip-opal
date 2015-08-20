@@ -1298,6 +1298,14 @@ void OpalMediaSession::GetStatistics(OpalMediaStatistics & statistics, bool) con
 #endif
 
 
+void OpalMediaSession::SetRemoteBehindNAT()
+{
+  m_remoteBehindNAT = true;
+  OpalMediaTransportPtr transport = m_transport; // This way avoids races
+  if (transport != NULL)
+    transport->SetRemoteBehindNAT();
+}
+
 void OpalMediaSession::OfferCryptoSuite(const PString & cryptoSuiteName)
 {
   OpalMediaCryptoSuite * cryptoSuite = OpalMediaCryptoSuiteFactory::CreateInstance(cryptoSuiteName);
