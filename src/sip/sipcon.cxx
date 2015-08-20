@@ -129,6 +129,7 @@ static SIP_PDU::StatusCodes GetStatusCodeFromReason(OpalConnection::CallEndReaso
     { OpalConnection::EndedByCallerAbort       , SIP_PDU::Failure_RequestTerminated      },
     { OpalConnection::EndedByCallForwarded     , SIP_PDU::Redirection_MovedTemporarily   },
     { OpalConnection::EndedByAnswerDenied      , SIP_PDU::GlobalFailure_Decline          },
+    { OpalConnection::EndedByOutOfService      , SIP_PDU::Failure_ServiceUnavailable     },
     { OpalConnection::EndedByRefusal           , SIP_PDU::GlobalFailure_Decline          }, // TODO - SGW - add for call reject from H323 side.
     { OpalConnection::EndedByHostOffline       , SIP_PDU::Failure_NotFound               }, // TODO - SGW - add for no ip from H323 side.
     { OpalConnection::EndedByNoEndPoint        , SIP_PDU::Failure_NotFound               }, // TODO - SGW - add for endpoints not running on a ip from H323 side.
