@@ -122,6 +122,8 @@ class OpalIntraFrameControl : public PObject
       e_Requested
     } m_state;
 
+    unsigned m_stuckCount;
+
     PMutex m_mutex;
     PTime  m_lastRequest;
     PTimer m_requestTimer;
