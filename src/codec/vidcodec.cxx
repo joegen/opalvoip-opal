@@ -231,10 +231,12 @@ OpalIntraFrameControl::OpalIntraFrameControl(const PTimeInterval & minThrottle,
   , m_retryTime(500)
   , m_currentThrottleTime(minThrottle)
   , m_state(e_Idle)
+  , m_stuckCount(0)
   , m_lastRequest(0)
 {
   m_requestTimer.SetNotifier(PCREATE_NOTIFIER(OnTimedRequest));
   m_requestTimer = m_periodicTime;
+  PTRACE(4, "Constructed I-Frame request control: delay=" << m_periodicTime << " this=" << this);
 }
 
 
@@ -250,12 +252,12 @@ void OpalIntraFrameControl::IntraFrameRequest()
       case e_Throttled :
         // Back to requested state so when timer fires, it will do a retry for new request
         m_state = e_Requested;
-        PTRACE(3, "Queuing I-Frame request as throttled: delay=" << m_currentThrottleTime);
+        PTRACE(3, "Queuing I-Frame request as throttled: delay=" << m_currentThrottleTime << " this=" << this);
         return;
 
       default :
         // Don't touch timer, this request will be serviced by existing I-Frame on it's way
-        PTRACE(4, "Ignoring I-Frame request as already in progress: state=" << m_state);
+        PTRACE(4, "Ignoring I-Frame request as already in progress: state=" << m_state << " this=" << this);
         return;
     }
 
@@ -275,7 +277,8 @@ void OpalIntraFrameControl::IntraFrameRequest()
     }
 
     m_state = e_Requesting;
-    PTRACE(3, "Immediate I-Frame request: retry=" << m_retryTime);
+    m_stuckCount = 0;
+    PTRACE(3, "Immediate I-Frame request: retry=" << m_retryTime << " this=" << this);
   }
 
   m_requestTimer = m_retryTime;
@@ -299,7 +302,7 @@ bool OpalIntraFrameControl::RequireIntraFrame()
       return false;
   }
 
-  PTRACE(4, "I-Frame requested.");
+  PTRACE(4, "I-Frame requested: retry=" << m_requestTimer.GetResetTime() << " this=" << this);
   return true;
 }
 
@@ -312,7 +315,7 @@ void OpalIntraFrameControl::IntraFrameDetected()
       return;
 
     m_state = e_Throttled;
-    PTRACE(4, "I-Frame detected: throttle=" << m_currentThrottleTime);
+    PTRACE(4, "I-Frame detected: throttle=" << m_currentThrottleTime << " this=" << this);
   }
 
   m_requestTimer = m_currentThrottleTime; // Outside mutex
@@ -328,24 +331,30 @@ void OpalIntraFrameControl::OnTimedRequest(PTimer &, P_INT_PTR)
     case e_Idle :
       m_state = e_Periodic;
       m_requestTimer = m_periodicTime;
-      PTRACE(4, "Periodic I-Frame request: next=" << m_periodicTime);
+      PTRACE(4, "Periodic I-Frame request: next=" << m_periodicTime << " this=" << this);
       break;
 
     case e_Throttled :
       m_state = e_Idle;
       m_requestTimer = m_periodicTime;
-      PTRACE(4, "End throttled I-Frames: next=" << m_periodicTime);
+      PTRACE(4, "End throttled I-Frames: next=" << m_periodicTime << " this=" << this);
       break;
 
     case e_Requested :
       m_state = e_Requesting;
+      m_stuckCount = 0;
       m_requestTimer = m_retryTime;
-      PTRACE(4, "Retry I-Frame request: retry=" << m_retryTime);
+      PTRACE(4, "Retry I-Frame request: retry=" << m_retryTime << " this=" << this);
       break;
 
     default :
-      m_requestTimer = m_requestTimer.GetResetTime();
-      PTRACE(2, "Encoder appears to be stuck, still requesting.");
+      if (++m_stuckCount < 10) {
+        m_requestTimer = m_requestTimer.GetResetTime();
+        PTRACE(m_stuckCount == 1 ? 2 : 3, "Encoder slow, still requesting I-Frame: "
+                                          "retry=" << m_requestTimer.GetResetTime() << " this=" << this);
+      }
+      else
+        PTRACE(2, "Encoder stopped, not requesting I-Frames any more: this=" << this);
       break;
   }
 }
