@@ -177,7 +177,7 @@ bool FFMPEGCodec::InitContext()
     return false;
   }
 
-  m_context->pix_fmt = PIX_FMT_YUV420P;
+  m_picture->format = m_context->pix_fmt = PIX_FMT_YUV420P;
   m_context->workaround_bugs = FF_BUG_AUTODETECT;
 
   // debugging flags
@@ -321,6 +321,8 @@ bool FFMPEGCodec::SetResolution(unsigned width, unsigned height)
 
   if (m_picture != NULL) {
     // YUV420P input
+    m_picture->width = width;
+    m_picture->height = height;
     m_picture->linesize[0] = width;
     m_picture->linesize[1] = m_picture->linesize[2] = width/2;
     av_free(m_alignedYUV[0]);
