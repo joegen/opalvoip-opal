@@ -510,6 +510,7 @@ class OpalUDPMediaTransport : public OpalMediaTransport
     ~OpalUDPMediaTransport() { InternalStop(); }
 
     virtual bool Open(OpalMediaSession & session, PINDEX count, const PString & localInterface, const OpalTransportAddress & remoteAddress);
+    virtual bool IsEstablished() const;
     virtual OpalTransportAddress GetLocalAddress(SubChannels subchannel = e_Media) const;
     virtual OpalTransportAddress GetRemoteAddress(SubChannels subchannel = e_Media) const;
     virtual bool SetRemoteAddress(const OpalTransportAddress & remoteAddress, SubChannels subchannel = e_Media);
