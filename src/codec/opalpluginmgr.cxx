@@ -990,19 +990,33 @@ bool OpalPluginVideoTranscoder::EncodeFrames(const RTP_DataFrame & src, RTP_Data
     PTRACE(3, "OpalPlugin\tEncoder has sent too many consecutive I-Frames - assuming codec cannot do P-Frames");
   }
 
-  if (PTrace::CanTrace(6)) {
-    ostream & trace = PTRACE_BEGIN(5);
-    trace << "OpalPlugin\tEncoded video frame " << m_totalFrames
-          << " into " << dstList.GetSize() << " packets: ";
-    for (RTP_DataFrameList::iterator it = dstList.begin(); it != dstList.end(); ++it) {
-      if (it != dstList.begin())
-        trace << ", ";
-      trace << it->GetPayloadSize();
+  unsigned traceLevel = m_lastFrameWasIFrame ? 4 : 5;
+  if (PTrace::CanTrace(traceLevel)) {
+    ostream & trace = PTRACE_BEGIN(traceLevel);
+    trace << "OpalPlugin\tEncoded video "
+          << (m_lastFrameWasIFrame ? 'I' : 'P') << "-frame:"
+             " num=" << m_totalFrames;
+    RTP_Timestamp ts = src.GetTimestamp();
+    if (ts > 0)
+      trace << ", ts=" << ts;
+    trace << " pkts=" << dstList.GetSize();
+    if (PTrace::CanTrace(6)) {
+      trace << " [";
+      for (RTP_DataFrameList::iterator it = dstList.begin(); it != dstList.end(); ++it) {
+        if (it != dstList.begin())
+          trace << ',';
+        trace << it->GetPayloadSize();
+      }
+      trace << ']';
     }
-    trace << " (ts=" << src.GetTimestamp() << ')' << PTrace::End;
+    else {
+      PINDEX total = 0;
+      for (RTP_DataFrameList::iterator it = dstList.begin(); it != dstList.end(); ++it)
+        total += it->GetPacketSize();
+      trace << ", " << total << " bytes.";
+    }
+    trace << PTrace::End;
   }
-  else
-    PTRACE(5, "OpalPlugin\tEncoded video frame " << m_totalFrames << " into " << dstList.GetSize() << " packets.");
 #endif // PTRACING
 
   if (m_lastFrameWasIFrame)
