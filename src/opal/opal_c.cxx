@@ -2335,21 +2335,21 @@ void OpalManager_C::HandleMediaStream(const OpalMessage & command, OpalMessageBu
     }
   }
 
-  OpalMediaType mediaType;
-  bool source = false;
-  if (!IsNullString(command.m_param.m_mediaStream.m_type)) {
-    PString typeStr = command.m_param.m_mediaStream.m_type;
-    mediaType = typeStr.Left(typeStr.Find(' '));
-    source = typeStr.Find("out") != P_MAX_INDEX;
+  PCaselessString typeStr = command.m_param.m_mediaStream.m_type;
+  bool source = typeStr.Find("out") != P_MAX_INDEX;
+  if (!source && typeStr.Find("in") == P_MAX_INDEX) {
+    response.SetError("No direction indication in media stream control.");
+    return;
   }
+  OpalMediaType mediaType = typeStr.Left(typeStr.Find(' '));
 
   OpalMediaStreamPtr stream;
   if (!IsNullString(command.m_param.m_mediaStream.m_identifier))
     stream = connection->GetMediaStream(PString(command.m_param.m_mediaStream.m_identifier), source);
-  else if (!IsNullString(command.m_param.m_mediaStream.m_type))
+  else if (!mediaType.empty())
     stream = connection->GetMediaStream(mediaType, source);
   else {
-    response.SetError("No identifer or type provided to locate media stream.");
+    response.SetError("No identifer or media type provided to locate media stream.");
     return;
   }
 
