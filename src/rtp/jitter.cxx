@@ -523,7 +523,8 @@ bool OpalAudioJitterBuffer::AdjustCurrentJitterDelay(int delta)
 
 PBoolean OpalAudioJitterBuffer::ReadData(RTP_DataFrame & frame, const PTimeInterval & PTRACE_PARAM(, PTimeInterval tick))
 {
-  // Default response is an empty frame, ie silence
+  // Default response is an empty frame, ie silence with possible comfort noise
+  frame.SetPayloadType(RTP_DataFrame::CN);
   frame.SetPayloadSize(0);
 
   if (m_maxJitterDelay == 0) {
