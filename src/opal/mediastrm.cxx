@@ -1388,7 +1388,7 @@ PBoolean OpalVideoMediaStream::ReadData(BYTE * data, PINDEX size, PINDEX & lengt
     return false;
   }
 
-  return m_outputDevice->SetFrameData(0, 0, width, height, OPAL_VIDEO_FRAME_DATA_PTR(frame), true);
+  return m_outputDevice->SetFrameData(0, 0, width, height, frameData, true);
 }
 
 
