@@ -2323,7 +2323,7 @@ void OpalManager_C::HandleTransferCall(const OpalMessage & command, OpalMessageB
 void OpalManager_C::HandleMediaStream(const OpalMessage & command, OpalMessageBuffer & response)
 {
   PSafePtr<OpalCall> call;
-  if (!FindCall(command.m_param.m_userInput.m_callToken, response, call))
+  if (!FindCall(command.m_param.m_mediaStream.m_callToken, response, call))
     return;
 
   PSafePtr<OpalConnection> connection = call->GetConnection(0, PSafeReadOnly);
