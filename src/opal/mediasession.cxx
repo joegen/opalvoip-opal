@@ -1094,7 +1094,10 @@ bool OpalUDPMediaTransport::Open(OpalMediaSession & session,
   for (size_t subchannel = 0; subchannel < m_subchannels.size(); ++subchannel) {
     PUDPSocket & socket = *GetSocket((SubChannels)subchannel);
     PTRACE_CONTEXT_ID_TO(socket);
-    socket.SetReadTimeout(session.GetStringOptions().GetVar(OPAL_OPT_MEDIA_RX_TIMEOUT, manager.GetNoMediaTimeout()));
+    PTimeInterval readTime = PMaxTimeInterval;
+    if (subchannel == e_Media)
+      readTime = session.GetStringOptions().GetVar(OPAL_OPT_MEDIA_RX_TIMEOUT, manager.GetNoMediaTimeout());
+    socket.SetReadTimeout(readTime);
 
     // Increase internal buffer size on media UDP sockets
     SetMinBufferSize(socket, SO_RCVBUF, session.GetMediaType() == OpalMediaType::Audio() ? 0x4000 : 0x100000);
