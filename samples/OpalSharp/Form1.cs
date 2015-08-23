@@ -82,6 +82,9 @@ namespace OpalSharp
                                 SetTextSafely(RegisterStatus, "Registration removed from " + reg.serverName);
                                 EnableSafely(Unregister, false);
                                 EnableSafely(Register, true);
+                                EnableSafely(host, true);
+                                EnableSafely(user, true);
+                                EnableSafely(password, true);
                                 break;
                             case OpalRegistrationStates.OpalRegisterFailed:
                                 SetTextSafely(RegisterStatus, "Registration failed: " + reg.error);
