@@ -191,13 +191,15 @@ OpalProductInfo::OpalProductInfo(const char * vend,
                                  const char * nam,
                                  const char * ver,
                                  BYTE country,
-                                 WORD manufacturer)
+                                 WORD manufacturer,
+                                 const char * o)
   : vendor(vend)
   , name(nam)
   , version(ver)
   , t35CountryCode(country)     
   , t35Extension(0)
-  , manufacturerCode(manufacturer) 
+  , manufacturerCode(manufacturer)
+  , oid(o)
 {
   // Sanitise the product name to be compatible with SIP User-Agent rules
   name.Replace(' ', '-', true);
@@ -213,7 +215,8 @@ const OpalProductInfo & OpalProductInfo::Default()
                                   PProcess::Current().GetName(),
                                   PProcess::Current().GetVersion(),
                                   9,    // Country code for Australia
-                                  61);  // Allocated by Australian Communications Authority, Oct 2000
+                                  61,   // Allocated by Australian Communications Authority, Oct 2000
+                                  NULL);
   return instance;
 }
 
