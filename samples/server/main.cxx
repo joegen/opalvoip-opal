@@ -389,6 +389,7 @@ MyManager::MyManager()
   : MyManagerParent(OPAL_CONSOLE_PREFIXES OPAL_PREFIX_PCSS " " OPAL_PREFIX_IVR " " OPAL_PREFIX_MIXER)
   , m_systemLog(PSystemLog::Info)
   , m_mediaTransferMode(MediaTransferForward)
+  , m_savedProductInfo(GetProductInfo())
 #if OPAL_CAPI
   , m_enableCAPI(true)
 #endif
@@ -592,12 +593,11 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
 #endif // P_NAT
 
   bool overrideProductInfo = rsrc->AddBooleanField(OverrideProductInfoKey, false, "Override the default product information");
-  OpalProductInfo productInfo = GetProductInfo();
-  productInfo.vendor = rsrc->AddStringField(VendorNameKey, 20, productInfo.vendor);
-  productInfo.name = rsrc->AddStringField(ProductNameKey, 20, productInfo.name);
-  productInfo.version = rsrc->AddStringField(ProductVersionKey, 20, productInfo.version);
+  m_savedProductInfo.vendor = rsrc->AddStringField(VendorNameKey, 20, m_savedProductInfo.vendor);
+  m_savedProductInfo.name = rsrc->AddStringField(ProductNameKey, 20, m_savedProductInfo.name);
+  m_savedProductInfo.version = rsrc->AddStringField(ProductVersionKey, 20, m_savedProductInfo.version);
   if (overrideProductInfo)
-    SetProductInfo(productInfo);
+    SetProductInfo(m_savedProductInfo);
 
 #if OPAL_H323
   if (!GetH323EndPoint().Configure(cfg, rsrc))
