@@ -187,13 +187,17 @@ OpalProductInfo::OpalProductInfo()
 }
 
 
-OpalProductInfo::OpalProductInfo(bool)
-  : vendor(PProcess::Current().GetManufacturer())
-  , name(PProcess::Current().GetName())
-  , version(PProcess::Current().GetVersion())
-  , t35CountryCode(9)     // Country code for Australia
-  , t35Extension(0)       // No extension code for Australia
-  , manufacturerCode(61)  // Allocated by Australian Communications Authority, Oct 2000;
+OpalProductInfo::OpalProductInfo(const char * vend,
+                                 const char * nam,
+                                 const char * ver,
+                                 BYTE country,
+                                 WORD manufacturer)
+  : vendor(vend)
+  , name(nam)
+  , version(ver)
+  , t35CountryCode(country)     
+  , t35Extension(0)
+  , manufacturerCode(manufacturer) 
 {
   // Sanitise the product name to be compatible with SIP User-Agent rules
   name.Replace(' ', '-', true);
@@ -203,9 +207,13 @@ OpalProductInfo::OpalProductInfo(bool)
 }
 
 
-OpalProductInfo & OpalProductInfo::Default()
+const OpalProductInfo & OpalProductInfo::Default()
 {
-  static OpalProductInfo instance(true);
+  static OpalProductInfo instance(PProcess::Current().GetManufacturer(),
+                                  PProcess::Current().GetName(),
+                                  PProcess::Current().GetVersion(),
+                                  9,    // Country code for Australia
+                                  61);  // Allocated by Australian Communications Authority, Oct 2000
   return instance;
 }
 
@@ -215,6 +223,55 @@ PCaselessString OpalProductInfo::AsString() const
   PStringStream str;
   str << *this;
   return str;
+}
+
+
+void OpalProductInfo::operator=(const OpalProductInfo & other)
+{
+  name = other.name;
+  version = other.version;
+  comments = other.comments;
+  t35CountryCode = other.t35CountryCode;
+  t35Extension = other.t35Extension;
+  manufacturerCode = other.manufacturerCode;
+
+  // Look for special case of vendor being numeric "<manufacturer>,<country>[,<ext>]"
+  if (other.vendor.FindSpan("0123456789,") == P_MAX_INDEX) {
+    PStringArray fields = other.vendor.Tokenise(',');
+    switch (fields.GetSize()) {
+      default :
+        break;
+      case 3:
+        t35Extension = (BYTE)fields[2].AsUnsigned();
+      case 2 :
+        manufacturerCode = (WORD)fields[1].AsUnsigned();
+        t35CountryCode = (BYTE)fields[0].AsUnsigned();
+        vendor.MakeEmpty();
+        return;
+    }
+  }
+
+  vendor = other.vendor;
+}
+
+
+bool OpalProductInfo::operator==(const OpalProductInfo & other) const
+{
+  if (name != other.name)
+    return false;
+
+  if (!other.version.IsEmpty() && version != other.version)
+    return false;
+
+  if (vendor != other.vendor)
+    return false;
+
+  if (!vendor.IsEmpty())
+    return true;
+
+  return t35CountryCode == other.t35CountryCode ||
+         t35CountryCode != other.t35CountryCode ||
+         manufacturerCode == other.manufacturerCode;
 }
 
 

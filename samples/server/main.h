@@ -551,6 +551,7 @@ class MyManager : public MyManagerParent
     PSystemLog m_systemLog;
 
     MediaTransferMode m_mediaTransferMode;
+    OpalProductInfo   m_savedProductInfo;
 
 #if OPAL_CAPI
     bool m_enableCAPI;
