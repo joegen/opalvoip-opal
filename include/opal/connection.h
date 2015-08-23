@@ -359,7 +359,8 @@ class OpalProductInfo
       const char * name,
       const char * version,
       BYTE t35CountryCode,
-      WORD manufacturerCode
+      WORD manufacturerCode,
+      const char * oid
     );
 
     static const OpalProductInfo & Default();
@@ -382,6 +383,8 @@ class OpalProductInfo
     BYTE t35CountryCode;
     BYTE t35Extension;
     WORD manufacturerCode;
+
+    PString oid;
 };
 
 
