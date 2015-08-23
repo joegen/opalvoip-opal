@@ -70,53 +70,144 @@
     <Compile Include="Form1.Designer.cs">
       <DependentUpon>Form1.cs</DependentUpon>
     </Compile>
-    <Compile Include="..\..\src\csharp\OPAL.cs" />
-    <Compile Include="..\..\src\csharp\OpalCallEndReason.cs" />
-    <Compile Include="..\..\src\csharp\OpalContext.cs" />
-    <Compile Include="..\..\src\csharp\OpalEchoCancelMode.cs" />
-    <Compile Include="..\..\src\csharp\OpalInstantMessage.cs" />
-    <Compile Include="..\..\src\csharp\OpalLineAppearanceStates.cs" />
-    <Compile Include="..\..\src\csharp\OpalMediaDataType.cs" />
-    <Compile Include="..\..\src\csharp\OpalMediaStates.cs" />
-    <Compile Include="..\..\src\csharp\OpalMediaTiming.cs" />
-    <Compile Include="..\..\src\csharp\OpalMessage.cs" />
-    <Compile Include="..\..\src\csharp\OpalMessageParam.cs" />
-    <Compile Include="..\..\src\csharp\OpalMessagePtr.cs" />
-    <Compile Include="..\..\src\csharp\OpalMessageType.cs" />
-    <Compile Include="..\..\src\csharp\OpalParamAnswerCall.cs" />
-    <Compile Include="..\..\src\csharp\OpalParamCallCleared.cs" />
-    <Compile Include="..\..\src\csharp\OpalParamGeneral.cs" />
-    <Compile Include="..\..\src\csharp\OpalParamProtocol.cs" />
-    <Compile Include="..\..\src\csharp\OpalParamRecording.cs" />
-    <Compile Include="..\..\src\csharp\OpalParamRegistration.cs" />
-    <Compile Include="..\..\src\csharp\OpalParamSetUpCall.cs" />
-    <Compile Include="..\..\src\csharp\OpalParamSetUserData.cs" />
-    <Compile Include="..\..\src\csharp\OPALPINVOKE.cs" />
-    <Compile Include="..\..\src\csharp\OpalPresenceStates.cs" />
-    <Compile Include="..\..\src\csharp\OpalPresenceStatus.cs" />
-    <Compile Include="..\..\src\csharp\OpalProductDescription.cs" />
-    <Compile Include="..\..\src\csharp\OpalRegistrationStates.cs" />
-    <Compile Include="..\..\src\csharp\OpalSilenceDetectMode.cs" />
-    <Compile Include="..\..\src\csharp\OpalStatusCallCleared.cs" />
-    <Compile Include="..\..\src\csharp\OpalStatusIncomingCall.cs" />
-    <Compile Include="..\..\src\csharp\OpalStatusIVR.cs" />
-    <Compile Include="..\..\src\csharp\OpalStatusLineAppearance.cs" />
-    <Compile Include="..\..\src\csharp\OpalStatusMediaStream.cs" />
-    <Compile Include="..\..\src\csharp\OpalStatusMessageWaiting.cs" />
-    <Compile Include="..\..\src\csharp\OpalStatusRegistration.cs" />
-    <Compile Include="..\..\src\csharp\OpalStatusTransferCall.cs" />
-    <Compile Include="..\..\src\csharp\OpalStatusUserInput.cs" />
-    <Compile Include="..\..\src\csharp\OpalUserInputModes.cs" />
-    <Compile Include="..\..\src\csharp\OpalVideoRecordMixMode.cs" />
+    <Compile Include="..\..\src\csharp\OPAL.cs">
+      <Link>OPAL\OPAL.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\csharp\OpalCallEndReason.cs">
+      <Link>OPAL\OpalCallEndReason.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\csharp\OpalContext.cs">
+      <Link>OPAL\OpalContext.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\csharp\OpalEchoCancelMode.cs">
+      <Link>OPAL\OpalEchoCancelMode.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\csharp\OpalInstantMessage.cs">
+      <Link>OPAL\OpalInstantMessage.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\csharp\OpalLineAppearanceStates.cs">
+      <Link>OPAL\OpalLineAppearanceStates.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\csharp\OpalMediaDataType.cs">
+      <Link>OPAL\OpalMediaDataType.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\csharp\OpalMediaStates.cs">
+      <Link>OPAL\OpalMediaStates.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\csharp\OpalMediaTiming.cs">
+      <Link>OPAL\OpalMediaTiming.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\csharp\OpalMessage.cs">
+      <Link>OPAL\OpalMessage.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\csharp\OpalMessageParam.cs">
+      <Link>OPAL\OpalMessageParam.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\csharp\OpalMessagePtr.cs">
+      <Link>OPAL\OpalMessagePtr.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\csharp\OpalMessageType.cs">
+      <Link>OPAL\OpalMessageType.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\csharp\OpalParamAnswerCall.cs">
+      <Link>OPAL\OpalParamAnswerCall.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\csharp\OpalParamCallCleared.cs">
+      <Link>OPAL\OpalParamCallCleared.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\csharp\OpalParamGeneral.cs">
+      <Link>OPAL\OpalParamGeneral.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\csharp\OpalParamProtocol.cs">
+      <Link>OPAL\OpalParamProtocol.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\csharp\OpalParamRecording.cs">
+      <Link>OPAL\OpalParamRecording.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\csharp\OpalParamRegistration.cs">
+      <Link>OPAL\OpalParamRegistration.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\csharp\OpalParamSetUpCall.cs">
+      <Link>OPAL\OpalParamSetUpCall.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\csharp\OpalParamSetUserData.cs">
+      <Link>OPAL\OpalParamSetUserData.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\csharp\OPALPINVOKE.cs">
+      <Link>OPAL\OPALPINVOKE.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\csharp\OpalPresenceStates.cs">
+      <Link>OPAL\OpalPresenceStates.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\csharp\OpalPresenceStatus.cs">
+      <Link>OPAL\OpalPresenceStatus.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\csharp\OpalProductDescription.cs">
+      <Link>OPAL\OpalProductDescription.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\csharp\OpalRegistrationStates.cs">
+      <Link>OPAL\OpalRegistrationStates.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\csharp\OpalSilenceDetectMode.cs">
+      <Link>OPAL\OpalSilenceDetectMode.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\csharp\OpalStatusCallCleared.cs">
+      <Link>OPAL\OpalStatusCallCleared.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\csharp\OpalStatusIncomingCall.cs">
+      <Link>OPAL\OpalStatusIncomingCall.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\csharp\OpalStatusIVR.cs">
+      <Link>OPAL\OpalStatusIVR.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\csharp\OpalStatusLineAppearance.cs">
+      <Link>OPAL\OpalStatusLineAppearance.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\csharp\OpalStatusMediaStream.cs">
+      <Link>OPAL\OpalStatusMediaStream.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\csharp\OpalStatusMessageWaiting.cs">
+      <Link>OPAL\OpalStatusMessageWaiting.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\csharp\OpalStatusRegistration.cs">
+      <Link>OPAL\OpalStatusRegistration.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\csharp\OpalStatusTransferCall.cs">
+      <Link>OPAL\OpalStatusTransferCall.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\csharp\OpalStatusUserInput.cs">
+      <Link>OPAL\OpalStatusUserInput.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\csharp\OpalUserInputModes.cs">
+      <Link>OPAL\OpalUserInputModes.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\csharp\OpalVideoRecordMixMode.cs">
+      <Link>OPAL\OpalVideoRecordMixMode.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\csharp\OpalMIME.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="..\..\src\csharp\SWIGTYPE_p_f_p_q_const__char_p_q_const__char_p_q_const__char_p_void_p_void_int__int.cs" />
-    <Compile Include="..\..\src\csharp\SWIGTYPE_p_f_p_q_const__OpalMessage__int.cs" />
-    <Compile Include="..\..\src\csharp\SWIGTYPE_p_OpalHandleStruct.cs" />
-    <Compile Include="..\..\src\csharp\SWIGTYPE_p_OpalMessage.cs" />
-    <Compile Include="..\..\src\csharp\SWIGTYPE_p_p_char.cs" />
-    <Compile Include="..\..\src\csharp\SWIGTYPE_p_unsigned_int.cs" />
-    <Compile Include="..\..\src\csharp\SWIGTYPE_p_void.cs" />
+    <Compile Include="..\..\src\csharp\SWIGTYPE_p_f_p_q_const__char_p_q_const__char_p_q_const__char_p_void_p_void_int__int.cs">
+      <Link>OPAL\SWIGTYPE_p_f_p_q_const__char_p_q_const__char_p_q_const__char_p_void_p_void_int__int.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\csharp\SWIGTYPE_p_f_p_q_const__OpalMessage__int.cs">
+      <Link>OPAL\SWIGTYPE_p_f_p_q_const__OpalMessage__int.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\csharp\SWIGTYPE_p_OpalHandleStruct.cs">
+      <Link>OPAL\SWIGTYPE_p_OpalHandleStruct.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\csharp\SWIGTYPE_p_OpalMessage.cs">
+      <Link>OPAL\SWIGTYPE_p_OpalMessage.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\csharp\SWIGTYPE_p_p_char.cs">
+      <Link>OPAL\SWIGTYPE_p_p_char.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\csharp\SWIGTYPE_p_unsigned_int.cs">
+      <Link>OPAL\SWIGTYPE_p_unsigned_int.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\csharp\SWIGTYPE_p_void.cs">
+      <Link>OPAL\SWIGTYPE_p_void.cs</Link>
+    </Compile>
     <EmbeddedResource Include="Form1.resx">
       <DependentUpon>Form1.cs</DependentUpon>
     </EmbeddedResource>
