@@ -1408,7 +1408,9 @@ PBoolean H323Connection::OnReceivedSignalConnect(const H323SignalPDU & pdu)
 #endif
 
   // have answer, so set timeout to interval for monitoring calls health
-  m_signallingChannel->SetReadTimeout(connectionState < EstablishedConnection ? MonitorCallStartTime : MonitorCallStatusTime);
+  m_signallingChannel->SetReadTimeout(connectionState < EstablishedConnection &&
+                                      endpoint.GetProductInfo() != H323EndPoint::AvayaPhone()
+                                                ? MonitorCallStartTime : MonitorCallStatusTime);
 
   // Set connected phase now so logic for not sending media before connected is not triggered
   PSafePtr<OpalConnection> otherParty = GetOtherPartyConnection();
@@ -1424,6 +1426,12 @@ PBoolean H323Connection::OnReceivedSignalConnect(const H323SignalPDU & pdu)
     // proposed channels
     m_fastStartState = FastStartDisabled;
     m_fastStartChannels.RemoveAll();
+  }
+
+  if (endpoint.GetProductInfo() == H323EndPoint::AvayaPhone()) {
+    PTRACE(4, "Adding Avaya IP Phone non standard data");
+    static BYTE const data[] = { 0x05, 0x38, 0x00, 0x60, 0x07 };
+    SendNonStandardControl(H323EndPoint::AvayaPhone().oid+".10", PBYTEArray(data, sizeof(data), false));
   }
 
   // Check that it has the H.245 channel connection info
@@ -2045,6 +2053,11 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
       setupPDU.m_h323_uu_pdu.RemoveOptionalField(H225_H323_UU_PDU::e_h245Control);
       set_lastPDUWasH245inSETUP = true;
     }
+  }
+
+  if (alias == "register" && endpoint.GetProductInfo() == H323EndPoint::AvayaPhone()) {
+    PTRACE(4, "Setting SETUP goal for Avaya IP Phone");
+    setup.m_conferenceGoal = H225_Setup_UUIE_conferenceGoal::e_callIndependentSupplementaryService;
   }
 
   if (!OnSendSignalSetup(setupPDU))
@@ -5556,6 +5569,49 @@ PBoolean H323Connection::GetAdmissionRequestAuthentication(const H225_AdmissionR
                                                        H235Authenticators & /*authenticators*/)
 {
   return false;
+}
+
+
+bool H323Connection::SendNonStandardControl(const PString & identifier, const PBYTEArray & data)
+{
+  if (identifier.IsEmpty())
+    return false;
+
+  H323SignalPDU pdu;
+  pdu.BuildInformation(*this);
+  pdu.m_h323_uu_pdu.m_h323_message_body.SetTag(H225_H323_UU_PDU_h323_message_body::e_empty);
+  pdu.m_h323_uu_pdu.IncludeOptionalField(H225_H323_UU_PDU::e_nonStandardControl);
+  if (!pdu.m_h323_uu_pdu.m_nonStandardControl.SetSize(1))
+    return false;
+
+  H225_NonStandardParameter & param = pdu.m_h323_uu_pdu.m_nonStandardControl[0];
+
+  PASN_ObjectId oid;
+  oid.SetValue(identifier);
+  if (oid.AsString() == identifier) {
+    param.m_nonStandardIdentifier.SetTag(H225_NonStandardIdentifier::e_object);
+    PASN_ObjectId & nonStandardIdentifier = param.m_nonStandardIdentifier;
+    nonStandardIdentifier = oid;
+  }
+  else {
+    param.m_nonStandardIdentifier.SetTag(H225_NonStandardIdentifier::e_h221NonStandard);
+    H225_H221NonStandard & nonStandardIdentifier = param.m_nonStandardIdentifier;
+    PStringArray fields = identifier.Tokenise(',');
+    switch (fields.GetSize()) {
+      default :
+        return false;
+
+      case 3 :
+        nonStandardIdentifier.m_t35Extension.SetValue(fields[2].AsUnsigned());
+      case 2 :
+        nonStandardIdentifier.m_t35CountryCode.SetValue(fields[0].AsUnsigned());
+        nonStandardIdentifier.m_manufacturerCode.SetValue(fields[1].AsUnsigned());
+    }
+  }
+
+  param.m_data = data;
+
+  return WriteSignalPDU(pdu);
 }
 
 

@@ -1848,6 +1848,13 @@ class H323Connection : public OpalRTPConnection
       const H225_AdmissionRequest & arq,  ///<  ARQ being constructed
       H235Authenticators & authenticators ///<  New authenticators for ARQ
     );
+
+    /**Send a Non-Standard command.
+      */
+    virtual bool SendNonStandardControl(
+      const PString & identifier,
+      const PBYTEArray & data
+    );
   //@}
 
   /**@name Member variable access */

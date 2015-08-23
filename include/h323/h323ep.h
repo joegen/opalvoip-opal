@@ -91,6 +91,7 @@ class H323EndPoint : public OpalRTPEndPoint
     enum {
       DefaultTcpSignalPort = 1720
     };
+    static const OpalProductInfo & AvayaPhone();
 
   /**@name Construction */
   //@{
