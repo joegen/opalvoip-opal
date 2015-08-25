@@ -827,18 +827,15 @@ bool OpalUDPMediaTransport::IsEstablished() const
 OpalTransportAddress OpalUDPMediaTransport::GetLocalAddress(SubChannels subchannel) const
 {
   PSafeLockReadOnly lock(*this);
-  if (!lock.IsLocked())
-    return OpalTransportAddress();
-
-  PUDPSocket * socket = GetSocket(subchannel);
-  if (socket == NULL)
-    return OpalTransportAddress();
-
-  PIPSocketAddressAndPort ap;
-  if (!socket->GetLocalAddress(ap))
-    return OpalTransportAddress();
-
-  return OpalTransportAddress(ap, OpalTransportAddress::UdpPrefix());
+  if (lock.IsLocked()) {
+    PUDPSocket * socket = GetSocket(subchannel);
+    if (socket != NULL) {
+      PIPSocketAddressAndPort ap;
+      if (socket->GetLocalAddress(ap) && ap.IsValid())
+        return OpalTransportAddress(ap, OpalTransportAddress::UdpPrefix());
+    }
+  }
+  return OpalTransportAddress();
 }
 
 
