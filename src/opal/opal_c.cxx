@@ -1604,7 +1604,7 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
     }
     else {
       OpalMediaType mediaType = mediaName.ToLower();
-      if (!mediaType.empty()) {
+      if (OpalMediaTypesFactory::CreateInstance(mediaType) != NULL) {
         // Known media type name, change all codecs of that type
         for (OpalMediaFormatList::iterator it = allCodecs.begin(); it != allCodecs.end(); ++it) {
           if (it->IsMediaType(mediaType)) {
