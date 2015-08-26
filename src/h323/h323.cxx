@@ -5641,33 +5641,7 @@ bool H323Connection::SendNonStandardControl(const PString & identifier, const PB
   if (!pdu.m_h323_uu_pdu.m_nonStandardControl.SetSize(1))
     return false;
 
-  H225_NonStandardParameter & param = pdu.m_h323_uu_pdu.m_nonStandardControl[0];
-
-  PASN_ObjectId oid;
-  oid.SetValue(identifier);
-  if (oid.AsString() == identifier) {
-    param.m_nonStandardIdentifier.SetTag(H225_NonStandardIdentifier::e_object);
-    PASN_ObjectId & nonStandardIdentifier = param.m_nonStandardIdentifier;
-    nonStandardIdentifier = oid;
-  }
-  else {
-    param.m_nonStandardIdentifier.SetTag(H225_NonStandardIdentifier::e_h221NonStandard);
-    H225_H221NonStandard & nonStandardIdentifier = param.m_nonStandardIdentifier;
-    PStringArray fields = identifier.Tokenise(',');
-    switch (fields.GetSize()) {
-      default :
-        return false;
-
-      case 3 :
-        nonStandardIdentifier.m_t35Extension.SetValue(fields[2].AsUnsigned());
-      case 2 :
-        nonStandardIdentifier.m_t35CountryCode.SetValue(fields[0].AsUnsigned());
-        nonStandardIdentifier.m_manufacturerCode.SetValue(fields[1].AsUnsigned());
-    }
-  }
-
-  param.m_data = data;
-
+  H323SetNonStandard(pdu.m_h323_uu_pdu.m_nonStandardControl[0], identifier, data);
   return WriteSignalPDU(pdu);
 }
 

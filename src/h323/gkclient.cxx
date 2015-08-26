@@ -779,13 +779,6 @@ PBoolean H323Gatekeeper::OnReceiveRegistrationConfirm(const H225_RegistrationCon
   
   SetRegistrationFailReason(RegistrationSuccessful);
 
-  if (endpoint.GetProductInfo() == H323EndPoint::AvayaPhone()) {
-    PTRACE(3, "Starting Avaya IP Phone registration call");
-    OpalConnection::StringOptions options;
-    options.Set(OPAL_OPT_CALLING_PARTY_NAME, m_aliases[0]);
-    endpoint.GetManager().SetUpCall("ivr:", "h323:register", NULL, 0, &options);
-  }
-
   return true;
 }
 
@@ -883,11 +876,24 @@ PTimeInterval H323Gatekeeper::InternalRegister()
     didGkDiscovery = true;
   }
 
-  if (RegistrationRequest(m_autoReregister, didGkDiscovery, !m_forceRegister))
+  if (!RegistrationRequest(m_autoReregister, didGkDiscovery, !m_forceRegister)) {
+    PTRACE_IF(2, !m_forceRegister, "Time To Live reregistration failed, retrying in " << OffLineRetryTime);
+    return OffLineRetryTime;
+  }
+
+  if (endpoint.GetProductInfo() != H323EndPoint::AvayaPhone())
     return m_currentTimeToLive;
 
-  PTRACE_IF(2, !m_forceRegister, "Time To Live reregistration failed, retrying in " << OffLineRetryTime);
-  return OffLineRetryTime;
+  PString oid = H323EndPoint::AvayaPhone().oid + ".10";
+  PBYTEArray reply;
+
+  static const BYTE msg1[] = { 0x40, 0x10, 0x7f, 0x00, 0x00, 0x27, 0x00 };
+  NonStandardMessage(oid, PBYTEArray(msg1, sizeof(msg1), false), reply);
+
+  PTRACE(3, "Starting Avaya IP Phone registration call");
+  OpalConnection::StringOptions options;
+  options.Set(OPAL_OPT_CALLING_PARTY_NAME, m_aliases[0]);
+  endpoint.GetManager().SetUpCall("ivr:", "h323:register", NULL, 0, &options);
 }
 
 
@@ -1901,6 +1907,29 @@ void H323Gatekeeper::OnTerminalAliasChanged()
   // Do a non-lightweight RRQ. Treat the GK as unregistered and immediately send a RRQ
   SetRegistrationFailReason(UnregisteredLocally);
   ReRegisterNow();
+}
+
+
+bool H323Gatekeeper::NonStandardMessage(const PString & identifer, const PBYTEArray & outData, PBYTEArray & replyData)
+{
+  H323RasPDU pdu;
+  H225_NonStandardMessage & nsm = pdu.BuildNonStandardMessage(GetNextSequenceNumber(), identifer, outData);
+
+  Request request(nsm.m_requestSeqNum, pdu);  
+  request.responseInfo = &replyData;
+  return MakeRequest(request);
+}
+
+
+PBoolean H323Gatekeeper::OnReceiveNonStandardMessage(const H225_NonStandardMessage & nsm)
+{
+  if (!H225_RAS::OnReceiveNonStandardMessage(nsm))
+    return false;
+
+  if (lastRequest->responseInfo != NULL)
+    *(PBYTEArray *)lastRequest->responseInfo = nsm.m_nonStandardData.m_data;
+
+  return true;
 }
 
 
