@@ -354,7 +354,20 @@ class OpalProductInfo
   public:
     OpalProductInfo();
 
-    static OpalProductInfo & Default();
+    OpalProductInfo(
+      const char * vendor,
+      const char * name,
+      const char * version,
+      BYTE t35CountryCode,
+      WORD manufacturerCode,
+      const char * oid
+    );
+
+    static const OpalProductInfo & Default();
+
+    void operator=(const OpalProductInfo & other);
+    bool operator==(const OpalProductInfo & other) const;
+    __inline bool operator!=(const OpalProductInfo & other) const { return !operator==(other); }
 
     friend ostream & operator<<(ostream & strm, const OpalProductInfo & info);
 
@@ -372,8 +385,7 @@ class OpalProductInfo
     BYTE t35Extension;
     WORD manufacturerCode;
 
-  private:
-    OpalProductInfo(bool);
+    PString oid;
 };
 
 

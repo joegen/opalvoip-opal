@@ -629,6 +629,7 @@ bool H323EndPoint::InternalCreateGatekeeper(const H323TransportAddress & remoteA
   PTRACE(3, "H323\tAdded gatekeeper (at=" << remoteAddress << ", if=" << transport->GetLocalAddress() << ") for aliases: " << setfill(',') << aliases);
 
   gatekeeper->m_aliasMutex.Wait();
+  gatekeeper->m_aliases.clear();
   for (PStringList::const_iterator alias = aliases.begin(); alias != aliases.end(); ++alias)
     gatekeeper->m_aliases += alias->GetPointer(); // Don't make reference
   gatekeeper->m_aliasMutex.Signal();

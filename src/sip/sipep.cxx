@@ -204,14 +204,14 @@ void SIPEndPoint::NewIncomingConnection(OpalListener &, const OpalTransportPtr &
     return;
   }
 
-  AddTransport(transport);
+  AddTransport(transport, m_keepAliveType);
   TransportThreadMain(transport);
 }
 
 
-void SIPEndPoint::AddTransport(const OpalTransportPtr & transport)
+void SIPEndPoint::AddTransport(const OpalTransportPtr & transport, KeepAliveType keepAliveType)
 {
-  switch (m_keepAliveType) {
+  switch (keepAliveType) {
     case KeepAliveByCRLF :
       transport->SetKeepAlive(m_keepAliveTimeout, PBYTEArray(DefaultKeepAliveData, sizeof(DefaultKeepAliveData)));
       break;
@@ -286,6 +286,8 @@ OpalTransportPtr SIPEndPoint::GetTransport(const SIPTransactionOwner & transacto
       // No link, so need to create one
       PTRACE(4, "Creating transport to " << remoteAddress);
 
+      KeepAliveType keepAliveType = m_keepAliveType;
+
       // See if we already have an interface, or have been told what to use
       PString localInterface = transactor.GetInterface();
       if (localInterface.IsEmpty())
@@ -297,7 +299,10 @@ OpalTransportPtr SIPEndPoint::GetTransport(const SIPTransactionOwner & transacto
         // Unlock to avoid deadlock through the registrar handler list
         m_transportsTable.GetMutex().Signal();
 
-        PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByDomain(domain, SIP_PDU::Method_REGISTER, PSafeReadOnly);
+        PSafePtr<SIPRegisterHandler> handler = PSafePtrCast<SIPHandler, SIPRegisterHandler>(activeSIPHandlers.FindSIPHandlerByDomain(domain, SIP_PDU::Method_REGISTER, PSafeReadOnly));
+
+        if (handler != NULL && handler->GetParams().m_compatibility == SIPRegister::e_RFC5626)
+          keepAliveType = KeepAliveByCRLF;
 
         // Lock it again, as the rest of this must be atomic
         m_transportsTable.GetMutex().Wait();
@@ -342,8 +347,8 @@ OpalTransportPtr SIPEndPoint::GetTransport(const SIPTransactionOwner & transacto
 
         transport->GetChannel()->SetBufferSize(m_maxSizeUDP);
 
-        PTRACE(4, "Created transport " << *transport);
-        AddTransport(transport);
+        PTRACE(4, "Created transport " << *transport << " keepAlive=" << keepAliveType);
+        AddTransport(transport, keepAliveType);
       }
     }
     else {

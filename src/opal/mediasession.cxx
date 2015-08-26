@@ -818,37 +818,40 @@ OpalUDPMediaTransport::OpalUDPMediaTransport(const PString & name)
 }
 
 
+bool OpalUDPMediaTransport::IsEstablished() const
+{
+  return !GetRemoteAddress().IsEmpty() && OpalMediaTransport::IsEstablished();
+}
+
+
 OpalTransportAddress OpalUDPMediaTransport::GetLocalAddress(SubChannels subchannel) const
 {
   PSafeLockReadOnly lock(*this);
-  if (!lock.IsLocked())
-    return OpalTransportAddress();
-
-  PUDPSocket * socket = GetSocket(subchannel);
-  if (socket == NULL)
-    return OpalTransportAddress();
-
-  PIPSocketAddressAndPort ap;
-  if (!socket->GetLocalAddress(ap))
-    return OpalTransportAddress();
-
-  return OpalTransportAddress(ap, OpalTransportAddress::UdpPrefix());
+  if (lock.IsLocked()) {
+    PUDPSocket * socket = GetSocket(subchannel);
+    if (socket != NULL) {
+      PIPSocketAddressAndPort ap;
+      if (socket->GetLocalAddress(ap) && ap.IsValid())
+        return OpalTransportAddress(ap, OpalTransportAddress::UdpPrefix());
+    }
+  }
+  return OpalTransportAddress();
 }
 
 
 OpalTransportAddress OpalUDPMediaTransport::GetRemoteAddress(SubChannels subchannel) const
 {
   PSafeLockReadOnly lock(*this);
-  if (!lock.IsLocked())
-    return OpalTransportAddress();
-
-  PUDPSocket * socket = GetSocket(subchannel);
-  if (socket == NULL)
-    return OpalTransportAddress();
-
-  PIPSocketAddressAndPort ap;
-  socket->GetSendAddress(ap);
-  return OpalTransportAddress(ap, OpalTransportAddress::UdpPrefix());
+  if (lock.IsLocked()) {
+    PUDPSocket * socket = GetSocket(subchannel);
+    if (socket != NULL) {
+      PIPSocketAddressAndPort ap;
+      socket->GetSendAddress(ap);
+      if (ap.IsValid())
+        return OpalTransportAddress(ap, OpalTransportAddress::UdpPrefix());
+    }
+  }
+  return OpalTransportAddress();
 }
 
 
@@ -1088,7 +1091,10 @@ bool OpalUDPMediaTransport::Open(OpalMediaSession & session,
   for (size_t subchannel = 0; subchannel < m_subchannels.size(); ++subchannel) {
     PUDPSocket & socket = *GetSocket((SubChannels)subchannel);
     PTRACE_CONTEXT_ID_TO(socket);
-    socket.SetReadTimeout(session.GetStringOptions().GetVar(OPAL_OPT_MEDIA_RX_TIMEOUT, manager.GetNoMediaTimeout()));
+    PTimeInterval readTime = PMaxTimeInterval;
+    if (subchannel == e_Media)
+      readTime = session.GetStringOptions().GetVar(OPAL_OPT_MEDIA_RX_TIMEOUT, manager.GetNoMediaTimeout());
+    socket.SetReadTimeout(readTime);
 
     // Increase internal buffer size on media UDP sockets
     SetMinBufferSize(socket, SO_RCVBUF, session.GetMediaType() == OpalMediaType::Audio() ? 0x4000 : 0x100000);
