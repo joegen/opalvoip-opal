@@ -781,7 +781,9 @@ PBoolean H323Gatekeeper::OnReceiveRegistrationConfirm(const H225_RegistrationCon
 
   if (endpoint.GetProductInfo() == H323EndPoint::AvayaPhone()) {
     PTRACE(3, "Starting Avaya IP Phone registration call");
-    endpoint.GetManager().SetUpCall("ivr:", "h323:register");
+    OpalConnection::StringOptions options;
+    options.Set(OPAL_OPT_CALLING_PARTY_NAME, m_aliases[0]);
+    endpoint.GetManager().SetUpCall("ivr:", "h323:register", NULL, 0, &options);
   }
 
   return true;
