@@ -365,7 +365,7 @@ static bool MergeFormats(const OpalMediaFormatList & masterFormats,
 bool OpalTranscoder::SelectFormats(const OpalMediaType & mediaType,
                                    const OpalMediaFormatList & srcFormats,
                                    const OpalMediaFormatList & dstFormats,
-                                   const OpalMediaFormatList & allFormats,
+                                   const OpalMediaFormatList & masterFormats,
                                    OpalMediaFormat & srcFormat,
                                    OpalMediaFormat & dstFormat)
 {
@@ -375,7 +375,7 @@ bool OpalTranscoder::SelectFormats(const OpalMediaType & mediaType,
   // directly from the given format to a possible one with no transcoders.
   for (d = dstFormats.begin(); d != dstFormats.end(); ++d) {
     for (s = srcFormats.begin(); s != srcFormats.end(); ++s) {
-      if (*s == *d && s->GetMediaType() == mediaType && MergeFormats(allFormats, *s, *d, srcFormat, dstFormat))
+      if (*s == *d && s->GetMediaType() == mediaType && MergeFormats(masterFormats, *s, *d, srcFormat, dstFormat))
         return true;
     }
   }
@@ -387,7 +387,7 @@ bool OpalTranscoder::SelectFormats(const OpalMediaType & mediaType,
         OpalTranscoderKey search(s->GetName(), d->GetName());
         OpalTranscoderList availableTranscoders = OpalTranscoderFactory::GetKeyList();
         for (OpalTranscoderIterator i = availableTranscoders.begin(); i != availableTranscoders.end(); ++i) {
-          if (search == *i && MergeFormats(allFormats, *s, *d, srcFormat, dstFormat))
+          if (search == *i && MergeFormats(masterFormats, *s, *d, srcFormat, dstFormat))
             return true;
         }
       }
@@ -400,7 +400,7 @@ bool OpalTranscoder::SelectFormats(const OpalMediaType & mediaType,
       if (s->GetMediaType() == mediaType || d->GetMediaType() == mediaType) {
         OpalMediaFormat intermediateFormat;
         if (FindIntermediateFormat(*s, *d, intermediateFormat) &&
-            MergeFormats(allFormats, *s, *d, srcFormat, dstFormat))
+            MergeFormats(masterFormats, *s, *d, srcFormat, dstFormat))
           return true;
       }
     }
