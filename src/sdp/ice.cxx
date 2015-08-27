@@ -240,17 +240,12 @@ bool OpalICEMediaTransport::GetCandidates(PString & user, PString & pass, PNatCa
     return false;
   }
 
-  if (offering) {
-    PTRACE_IF(2, m_state == e_Answering, *this << "ICE state error, making local offer when answering remote offer");
-    m_state = e_Offering;
-  }
-
   user = m_localUsername;
   pass = m_localPassword;
 
-  m_localCandidates.SetSize(m_subchannels.size());
+  CandidatesArray newCandidates(m_subchannels.size());
   for (size_t subchannel = 0; subchannel < m_subchannels.size(); ++subchannel) {
-    m_localCandidates.SetAt(subchannel, new CandidateStateList);
+    newCandidates.SetAt(subchannel, new CandidateStateList);
 
     // Only do ICE-Lite right now so just offer "host" type using local address.
     static const PNatMethod::Component ComponentId[2] = { PNatMethod::eComponent_RTP, PNatMethod::eComponent_RTCP };
@@ -273,17 +268,29 @@ bool OpalICEMediaTransport::GetCandidates(PString & user, PString & pass, PNatCa
     }
 
     candidates.push_back(candidate);
-    m_localCandidates[subchannel].push_back(candidate);
+    newCandidates[subchannel].push_back(candidate);
+  }
+
+  if (offering && m_localCandidates != newCandidates) {
+    PTRACE_IF(2, m_state == e_Answering, *this << "ICE state error, making local offer when answering remote offer");
+    m_localCandidates = newCandidates;
+    m_state = e_Offering;
   }
 
 #if PTRACING
   if (PTrace::CanTrace(3)) {
     ostream & trace = PTRACE_BEGIN(3);
     trace << *this << "ICE ";
-    if (m_state == e_Answering)
-      trace << "responding to received";
-    else
-      trace << "configured with offered";
+    switch (m_state) {
+      case e_Answering:
+        trace << "responding to received";
+        break;
+      case e_Offering:
+        trace << "configured with offered";
+        break;
+      default :
+        trace << "sending unchanged";
+    }
     trace << " candidates:";
     for (PINDEX i = 0; i < m_localCandidates.GetSize(); ++i)
       trace << " local-" << (SubChannels)i << '=' << m_localCandidates[i].size();

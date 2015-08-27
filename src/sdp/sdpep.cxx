@@ -99,7 +99,7 @@ OpalMediaFormatList OpalSDPConnection::GetMediaFormats() const
 {
   // Need to limit the media formats to what the other side provided in it's offer
   if (!m_activeFormatList.IsEmpty()) {
-    PTRACE(4, "Using offered media format list");
+    PTRACE(4, "Using offered media format list: " << setfill(',') << m_activeFormatList);
     return m_activeFormatList;
   }
 
@@ -330,10 +330,11 @@ bool OpalSDPConnection::SetActiveMediaFormats(const OpalMediaFormatList & format
 }
 
 
-OpalMediaSession * OpalSDPConnection::SetUpMediaSession(const unsigned sessionId,
-                                                        const OpalMediaType & mediaType,
-                                                        const SDPMediaDescription & mediaDescription,
-                                                        OpalTransportAddress & localAddress)
+OpalMediaSession * OpalSDPConnection::SetUpMediaSession(const unsigned   sessionId,
+                                                   const OpalMediaType & mediaType,
+                                             const SDPMediaDescription & mediaDescription,
+                                                  OpalTransportAddress & localAddress,
+                                                 OpalMediaTransportPtr & bundledTransport)
 {
   if (mediaDescription.GetPort() == 0) {
     PTRACE(2, "Received disabled/missing media description for " << mediaType);
@@ -370,8 +371,15 @@ OpalMediaSession * OpalSDPConnection::SetUpMediaSession(const unsigned sessionId
   if (!mediaDescription.ToSession(session))
     return NULL;
 
+  bool bundled = session->GetBundleGroupId() == OpalMediaSession::GetBundleGroupId();
+  if (bundled && bundledTransport != NULL)
+    session->AttachTransport(bundledTransport);
+
   if (!session->Open(GetMediaInterface(), remoteMediaAddress))
     return NULL;
+
+  if (bundled && bundledTransport == NULL)
+    bundledTransport = session->GetTransport();
 
   // And again after
   if (!mediaDescription.ToSession(session))
@@ -489,18 +497,20 @@ bool OpalSDPConnection::OnSendOfferSDP(SDPSessionDescription & sdpOut, bool offe
       SetAudioVideoGroup();
 #endif
 
-    OpalMediaTransportPtr transport;
+    OpalMediaTransportPtr bundledTransport;
     for (vector<bool>::size_type sessionId = 1; sessionId < sessions.size(); ++sessionId) {
       if (sessions[sessionId]) {
         OpalMediaSession * session = GetMediaSession(sessionId);
-        if (transport != NULL && session->GetGroupId() == OpalMediaSession::GetBundleGroupId())
-          session->AttachTransport(transport);
+
+        bool bundled = session->GetBundleGroupId() == OpalMediaSession::GetBundleGroupId();
+        if (bundled && bundledTransport != NULL)
+          session->AttachTransport(bundledTransport);
 
         if (OnSendOfferSDPSession(sessionId, sdpOut, false)) {
           sdpOK = true;
 
-          if (transport == NULL && session->GetGroupId() == OpalMediaSession::GetBundleGroupId())
-            transport = session->GetTransport();
+          if (bundled && bundledTransport == NULL)
+            bundledTransport = session->GetTransport();
         }
         else
           ReleaseMediaSession(sessionId);
@@ -701,22 +711,32 @@ bool OpalSDPConnection::OnSendAnswerSDP(const SDPSessionDescription & sdpOffer, 
   vector<SDPMediaDescription *> sdpMediaDescriptions(sessionCount+1);
   size_t sessionId;
 
+  OpalMediaTransportPtr bundledTransport;
 #if OPAL_SRTP
   for (sessionId = 1; sessionId <= sessionCount; ++sessionId) {
     SDPMediaDescription * incomingMedia = sdpOffer.GetMediaDescriptionByIndex(sessionId);
     if (PAssert(incomingMedia != NULL, PLogicError) && incomingMedia->IsSecure())
-      sdpMediaDescriptions[sessionId] = OnSendAnswerSDPSession(incomingMedia, sessionId, sdpOffer.GetDirection(sessionId));
+      sdpMediaDescriptions[sessionId] = OnSendAnswerSDPSession(incomingMedia,
+                                                               sessionId,
+                                                               sdpOffer.GetDirection(sessionId),
+                                                               bundledTransport);
   }
   for (sessionId = 1; sessionId <= sessionCount; ++sessionId) {
     SDPMediaDescription * incomingMedia = sdpOffer.GetMediaDescriptionByIndex(sessionId);
     if (PAssert(incomingMedia != NULL, PLogicError) && !incomingMedia->IsSecure())
-      sdpMediaDescriptions[sessionId] = OnSendAnswerSDPSession(incomingMedia, sessionId, sdpOffer.GetDirection(sessionId));
+      sdpMediaDescriptions[sessionId] = OnSendAnswerSDPSession(incomingMedia,
+                                                               sessionId,
+                                                               sdpOffer.GetDirection(sessionId),
+                                                               bundledTransport);
   }
 #else
   for (sessionId = 1; sessionId <= sessionCount; ++sessionId) {
     SDPMediaDescription * incomingMedia = sdpOffer.GetMediaDescriptionByIndex(sessionId);
     if (PAssert(incomingMedia != NULL, "SDP Media description list changed"))
-      sdpMediaDescriptions[sessionId] = OnSendAnswerSDPSession(incomingMedia, sessionId, sdpOffer.GetDirection(sessionId));
+      sdpMediaDescriptions[sessionId] = OnSendAnswerSDPSession(incomingMedia,
+                                                               sessionId,
+                                                               sdpOffer.GetDirection(sessionId),
+                                                               bundledTransport);
   }
 #endif // OPAL_SRTP
 
@@ -765,8 +785,9 @@ bool OpalSDPConnection::OnSendAnswerSDP(const SDPSessionDescription & sdpOffer, 
 
 
 SDPMediaDescription * OpalSDPConnection::OnSendAnswerSDPSession(SDPMediaDescription * incomingMedia,
-                                                                       unsigned   sessionId,
-                                                 SDPMediaDescription::Direction   otherSidesDir)
+                                                                           unsigned   sessionId,
+                                                     SDPMediaDescription::Direction   otherSidesDir,
+                                                              OpalMediaTransportPtr & bundledTransport)
 {
   OpalMediaType mediaType = incomingMedia->GetMediaType();
 
@@ -804,7 +825,7 @@ SDPMediaDescription * OpalSDPConnection::OnSendAnswerSDPSession(SDPMediaDescript
 
   // Create new media session
   OpalTransportAddress localAddress;
-  OpalMediaSession * mediaSession = SetUpMediaSession(sessionId, mediaType, *incomingMedia, localAddress);
+  OpalMediaSession * mediaSession = SetUpMediaSession(sessionId, mediaType, *incomingMedia, localAddress, bundledTransport);
   if (mediaSession == NULL)
     return NULL;
 
@@ -827,7 +848,8 @@ SDPMediaDescription * OpalSDPConnection::OnSendAnswerSDPSession(SDPMediaDescript
       }
     }
 #endif // OPAL_T38_CAPABILITY
-    mediaSession = CreateMediaSession(sessionId, mediaType, incomingMedia->GetSDPTransportType());
+
+    mediaSession = CreateMediaSession(sessionId, mediaType, incomingMedia->GetSessionType());
     if (mediaSession == NULL) {
       PTRACE(2, "Could not create session for " << mediaType);
       return NULL;
@@ -1123,7 +1145,8 @@ bool OpalSDPConnection::OnReceivedAnswerSDPSession(const SDPSessionDescription &
 
   // Set up the media session, e.g. RTP
   OpalTransportAddress localAddress;
-  OpalMediaSession * mediaSession = SetUpMediaSession(sessionId, mediaType, *mediaDescription, localAddress);
+  OpalMediaTransportPtr dummy;
+  OpalMediaSession * mediaSession = SetUpMediaSession(sessionId, mediaType, *mediaDescription, localAddress, dummy);
   if (mediaSession == NULL)
     return false;
 
@@ -1175,25 +1198,10 @@ bool OpalSDPConnection::OnReceivedAnswerSDPSession(const SDPSessionDescription &
   bool recvDisabled = (otherSidesDir&SDPMediaDescription::SendOnly) == 0;
   PauseOrCloseMediaStream(recvStream, m_activeFormatList, false, recvDisabled);
 
-  // Then open the streams if the direction allows and if needed
-  // If already open then update to new parameters/payload type
-
-  if (recvStream == NULL) {
-    PTRACE(5, "Opening rx " << mediaType << " stream from answer SDP");
-    if (ownerCall.OpenSourceMediaStreams(*this,
-                                         mediaType,
-                                         sessionId,
-                                         OpalMediaFormat(),
-#if OPAL_VIDEO
-                                         mediaDescription->GetContentRole(),
-#endif
-                                         false,
-                                         recvDisabled))
-      recvStream = GetMediaStream(sessionId, true);
-    if (!recvDisabled && recvStream == NULL)
-      OnMediaStreamOpenFailed(true);
-  }
-
+  /* After (possibly) closing streams, we now open them again if necessary,
+     OpenSourceMediaStreams will just return true if they are already open.
+     We open tx (other party source) side first so we follow the remote
+     endpoints preferences. */
   if (sendStream == NULL) {
     PSafePtr<OpalConnection> otherParty = GetOtherPartyConnection();
     if (otherParty == NULL)
@@ -1212,6 +1220,22 @@ bool OpalSDPConnection::OnReceivedAnswerSDPSession(const SDPSessionDescription &
       sendStream = GetMediaStream(sessionId, false);
     if (!sendDisabled && sendStream == NULL && !otherParty->IsOnHold(true))
       OnMediaStreamOpenFailed(false);
+  }
+
+  if (recvStream == NULL) {
+    PTRACE(5, "Opening rx " << mediaType << " stream from answer SDP");
+    if (ownerCall.OpenSourceMediaStreams(*this,
+                                         mediaType,
+                                         sessionId,
+                                         OpalMediaFormat(),
+#if OPAL_VIDEO
+                                         mediaDescription->GetContentRole(),
+#endif
+                                         false,
+                                         recvDisabled))
+      recvStream = GetMediaStream(sessionId, true);
+    if (!recvDisabled && recvStream == NULL)
+      OnMediaStreamOpenFailed(true);
   }
 
   PINDEX maxFormats = 1;
