@@ -1559,7 +1559,21 @@ bool SDPRTPAVPMediaDescription::Decode(const PStringArray & tokens)
 
 PCaselessString SDPRTPAVPMediaDescription::GetSDPTransportType() const
 {
-  return m_transportType.IsEmpty() ? GetSessionType() : m_transportType;
+  PString type = m_transportType;
+
+  if (type.IsEmpty())
+    type = GetSessionType();
+
+#if OPAL_SRTP
+  if (m_fingerprint.IsValid() && m_stringOptions.GetBoolean(OPAL_OPT_SUPPRESS_UDP_TLS)) {
+    if (type == OpalDTLSSRTPSession::RTP_DTLS_SAVPF())
+      type = OpalSRTPSession::RTP_SAVPF();
+    else if (type == OpalDTLSSRTPSession::RTP_DTLS_SAVP())
+      type = OpalDTLSSRTPSession::RTP_SAVP();
+  }
+#endif
+
+  return type;
 }
 
 
@@ -1591,12 +1605,8 @@ PCaselessString SDPRTPAVPMediaDescription::GetSessionType() const
   }
 
 #if OPAL_SRTP
-  if (m_fingerprint.IsValid()) { // Prefer DTLS over SDES
-    if (m_stringOptions.GetBoolean(OPAL_OPT_SUPPRESS_UDP_TLS))
-      return feedbackEnabled ? OpalDTLSSRTPSession::RTP_SAVPF() : OpalDTLSSRTPSession::RTP_SAVP();
-    else
-      return feedbackEnabled ? OpalDTLSSRTPSession::RTP_DTLS_SAVPF() : OpalDTLSSRTPSession::RTP_DTLS_SAVP();
-  }
+  if (m_fingerprint.IsValid()) // Prefer DTLS over SDES
+    return feedbackEnabled ? OpalDTLSSRTPSession::RTP_DTLS_SAVPF() : OpalDTLSSRTPSession::RTP_DTLS_SAVP();
   if (!m_cryptoSuites.IsEmpty()) // SDES
     return feedbackEnabled ? OpalSRTPSession::RTP_SAVPF() : OpalSRTPSession::RTP_SAVP();
 #endif
@@ -1981,8 +1991,8 @@ bool SDPRTPAVPMediaDescription::FromSession(OpalMediaSession * session,
 #if OPAL_SRTP
   const OpalDTLSSRTPSession* dltsMediaSession = dynamic_cast<const OpalDTLSSRTPSession*>(session);
   if (dltsMediaSession != NULL) {
-    m_fingerprint = dltsMediaSession->GetLocalFingerprint(offer != NULL ? offer->GetFingerprint().GetHash()
-                                                                        : PSSLCertificateFingerprint::HashSha1);
+    SetFingerprint(dltsMediaSession->GetLocalFingerprint(offer != NULL ? offer->GetFingerprint().GetHash()
+                                                                       : PSSLCertificateFingerprint::HashSha1));
 
     if (offer == NULL)
       m_setupMode = SDPCommonAttributes::SetupActivePassive; // We are making offer, allow other side to decide
@@ -2029,7 +2039,7 @@ bool SDPRTPAVPMediaDescription::ToSession(OpalMediaSession * session) const
 #if OPAL_SRTP
   OpalDTLSSRTPSession* dltsMediaSession = dynamic_cast<OpalDTLSSRTPSession*>(session);
   if (dltsMediaSession) { // DTLS
-    dltsMediaSession->SetRemoteFingerprint(m_fingerprint);
+    dltsMediaSession->SetRemoteFingerprint(GetFingerprint());
     // If they are active, we are passive
     dltsMediaSession->SetPassiveMode(m_setupMode & SDPCommonAttributes::SetupActive);
   }

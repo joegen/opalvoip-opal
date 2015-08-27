@@ -253,7 +253,8 @@ class OpalSDPConnection : public OpalRTPConnection
     virtual SDPMediaDescription * OnSendAnswerSDPSession(
       SDPMediaDescription * incomingMedia,
       unsigned sessionId,
-      SDPMediaDescription::Direction otherSidesDir
+      SDPMediaDescription::Direction otherSidesDir,
+      OpalMediaTransportPtr & bundledTransport
     );
 
     virtual bool OnReceivedAnswerSDP(
@@ -275,7 +276,8 @@ class OpalSDPConnection : public OpalRTPConnection
       const unsigned rtpSessionId,
       const OpalMediaType & mediaType,
       const SDPMediaDescription & mediaDescription,
-      OpalTransportAddress & localAddress
+      OpalTransportAddress & localAddress,
+      OpalMediaTransportPtr & bundledTransport
     );
 #if OPAL_VIDEO
     virtual void SetAudioVideoGroup(
