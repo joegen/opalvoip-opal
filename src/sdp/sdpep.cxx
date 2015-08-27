@@ -1175,25 +1175,10 @@ bool OpalSDPConnection::OnReceivedAnswerSDPSession(const SDPSessionDescription &
   bool recvDisabled = (otherSidesDir&SDPMediaDescription::SendOnly) == 0;
   PauseOrCloseMediaStream(recvStream, m_activeFormatList, false, recvDisabled);
 
-  // Then open the streams if the direction allows and if needed
-  // If already open then update to new parameters/payload type
-
-  if (recvStream == NULL) {
-    PTRACE(5, "Opening rx " << mediaType << " stream from answer SDP");
-    if (ownerCall.OpenSourceMediaStreams(*this,
-                                         mediaType,
-                                         sessionId,
-                                         OpalMediaFormat(),
-#if OPAL_VIDEO
-                                         mediaDescription->GetContentRole(),
-#endif
-                                         false,
-                                         recvDisabled))
-      recvStream = GetMediaStream(sessionId, true);
-    if (!recvDisabled && recvStream == NULL)
-      OnMediaStreamOpenFailed(true);
-  }
-
+  /* After (possibly) closing streams, we now open them again if necessary,
+     OpenSourceMediaStreams will just return true if they are already open.
+     We open tx (other party source) side first so we follow the remote
+     endpoints preferences. */
   if (sendStream == NULL) {
     PSafePtr<OpalConnection> otherParty = GetOtherPartyConnection();
     if (otherParty == NULL)
@@ -1212,6 +1197,22 @@ bool OpalSDPConnection::OnReceivedAnswerSDPSession(const SDPSessionDescription &
       sendStream = GetMediaStream(sessionId, false);
     if (!sendDisabled && sendStream == NULL && !otherParty->IsOnHold(true))
       OnMediaStreamOpenFailed(false);
+  }
+
+  if (recvStream == NULL) {
+    PTRACE(5, "Opening rx " << mediaType << " stream from answer SDP");
+    if (ownerCall.OpenSourceMediaStreams(*this,
+                                         mediaType,
+                                         sessionId,
+                                         OpalMediaFormat(),
+#if OPAL_VIDEO
+                                         mediaDescription->GetContentRole(),
+#endif
+                                         false,
+                                         recvDisabled))
+      recvStream = GetMediaStream(sessionId, true);
+    if (!recvDisabled && recvStream == NULL)
+      OnMediaStreamOpenFailed(true);
   }
 
   PINDEX maxFormats = 1;
