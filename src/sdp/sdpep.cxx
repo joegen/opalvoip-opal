@@ -99,7 +99,7 @@ OpalMediaFormatList OpalSDPConnection::GetMediaFormats() const
 {
   // Need to limit the media formats to what the other side provided in it's offer
   if (!m_activeFormatList.IsEmpty()) {
-    PTRACE(4, "Using offered media format list");
+    PTRACE(4, "Using offered media format list: " << setfill(',') << m_activeFormatList);
     return m_activeFormatList;
   }
 
