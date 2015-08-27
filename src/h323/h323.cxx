@@ -1489,8 +1489,7 @@ PBoolean H323Connection::OnReceivedSignalConnect(const H323SignalPDU & pdu)
   // Check for fastStart data and start fast
   if (connect.HasOptionalField(H225_Connect_UUIE::e_fastStart))
     HandleFastStartAcknowledge(connect.m_fastStart);
-
-  if (m_fastStartState != FastStartAcknowledged) {
+  else if (m_fastStartState != FastStartAcknowledged) {
     // If didn't get fast start channels accepted by remote then clear our
     // proposed channels
     m_fastStartState = FastStartDisabled;
@@ -2569,59 +2568,62 @@ PBoolean H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_Octe
 
   PTRACE(3, "H225\tFast start accepted by remote endpoint");
 
-  PINDEX i;
+  bool allNullData = true;
 
   H323LogicalChannelList replyFastStartChannels;
 
   // Go through provided list of structures, if can decode it and match it up
   // with a channel we requested AND it has all the information needed in the
   // m_multiplexParameters, then we can start the channel.
-  for (i = 0; i < array.GetSize(); i++) {
+  for (PINDEX i = 0; i < array.GetSize(); i++) {
     H245_OpenLogicalChannel open;
     if (array[i].DecodeSubType(open)) {
       PTRACE(4, "H225\tFast start open:\n  " << setprecision(2) << open);
       PBoolean reverse = open.HasOptionalField(H245_OpenLogicalChannel::e_reverseLogicalChannelParameters);
       const H245_DataType & dataType = reverse ? open.m_reverseLogicalChannelParameters.m_dataType
-                                               : open.m_forwardLogicalChannelParameters.m_dataType;
-      H323Capability * replyCapability = localCapabilities.FindCapability(dataType);
-      if (replyCapability != NULL) {
-        for (H323LogicalChannelList::iterator channel = m_fastStartChannels.begin(); channel != m_fastStartChannels.end(); ++channel) {
-          H323Channel & channelToStart = *channel;
-          H323Channel::Directions dir = channelToStart.GetDirection();
-          if ((dir == H323Channel::IsReceiver) == reverse &&
-               channelToStart.GetCapability() == *replyCapability) {
-            unsigned error = 1000;
-            if (channelToStart.OnReceivedPDU(open, error)) {
-              H323Capability * channelCapability;
-              if (dir == H323Channel::IsReceiver)
-                channelCapability = replyCapability;
-              else {
-                // For transmitter, need to fake a capability into the remote table
-                channelCapability = remoteCapabilities.FindCapability(channelToStart.GetCapability());
-                if (channelCapability == NULL) {
-                  channelCapability = remoteCapabilities.Copy(channelToStart.GetCapability());
-                  remoteCapabilities.SetCapability(0, channelCapability->GetDefaultSessionID()-1, channelCapability);
+        : open.m_forwardLogicalChannelParameters.m_dataType;
+      if (dataType.GetTag() != H245_DataType::e_nullData) {
+        allNullData = false;
+        H323Capability * replyCapability = localCapabilities.FindCapability(dataType);
+        if (replyCapability != NULL) {
+          for (H323LogicalChannelList::iterator channel = m_fastStartChannels.begin(); channel != m_fastStartChannels.end(); ++channel) {
+            H323Channel & channelToStart = *channel;
+            H323Channel::Directions dir = channelToStart.GetDirection();
+            if ((dir == H323Channel::IsReceiver) == reverse &&
+                channelToStart.GetCapability() == *replyCapability) {
+              unsigned error = 1000;
+              if (channelToStart.OnReceivedPDU(open, error)) {
+                H323Capability * channelCapability;
+                if (dir == H323Channel::IsReceiver)
+                  channelCapability = replyCapability;
+                else {
+                  // For transmitter, need to fake a capability into the remote table
+                  channelCapability = remoteCapabilities.FindCapability(channelToStart.GetCapability());
+                  if (channelCapability == NULL) {
+                    channelCapability = remoteCapabilities.Copy(channelToStart.GetCapability());
+                    remoteCapabilities.SetCapability(0, channelCapability->GetDefaultSessionID() - 1, channelCapability);
+                  }
                 }
-              }
-              // Must use the actual capability instance from the
-              // localCapability or remoteCapability structures.
-              if (OnCreateLogicalChannel(*channelCapability, dir, error)) {
-                if (channelToStart.SetInitialBandwidth()) {
-                  PTRACE(4, "H225\tFast start channel opened: " << *channel);
-                  replyFastStartChannels.Append(&*channel);
-                  m_fastStartChannels.DisallowDeleteObjects();
-                  m_fastStartChannels.erase(channel);
-                  m_fastStartChannels.AllowDeleteObjects();
-                  break;
+                // Must use the actual capability instance from the
+                // localCapability or remoteCapability structures.
+                if (OnCreateLogicalChannel(*channelCapability, dir, error)) {
+                  if (channelToStart.SetInitialBandwidth()) {
+                    PTRACE(4, "H225\tFast start channel opened: " << *channel);
+                    replyFastStartChannels.Append(&*channel);
+                    m_fastStartChannels.DisallowDeleteObjects();
+                    m_fastStartChannels.erase(channel);
+                    m_fastStartChannels.AllowDeleteObjects();
+                    break;
+                  }
+                  else
+                    PTRACE(2, "H225\tFast start channel open fail: insufficent bandwidth");
                 }
                 else
-                  PTRACE(2, "H225\tFast start channel open fail: insufficent bandwidth");
+                  PTRACE(2, "H225\tFast start channel open error: " << error);
               }
               else
-                PTRACE(2, "H225\tFast start channel open error: " << error);
+                PTRACE(2, "H225\tFast start capability error: " << error);
             }
-            else
-              PTRACE(2, "H225\tFast start capability error: " << error);
           }
         }
       }
@@ -2631,13 +2633,21 @@ PBoolean H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_Octe
     }
   }
 
+  if (allNullData) {
+    PTRACE(3, "H225\tAll fast start OLC's nullData, deferring open");
+    return true;
+  }
+
   // Delete all the ones we couldn't open
   m_fastStartChannels.RemoveAll();
 
-  PTRACE(3, "H225\tFast start opening " << replyFastStartChannels.GetSize() << " channels");
-  if (replyFastStartChannels.IsEmpty())
+  if (replyFastStartChannels.IsEmpty()) {
+    PTRACE(3, "H225\tFast start open failed, no suitable channels.");
+    m_fastStartState = FastStartDisabled;
     return false;
+  }
 
+  PTRACE(3, "H225\tFast start opening " << replyFastStartChannels.GetSize() << " channels");
   m_fastStartState = FastStartAcknowledged;
 
   /* Need to put the opened channels back into the m_fastStartChannels member
