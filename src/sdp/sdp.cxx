@@ -1559,20 +1559,21 @@ bool SDPRTPAVPMediaDescription::Decode(const PStringArray & tokens)
 
 PCaselessString SDPRTPAVPMediaDescription::GetSDPTransportType() const
 {
-  if (m_transportType.IsEmpty())
-    return GetSessionType();
+  PString type = m_transportType;
+
+  if (type.IsEmpty())
+    type = GetSessionType();
 
 #if OPAL_SRTP
-  if (m_fingerprint.IsValid()) {
-    // Compensate for broken endpoints
-    if (m_transportType == OpalDTLSSRTPSession::RTP_SAVPF())
-      return OpalDTLSSRTPSession::RTP_DTLS_SAVPF();
-    if (m_transportType == OpalDTLSSRTPSession::RTP_SAVP() || m_transportType == OpalDTLSSRTPSession::RTP_AVP())
-      return OpalDTLSSRTPSession::RTP_DTLS_SAVP();
+  if (m_fingerprint.IsValid() && m_stringOptions.GetBoolean(OPAL_OPT_SUPPRESS_UDP_TLS)) {
+    if (type == OpalDTLSSRTPSession::RTP_DTLS_SAVPF())
+      type = OpalSRTPSession::RTP_SAVPF();
+    else if (type == OpalDTLSSRTPSession::RTP_DTLS_SAVP())
+      type = OpalDTLSSRTPSession::RTP_SAVP();
   }
 #endif
 
-  return m_transportType;
+  return type;
 }
 
 
@@ -1604,12 +1605,8 @@ PCaselessString SDPRTPAVPMediaDescription::GetSessionType() const
   }
 
 #if OPAL_SRTP
-  if (m_fingerprint.IsValid()) { // Prefer DTLS over SDES
-    if (m_stringOptions.GetBoolean(OPAL_OPT_SUPPRESS_UDP_TLS))
-      return feedbackEnabled ? OpalDTLSSRTPSession::RTP_SAVPF() : OpalDTLSSRTPSession::RTP_SAVP();
-    else
-      return feedbackEnabled ? OpalDTLSSRTPSession::RTP_DTLS_SAVPF() : OpalDTLSSRTPSession::RTP_DTLS_SAVP();
-  }
+  if (m_fingerprint.IsValid()) // Prefer DTLS over SDES
+    return feedbackEnabled ? OpalDTLSSRTPSession::RTP_DTLS_SAVPF() : OpalDTLSSRTPSession::RTP_DTLS_SAVP();
   if (!m_cryptoSuites.IsEmpty()) // SDES
     return feedbackEnabled ? OpalSRTPSession::RTP_SAVPF() : OpalSRTPSession::RTP_SAVP();
 #endif

@@ -848,7 +848,8 @@ SDPMediaDescription * OpalSDPConnection::OnSendAnswerSDPSession(SDPMediaDescript
       }
     }
 #endif // OPAL_T38_CAPABILITY
-    mediaSession = CreateMediaSession(sessionId, mediaType, incomingMedia->GetSDPTransportType());
+
+    mediaSession = CreateMediaSession(sessionId, mediaType, incomingMedia->GetSessionType());
     if (mediaSession == NULL) {
       PTRACE(2, "Could not create session for " << mediaType);
       return NULL;
