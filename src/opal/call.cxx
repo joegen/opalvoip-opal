@@ -746,11 +746,15 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
 bool OpalCall::SelectMediaFormats(const OpalMediaType & mediaType,
                                   const OpalMediaFormatList & srcFormats,
                                   const OpalMediaFormatList & dstFormats,
-                                  const OpalMediaFormatList & allFormats,
+                                  const OpalMediaFormatList & masterFormats,
                                   OpalMediaFormat & srcFormat,
                                   OpalMediaFormat & dstFormat) const
 {
-  if (OpalTranscoder::SelectFormats(mediaType, srcFormats, dstFormats, allFormats, srcFormat, dstFormat)) {
+  if (OpalTranscoder::SelectFormats(mediaType, srcFormats, dstFormats, masterFormats, srcFormat, dstFormat)) {
+    PTRACE(4, "SelectMediaFormats:\n"
+              "  source formats=" << setfill(',') << srcFormats << "\n"
+              "   sink  formats=" << dstFormats << "\n"
+              "  master formats=" << masterFormats << setfill(' '));
     PTRACE(3, "Selected media formats " << srcFormat << " -> " << dstFormat);
     return true;
   }
