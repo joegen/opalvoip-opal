@@ -771,15 +771,18 @@ OpalMediaTransportPtr OpalRTPSession::DetachTransport()
 }
 
 
-void OpalRTPSession::SetGroupId(const PString & id)
+bool OpalRTPSession::SetGroupId(const PString & id, bool overwrite)
 {
-  OpalMediaSession::SetGroupId(id);
+  if (!OpalMediaSession::SetGroupId(id, overwrite))
+    return false;
 
   if (id == GetBundleGroupId()) {
     // When bundling we force rtcp-mux and only allow announced SSRC values
     m_singlePortRx = true;
     m_allowAnySyncSource = false;
   }
+
+  return true;
 }
 
 
