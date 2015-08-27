@@ -1942,7 +1942,7 @@ bool H323Gatekeeper::NonStandardMessage(const PString & identifer, const PBYTEAr
 bool H323Gatekeeper::SendNonStandardMessage(const PString & identifer, const PBYTEArray & outData)
 {
   H323RasPDU pdu;
-  H225_NonStandardMessage & nsm = pdu.BuildNonStandardMessage(GetNextSequenceNumber(), identifer, outData);
+  pdu.BuildNonStandardMessage(GetNextSequenceNumber(), identifer, outData);
   return WritePDU(pdu);
 }
 
