@@ -2121,6 +2121,13 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
   if (alias == "register" && endpoint.GetProductInfo() == H323EndPoint::AvayaPhone()) {
     PTRACE(4, "Setting SETUP goal for Avaya IP Phone");
     setup.m_conferenceGoal = H225_Setup_UUIE_conferenceGoal::e_callIndependentSupplementaryService;
+    setup.RemoveOptionalField(H225_Setup_UUIE::e_sourceAddress);
+    setup.RemoveOptionalField(H225_Setup_UUIE::e_sourceCallSignalAddress);
+    setup.RemoveOptionalField(H225_Setup_UUIE::e_destinationAddress);
+    setup.RemoveOptionalField(H225_Setup_UUIE::e_destCallSignalAddress);
+    setup.m_mediaWaitForConnect = true;
+    setup.m_canOverlapSend = true;
+    setup.m_multipleCalls = true;
   }
 
   if (!OnSendSignalSetup(setupPDU))
