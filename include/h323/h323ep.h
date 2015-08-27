@@ -941,7 +941,7 @@ class H323EndPoint : public OpalRTPEndPoint
     /**Get the default H.245 tunneling mode.
       */
     PBoolean IsH245TunnelingDisabled() const
-      { return disableH245Tunneling; }
+      { return disableH245Tunneling || GetProductInfo() == AvayaPhone(); }
 
     /**Set the default H.245 tunneling mode.
       */
