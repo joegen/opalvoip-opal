@@ -1260,6 +1260,7 @@ PBoolean H323Connection::OnReceivedSignalInformation(const H323SignalPDU & infoP
       PBYTEArray data = param.m_data.GetValue();
       BYTE *data_ptr = data.GetPointer();
 
+#pragma pack(1)
       struct
       {
         BYTE length;
@@ -1268,45 +1269,56 @@ PBoolean H323Connection::OnReceivedSignalInformation(const H323SignalPDU & infoP
         BYTE choice;
       } header;
 
+      static BYTE ringerSetEvent[] = { 0x4B };
+      static BYTE offHookEvent[] = { 0x89 };
+      static BYTE ringerClearEvent[] = { 0xa3, 0x80, 0x18, 0x40, 0x40 };
+      static BYTE disconnectedEvent[] = { 0x84 };
+      static BYTE stationUnlockEvent[] = { 0xa3, 0x80, 0x11, 0x02 };
+
+      static BYTE const select_button[] = { 0x05, 0x38, 0x00, 0x60, 0x07 };
+      static BYTE const off_hook[] = { 0x05, 0x38, 0x00, 0x80, 0x02 };
+      static BYTE const on_hook[] = { 0x05, 0x38, 0x00, 0x80, 0x01 };
+#pragma pack()
+
       memcpy(&header, data_ptr, sizeof(header));
       data_ptr += sizeof(header);
 
       if ((header.function != 0x38) || (header.choice != 0x20))
         return true;
 
-      static BYTE ringerSetEvent[] = { 0x4B };
-      static BYTE offHookEvent[] = { 0x89 };
-      static BYTE ringerClearEvent[] = { 0xa3, 0x80, 0x18, 0x40, 0x40 };
-      static BYTE disconnectedEvent[] = { 0x84 };
+      // Unlocked station from login
+      if (memcmp(data_ptr, stationUnlockEvent, sizeof stationUnlockEvent) == 0) {
+        PTRACE(4, "Received Avaya NonStandard UU Information event - Station unlock - sand line, offhook, onhook sequence to initialise");
 
-      // Is this the ringer set event
-      if (memcmp(data_ptr, ringerSetEvent, sizeof ringerSetEvent) == 0) {
-        PTRACE(4, "Received Avaya NonStandard UU Information event - Ringer Set");
-        // Select answer button (0t7)
-        static BYTE const select_button[] = { 0x05, 0x38, 0x00, 0x60, 0x07 };
-        SendNonStandardControl(H323EndPoint::AvayaPhone().oid + ".10", PBYTEArray(select_button, sizeof(select_button), false));
+        //				SendNonStandardControl(H323EndPoint::AvayaPhone().oid + ".10", PBYTEArray(select_button, sizeof(select_button), false));
+        //				SendNonStandardControl(H323EndPoint::AvayaPhone().oid + ".10", PBYTEArray(off_hook, sizeof(off_hook), false));
+        //				SendNonStandardControl(H323EndPoint::AvayaPhone().oid + ".10", PBYTEArray(on_hook, sizeof(on_hook), false));
 
       }
-      // Is this the ringer clear event
-      else if (memcmp(data_ptr, offHookEvent, sizeof offHookEvent) == 0) {
-        PTRACE(4, "Received Avaya NonStandard UU Information event - Off Hook");
+      // Is this the ringer set event
+      else if (memcmp(data_ptr, ringerSetEvent, sizeof ringerSetEvent) == 0) {
 
+        PTRACE(4, "Received Avaya NonStandard UU Information event - Ringer Set - Sending line button press");
+        // Select answer button (0t7)
+        SendNonStandardControl(H323EndPoint::AvayaPhone().oid + ".10", PBYTEArray(select_button, sizeof(select_button), false));
+      }
+      // Is this the off hook event
+      else if (memcmp(data_ptr, offHookEvent, sizeof offHookEvent) == 0) {
+
+        PTRACE(4, "Received Avaya NonStandard UU Information event - Off Hook - sending off hook request");
         // Reply with off hook response
-        static BYTE const off_hook[] = { 0x05, 0x38, 0x00, 0x80, 0x02 };
         SendNonStandardControl(H323EndPoint::AvayaPhone().oid + ".10", PBYTEArray(off_hook, sizeof(off_hook), false));
       }
       // Is this the ringer clear event
       else if (memcmp(data_ptr, ringerClearEvent, sizeof ringerClearEvent) == 0) {
         PTRACE(4, "Received Avaya NonStandard UU Information event - Ringer Clear");
         // call is now fully established
-
       }
       // Is this the ringer clear event
       else if (memcmp(data_ptr, disconnectedEvent, sizeof disconnectedEvent) == 0) {
-        PTRACE(4, "Received Avaya NonStandard UU Information event - Disconnected");
+        PTRACE(4, "Received Avaya NonStandard UU Information event - Disconnected - Sending on hook");
         // Send on hook to hangup
-        static BYTE const off_hook[] = { 0x05, 0x38, 0x00, 0x80, 0x01 };
-        SendNonStandardControl(H323EndPoint::AvayaPhone().oid + ".10", PBYTEArray(off_hook, sizeof(off_hook), false));
+        SendNonStandardControl(H323EndPoint::AvayaPhone().oid + ".10", PBYTEArray(on_hook, sizeof(on_hook), false));
       }
     }
   }
@@ -1483,12 +1495,6 @@ PBoolean H323Connection::OnReceivedSignalConnect(const H323SignalPDU & pdu)
     // proposed channels
     m_fastStartState = FastStartDisabled;
     m_fastStartChannels.RemoveAll();
-  }
-
-  if (endpoint.GetProductInfo() == H323EndPoint::AvayaPhone()) {
-    PTRACE(4, "Adding Avaya IP Phone non standard data");
-    static BYTE const data[] = { 0x05, 0x38, 0x00, 0x60, 0x07 };
-    SendNonStandardControl(H323EndPoint::AvayaPhone().oid+".10", PBYTEArray(data, sizeof(data), false));
   }
 
   // Check that it has the H.245 channel connection info

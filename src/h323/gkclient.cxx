@@ -603,7 +603,7 @@ bool H323Gatekeeper::RegistrationRequest(bool autoReg, bool didGkDiscovery, bool
     }
 
     if (endpoint.GetProductInfo() == H323EndPoint::AvayaPhone()) {
-      PTRACE(4, "Adding Avaya IP Phone non standard data");
+      PTRACE(4, "Adding Avaya IP Phone non standard data to registration");
       rrq.IncludeOptionalField(H225_RegistrationRequest::e_nonStandardData);
       rrq.m_nonStandardData.m_nonStandardIdentifier.SetTag(H225_NonStandardIdentifier::e_object);
       PASN_ObjectId & nonStandardIdentifier = rrq.m_nonStandardData.m_nonStandardIdentifier;
@@ -611,11 +611,11 @@ bool H323Gatekeeper::RegistrationRequest(bool autoReg, bool didGkDiscovery, bool
 #pragma pack(1)
       struct
       {
-        BYTE unknown1[13];
-        PEthSocket::Address macAddress;
-        BYTE unknown2[12];
+		  BYTE unknown1[13];
+		  PEthSocket::Address macAddress;
+		  BYTE unknown2[12];
       } data = {
-        { 0x09, 0x81, 0x01, 0x00, 0x24, 0x1e, 0x89, 0x00, 0x01, 0x20, 0x01, 0x00, 0x06 },
+        { 0x0b, 0x81, 0x01, 0x00, 0x24, 0x1e, 0x89, 0x00, 0x01, 0x20, 0x01, 0x00, 0x06 },    // force logout = 0x0b no force logout = 0x09
         PIPSocket::GetInterfaceMACAddress(),
         { 0x01, 0x00, 0x05, 0xc0, 0xff, 0xff, 0xff, 0xff, 0x01, 0x80, 0x01, 0x00 }
       };
@@ -894,6 +894,7 @@ PTimeInterval H323Gatekeeper::InternalRegister()
   OpalConnection::StringOptions options;
   options.Set(OPAL_OPT_CALLING_PARTY_NAME, m_aliases[0]);
   endpoint.GetManager().SetUpCall("ivr:", "h323:register", NULL, 0, &options);
+  return m_currentTimeToLive;
 }
 
 
@@ -927,6 +928,23 @@ PBoolean H323Gatekeeper::UnregistrationRequest(int reason)
   if (reason >= 0) {
     urq.IncludeOptionalField(H225_UnregistrationRequest::e_reason);
     urq.m_reason = reason;
+  }
+
+  if (endpoint.GetProductInfo() == H323EndPoint::AvayaPhone()) {
+    PTRACE(4, "Adding Avaya IP Phone non standard data to unregistration");
+    urq.IncludeOptionalField(H225_UnregistrationRequest::e_nonStandardData);
+    urq.m_nonStandardData.m_nonStandardIdentifier.SetTag(H225_NonStandardIdentifier::e_object);
+    PASN_ObjectId & nonStandardIdentifier = urq.m_nonStandardData.m_nonStandardIdentifier;
+    nonStandardIdentifier = H323EndPoint::AvayaPhone().oid + ".1";
+#pragma pack(1)
+    struct
+    {
+      BYTE unknown1[1];
+    } data = {
+      { 0x10 }
+    };
+#pragma pack()
+    urq.m_nonStandardData.m_data = PBYTEArray((const BYTE *)&data, sizeof(data), false);
   }
 
   Request request(urq.m_requestSeqNum, pdu);
@@ -1918,6 +1936,14 @@ bool H323Gatekeeper::NonStandardMessage(const PString & identifer, const PBYTEAr
   Request request(nsm.m_requestSeqNum, pdu);  
   request.responseInfo = &replyData;
   return MakeRequest(request);
+}
+
+
+bool H323Gatekeeper::SendNonStandardMessage(const PString & identifer, const PBYTEArray & outData)
+{
+  H323RasPDU pdu;
+  H225_NonStandardMessage & nsm = pdu.BuildNonStandardMessage(GetNextSequenceNumber(), identifer, outData);
+  return WritePDU(pdu);
 }
 
 

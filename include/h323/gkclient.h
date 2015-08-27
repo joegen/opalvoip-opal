@@ -240,6 +240,13 @@ class H323Gatekeeper : public H225_RAS
       PBYTEArray & replyData
     );
 
+    /**Send a non-standard message and dont wait for a reply.
+      */
+    bool SendNonStandardMessage(
+      const PString & identifer,
+      const PBYTEArray & outData
+    );
+
     /**Handle incoming service control session information.
      */
     virtual void OnServiceControlSessions(
