@@ -1247,6 +1247,9 @@ bool OpalMediaSession::SetGroupId(const PString & id, bool overwrite)
 {
   PSafeLockReadWrite lock(*this);
 
+  if (m_groupId == id)
+    return true;
+
   if (overwrite || m_groupId.IsEmpty()) {
     m_groupId = id;
     m_groupId.MakeUnique();
@@ -1273,6 +1276,9 @@ PString OpalMediaSession::GetGroupMediaId() const
 bool OpalMediaSession::SetGroupMediaId(const PString & id, bool overwrite)
 {
   PSafeLockReadWrite lock(*this);
+
+  if (m_groupMediaId == id)
+    return true;
 
   if (overwrite || m_groupMediaId.IsEmpty()) {
     m_groupMediaId = id;
