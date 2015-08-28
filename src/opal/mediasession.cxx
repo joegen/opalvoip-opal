@@ -908,7 +908,7 @@ bool OpalUDPMediaTransport::InternalSetRemoteAddress(const PIPSocket::AddressAnd
     return true;
 
   if (dontOverride && oldAP.IsValid()) {
-    PTRACE(2, *this << source << " cannot set remote address/port to " << newAP << ", already set to " << oldAP);
+    PTRACE(3, *this << source << " cannot set remote address/port to " << newAP << ", already set to " << oldAP);
     return false;
   }
 
