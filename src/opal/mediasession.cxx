@@ -873,11 +873,13 @@ bool OpalUDPMediaTransport::SetRemoteAddress(const OpalTransportAddress & remote
 
 void OpalUDPMediaTransport::InternalRxData(SubChannels subchannel, const PBYTEArray & data)
 {
-  // If remote address never set from higher levels, then try and figure
-  // it out from the first packet received.
-  PIPAddressAndPort ap;
-  GetSocket(subchannel)->GetLastReceiveAddress(ap);
-  InternalSetRemoteAddress(ap, subchannel, true PTRACE_PARAM(, "first PDU"));
+  if (m_remoteBehindNAT) {
+    // If remote address never set from higher levels, then try and figure
+    // it out from the first packet received.
+    PIPAddressAndPort ap;
+    GetSocket(subchannel)->GetLastReceiveAddress(ap);
+    InternalSetRemoteAddress(ap, subchannel, true PTRACE_PARAM(, "first PDU"));
+  }
 
   OpalMediaTransport::InternalRxData(subchannel, data);
 }
