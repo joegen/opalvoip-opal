@@ -867,17 +867,19 @@ bool OpalUDPMediaTransport::SetRemoteAddress(const OpalTransportAddress & remote
   if (!remoteAddress.GetIpAndPort(ap))
     return false;
 
-  return InternalSetRemoteAddress(ap, subchannel, false PTRACE_PARAM(, "signalling"));
+  return InternalSetRemoteAddress(ap, subchannel, true PTRACE_PARAM(, "signalling"));
 }
 
 
 void OpalUDPMediaTransport::InternalRxData(SubChannels subchannel, const PBYTEArray & data)
 {
-  // If remote address never set from higher levels, then try and figure
-  // it out from the first packet received.
-  PIPAddressAndPort ap;
-  GetSocket(subchannel)->GetLastReceiveAddress(ap);
-  InternalSetRemoteAddress(ap, subchannel, true PTRACE_PARAM(, "first PDU"));
+  if (m_remoteBehindNAT) {
+    // If remote address never set from higher levels, then try and figure
+    // it out from the first packet received.
+    PIPAddressAndPort ap;
+    GetSocket(subchannel)->GetLastReceiveAddress(ap);
+    InternalSetRemoteAddress(ap, subchannel, true PTRACE_PARAM(, "first PDU"));
+  }
 
   OpalMediaTransport::InternalRxData(subchannel, data);
 }
@@ -908,7 +910,7 @@ bool OpalUDPMediaTransport::InternalSetRemoteAddress(const PIPSocket::AddressAnd
     return true;
 
   if (dontOverride && oldAP.IsValid()) {
-    PTRACE(2, *this << source << " cannot set remote address/port to " << newAP << ", already set to " << oldAP);
+    PTRACE(3, *this << source << " cannot set remote address/port to " << newAP << ", already set to " << oldAP);
     return false;
   }
 
@@ -1247,6 +1249,9 @@ bool OpalMediaSession::SetGroupId(const PString & id, bool overwrite)
 {
   PSafeLockReadWrite lock(*this);
 
+  if (m_groupId == id)
+    return true;
+
   if (overwrite || m_groupId.IsEmpty()) {
     m_groupId = id;
     m_groupId.MakeUnique();
@@ -1273,6 +1278,9 @@ PString OpalMediaSession::GetGroupMediaId() const
 bool OpalMediaSession::SetGroupMediaId(const PString & id, bool overwrite)
 {
   PSafeLockReadWrite lock(*this);
+
+  if (m_groupMediaId == id)
+    return true;
 
   if (overwrite || m_groupMediaId.IsEmpty()) {
     m_groupMediaId = id;
