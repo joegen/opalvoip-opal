@@ -4171,8 +4171,9 @@ void H323Connection::InternalEstablishedConnectionCheck()
       break;
 
     case ConnectedPhase :
-      SetPhase(EstablishedPhase);
-      OnEstablished();
+      if (!InternalOnEstablished())
+        break;
+
       // Set established in next case
 
     case EstablishedPhase :
