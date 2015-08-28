@@ -2579,9 +2579,9 @@ PBoolean H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_Octe
     H245_OpenLogicalChannel open;
     if (array[i].DecodeSubType(open)) {
       PTRACE(4, "H225\tFast start open:\n  " << setprecision(2) << open);
-      PBoolean reverse = open.HasOptionalField(H245_OpenLogicalChannel::e_reverseLogicalChannelParameters);
+      bool reverse = open.HasOptionalField(H245_OpenLogicalChannel::e_reverseLogicalChannelParameters);
       const H245_DataType & dataType = reverse ? open.m_reverseLogicalChannelParameters.m_dataType
-        : open.m_forwardLogicalChannelParameters.m_dataType;
+                                               : open.m_forwardLogicalChannelParameters.m_dataType;
       if (dataType.GetTag() != H245_DataType::e_nullData) {
         allNullData = false;
         H323Capability * replyCapability = localCapabilities.FindCapability(dataType);
@@ -2589,8 +2589,7 @@ PBoolean H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_Octe
           for (H323LogicalChannelList::iterator channel = m_fastStartChannels.begin(); channel != m_fastStartChannels.end(); ++channel) {
             H323Channel & channelToStart = *channel;
             H323Channel::Directions dir = channelToStart.GetDirection();
-            if ((dir == H323Channel::IsReceiver) == reverse &&
-                channelToStart.GetCapability() == *replyCapability) {
+            if ((dir == H323Channel::IsTransmitter) == reverse && channelToStart.GetCapability() == *replyCapability) {
               unsigned error = 1000;
               if (channelToStart.OnReceivedPDU(open, error)) {
                 H323Capability * channelCapability;
@@ -5019,13 +5018,15 @@ H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability 
   const H323Transport & transport = GetControlChannel();
 
   // We only support RTP over UDP at this point in time ...
-  H323TransportAddress remoteControlAddress(transport.GetRemoteAddress().GetHostName(), 0, OpalTransportAddress::UdpPrefix());
+  H323TransportAddress remoteHostAddress(transport.GetRemoteAddress().GetHostName(), 0, OpalTransportAddress::UdpPrefix());
+  H323TransportAddress remoteControlAddress;
   if (param != NULL && param->HasOptionalField(H245_H2250LogicalChannelParameters::e_mediaControlChannel)) {
     remoteControlAddress = H323TransportAddress(param->m_mediaControlChannel);
     if (remoteControlAddress.IsEmpty() || !transport.GetRemoteAddress().IsCompatible(remoteControlAddress)) {
       OnFailedMediaStream(dir == H323Channel::IsReceiver, "Invalid transport address");
       return NULL;
     }
+    remoteHostAddress = remoteControlAddress;
   }
 
   PCaselessString sessionType = mediaType->GetMediaSessionType();
@@ -5055,7 +5056,7 @@ H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability 
   }
 #endif // OPAL_T38_CAPABILITY
 
-  if (!session->Open(transport.GetInterface(), remoteControlAddress)) {
+  if (!session->Open(transport.GetInterface(), remoteHostAddress)) {
     ReleaseMediaSession(sessionID);
     OnFailedMediaStream(dir == H323Channel::IsReceiver, "Could not open session transports");
     return NULL;
