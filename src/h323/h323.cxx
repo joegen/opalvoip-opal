@@ -2558,17 +2558,19 @@ PBoolean H323Connection::SendFastStartAcknowledge(H225_ArrayOf_PASN_OctetString 
 
 PBoolean H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_OctetString & array)
 {
-  if (m_fastStartState == FastStartAcknowledged)
-    return true;
+  if (connectionState < EstablishedConnection) {
+    if (m_fastStartState == FastStartAcknowledged)
+      return true;
 
-  if (m_fastStartChannels.IsEmpty()) {
-    PTRACE(2, "H225\tFast start response with no channels to open");
-    return false;
+    if (m_fastStartChannels.IsEmpty()) {
+      PTRACE(2, "H225\tFast start response with no channels to open");
+      return false;
+    }
+
+    PTRACE(3, "H225\tFast start accepted by remote endpoint");
   }
 
-  PTRACE(3, "H225\tFast start accepted by remote endpoint");
-
-  bool allNullData = true;
+  bool nothingToOpen = true;
 
   H323LogicalChannelList replyFastStartChannels;
 
@@ -2577,63 +2579,101 @@ PBoolean H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_Octe
   // m_multiplexParameters, then we can start the channel.
   for (PINDEX i = 0; i < array.GetSize(); i++) {
     H245_OpenLogicalChannel open;
-    if (array[i].DecodeSubType(open)) {
-      PTRACE(4, "H225\tFast start open:\n  " << setprecision(2) << open);
-      bool reverse = open.HasOptionalField(H245_OpenLogicalChannel::e_reverseLogicalChannelParameters);
-      const H245_DataType & dataType = reverse ? open.m_reverseLogicalChannelParameters.m_dataType
-                                               : open.m_forwardLogicalChannelParameters.m_dataType;
-      if (dataType.GetTag() != H245_DataType::e_nullData) {
-        allNullData = false;
-        H323Capability * replyCapability = localCapabilities.FindCapability(dataType);
-        if (replyCapability != NULL) {
-          for (H323LogicalChannelList::iterator channel = m_fastStartChannels.begin(); channel != m_fastStartChannels.end(); ++channel) {
-            H323Channel & channelToStart = *channel;
-            H323Channel::Directions dir = channelToStart.GetDirection();
-            if ((dir == H323Channel::IsTransmitter) == reverse && channelToStart.GetCapability() == *replyCapability) {
-              unsigned error = 1000;
-              if (channelToStart.OnReceivedPDU(open, error)) {
-                H323Capability * channelCapability;
-                if (dir == H323Channel::IsReceiver)
-                  channelCapability = replyCapability;
-                else {
-                  // For transmitter, need to fake a capability into the remote table
-                  channelCapability = remoteCapabilities.FindCapability(channelToStart.GetCapability());
-                  if (channelCapability == NULL) {
-                    channelCapability = remoteCapabilities.Copy(channelToStart.GetCapability());
-                    remoteCapabilities.SetCapability(0, channelCapability->GetDefaultSessionID() - 1, channelCapability);
-                  }
-                }
-                // Must use the actual capability instance from the
-                // localCapability or remoteCapability structures.
-                if (OnCreateLogicalChannel(*channelCapability, dir, error)) {
-                  if (channelToStart.SetInitialBandwidth()) {
-                    PTRACE(4, "H225\tFast start channel opened: " << *channel);
-                    replyFastStartChannels.Append(&*channel);
-                    m_fastStartChannels.DisallowDeleteObjects();
-                    m_fastStartChannels.erase(channel);
-                    m_fastStartChannels.AllowDeleteObjects();
-                    break;
-                  }
-                  else
-                    PTRACE(2, "H225\tFast start channel open fail: insufficent bandwidth");
-                }
-                else
-                  PTRACE(2, "H225\tFast start channel open error: " << error);
-              }
-              else
-                PTRACE(2, "H225\tFast start capability error: " << error);
-            }
-          }
+    if (!array[i].DecodeSubType(open)) {
+      PTRACE(1, "H225\tInvalid fast start PDU decode:\n  " << setprecision(2) << open);
+      continue;
+    }
+
+    PTRACE(4, "H225\tFast start open:\n  " << setprecision(2) << open);
+    bool reverse = open.HasOptionalField(H245_OpenLogicalChannel::e_reverseLogicalChannelParameters);
+    const H245_DataType & dataType =
+          reverse ? open.m_reverseLogicalChannelParameters.m_dataType
+                  : open.m_forwardLogicalChannelParameters.m_dataType;
+    const H245_H2250LogicalChannelParameters & param =
+          reverse ? (const H245_H2250LogicalChannelParameters &)open.m_reverseLogicalChannelParameters.m_multiplexParameters
+                  : (const H245_H2250LogicalChannelParameters &)open.m_forwardLogicalChannelParameters.m_multiplexParameters;
+
+    H323Channel * channel = FindChannel(param.m_sessionID, reverse);
+    if (channel != NULL) {
+      OpalMediaStreamPtr mediaStream = channel->GetMediaStream();
+      if (mediaStream == NULL) {
+        PTRACE(2, "H225\tFast restart has logical channel but no media stream!");
+        continue;
+      }
+
+      if (dataType.GetTag() == H245_DataType::e_nullData) {
+        PTRACE(3, "H225\tFast restart pausing " << *mediaStream);
+        channel->GetMediaStream()->SetPaused(true);
+        continue;
+      }
+
+      unsigned error = 1000;
+      if (channel->OnReceivedPDU(open, error)) {
+        PTRACE(2, "H225\tFast restart capability error: " << error);
+        continue;
+      }
+
+      PTRACE(3, "H225\tFast restart resuming " << *mediaStream);
+      channel->GetMediaStream()->SetPaused(false);
+      continue;
+    }
+
+    if (dataType.GetTag() == H245_DataType::e_nullData)
+      continue;
+
+    nothingToOpen = false;
+
+    H323Capability * replyCapability = localCapabilities.FindCapability(dataType);
+    if (replyCapability == NULL)
+      continue;
+
+    for (H323LogicalChannelList::iterator iterChannel = m_fastStartChannels.begin(); iterChannel != m_fastStartChannels.end(); ++iterChannel) {
+      H323Channel & channelToStart = *iterChannel;
+      H323Channel::Directions dir = channelToStart.GetDirection();
+      if ((dir == H323Channel::IsTransmitter) != reverse || channelToStart.GetCapability() != *replyCapability)
+        continue;
+
+      unsigned error = 1000;
+      if (!channelToStart.OnReceivedPDU(open, error)) {
+        PTRACE(2, "H225\tFast start capability error: " << error);
+        continue;
+      }
+
+      H323Capability * channelCapability;
+      if (dir == H323Channel::IsReceiver)
+        channelCapability = replyCapability;
+      else {
+        // For transmitter, need to fake a capability into the remote table
+        channelCapability = remoteCapabilities.FindCapability(channelToStart.GetCapability());
+        if (channelCapability == NULL) {
+          channelCapability = remoteCapabilities.Copy(channelToStart.GetCapability());
+          remoteCapabilities.SetCapability(0, channelCapability->GetDefaultSessionID() - 1, channelCapability);
         }
       }
-    }
-    else {
-      PTRACE(1, "H225\tInvalid fast start PDU decode:\n  " << setprecision(2) << open);
+
+      // Must use the actual capability instance from the
+      // localCapability or remoteCapability structures.
+      if (!OnCreateLogicalChannel(*channelCapability, dir, error)) {
+        PTRACE(2, "H225\tFast start channel open error: " << error);
+        continue;
+      }
+
+      if (!channelToStart.SetInitialBandwidth()) {
+        PTRACE(2, "H225\tFast start channel open fail: insufficent bandwidth");
+        continue;
+      }
+
+      PTRACE(4, "H225\tFast start channel opened: " << channelToStart);
+      replyFastStartChannels.Append(&channelToStart);
+      m_fastStartChannels.DisallowDeleteObjects();
+      m_fastStartChannels.erase(iterChannel);
+      m_fastStartChannels.AllowDeleteObjects();
+      break;
     }
   }
 
-  if (allNullData) {
-    PTRACE(3, "H225\tAll fast start OLC's nullData, deferring open");
+  if (nothingToOpen) {
+    PTRACE_IF(3, mediaStreams.IsEmpty(), "H225\tAll fast start OLC's nullData, deferring open");
     return true;
   }
 
