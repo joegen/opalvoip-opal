@@ -371,7 +371,7 @@ OpalMediaSession * OpalSDPConnection::SetUpMediaSession(const unsigned   session
   if (!mediaDescription.ToSession(session))
     return NULL;
 
-  bool bundled = session->GetBundleGroupId() == OpalMediaSession::GetBundleGroupId();
+  bool bundled = session->GetGroupId() == OpalMediaSession::GetBundleGroupId();
   if (bundled && bundledTransport != NULL)
     session->AttachTransport(bundledTransport);
 
@@ -502,7 +502,7 @@ bool OpalSDPConnection::OnSendOfferSDP(SDPSessionDescription & sdpOut, bool offe
       if (sessions[sessionId]) {
         OpalMediaSession * session = GetMediaSession(sessionId);
 
-        bool bundled = session->GetBundleGroupId() == OpalMediaSession::GetBundleGroupId();
+        bool bundled = session->GetGroupId() == OpalMediaSession::GetBundleGroupId();
         if (bundled && bundledTransport != NULL)
           session->AttachTransport(bundledTransport);
 
