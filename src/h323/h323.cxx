@@ -2497,7 +2497,7 @@ PBoolean H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_Octe
     H245_OpenLogicalChannel open;
     if (array[i].DecodeSubType(open)) {
       PTRACE(4, "H225\tFast start open:\n  " << setprecision(2) << open);
-      PBoolean reverse = open.HasOptionalField(H245_OpenLogicalChannel::e_reverseLogicalChannelParameters);
+      bool reverse = open.HasOptionalField(H245_OpenLogicalChannel::e_reverseLogicalChannelParameters);
       const H245_DataType & dataType = reverse ? open.m_reverseLogicalChannelParameters.m_dataType
                                                : open.m_forwardLogicalChannelParameters.m_dataType;
       H323Capability * replyCapability = localCapabilities.FindCapability(dataType);
@@ -2505,8 +2505,7 @@ PBoolean H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_Octe
         for (H323LogicalChannelList::iterator channel = m_fastStartChannels.begin(); channel != m_fastStartChannels.end(); ++channel) {
           H323Channel & channelToStart = *channel;
           H323Channel::Directions dir = channelToStart.GetDirection();
-          if ((dir == H323Channel::IsReceiver) == reverse &&
-               channelToStart.GetCapability() == *replyCapability) {
+          if ((dir == H323Channel::IsTransmitter) == reverse && channelToStart.GetCapability() == *replyCapability) {
             unsigned error = 1000;
             if (channelToStart.OnReceivedPDU(open, error)) {
               H323Capability * channelCapability;
