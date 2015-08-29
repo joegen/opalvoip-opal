@@ -2585,13 +2585,13 @@ PBoolean H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_Octe
     }
 
     PTRACE(4, "H225\tFast start open:\n  " << setprecision(2) << open);
-    bool reverse = open.HasOptionalField(H245_OpenLogicalChannel::e_reverseLogicalChannelParameters);
+    bool transmitter = open.HasOptionalField(H245_OpenLogicalChannel::e_reverseLogicalChannelParameters);
     const H245_DataType & dataType =
-          reverse ? open.m_reverseLogicalChannelParameters.m_dataType
-                  : open.m_forwardLogicalChannelParameters.m_dataType;
+          transmitter ? open.m_reverseLogicalChannelParameters.m_dataType
+                   : open.m_forwardLogicalChannelParameters.m_dataType;
 
     const H245_H2250LogicalChannelParameters * param = NULL;
-    if (reverse && open.m_reverseLogicalChannelParameters.m_multiplexParameters.GetTag() ==
+    if (transmitter && open.m_reverseLogicalChannelParameters.m_multiplexParameters.GetTag() ==
                 H245_OpenLogicalChannel_reverseLogicalChannelParameters_multiplexParameters::e_h2250LogicalChannelParameters)
       param = &(const H245_H2250LogicalChannelParameters &)open.m_reverseLogicalChannelParameters.m_multiplexParameters;
     else if (open.m_forwardLogicalChannelParameters.m_multiplexParameters.GetTag() ==
@@ -2599,7 +2599,7 @@ PBoolean H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_Octe
       param = &(const H245_H2250LogicalChannelParameters &)open.m_forwardLogicalChannelParameters.m_multiplexParameters;
 
     if (param != NULL) {
-      H323Channel * channel = FindChannel(param->m_sessionID, reverse, true);
+      H323Channel * channel = FindChannel(param->m_sessionID, !transmitter, true);
       if (channel != NULL) {
         OpalMediaStreamPtr mediaStream = channel->GetMediaStream();
         if (mediaStream == NULL) {
@@ -2623,7 +2623,7 @@ PBoolean H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_Octe
         channel->GetMediaStream()->SetPaused(false);
         continue;
       }
-      PTRACE(4, "H225\tFast restart could not find session " << (unsigned)param->m_sessionID << (reverse ? " from" : " to") << " remote");
+      PTRACE(4, "H225\tFast restart could not find session " << (unsigned)param->m_sessionID << (transmitter ? " from" : " to") << " remote");
     }
     else
       PTRACE(4, "H225\tFast restart cannot be performed without multiplexParameters");
@@ -2640,7 +2640,7 @@ PBoolean H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_Octe
     for (H323LogicalChannelList::iterator iterChannel = m_fastStartChannels.begin(); iterChannel != m_fastStartChannels.end(); ++iterChannel) {
       H323Channel & channelToStart = *iterChannel;
       H323Channel::Directions dir = channelToStart.GetDirection();
-      if ((dir == H323Channel::IsTransmitter) != reverse || channelToStart.GetCapability() != *replyCapability)
+      if ((dir == H323Channel::IsTransmitter) != transmitter || channelToStart.GetCapability() != *replyCapability)
         continue;
 
       unsigned error = 1000;
