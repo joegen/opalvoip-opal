@@ -743,12 +743,12 @@ static bool BuildFastStartList(const H323Channel & channel,
                 H245_OpenLogicalChannel_forwardLogicalChannelParameters_multiplexParameters::e_none);
   }
 
-  PTRACE(4, "H225\tBuild fastStart:\n  " << setprecision(2) << open);
+  PTRACE(4, &channel, "H225\tBuild fastStart:\n  " << setprecision(2) << open);
   PINDEX last = array.GetSize();
   array.SetSize(last+1);
   array[last].EncodeSubType(open);
 
-  PTRACE(3, "H225\tBuilt fastStart for " << channel << ' ' << channel.GetCapability());
+  PTRACE(3, &channel, "H225\tBuilt fastStart for " << channel << ' ' << channel.GetCapability());
   return true;
 }
 
@@ -2589,6 +2589,7 @@ PBoolean H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_Octe
     const H245_DataType & dataType =
           reverse ? open.m_reverseLogicalChannelParameters.m_dataType
                   : open.m_forwardLogicalChannelParameters.m_dataType;
+
     const H245_H2250LogicalChannelParameters * param = NULL;
     if (reverse && open.m_reverseLogicalChannelParameters.m_multiplexParameters.GetTag() ==
                 H245_OpenLogicalChannel_forwardLogicalChannelParameters_multiplexParameters::e_h2250LogicalChannelParameters)
@@ -2598,7 +2599,7 @@ PBoolean H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_Octe
       param = &(const H245_H2250LogicalChannelParameters &)open.m_forwardLogicalChannelParameters.m_multiplexParameters;
 
     if (param != NULL) {
-      H323Channel * channel = FindChannel(param->m_sessionID, reverse);
+      H323Channel * channel = FindChannel(param->m_sessionID, reverse, true);
       if (channel != NULL) {
         OpalMediaStreamPtr mediaStream = channel->GetMediaStream();
         if (mediaStream == NULL) {
@@ -2622,6 +2623,7 @@ PBoolean H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_Octe
         channel->GetMediaStream()->SetPaused(false);
         continue;
       }
+      PTRACE(4, "H225\tFast restart could not find session " << (unsigned)param->m_sessionID << (reverse ? " from" : " to") << " remote");
     }
 
     if (dataType.GetTag() == H245_DataType::e_nullData)
@@ -2679,7 +2681,13 @@ PBoolean H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_Octe
   }
 
   if (nothingToOpen) {
-    PTRACE_IF(3, mediaStreams.IsEmpty(), "H225\tAll fast start OLC's nullData, deferring open");
+    if (mediaStreams.IsEmpty())
+      PTRACE(3, "H225\tAll fast start OLC's nullData, deferring open");
+    else {
+      PTRACE(3, "H225\tFast restart, pausing media streams");
+      for (OpalMediaStreamPtr stream(mediaStreams); stream != NULL; ++stream)
+        stream->SetPaused(true);
+    }
     return true;
   }
 
@@ -3675,10 +3683,10 @@ H323Channel * H323Connection::GetLogicalChannel(unsigned number, PBoolean fromRe
 }
 
 
-H323Channel * H323Connection::FindChannel(unsigned rtpSessionId, PBoolean fromRemote) const
+H323Channel * H323Connection::FindChannel(unsigned rtpSessionId, bool fromRemote, bool anyState) const
 {
   PSafeLockReadWrite mutex(*this);
-  return logicalChannels->FindChannelBySession(rtpSessionId, fromRemote);
+  return logicalChannels->FindChannelBySession(rtpSessionId, fromRemote, anyState);
 }
 
 
@@ -4180,11 +4188,11 @@ void H323Connection::InternalEstablishedConnectionCheck()
     m_endSessionNeeded = true;
 
     if (m_holdFromRemote != eOnHoldFromRemote) {
-      H323Channel * chan = logicalChannels->FindChannelBySession(0, false);
+      H323Channel * chan = FindChannel(0, false);
 
       // Delay handling of off hold until we finish redoing TCS, MSD & OLC.
       if (m_holdFromRemote == eRetrieveFromRemote) {
-        if (chan != NULL && (chan = logicalChannels->FindChannelBySession(chan->GetSessionID(), true)) != NULL) {
+        if (chan != NULL && (chan = FindChannel(chan->GetSessionID(), true)) != NULL) {
           m_holdFromRemote = eOffHoldFromRemote;
           OnHold(true, false);
         }
@@ -4759,8 +4767,7 @@ PBoolean H323Connection::OpenLogicalChannel(const H323Capability & capability,
   if (channel == NULL)
     return false;
 
-  if (dir != H323Channel::IsReceiver)
-    channel->SetNumber(logicalChannels->GetNextChannelNumber());
+  channel->SetNumber(logicalChannels->GetNextChannelNumber(dir == H323Channel::IsReceiver));
 
   m_fastStartChannels.Append(channel);
   return true;
@@ -5181,8 +5188,7 @@ PBoolean H323Connection::OnStartLogicalChannel(H323Channel & channel)
 {
 #if OPAL_T38_CAPABILITY
   if (ownerCall.IsSwitchingT38()) {
-    H323Channel * other = logicalChannels->FindChannelBySession(channel.GetSessionID(),
-                                                   !channel.GetNumber().IsFromRemote());
+    H323Channel * other = FindChannel(channel.GetSessionID(), !channel.GetNumber().IsFromRemote());
     if (other != NULL && other->IsOpen()) {
       if (t38ModeChangeCapabilities.IsEmpty()) {
         PTRACE(4, "H323\tCompleted remote switch of T.38");
