@@ -2571,6 +2571,7 @@ PBoolean H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_Octe
   }
 
   bool nothingToOpen = true;
+  bool pauseChannels = true;
 
   H323LogicalChannelList replyFastStartChannels;
 
@@ -2621,6 +2622,7 @@ PBoolean H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_Octe
 
         PTRACE(3, "H225\tFast restart resuming " << *mediaStream);
         channel->GetMediaStream()->SetPaused(false);
+        pauseChannels = false;
         continue;
       }
       PTRACE(4, "H225\tFast restart could not find session " << (unsigned)param->m_sessionID << (transmitter ? " from" : " to") << " remote");
@@ -2685,7 +2687,7 @@ PBoolean H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_Octe
   if (nothingToOpen) {
     if (mediaStreams.IsEmpty())
       PTRACE(3, "H225\tAll fast start OLC's nullData, deferring open");
-    else {
+    else if (pauseChannels) {
       PTRACE(3, "H225\tFast restart, pausing media streams");
       for (OpalMediaStreamPtr stream(mediaStreams); stream != NULL; ++stream)
         stream->SetPaused(true);
