@@ -45,6 +45,7 @@ static const PConstString PreferredMediaKey("Preferred Media");
 static const PConstString RemovedMediaKey("Removed Media");
 static const PConstString MinJitterKey("Minimum Jitter");
 static const PConstString MaxJitterKey("Maximum Jitter");
+static const PConstString NoMediaTimeoutKey("No Media Timeout");
 static const PConstString TCPPortBaseKey("TCP Port Base");
 static const PConstString TCPPortMaxKey("TCP Port Max");
 static const PConstString UDPPortBaseKey("UDP Port Base");
@@ -562,6 +563,9 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
 
   SetAudioJitterDelay(rsrc->AddIntegerField(MinJitterKey, 20, 2000, GetMinAudioJitterDelay(), "ms", "Minimum jitter buffer size"),
                       rsrc->AddIntegerField(MaxJitterKey, 20, 2000, GetMaxAudioJitterDelay(), "ms", "Maximum jitter buffer size"));
+
+  SetNoMediaTimeout(PTimeInterval(0, rsrc->AddIntegerField(NoMediaTimeoutKey, 1, UINT_MAX, GetNoMediaTimeout().GetSeconds(),
+                                                           "seconds", "Clear call when no media is received from remote for this time")));
 
   SetTCPPorts(rsrc->AddIntegerField(TCPPortBaseKey, 0, 65535, GetTCPPortBase(), "", "Base of port range for allocating TCP streams, e.g. H.323 signalling channel"),
               rsrc->AddIntegerField(TCPPortMaxKey, 0, 65535, GetTCPPortMax(), "", "Maximum of port range for allocating TCP streams"));
