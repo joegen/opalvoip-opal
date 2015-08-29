@@ -867,7 +867,7 @@ bool OpalUDPMediaTransport::SetRemoteAddress(const OpalTransportAddress & remote
   if (!remoteAddress.GetIpAndPort(ap))
     return false;
 
-  return InternalSetRemoteAddress(ap, subchannel, true PTRACE_PARAM(, "signalling"));
+  return InternalSetRemoteAddress(ap, subchannel, false PTRACE_PARAM(, "signalling"));
 }
 
 
