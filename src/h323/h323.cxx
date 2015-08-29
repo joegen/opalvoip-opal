@@ -2592,7 +2592,7 @@ PBoolean H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_Octe
 
     const H245_H2250LogicalChannelParameters * param = NULL;
     if (reverse && open.m_reverseLogicalChannelParameters.m_multiplexParameters.GetTag() ==
-                H245_OpenLogicalChannel_forwardLogicalChannelParameters_multiplexParameters::e_h2250LogicalChannelParameters)
+                H245_OpenLogicalChannel_reverseLogicalChannelParameters_multiplexParameters::e_h2250LogicalChannelParameters)
       param = &(const H245_H2250LogicalChannelParameters &)open.m_reverseLogicalChannelParameters.m_multiplexParameters;
     else if (open.m_forwardLogicalChannelParameters.m_multiplexParameters.GetTag() ==
                 H245_OpenLogicalChannel_forwardLogicalChannelParameters_multiplexParameters::e_h2250LogicalChannelParameters)
