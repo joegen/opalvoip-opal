@@ -2614,7 +2614,7 @@ PBoolean H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_Octe
         }
 
         unsigned error = 1000;
-        if (channel->OnReceivedPDU(open, error)) {
+        if (!channel->OnReceivedPDU(open, error)) {
           PTRACE(2, "H225\tFast restart capability error: " << error);
           continue;
         }
