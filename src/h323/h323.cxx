@@ -2589,33 +2589,39 @@ PBoolean H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_Octe
     const H245_DataType & dataType =
           reverse ? open.m_reverseLogicalChannelParameters.m_dataType
                   : open.m_forwardLogicalChannelParameters.m_dataType;
-    const H245_H2250LogicalChannelParameters & param =
-          reverse ? (const H245_H2250LogicalChannelParameters &)open.m_reverseLogicalChannelParameters.m_multiplexParameters
-                  : (const H245_H2250LogicalChannelParameters &)open.m_forwardLogicalChannelParameters.m_multiplexParameters;
+    const H245_H2250LogicalChannelParameters * param = NULL;
+    if (reverse && open.m_reverseLogicalChannelParameters.m_multiplexParameters.GetTag() ==
+                H245_OpenLogicalChannel_forwardLogicalChannelParameters_multiplexParameters::e_h2250LogicalChannelParameters)
+      param = &(const H245_H2250LogicalChannelParameters &)open.m_reverseLogicalChannelParameters.m_multiplexParameters;
+    else if (open.m_forwardLogicalChannelParameters.m_multiplexParameters.GetTag() ==
+                H245_OpenLogicalChannel_forwardLogicalChannelParameters_multiplexParameters::e_h2250LogicalChannelParameters)
+      param = &(const H245_H2250LogicalChannelParameters &)open.m_forwardLogicalChannelParameters.m_multiplexParameters;
 
-    H323Channel * channel = FindChannel(param.m_sessionID, reverse);
-    if (channel != NULL) {
-      OpalMediaStreamPtr mediaStream = channel->GetMediaStream();
-      if (mediaStream == NULL) {
-        PTRACE(2, "H225\tFast restart has logical channel but no media stream!");
+    if (param != NULL) {
+      H323Channel * channel = FindChannel(param->m_sessionID, reverse);
+      if (channel != NULL) {
+        OpalMediaStreamPtr mediaStream = channel->GetMediaStream();
+        if (mediaStream == NULL) {
+          PTRACE(2, "H225\tFast restart has logical channel but no media stream!");
+          continue;
+        }
+
+        if (dataType.GetTag() == H245_DataType::e_nullData) {
+          PTRACE(3, "H225\tFast restart pausing " << *mediaStream);
+          channel->GetMediaStream()->SetPaused(true);
+          continue;
+        }
+
+        unsigned error = 1000;
+        if (channel->OnReceivedPDU(open, error)) {
+          PTRACE(2, "H225\tFast restart capability error: " << error);
+          continue;
+        }
+
+        PTRACE(3, "H225\tFast restart resuming " << *mediaStream);
+        channel->GetMediaStream()->SetPaused(false);
         continue;
       }
-
-      if (dataType.GetTag() == H245_DataType::e_nullData) {
-        PTRACE(3, "H225\tFast restart pausing " << *mediaStream);
-        channel->GetMediaStream()->SetPaused(true);
-        continue;
-      }
-
-      unsigned error = 1000;
-      if (channel->OnReceivedPDU(open, error)) {
-        PTRACE(2, "H225\tFast restart capability error: " << error);
-        continue;
-      }
-
-      PTRACE(3, "H225\tFast restart resuming " << *mediaStream);
-      channel->GetMediaStream()->SetPaused(false);
-      continue;
     }
 
     if (dataType.GetTag() == H245_DataType::e_nullData)
@@ -4962,8 +4968,7 @@ H323Channel * H323Connection::CreateLogicalChannel(const H245_OpenLogicalChannel
 
   if (startingFast && open.HasOptionalField(H245_OpenLogicalChannel::e_reverseLogicalChannelParameters)) {
     if (open.m_reverseLogicalChannelParameters.m_multiplexParameters.GetTag() !=
-              H245_OpenLogicalChannel_reverseLogicalChannelParameters_multiplexParameters
-                                                      ::e_h2250LogicalChannelParameters) {
+              H245_OpenLogicalChannel_reverseLogicalChannelParameters_multiplexParameters::e_h2250LogicalChannelParameters) {
       errorCode = H245_OpenLogicalChannelReject_cause::e_unsuitableReverseParameters;
       PTRACE(1, "H323\tCreateLogicalChannel - reverse channel, H225.0 only supported");
       OnFailedMediaStream(true, "Unsupported multiplex");
@@ -4981,8 +4986,7 @@ H323Channel * H323Connection::CreateLogicalChannel(const H245_OpenLogicalChannel
   }
   else {
     if (open.m_forwardLogicalChannelParameters.m_multiplexParameters.GetTag() !=
-              H245_OpenLogicalChannel_forwardLogicalChannelParameters_multiplexParameters
-                                                      ::e_h2250LogicalChannelParameters) {
+              H245_OpenLogicalChannel_forwardLogicalChannelParameters_multiplexParameters::e_h2250LogicalChannelParameters) {
       PTRACE(1, "H323\tCreateLogicalChannel - forward channel, H225.0 only supported");
       errorCode = H245_OpenLogicalChannelReject_cause::e_unspecified;
       OnFailedMediaStream(true, "Unsupported multiplex");
