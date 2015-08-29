@@ -1616,7 +1616,8 @@ class H323Connection : public OpalRTPConnection
       */
     H323Channel * FindChannel(
       unsigned sessionId,   ///<  Session ID to search for.
-      PBoolean fromRemote       ///<  Indicates the direction of RTP data.
+      bool fromRemote,      ///<  Indicates the direction of RTP data.
+      bool anyState = false ///< Logical channel can be in any state, normally must be established
     ) const;
   //@}
 
