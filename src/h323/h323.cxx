@@ -2625,6 +2625,8 @@ PBoolean H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_Octe
       }
       PTRACE(4, "H225\tFast restart could not find session " << (unsigned)param->m_sessionID << (reverse ? " from" : " to") << " remote");
     }
+    else
+      PTRACE(4, "H225\tFast restart cannot be performed without multiplexParameters");
 
     if (dataType.GetTag() == H245_DataType::e_nullData)
       continue;
