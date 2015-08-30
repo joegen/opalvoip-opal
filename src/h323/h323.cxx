@@ -2689,8 +2689,15 @@ PBoolean H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_Octe
       PTRACE(3, "H225\tAll fast start OLC's nullData, deferring open");
     else if (pauseChannels) {
       PTRACE(3, "H225\tFast restart, pausing media streams");
-      for (OpalMediaStreamPtr stream(mediaStreams); stream != NULL; ++stream)
+      for (OpalMediaStreamPtr stream(mediaStreams); stream != NULL; ++stream) {
         stream->SetPaused(true);
+        OpalRTPSession * session = dynamic_cast<OpalRTPSession *>(GetMediaSession(stream->GetSessionID()));
+        if (session != NULL) {
+          const RTP_SyncSourceArray ssrcs = session->GetSyncSources(OpalRTPSession::e_Receiver);
+          for (RTP_SyncSourceArray::const_iterator it = ssrcs.begin(); it != ssrcs.end(); ++it)
+            session->RemoveSyncSource(*it);
+        }
+      }
     }
     return true;
   }
