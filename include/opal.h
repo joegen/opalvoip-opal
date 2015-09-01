@@ -111,23 +111,25 @@ typedef struct OpalMessage OpalMessage;
         <tr><td>-l or --trace-level X <td>Enable trace log and set level to X.
         <tr><td>-o or --output "name" <td>Set the filename for trace log output.
         <tr><td>-l or --trace-option X <td>Enable trace log option, use +X or -X
-                              to add/remove option where X is one of:
-                              block    PTrace::Block constructs in output
-                              time     time since prgram start
-                              date     date and time
-                              gmt      Date/time is in UTC
-                              thread   thread name and identifier
-                              level    log level
-                              file     source file name and line number
-                              object   PObject pointer
-                              context  context identifier
-                              daily    rotate output file daily
-                              hour     rotate output file hourly
-                              minute   rotate output file every minute
-                              append   append to output file, otherwise overwrites
-                              <perm>   file permission similar to unix chmod, but starts
-                                       with +/- and only has one combination at a time,
-                                       e.g. +uw is user write, +or is other read, etc
+                                           to add/remove option where X is one of:
+            <table>
+            <tr><td>block    <td>PTrace::Block constructs in output
+            <tr><td>time     <td>time since prgram start
+            <tr><td>date     <td>date and time
+            <tr><td>gmt      <td>Date/time is in UTC
+            <tr><td>thread   <td>thread name and identifier
+            <tr><td>level    <td>log level
+            <tr><td>file     <td>source file name and line number
+            <tr><td>object   <td>PObject pointer
+            <tr><td>context  <td>context identifier
+            <tr><td>daily    <td>rotate output file daily
+            <tr><td>hour     <td>rotate output file hourly
+            <tr><td>minute   <td>rotate output file every minute
+            <tr><td>append   <td>append to output file, otherwise overwrites
+                             &lt;perm&gt; <td>file permission similar to unix chmod,
+                             but starts with +/- and only has one combination at a
+                             time, e.g. +uw is user write, +or is other read, etc
+            </table>
         <tr><td>-c or --config "dir"  <td>Configuration file or directory.
         <tr><td>-p or --plugin "dir"  <td>Plugin module directory.
         <tr><td>-m or --manaufacturer "str" <td>Manufacturer name for application.
