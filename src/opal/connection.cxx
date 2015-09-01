@@ -517,6 +517,10 @@ PBoolean OpalConnection::OnIncomingConnection(unsigned options, OpalConnection::
 
 PString OpalConnection::GetDestinationAddress()
 {
+  PSafePtr<OpalConnection> partyA = ownerCall.GetConnection(0);
+  if (partyA != this)
+    return partyA->GetDestinationAddress();
+
   if (!IsOriginating()) {
     if (!m_calledPartyNumber)
       return m_calledPartyNumber;
