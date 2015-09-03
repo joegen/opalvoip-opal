@@ -69,27 +69,16 @@ class OpalDTLSContext : public PSSLContext
 {
     PCLASSINFO(OpalDTLSContext, PSSLContext);
   public:
-    OpalDTLSContext()
+    OpalDTLSContext(const OpalDTLSMediaTransport & transport)
       : PSSLContext(PSSLContext::DTLSv1_2_v1_0)
     {
-      PStringStream dn;
-      dn << "/O=" << PProcess::Current().GetManufacturer()
-        << "/CN=*";
-
-      PSSLPrivateKey pk(1024);
-      if (!m_cert.CreateRoot(dn, pk))
-      {
-        PTRACE(1, "Could not create certificate for DTLS.");
-        return;
-      }
-
-      if (!UseCertificate(m_cert))
+      if (!UseCertificate(transport.m_certificate))
       {
         PTRACE(1, "Could not use DTLS certificate.");
         return;
       }
 
-      if (!UsePrivateKey(pk))
+      if (!UsePrivateKey(transport.m_privateKey))
       {
         PTRACE(1, "Could not use private key for DTLS.");
         return;
@@ -111,21 +100,11 @@ class OpalDTLSContext : public PSSLContext
         return;
       }
     }
-
-    PSSLCertificateFingerprint GetFingerprint(PSSLCertificateFingerprint::HashType hashType) const
-    {
-      return PSSLCertificateFingerprint(hashType, m_cert);
-    }
-
-  protected:
-    PSSLCertificate m_cert;
 };
 
-typedef PSingleton<OpalDTLSContext, atomic<uint32_t> > DTLSContextSingleton;
 
-
-OpalDTLSMediaTransport::DTLSChannel::DTLSChannel()
-  : PSSLChannelDTLS(*DTLSContextSingleton())
+OpalDTLSMediaTransport::DTLSChannel::DTLSChannel(const OpalDTLSMediaTransport & transport)
+  : PSSLChannelDTLS(new OpalDTLSContext(transport))
 {
 }
 
@@ -163,6 +142,7 @@ OpalDTLSMediaTransport::OpalDTLSMediaTransport(const PString & name, bool passiv
   , m_passiveMode(passiveMode)
   , m_handshakeTimeout(0, 2)
   , m_MTU(1400)
+  , m_privateKey(1024)
   , m_remoteFingerprint(fp)
 {
 }
@@ -175,7 +155,16 @@ bool OpalDTLSMediaTransport::Open(OpalMediaSession & session,
 {
   m_handshakeTimeout = session.GetStringOptions().GetVar(OPAL_OPT_DTLS_TIMEOUT, session.GetConnection().GetEndPoint().GetManager().GetDTLSTimeout());
   m_MTU = session.GetConnection().GetMaxRtpPayloadSize();
-  return OpalDTLSMediaTransportParent::Open(session, count, localInterface, remoteAddress);
+  if (!OpalDTLSMediaTransportParent::Open(session, count, localInterface, remoteAddress))
+    return false;
+
+  PStringStream subject;
+  subject << "/O=" + PProcess::Current().GetManufacturer() << "/CN=" << GetLocalAddress();
+  if (m_certificate.CreateRoot(subject, m_privateKey))
+  return true;
+  
+  PTRACE(1, "Could not create certificate for DTLS.");
+  return true;
 }
 
 
@@ -199,9 +188,15 @@ bool OpalDTLSMediaTransport::GetKeyInfo(OpalMediaCryptoKeyInfo * keyInfo[2])
 }
 
 
+PSSLCertificateFingerprint OpalDTLSMediaTransport::GetLocalFingerprint(PSSLCertificateFingerprint::HashType hashType) const
+{
+  return PSSLCertificateFingerprint(hashType, m_certificate);
+}
+
+
 OpalDTLSMediaTransport::DTLSChannel * OpalDTLSMediaTransport::CreateDTLSChannel()
 {
-  return new DTLSChannel();
+  return new DTLSChannel(*this);
 }
 
 
@@ -325,16 +320,24 @@ void OpalDTLSSRTPSession::SetPassiveMode(bool passive)
 }
 
 
-const PSSLCertificateFingerprint & OpalDTLSSRTPSession::GetLocalFingerprint(PSSLCertificateFingerprint::HashType preferredHashType) const
+PSSLCertificateFingerprint OpalDTLSSRTPSession::GetLocalFingerprint(PSSLCertificateFingerprint::HashType hashType) const
 {
-  if (!m_localFingerprint.IsValid())
-    const_cast<OpalDTLSSRTPSession*>(this)->m_localFingerprint = DTLSContextSingleton()->GetFingerprint(preferredHashType);
-  return m_localFingerprint;
+  OpalMediaTransportPtr transport = m_transport;
+  if (transport == NULL) {
+    PTRACE(3, "Tried to get certificate fingerprint before transport opened");
+    return PSSLCertificateFingerprint();
+  }
+
+  return dynamic_cast<const OpalDTLSMediaTransport &>(*transport).GetLocalFingerprint(hashType);
 }
 
 
 void OpalDTLSSRTPSession::SetRemoteFingerprint(const PSSLCertificateFingerprint& fp)
 {
+  OpalMediaTransportPtr transport = m_transport;
+  if (transport != NULL)
+    dynamic_cast<OpalDTLSMediaTransport &>(*transport).SetRemoteFingerprint(fp);
+
   m_remoteFingerprint = fp;
 }
 
