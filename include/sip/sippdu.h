@@ -1006,7 +1006,7 @@ class SIPTransactionOwner
     unsigned            m_authenticateErrors;
 
     PSafeList<SIPTransaction> m_transactions;
-    PMutex                    m_forkMutex;
+    PDECLARE_MUTEX(m_forkMutex);
 
   friend class SIPTransaction;
 };

@@ -178,7 +178,7 @@ class OpalBaseMixer : public PSmartObject
     RTP_DataFrame * m_pushFrame;        // Cached frame for pushing RTP
     PThread *       m_workerThread;     // reader thread handle
     bool            m_threadRunning;    // used to stop reader thread
-    PMutex          m_mutex;            // mutex for list of streams and thread handle
+   PDECLARE_MUTEX(m_mutex);             // mutex for list of streams and thread handle
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -784,7 +784,7 @@ class OpalMixerEndPoint : public OpalLocalEndPoint, public OpalMixerNodeManager
 
     OpalMixerNodeInfo  * m_adHocNodeInfo;
     OpalMixerNodeInfo  * m_factoryNodeInfo;
-    PMutex               m_infoMutex; // For above two fields
+    PDECLARE_MUTEX(m_infoMutex); // For above two fields
     atomic<uint32_t>     m_factoryIndex;
 };
 

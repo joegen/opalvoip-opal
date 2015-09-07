@@ -350,7 +350,7 @@ class OpalTranscoder : public OpalMediaFormatPair
   protected:
     PINDEX    maxOutputSize;
     PNotifier commandNotifier;
-    PMutex    updateMutex;
+    PDECLARE_MUTEX(updateMutex);
 
     unsigned m_sessionID;
     bool     outputIsRTP, inputIsRTP;

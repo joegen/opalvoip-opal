@@ -1976,7 +1976,7 @@ class OpalConnection : public PSafeObject
     OpalMediaFormat m_dtmfSendFormat;
     PBYTEArray      m_inBandDTMF;
     PINDEX          m_emittedInBandDTMF;
-    PMutex          m_inBandMutex;
+    PDECLARE_MUTEX(m_inBandMutex);
     PNotifier       m_dtmfSendNotifier;
     PDECLARE_NOTIFIER(RTP_DataFrame, OpalConnection, OnSendInBandDTMF);
 #endif
