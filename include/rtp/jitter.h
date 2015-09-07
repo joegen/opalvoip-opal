@@ -297,7 +297,7 @@ class OpalAudioJitterBuffer : public OpalJitterBuffer
 
     typedef std::map<RTP_Timestamp, RTP_DataFrame> FrameMap;
     FrameMap   m_frames;
-    PMutex     m_bufferMutex;
+    PDECLARE_MUTEX(m_bufferMutex);
     PSemaphore m_frameCount;
 
 #if PTRACING

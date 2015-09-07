@@ -1058,7 +1058,7 @@ class SIPEndPoint : public OpalSDPEndPoint
     PSafePtr<SIPHandler> FindHandlerByPDU(const SIP_PDU & pdu, PSafetyMode mode);
 
     PStringToString   m_receivedConnectionTokens;
-    PMutex            m_receivedConnectionMutex;
+    PDECLARE_MUTEX(m_receivedConnectionMutex);
 
     PSafeSortedList<SIPTransactionBase> m_transactions;
 

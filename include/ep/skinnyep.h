@@ -631,7 +631,7 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
 
     typedef PDictionary<PString, PhoneDevice> PhoneDeviceDict;
     PhoneDeviceDict           m_phoneDevices;
-    PMutex                    m_phoneDevicesMutex;
+    PDECLARE_MUTEX(m_phoneDevicesMutex);
     OpalTransportAddressArray m_serverInterfaces;
     PFilePath                 m_simulatedAudioFile;
     bool                      m_secondaryAudioAlwaysSimulated;
