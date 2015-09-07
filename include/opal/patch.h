@@ -283,7 +283,7 @@ class OpalMediaPatch : public PSafeObject
         PBYTEArray          m_keyFrameDetectContext;
         typedef map<RTP_SyncSourceId, OpalVideoStatistics> VideoStatsMap;
         VideoStatsMap m_videoStatistics;
-        PMutex        m_videoStatsMutex;
+        PDECLARE_MUTEX(m_videoStatsMutex);
 #endif
 #endif
     };
@@ -304,7 +304,7 @@ class OpalMediaPatch : public PSafeObject
     PSyncPoint        m_bypassEnded;
 
     PThread * m_patchThread;
-    PMutex    m_patchThreadMutex;
+    PDECLARE_MUTEX(m_patchThreadMutex);
 #if OPAL_STATISTICS
     PThreadIdentifier m_patchThreadId;
 #endif

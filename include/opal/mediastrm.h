@@ -655,7 +655,7 @@ class OpalRawMediaStream : public OpalMediaStream
 
     PChannel * m_channel;
     bool       m_autoDelete;
-    PMutex     m_channelMutex;
+    PDECLARE_MUTEX(m_channelMutex);
 
     PBYTEArray m_silence;
 
@@ -922,7 +922,7 @@ class OpalVideoMediaStream : public OpalMediaStream
     bool                 m_autoDeleteOutput;
     PTimeInterval        m_lastGrabTime;
     bool                 m_needKeyFrame;
-    PMutex               m_devicesMutex;
+    PDECLARE_MUTEX(m_devicesMutex);
     PBYTEArray           m_watermarkData;
 };
 
