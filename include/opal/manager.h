@@ -2114,7 +2114,7 @@ class OpalManager : public PObject
     PMutex     m_routeMutex;
 
     // Dynamic variables
-    PReadWriteMutex     endpointsMutex;
+    PDECLARE_READ_WRITE_MUTEX(endpointsMutex);
     PList<OpalEndPoint> endpointList;
     std::map<PString, OpalEndPoint *> endpointMap;
 

@@ -172,14 +172,14 @@ class OpalRFC2833Proto : public PObject
     PTimeInterval    m_transmitStartTime;
     BYTE             m_transmitCode;
     WORD             m_transmitDuration;
-    PMutex           m_transmitMutex;
+    PDECLARE_MUTEX(m_transmitMutex);
 
     bool     m_receiveIdle;
     BYTE     m_receivedTone;
     DWORD    m_receivedTimestamp;
     WORD     m_receivedDuration;
     PTimer   m_receiveTimer;
-    PMutex   m_receiveMutex;
+    PDECLARE_MUTEX(m_receiveMutex);
 
   P_REMOVE_VIRTUAL_VOID(OnStartReceive(char));
   P_REMOVE_VIRTUAL_VOID(OnEndReceive(char, unsigned, unsigned));
