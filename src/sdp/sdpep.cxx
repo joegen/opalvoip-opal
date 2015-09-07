@@ -703,7 +703,7 @@ bool OpalSDPConnection::OnSendOfferSDPSession(OpalMediaSession * mediaSession,
 }
 
 
-bool OpalSDPConnection::OnSendAnswerSDP(const SDPSessionDescription & sdpOffer, SDPSessionDescription & sdpOut)
+bool OpalSDPConnection::OnSendAnswerSDP(const SDPSessionDescription & sdpOffer, SDPSessionDescription & sdpOut, bool transfer)
 {
   SetActiveMediaFormats(sdpOffer.GetMediaFormats());
 
@@ -718,6 +718,7 @@ bool OpalSDPConnection::OnSendAnswerSDP(const SDPSessionDescription & sdpOffer, 
     if (PAssert(incomingMedia != NULL, PLogicError) && incomingMedia->IsSecure())
       sdpMediaDescriptions[sessionId] = OnSendAnswerSDPSession(incomingMedia,
                                                                sessionId,
+                                                               transfer,
                                                                sdpOffer.GetDirection(sessionId),
                                                                bundledTransport);
   }
@@ -726,6 +727,7 @@ bool OpalSDPConnection::OnSendAnswerSDP(const SDPSessionDescription & sdpOffer, 
     if (PAssert(incomingMedia != NULL, PLogicError) && !incomingMedia->IsSecure())
       sdpMediaDescriptions[sessionId] = OnSendAnswerSDPSession(incomingMedia,
                                                                sessionId,
+                                                               transfer,
                                                                sdpOffer.GetDirection(sessionId),
                                                                bundledTransport);
   }
@@ -735,6 +737,7 @@ bool OpalSDPConnection::OnSendAnswerSDP(const SDPSessionDescription & sdpOffer, 
     if (PAssert(incomingMedia != NULL, "SDP Media description list changed"))
       sdpMediaDescriptions[sessionId] = OnSendAnswerSDPSession(incomingMedia,
                                                                sessionId,
+                                                               transfer,
                                                                sdpOffer.GetDirection(sessionId),
                                                                bundledTransport);
   }
@@ -786,6 +789,7 @@ bool OpalSDPConnection::OnSendAnswerSDP(const SDPSessionDescription & sdpOffer, 
 
 SDPMediaDescription * OpalSDPConnection::OnSendAnswerSDPSession(SDPMediaDescription * incomingMedia,
                                                                            unsigned   sessionId,
+                                                                               bool   transfer,
                                                      SDPMediaDescription::Direction   otherSidesDir,
                                                               OpalMediaTransportPtr & bundledTransport)
 {
@@ -948,7 +952,7 @@ SDPMediaDescription * OpalSDPConnection::OnSendAnswerSDPSession(SDPMediaDescript
 #if OPAL_VIDEO
                                              incomingMedia->GetContentRole(),
 #endif
-                                             false,
+                                             transfer,
                                              (otherSidesDir&SDPMediaDescription::RecvOnly) == 0))
           sendStream = GetMediaStream(sessionId, false);
       }
@@ -978,7 +982,7 @@ SDPMediaDescription * OpalSDPConnection::OnSendAnswerSDPSession(SDPMediaDescript
 #if OPAL_VIDEO
                                              incomingMedia->GetContentRole(),
 #endif
-                                             false,
+                                             transfer,
                                              (otherSidesDir&SDPMediaDescription::SendOnly) == 0))
           recvStream = GetMediaStream(sessionId, true);
       }
