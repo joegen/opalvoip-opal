@@ -248,11 +248,13 @@ class OpalSDPConnection : public OpalRTPConnection
 
     virtual bool OnSendAnswerSDP(
       const SDPSessionDescription & sdpOffer,
-      SDPSessionDescription & sdpAnswer
+      SDPSessionDescription & sdpAnswer,
+      bool transfer = false
     );
     virtual SDPMediaDescription * OnSendAnswerSDPSession(
       SDPMediaDescription * incomingMedia,
       unsigned sessionId,
+      bool transfer,
       SDPMediaDescription::Direction otherSidesDir,
       OpalMediaTransportPtr & bundledTransport
     );

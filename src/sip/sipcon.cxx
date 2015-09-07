@@ -450,12 +450,14 @@ void SIPConnection::OnReleased()
 
   // If forwardParty is a connection token, then must be INVITE with replaces scenario
   if (!m_forwardParty.IsEmpty()) {
-    PSafePtr<OpalConnection> replacerConnection = GetEndPoint().GetConnectionWithLock(m_forwardParty);
+    PSafePtr<SIPConnection> replacerConnection = GetEndPoint().GetSIPConnectionWithLock(m_forwardParty);
     if (replacerConnection != NULL) {
+      PTRACE(3, "INVITE with replace on " << *replacerConnection);
+
       /* According to RFC 3891 we now send a 200 OK in both the early and confirmed
          dialog cases. OnReleased() is responsible for if the replaced connection is
          sent a BYE or a CANCEL. */
-      replacerConnection->SetConnected();
+      replacerConnection->InternalSetConnected(true);
     }
   }
 }
@@ -566,7 +568,7 @@ PBoolean SIPConnection::SetAlerting(const PString & /*calleeName*/, PBoolean wit
   if (!withMedia && (!m_prackEnabled || m_lastReceivedINVITE->GetSDP() != NULL))
     SendInviteResponse(SIP_PDU::Information_Ringing);
   else {
-    if (!OnSendAnswer(SIP_PDU::Information_Session_Progress)) {
+    if (!OnSendAnswer(SIP_PDU::Information_Session_Progress, false)) {
       Release(EndedByCapabilityExchange);
       return false;
     }
@@ -580,6 +582,12 @@ PBoolean SIPConnection::SetAlerting(const PString & /*calleeName*/, PBoolean wit
 
 
 PBoolean SIPConnection::SetConnected()
+{
+  return InternalSetConnected(false);
+}
+
+
+bool SIPConnection::InternalSetConnected(bool transfer)
 {
   PSafeLockReadWrite safeLock(*this);
   if (!safeLock.IsLocked())
@@ -602,7 +610,7 @@ PBoolean SIPConnection::SetConnected()
   // send the 200 OK response
   PString externalSDP = m_stringOptions(OPAL_OPT_EXTERNAL_SDP);
   if (externalSDP.IsEmpty()) {
-    if (!OnSendAnswer(SIP_PDU::Successful_OK)) {
+    if (!OnSendAnswer(SIP_PDU::Successful_OK, transfer)) {
       Release(EndedByCapabilityExchange);
       return false;
     }
@@ -2361,7 +2369,7 @@ void SIPConnection::OnReceivedReINVITE(SIP_PDU & request)
   m_handlingINVITE = true;
 
   // send the 200 OK response
-  if (!OnSendAnswer(SIP_PDU::Successful_OK))
+  if (!OnSendAnswer(SIP_PDU::Successful_OK, false))
     SendInviteResponse(SIP_PDU::Failure_NotAcceptableHere);
 
   SIPURL newRemotePartyID(request.GetMIME(), RemotePartyID);
@@ -2949,7 +2957,7 @@ void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & respons
 }
 
 
-bool SIPConnection::OnSendAnswer(SIP_PDU::StatusCodes response)
+bool SIPConnection::OnSendAnswer(SIP_PDU::StatusCodes response, bool transfer)
 {
   if (!PAssert(m_lastReceivedINVITE != NULL, PLogicError))
     return false;
@@ -2971,9 +2979,10 @@ bool SIPConnection::OnSendAnswer(SIP_PDU::StatusCodes response)
     ok = OnSendOfferSDP(*sdpOut, false);
   }
   else {
+    PTRACE(3, "Remote sent offer media, answering.");
     // The Re-INVITE can be sent to change the RTP Session parameters,
     // the current codecs, or to put the call on hold
-    ok = OnSendAnswerSDP(*sdp, *sdpOut);
+    ok = OnSendAnswerSDP(*sdp, *sdpOut, transfer);
   }
 
   return ok && SendInviteResponse(response, sdpOut.get());
