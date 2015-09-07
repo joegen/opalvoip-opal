@@ -674,8 +674,10 @@ class SIPConnection : public OpalSDPConnection, public SIPTransactionOwner
       SIPTransaction & transaction,
       SIP_PDU & response
     );
+    bool InternalSetConnected(bool transfer);
     virtual bool OnSendAnswer(
-      SIP_PDU::StatusCodes response
+      SIP_PDU::StatusCodes response,
+      bool transfer
     );
     virtual bool OnReceivedAnswer(
       SIP_PDU & response,
