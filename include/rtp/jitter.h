@@ -55,21 +55,12 @@ class OpalJitterBuffer : public PObject
     /// Initialisation information
     struct Init
     {
-      Init()
-        : m_minJitterDelay(0)
-        , m_maxJitterDelay(0)
-        , m_currentJitterDelay(0)
-        , m_timeUnits(8)
-        , m_packetSize(2048)
-      {
-      }
-
-      Init(
+      explicit Init(
         const OpalMediaType & mediaType,
-        unsigned minDelay = 0,
-        unsigned maxDelay = 0,
-        unsigned timeUnits = 8,
-        unsigned packetSize = 2048
+        unsigned minDelay,
+        unsigned maxDelay,
+        unsigned timeUnits,
+        unsigned packetSize
       )
         : m_mediaType(mediaType)
         , m_minJitterDelay(minDelay)
