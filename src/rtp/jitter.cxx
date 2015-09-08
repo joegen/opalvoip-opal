@@ -248,7 +248,7 @@ OpalJitterBuffer * OpalJitterBuffer::Create(const Init & init)
 
 void OpalJitterBuffer::SetDelay(const Init & init)
 {
-  PAssert(m_timeUnits != init.m_timeUnits, PInvalidParameter);
+  PAssert(m_timeUnits == init.m_timeUnits, PInvalidParameter);
   m_packetSize     = init.m_packetSize;
   m_minJitterDelay = init.m_minJitterDelay;
   m_maxJitterDelay = init.m_maxJitterDelay;
