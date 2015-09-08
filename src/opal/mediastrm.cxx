@@ -467,12 +467,13 @@ bool OpalMediaStream::EnableJitterBuffer(bool enab)
     return false;
 
   PTRACE(4, (enab ? "En" : "Dis") << "abling jitter buffer on " << *this);
-  return InternalSetJitterBuffer(enab ? OpalJitterBuffer::Init(mediaFormat.GetMediaType(),
-                                                               connection.GetMinAudioJitterDelay()*mediaFormat.GetTimeUnits(),
-                                                               connection.GetMaxAudioJitterDelay()*mediaFormat.GetTimeUnits(),
-                                                               mediaFormat.GetTimeUnits(),
-                                                               connection.GetEndPoint().GetManager().GetMaxRtpPacketSize())
-                                      : OpalJitterBuffer::Init());
+  unsigned timeUnits = mediaFormat.GetTimeUnits();
+  OpalJitterBuffer::Init init(mediaFormat.GetMediaType(),
+                              enab ? connection.GetMinAudioJitterDelay()*timeUnits : 0,
+                              enab ? connection.GetMaxAudioJitterDelay()*timeUnits : 0,
+                              timeUnits,
+                              connection.GetEndPoint().GetManager().GetMaxRtpPacketSize());
+  return InternalSetJitterBuffer(init);
 }
 
 
