@@ -516,6 +516,7 @@ class OpalMediaStreamPacing
     PINDEX         m_frameSize;
     unsigned       m_timeUnits;
     PAdaptiveDelay m_delay;
+    unsigned       m_previousDelay;
 
     PTRACE_THROTTLE(m_throttleLog, 4, 5000);
 };

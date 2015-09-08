@@ -466,7 +466,7 @@ bool OpalMediaStream::EnableJitterBuffer(bool enab)
   if (!IsOpen())
     return false;
 
-  PTRACE(4, (enab ? "En" : "Dis") << "abling jitter buffer");
+  PTRACE(4, (enab ? "En" : "Dis") << "abling jitter buffer on " << *this);
   return InternalSetJitterBuffer(enab ? OpalJitterBuffer::Init(mediaFormat.GetMediaType(),
                                                                connection.GetMinAudioJitterDelay()*mediaFormat.GetTimeUnits(),
                                                                connection.GetMaxAudioJitterDelay()*mediaFormat.GetTimeUnits(),
@@ -666,6 +666,7 @@ OpalMediaStreamPacing::OpalMediaStreamPacing(const OpalMediaFormat & mediaFormat
      the timeout for a whole second. Prevents too much bunching up of data
      in "bad" conditions, that really should not happen. */
   , m_delay(1000)
+  , m_previousDelay(m_frameTime/m_timeUnits)
 {
   PAssert(m_timeOnMarkers || m_frameSize > 0, PInvalidParameter);
   PTRACE(4, "Pacing " << mediaFormat << ", time=" << m_frameTime << " (" << (m_frameTime/m_timeUnits) << "ms), "
@@ -686,12 +687,18 @@ void OpalMediaStreamPacing::Pace(bool generated, PINDEX bytes, bool & marker)
       return;
   }
 
+  unsigned msToWait = timeToWait/m_timeUnits;
+  if (msToWait == 0)
+    msToWait = m_previousDelay;
+  else
+    m_previousDelay = msToWait;
+
   PTRACE(m_throttleLog, "Pacing delay: " << timeToWait
-         << " (" << (timeToWait / m_timeUnits) << "ms), "
+         << " (" << msToWait << "ms), "
             "time=" << m_frameTime << " (" << (m_frameTime/m_timeUnits) << "ms), "
             "bytes=" << bytes << ", size=" << m_frameSize
          << m_throttleLog);
-  m_delay.Delay(timeToWait/m_timeUnits);
+  m_delay.Delay(msToWait);
 }
 
 
