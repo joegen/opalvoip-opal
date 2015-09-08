@@ -401,9 +401,7 @@ bool OpalRTPMediaStream::InternalSetJitterBuffer(const OpalJitterBuffer::Init & 
   if (!IsOpen() || IsSink() || !RequiresPatchThread() || m_jitterBuffer == NULL)
     return false;
 
-  PTRACE_IF(4, init.m_maxJitterDelay == 0, "Jitter", "Switching off jitter buffer " << *m_jitterBuffer);
   m_jitterBuffer->SetDelay(init);
-
   return true;
 }
 
