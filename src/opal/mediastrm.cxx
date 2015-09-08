@@ -466,6 +466,7 @@ bool OpalMediaStream::EnableJitterBuffer(bool enab)
   if (!IsOpen())
     return false;
 
+  PTRACE(4, (enab ? "En" : "Dis") << "abling jitter buffer");
   return InternalSetJitterBuffer(enab ? OpalJitterBuffer::Init(mediaFormat.GetMediaType(),
                                                                connection.GetMinAudioJitterDelay()*mediaFormat.GetTimeUnits(),
                                                                connection.GetMaxAudioJitterDelay()*mediaFormat.GetTimeUnits(),
