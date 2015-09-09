@@ -103,6 +103,8 @@ const unsigned MaxConsecutiveOverflows = 10;
         inPos = outPos = 0;
       }
 
+      bool HasData() const { return inPos > 0 || outPos > 0; }
+
       void In(const PTimeInterval & tick, RTP_Timestamp time, size_t depth, const char * extra)
       {
         if (inPos == 0)
@@ -246,6 +248,7 @@ OpalJitterBuffer * OpalJitterBuffer::Create(const Init & init)
 
 void OpalJitterBuffer::SetDelay(const Init & init)
 {
+  PAssert(m_timeUnits == init.m_timeUnits, PInvalidParameter);
   m_packetSize     = init.m_packetSize;
   m_minJitterDelay = init.m_minJitterDelay;
   m_maxJitterDelay = init.m_maxJitterDelay;
@@ -293,7 +296,7 @@ void OpalAudioJitterBuffer::Close()
   m_closed = true;
   m_frameCount.Signal();
 #ifndef NO_ANALYSER
-  PTRACE(ANALYSER_TRACE_LEVEL, "Buffer analysis: " << *this << '\n' << *m_analyser);
+  PTRACE_IF(ANALYSER_TRACE_LEVEL, m_analyser->HasData(), "Buffer analysis: " << *this << '\n' << *m_analyser);
   m_analyser->Reset();
 #endif
 }

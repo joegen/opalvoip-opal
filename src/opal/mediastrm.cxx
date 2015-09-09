@@ -466,12 +466,14 @@ bool OpalMediaStream::EnableJitterBuffer(bool enab)
   if (!IsOpen())
     return false;
 
-  return InternalSetJitterBuffer(enab ? OpalJitterBuffer::Init(mediaFormat.GetMediaType(),
-                                                               connection.GetMinAudioJitterDelay()*mediaFormat.GetTimeUnits(),
-                                                               connection.GetMaxAudioJitterDelay()*mediaFormat.GetTimeUnits(),
-                                                               mediaFormat.GetTimeUnits(),
-                                                               connection.GetEndPoint().GetManager().GetMaxRtpPacketSize())
-                                      : OpalJitterBuffer::Init());
+  PTRACE(4, (enab ? "En" : "Dis") << "abling jitter buffer on " << *this);
+  unsigned timeUnits = mediaFormat.GetTimeUnits();
+  OpalJitterBuffer::Init init(mediaFormat.GetMediaType(),
+                              enab ? connection.GetMinAudioJitterDelay()*timeUnits : 0,
+                              enab ? connection.GetMaxAudioJitterDelay()*timeUnits : 0,
+                              timeUnits,
+                              connection.GetEndPoint().GetManager().GetMaxRtpPacketSize());
+  return InternalSetJitterBuffer(init);
 }
 
 
@@ -665,6 +667,7 @@ OpalMediaStreamPacing::OpalMediaStreamPacing(const OpalMediaFormat & mediaFormat
      the timeout for a whole second. Prevents too much bunching up of data
      in "bad" conditions, that really should not happen. */
   , m_delay(1000)
+  , m_previousDelay(m_frameTime/m_timeUnits)
 {
   PAssert(m_timeOnMarkers || m_frameSize > 0, PInvalidParameter);
   PTRACE(4, "Pacing " << mediaFormat << ", time=" << m_frameTime << " (" << (m_frameTime/m_timeUnits) << "ms), "
@@ -685,12 +688,18 @@ void OpalMediaStreamPacing::Pace(bool generated, PINDEX bytes, bool & marker)
       return;
   }
 
+  unsigned msToWait = timeToWait/m_timeUnits;
+  if (msToWait == 0)
+    msToWait = m_previousDelay;
+  else
+    m_previousDelay = msToWait;
+
   PTRACE(m_throttleLog, "Pacing delay: " << timeToWait
-         << " (" << (timeToWait / m_timeUnits) << "ms), "
+         << " (" << msToWait << "ms), "
             "time=" << m_frameTime << " (" << (m_frameTime/m_timeUnits) << "ms), "
             "bytes=" << bytes << ", size=" << m_frameSize
          << m_throttleLog);
-  m_delay.Delay(timeToWait/m_timeUnits);
+  m_delay.Delay(msToWait);
 }
 
 

@@ -99,7 +99,11 @@ PBoolean OpalRTPMediaStream::Open()
 
   if (IsSource()) {
     delete m_jitterBuffer;
-    m_jitterBuffer = OpalJitterBuffer::Create(OpalJitterBuffer::Init(mediaFormat.GetMediaType()));
+    OpalJitterBuffer::Init init(mediaFormat.GetMediaType(),
+                                0,0, // Initially disabled
+                                mediaFormat.GetTimeUnits(),
+                                connection.GetEndPoint().GetManager().GetMaxRtpPacketSize());
+    m_jitterBuffer = OpalJitterBuffer::Create(init);
     m_rtpSession.SetJitterBuffer(m_jitterBuffer, m_syncSource);
     m_rtpSession.AddDataNotifier(100, m_receiveNotifier);
     PTRACE(4, "Opening source stream " << *this << " jb=" << *m_jitterBuffer);
@@ -401,9 +405,7 @@ bool OpalRTPMediaStream::InternalSetJitterBuffer(const OpalJitterBuffer::Init & 
   if (!IsOpen() || IsSink() || !RequiresPatchThread() || m_jitterBuffer == NULL)
     return false;
 
-  PTRACE_IF(4, init.m_maxJitterDelay == 0, "Jitter", "Switching off jitter buffer " << *m_jitterBuffer);
   m_jitterBuffer->SetDelay(init);
-
   return true;
 }
 
