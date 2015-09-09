@@ -395,10 +395,19 @@ class OpusPluginDecoder : public OpusPluginCodec
                              unsigned & toLen,
                              unsigned & flags)
     {
-      int samples = opus_decoder_get_nb_samples(m_decoder, (const unsigned char *)fromPtr, fromLen);
-      if (samples < 0) {
-        PTRACE(1, MY_CODEC_LOG, "Decoding error " << samples << ' ' << opus_strerror(samples));
-        return false;
+      int samples;
+      const unsigned char * packet;
+      if (fromLen == 0) {
+        packet = NULL; // As per opus_decode() API
+        opus_decoder_ctl(m_decoder, OPUS_GET_LAST_PACKET_DURATION(&samples));
+      }
+      else {
+        packet = (const unsigned char *)fromPtr;
+        samples = opus_decoder_get_nb_samples(m_decoder, packet, fromLen);
+        if (samples < 0) {
+          PTRACE(1, MY_CODEC_LOG, "Decoding error " << samples << ' ' << opus_strerror(samples));
+          return false;
+        }
       }
 
       if ((unsigned)samples*m_channels*2U > toLen) {
@@ -406,12 +415,7 @@ class OpusPluginDecoder : public OpusPluginCodec
         return false;
       }
 
-      int result = opus_decode(m_decoder,
-                               fromLen > 0 ? (const unsigned char *)fromPtr : NULL,
-                               fromLen,
-                               (opus_int16 *)toPtr,
-                               samples,
-                               m_useInBandFEC);
+      int result = opus_decode(m_decoder, packet, fromLen, (opus_int16 *)toPtr, samples, m_useInBandFEC);
       if (result < 0) {
         PTRACE(1, MY_CODEC_LOG, "Decoder error " << result << ' ' << opus_strerror(result));
         return false;
