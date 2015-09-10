@@ -633,6 +633,11 @@ H264Encoder::~H264Encoder()
   if (remove(m_dlName) == -1) {
     PTRACE(1, PipeTraceName, "Error when trying to remove DL named pipe - " << strerror(errno));
   }
+
+  if (m_pid != 0) {
+    int status;
+    waitpid(m_pid, &status, 0);
+  }
 }
 
 
