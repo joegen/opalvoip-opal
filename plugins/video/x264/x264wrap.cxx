@@ -593,6 +593,7 @@ bool H264Encoder::WritePipe(const void * ptr, size_t len)
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 
 
 static const char DefaultPluginDirs[] = "." DIR_TOKENISER
