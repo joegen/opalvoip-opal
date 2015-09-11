@@ -44,6 +44,9 @@
 #include <rtp/rtp.h>
 
 
+class OpalManager;
+
+
 ///////////////////////////////////////////////////////////////////////////////
 
 /**This is an Abstract jitter buffer. 
@@ -52,31 +55,42 @@ class OpalJitterBuffer : public PObject
 {
     PCLASSINFO(OpalJitterBuffer, PObject);
   public:
-    /// Initialisation information
-    struct Init
+    struct Params
     {
-      explicit Init(
-        const OpalMediaType & mediaType,
-        unsigned minDelay,
-        unsigned maxDelay,
-        unsigned timeUnits,
-        unsigned packetSize
-      )
-        : m_mediaType(mediaType)
-        , m_minJitterDelay(minDelay)
-        , m_maxJitterDelay(maxDelay != 0 ? maxDelay : minDelay)
-        , m_currentJitterDelay(minDelay)
-        , m_timeUnits(timeUnits)
-        , m_packetSize(packetSize)
-      {
-      }
+      unsigned m_minJitterDelay;      ///< Minimum delay in milliseconds
+      unsigned m_maxJitterDelay;      ///< Maximum delay in milliseconds
+      unsigned m_currentJitterDelay;  ///< Current/initial delay in milliseconds
+      unsigned m_jitterGrowTime;      ///< Amount to increase jitter delay by when get "late" packet
+      unsigned m_jitterShrinkPeriod;  ///< Deadband of low jitter before shrink delay
+      unsigned m_jitterShrinkTime;    ///< Amount to reduce buffer delay
+      unsigned m_silenceShrinkPeriod; ///< Reduce jitter delay is silent for this long
+      unsigned m_silenceShrinkTime;   ///< Amount to shrink jitter delay by if consistently silent
+      unsigned m_jitterDriftPeriod;   ///< Time over which repeated undeflows cause packet to be dropped
+
+      Params()
+        : m_minJitterDelay(40)
+        , m_maxJitterDelay(250)
+        , m_currentJitterDelay(m_minJitterDelay)
+        , m_jitterGrowTime(10)
+        , m_jitterShrinkPeriod(1000)
+        , m_jitterShrinkTime(5)
+        , m_silenceShrinkPeriod(5000)
+        , m_silenceShrinkTime(20)
+        , m_jitterDriftPeriod(500)
+      { }
+    };
+
+    /// Initialisation information
+    struct Init : Params
+    {
+      Init(
+        const OpalManager & manager,
+        unsigned timeUnits
+      );
 
       OpalMediaType m_mediaType;
-      unsigned      m_minJitterDelay;     ///<  Minimum delay in RTP timestamp units
-      unsigned      m_maxJitterDelay;     ///<  Maximum delay in RTP timestamp units
-      unsigned      m_currentJitterDelay; ///< Current/initial delay in RTP timestamp units
-      unsigned      m_timeUnits;          ///<  Time units, usually 8 or 16
-      PINDEX        m_packetSize;         ///<  Max RTP packet size
+      unsigned      m_timeUnits;           ///< Time units, usually 8 or 16
+      PINDEX   m_packetSize;          ///< Max RTP packet size
     };
 
     /**@name Construction */
@@ -94,6 +108,7 @@ class OpalJitterBuffer : public PObject
 
     // Create an appropriate jitter buffer for the media type
     static OpalJitterBuffer * Create(
+      const OpalMediaType & mediaType,
       const Init & init  ///< Initialisation information
     );
     //@}
@@ -133,7 +148,7 @@ class OpalJitterBuffer : public PObject
 
     /**Get current delay for jitter buffer.
       */
-    virtual unsigned GetCurrentJitterDelay() const { return 0; }
+    virtual RTP_Timestamp GetCurrentJitterDelay() const { return 0; }
 
     /**Get time units.
       */
@@ -236,7 +251,7 @@ class OpalAudioJitterBuffer : public OpalJitterBuffer
 
     /**Get current delay for jitter buffer.
       */
-    virtual unsigned GetCurrentJitterDelay() const { return m_currentJitterDelay; }
+    virtual RTP_Timestamp GetCurrentJitterDelay() const { return m_currentJitterDelay; }
 
     /**Get maximum consecutive marker bits before buffer starts to ignore them.
       */
