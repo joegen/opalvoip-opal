@@ -1767,15 +1767,23 @@ class OpalManager : public PObject
 
 #endif
 
+    /**Get the default jitter parameters.
+     */
+    const OpalJitterBuffer::Params & GetJitterParameters() const { return m_jitterParams; }
+
+    /**Set the default jitter parameters.
+     */
+    void SetJitterParameters(const OpalJitterBuffer::Params & params) { m_jitterParams = params; }
+
     /**Get the default maximum audio jitter delay parameter.
        Defaults to 50ms
      */
-    unsigned GetMinAudioJitterDelay() const { return minAudioJitterDelay; }
+    unsigned GetMinAudioJitterDelay() const { return m_jitterParams.m_minJitterDelay; }
 
     /**Get the default maximum audio jitter delay parameter.
        Defaults to 250ms.
      */
-    unsigned GetMaxAudioJitterDelay() const { return maxAudioJitterDelay; }
+    unsigned GetMaxAudioJitterDelay() const { return m_jitterParams.m_maxJitterDelay; }
 
     /**Set the maximum audio jitter delay parameter.
 
@@ -2066,8 +2074,7 @@ class OpalManager : public PObject
 
     PINDEX        rtpPayloadSizeMax;
     PINDEX        rtpPacketSizeMax;
-    unsigned      minAudioJitterDelay;
-    unsigned      maxAudioJitterDelay;
+    OpalJitterBuffer::Params m_jitterParams;
     PStringArray  mediaFormatOrder;
     PStringArray  mediaFormatMask;
     bool          disableDetectInBandDTMF;
