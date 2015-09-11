@@ -310,8 +310,6 @@ OpalManager::OpalManager()
   , defaultDisplayName(defaultUserName)
   , rtpPayloadSizeMax(1400) // RFC879 recommends 576 bytes, but that is ancient history, 99.999% of the time 1400+ bytes is used.
   , rtpPacketSizeMax(10*1024)
-  , minAudioJitterDelay(50)  // milliseconds
-  , maxAudioJitterDelay(250) // milliseconds
   , mediaFormatOrder(PARRAYSIZE(DefaultMediaFormatOrder), DefaultMediaFormatOrder)
   , mediaFormatMask(PARRAYSIZE(DefaultMediaFormatMask), DefaultMediaFormatMask)
   , disableDetectInBandDTMF(false)
@@ -2148,7 +2146,7 @@ void OpalManager::SetAudioJitterDelay(unsigned minDelay, unsigned maxDelay)
 {
   if (minDelay == 0) {
     // Disable jitter buffer completely if minimum is zero.
-    minAudioJitterDelay = maxAudioJitterDelay = 0;
+    m_jitterParams.m_minJitterDelay = m_jitterParams.m_maxJitterDelay = 0;
     return;
   }
 
@@ -2156,11 +2154,11 @@ void OpalManager::SetAudioJitterDelay(unsigned minDelay, unsigned maxDelay)
 
   if (minDelay < 10)
     minDelay = 10;
-  minAudioJitterDelay = minDelay;
+  m_jitterParams.m_minJitterDelay = minDelay;
 
   if (maxDelay < minDelay)
     maxDelay = minDelay;
-  maxAudioJitterDelay = maxDelay;
+  m_jitterParams.m_maxJitterDelay = maxDelay;
 }
 
 

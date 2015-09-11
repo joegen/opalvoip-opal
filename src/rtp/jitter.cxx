@@ -42,6 +42,7 @@
 #include <rtp/jitter.h>
 
 #include <rtp/metrics.h>
+#include <opal/manager.h>
 
 
 #define PTraceModule() "Jitter"
@@ -213,11 +214,18 @@ const unsigned MaxConsecutiveOverflows = 10;
 
 /////////////////////////////////////////////////////////////////////////////
 
+OpalJitterBuffer::Init::Init(const OpalManager & manager, unsigned timeUnits)
+  : Params(manager.GetJitterParameters())
+  , m_timeUnits(timeUnits)
+  , m_packetSize(manager.GetMaxRtpPacketSize())
+{
+}
+
 OpalJitterBuffer::OpalJitterBuffer(const Init & init)
   : m_timeUnits(init.m_timeUnits)
   , m_packetSize(init.m_packetSize)
-  , m_minJitterDelay(init.m_minJitterDelay)
-  , m_maxJitterDelay(init.m_maxJitterDelay)
+  , m_minJitterDelay(init.m_minJitterDelay*m_timeUnits)
+  , m_maxJitterDelay(init.m_maxJitterDelay*m_timeUnits)
   , m_packetsTooLate(0)
   , m_bufferOverruns(0)
 #ifdef NO_ANALYSER
@@ -237,9 +245,9 @@ OpalJitterBuffer::~OpalJitterBuffer()
 }
 
 
-OpalJitterBuffer * OpalJitterBuffer::Create(const Init & init)
+OpalJitterBuffer * OpalJitterBuffer::Create(const OpalMediaType & mediaType, const Init & init)
 {
-  OpalJitterBuffer * jb = OpalJitterBufferFactory::CreateInstance(init.m_mediaType, init);
+  OpalJitterBuffer * jb = OpalJitterBufferFactory::CreateInstance(mediaType, init);
   if (jb == NULL)
     jb = new OpalNonJitterBuffer(init);
   return jb;
@@ -250,8 +258,8 @@ void OpalJitterBuffer::SetDelay(const Init & init)
 {
   PAssert(m_timeUnits == init.m_timeUnits, PInvalidParameter);
   m_packetSize     = init.m_packetSize;
-  m_minJitterDelay = init.m_minJitterDelay;
-  m_maxJitterDelay = init.m_maxJitterDelay;
+  m_minJitterDelay = init.m_minJitterDelay*m_timeUnits;
+  m_maxJitterDelay = init.m_maxJitterDelay*m_timeUnits;
 }
 
 
@@ -261,14 +269,14 @@ PFACTORY_CREATE(OpalJitterBufferFactory, OpalAudioJitterBuffer, OpalMediaType::A
 
 OpalAudioJitterBuffer::OpalAudioJitterBuffer(const Init & init)
   : OpalJitterBuffer(init)
-  , m_jitterGrowTime(10*init.m_timeUnits) // 10 milliseconds @ 8kHz
-  , m_jitterShrinkPeriod(2000*init.m_timeUnits) // 2 seconds @ 8kHz
-  , m_jitterShrinkTime(-5*init.m_timeUnits) // 5 milliseconds @ 8kHz
-  , m_silenceShrinkPeriod(5000*init.m_timeUnits) // 5 seconds @ 8kHz
-  , m_silenceShrinkTime(-20*init.m_timeUnits) // 20 milliseconds @ 8kHz
-  , m_jitterDriftPeriod(500*init.m_timeUnits) // 0.5 second @ 8kHz
+  , m_jitterGrowTime(init.m_jitterGrowTime*m_timeUnits)
+  , m_jitterShrinkPeriod(init.m_jitterShrinkPeriod*m_timeUnits)
+  , m_jitterShrinkTime(-(int)init.m_jitterShrinkTime*m_timeUnits)
+  , m_silenceShrinkPeriod(init.m_silenceShrinkPeriod*m_timeUnits)
+  , m_silenceShrinkTime(-(int)init.m_silenceShrinkTime*m_timeUnits)
+  , m_jitterDriftPeriod(init.m_jitterDriftPeriod*m_timeUnits)
   , m_closed(false)
-  , m_currentJitterDelay(init.m_minJitterDelay)
+  , m_currentJitterDelay(init.m_minJitterDelay*m_timeUnits)
   , m_consecutiveMarkerBits(0)
   , m_maxConsecutiveMarkerBits(10)
   , m_consecutiveLatePackets(0)
@@ -326,7 +334,19 @@ void OpalAudioJitterBuffer::SetDelay(const Init & init)
   m_bufferMutex.Wait();
 
   OpalJitterBuffer::SetDelay(init);
-  m_currentJitterDelay = m_minJitterDelay;
+
+  m_currentJitterDelay = init.m_currentJitterDelay*m_timeUnits;
+  if (m_currentJitterDelay < (int)m_minJitterDelay)
+    m_currentJitterDelay = m_minJitterDelay;
+  else if (m_currentJitterDelay > (int)m_maxJitterDelay)
+    m_currentJitterDelay = m_maxJitterDelay;
+
+  m_jitterGrowTime = init.m_jitterGrowTime*m_timeUnits;
+  m_jitterShrinkPeriod = init.m_jitterShrinkPeriod*m_timeUnits;
+  m_jitterShrinkTime = -(int)init.m_jitterShrinkTime*m_timeUnits;
+  m_silenceShrinkPeriod = init.m_silenceShrinkPeriod*m_timeUnits;
+  m_silenceShrinkTime = -(int)init.m_silenceShrinkTime*m_timeUnits;
+  m_jitterDriftPeriod = init.m_jitterDriftPeriod*m_timeUnits;
 
   PTRACE(3, "Delays set to " << *this);
 
