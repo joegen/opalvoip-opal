@@ -1846,12 +1846,12 @@ class OpalConnection : public PSafeObject
     /**Get the default maximum audio jitter delay parameter.
        Defaults to 50ms
      */
-    unsigned GetMinAudioJitterDelay() const { return m_minAudioJitterDelay; }
+    unsigned GetMinAudioJitterDelay() const { return m_jitterParams.m_minJitterDelay; }
 
     /**Get the default maximum audio delay jitter parameter.
        Defaults to 250ms.
      */
-    unsigned GetMaxAudioJitterDelay() const { return m_maxAudioJitterDelay; }
+    unsigned GetMaxAudioJitterDelay() const { return m_jitterParams.m_maxJitterDelay; }
 
     /**Set the maximum audio delay jitter parameter.
      */
@@ -1957,8 +1957,8 @@ class OpalConnection : public PSafeObject
     OpalMediaFormatList        m_localMediaFormats;
     PSafeList<OpalMediaStream> mediaStreams;
 
-    unsigned            m_minAudioJitterDelay;
-    unsigned            m_maxAudioJitterDelay;
+    OpalJitterBuffer::Params m_jitterParams;
+
     OpalBandwidth       m_rxBandwidthAvailable;
     OpalBandwidth       m_txBandwidthAvailable;
 

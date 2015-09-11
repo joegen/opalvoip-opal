@@ -135,8 +135,7 @@ OpalConnection::OpalConnection(OpalCall & call,
   , echoCanceler(NULL)
 #endif
 #if OPAL_PTLIB_DTMF
-  , m_minAudioJitterDelay(endpoint.GetManager().GetMinAudioJitterDelay())
-  , m_maxAudioJitterDelay(endpoint.GetManager().GetMaxAudioJitterDelay())
+  , m_jitterParams(endpoint.GetManager().GetJitterParameters())
   , m_rxBandwidthAvailable(endpoint.GetInitialBandwidth(OpalBandwidth::Rx))
   , m_txBandwidthAvailable(endpoint.GetInitialBandwidth(OpalBandwidth::Tx))
   , m_dtmfScaleMultiplier(1)
@@ -1598,8 +1597,8 @@ void OpalConnection::SetAudioJitterDelay(unsigned minDelay, unsigned maxDelay)
     maxDelay = std::max(minDelay, std::min(maxDelay, 999U));
   }
 
-  m_minAudioJitterDelay = minDelay;
-  m_maxAudioJitterDelay = maxDelay;
+  m_jitterParams.m_minJitterDelay = minDelay;
+  m_jitterParams.m_maxJitterDelay = maxDelay;
 }
 
 
