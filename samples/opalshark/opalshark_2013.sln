@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Express 2013 for Windows Desktop
-VisualStudioVersion = 12.0.21005.1
+VisualStudioVersion = 12.0.30723.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OpalShark", "opalshark_2013.vcxproj", "{56E04FF6-6AEB-4917-B8FC-6C0C1F5831F1}"
 	ProjectSection(WebsiteProperties) = preProject
@@ -69,19 +69,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Video - H.263-1998 (FFMPEG)
 		Release.AspNetCompiler.Debug = "False"
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SpanDSP Fax Codec", "..\..\plugins\fax\fax_spandsp\spandsp_fax_2013.vcxproj", "{D875EC01-6BBF-48EE-93F8-800BD6D76443}"
-	ProjectSection(WebsiteProperties) = preProject
-		Debug.AspNetCompiler.Debug = "True"
-		Release.AspNetCompiler.Debug = "False"
-	EndProjectSection
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Audio - G.722.2", "..\..\plugins\audio\G.722.2\G.722.2_2013.vcxproj", "{B68CA250-5801-4F0C-87CD-BB9A73FA934A}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Video - MPEG4 part 2 (FFMPEG)", "..\..\plugins\video\MPEG4-ffmpeg\mpeg_2013.vcxproj", "{D96E9539-B594-4C4B-8782-33A54D990F5F}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OpalSharkInstaller", "opalsharkInstaller_2013.vcxproj", "{AE1C39FC-A03D-4947-9127-ABE9FE7EDF3A}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LID - WinXP USB HID", "..\..\plugins\LID\WinXP_HID\winxp_hid_2013.vcxproj", "{8A03DDCA-6AA4-4271-86D7-D4F4AC010EE8}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Audio  - G.722", "..\..\plugins\audio\G722\G722_2013.vcxproj", "{B247D5F5-2052-4BBD-9A7D-1AD3749A3BC3}"
 EndProject
@@ -247,16 +239,6 @@ Global
 		{E75AF717-C8A6-40E7-82CB-80D67CE01611}.Release|Win32.Build.0 = Release|Win32
 		{E75AF717-C8A6-40E7-82CB-80D67CE01611}.Release|x64.ActiveCfg = Release|x64
 		{E75AF717-C8A6-40E7-82CB-80D67CE01611}.Release|x64.Build.0 = Release|x64
-		{D875EC01-6BBF-48EE-93F8-800BD6D76443}.Debug|Win32.ActiveCfg = Debug|Win32
-		{D875EC01-6BBF-48EE-93F8-800BD6D76443}.Debug|Win32.Build.0 = Debug|Win32
-		{D875EC01-6BBF-48EE-93F8-800BD6D76443}.Debug|x64.ActiveCfg = Debug|x64
-		{D875EC01-6BBF-48EE-93F8-800BD6D76443}.No Trace|Win32.ActiveCfg = Release|Win32
-		{D875EC01-6BBF-48EE-93F8-800BD6D76443}.No Trace|Win32.Build.0 = Release|Win32
-		{D875EC01-6BBF-48EE-93F8-800BD6D76443}.No Trace|x64.ActiveCfg = Release|x64
-		{D875EC01-6BBF-48EE-93F8-800BD6D76443}.Release|Win32.ActiveCfg = Release|Win32
-		{D875EC01-6BBF-48EE-93F8-800BD6D76443}.Release|Win32.Build.0 = Release|Win32
-		{D875EC01-6BBF-48EE-93F8-800BD6D76443}.Release|x64.ActiveCfg = Release|x64
-		{D875EC01-6BBF-48EE-93F8-800BD6D76443}.Release|x64.Build.0 = Release|x64
 		{B68CA250-5801-4F0C-87CD-BB9A73FA934A}.Debug|Win32.ActiveCfg = Debug|Win32
 		{B68CA250-5801-4F0C-87CD-BB9A73FA934A}.Debug|Win32.Build.0 = Debug|Win32
 		{B68CA250-5801-4F0C-87CD-BB9A73FA934A}.Debug|x64.ActiveCfg = Debug|x64
@@ -290,18 +272,6 @@ Global
 		{AE1C39FC-A03D-4947-9127-ABE9FE7EDF3A}.Release|Win32.Build.0 = Release|Win32
 		{AE1C39FC-A03D-4947-9127-ABE9FE7EDF3A}.Release|x64.ActiveCfg = Release|x64
 		{AE1C39FC-A03D-4947-9127-ABE9FE7EDF3A}.Release|x64.Build.0 = Release|x64
-		{8A03DDCA-6AA4-4271-86D7-D4F4AC010EE8}.Debug|Win32.ActiveCfg = Debug|Win32
-		{8A03DDCA-6AA4-4271-86D7-D4F4AC010EE8}.Debug|Win32.Build.0 = Debug|Win32
-		{8A03DDCA-6AA4-4271-86D7-D4F4AC010EE8}.Debug|x64.ActiveCfg = Debug|x64
-		{8A03DDCA-6AA4-4271-86D7-D4F4AC010EE8}.Debug|x64.Build.0 = Debug|x64
-		{8A03DDCA-6AA4-4271-86D7-D4F4AC010EE8}.No Trace|Win32.ActiveCfg = Release|Win32
-		{8A03DDCA-6AA4-4271-86D7-D4F4AC010EE8}.No Trace|Win32.Build.0 = Release|Win32
-		{8A03DDCA-6AA4-4271-86D7-D4F4AC010EE8}.No Trace|x64.ActiveCfg = Release|x64
-		{8A03DDCA-6AA4-4271-86D7-D4F4AC010EE8}.No Trace|x64.Build.0 = Release|x64
-		{8A03DDCA-6AA4-4271-86D7-D4F4AC010EE8}.Release|Win32.ActiveCfg = Release|Win32
-		{8A03DDCA-6AA4-4271-86D7-D4F4AC010EE8}.Release|Win32.Build.0 = Release|Win32
-		{8A03DDCA-6AA4-4271-86D7-D4F4AC010EE8}.Release|x64.ActiveCfg = Release|x64
-		{8A03DDCA-6AA4-4271-86D7-D4F4AC010EE8}.Release|x64.Build.0 = Release|x64
 		{B247D5F5-2052-4BBD-9A7D-1AD3749A3BC3}.Debug|Win32.ActiveCfg = Debug|Win32
 		{B247D5F5-2052-4BBD-9A7D-1AD3749A3BC3}.Debug|Win32.Build.0 = Debug|Win32
 		{B247D5F5-2052-4BBD-9A7D-1AD3749A3BC3}.Debug|x64.ActiveCfg = Debug|x64
