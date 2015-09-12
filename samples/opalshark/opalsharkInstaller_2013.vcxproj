@@ -109,12 +109,6 @@
       <Project>{02afb070-a9d5-4fb7-a041-311722c9f8d4}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\plugins\fax\fax_spandsp\spandsp_fax_2013.vcxproj">
-      <Project>{d875ec01-6bbf-48ee-93f8-800bd6d76443}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\..\plugins\LID\WinXP_HID\winxp_hid_2013.vcxproj">
-      <Project>{8a03ddca-6aa4-4271-86d7-d4f4ac010ee8}</Project>
-    </ProjectReference>
     <ProjectReference Include="..\..\plugins\video\H.261-vic\h261vic_2013.vcxproj">
       <Project>{4a1b92cb-ca8e-4511-a1d5-b0a322fde67c}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
