@@ -640,10 +640,13 @@ void MyPlayer::OnPlay(wxCommandEvent &)
 
 void MyPlayer::OnStop(wxCommandEvent &)
 {
-  m_playThreadCtrl = CtlStop;
-  m_playThread->WaitForTermination();
-  delete m_playThread;
-  m_playThread = NULL;
+  if (m_playThread != NULL) {
+    PThread * thread = m_playThread;
+    m_playThread = NULL;
+    m_playThreadCtrl = CtlStop;
+    thread->WaitForTermination();
+    delete thread;
+  }
 
   m_rtpList->Enable();
   FindWindowById(ID_Play)->Enable();
@@ -683,16 +686,31 @@ void MyPlayer::PlayAudio()
 
 void MyPlayer::PlayVideo()
 {
-  PTime startTime;
+  PTime realStartTime;
+  PTime fileStartTime(0);
 
   OpalTranscoder * transcoder = NULL;
   while (m_playThreadCtrl != CtlStop && !m_pcapFile.IsEndOfFile()) {
-    RTP_DataFrame data;
-    if (m_pcapFile.GetDecodedRTP(data, transcoder) > 0)
-      m_videoOutput->OutputVideo(data);
-
-    while (m_playThreadCtrl == CtlPause)
+    while (m_playThreadCtrl == CtlPause) {
       PThread::Sleep(200);
+      realStartTime.SetCurrentTime();
+      fileStartTime.SetTimestamp(0);
+    }
+
+    RTP_DataFrame data;
+    if (m_pcapFile.GetDecodedRTP(data, transcoder) <= 0)
+      continue;
+
+    PTime packetTime = m_pcapFile.GetPacketTime();
+    if (!fileStartTime.IsValid())
+      fileStartTime = packetTime;
+    else {
+      PTimeInterval delay = packetTime - fileStartTime - realStartTime.GetElapsed();
+      if (delay > 0)
+        PThread::Sleep(delay);
+    }
+
+    m_videoOutput->OutputVideo(data);
   }
 
   delete transcoder;
