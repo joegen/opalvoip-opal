@@ -140,12 +140,12 @@ void PlayRTP::Main()
   }
 
   if (args.HasOption('f')) {
-    OpalPCAPFile::DiscoveredRTPMap discoveredRTPMap;
-    if (!pcap.DiscoverRTP(discoveredRTPMap)) {
+    OpalPCAPFile::DiscoveredRTP discoveredRTP;
+    if (!pcap.DiscoverRTP(discoveredRTP)) {
       cerr << "No RTP sessions found" << endl;
       return;
     }
-    cout << "Found " << discoveredRTPMap.size() << " sessions:\n" << discoveredRTPMap << endl;
+    cout << "Found " << discoveredRTP.size() << " sessions:\n" << discoveredRTP << endl;
     return;
   }
 
@@ -181,29 +181,31 @@ void PlayRTP::Main()
   }
   else {
     cout << "Scanning file for RTP sessions." << endl;
-    OpalPCAPFile::DiscoveredRTPMap discoveredRTPMap;
-    if (!pcap.DiscoverRTP(discoveredRTPMap)) {
+    OpalPCAPFile::DiscoveredRTP discoveredRTP;
+    if (!pcap.DiscoverRTP(discoveredRTP)) {
       cerr << "No RTP sessions found - please use -S/-D/-s/-d option to specify session manually" << endl;
       return;
     }
 
     if (args.HasOption("session")) {
-      if (!pcap.SetFilters(discoveredRTPMap, args.GetOptionString("session").AsUnsigned())) {
+      size_t idx = args.GetOptionString("session").AsUnsigned();
+      if (idx == 0 || idx > discoveredRTP.size() || !pcap.SetFilters(discoveredRTP[idx-1])) {
         cout << "Preselected session " << args.GetOptionString("session") << " not valid" << endl;
         return;
       }
     }
-    else if (discoveredRTPMap.size() == 1 && OpalMediaFormat(discoveredRTPMap.begin()->second.m_direction[0].m_format).IsValid())
-      pcap.SetFilters(discoveredRTPMap, discoveredRTPMap.begin()->second.m_direction[0].m_index, PString::Empty());
-    else if (discoveredRTPMap.size() == 1 && OpalMediaFormat(discoveredRTPMap.begin()->second.m_direction[1].m_format).IsValid())
-      pcap.SetFilters(discoveredRTPMap, discoveredRTPMap.begin()->second.m_direction[1].m_index, PString::Empty());
+    else if (discoveredRTP.size() == 1 && discoveredRTP[0].m_mediaFormat.IsValid())
+      pcap.SetFilters(discoveredRTP[0]);
     else {
-      cout << "Select one of the following sessions (index [ format ]):\n" << discoveredRTPMap << endl;
+      cout << "Select one of the following sessions (index [ format ]):\n";
+      for (size_t i = 0; i < discoveredRTP.size(); ++i)
+        cout << (i + 1) << ' ' << discoveredRTP[i] << endl;
       for (;;) {
-        cout << "Select (1-" << discoveredRTPMap.size()*2 << ") ? " << flush;
+        cout << "Select (1-" << discoveredRTP.size()*2 << ") ? " << flush;
         PString line;
         cin >> line;
-        if (pcap.SetFilters(discoveredRTPMap, line.AsUnsigned(), line.Mid(line.Find(' ')).Trim()))
+        size_t idx = line.AsUnsigned();
+        if (idx > 0 && idx <= discoveredRTP.size() && pcap.SetFilters(discoveredRTP[idx-1], line.Mid(line.Find(' ')).Trim()))
           break;
         cout << "Session/format " << line << " is not valid" << endl;
       }
