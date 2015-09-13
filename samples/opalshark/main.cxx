@@ -693,6 +693,8 @@ void MyPlayer::OnStep(wxCommandEvent &)
 
 void MyPlayer::PlayAudio()
 {
+  PTRACE(3, "Started audio player thread.");
+
   PSoundChannel * soundChannel = NULL;
   OpalTranscoder * transcoder = NULL;
   while (m_playThreadCtrl != CtlStop && !m_pcapFile.IsEndOfFile()) {
@@ -718,11 +720,16 @@ void MyPlayer::PlayAudio()
 
   delete transcoder;
   delete soundChannel;
+
+  QueueEvent(new wxCommandEvent(VideoEndedEvent, wxID_HIGHEST));
+  PTRACE(3, "Ended audio player thread.");
 }
 
 
 void MyPlayer::PlayVideo()
 {
+  PTRACE(3, "Started video player thread.");
+
   PTime realStartTime;
   PTime fileStartTime(0);
   RTP_Timestamp startTimestamp = 0;
@@ -761,7 +768,8 @@ void MyPlayer::PlayVideo()
 
   delete transcoder;
 
-  GetEventHandler()->AddPendingEvent(wxCommandEvent(VideoEndedEvent, wxID_HIGHEST));
+  QueueEvent(new wxCommandEvent(VideoEndedEvent, wxID_HIGHEST));
+  PTRACE(3, "Ended video player thread.");
 }
 
 
@@ -776,6 +784,7 @@ END_EVENT_TABLE()
 
 VideoOutputWindow::VideoOutputWindow()
   : m_converter(NULL)
+  , m_bitmap(352,288)
 {
 }
 
@@ -794,11 +803,12 @@ void VideoOutputWindow::OutputVideo(const RTP_DataFrame & data)
 
   if (m_converter == NULL)
     m_converter = PColourConverter::Create(PVideoFrameInfo(header->width, header->height),
-                                           PVideoFrameInfo(header->width, header->height, "BGR24"));
+                                           PVideoFrameInfo(header->width, header->height,
+                                                           psprintf("BGR%u", m_bitmap.GetDepth())));
   else
     m_converter->SetSrcFrameSize(header->width, header->height);
 
-  if (m_bitmap.Create(header->width, header->height, 24)) {
+  if (m_bitmap.Create(header->width, header->height)) {
     wxNativePixelData bmdata(m_bitmap);
     wxNativePixelData::Iterator it = bmdata.GetPixels();
     if (it.IsOk()) {
@@ -807,9 +817,13 @@ void VideoOutputWindow::OutputVideo(const RTP_DataFrame & data)
         it.Offset(bmdata, 0, header->height - 1);
       m_converter->SetVFlipState(flipped);
 
-      if (m_converter->Convert(OPAL_VIDEO_FRAME_DATA_PTR(header), (BYTE *)&it.Data()))
-        GetEventHandler()->AddPendingEvent(wxCommandEvent(VideoUpdateEvent, wxID_HIGHEST));
+      if (PAssertNULL(m_converter)->Convert(OPAL_VIDEO_FRAME_DATA_PTR(header), (BYTE *)&it.Data())) {
+        QueueEvent(new wxCommandEvent(VideoUpdateEvent, wxID_HIGHEST));
+        PTRACE(4, "Posted video update event: " << header->width << 'x' << header->height << '@' << m_bitmap.GetDepth());
+      }
     }
+    else
+      PTRACE(1, "Could not get pixel iterator in wxBitmap");
   }
 
   m_mutex.Signal();
@@ -818,6 +832,7 @@ void VideoOutputWindow::OutputVideo(const RTP_DataFrame & data)
 
 void VideoOutputWindow::OnVideoUpdate(wxCommandEvent &)
 {
+  PTRACE(4, "VideoOutputWindow::OnVideoUpdate");
   Refresh(false);
 }
 
@@ -831,8 +846,13 @@ void VideoOutputWindow::OnPaint(wxPaintEvent &)
   if (m_bitmap.IsOk()) {
     wxMemoryDC bmDC;
     bmDC.SelectObject(m_bitmap);
-    dc.Blit(0, 0, m_bitmap.GetWidth(), m_bitmap.GetHeight(), &bmDC, 0, 0);
+    if (dc.Blit(0, 0, m_bitmap.GetWidth(), m_bitmap.GetHeight(), &bmDC, 0, 0))
+      PTRACE(5, "Updated screen.");
+    else
+      PTRACE(1, "Cannot update screen, wxBitmap Blit failed.");
   }
+  else
+    PTRACE(1, "Cannot update screen, wxBitmap invalid.");
 
   m_mutex.Signal();
 }
