@@ -448,7 +448,7 @@ struct OpalPCAPFile::DiscoveryInfo
 };
 
 
-bool OpalPCAPFile::DiscoverRTP(DiscoveredRTP & discoveredRTP, ProgressNotifier progressNotifier)
+bool OpalPCAPFile::DiscoverRTP(DiscoveredRTP & discoveredRTP, const ProgressNotifier & progressNotifier)
 {
   if (!Restart())
     return false;
