@@ -70,7 +70,7 @@
             <event name="OnSetFocus"></event>
             <event name="OnSize"></event>
             <event name="OnUpdateUI"></event>
-            <object class="wxMenu" expanded="0">
+            <object class="wxMenu" expanded="1">
                 <property name="label">&amp;File</property>
                 <property name="name">m_menu1</property>
                 <property name="permission">protected</property>
@@ -347,8 +347,8 @@
                         <property name="rows">3</property>
                         <property name="vgap">0</property>
                         <object class="sizeritem" expanded="1">
-                            <property name="border">0</property>
-                            <property name="flag">wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT</property>
+                            <property name="border">20</property>
+                            <property name="flag">wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxLEFT|wxTOP</property>
                             <property name="proportion">0</property>
                             <object class="wxStaticText" expanded="1">
                                 <property name="BottomDockable">1</property>
@@ -430,8 +430,8 @@
                             </object>
                         </object>
                         <object class="sizeritem" expanded="1">
-                            <property name="border">0</property>
-                            <property name="flag">wxALIGN_CENTER_VERTICAL|wxEXPAND</property>
+                            <property name="border">20</property>
+                            <property name="flag">wxALIGN_CENTER_VERTICAL|wxEXPAND|wxRIGHT|wxTOP</property>
                             <property name="proportion">0</property>
                             <object class="wxComboBox" expanded="1">
                                 <property name="BottomDockable">1</property>
@@ -521,8 +521,8 @@
                             </object>
                         </object>
                         <object class="sizeritem" expanded="1">
-                            <property name="border">0</property>
-                            <property name="flag">wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT</property>
+                            <property name="border">20</property>
+                            <property name="flag">wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxLEFT|wxTOP</property>
                             <property name="proportion">0</property>
                             <object class="wxStaticText" expanded="1">
                                 <property name="BottomDockable">1</property>
@@ -552,7 +552,7 @@
                                 <property name="gripper">0</property>
                                 <property name="hidden"></property>
                                 <property name="id">wxID_ANY</property>
-                                <property name="label">Video Player: </property>
+                                <property name="label">Video Timing: </property>
                                 <property name="max_size"></property>
                                 <property name="maximize_button">0</property>
                                 <property name="maximum_size"></property>
@@ -604,10 +604,10 @@
                             </object>
                         </object>
                         <object class="sizeritem" expanded="1">
-                            <property name="border">0</property>
-                            <property name="flag">wxALIGN_CENTER_VERTICAL|wxEXPAND</property>
+                            <property name="border">10</property>
+                            <property name="flag">wxALIGN_CENTER_VERTICAL|wxRIGHT|wxTOP</property>
                             <property name="proportion">0</property>
-                            <object class="wxComboBox" expanded="1">
+                            <object class="wxRadioBox" expanded="1">
                                 <property name="BottomDockable">1</property>
                                 <property name="LeftDockable">1</property>
                                 <property name="RightDockable">1</property>
@@ -621,7 +621,7 @@
                                 <property name="caption"></property>
                                 <property name="caption_visible">1</property>
                                 <property name="center_pane">0</property>
-                                <property name="choices"></property>
+                                <property name="choices">&quot;PCAP Packet Time&quot; &quot;RTP Timestamps&quot;</property>
                                 <property name="close_button">1</property>
                                 <property name="context_help"></property>
                                 <property name="context_menu">1</property>
@@ -634,16 +634,18 @@
                                 <property name="floatable">1</property>
                                 <property name="font"></property>
                                 <property name="gripper">0</property>
-                                <property name="hidden"></property>
+                                <property name="hidden">0</property>
                                 <property name="id">wxID_ANY</property>
+                                <property name="label"></property>
+                                <property name="majorDimension">2</property>
                                 <property name="max_size"></property>
                                 <property name="maximize_button">0</property>
                                 <property name="maximum_size"></property>
                                 <property name="min_size"></property>
                                 <property name="minimize_button">0</property>
-                                <property name="minimum_size">200,-1</property>
+                                <property name="minimum_size"></property>
                                 <property name="moveable">1</property>
-                                <property name="name">VideoDevice</property>
+                                <property name="name">VideoTiming</property>
                                 <property name="pane_border">1</property>
                                 <property name="pane_position"></property>
                                 <property name="pane_size"></property>
@@ -651,10 +653,10 @@
                                 <property name="pin_button">1</property>
                                 <property name="pos"></property>
                                 <property name="resize">Resizable</property>
-                                <property name="selection">-1</property>
+                                <property name="selection">1</property>
                                 <property name="show">1</property>
                                 <property name="size"></property>
-                                <property name="style"></property>
+                                <property name="style">wxRA_SPECIFY_COLS</property>
                                 <property name="subclass"></property>
                                 <property name="toolbar_pane">0</property>
                                 <property name="tooltip"></property>
@@ -662,12 +664,10 @@
                                 <property name="validator_style">wxFILTER_NONE</property>
                                 <property name="validator_type">wxDefaultValidator</property>
                                 <property name="validator_variable"></property>
-                                <property name="value"></property>
                                 <property name="window_extra_style"></property>
                                 <property name="window_name"></property>
                                 <property name="window_style"></property>
                                 <event name="OnChar"></event>
-                                <event name="OnCombobox"></event>
                                 <event name="OnEnterWindow"></event>
                                 <event name="OnEraseBackground"></event>
                                 <event name="OnKeyDown"></event>
@@ -684,13 +684,12 @@
                                 <event name="OnMouseEvents"></event>
                                 <event name="OnMouseWheel"></event>
                                 <event name="OnPaint"></event>
+                                <event name="OnRadioBox"></event>
                                 <event name="OnRightDClick"></event>
                                 <event name="OnRightDown"></event>
                                 <event name="OnRightUp"></event>
                                 <event name="OnSetFocus"></event>
                                 <event name="OnSize"></event>
-                                <event name="OnText"></event>
-                                <event name="OnTextEnter"></event>
                                 <event name="OnUpdateUI"></event>
                             </object>
                         </object>

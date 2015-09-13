@@ -489,7 +489,7 @@ bool OpalPCAPFile::DiscoverRTP(DiscoveredRTP & discoveredRTP, const ProgressNoti
       delete info;
   }
 
-  return Restart() && !discoveredRTP.empty();
+  return Restart();
 }
 
 
