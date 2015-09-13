@@ -133,7 +133,7 @@ class OpalPCAPFile : public PFile
     };
     typedef PNotifierTemplate<Progress &> ProgressNotifier;
 
-    bool DiscoverRTP(DiscoveredRTP & discoveredRTP, ProgressNotifier progressNotifier = ProgressNotifier());
+    bool DiscoverRTP(DiscoveredRTP & discoveredRTP, const ProgressNotifier & progressNotifier = NULL);
 
     bool SetFilters(
       const DiscoveredRTPInfo & discoveredRTP,
