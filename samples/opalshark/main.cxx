@@ -37,7 +37,6 @@
 #include <codec/vidcodec.h>
 
 #include <wx/xrc/xmlres.h>
-#include <wx/gdicmn.h>     //Required for icons on linux.
 #include <wx/config.h>
 #include <wx/accel.h>
 #include <wx/valgen.h>
@@ -54,7 +53,8 @@
     defined(__WXMAC__)   || \
     defined(__WXMGL__)   || \
     defined(__WXCOCOA__)
-  #include "openphone.xpm"
+  #include <wx/gdicmn.h>
+  #include "opalshark.xpm"
 #endif
 
 
@@ -193,15 +193,15 @@ bool OpalSharkApp::OnInit()
 BEGIN_EVENT_TABLE(MyManager, wxMDIParentFrame)
   EVT_CLOSE(MyManager::OnClose)
 
-  EVT_MENU_OPEN(OnMenuOpen)
-  EVT_MENU_CLOSE(OnMenuClose)
+  EVT_MENU_OPEN(MyManager::OnMenuOpen)
+  EVT_MENU_CLOSE(MyManager::OnMenuClose)
 
-  EVT_MENU(wxID_EXIT,         OnMenuQuit)
-  EVT_MENU(wxID_ABOUT,        OnMenuAbout)
-  EVT_MENU(wxID_PREFERENCES,  OnMenuOptions)
-  EVT_MENU(wxID_OPEN,         OnMenuOpenPCAP)
-  EVT_MENU(wxID_CLOSE_ALL,    OnMenuCloseAll)
-  EVT_MENU(ID_MenuFullScreen, OnMenuFullScreen)
+  EVT_MENU(wxID_EXIT,         MyManager::OnMenuQuit)
+  EVT_MENU(wxID_ABOUT,        MyManager::OnMenuAbout)
+  EVT_MENU(wxID_PREFERENCES,  MyManager::OnMenuOptions)
+  EVT_MENU(wxID_OPEN,         MyManager::OnMenuOpenPCAP)
+  EVT_MENU(wxID_CLOSE_ALL,    MyManager::OnMenuCloseAll)
+  EVT_MENU(ID_MenuFullScreen, MyManager::OnMenuFullScreen)
 
 END_EVENT_TABLE()
 
@@ -406,21 +406,21 @@ void MyManager::Load(const PwxString & fname)
 ///////////////////////////////////////////////////////////////
 
 BEGIN_EVENT_TABLE(MyPlayer, wxMDIChildFrame)
-  EVT_CLOSE(OnCloseWindow)
+  EVT_CLOSE(MyPlayer::OnCloseWindow)
 
-  EVT_MENU_OPEN(OnMenuOpen)
-  EVT_MENU_CLOSE(OnMenuClose)
-  EVT_MENU(wxID_CLOSE, OnClose)
+  EVT_MENU_OPEN(MyPlayer::OnMenuOpen)
+  EVT_MENU_CLOSE(MyPlayer::OnMenuClose)
+  EVT_MENU(wxID_CLOSE, MyPlayer::OnClose)
 
-  EVT_GRID_CELL_CHANGED(OnListChanged)
+  EVT_GRID_CELL_CHANGED(MyPlayer::OnListChanged)
 
-  EVT_BUTTON(ID_Play,   OnPlay)
-  EVT_BUTTON(ID_Stop,   OnStop)
-  EVT_BUTTON(ID_Pause,  OnPause)
-  EVT_BUTTON(ID_Resume, OnResume)
-  EVT_BUTTON(ID_Step,   OnStep)
+  EVT_BUTTON(ID_Play,   MyPlayer::OnPlay)
+  EVT_BUTTON(ID_Stop,   MyPlayer::OnStop)
+  EVT_BUTTON(ID_Pause,  MyPlayer::OnPause)
+  EVT_BUTTON(ID_Resume, MyPlayer::OnResume)
+  EVT_BUTTON(ID_Step,   MyPlayer::OnStep)
 
-  EVT_COMMAND(wxID_HIGHEST, VideoEndedEvent, OnStop)
+  EVT_COMMAND(wxID_HIGHEST, VideoEndedEvent, MyPlayer::OnStop)
 END_EVENT_TABLE()
 
 
@@ -770,8 +770,8 @@ void MyPlayer::PlayVideo()
 wxIMPLEMENT_DYNAMIC_CLASS(VideoOutputWindow, wxScrolledWindow);
 
 BEGIN_EVENT_TABLE(VideoOutputWindow, wxScrolledWindow)
-  EVT_PAINT(OnPaint)
-  EVT_COMMAND(wxID_HIGHEST, VideoUpdateEvent, OnVideoUpdate)
+  EVT_PAINT(VideoOutputWindow::OnPaint)
+  EVT_COMMAND(wxID_HIGHEST, VideoUpdateEvent, VideoOutputWindow::OnVideoUpdate)
 END_EVENT_TABLE()
 
 VideoOutputWindow::VideoOutputWindow()
