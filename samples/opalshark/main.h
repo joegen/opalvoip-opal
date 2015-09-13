@@ -56,7 +56,12 @@ class wxGridEvent;
 struct MyOptions
 {
   PwxString m_AudioDevice;
-  PwxString m_VideoDevice;
+  int       m_VideoTiming;
+
+  MyOptions()
+    : m_AudioDevice("Default")
+    , m_VideoTiming(0)
+  { }
 };
 
 
@@ -143,7 +148,6 @@ class MyPlayer : public wxMDIChildFrame
     wxGrid * m_rtpList;
     unsigned m_selectedRTP;
 
-    PThread * m_playThread;
     enum
     {
       CtlIdle,
@@ -151,7 +155,14 @@ class MyPlayer : public wxMDIChildFrame
       CtlPause,
       CtlStep,
       CtlStop
-    } m_playThreadCtrl;
+    }         m_playThreadCtrl;
+    PThread * m_playThread;
+
+    wxButton * m_play;
+    wxButton * m_stop;
+    wxButton * m_pause;
+    wxButton * m_resume;
+    wxButton * m_step;
 
   wxDECLARE_EVENT_TABLE();
 };
@@ -166,11 +177,8 @@ class MyManager : public wxMDIParentFrame, public OpalManager
     bool Initialise(bool startMinimised);
     void Load(const PwxString & fname);
 
-    void PostEvent(
-      const wxCommandEvent & cmdEvent,
-      const PString & str = PString::Empty(),
-      const void * data = NULL
-    );
+    PString GetAudioDevice() const { return m_options.m_AudioDevice; }
+    bool UseFileVideoTiming() const { return m_options.m_VideoTiming == 0; }
 
   private:
     void OnClose(wxCloseEvent &);

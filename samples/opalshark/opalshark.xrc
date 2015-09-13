@@ -79,8 +79,8 @@
 					<growablerows></growablerows>
 					<object class="sizeritem">
 						<option>0</option>
-						<flag>wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT</flag>
-						<border>0</border>
+						<flag>wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxLEFT|wxTOP</flag>
+						<border>20</border>
 						<object class="wxStaticText" name="label_1">
 							<label>Audio Player: </label>
 							<wrap>-1</wrap>
@@ -88,8 +88,8 @@
 					</object>
 					<object class="sizeritem">
 						<option>0</option>
-						<flag>wxALIGN_CENTER_VERTICAL|wxEXPAND</flag>
-						<border>0</border>
+						<flag>wxALIGN_CENTER_VERTICAL|wxEXPAND|wxRIGHT|wxTOP</flag>
+						<border>20</border>
 						<object class="wxComboBox" name="AudioDevice">
 							<value></value>
 							<content />
@@ -97,20 +97,26 @@
 					</object>
 					<object class="sizeritem">
 						<option>0</option>
-						<flag>wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT</flag>
-						<border>0</border>
+						<flag>wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxLEFT|wxTOP</flag>
+						<border>20</border>
 						<object class="wxStaticText" name="label_2">
-							<label>Video Player: </label>
+							<label>Video Timing: </label>
 							<wrap>-1</wrap>
 						</object>
 					</object>
 					<object class="sizeritem">
 						<option>0</option>
-						<flag>wxALIGN_CENTER_VERTICAL|wxEXPAND</flag>
-						<border>0</border>
-						<object class="wxComboBox" name="VideoDevice">
-							<value></value>
-							<content />
+						<flag>wxALIGN_CENTER_VERTICAL|wxRIGHT|wxTOP</flag>
+						<border>10</border>
+						<object class="wxRadioBox" name="VideoTiming">
+							<style>wxRA_SPECIFY_COLS</style>
+							<label></label>
+							<selection>1</selection>
+							<content>
+								<item>PCAP Packet Time</item>
+								<item>RTP Timestamps</item>
+							</content>
+							<dimension>2</dimension>
 						</object>
 					</object>
 				</object>
