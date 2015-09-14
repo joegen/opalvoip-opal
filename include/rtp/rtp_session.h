@@ -736,7 +736,7 @@ class OpalRTPSession : public OpalMediaSession
 #endif
 
       OpalJitterBuffer * m_jitterBuffer;
-      OpalJitterBuffer * GetJitterBuffer() const { return m_jitterBuffer != NULL ? m_jitterBuffer : m_session.m_jitterBuffer; }
+      OpalJitterBuffer * GetJitterBuffer() const;
 
       PTRACE_THROTTLE(m_throttleSendData,3,20000);
       PTRACE_THROTTLE(m_throttleReceiveData,3,20000);
