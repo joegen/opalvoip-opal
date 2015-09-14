@@ -395,13 +395,16 @@ class OpusPluginDecoder : public OpusPluginCodec
                              unsigned & toLen,
                              unsigned & flags)
     {
+      bool fec;
       int samples;
       const unsigned char * packet;
       if (fromLen == 0) {
+        fec = m_useInBandFEC;
         packet = NULL; // As per opus_decode() API
         opus_decoder_ctl(m_decoder, OPUS_GET_LAST_PACKET_DURATION(&samples));
       }
       else {
+        fec = false;
         packet = (const unsigned char *)fromPtr;
         samples = opus_decoder_get_nb_samples(m_decoder, packet, fromLen);
         if (samples < 0) {
@@ -415,7 +418,7 @@ class OpusPluginDecoder : public OpusPluginCodec
         return false;
       }
 
-      int result = opus_decode(m_decoder, packet, fromLen, (opus_int16 *)toPtr, samples, m_useInBandFEC);
+      int result = opus_decode(m_decoder, packet, fromLen, (opus_int16 *)toPtr, samples, fec);
       if (result < 0) {
         PTRACE(1, MY_CODEC_LOG, "Decoder error " << result << ' ' << opus_strerror(result));
         return false;
