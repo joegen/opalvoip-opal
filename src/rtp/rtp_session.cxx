@@ -110,6 +110,7 @@ OpalRTPSession::OpalRTPSession(const Init & init)
   , m_txStatisticsInterval(100)
   , m_rxStatisticsInterval(100)
   , m_feedback(OpalMediaFormat::e_NoRTCPFb)
+  , m_jitterBuffer(NULL)
 #if OPAL_RTP_FEC
   , m_redundencyPayloadType(RTP_DataFrame::IllegalPayloadType)
   , m_ulpFecPayloadType(RTP_DataFrame::IllegalPayloadType)
@@ -353,9 +354,11 @@ OpalRTPSession::SyncSource::~SyncSource()
                "    total octets         = " << m_octets << "\n"
                "    bitRateSent          = " << (8 * m_octets / duration) << "\n"
                "    lostPackets          = " << m_packetsLost << '\n';
-    if (m_direction == e_Receiver)
-      trace << "    packets too late     = " << (m_jitterBuffer != NULL ? m_jitterBuffer->GetPacketsTooLate() : m_packetsTooLate) << "\n"
+    if (m_direction == e_Receiver) {
+      OpalJitterBuffer * jb = GetJitterBuffer();
+      trace << "    packets too late     = " << (jb != NULL ? jb->GetPacketsTooLate() : m_packetsTooLate) << "\n"
                "    packets out of order = " << m_packetsOutOfOrder << '\n';
+    }
     trace <<   "    average time         = " << m_averagePacketTime << "\n"
                "    maximum time         = " << m_maximumPacketTime << "\n"
                "    minimum time         = " << m_minimumPacketTime << "\n"
@@ -443,8 +446,9 @@ void OpalRTPSession::SyncSource::CalculateStatistics(const RTP_DataFrame & frame
     if (m_direction == e_Receiver) {
       trace <<   " lost=" << m_session.GetPacketsLost() <<
                  " order=" << m_session.GetPacketsOutOfOrder();
-      if (m_jitterBuffer != NULL)
-        trace << " tooLate=" << m_jitterBuffer->GetPacketsTooLate();
+      OpalJitterBuffer * jb = GetJitterBuffer();
+      if (jb != NULL)
+        trace << " tooLate=" << jb->GetPacketsTooLate();
     }
     trace <<     " avgTime=" << m_averagePacketTime <<
                  " maxTime=" << m_maximumPacketTime <<
@@ -598,8 +602,9 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveData(RTP_
 #if OPAL_RTCP_XR
   if (m_metrics != NULL) {
     m_metrics->OnPacketReceived();
-    if (m_jitterBuffer != NULL)
-      m_metrics->SetJitterDelay(m_jitterBuffer->GetCurrentJitterDelay() / m_session.m_timeUnits);
+    OpalJitterBuffer * jb = GetJitterBuffer();
+    if (jb != NULL)
+      m_metrics->SetJitterDelay(jb->GetCurrentJitterDelay() / m_session.m_timeUnits);
   }
 #endif
 
@@ -638,9 +643,10 @@ void OpalRTPSession::SyncSource::SetLastSequenceNumber(RTP_SequenceNumber sequen
 }
 
 
-bool OpalRTPSession::ResequenceOutOfOrderPackets(SyncSource & ssrc) const
+bool OpalRTPSession::ResequenceOutOfOrderPackets(SyncSource & receiver) const
 {
-  return ssrc.m_jitterBuffer == NULL || ssrc.m_jitterBuffer->GetCurrentJitterDelay() == 0;
+  OpalJitterBuffer * jb = receiver.GetJitterBuffer();
+  return jb == NULL || jb->GetCurrentJitterDelay() == 0;
 }
 
 
@@ -944,8 +950,9 @@ bool OpalRTPSession::SyncSource::OnSendReceiverReport(RTP_ControlFrame::Receiver
   report->ssrc = m_sourceIdentifier;
 
   unsigned lost = m_session.GetPacketsLost();
-  if (m_jitterBuffer != NULL)
-    lost += m_jitterBuffer->GetPacketsTooLate();
+  OpalJitterBuffer * jb = GetJitterBuffer();
+  if (jb != NULL)
+    lost += jb->GetPacketsTooLate();
   report->SetLostPackets(lost);
 
   if (m_extendedSequenceNumber >= m_lastRRSequenceNumber)
@@ -1231,7 +1238,7 @@ bool OpalRTPSession::InternalSendReport(RTP_ControlFrame & report, SyncSource * 
     for (SyncSourceMap::iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
       //Generate and send RTCP-XR packet
       if (it->second->m_direction == e_Receiver && it->second->m_metrics != NULL)
-        it->second->m_metrics->InsertMetricsReport(report, *this, it->second->m_sourceIdentifier, it->second->m_jitterBuffer);
+        it->second->m_metrics->InsertMetricsReport(report, *this, it->second->m_sourceIdentifier, it->second->GetJitterBuffer());
     }
   }
 #endif
@@ -1421,10 +1428,11 @@ void OpalRTPSession::SyncSource::GetStatistics(OpalMediaStatistics & statistics)
   statistics.m_lastPacketTime    = m_lastPacketAbsTime;
   statistics.m_lastReportTime    = m_lastSenderReportTime;
 
-  if (m_jitterBuffer != NULL) {
-    statistics.m_packetsTooLate    = m_jitterBuffer->GetPacketsTooLate() + m_packetsTooLate;
-    statistics.m_packetOverruns    = m_jitterBuffer->GetBufferOverruns();
-    statistics.m_jitterBufferDelay = m_jitterBuffer->GetCurrentJitterDelay()/m_jitterBuffer->GetTimeUnits();
+  OpalJitterBuffer * jb = GetJitterBuffer();
+  if (jb != NULL) {
+    statistics.m_packetsTooLate    = jb->GetPacketsTooLate() + m_packetsTooLate;
+    statistics.m_packetOverruns    = jb->GetBufferOverruns();
+    statistics.m_jitterBufferDelay = jb->GetCurrentJitterDelay()/jb->GetTimeUnits();
   }
   else {
     statistics.m_packetsTooLate    = m_packetsTooLate;
@@ -2059,23 +2067,33 @@ void OpalRTPSession::SetJitterBuffer(OpalJitterBuffer * jitterBuffer, RTP_SyncSo
   if (!lock.IsLocked())
     return;
 
-  SyncSource * receiver;
-  if (GetSyncSource(ssrc, e_Receiver, receiver)) {
-    receiver->m_jitterBuffer = jitterBuffer;
-#if PTRACING
-    static unsigned const Level = 4;
-    if (PTrace::CanTrace(Level)) {
-      ostream & trace = PTRACE_BEGIN(Level);
-      trace << *this;
-      if (jitterBuffer != NULL)
-        trace << "attached jitter buffer " << *jitterBuffer << " to";
-      else
-        trace << "detached jitter buffer from";
-      trace << " SSRC=" << RTP_TRACE_SRC(receiver->m_sourceIdentifier)
-            << PTrace::End;
+  if (ssrc == 0)
+    m_jitterBuffer = jitterBuffer;
+  else {
+    SyncSource * receiver = NULL;
+    if (!GetSyncSource(ssrc, e_Receiver, receiver)) {
+      PTRACE(2, "Could not change jitter buffer on SSRC=" << RTP_TRACE_SRC(ssrc));
+      return;
     }
-#endif
+    receiver->m_jitterBuffer = jitterBuffer;
   }
+
+#if PTRACING
+  static unsigned const Level = 3;
+  if (PTrace::CanTrace(Level)) {
+    ostream & trace = PTRACE_BEGIN(Level);
+    trace << *this;
+    if (jitterBuffer != NULL)
+      trace << "attached jitter buffer " << *jitterBuffer << " to";
+    else
+      trace << "detached jitter buffer from";
+    if (ssrc != 0)
+      trace << " SSRC=" << RTP_TRACE_SRC(ssrc);
+    else
+      trace << " all receivers";
+    trace << PTrace::End;
+  }
+#endif
 }
 
 
