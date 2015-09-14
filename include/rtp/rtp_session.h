@@ -611,6 +611,8 @@ class OpalRTPSession : public OpalMediaSession
     unsigned            m_rxStatisticsInterval;
     OpalMediaFormat::RTCPFeedback m_feedback;
 
+    OpalJitterBuffer  * m_jitterBuffer;
+
 #if OPAL_RTP_FEC
     RTP_DataFrame::PayloadTypes m_redundencyPayloadType;
     RTP_DataFrame::PayloadTypes m_ulpFecPayloadType;
@@ -734,6 +736,7 @@ class OpalRTPSession : public OpalMediaSession
 #endif
 
       OpalJitterBuffer * m_jitterBuffer;
+      OpalJitterBuffer * GetJitterBuffer() const { return m_jitterBuffer != NULL ? m_jitterBuffer : m_session.m_jitterBuffer; }
 
       PTRACE_THROTTLE(m_throttleSendData,3,20000);
       PTRACE_THROTTLE(m_throttleReceiveData,3,20000);
