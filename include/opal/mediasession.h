@@ -78,18 +78,18 @@ struct OpalNetworkStatistics
   unsigned m_totalPackets;
   unsigned m_controlPacketsIn;  // RTCP received for this channel
   unsigned m_controlPacketsOut; // RTCP sent for this channel
-  unsigned m_NACKs;
-  unsigned m_packetsLost;
-  unsigned m_packetsOutOfOrder;
-  unsigned m_packetsTooLate;
-  unsigned m_packetOverruns;
-  unsigned m_minimumPacketTime; // Milliseconds
-  unsigned m_averagePacketTime; // Milliseconds
-  unsigned m_maximumPacketTime; // Milliseconds
-  unsigned m_averageJitter;     // Milliseconds
-  unsigned m_maximumJitter;     // Milliseconds
-  unsigned m_jitterBufferDelay; // Milliseconds
-  unsigned m_roundTripTime;     // Milliseconds
+  int      m_NACKs;             // (-1 is N/A)
+  int      m_packetsLost;       // (-1 is N/A)
+  int      m_packetsOutOfOrder; // (-1 is N/A)
+  int      m_packetsTooLate;    // (-1 is N/A)
+  int      m_packetOverruns;    // (-1 is N/A)
+  int      m_minimumPacketTime; // Milliseconds (-1 is N/A)
+  int      m_averagePacketTime; // Milliseconds (-1 is N/A)
+  int      m_maximumPacketTime; // Milliseconds (-1 is N/A)
+  int      m_averageJitter;     // Milliseconds (-1 is N/A)
+  int      m_maximumJitter;     // Milliseconds (-1 is N/A)
+  int      m_jitterBufferDelay; // Milliseconds (-1 is N/A)
+  int      m_roundTripTime;     // Milliseconds (-1 is N/A)
   PTime    m_lastPacketTime;
   PTime    m_lastReportTime;
   unsigned m_targetBitRate;    // As configured, not actual, which is calculated from m_totalBytes
@@ -201,7 +201,7 @@ class OpalMediaStatistics : public PObject, public OpalNetworkStatistics, public
     unsigned GetRateInt(int64_t current, int64_t previous) const;
     unsigned GetBitRate() const { return GetRateInt(m_totalBytes*8, m_updateInfo.m_previousBytes*8); }
     unsigned GetPacketRate() const { return GetRateInt(m_totalPackets, m_updateInfo.m_previousPackets); }
-    unsigned GetLossRate() const { return GetRateInt(m_packetsLost, m_updateInfo.m_previousLost); }
+    unsigned GetLossRate() const { return m_packetsLost <= 0 ? 0 : GetRateInt(m_packetsLost, m_updateInfo.m_previousLost); }
 
     PString GetRateStr(int64_t total, const char * units = "", unsigned significantFigures = 0) const;
     PString GetRateStr(int64_t current, int64_t previous, const char * units = "", unsigned significantFigures = 0) const;
