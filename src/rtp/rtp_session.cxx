@@ -1378,43 +1378,59 @@ void OpalRTPSession::GetStatistics(OpalMediaStatistics & statistics, Direction d
     return;
   }
 
-  unsigned count = 0;
+  unsigned pktTimeSum = 0;
+  unsigned pktTimeCount = 0;
   unsigned jitterSum = 0;
+  unsigned jitterCount = 0;
   for (SyncSourceMap::const_iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
     if (it->second->m_direction == dir) {
       OpalMediaStatistics ssrcStats;
       it->second->GetStatistics(ssrcStats);
       if (ssrcStats.m_totalPackets > 0) {
-        statistics.m_totalBytes        += ssrcStats.m_totalBytes;
-        statistics.m_totalPackets      += ssrcStats.m_totalPackets;
+        statistics.m_totalBytes   += ssrcStats.m_totalBytes;
+        statistics.m_totalPackets += ssrcStats.m_totalPackets;
+
         if (m_feedback&OpalMediaFormat::e_NACK)
           statistics.m_NACKs += ssrcStats.m_NACKs;
+
         AddSpecial(statistics.m_packetsLost, ssrcStats.m_packetsLost);
         AddSpecial(statistics.m_packetsOutOfOrder, ssrcStats.m_packetsOutOfOrder);
         AddSpecial(statistics.m_packetsTooLate, ssrcStats.m_packetsTooLate);
         AddSpecial(statistics.m_packetOverruns, ssrcStats.m_packetOverruns);
         AddSpecial(statistics.m_minimumPacketTime, ssrcStats.m_minimumPacketTime);
-        AddSpecial(statistics.m_averagePacketTime, ssrcStats.m_averagePacketTime);
         AddSpecial(statistics.m_maximumPacketTime, ssrcStats.m_maximumPacketTime);
-        jitterSum                      += ssrcStats.m_averageJitter;
+
+        if (ssrcStats.m_averagePacketTime > 0) {
+          pktTimeSum += ssrcStats.m_averagePacketTime;
+          ++pktTimeCount;
+        }
+
+        if (ssrcStats.m_averageJitter > 0) {
+          jitterSum += ssrcStats.m_averageJitter;
+          ++jitterCount;
+        }
+
         if (statistics.m_maximumJitter < ssrcStats.m_maximumJitter)
           statistics.m_maximumJitter = ssrcStats.m_maximumJitter;
+
         if (statistics.m_jitterBufferDelay < ssrcStats.m_jitterBufferDelay)
           statistics.m_jitterBufferDelay = ssrcStats.m_jitterBufferDelay;
+
         if (!statistics.m_startTime.IsValid() || statistics.m_startTime > ssrcStats.m_startTime)
           statistics.m_startTime = ssrcStats.m_startTime;
+
         if (statistics.m_lastPacketTime < ssrcStats.m_lastPacketTime)
           statistics.m_lastPacketTime = ssrcStats.m_lastPacketTime;
+
         if (statistics.m_lastReportTime < ssrcStats.m_lastReportTime)
           statistics.m_lastReportTime = ssrcStats.m_lastReportTime;
-        ++count;
       }
     }
   }
-  if (count > 1) {
-    statistics.m_averagePacketTime /= count;
-    statistics.m_averageJitter = jitterSum/count;
-  }
+  if (pktTimeCount > 0)
+    statistics.m_averagePacketTime = pktTimeSum/pktTimeCount;
+  if (jitterCount > 0)
+    statistics.m_averageJitter = jitterSum/jitterCount;
 }
 #endif
 
