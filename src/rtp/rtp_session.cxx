@@ -118,7 +118,7 @@ OpalRTPSession::OpalRTPSession(const Init & init)
   , m_dummySyncSource(*this, 0, e_Receiver, "-")
   , m_rtcpPacketsSent(0)
   , m_rtcpPacketsReceived(0)
-  , m_roundTripTime(0)
+  , m_roundTripTime(-1)
   , m_reportTimer(0, 12)  // Seconds
   , m_qos(m_manager.GetMediaQoS(init.m_mediaType))
   , m_packetOverhead(0)
@@ -298,14 +298,14 @@ OpalRTPSession::SyncSource::SyncSource(OpalRTPSession & session, RTP_SyncSourceI
   , m_octets(0)
   , m_senderReports(0)
   , m_NACKs(0)
-  , m_packetsLost(0)
+  , m_packetsLost(-1)
   , m_packetsOutOfOrder(0)
-  , m_packetsTooLate(0)
-  , m_averagePacketTime(0)
-  , m_maximumPacketTime(0)
-  , m_minimumPacketTime(0)
-  , m_jitter(0)
-  , m_maximumJitter(0)
+  , m_packetsTooLate(-1)
+  , m_averagePacketTime(-1)
+  , m_maximumPacketTime(-1)
+  , m_minimumPacketTime(-1)
+  , m_currentjitter(-1)
+  , m_maximumJitter(-1)
   , m_markerCount(0)
   , m_lastPacketTimestamp(0)
   , m_lastPacketAbsTime(0)
@@ -359,7 +359,7 @@ OpalRTPSession::SyncSource::~SyncSource()
     trace <<   "    average time         = " << m_averagePacketTime << "\n"
                "    maximum time         = " << m_maximumPacketTime << "\n"
                "    minimum time         = " << m_minimumPacketTime << "\n"
-               "    last jitter          = " << m_jitter << "\n"
+               "    last jitter          = " << m_currentjitter << "\n"
                "    max jitter           = " << m_maximumJitter
           << PTrace::End;
   }
@@ -415,9 +415,9 @@ void OpalRTPSession::SyncSource::CalculateStatistics(const RTP_DataFrame & frame
     long variance = diff > m_lastJitterTimestamp ? (diff - m_lastJitterTimestamp) : (m_lastJitterTimestamp - diff);
     m_lastJitterTimestamp = diff;
     m_jitterAccum += variance - ((m_jitterAccum + (1 << (JitterRoundingGuardBits - 1))) >> JitterRoundingGuardBits);
-    m_jitter = (m_jitterAccum >> JitterRoundingGuardBits) / m_session.m_timeUnits;
-    if (m_jitter > m_maximumJitter)
-      m_maximumJitter = m_jitter;
+    m_currentjitter = (m_jitterAccum >> JitterRoundingGuardBits) / m_session.m_timeUnits;
+    if (m_maximumJitter < m_currentjitter)
+      m_maximumJitter = m_currentjitter;
   }
 
   if (m_statisticsCount < (m_direction == e_Receiver ? m_session.GetRxStatisticsInterval() : m_session.GetTxStatisticsInterval()))
@@ -449,7 +449,7 @@ void OpalRTPSession::SyncSource::CalculateStatistics(const RTP_DataFrame & frame
     trace <<     " avgTime=" << m_averagePacketTime <<
                  " maxTime=" << m_maximumPacketTime <<
                  " minTime=" << m_minimumPacketTime <<
-                 " jitter=" << m_jitter <<
+                 " jitter=" << m_currentjitter <<
                  " maxJitter=" << m_maximumJitter
           << PTrace::End;
   }
@@ -525,6 +525,8 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveData(RTP_
   if (m_packets == 0) {
     m_firstPacketTime.SetCurrentTime();
     m_lastPacketTick = PTimer::Tick();
+    m_packetsLost = 0;
+    m_packetsTooLate = 0;
 
     PTRACE(3, &m_session, m_session << "first receive data:" << setw(1) << frame);
 
@@ -1014,7 +1016,9 @@ void OpalRTPSession::SyncSource::OnRxSenderReport(const RTP_SenderReport & repor
 void OpalRTPSession::SyncSource::OnRxReceiverReport(const RTP_ReceiverReport & report)
 {
   m_packetsLost = report.totalLost;
-  m_jitter = report.jitter / m_session.m_timeUnits;
+  m_currentjitter = (report.jitter + m_session.m_timeUnits -1)/m_session.m_timeUnits;
+  if (m_maximumJitter < m_currentjitter)
+    m_maximumJitter = m_currentjitter;
 
 #if OPAL_RTCP_XR
   if (m_metrics != NULL)
@@ -1320,6 +1324,14 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SendReport(RTP_SyncSourceId ss
 
 
 #if OPAL_STATISTICS
+static void AddSpecial(int & left, int right)
+{
+  if (left < 0)
+    left = right;
+  else
+    left += right;
+}
+
 void OpalRTPSession::GetStatistics(OpalMediaStatistics & statistics, Direction dir) const
 {
   OpalMediaSession::GetStatistics(statistics, dir);
@@ -1328,17 +1340,17 @@ void OpalRTPSession::GetStatistics(OpalMediaStatistics & statistics, Direction d
   statistics.m_totalPackets      = 0;
   statistics.m_controlPacketsIn  = m_rtcpPacketsReceived;
   statistics.m_controlPacketsOut = m_rtcpPacketsSent;
-  statistics.m_NACKs             = 0;
-  statistics.m_packetsLost       = 0;
-  statistics.m_packetsOutOfOrder = 0;
-  statistics.m_packetsTooLate    = 0;
-  statistics.m_packetOverruns    = 0;
-  statistics.m_minimumPacketTime = 0;
-  statistics.m_averagePacketTime = 0;
-  statistics.m_maximumPacketTime = 0;
-  statistics.m_averageJitter     = 0;
-  statistics.m_maximumJitter     = 0;
-  statistics.m_jitterBufferDelay = 0;
+  statistics.m_NACKs             = (m_feedback&OpalMediaFormat::e_NACK) ? 0 : -1;
+  statistics.m_packetsLost       = -1;
+  statistics.m_packetsOutOfOrder = -1;
+  statistics.m_packetsTooLate    = -1;
+  statistics.m_packetOverruns    = -1;
+  statistics.m_minimumPacketTime = -1;
+  statistics.m_averagePacketTime = -1;
+  statistics.m_maximumPacketTime = -1;
+  statistics.m_averageJitter     = -1;
+  statistics.m_maximumJitter     = -1;
+  statistics.m_jitterBufferDelay = -1;
   statistics.m_roundTripTime     = m_roundTripTime;
   statistics.m_lastPacketTime    = 0;
   statistics.m_lastReportTime    = 0;
@@ -1351,6 +1363,7 @@ void OpalRTPSession::GetStatistics(OpalMediaStatistics & statistics, Direction d
   }
 
   unsigned count = 0;
+  unsigned jitterSum = 0;
   for (SyncSourceMap::const_iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
     if (it->second->m_direction == dir) {
       OpalMediaStatistics ssrcStats;
@@ -1358,15 +1371,16 @@ void OpalRTPSession::GetStatistics(OpalMediaStatistics & statistics, Direction d
       if (ssrcStats.m_totalPackets > 0) {
         statistics.m_totalBytes        += ssrcStats.m_totalBytes;
         statistics.m_totalPackets      += ssrcStats.m_totalPackets;
-        statistics.m_NACKs             += ssrcStats.m_NACKs;
-        statistics.m_packetsLost       += ssrcStats.m_packetsLost;
-        statistics.m_packetsOutOfOrder += ssrcStats.m_packetsOutOfOrder;
-        statistics.m_packetsTooLate    += ssrcStats.m_packetsTooLate;
-        statistics.m_packetOverruns    += ssrcStats.m_packetOverruns;
-        statistics.m_minimumPacketTime += ssrcStats.m_minimumPacketTime;
-        statistics.m_averagePacketTime += ssrcStats.m_averagePacketTime;
-        statistics.m_maximumPacketTime += ssrcStats.m_maximumPacketTime;
-        statistics.m_averageJitter     += ssrcStats.m_averageJitter;
+        if (m_feedback&OpalMediaFormat::e_NACK)
+          statistics.m_NACKs += ssrcStats.m_NACKs;
+        AddSpecial(statistics.m_packetsLost, ssrcStats.m_packetsLost);
+        AddSpecial(statistics.m_packetsOutOfOrder, ssrcStats.m_packetsOutOfOrder);
+        AddSpecial(statistics.m_packetsTooLate, ssrcStats.m_packetsTooLate);
+        AddSpecial(statistics.m_packetOverruns, ssrcStats.m_packetOverruns);
+        AddSpecial(statistics.m_minimumPacketTime, ssrcStats.m_minimumPacketTime);
+        AddSpecial(statistics.m_averagePacketTime, ssrcStats.m_averagePacketTime);
+        AddSpecial(statistics.m_maximumPacketTime, ssrcStats.m_maximumPacketTime);
+        jitterSum                      += ssrcStats.m_averageJitter;
         if (statistics.m_maximumJitter < ssrcStats.m_maximumJitter)
           statistics.m_maximumJitter = ssrcStats.m_maximumJitter;
         if (statistics.m_jitterBufferDelay < ssrcStats.m_jitterBufferDelay)
@@ -1383,7 +1397,7 @@ void OpalRTPSession::GetStatistics(OpalMediaStatistics & statistics, Direction d
   }
   if (count > 1) {
     statistics.m_averagePacketTime /= count;
-    statistics.m_averageJitter /= count;
+    statistics.m_averageJitter = jitterSum/count;
   }
 }
 #endif
@@ -1397,11 +1411,12 @@ void OpalRTPSession::SyncSource::GetStatistics(OpalMediaStatistics & statistics)
   statistics.m_totalPackets      = m_packets;
   statistics.m_NACKs             = m_NACKs;
   statistics.m_packetsLost       = m_packetsLost;
-  statistics.m_packetsOutOfOrder = m_packetsOutOfOrder;
+  if (m_direction == e_Receiver)
+    statistics.m_packetsOutOfOrder = m_packetsOutOfOrder;
   statistics.m_minimumPacketTime = m_minimumPacketTime;
   statistics.m_averagePacketTime = m_averagePacketTime;
   statistics.m_maximumPacketTime = m_maximumPacketTime;
-  statistics.m_averageJitter     = m_jitter;
+  statistics.m_averageJitter     = m_currentjitter;
   statistics.m_maximumJitter     = m_maximumJitter;
   statistics.m_lastPacketTime    = m_lastPacketAbsTime;
   statistics.m_lastReportTime    = m_lastSenderReportTime;
@@ -1413,8 +1428,8 @@ void OpalRTPSession::SyncSource::GetStatistics(OpalMediaStatistics & statistics)
   }
   else {
     statistics.m_packetsTooLate    = m_packetsTooLate;
-    statistics.m_packetOverruns    = 0;
-    statistics.m_jitterBufferDelay = 0;
+    statistics.m_packetOverruns    = -1;
+    statistics.m_jitterBufferDelay = -1;
   }
 }
 #endif // OPAL_STATISTICS
