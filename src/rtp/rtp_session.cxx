@@ -854,6 +854,15 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::SendBYE()
 }
 
 
+OpalJitterBuffer * OpalRTPSession::SyncSource::GetJitterBuffer() const
+{
+    if (m_direction != e_Receiver)
+        return NULL;
+
+    return m_jitterBuffer != NULL ? m_jitterBuffer : m_session.m_jitterBuffer;
+}
+
+
 PString OpalRTPSession::GetCanonicalName(RTP_SyncSourceId ssrc, Direction dir) const
 {
   PSafeLockReadOnly lock(*this);
