@@ -324,9 +324,13 @@ void OpalAudioJitterBuffer::PrintOn(ostream & strm) const
   strm << "this=" << (void *)this
        << " packets=" << m_frames.size()
        <<   " rate=" << m_timeUnits << "kHz"
-       << " delay=" << (m_minJitterDelay/m_timeUnits) << '-'
-                    << (m_currentJitterDelay/m_timeUnits) << '-'
-                    << (m_maxJitterDelay/m_timeUnits) << "ms";
+       <<  " delay=" << (m_minJitterDelay/m_timeUnits) << '-'
+                     << (m_currentJitterDelay/m_timeUnits) << '-'
+                     << (m_maxJitterDelay/m_timeUnits) << "ms"
+           " frame=" << (m_incomingFrameTime/m_timeUnits) << "ms"
+            " grow=" << (m_jitterGrowTime/m_timeUnits) << "ms"
+          " shrink=" << (m_jitterShrinkTime/m_timeUnits) << "ms"
+                " (" << (m_silenceShrinkPeriod/m_timeUnits) << "ms)";
 }
 
 
