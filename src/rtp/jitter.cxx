@@ -266,6 +266,8 @@ void OpalJitterBuffer::SetDelay(const Init & init)
 
 PFACTORY_CREATE(OpalJitterBufferFactory, OpalAudioJitterBuffer, OpalMediaType::Audio());
 
+unsigned OpalAudioJitterBuffer::sm_EveryPacketLogLevel;
+
 OpalAudioJitterBuffer::OpalAudioJitterBuffer(const Init & init)
   : OpalJitterBuffer(init)
   , m_jitterGrowTime(init.m_jitterGrowTime*m_timeUnits)
@@ -285,7 +287,6 @@ OpalAudioJitterBuffer::OpalAudioJitterBuffer(const Init & init)
 #if PTRACING
   , m_lastInsertTick(PTimer::Tick())
   , m_lastRemoveTick(m_lastInsertTick)
-  , m_EveryPacketLogLevel(6)
 #endif
 {
   Reset();
@@ -502,7 +503,7 @@ PBoolean OpalAudioJitterBuffer::WriteData(const RTP_DataFrame & frame, PTimeInte
   pair<FrameMap::iterator,bool> result = m_frames.insert(FrameMap::value_type(timestamp, frame));
   if (result.second) {
     ANALYSE(In, timestamp, m_synchronisationState != e_SynchronisationDone ? "PreBuf" : "");
-    PTRACE(m_EveryPacketLogLevel, "Inserted packet : ts=" << timestamp << ", dT=" << (tick - m_lastInsertTick) << ", sz=" << frame.GetPayloadSize());
+    PTRACE(sm_EveryPacketLogLevel, "Inserted packet : ts=" << timestamp << ", dT=" << (tick - m_lastInsertTick) << ", sz=" << frame.GetPayloadSize());
 #if PTRACING
     m_lastInsertTick = tick;
 #endif
@@ -594,7 +595,7 @@ PBoolean OpalAudioJitterBuffer::ReadData(RTP_DataFrame & frame, const PTimeInter
 
     ++m_consecutiveEmpty;
     PTRACE_IF(4, m_consecutiveEmpty == 100, "Always empty    " COMMON_TRACE_INFO);
-    PTRACE(m_consecutiveEmpty < 100 && m_synchronisationState == e_SynchronisationDone ? 4 : m_EveryPacketLogLevel,
+    PTRACE(m_consecutiveEmpty < 100 && m_synchronisationState == e_SynchronisationDone ? 4 : sm_EveryPacketLogLevel,
            "Buffer is empty " COMMON_TRACE_INFO);
     return true;
   }
@@ -663,7 +664,7 @@ PBoolean OpalAudioJitterBuffer::ReadData(RTP_DataFrame & frame, const PTimeInter
     case e_SynchronisationFill :
       /* Now see if we have buffered enough yet */
       if (requiredTimestamp < oldestFrame->first) {
-        PTRACE(m_EveryPacketLogLevel, "Pre-buffering   " COMMON_TRACE_INFO << ", oldest=" << oldestFrame->first);
+        PTRACE(sm_EveryPacketLogLevel, "Pre-buffering   " COMMON_TRACE_INFO << ", oldest=" << oldestFrame->first);
         /* Nope, play out some silence */
         ANALYSE(Out, oldestFrame->first, "PreBuf");
         return true;
@@ -753,7 +754,7 @@ PBoolean OpalAudioJitterBuffer::ReadData(RTP_DataFrame & frame, const PTimeInter
   // Finally can return the frame we have
   ANALYSE(Out, oldestFrame->first, "");
   frame = oldestFrame->second;
-  PTRACE(m_EveryPacketLogLevel, "Delivered packet" COMMON_TRACE_INFO << ", payload=" << frame.GetPayloadSize());
+  PTRACE(sm_EveryPacketLogLevel, "Delivered packet" COMMON_TRACE_INFO << ", payload=" << frame.GetPayloadSize());
   m_frames.erase(oldestFrame);
   frame.SetTimestamp(playOutTimestamp);
   m_consecutiveLatePackets = 0;
