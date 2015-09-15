@@ -311,7 +311,7 @@ class OpalAudioJitterBuffer : public OpalJitterBuffer
     PTimeInterval m_lastInsertTick;
     PTimeInterval m_lastRemoveTick;
   public:
-    unsigned m_EveryPacketLogLevel;
+    static unsigned sm_EveryPacketLogLevel;
 #endif
 };
 
