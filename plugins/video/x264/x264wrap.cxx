@@ -636,6 +636,7 @@ H264Encoder::~H264Encoder()
   }
 
   if (m_pid != 0) {
+    kill(m_pid, 9);
     int status;
     waitpid(m_pid, &status, 0);
   }
