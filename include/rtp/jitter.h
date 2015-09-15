@@ -289,7 +289,8 @@ class OpalAudioJitterBuffer : public OpalJitterBuffer
     RTP_SequenceNumber m_lastSequenceNum;
     RTP_Timestamp      m_lastTimestamp;
     RTP_SyncSourceId   m_lastSyncSource;
-    RTP_Timestamp      m_bufferFilledTime;
+    int                m_lastBufferSize;
+    RTP_Timestamp      m_bufferStaticTime;
     RTP_Timestamp      m_bufferLowTime;
     RTP_Timestamp      m_bufferEmptiedTime;
     int                m_timestampDelta;
@@ -309,6 +310,8 @@ class OpalAudioJitterBuffer : public OpalJitterBuffer
 #if PTRACING
     PTimeInterval m_lastInsertTick;
     PTimeInterval m_lastRemoveTick;
+  public:
+    unsigned m_EveryPacketLogLevel;
 #endif
 };
 
