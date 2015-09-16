@@ -189,8 +189,8 @@ void OpalRTPMediaStream::SetReadTimeout(const PTimeInterval & timeout)
 {
   if (m_readTimeout != timeout) {
     m_readTimeout = timeout;
-    // If jitter buffer off, force unblock immediately on change.
-    if (m_jitterBuffer->GetCurrentJitterDelay() == 0)
+    // If jitter buffer off, and want complete non-blocking read, force unblock immediately on change.
+    if (m_jitterBuffer->GetCurrentJitterDelay() == 0 && timeout == 0)
       m_jitterBuffer->WriteData(RTP_DataFrame());
   }
 }
