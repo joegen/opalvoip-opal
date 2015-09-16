@@ -185,6 +185,16 @@ bool OpalRTPMediaStream::SetMediaPassThrough(OpalMediaStream & otherStream, bool
 }
 
 
+void OpalRTPMediaStream::SetReadTimeout(const PTimeInterval & timeout)
+{
+  if (m_readTimeout != timeout) {
+    m_readTimeout = timeout;
+    // If jitter buffer off, force unblock immediately on change.
+    if (m_jitterBuffer->GetCurrentJitterDelay() == 0)
+      m_jitterBuffer->WriteData(RTP_DataFrame());
+  }
+}
+
 void OpalRTPMediaStream::InternalClose()
 {
   // Break any I/O blocks and wait for the thread that uses this object to
