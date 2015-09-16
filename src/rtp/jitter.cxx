@@ -329,8 +329,8 @@ void OpalAudioJitterBuffer::PrintOn(ostream & strm) const
                      << (m_maxJitterDelay/m_timeUnits) << "ms"
            " frame=" << (m_incomingFrameTime/m_timeUnits) << "ms"
             " grow=" << (m_jitterGrowTime/m_timeUnits) << "ms"
-          " shrink=" << (m_jitterShrinkTime/m_timeUnits) << "ms"
-                " (" << (m_silenceShrinkPeriod/m_timeUnits) << "ms)";
+          " shrink=" << (-m_jitterShrinkTime/m_timeUnits) << "ms"
+                " (" << (m_jitterShrinkPeriod/m_timeUnits) << "ms)";
 }
 
 
@@ -507,7 +507,11 @@ PBoolean OpalAudioJitterBuffer::WriteData(const RTP_DataFrame & frame, PTimeInte
   pair<FrameMap::iterator,bool> result = m_frames.insert(FrameMap::value_type(timestamp, frame));
   if (result.second) {
     ANALYSE(In, timestamp, m_synchronisationState != e_SynchronisationDone ? "PreBuf" : "");
-    PTRACE(sm_EveryPacketLogLevel, "Inserted packet : ts=" << timestamp << ", dT=" << (tick - m_lastInsertTick) << ", sz=" << frame.GetPayloadSize());
+    PTRACE(sm_EveryPacketLogLevel, "Inserted packet :"
+           " ts=" << timestamp << ","
+           " dT=" << (tick - m_lastInsertTick) << ","
+           " payload=" << frame.GetPayloadSize() << ","
+           " size=" << m_frames.size());
 #if PTRACING
     m_lastInsertTick = tick;
 #endif
@@ -699,6 +703,7 @@ PBoolean OpalAudioJitterBuffer::ReadData(RTP_DataFrame & frame, const PTimeInter
                   << (adjusted ? "increasing" : "cannot increase") << " delay="
                   << m_currentJitterDelay << " (" << (m_currentJitterDelay/m_timeUnits) << "ms)");
         ANALYSE(Out, oldestFrame->first, "Late");
+        m_bufferStaticTime = playOutTimestamp;
         m_frames.erase(oldestFrame);
         ++m_packetsTooLate;
 
