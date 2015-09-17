@@ -1775,6 +1775,14 @@ class OpalConnection : public PSafeObject
       */
     const PString & GetCalledPartyName() const { return m_calledPartyName; }
 
+    /**Set the called alias name (for incoming calls). This is useful for gateway
+       applications where the destination name may not be the same as the local name.
+
+       Note that if the called party is anm E.164 address and there are no alternative
+       names, such as aliases in H.323, then this field will be empty.
+      */
+    void SetCalledPartyName(const PString & name) { m_calledPartyName = name; }
+
     /**Get the called E.164 number (for incoming calls). This is useful for gateway
        applications where the destination number may not be the same as the local number.
 
