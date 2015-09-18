@@ -57,6 +57,7 @@ class OpalICEMediaTransport::Server : public PSTUNServer
     virtual void OnBindingResponse(const PSTUNMessage &, PSTUNMessage & response)
     {
       response.AddAttribute(PSTUNAttribute::USE_CANDIDATE);
+      response.AddAttribute(PSTUNAttribute::ICE_CONTROLLED); // We are ICE-lite and always controlled
     }
 };
 
@@ -358,7 +359,7 @@ bool OpalICEMediaTransport::InternalHandleICE(SubChannels subchannel, const void
     }
   }
   if (candidate == NULL) {
-    if (!m_promiscuous) {
+    if (!m_promiscuous || !message.IsRequest()) {
       PTRACE(2, *this << subchannel << ", ignoring STUN message for unknown ICE candidate: " << ap);
       return false;
     }
@@ -366,7 +367,7 @@ bool OpalICEMediaTransport::InternalHandleICE(SubChannels subchannel, const void
     m_remoteCandidates[subchannel].push_back(PNatCandidate(PNatCandidate::HostType, (PNatMethod::Component)(subchannel+1)));
     candidate = &m_remoteCandidates[subchannel].back();
     candidate->m_baseTransportAddress = ap;
-    PTRACE(2, *this << subchannel << ", received STUN message for unknown ICE candidate, adding: " << ap);
+    PTRACE(2, *this << subchannel << ", received STUN request for unknown ICE candidate, adding: " << ap);
   }
 
   if (message.IsRequest()) {
@@ -378,6 +379,9 @@ bool OpalICEMediaTransport::InternalHandleICE(SubChannels subchannel, const void
     if (!PAssertNULL(m_server)->OnReceiveMessage(message, PSTUNServer::SocketInfo(socket)))
       return false;
 
+    if (m_state == e_Completed)
+      return true;
+
     if (message.FindAttribute(PSTUNAttribute::USE_CANDIDATE) == NULL) {
       PTRACE(4, *this << subchannel << ", ICE awaiting USE-CANDIDATE");
       return false;
@@ -386,7 +390,7 @@ bool OpalICEMediaTransport::InternalHandleICE(SubChannels subchannel, const void
     candidate->m_state = e_CandidateSucceeded;
     PTRACE(3, *this << subchannel << ", ICE found USE-CANDIDATE");
   }
-  else {
+  else if (message.IsSuccessResponse()) {
     if (m_state != e_Offering) {
       PTRACE(3, *this << subchannel << ", unexpected STUN response in ICE: " << message);
       return false;
