@@ -1232,70 +1232,51 @@ bool OpalMediaSession::UpdateMediaFormat(const OpalMediaFormat &)
 }
 
 
-#if OPAL_SDP
 const PString & OpalMediaSession::GetBundleGroupId() { static PConstString const s("BUNDLE"); return s;  }
 
 
-PString OpalMediaSession::GetGroupId() const
-{
-  PSafeLockReadOnly lock(*this);
-  PString s = m_groupId;
-  s.MakeUnique();
-  return s;
-}
-
-
-bool OpalMediaSession::SetGroupId(const PString & id, bool overwrite)
+bool OpalMediaSession::AddGroup(const PString & groupId, const PString & mediaId, bool overwrite)
 {
   PSafeLockReadWrite lock(*this);
 
-  if (m_groupId == id)
-    return true;
-
-  if (overwrite || m_groupId.IsEmpty()) {
-    m_groupId = id;
-    m_groupId.MakeUnique();
-    PTRACE(4, *this << "set group id to \"" << id << '"');
+  if (!overwrite && m_groups.Contains(groupId)) {
+    if (m_groups[groupId] == mediaId)
+      return true;
+    PTRACE(3, *this << "could not set group \"" << groupId << "\" media id to"
+           " \"" << mediaId << "\", already set to \"" << m_groups[groupId] << '"');
+    return false;
   }
 
-  if (m_groupId == id)
-    return true;
-
-  PTRACE(3, *this << "could not set group id to \"" << id << "\", already set to \"" << m_groupId << '"');
-  return false;
+  m_groups.SetAt(groupId, mediaId);
+  PTRACE(4, "Set group \"" << groupId << "\" to media id \"" << mediaId << '"');
+  return true;
 }
 
 
-PString OpalMediaSession::GetGroupMediaId() const
+bool OpalMediaSession::IsGroupMember(const PString & groupId) const
 {
   PSafeLockReadOnly lock(*this);
-  PString s = m_groupMediaId;
-  s.MakeUnique();
-  return s;
+  return m_groups.Contains(groupId);
 }
 
 
-bool OpalMediaSession::SetGroupMediaId(const PString & id, bool overwrite)
+PStringArray OpalMediaSession::GetGroups() const
 {
-  PSafeLockReadWrite lock(*this);
-
-  if (m_groupMediaId == id)
-    return true;
-
-  if (overwrite || m_groupMediaId.IsEmpty()) {
-    m_groupMediaId = id;
-    m_groupMediaId.MakeUnique();
-    PTRACE(4, *this << "set group media id to \"" << id << '"');
-  }
-
-  if (m_groupMediaId == id)
-    return true;
-
-  PTRACE(3, *this << "could not set group media id to \"" << id << "\", already set to \"" << m_groupMediaId << '"');
-  return false;
+  PSafeLockReadOnly lock(*this);
+  return m_groups.GetKeys();
 }
 
 
+PString OpalMediaSession::GetGroupMediaId(const PString & groupId) const
+{
+  PSafeLockReadOnly lock(*this);
+  PString str = m_groups(groupId);
+  str.MakeUnique();
+  return str;
+}
+
+
+#if OPAL_SDP
 SDPMediaDescription * OpalMediaSession::CreateSDPMediaDescription()
 {
   return m_mediaType->CreateSDPMediaDescription(GetLocalAddress());

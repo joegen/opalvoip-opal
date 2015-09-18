@@ -453,6 +453,17 @@ void OpalRTPConnection::ReleaseMediaSession(unsigned sessionID)
 }
 
 
+#if OPAL_VIDEO
+void OpalRTPConnection::AddAudioVideoGroup(const PString & id)
+{
+  for (SessionMap::iterator it = m_sessions.begin(); it != m_sessions.end(); ++it) {
+    if (it->second->GetMediaType() == OpalMediaType::Audio() || it->second->GetMediaType() == OpalMediaType::Video())
+      it->second->AddGroup(id, it->second->GetMediaType(), false);
+  }
+}
+#endif // OPAL_VIDEO
+
+
 bool OpalRTPConnection::SetSessionQoS(OpalRTPSession * /*session*/)
 {
   return true;

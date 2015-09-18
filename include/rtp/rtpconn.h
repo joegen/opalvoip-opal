@@ -269,6 +269,14 @@ class OpalRTPConnection : public OpalConnection
       OpalMediaSession * mediaSession ///< New session
     );
 
+#if OPAL_VIDEO
+    /**Set group id, typically BUNDLE, for all audio/video sessions.
+      */
+    virtual void AddAudioVideoGroup(
+      const PString & id = OpalMediaSession::GetBundleGroupId()
+    );
+#endif
+
     /**Set QoS on session.
       */
     virtual bool SetSessionQoS(

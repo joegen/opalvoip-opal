@@ -281,11 +281,6 @@ class OpalSDPConnection : public OpalRTPConnection
       OpalTransportAddress & localAddress,
       OpalMediaTransportPtr & bundledTransport
     );
-#if OPAL_VIDEO
-    virtual void SetAudioVideoGroup(
-      const PString & id = OpalMediaSession::GetBundleGroupId()
-    );
-#endif
 
     void RetryHoldRemote(bool placeOnHold);
     virtual bool OnHoldStateChanged(bool placeOnHold);
