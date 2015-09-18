@@ -57,7 +57,6 @@ class OpalICEMediaTransport::Server : public PSTUNServer
     virtual void OnBindingResponse(const PSTUNMessage &, PSTUNMessage & response)
     {
       response.AddAttribute(PSTUNAttribute::USE_CANDIDATE);
-      response.AddAttribute(PSTUNAttribute::ICE_CONTROLLED); // We are ICE-lite and always controlled
     }
 };
 
