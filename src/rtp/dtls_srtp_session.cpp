@@ -334,6 +334,11 @@ PSSLCertificateFingerprint OpalDTLSSRTPSession::GetLocalFingerprint(PSSLCertific
 
 void OpalDTLSSRTPSession::SetRemoteFingerprint(const PSSLCertificateFingerprint& fp)
 {
+  if (!fp.IsValid()) {
+    PTRACE(2, "Invalid fingerprint supplied.");
+    return;
+  }
+
   OpalMediaTransportPtr transport = m_transport;
   if (transport != NULL)
     dynamic_cast<OpalDTLSMediaTransport &>(*transport).SetRemoteFingerprint(fp);
