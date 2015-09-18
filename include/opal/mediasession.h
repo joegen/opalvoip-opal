@@ -628,30 +628,37 @@ class OpalMediaSession : public PSafeObject, public OpalMediaTransportChannelTyp
       const OpalMediaFormat & mediaFormat
     );
 
-#if OPAL_SDP
     static const PString & GetBundleGroupId();
-
-    /**Get the "group" id for the RTP session.
-       This is typically a mechanism for connecting audio and video together via BUNDLE.
-    */
-    virtual PString GetGroupId() const;
 
     /**Set the "group" id for the RTP session.
        This is typically a mechanism for connecting audio and video together via BUNDLE.
     */
-    virtual bool SetGroupId(const PString & id, bool overwrite = true);
+    virtual bool AddGroup(
+        const PString & groupId,  ///< Identifier of the "group"
+        const PString & mediaId,  ///< Identifier of the session within the "group"
+        bool overwrite = true     ///< Allow overwrite of the mediaId
+    );
 
-    /**Get the "group media" id for the RTP session.
+    /**Indicate if the RTP session is a member of the "group".
+       This is typically a mechanism for connecting audio and video together via BUNDLE.
+    */
+    bool IsGroupMember(
+      const PString & groupId
+    ) const;
+
+    /**Get all groups this session belongs to.
+      */
+    PStringArray GetGroups() const;
+
+    /**Get the "group media" id for the group in this RTP session.
        This is typically a mechanism for connecting audio and video together via BUNDLE.
        If not set, uses the media type.
     */
-    virtual PString GetGroupMediaId() const;
+    PString GetGroupMediaId(
+      const PString & groupId
+    ) const;
 
-    /**Set the "group media" id for the RTP session.
-       This is typically a mechanism for connecting audio and video together via BUNDLE.
-    */
-    virtual bool SetGroupMediaId(const PString & id, bool overwrite = true);
-
+#if OPAL_SDP
     /**Create an appropriate SDP media description object for this media session.
       */
     virtual SDPMediaDescription * CreateSDPMediaDescription();
@@ -721,10 +728,7 @@ class OpalMediaSession : public PSafeObject, public OpalMediaTransportChannelTyp
     OpalMediaType    m_mediaType;  // media type for session
     bool             m_remoteBehindNAT;
     PStringOptions   m_stringOptions;
-#if OPAL_SDP
-    PString          m_groupId;
-    PString          m_groupMediaId;
-#endif    
+    PStringToString  m_groups;
 
     OpalMediaTransportPtr  m_transport;
     OpalMediaCryptoKeyList m_offeredCryptokeys;
