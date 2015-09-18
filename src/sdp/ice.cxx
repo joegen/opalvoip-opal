@@ -371,7 +371,7 @@ bool OpalICEMediaTransport::InternalHandleICE(SubChannels subchannel, const void
 
   if (message.IsRequest()) {
     if (m_state == e_Offering) {
-      PTRACE_IF(3, m_state != e_Completed, *this << subchannel << ", unexpected STUN request in ICE");
+      PTRACE_IF(3, m_state != e_Completed, *this << subchannel << ", unexpected STUN request in ICE: " << message);
       return false; // Just eat the STUN packet
     }
 
@@ -388,7 +388,7 @@ bool OpalICEMediaTransport::InternalHandleICE(SubChannels subchannel, const void
   }
   else {
     if (m_state != e_Offering) {
-      PTRACE(3, *this << subchannel << ", unexpected STUN response in ICE");
+      PTRACE(3, *this << subchannel << ", unexpected STUN response in ICE: " << message);
       return false;
     }
 
