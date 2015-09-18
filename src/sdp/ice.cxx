@@ -399,6 +399,10 @@ bool OpalICEMediaTransport::InternalHandleICE(SubChannels subchannel, const void
     if (!PAssertNULL(m_client)->ValidateMessageIntegrity(message))
       return false;
   }
+  else {
+      PTRACE(5, *this << subchannel << ", unexpected STUN message in ICE: " << message);
+      return false;
+  }
 
   InternalSetRemoteAddress(ap, subchannel, false PTRACE_PARAM(, "ICE"));
   m_state = e_Completed;
