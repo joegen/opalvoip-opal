@@ -94,7 +94,7 @@ class OpalRTPSession : public OpalMediaSession
     virtual bool SetRemoteAddress(const OpalTransportAddress & remoteAddress, bool isMediaAddress = true);
     virtual void AttachTransport(const OpalMediaTransportPtr & transport);
     virtual OpalMediaTransportPtr DetachTransport();
-    virtual bool SetGroupId(const PString & id, bool overwrite = true);
+    virtual bool AddGroup(const PString & groupId, const PString & mediaId, bool overwrite = true);
 
     virtual bool UpdateMediaFormat(const OpalMediaFormat & mediaFormat);
 
