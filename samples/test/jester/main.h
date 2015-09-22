@@ -61,7 +61,6 @@ class JesterJitterBuffer : public OpalAudioJitterBuffer
     JesterJitterBuffer();
 
     PINDEX GetCurrentDepth() const { return m_frames.size(); }
-    DWORD GetIncomingFrameTime() const { return m_incomingFrameTime; }
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -102,6 +101,8 @@ class JesterProcess : public PProcess
        while the different loops run. The program will not finish until this
        method is completed.*/
     void ManageUserInput();
+
+    unsigned m_sampleRate;
 
     /**The number of bytes of data in each simulated RTP_DataFrame */
     PINDEX m_bytesPerBlock;
