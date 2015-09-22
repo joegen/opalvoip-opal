@@ -280,7 +280,19 @@ PBoolean OpalRTPMediaStream::ReadPacket(RTP_DataFrame & packet)
     return false;
   }
 
-  if (PAssertNULL(m_jitterBuffer) == NULL || !m_jitterBuffer->ReadData(packet, m_readTimeout))
+  if (PAssertNULL(m_jitterBuffer) == NULL)
+    return false;
+
+  if (packet.GetTimestamp() == timestamp) {
+    RTP_Timestamp packetTime = m_jitterBuffer->GetPacketTime();
+    if (packetTime > 0)
+      timestamp += packetTime;
+    else
+      timestamp += m_frameTime;
+    packet.SetTimestamp(timestamp);
+  }
+
+  if (!m_jitterBuffer->ReadData(packet, m_readTimeout))
     return false;
 
 #if OPAL_VIDEO

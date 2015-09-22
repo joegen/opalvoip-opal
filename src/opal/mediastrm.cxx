@@ -290,12 +290,6 @@ PBoolean OpalMediaStream::WritePackets(RTP_DataFrameList & packets)
 }
 
 
-void OpalMediaStream::IncrementTimestamp(PINDEX size)
-{
-  timestamp += m_frameTime * (m_frameSize != 0 ? ((size + m_frameSize - 1) / m_frameSize) : 1);
-}
-
-
 PBoolean OpalMediaStream::ReadPacket(RTP_DataFrame & packet)
 {
   if (!IsOpen())
@@ -315,11 +309,6 @@ PBoolean OpalMediaStream::ReadPacket(RTP_DataFrame & packet)
   PINDEX lastReadCount;
   if (!ReadData(packet.GetPayloadPtr(), maxSize, lastReadCount))
     return false;
-
-  // If the ReadData() function did not change the timestamp then use the default
-  // method or fixed frame times and sizes.
-  if (oldTimestamp == timestamp)
-    IncrementTimestamp(lastReadCount);
 
   if (oldSeqNumber == m_sequenceNumber)
     m_sequenceNumber++;
@@ -345,8 +334,10 @@ PBoolean OpalMediaStream::WritePacket(RTP_DataFrame & packet)
   int size = packet.GetPayloadSize();
   if (size == 0) {
     PINDEX dummy;
-    if (!InternalWriteData(NULL, 0, dummy))
+    if (!WriteData(NULL, 0, dummy)) {
+      PTRACE(2, "WriteData (silence) failed");
       return false;
+    }
   }
   else {
     marker = packet.GetMarker();
@@ -354,8 +345,10 @@ PBoolean OpalMediaStream::WritePacket(RTP_DataFrame & packet)
 
     while (size > 0) {
       PINDEX written;
-      if (!InternalWriteData(ptr, size, written))
+      if (!WriteData(ptr, size, written)) {
+        PTRACE(2, "WriteData failed, size=" << size << ", written=" << written);
         return false;
+      }
       size -= written;
       ptr += written;
     }
@@ -364,24 +357,6 @@ PBoolean OpalMediaStream::WritePacket(RTP_DataFrame & packet)
   }
 
   packet.SetTimestamp(timestamp);
-
-  return true;
-}
-
-
-bool OpalMediaStream::InternalWriteData(const BYTE * data, PINDEX length, PINDEX & written)
-{
-  unsigned oldTimestamp = timestamp;
-
-  if (!WriteData(data, length, written) || (length > 0 && written == 0)) {
-    PTRACE(2, "WriteData failed, written=" << written);
-    return false;
-  }
-
-  // If the Write() function did not change the timestamp then use the default
-  // method of fixed frame times and sizes.
-  if (oldTimestamp == timestamp)
-    IncrementTimestamp(written);
 
   return true;
 }
