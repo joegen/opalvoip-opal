@@ -1452,7 +1452,7 @@ void OpalRTPSession::SyncSource::GetStatistics(OpalMediaStatistics & statistics)
   statistics.m_lastReportTime    = m_lastSenderReportTime;
 
   OpalJitterBuffer * jb = GetJitterBuffer();
-  if (jb != NULL) {
+  if (jb != NULL && jb->GetCurrentJitterDelay() > 0) {
     statistics.m_packetsTooLate    = jb->GetPacketsTooLate() + m_packetsTooLate;
     statistics.m_packetOverruns    = jb->GetBufferOverruns();
     statistics.m_jitterBufferDelay = jb->GetCurrentJitterDelay()/jb->GetTimeUnits();
