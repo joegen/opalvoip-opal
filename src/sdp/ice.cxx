@@ -51,16 +51,6 @@
 
 /////////////////////////////////////////////////////////////////////////////
 
-class OpalICEMediaTransport::Server : public PSTUNServer
-{
-  public:
-    virtual void OnBindingResponse(const PSTUNMessage &, PSTUNMessage & response)
-    {
-      response.AddAttribute(PSTUNAttribute::USE_CANDIDATE);
-    }
-};
-
-
 OpalICEMediaTransport::OpalICEMediaTransport(const PString & name)
   : OpalUDPMediaTransport(name)
   , m_localUsername(PBase64::Encode(PRandom::Octets(12)))
@@ -188,15 +178,15 @@ void OpalICEMediaTransport::SetCandidates(const PString & user, const PString & 
   m_remoteCandidates = newCandidates;
 
   if (m_server == NULL) {
-      m_server = new Server();
-      PTRACE_CONTEXT_ID_TO(m_server);
+    m_server = new PSTUNServer();
+    PTRACE_CONTEXT_ID_TO(m_server);
   }
   m_server->Open(GetSocket(e_Data),GetSocket(e_Control));
   m_server->SetCredentials(m_localUsername + ':' + m_remoteUsername, m_localPassword, PString::Empty());
 
   if (m_client == NULL) {
-      m_client = new PSTUNClient;
-      PTRACE_CONTEXT_ID_TO(m_client);
+    m_client = new PSTUNClient;
+    PTRACE_CONTEXT_ID_TO(m_client);
   }
   m_client->SetCredentials(m_remoteUsername + ':' + m_localUsername, m_remotePassword, PString::Empty());
 
