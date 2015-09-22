@@ -67,9 +67,12 @@ class OpalJitterBuffer : public PObject
       unsigned m_silenceShrinkTime;   ///< Amount to shrink jitter delay by if consistently silent
       unsigned m_jitterDriftPeriod;   ///< Time over which repeated undeflows cause packet to be dropped
 
-      Params()
-        : m_minJitterDelay(40)
-        , m_maxJitterDelay(250)
+      Params(
+        unsigned minJitterDelay = 40,
+        unsigned maxJitterDelay = 250
+      )
+        : m_minJitterDelay(minJitterDelay)
+        , m_maxJitterDelay(maxJitterDelay)
         , m_currentJitterDelay(m_minJitterDelay)
         , m_jitterGrowTime(10)
         , m_jitterShrinkPeriod(1000)
@@ -87,10 +90,21 @@ class OpalJitterBuffer : public PObject
         const OpalManager & manager,
         unsigned timeUnits
       );
+      Init(
+        const OpalMediaType & mediaType,
+        unsigned minJitterDelay,
+        unsigned maxJitterDelay,
+        unsigned timeUnits = 8,
+        PINDEX packetSize = 2048
+        ) : Params(minJitterDelay, maxJitterDelay)
+          , m_mediaType(mediaType)
+          , m_timeUnits(timeUnits)
+          , m_packetSize(packetSize)
+      { }
 
       OpalMediaType m_mediaType;
       unsigned      m_timeUnits;           ///< Time units, usually 8 or 16
-      PINDEX   m_packetSize;          ///< Max RTP packet size
+      PINDEX        m_packetSize;          ///< Max RTP packet size
     };
 
     /**@name Construction */
