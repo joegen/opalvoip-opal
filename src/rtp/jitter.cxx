@@ -508,7 +508,7 @@ PBoolean OpalAudioJitterBuffer::WriteData(const RTP_DataFrame & frame, PTimeInte
   pair<FrameMap::iterator,bool> result = m_frames.insert(FrameMap::value_type(timestamp, frame));
   if (result.second) {
     ANALYSE(In, timestamp, m_synchronisationState != e_SynchronisationDone ? "PreBuf" : "");
-    PTRACE(sm_EveryPacketLogLevel, "Inserted packet :"
+    PTRACE_IF(sm_EveryPacketLogLevel, m_maxJitterDelay > 0, "Inserted packet :"
            " ts=" << timestamp << ","
            " dT=" << (tick - m_lastInsertTick) << ","
            " payload=" << frame.GetPayloadSize() << ","
@@ -560,6 +560,7 @@ PBoolean OpalAudioJitterBuffer::ReadData(RTP_DataFrame & frame, const PTimeInter
   frame.SetPayloadSize(0);
 
   if (m_maxJitterDelay == 0) {
+    m_currentJitterDelay = 0;
     m_frameCount.Wait(); // Go synchronous
     PWaitAndSignal mutex(m_bufferMutex);
     if (!m_frames.empty()) {
