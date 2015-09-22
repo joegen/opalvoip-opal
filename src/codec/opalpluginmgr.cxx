@@ -782,17 +782,8 @@ PBoolean OpalPluginFramedAudioTranscoder::ConvertSilentFrame(BYTE * buffer)
 
   unsigned length;
 
-  // for a decoder, this mean that we need to create a silence frame
-  // which is easy - ask the decoder, or just create silence
-  if (!isEncoder) {
-    if ((codecDef->flags & PluginCodec_DecodeSilence) == 0) {
-      memset(buffer, 0, outputBytesPerFrame); 
-      return true;
-    }
-  }
-
-  // for an encoder, we encode silence but set the flag so it can do something special if need be
-  else {
+  if (isEncoder) {
+    // for an encoder, we encode silence but set the flag so it can do something special if need be
     length = codecDef->parm.audio.bytesPerFrame;
     if ((codecDef->flags & PluginCodec_EncodeSilence) == 0) {
       void * silence = alloca(inputBytesPerFrame);
@@ -802,9 +793,19 @@ PBoolean OpalPluginFramedAudioTranscoder::ConvertSilentFrame(BYTE * buffer)
       return Transcode(silence, &silenceLen, buffer, &length, &flags);
     }
   }
+  else {
+    // for a decoder, this mean that we need to create a silence frame
+    // which we either ask the decoder, or just create zero PCM data
+    if ((codecDef->flags & PluginCodec_DecodeSilence) == 0) {
+      memset(buffer, 0, outputBytesPerFrame); 
+      return true;
+    }
+    length = outputBytesPerFrame;
+  }
 
+  unsigned zero = 0;
   unsigned flags = PluginCodec_CoderSilenceFrame;
-  return Transcode(NULL, NULL, buffer, &length, &flags);
+  return Transcode("", &zero, buffer, &length, &flags);
 }
 
 
