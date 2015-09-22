@@ -164,6 +164,10 @@ class OpalJitterBuffer : public PObject
       */
     virtual RTP_Timestamp GetCurrentJitterDelay() const { return 0; }
 
+    /**Get average packet time for incoming data.
+      */
+    virtual RTP_Timestamp GetPacketTime() const { return 0; }
+
     /**Get time units.
       */
     unsigned GetTimeUnits() const { return m_timeUnits; }
@@ -267,6 +271,10 @@ class OpalAudioJitterBuffer : public OpalJitterBuffer
       */
     virtual RTP_Timestamp GetCurrentJitterDelay() const { return m_currentJitterDelay; }
 
+    /**Get average packet time for incoming data.
+      */
+    virtual RTP_Timestamp GetPacketTime() const { return m_packetTime; }
+
     /**Get maximum consecutive marker bits before buffer starts to ignore them.
       */
     unsigned GetMaxConsecutiveMarkerBits() const { return m_maxConsecutiveMarkerBits; }
@@ -299,7 +307,7 @@ class OpalAudioJitterBuffer : public OpalJitterBuffer
 
     unsigned           m_frameTimeCount;
     uint64_t           m_frameTimeSum;
-    RTP_Timestamp      m_incomingFrameTime;
+    RTP_Timestamp      m_packetTime;
     RTP_SequenceNumber m_lastSequenceNum;
     RTP_Timestamp      m_lastTimestamp;
     RTP_SyncSourceId   m_lastSyncSource;
