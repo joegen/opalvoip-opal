@@ -445,8 +445,6 @@ class OpalMediaStream : public PSafeObject
     virtual bool InternalExecuteCommand(const OpalMediaCommand & command);
 
   protected:
-    void IncrementTimestamp(PINDEX size);
-    bool InternalWriteData(const BYTE * data, PINDEX length, PINDEX & written);
     OpalMediaPatchPtr InternalSetPatchPart1(OpalMediaPatch * newPatch);
     void InternalSetPatchPart2(const OpalMediaPatchPtr & oldPatch);
     virtual bool InternalSetJitterBuffer(const OpalJitterBuffer::Init & init);
