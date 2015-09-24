@@ -46,10 +46,6 @@
 PCREATE_PROCESS(JesterProcess);
 
 
-#define SAMPLES_PER_SECOND 8000
-#define SAMPLES_PER_MILLISECOND (SAMPLES_PER_SECOND/1000)
-
-
 ostream & operator<<(ostream & strm, const JitterProfileMap & profile)
 {
   for (JitterProfileMap::const_iterator it = profile.begin(); it != profile.end(); ++it) {
@@ -96,6 +92,7 @@ void JesterProcess::Main()
              "D-start-delta: Start delta time between generator and playback (ms)\n"
              "d-drop. simulate dropped packets.\n"
              "j-jitter: size of the jitter buffer in ms (100-1000)\n"
+             "r-rate: sample rate (default 8000Hz)\n"
              "g-generate: amount of jitter to simulate (see below)\n"
              "I-init-play-ts: Initial timestamp value for generator\n"
              "i-init-gen-ts: Initial timestamp value for playback\n"
@@ -130,7 +127,9 @@ void JesterProcess::Main()
 
   PTRACE_INITIALISE(args);
 
-  OpalJitterBuffer::Init init(OpalMediaType::Audio(), 50, 250);
+  m_sampleRate = args.GetOptionAs('r', 8000);
+
+  OpalJitterBuffer::Init init(OpalMediaType::Audio(), 50, 250, m_sampleRate/1000);
 
   if (args.HasOption('j')) {
     unsigned minJitterNew;
@@ -146,8 +145,8 @@ void JesterProcess::Main()
     }
 
     if (minJitterNew >= 20 && minJitterNew <= maxJitterNew && maxJitterNew <= 1000) {
-      init.m_minJitterDelay = minJitterNew*SAMPLES_PER_MILLISECOND;
-      init.m_maxJitterDelay = maxJitterNew*SAMPLES_PER_MILLISECOND;
+      init.m_minJitterDelay = minJitterNew;
+      init.m_maxJitterDelay = maxJitterNew;
     } else {
       cerr << "Jitter should be between 20 milliseconds and 1 seconds, is "
         << 20 << '-' << 1000 << endl;
@@ -158,7 +157,7 @@ void JesterProcess::Main()
   m_silenceSuppression = args.HasOption('s');
   m_dropPackets = args.HasOption('d');
   m_markerSuppression = args.HasOption('m');
-  m_bytesPerBlock = args.GetOptionString('S', "20").AsUnsigned()*SAMPLES_PER_MILLISECOND*2;
+  m_bytesPerBlock = args.GetOptionString('S', "20").AsUnsigned()*m_sampleRate/1000*2;
   m_startTimeDelta = args.GetOptionString('D', "0").AsInteger();
   m_generateTimestamp = args.GetOptionString('i', "0").AsUnsigned();
   m_playbackTimestamp = args.GetOptionString('I', "0").AsUnsigned();
@@ -180,7 +179,7 @@ void JesterProcess::Main()
   }
 
   PString audioDevice = args.GetOptionString('a', PSoundChannel::GetDefaultDevice(PSoundChannel::Player));
-  if (!m_player.Open(audioDevice, PSoundChannel::Player, 1, SAMPLES_PER_SECOND)) {
+  if (!m_player.Open(audioDevice, PSoundChannel::Player, 1, m_sampleRate)) {
     cerr << "Failed to open the sound device \"" << audioDevice 
          << "\", available devices:\n";
     PStringList namesPlay = PSoundChannel::GetDeviceNames(PSoundChannel::Player);
@@ -189,7 +188,7 @@ void JesterProcess::Main()
     cerr << endl;
     return;
   }
-  m_player.SetBuffers(m_bytesPerBlock, 160/SAMPLES_PER_MILLISECOND/2);
+  m_player.SetBuffers(m_bytesPerBlock, 160/(m_sampleRate/1000)/2);
 
   if (args.HasOption('P')) {
     if (!m_pcap.Open(args.GetOptionString('P'))) {
@@ -198,25 +197,25 @@ void JesterProcess::Main()
     }
 
     cout << "Analysing PCAP file ... " << flush;
-    OpalPCAPFile::DiscoveredRTPMap discoveredRTPMap;
-    if (!m_pcap.DiscoverRTP(discoveredRTPMap)) {
+    OpalPCAPFile::DiscoveredRTP discoveredRTP;
+    if (!m_pcap.DiscoverRTP(discoveredRTP)) {
       cerr << "error: no RTP sessions found" << endl;
       return;
     }
 
-    cout << "\nSelect one of the following sessions:\n" << discoveredRTPMap << endl;
+    cout << "\nSelect one of the following sessions:\n" << discoveredRTP << endl;
     for (;;) {
       cout << "Session? " << flush;
       size_t session;
       cin >> session;
-      if (m_pcap.SetFilters(discoveredRTPMap, session))
+      if (m_pcap.SetFilters(discoveredRTP[session]))
         break;
       cout << "Session " << session << " is not valid" << endl;
     }
     cout << "\nPCAP file         : " << m_pcap.GetFilePath() << endl;
   }
   else {
-    cout << "Packet size       : " << m_bytesPerBlock << " bytes (" << m_bytesPerBlock/SAMPLES_PER_MILLISECOND/2 << "ms)\n"
+    cout << "Packet size       : " << m_bytesPerBlock << " bytes (" << m_bytesPerBlock/(m_sampleRate/1000)/2 << "ms)\n"
             "Generated jitter  : " << m_generateJitter << "\n"
             "Silence periods   : " << (m_silenceSuppression ? "yes" : "no") << "\n"
             "Suppress markers  : " << (m_markerSuppression ? "yes" : "no") << "\n"
@@ -267,7 +266,7 @@ void JesterProcess::Main()
           }
           m_playbackTimestamp = ts + lastReadTimeDelta;
         }
-        outTick += lastReadTimeDelta/SAMPLES_PER_MILLISECOND;
+        outTick += lastReadTimeDelta/(m_sampleRate/1000);
 #if 0
         static unsigned adjust = 0;
         outTick -= ++adjust % 3 > 0;
@@ -279,7 +278,7 @@ void JesterProcess::Main()
         PTRACE(5, "Jester\tInserting frame : "
                   "ts=" << setw(8) << ts << " "
                   "tick=" << setw(7) << genTick << " "
-                  "(" << PTimeInterval(ts/SAMPLES_PER_MILLISECOND) << ')');
+                  "(" << PTimeInterval(ts/(m_sampleRate/1000)) << ')');
         if (!m_jitterBuffer.WriteData(writeFrame, genTick))
           break;
       }
@@ -356,7 +355,7 @@ bool JesterProcess::GenerateFrame(RTP_DataFrame & frame, PTimeInterval & delay)
   }
 
   if (m_silenceSuppression && !m_lastFrameWasSilence &&
-          (m_generateTimestamp - m_talkBurstTimestamp) > (10000*SAMPLES_PER_MILLISECOND)) {
+          (m_generateTimestamp - m_talkBurstTimestamp) > (10000*(m_sampleRate/1000))) {
     PTRACE(3, "Jester\tStarted silence : ts=" << m_generateTimestamp);
     m_lastFrameWasSilence = true;
     m_lastSilentTimestamp = m_generateTimestamp;
@@ -364,7 +363,7 @@ bool JesterProcess::GenerateFrame(RTP_DataFrame & frame, PTimeInterval & delay)
     return false;
   }
 
-  if (m_lastSilentTimestamp != 0 && (m_generateTimestamp - m_lastSilentTimestamp) < (2000*SAMPLES_PER_MILLISECOND)) {
+  if (m_lastSilentTimestamp != 0 && (m_generateTimestamp - m_lastSilentTimestamp) < (2000*(m_sampleRate/1000))) {
     PTRACE(5, "Jester\tSilence active  : ts=" << setw(8) << m_generateTimestamp);
     delay = 10;
     return false;
@@ -400,7 +399,7 @@ bool JesterProcess::GenerateFrame(RTP_DataFrame & frame, PTimeInterval & delay)
   PTRACE_IF(3, m_lastGeneratedJitter != it->second,
                "Jester\tGenerated jitter changed to " << it->second << "ms");
   m_lastGeneratedJitter = it->second;
-  delay.SetInterval(elapsedTimestamp/SAMPLES_PER_MILLISECOND
+  delay.SetInterval(elapsedTimestamp/(m_sampleRate/1000)
                           - (PTimer::Tick() - m_initialTick).GetMilliSeconds()
                           + PRandom::Number(m_lastGeneratedJitter));
 
@@ -496,9 +495,9 @@ void JesterProcess::Report()
   cout << "  Generated jitter      = " << m_lastGeneratedJitter << "ms\n"
           "  Total packets created = " << m_generateSequenceNumber << "\n"
           "  Current Jitter Delay  = " << m_jitterBuffer.GetCurrentJitterDelay() << " ("
-       <<      m_jitterBuffer.GetCurrentJitterDelay()/SAMPLES_PER_MILLISECOND << "ms)\n"
-          "  Current frame period  = " << m_jitterBuffer.GetIncomingFrameTime() << " ("
-       <<      m_jitterBuffer.GetIncomingFrameTime()/SAMPLES_PER_MILLISECOND << "ms)\n"
+       <<      m_jitterBuffer.GetCurrentJitterDelay()/(m_sampleRate/1000) << "ms)\n"
+          "  Current frame period  = " << m_jitterBuffer.GetPacketTime() << " ("
+       <<      m_jitterBuffer.GetPacketTime()/(m_sampleRate/1000) << "ms)\n"
           "  Current packet depth  = " << m_jitterBuffer.GetCurrentDepth() << "\n"
           "  Too late packet count = " << m_jitterBuffer.GetPacketsTooLate() << "\n"
           "  Packet overrun count  = " << m_jitterBuffer.GetBufferOverruns() << "\n"

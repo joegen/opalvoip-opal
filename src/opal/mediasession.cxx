@@ -63,18 +63,18 @@ OpalNetworkStatistics::OpalNetworkStatistics()
   , m_totalPackets(0)
   , m_controlPacketsIn(0)
   , m_controlPacketsOut(0)
-  , m_NACKs(0)
-  , m_packetsLost(0)
-  , m_packetsOutOfOrder(0)
-  , m_packetsTooLate(0)
-  , m_packetOverruns(0)
-  , m_minimumPacketTime(0)
-  , m_averagePacketTime(0)
-  , m_maximumPacketTime(0)
-  , m_averageJitter(0)
-  , m_maximumJitter(0)
-  , m_jitterBufferDelay(0)
-  , m_roundTripTime(0)
+  , m_NACKs(-1)
+  , m_packetsLost(-1)
+  , m_packetsOutOfOrder(-1)
+  , m_packetsTooLate(-1)
+  , m_packetOverruns(-1)
+  , m_minimumPacketTime(-1)
+  , m_averagePacketTime(-1)
+  , m_maximumPacketTime(-1)
+  , m_averageJitter(-1)
+  , m_maximumJitter(-1)
+  , m_jitterBufferDelay(-1)
+  , m_roundTripTime(-1)
   , m_lastPacketTime(0)
   , m_lastReportTime(0)
   , m_targetBitRate(0)
@@ -255,7 +255,7 @@ static PString InternalGetRate(const PTime & lastUpdate,
 {
   PString str = "N/A";
 
-  if (lastUpdate.IsValid() && previousUpdate.IsValid()) {
+  if (lastValue >= 0 && previousValue >= 0 && lastUpdate.IsValid() && previousUpdate.IsValid()) {
     PTimeInterval interval = lastUpdate - previousUpdate;
     if (interval == 0)
       str = '0';
@@ -363,15 +363,15 @@ void OpalMediaStatistics::PrintOn(ostream & strm) const
        << setw(indent) <<    "Packets out of order" << " = " << m_packetsOutOfOrder << '\n'
        << setw(indent) <<        "Packets too late" << " = " << m_packetsTooLate << '\n';
 
-  if (m_roundTripTime > 0)
+  if (m_roundTripTime >= 0)
     strm << setw(indent) <<       "Round Trip Time" << " = " << m_roundTripTime << '\n';
 
   if (m_mediaType == OpalMediaType::Audio()) {
     strm << setw(indent) <<       "Packet overruns" << " = " << m_packetOverruns << '\n';
-    if (m_averageJitter > 0 || m_maximumJitter > 0)
+    if (m_averageJitter >= 0 || m_maximumJitter >= 0)
       strm << setw(indent) <<      "Average jitter" << " = " << m_averageJitter << "ms\n"
            << setw(indent) <<      "Maximum jitter" << " = " << m_maximumJitter << "ms\n";
-    if (m_jitterBufferDelay > 0)
+    if (m_jitterBufferDelay >= 0)
       strm << setw(indent) << "Jitter buffer delay" << " = " << m_jitterBufferDelay << "ms\n";
   }
 #if OPAL_VIDEO
