@@ -733,8 +733,14 @@ PBoolean OpalAudioJitterBuffer::ReadData(RTP_DataFrame & frame, const PTimeInter
         PTRACE(sm_EveryPacketLogLevel, "Dropping packet " COMMON_TRACE_INFO << ", actual-ts=" << oldestFrame->first);
         m_frames.erase(oldestFrame);
         ++m_bufferOverruns;
+
+        if (m_frames.empty()) {
+          PTRACE(sm_EveryPacketLogLevel, "Buffer emptied  " COMMON_TRACE_INFO);
+          ANALYSE(Out, requiredTimestamp, "Emptied");
+          return true;
+        }
+
         oldestFrame = m_frames.begin();
-        PAssert(oldestFrame != m_frames.end(), PLogicError);
       }
 
       m_synchronisationState = e_SynchronisationDone;
