@@ -144,10 +144,22 @@ dnl $2 new CPPFLAGS
 dnl $3 new CFLAGS
 dnl $4 new CXXFLAGS
 AC_DEFUN([MY_ADD_FLAGS],[
-   m4_ifnblank([$1], [LIBS="$1 $LIBS"])
-   m4_ifnblank([$2], [CPPFLAGS="$2 $CPPFLAGS"])
-   m4_ifnblank([$3], [CFLAGS="$3 $CFLAGS"])
-   m4_ifnblank([$4], [CXXFLAGS="$4 $CXXFLAGS"])
+   m4_ifnblank([$2], [
+      AC_MSG_NOTICE([Adding CPPFLAGS: $2])
+      CPPFLAGS="$2 $CPPFLAGS"
+   ])
+   m4_ifnblank([$3], [
+      AC_MSG_NOTICE([Adding CFLAGS: $3])
+      CFLAGS="$3 $CFLAGS"
+   ])
+   m4_ifnblank([$4], [
+      AC_MSG_NOTICE([Adding CXXFLAGS: $4])
+      CXXFLAGS="$4 $CXXFLAGS"
+   ])
+   m4_ifnblank([$1], [
+      AC_MSG_NOTICE([Adding LIBS: $1])
+      LIBS="$1 $LIBS"
+   ])
 ])
 
 
@@ -465,12 +477,14 @@ case "$target_os" in
       CPPFLAGS="-stdlib=libc++ $CPPFLAGS"
       LDFLAGS="${LDFLAGS} -stdlib=libc++"
       LIBS="-framework AudioToolbox -framework CoreAudio -framework SystemConfiguration -framework Foundation -lobjc $LIBS"
-      MY_COMPILE_IFELSE(
-         [debug build (-gdwarf-4)],
-         [-gdwarf-4],
-         [],
-         [],
-         [DEBUG_FLAG="-gdwarf-4"]
+      AS_VAR_SET_IF([DEBUG_FLAG], ,
+         MY_COMPILE_IFELSE(
+            [debug build (-gdwarf-4)],
+            [-gdwarf-4],
+            [],
+            [],
+            [DEBUG_FLAG="-gdwarf-4"]
+         )
       )
    ;;
 
