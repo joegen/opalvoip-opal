@@ -206,7 +206,7 @@ OpalRTPSession::SyncSource * OpalRTPSession::UseSyncSource(RTP_SyncSourceId ssrc
   }
 
 #if PTRACING
-  const unsigned Level = m_groupId != GetBundleGroupId() ? 2 : 6;
+  const unsigned Level = IsGroupMember(GetBundleGroupId()) ? 6 : 2;
   if (PTrace::CanTrace(Level)) {
     ostream & trace = PTRACE_BEGIN(Level);
     trace << *this << "packet from SSRC=" << RTP_TRACE_SRC(ssrc) << " ignored";
@@ -777,12 +777,12 @@ OpalMediaTransportPtr OpalRTPSession::DetachTransport()
 }
 
 
-bool OpalRTPSession::SetGroupId(const PString & id, bool overwrite)
+bool OpalRTPSession::AddGroup(const PString & groupId, const PString & mediaId, bool overwrite)
 {
-  if (!OpalMediaSession::SetGroupId(id, overwrite))
+  if (!OpalMediaSession::AddGroup(groupId, mediaId, overwrite))
     return false;
 
-  if (id == GetBundleGroupId()) {
+  if (IsGroupMember(GetBundleGroupId())) {
     // When bundling we force rtcp-mux and only allow announced SSRC values
     m_singlePortRx = true;
     m_allowAnySyncSource = false;
@@ -2204,10 +2204,10 @@ bool OpalRTPSession::Open(const PString & localInterface, const OpalTransportAdd
     return false;
 
   PString transportName("RTP ");
-  if (m_groupId != GetBundleGroupId())
-    transportName.sprintf("Session %u", m_sessionId);
-  else
+  if (IsGroupMember(GetBundleGroupId()))
     transportName += "bundle";
+  else
+    transportName.sprintf("Session %u", m_sessionId);
   OpalMediaTransportPtr transport = CreateMediaTransport(transportName);
   PTRACE_CONTEXT_ID_TO(*transport);
 

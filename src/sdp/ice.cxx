@@ -51,16 +51,6 @@
 
 /////////////////////////////////////////////////////////////////////////////
 
-class OpalICEMediaTransport::Server : public PSTUNServer
-{
-  public:
-    virtual void OnBindingResponse(const PSTUNMessage &, PSTUNMessage & response)
-    {
-      response.AddAttribute(PSTUNAttribute::USE_CANDIDATE);
-    }
-};
-
-
 OpalICEMediaTransport::OpalICEMediaTransport(const PString & name)
   : OpalUDPMediaTransport(name)
   , m_localUsername(PBase64::Encode(PRandom::Octets(12)))
@@ -188,19 +178,19 @@ void OpalICEMediaTransport::SetCandidates(const PString & user, const PString & 
   m_remoteCandidates = newCandidates;
 
   if (m_server == NULL) {
-      m_server = new Server();
-      PTRACE_CONTEXT_ID_TO(m_server);
+    m_server = new PSTUNServer();
+    PTRACE_CONTEXT_ID_TO(m_server);
   }
   m_server->Open(GetSocket(e_Data),GetSocket(e_Control));
   m_server->SetCredentials(m_localUsername + ':' + m_remoteUsername, m_localPassword, PString::Empty());
 
   if (m_client == NULL) {
-      m_client = new PSTUNClient;
-      PTRACE_CONTEXT_ID_TO(m_client);
+    m_client = new PSTUNClient;
+    PTRACE_CONTEXT_ID_TO(m_client);
   }
   m_client->SetCredentials(m_remoteUsername + ':' + m_localUsername, m_remotePassword, PString::Empty());
 
-  m_remoteBehindNAT = true;
+  SetRemoteBehindNAT();
 
   for (size_t subchannel = 0; subchannel < m_subchannels.size(); ++subchannel) {
     PUDPSocket * socket = GetSocket((SubChannels)subchannel);
@@ -358,7 +348,7 @@ bool OpalICEMediaTransport::InternalHandleICE(SubChannels subchannel, const void
     }
   }
   if (candidate == NULL) {
-    if (!m_promiscuous) {
+    if (!m_promiscuous || !message.IsRequest()) {
       PTRACE(2, *this << subchannel << ", ignoring STUN message for unknown ICE candidate: " << ap);
       return false;
     }
@@ -366,17 +356,20 @@ bool OpalICEMediaTransport::InternalHandleICE(SubChannels subchannel, const void
     m_remoteCandidates[subchannel].push_back(PNatCandidate(PNatCandidate::HostType, (PNatMethod::Component)(subchannel+1)));
     candidate = &m_remoteCandidates[subchannel].back();
     candidate->m_baseTransportAddress = ap;
-    PTRACE(2, *this << subchannel << ", received STUN message for unknown ICE candidate, adding: " << ap);
+    PTRACE(2, *this << subchannel << ", received STUN request for unknown ICE candidate, adding: " << ap);
   }
 
   if (message.IsRequest()) {
     if (m_state == e_Offering) {
-      PTRACE_IF(3, m_state != e_Completed, *this << subchannel << ", unexpected STUN request in ICE");
+      PTRACE_IF(3, m_state != e_Completed, *this << subchannel << ", unexpected STUN request in ICE: " << message);
       return false; // Just eat the STUN packet
     }
 
     if (!PAssertNULL(m_server)->OnReceiveMessage(message, PSTUNServer::SocketInfo(socket)))
       return false;
+
+    if (m_state == e_Completed)
+      return true;
 
     if (message.FindAttribute(PSTUNAttribute::USE_CANDIDATE) == NULL) {
       PTRACE(4, *this << subchannel << ", ICE awaiting USE-CANDIDATE");
@@ -386,13 +379,17 @@ bool OpalICEMediaTransport::InternalHandleICE(SubChannels subchannel, const void
     candidate->m_state = e_CandidateSucceeded;
     PTRACE(3, *this << subchannel << ", ICE found USE-CANDIDATE");
   }
-  else {
+  else if (message.IsSuccessResponse()) {
     if (m_state != e_Offering) {
-      PTRACE(3, *this << subchannel << ", unexpected STUN response in ICE");
+      PTRACE(3, *this << subchannel << ", unexpected STUN response in ICE: " << message);
       return false;
     }
 
     if (!PAssertNULL(m_client)->ValidateMessageIntegrity(message))
+      return false;
+  }
+  else {
+      PTRACE(5, *this << subchannel << ", unexpected STUN message in ICE: " << message);
       return false;
   }
 

@@ -37,6 +37,7 @@
 
 #include <ptlib_wx.h>
 #include <opal/manager.h>
+#include <rtp/pcapfile.h>
 
 #ifndef OPAL_PTLIB_AUDIO
   #error Cannot compile without PTLib sound channel support!
@@ -47,12 +48,20 @@
 
 
 class MyManager;
+class wxProgressDialog;
+class wxGrid;
+class wxGridEvent;
 
 
 struct MyOptions
 {
   PwxString m_AudioDevice;
-  PwxString m_VideoDevice;
+  int       m_VideoTiming;
+
+  MyOptions()
+    : m_AudioDevice("Default")
+    , m_VideoTiming(0)
+  { }
 };
 
 
@@ -70,7 +79,26 @@ class OptionsDialog : public wxDialog
     MyOptions   m_options;
 
 
-    DECLARE_EVENT_TABLE()
+  wxDECLARE_EVENT_TABLE();
+};
+
+
+class VideoOutputWindow : public wxScrolledWindow
+{
+  public:
+    VideoOutputWindow();
+    ~VideoOutputWindow();
+
+    void OutputVideo(const RTP_DataFrame & data);
+    void OnVideoUpdate(wxCommandEvent &);
+    void OnPaint(wxPaintEvent &);
+
+    PColourConverter * m_converter;
+    wxBitmap   m_bitmap;
+    PMutex     m_mutex;
+
+  wxDECLARE_DYNAMIC_CLASS(VideoOutputWindow);
+  wxDECLARE_EVENT_TABLE();
 };
 
 
@@ -78,17 +106,65 @@ class MyPlayer : public wxMDIChildFrame
 {
   public:
     MyPlayer(MyManager * manager, const PFilePath & filename);
-
-    void Play();
+    ~MyPlayer();
 
   private:
     void OnCloseWindow(wxCloseEvent &);
     void OnClose(wxCommandEvent &);
+    void OnListChanged(wxGridEvent &);
+    void OnPlay(wxCommandEvent &);
+    void OnStop(wxCommandEvent &);
+    void OnPause(wxCommandEvent &);
+    void OnResume(wxCommandEvent &);
+    void OnStep(wxCommandEvent &);
 
-    MyManager & m_manager;
-    PFilePath   m_pcapFile;
+    void Discover();
+    PDECLARE_NOTIFIER2(OpalPCAPFile, MyPlayer, DiscoverProgress, OpalPCAPFile::Progress &);
 
-    DECLARE_EVENT_TABLE()
+    void PlayAudio();
+    void PlayVideo();
+
+    MyManager        & m_manager;
+    OpalPCAPFile       m_pcapFile;
+
+    VideoOutputWindow * m_videoOutput;
+
+    PThread          * m_discoverThread;
+    wxProgressDialog * m_discoverProgress;
+    OpalPCAPFile::DiscoveredRTP m_discoveredRTP;
+
+    enum
+    {
+      ColSrcIP,
+      ColSrcPort,
+      ColDstIP,
+      ColDstPort,
+      ColSSRC,
+      ColPayloadType,
+      ColFormat,
+      ColPlay,
+      NumCols
+    };
+    wxGrid * m_rtpList;
+    unsigned m_selectedRTP;
+
+    enum
+    {
+      CtlIdle,
+      CtlRunning,
+      CtlPause,
+      CtlStep,
+      CtlStop
+    }         m_playThreadCtrl;
+    PThread * m_playThread;
+
+    wxButton * m_play;
+    wxButton * m_stop;
+    wxButton * m_pause;
+    wxButton * m_resume;
+    wxButton * m_step;
+
+  wxDECLARE_EVENT_TABLE();
 };
 
 
@@ -99,13 +175,10 @@ class MyManager : public wxMDIParentFrame, public OpalManager
     ~MyManager();
 
     bool Initialise(bool startMinimised);
-    void Play(const PwxString & fname);
+    void Load(const PwxString & fname);
 
-    void PostEvent(
-      const wxCommandEvent & cmdEvent,
-      const PString & str = PString::Empty(),
-      const void * data = NULL
-    );
+    PString GetAudioDevice() const { return m_options.m_AudioDevice; }
+    bool UseFileVideoTiming() const { return m_options.m_VideoTiming == 0; }
 
   private:
     void OnClose(wxCloseEvent &);
@@ -118,7 +191,7 @@ class MyManager : public wxMDIParentFrame, public OpalManager
 
     MyOptions m_options;
 
-    DECLARE_EVENT_TABLE()
+  wxDECLARE_EVENT_TABLE();
 };
 
 

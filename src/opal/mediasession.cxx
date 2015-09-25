@@ -504,6 +504,7 @@ ostream & operator<<(ostream & strm, OpalMediaTransportChannelTypes::SubChannels
 OpalMediaTransport::OpalMediaTransport(const PString & name)
   : m_name(name)
   , m_remoteBehindNAT(false)
+  , m_remoteAddressSet(true)
   , m_packetSize(2048)
   , m_maxNoTransmitTime(0, 10)          // Sending data for 10 seconds, ICMP says still not there
   , m_started(false)
@@ -533,7 +534,7 @@ bool OpalMediaTransport::IsOpen() const
 
 bool OpalMediaTransport::IsEstablished() const
 {
-  return IsOpen();
+  return m_remoteAddressSet && IsOpen();
 }
 
 
@@ -635,6 +636,12 @@ void OpalMediaTransport::RemoveReadNotifier(PObject * target, SubChannels subcha
   }
 }
 
+
+void OpalMediaTransport::SetRemoteBehindNAT()
+{
+  m_remoteBehindNAT = true;
+  m_remoteAddressSet = !GetRemoteAddress().IsEmpty();
+}
 
 OpalMediaTransport::Transport::Transport(OpalMediaTransport * owner, SubChannels subchannel, PChannel * chan)
   : m_owner(owner)
@@ -818,12 +825,6 @@ OpalUDPMediaTransport::OpalUDPMediaTransport(const PString & name)
 }
 
 
-bool OpalUDPMediaTransport::IsEstablished() const
-{
-  return !GetRemoteAddress().IsEmpty() && OpalMediaTransport::IsEstablished();
-}
-
-
 OpalTransportAddress OpalUDPMediaTransport::GetLocalAddress(SubChannels subchannel) const
 {
   PSafeLockReadOnly lock(*this);
@@ -915,6 +916,7 @@ bool OpalUDPMediaTransport::InternalSetRemoteAddress(const PIPSocket::AddressAnd
   }
 
   socket->SetSendAddress(newAP);
+  m_remoteAddressSet = true;
 
   if (m_localHasRestrictedNAT) {
     // If have Port Restricted NAT on local host then send a datagram
@@ -1007,7 +1009,8 @@ bool OpalUDPMediaTransport::Open(OpalMediaSession & session,
   OpalManager & manager = session.GetConnection().GetEndPoint().GetManager();
 
   m_packetSize = manager.GetMaxRtpPacketSize();
-  m_remoteBehindNAT = session.IsRemoteBehindNAT();
+  if (session.IsRemoteBehindNAT())
+    SetRemoteBehindNAT();
   m_maxNoTransmitTime = session.GetStringOptions().GetVar(OPAL_OPT_MEDIA_TX_TIMEOUT, manager.GetTxMediaTimeout());
 
   PIPAddress bindingIP(localInterface);
@@ -1232,70 +1235,51 @@ bool OpalMediaSession::UpdateMediaFormat(const OpalMediaFormat &)
 }
 
 
-#if OPAL_SDP
 const PString & OpalMediaSession::GetBundleGroupId() { static PConstString const s("BUNDLE"); return s;  }
 
 
-PString OpalMediaSession::GetGroupId() const
-{
-  PSafeLockReadOnly lock(*this);
-  PString s = m_groupId;
-  s.MakeUnique();
-  return s;
-}
-
-
-bool OpalMediaSession::SetGroupId(const PString & id, bool overwrite)
+bool OpalMediaSession::AddGroup(const PString & groupId, const PString & mediaId, bool overwrite)
 {
   PSafeLockReadWrite lock(*this);
 
-  if (m_groupId == id)
-    return true;
-
-  if (overwrite || m_groupId.IsEmpty()) {
-    m_groupId = id;
-    m_groupId.MakeUnique();
-    PTRACE(4, *this << "set group id to \"" << id << '"');
+  if (!overwrite && m_groups.Contains(groupId)) {
+    if (m_groups[groupId] == mediaId)
+      return true;
+    PTRACE(3, *this << "could not set group \"" << groupId << "\" media id to"
+           " \"" << mediaId << "\", already set to \"" << m_groups[groupId] << '"');
+    return false;
   }
 
-  if (m_groupId == id)
-    return true;
-
-  PTRACE(3, *this << "could not set group id to \"" << id << "\", already set to \"" << m_groupId << '"');
-  return false;
+  m_groups.SetAt(groupId, mediaId);
+  PTRACE(4, "Set group \"" << groupId << "\" to media id \"" << mediaId << '"');
+  return true;
 }
 
 
-PString OpalMediaSession::GetGroupMediaId() const
+bool OpalMediaSession::IsGroupMember(const PString & groupId) const
 {
   PSafeLockReadOnly lock(*this);
-  PString s = m_groupMediaId;
-  s.MakeUnique();
-  return s;
+  return m_groups.Contains(groupId);
 }
 
 
-bool OpalMediaSession::SetGroupMediaId(const PString & id, bool overwrite)
+PStringArray OpalMediaSession::GetGroups() const
 {
-  PSafeLockReadWrite lock(*this);
-
-  if (m_groupMediaId == id)
-    return true;
-
-  if (overwrite || m_groupMediaId.IsEmpty()) {
-    m_groupMediaId = id;
-    m_groupMediaId.MakeUnique();
-    PTRACE(4, *this << "set group media id to \"" << id << '"');
-  }
-
-  if (m_groupMediaId == id)
-    return true;
-
-  PTRACE(3, *this << "could not set group media id to \"" << id << "\", already set to \"" << m_groupMediaId << '"');
-  return false;
+  PSafeLockReadOnly lock(*this);
+  return m_groups.GetKeys();
 }
 
 
+PString OpalMediaSession::GetGroupMediaId(const PString & groupId) const
+{
+  PSafeLockReadOnly lock(*this);
+  PString str = m_groups(groupId);
+  str.MakeUnique();
+  return str;
+}
+
+
+#if OPAL_SDP
 SDPMediaDescription * OpalMediaSession::CreateSDPMediaDescription()
 {
   return m_mediaType->CreateSDPMediaDescription(GetLocalAddress());

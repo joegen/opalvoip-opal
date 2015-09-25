@@ -371,7 +371,7 @@ OpalMediaSession * OpalSDPConnection::SetUpMediaSession(const unsigned   session
   if (!mediaDescription.ToSession(session))
     return NULL;
 
-  bool bundled = session->GetGroupId() == OpalMediaSession::GetBundleGroupId();
+  bool bundled = session->IsGroupMember(OpalMediaSession::GetBundleGroupId());
   if (bundled && bundledTransport != NULL)
     session->AttachTransport(bundledTransport);
 
@@ -494,7 +494,7 @@ bool OpalSDPConnection::OnSendOfferSDP(SDPSessionDescription & sdpOut, bool offe
 
 #if OPAL_VIDEO
     if (m_stringOptions.GetBoolean(OPAL_OPT_AV_BUNDLE))
-      SetAudioVideoGroup();
+      AddAudioVideoGroup();
 #endif
 
     OpalMediaTransportPtr bundledTransport;
@@ -502,7 +502,7 @@ bool OpalSDPConnection::OnSendOfferSDP(SDPSessionDescription & sdpOut, bool offe
       if (sessions[sessionId]) {
         OpalMediaSession * session = GetMediaSession(sessionId);
 
-        bool bundled = session->GetGroupId() == OpalMediaSession::GetBundleGroupId();
+        bool bundled = session->IsGroupMember(OpalMediaSession::GetBundleGroupId());
         if (bundled && bundledTransport != NULL)
           session->AttachTransport(bundledTransport);
 
@@ -520,19 +520,6 @@ bool OpalSDPConnection::OnSendOfferSDP(SDPSessionDescription & sdpOut, bool offe
 
   return sdpOK && !sdpOut.GetMediaDescriptions().IsEmpty();
 }
-
-
-#if OPAL_VIDEO
-void OpalSDPConnection::SetAudioVideoGroup(const PString & id)
-{
-  for (SessionMap::iterator it = m_sessions.begin(); it != m_sessions.end(); ++it) {
-    if (it->second->GetMediaType() == OpalMediaType::Audio() || it->second->GetMediaType() == OpalMediaType::Video()) {
-      it->second->SetGroupId(id);
-      it->second->SetGroupMediaId(it->second->GetMediaType(), false);
-    }
-  }
-}
-#endif // OPAL_VIDEO
 
 
 bool OpalSDPConnection::OnSendOfferSDPSession(unsigned   sessionId,
@@ -565,7 +552,7 @@ bool OpalSDPConnection::OnSendOfferSDPSession(unsigned   sessionId,
   if (sdp.GetDefaultConnectAddress().IsEmpty())
     sdp.SetDefaultConnectAddress(mediaSession->GetLocalAddress());
 
-  if (!m_stringOptions.GetBoolean(OPAL_OPT_MULTI_SSRC) && mediaSession->GetGroupId() == OpalMediaSession::GetBundleGroupId()) {
+  if (!m_stringOptions.GetBoolean(OPAL_OPT_MULTI_SSRC) && mediaSession->IsGroupMember(OpalMediaSession::GetBundleGroupId())) {
     OpalRTPSession * rtpSession = dynamic_cast<OpalRTPSession *>(mediaSession);
     if (rtpSession != NULL) {
       RTP_SyncSourceArray ssrcs = rtpSession->GetSyncSources(OpalRTPSession::e_Sender);
@@ -1079,22 +1066,23 @@ bool OpalSDPConnection::OnReceivedAnswerSDP(const SDPSessionDescription & sdp, b
       return false;
 
     unsigned sessionId;
-    if (mediaDescription->GetGroupId() != OpalMediaSession::GetBundleGroupId())
+    if (!mediaDescription->IsGroupMember(OpalMediaSession::GetBundleGroupId()))
       sessionId = index;
     else {
       /* When using BUNDLE, sessionId not 1 to 1 with media description any
          more, so need to try and match it up by SDP "mid" attribute. */
       sessionId = 0;
       for (SessionMap::iterator it = m_sessions.begin(); it != m_sessions.end(); ++it) {
-        if (it->second->GetGroupId() == OpalMediaSession::GetBundleGroupId() &&
-            mediaDescription->GetGroupMediaId().NumCompare(it->second->GetGroupMediaId()) == EqualTo) {
+        if (it->second->IsGroupMember(OpalMediaSession::GetBundleGroupId()) &&
+            mediaDescription->GetGroupMediaId(OpalMediaSession::GetBundleGroupId()).NumCompare(
+                                it->second->GetGroupMediaId(OpalMediaSession::GetBundleGroupId())) == EqualTo) {
           sessionId = it->first;
           break;
         }
       }
       if (sessionId == 0) {
-        PTRACE(3, "Could not match mid=\"" << mediaDescription->GetGroupMediaId() << "\""
-                  " to any session in " << mediaDescription->GetGroupId());
+        PTRACE(3, "Could not match mid=\"" << mediaDescription->GetGroupMediaId(OpalMediaSession::GetBundleGroupId()) << "\""
+                  " to any session in " << OpalMediaSession::GetBundleGroupId());
         return false;
       }
     }

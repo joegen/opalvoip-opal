@@ -32,16 +32,20 @@
 
 #include "version.h"
 
-#include <rtp/pcapfile.h>
+#include <ptlib/sound.h>
 #include <ptlib/vconvert.h>
+#include <codec/vidcodec.h>
 
 #include <wx/xrc/xmlres.h>
-#include <wx/gdicmn.h>     //Required for icons on linux.
 #include <wx/config.h>
 #include <wx/accel.h>
 #include <wx/valgen.h>
 #include <wx/progdlg.h>
 #include <wx/cmdline.h>
+#include <wx/splitter.h>
+#include <wx/grid.h>
+#include <wx/rawbmp.h>
+
 
 #if defined(__WXGTK__)   || \
     defined(__WXMOTIF__) || \
@@ -49,21 +53,16 @@
     defined(__WXMAC__)   || \
     defined(__WXMGL__)   || \
     defined(__WXCOCOA__)
-#include "openphone.xpm"
-
-#define VIDEO_WINDOW_DRIVER P_SDL_VIDEO_DRIVER
-#define VIDEO_WINDOW_DEVICE P_SDL_VIDEO_PREFIX
-
-#else
-
-#define VIDEO_WINDOW_DRIVER P_MSWIN_VIDEO_DRIVER
-#define VIDEO_WINDOW_DEVICE P_MSWIN_VIDEO_PREFIX" STYLE=0x80C80000"  // WS_POPUP|WS_BORDER|WS_SYSMENU|WS_CAPTION
-
+  #include <wx/gdicmn.h>
+  #include "opalshark.xpm"
 #endif
 
 
 extern void InitXmlResource(); // From resource.cpp whichis compiled openphone.xrc
 
+
+static const wxChar OpalSharkString[] = wxT("OPAL Shark");
+static const wxChar OpalSharkErrorString[] = wxT("OPAL Shark Error");
 
 // Definitions of the configuration file section and key names
 
@@ -74,39 +73,26 @@ DEF_FIELD(MainFrameX);
 DEF_FIELD(MainFrameY);
 DEF_FIELD(MainFrameWidth);
 DEF_FIELD(MainFrameHeight);
-DEF_FIELD(SashPosition);
-DEF_FIELD(ActiveView);
-static const wxChar ColumnWidthKey[] = wxT("ColumnWidth%u");
 
-static const wxChar OpalSharkString[] = wxT("OPAL Shark");
-static const wxChar OpalSharkErrorString[] = wxT("OPAL Shark Error");
-
+static const wxChar OptionsGroup[] = wxT("/Options");
+DEF_FIELD(AudioDevice);
+DEF_FIELD(VideoTiming);
 
 // Menu and command identifiers
 #define DEF_XRCID(name) static int ID_##name = XRCID(#name)
 DEF_XRCID(MenuFullScreen);
 DEF_XRCID(MenuCloseAll);
-DEF_XRCID(MenuPlay);
+DEF_XRCID(Play);
+DEF_XRCID(Stop);
+DEF_XRCID(Pause);
+DEF_XRCID(Resume);
+DEF_XRCID(Step);
+
+DEFINE_EVENT_TYPE(VideoUpdateEvent);
+DEFINE_EVENT_TYPE(VideoEndedEvent);
 
 
 #define PTraceModule() "OpalShark"
-
-
-///////////////////////////////////////////////////////////////////////////////
-
-class UserCommandEvent : public wxCommandEvent
-{
-public:
-  UserCommandEvent(const wxChar * name)
-    : wxCommandEvent(wxNewEventType(), wxXmlResource::GetXRCID(name))
-  { }
-
-  const wxEventType & GetEventTypeRef() const { return m_eventType; }
-};
-
-#define EVT_USER_COMMAND(name, fn) EVT_COMMAND((name).GetId(), (name).GetEventTypeRef(), fn)
-#define DEFINE_USER_COMMAND(name) static UserCommandEvent const name(wxT(#name))
-DEFINE_USER_COMMAND(wxEvtLogMessage);
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -168,7 +154,7 @@ bool OpalSharkApp::OnInit()
       wxCMD_LINE_DESC(wxCMD_LINE_OPTION, "n", "config-name", "Set name to use for configuration", wxCMD_LINE_VAL_STRING),
       wxCMD_LINE_DESC(wxCMD_LINE_OPTION, "f", "config-file", "Use specified file for configuration", wxCMD_LINE_VAL_STRING),
       wxCMD_LINE_DESC(wxCMD_LINE_SWITCH, "m", "minimised", "Start application minimised"),
-      wxCMD_LINE_DESC(wxCMD_LINE_PARAM,  "", "", "PCAP file to play", wxCMD_LINE_VAL_STRING, wxCMD_LINE_PARAM_OPTIONAL),
+      wxCMD_LINE_DESC(wxCMD_LINE_PARAM,  "", "", "PCAP file to play", wxCMD_LINE_VAL_STRING, wxCMD_LINE_PARAM_OPTIONAL|wxCMD_LINE_PARAM_MULTIPLE),
       wxCMD_LINE_DESC_END
   };
 
@@ -192,8 +178,10 @@ bool OpalSharkApp::OnInit()
   wxBeginBusyCursor();
 
   bool ok = main->Initialise(cmdLine.Found(wxT("minimised")));
-  if (ok && cmdLine.GetParamCount() > 0)
-    main->Play(cmdLine.GetParam());
+  if (ok) {
+    for (size_t i = 0; i < cmdLine.GetParamCount(); ++i)
+      main->Load(cmdLine.GetParam(i));
+  }
 
   wxEndBusyCursor();
   return ok;
@@ -236,21 +224,13 @@ MyManager::~MyManager()
 }
 
 
-void MyManager::PostEvent(const wxCommandEvent & cmdEvent, const PString & str, const void * data)
-{
-  wxCommandEvent theEvent(cmdEvent);
-  theEvent.SetEventObject(this);
-  theEvent.SetString(PwxString(str));
-  theEvent.SetClientData((void *)data);
-  GetEventHandler()->AddPendingEvent(theEvent);
-}
-
-
 bool MyManager::Initialise(bool startMinimised)
 {
   wxImage::AddHandler(new wxGIFHandler);
   wxXmlResource::Get()->InitAllHandlers();
   InitXmlResource();
+
+  wxGridCellBoolEditor::UseStringValues(wxT("Yes"), wxT("No"));
 
   // Make a menubar
   wxMenuBar * menubar;
@@ -281,6 +261,10 @@ bool MyManager::Initialise(bool startMinimised)
 
   // connect it only now, after creating m_textWindow
   Connect(wxEVT_SIZE, wxSizeEventHandler(MyManager::OnSize));
+
+  config->SetPath(PwxString(OptionsGroup));
+  config->Read(AudioDeviceKey, m_options.m_AudioDevice);
+  config->Read(VideoTimingKey, m_options.m_VideoTiming);
 
   // Show the frame window
   if (startMinimised)
@@ -360,9 +344,6 @@ void MyManager::OnMenuOptions(wxCommandEvent &)
 BEGIN_EVENT_TABLE(OptionsDialog, wxDialog)
 END_EVENT_TABLE()
 
-DEF_FIELD(AudioDevice);
-DEF_FIELD(VideoDevice);
-
 OptionsDialog::OptionsDialog(MyManager *manager, const MyOptions & options)
   : m_manager(*manager)
   , m_options(options)
@@ -371,7 +352,7 @@ OptionsDialog::OptionsDialog(MyManager *manager, const MyOptions & options)
   wxXmlResource::Get()->LoadDialog(this, manager, wxT("OptionsDialog"));
 
   FindWindowByName(AudioDeviceKey)->SetValidator(wxGenericValidator(&m_options.m_AudioDevice));
-  FindWindowByName(VideoDeviceKey)->SetValidator(wxGenericValidator(&m_options.m_VideoDevice));
+  FindWindowByName(VideoTimingKey)->SetValidator(wxGenericValidator(&m_options.m_VideoTiming));
 }
 
 
@@ -379,6 +360,11 @@ bool OptionsDialog::TransferDataFromWindow()
 {
   if (!wxDialog::TransferDataFromWindow())
     return false;
+
+  wxConfigBase * config = wxConfig::Get();
+  config->SetPath(PwxString(OptionsGroup));
+  config->Write(AudioDeviceKey, m_options.m_AudioDevice);
+  config->Write(VideoTimingKey, m_options.m_VideoTiming);
 
   return true;
 }
@@ -392,7 +378,7 @@ void MyManager::OnMenuOpenPCAP(wxCommandEvent &)
                    wxEmptyString,
                    "Capture Files (*.pcap)|*.pcap");
   if (dlg.ShowModal() == wxID_OK)
-    Play(dlg.GetPath());
+    Load(dlg.GetPath());
 }
 
 
@@ -411,10 +397,9 @@ void MyManager::OnMenuFullScreen(wxCommandEvent& commandEvent)
 }
 
 
-void MyManager::Play(const PwxString & fname)
+void MyManager::Load(const PwxString & fname)
 {
-  MyPlayer * player = new MyPlayer(this, fname);
-  player->Play();
+  new MyPlayer(this, fname);
 }
 
 
@@ -423,19 +408,66 @@ void MyManager::Play(const PwxString & fname)
 BEGIN_EVENT_TABLE(MyPlayer, wxMDIChildFrame)
   EVT_CLOSE(MyPlayer::OnCloseWindow)
 
-  EVT_MENU_OPEN(MyManager::OnMenuOpen)
-  EVT_MENU_CLOSE(MyManager::OnMenuClose)
-
+  EVT_MENU_OPEN(MyPlayer::OnMenuOpen)
+  EVT_MENU_CLOSE(MyPlayer::OnMenuClose)
   EVT_MENU(wxID_CLOSE, MyPlayer::OnClose)
+
+  EVT_GRID_CELL_CHANGED(MyPlayer::OnListChanged)
+
+  EVT_BUTTON(ID_Play,   MyPlayer::OnPlay)
+  EVT_BUTTON(ID_Stop,   MyPlayer::OnStop)
+  EVT_BUTTON(ID_Pause,  MyPlayer::OnPause)
+  EVT_BUTTON(ID_Resume, MyPlayer::OnResume)
+  EVT_BUTTON(ID_Step,   MyPlayer::OnStep)
+
+  EVT_COMMAND(wxID_HIGHEST, VideoEndedEvent, MyPlayer::OnStop)
 END_EVENT_TABLE()
 
 
 MyPlayer::MyPlayer(MyManager * manager, const PFilePath & filename)
   : wxMDIChildFrame(manager, wxID_ANY, PwxString(filename.GetTitle()))
   , m_manager(*manager)
-  , m_pcapFile(filename)
+  , m_discoverThread(NULL)
+  , m_discoverProgress(NULL)
+  , m_selectedRTP(0)
+  , m_playThreadCtrl(CtlIdle)
+  , m_playThread(NULL)
 {
-  Show(true);
+  wxXmlResource::Get()->LoadPanel(this, wxT("PlayerPanel"));
+
+  FindWindowByNameAs(m_rtpList, this, wxT("RTPList"));
+  FindWindowByNameAs(m_videoOutput, this, wxT("VideoOutput"));
+
+  FindWindowByNameAs(m_play,   this, wxT("Play"));
+  FindWindowByNameAs(m_stop,   this, wxT("Stop"));
+  FindWindowByNameAs(m_pause,  this, wxT("Pause"));
+  FindWindowByNameAs(m_resume, this, wxT("Resume"));
+  FindWindowByNameAs(m_step,   this, wxT("Step"));
+
+  if (m_pcapFile.Open(filename, PFile::ReadOnly)) {
+    m_discoverThread = new PThreadObj<MyPlayer>(*this, &MyPlayer::Discover, false, "Discover");
+    Show(true);
+  }
+  else {
+    wxMessageBox("Could not open PCAP file", OpalSharkErrorString, wxICON_EXCLAMATION | wxOK);
+    Close();
+  }
+}
+
+
+MyPlayer::~MyPlayer()
+{
+  if (m_discoverThread != NULL) {
+    m_discoverProgress = NULL;
+    m_discoverThread->WaitForTermination();
+    delete m_discoverThread;
+  }
+
+  if (m_playThread != NULL) {
+    m_playThreadCtrl = CtlStop;
+    m_playThread->WaitForTermination();
+    delete m_playThread;
+  }
 }
 
 
@@ -453,14 +485,376 @@ void MyPlayer::OnClose(wxCommandEvent &)
   Close(true);
 }
 
-
-void MyPlayer::Play()
+void MyPlayer::Discover()
 {
-  OpalPCAPFile pcap;
-  if (!pcap.Open(m_pcapFile, PFile::ReadOnly)) {
-    wxMessageBox("Could not open PCAP file", OpalSharkErrorString, wxICON_EXCLAMATION | wxOK);
+  wxProgressDialog progress(OpalSharkString,
+                            PwxString(PSTRSTRM("Loading " << m_pcapFile.GetFilePath())),
+                            m_pcapFile.GetLength(),
+                            this,
+                            wxPD_CAN_ABORT|wxPD_AUTO_HIDE);
+  m_discoverProgress = &progress;
+
+  bool found = m_pcapFile.DiscoverRTP(m_discoveredRTP, PCREATE_NOTIFIER(DiscoverProgress));
+
+  m_discoverProgress = NULL;
+
+  if (!found)
+    return;
+
+  {
+    OpalPCAPFile::DiscoveredRTPInfo * info = new OpalPCAPFile::DiscoveredRTPInfo;
+    info->m_src.SetAddress(PIPSocket::GetDefaultIpAny(), 5000);
+    info->m_dst.SetAddress(PIPSocket::GetDefaultIpAny(), 5000);
+    info->m_payloadType = RTP_DataFrame::PCMU;
+    info->m_mediaFormat = OpalG711uLaw;
+    m_discoveredRTP.Append(info);
+  }
+
+  m_rtpList->CreateGrid(m_discoveredRTP.size(), NumCols);
+
+  for (int col = ColSrcIP; col < NumCols; ++col) {
+    static wxChar const * const headings[] = {
+      wxT("Src IP"),
+      wxT("Src Port"),
+      wxT("Dst IP"),
+      wxT("Dst Port"),
+      wxT("SSRC"),
+      wxT("Type"),
+      wxT("Format"),
+      wxT("Play")
+    };
+    m_rtpList->SetColLabelValue(col, headings[col]);
+  }
+  m_rtpList->SetColLabelSize(wxGRID_AUTOSIZE);
+  m_rtpList->AutoSizeColLabelSize(0);
+  m_rtpList->SetRowLabelAlignment(wxALIGN_LEFT, wxALIGN_TOP);
+  m_rtpList->HideRowLabels();
+
+  size_t row;
+  for (row = 0; row < m_discoveredRTP.size(); ++row) {
+    for (int col = ColSrcIP; col < NumCols; ++col) {
+      m_rtpList->SetCellAlignment(row, col, wxALIGN_CENTRE, wxALIGN_TOP);
+      if (row < m_discoveredRTP.size()-1 && col < ColFormat)
+        m_rtpList->SetReadOnly(row, col);
+    }
+
+    wxArrayString formatNames;
+    OpalMediaFormatList mediaFormats = OpalMediaFormat::GetAllRegisteredMediaFormats();
+    for (OpalMediaFormatList::iterator it = mediaFormats.begin(); it != mediaFormats.end(); ++it) {
+      if (it->IsTransportable() && (it->GetMediaType() == OpalMediaType::Audio() || it->GetMediaType() == OpalMediaType::Video()))
+        formatNames.push_back(PwxString(it->GetName()));
+    }
+    m_rtpList->SetCellEditor(row, ColFormat, new wxGridCellChoiceEditor(formatNames));
+
+    m_rtpList->SetCellEditor(row, ColPlay, new wxGridCellBoolEditor);
+
+    const OpalPCAPFile::DiscoveredRTPInfo & info = m_discoveredRTP[row];
+    m_rtpList->SetCellValue(row, ColSrcIP,       PwxString(PSTRSTRM(info.m_src.GetAddress())));
+    m_rtpList->SetCellValue(row, ColSrcPort,     wxString() << info.m_src.GetPort());
+    m_rtpList->SetCellValue(row, ColDstIP,       PwxString(PSTRSTRM(info.m_dst.GetAddress())));
+    m_rtpList->SetCellValue(row, ColDstPort,     wxString() << info.m_dst.GetPort());
+    m_rtpList->SetCellValue(row, ColSSRC,        wxString() << info.m_ssrc);
+    m_rtpList->SetCellValue(row, ColPayloadType, PwxString(PSTRSTRM(info.m_payloadType)));
+    m_rtpList->SetCellValue(row, ColFormat,      wxString() << info.m_mediaFormat);
+    m_rtpList->SetCellValue(row, ColPlay,        wxT("No"));
+  }
+
+  m_rtpList->AutoSizeColumns();
+  m_rtpList->SetColSize(ColFormat, m_rtpList->GetColSize(ColFormat)+40);
+}
+
+
+void  MyPlayer::DiscoverProgress(OpalPCAPFile &, OpalPCAPFile::Progress & progress)
+{
+  if (m_discoverProgress == NULL)
+    progress.m_abort = true;
+  else {
+    progress.m_abort = m_discoverProgress->WasCancelled();
+    m_discoverProgress->Update(progress.m_filePosition);
+  }
+}
+
+
+void MyPlayer::OnListChanged(wxGridEvent & evt)
+{
+  PString value = PwxString(m_rtpList->GetCellValue(evt.GetRow(), evt.GetCol()));
+  OpalPCAPFile::DiscoveredRTPInfo & info = m_discoveredRTP[evt.GetRow()];
+
+  switch (evt.GetCol()) {
+    case ColSrcIP :
+      info.m_src.SetAddress(PIPAddress(value));
+      break;
+    case ColSrcPort :
+      info.m_src.SetPort((WORD)value.AsUnsigned());
+      break;
+    case ColDstIP :
+      info.m_dst.SetAddress(PIPAddress(value));
+      break;
+    case ColDstPort :
+      info.m_dst.SetPort((WORD)value.AsUnsigned());
+      break;
+    case ColSSRC :
+      info.m_ssrc = value.AsUnsigned();
+      break;
+    case ColPayloadType :
+      info.m_payloadType = (RTP_DataFrame::PayloadTypes)value.AsUnsigned();
+      break;
+    case ColFormat :
+      info.m_mediaFormat = value;
+      break;
+    case ColPlay:
+      if (wxGridCellBoolEditor::IsTrueValue(PwxString(value))) {
+        m_selectedRTP = evt.GetRow();
+        for (size_t row = 0; row < m_discoveredRTP.size(); ++row) {
+          if (m_selectedRTP != row && wxGridCellBoolEditor::IsTrueValue(m_rtpList->GetCellValue(row, ColPlay)))
+            m_rtpList->SetCellValue(row, ColPlay, "No");
+        }
+        m_play->Enable(m_discoveredRTP[m_selectedRTP].m_mediaFormat.IsTransportable());
+      }
+      else {
+        bool allOff = true;
+        for (int row = 0; row < m_rtpList->GetNumberRows(); ++row) {
+          if (wxGridCellBoolEditor::IsTrueValue(m_rtpList->GetCellValue(row, ColPlay))) {
+            allOff = false;
+            break;
+          }
+        }
+        if (allOff)
+          m_play->Disable();
+      }
+  }
+}
+
+
+void MyPlayer::OnPlay(wxCommandEvent &)
+{
+  m_rtpList->Disable();
+  m_play->Disable();
+  m_stop->Enable();
+  m_pause->Enable();
+  m_resume->Disable();
+  m_step->Enable();
+
+  m_pcapFile.SetFilters(m_discoveredRTP[m_selectedRTP]);
+
+  if (!m_pcapFile.Restart()) {
+    wxMessageBox("Could not restart PCAP file", OpalSharkErrorString);
     return;
   }
+
+  m_playThreadCtrl = CtlRunning;
+  if (m_discoveredRTP[m_selectedRTP].m_mediaFormat.GetMediaType() == OpalMediaType::Audio())
+    m_playThread = new PThreadObj<MyPlayer>(*this, &MyPlayer::PlayAudio, false, "AudioPlayer");
+  else
+    m_playThread = new PThreadObj<MyPlayer>(*this, &MyPlayer::PlayVideo, false, "VideoPlayer");
+}
+
+
+void MyPlayer::OnStop(wxCommandEvent &)
+{
+  if (m_playThread != NULL) {
+    PThread * thread = m_playThread;
+    m_playThread = NULL;
+    m_playThreadCtrl = CtlStop;
+    thread->WaitForTermination();
+    delete thread;
+  }
+
+  m_rtpList->Enable();
+  m_play->Enable();
+  m_stop->Disable();
+  m_pause->Disable();
+  m_resume->Disable();
+  m_step->Disable();
+}
+
+
+void MyPlayer::OnPause(wxCommandEvent &)
+{
+  m_playThreadCtrl = CtlPause;
+  m_pause->Disable();
+  m_resume->Enable();
+}
+
+
+void MyPlayer::OnResume(wxCommandEvent &)
+{
+  m_playThreadCtrl = CtlRunning;
+  m_pause->Disable();
+  m_resume->Enable();
+}
+
+
+void MyPlayer::OnStep(wxCommandEvent &)
+{
+  m_playThreadCtrl = CtlStep;
+}
+
+
+void MyPlayer::PlayAudio()
+{
+  PTRACE(3, "Started audio player thread.");
+
+  PSoundChannel * soundChannel = NULL;
+  OpalTranscoder * transcoder = NULL;
+  while (m_playThreadCtrl != CtlStop && !m_pcapFile.IsEndOfFile()) {
+    while (m_playThreadCtrl == CtlPause) {
+      PThread::Sleep(200);
+    }
+
+    RTP_DataFrame data;
+    if (m_pcapFile.GetDecodedRTP(data, transcoder) <= 0)
+      continue;
+
+    if (soundChannel == NULL) {
+      OpalMediaFormat format = transcoder->GetOutputFormat();
+      soundChannel = new PSoundChannel(m_manager.GetAudioDevice(),
+                                       PSoundChannel::Player,
+                                       format.GetOptionInteger(OpalAudioFormat::ChannelsOption(), 1),
+                                       format.GetClockRate());
+    }
+
+    if (!soundChannel->Write(data.GetPayloadPtr(), data.GetPaddingSize()))
+      break;
+  }
+
+  delete transcoder;
+  delete soundChannel;
+
+  QueueEvent(new wxCommandEvent(VideoEndedEvent, wxID_HIGHEST));
+  PTRACE(3, "Ended audio player thread.");
+}
+
+
+void MyPlayer::PlayVideo()
+{
+  PTRACE(3, "Started video player thread.");
+
+  PTime realStartTime;
+  PTime fileStartTime(0);
+  RTP_Timestamp startTimestamp = 0;
+
+  OpalTranscoder * transcoder = NULL;
+  while (m_playThreadCtrl != CtlStop && !m_pcapFile.IsEndOfFile()) {
+    while (m_playThreadCtrl == CtlPause) {
+      PThread::Sleep(200);
+      realStartTime.SetCurrentTime();
+      fileStartTime.SetTimestamp(0);
+      startTimestamp = 0;
+    }
+
+    RTP_DataFrame data;
+    if (m_pcapFile.GetDecodedRTP(data, transcoder) <= 0)
+      continue;
+
+    PTimeInterval delay;
+    if (m_manager.UseFileVideoTiming()) {
+      if (fileStartTime.IsValid())
+        delay = m_pcapFile.GetPacketTime() - fileStartTime - realStartTime.GetElapsed();
+      else
+        fileStartTime = m_pcapFile.GetPacketTime();
+    }
+    else {
+      if (startTimestamp != 0)
+        delay = (data.GetTimestamp() - startTimestamp)/90 - realStartTime.GetElapsed();
+      else
+        startTimestamp = data.GetTimestamp();
+    }
+    if (delay > 0)
+      PThread::Sleep(delay);
+
+    m_videoOutput->OutputVideo(data);
+  }
+
+  delete transcoder;
+
+  QueueEvent(new wxCommandEvent(VideoEndedEvent, wxID_HIGHEST));
+  PTRACE(3, "Ended video player thread.");
+}
+
+
+//////////////////////////////////////////////////////////////////////////////
+
+wxIMPLEMENT_DYNAMIC_CLASS(VideoOutputWindow, wxScrolledWindow);
+
+BEGIN_EVENT_TABLE(VideoOutputWindow, wxScrolledWindow)
+  EVT_PAINT(VideoOutputWindow::OnPaint)
+  EVT_COMMAND(wxID_HIGHEST, VideoUpdateEvent, VideoOutputWindow::OnVideoUpdate)
+END_EVENT_TABLE()
+
+VideoOutputWindow::VideoOutputWindow()
+  : m_converter(NULL)
+  , m_bitmap(352,288)
+{
+}
+
+
+VideoOutputWindow::~VideoOutputWindow()
+{
+  delete m_converter;
+}
+
+
+void VideoOutputWindow::OutputVideo(const RTP_DataFrame & data)
+{
+  m_mutex.Wait();
+
+  const OpalVideoTranscoder::FrameHeader * header = (const OpalVideoTranscoder::FrameHeader *)data.GetPayloadPtr();
+
+  if (m_converter == NULL)
+    m_converter = PColourConverter::Create(PVideoFrameInfo(header->width, header->height),
+                                           PVideoFrameInfo(header->width, header->height,
+                                                           psprintf("BGR%u", m_bitmap.GetDepth())));
+  else
+    m_converter->SetSrcFrameSize(header->width, header->height);
+
+  if (m_bitmap.Create(header->width, header->height)) {
+    wxNativePixelData bmdata(m_bitmap);
+    wxNativePixelData::Iterator it = bmdata.GetPixels();
+    if (it.IsOk()) {
+      bool flipped = bmdata.GetRowStride() < 0;
+      if (flipped)
+        it.Offset(bmdata, 0, header->height - 1);
+      m_converter->SetVFlipState(flipped);
+
+      if (PAssertNULL(m_converter)->Convert(OPAL_VIDEO_FRAME_DATA_PTR(header), (BYTE *)&it.Data())) {
+        QueueEvent(new wxCommandEvent(VideoUpdateEvent, wxID_HIGHEST));
+        PTRACE(4, "Posted video update event: " << header->width << 'x' << header->height << '@' << m_bitmap.GetDepth());
+      }
+    }
+    else
+      PTRACE(1, "Could not get pixel iterator in wxBitmap");
+  }
+
+  m_mutex.Signal();
+}
+
+
+void VideoOutputWindow::OnVideoUpdate(wxCommandEvent &)
+{
+  PTRACE(4, "VideoOutputWindow::OnVideoUpdate");
+  Refresh(false);
+}
+
+
+void VideoOutputWindow::OnPaint(wxPaintEvent &)
+{
+  wxPaintDC dc(this);
+
+  m_mutex.Wait();
+
+  if (m_bitmap.IsOk()) {
+    wxMemoryDC bmDC;
+    bmDC.SelectObject(m_bitmap);
+    if (dc.Blit(0, 0, m_bitmap.GetWidth(), m_bitmap.GetHeight(), &bmDC, 0, 0))
+      PTRACE(5, "Updated screen.");
+    else
+      PTRACE(1, "Cannot update screen, wxBitmap Blit failed.");
+  }
+  else
+    PTRACE(1, "Cannot update screen, wxBitmap invalid.");
+
+  m_mutex.Signal();
 }
 
 

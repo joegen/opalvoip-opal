@@ -66,6 +66,7 @@ class OpalJitterBuffer : public PObject
       unsigned m_silenceShrinkPeriod; ///< Reduce jitter delay is silent for this long
       unsigned m_silenceShrinkTime;   ///< Amount to shrink jitter delay by if consistently silent
       unsigned m_jitterDriftPeriod;   ///< Time over which repeated undeflows cause packet to be dropped
+      unsigned m_overrunFactor;       ///< Multiplier on JB length (in packets) before throwing away packets
 
       Params(
         unsigned minJitterDelay = 40,
@@ -80,6 +81,7 @@ class OpalJitterBuffer : public PObject
         , m_silenceShrinkPeriod(5000)
         , m_silenceShrinkTime(20)
         , m_jitterDriftPeriod(500)
+        , m_overrunFactor(2)
       { }
     };
 
@@ -296,6 +298,7 @@ class OpalAudioJitterBuffer : public OpalJitterBuffer
     RTP_Timestamp m_silenceShrinkPeriod; ///< Reduce jitter delay is silent for this long
     int           m_silenceShrinkTime;   ///< Amount to shrink jitter delay by if consistently silent
     RTP_Timestamp m_jitterDriftPeriod;
+    unsigned      m_overrunFactor;
 
     bool     m_closed;
     int      m_currentJitterDelay;
