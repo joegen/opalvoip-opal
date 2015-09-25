@@ -448,13 +448,14 @@ public:
       */
     PChannel * GetChannel(SubChannels subchannel = e_Media) const { return (size_t)subchannel < m_subchannels.size() ? m_subchannels[subchannel].m_channel : NULL; }
 
-    void SetRemoteBehindNAT() { m_remoteBehindNAT = true; }
+    void SetRemoteBehindNAT();
 
   protected:
     virtual void InternalStop();
 
     PString       m_name;
     bool          m_remoteBehindNAT;
+    bool          m_remoteAddressSet;
     PINDEX        m_packetSize;
     PTimeInterval m_maxNoTransmitTime;
     bool          m_started;
@@ -510,7 +511,6 @@ class OpalUDPMediaTransport : public OpalMediaTransport
     ~OpalUDPMediaTransport() { InternalStop(); }
 
     virtual bool Open(OpalMediaSession & session, PINDEX count, const PString & localInterface, const OpalTransportAddress & remoteAddress);
-    virtual bool IsEstablished() const;
     virtual OpalTransportAddress GetLocalAddress(SubChannels subchannel = e_Media) const;
     virtual OpalTransportAddress GetRemoteAddress(SubChannels subchannel = e_Media) const;
     virtual bool SetRemoteAddress(const OpalTransportAddress & remoteAddress, SubChannels subchannel = e_Media);

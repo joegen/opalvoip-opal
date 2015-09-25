@@ -190,7 +190,7 @@ void OpalICEMediaTransport::SetCandidates(const PString & user, const PString & 
   }
   m_client->SetCredentials(m_remoteUsername + ':' + m_localUsername, m_remotePassword, PString::Empty());
 
-  m_remoteBehindNAT = true;
+  SetRemoteBehindNAT();
 
   for (size_t subchannel = 0; subchannel < m_subchannels.size(); ++subchannel) {
     PUDPSocket * socket = GetSocket((SubChannels)subchannel);
