@@ -1009,7 +1009,8 @@ bool OpalUDPMediaTransport::Open(OpalMediaSession & session,
   OpalManager & manager = session.GetConnection().GetEndPoint().GetManager();
 
   m_packetSize = manager.GetMaxRtpPacketSize();
-  m_remoteBehindNAT = session.IsRemoteBehindNAT();
+  if (session.IsRemoteBehindNAT())
+    SetRemoteBehindNAT();
   m_maxNoTransmitTime = session.GetStringOptions().GetVar(OPAL_OPT_MEDIA_TX_TIMEOUT, manager.GetTxMediaTimeout());
 
   PIPAddress bindingIP(localInterface);
