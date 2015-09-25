@@ -279,6 +279,7 @@ OpalAudioJitterBuffer::OpalAudioJitterBuffer(const Init & init)
   , m_silenceShrinkPeriod(init.m_silenceShrinkPeriod*m_timeUnits)
   , m_silenceShrinkTime(-(int)init.m_silenceShrinkTime*m_timeUnits)
   , m_jitterDriftPeriod(init.m_jitterDriftPeriod*m_timeUnits)
+  , m_overrunFactor(init.m_overrunFactor)
   , m_closed(false)
   , m_currentJitterDelay(init.m_minJitterDelay*m_timeUnits)
   , m_consecutiveMarkerBits(0)
@@ -355,6 +356,7 @@ void OpalAudioJitterBuffer::SetDelay(const Init & init)
   m_silenceShrinkPeriod = init.m_silenceShrinkPeriod*m_timeUnits;
   m_silenceShrinkTime = -(int)init.m_silenceShrinkTime*m_timeUnits;
   m_jitterDriftPeriod = init.m_jitterDriftPeriod*m_timeUnits;
+  m_overrunFactor = init.m_overrunFactor;
 
   PTRACE(3, "Delays set to " << *this);
 
@@ -719,10 +721,10 @@ PBoolean OpalAudioJitterBuffer::ReadData(RTP_DataFrame & frame, const PTimeInter
          to have a clock of 8.01kHz and the receiver 7.99kHz so gradually the remote
          sends more data than we take out over time, gradually building up in the
          jitter buffer. So, drop a frame every now and then. */
-      if (m_frames.size() <= maxFramesInBuffer*2)
+      if (m_frames.size() <= maxFramesInBuffer*m_overrunFactor)
         break;
 
-      PTRACE(4, "Clock overrun   " COMMON_TRACE_INFO << " greater than " << maxFramesInBuffer << "*2");
+      PTRACE(4, "Clock overrun   " COMMON_TRACE_INFO << " greater than " << maxFramesInBuffer << '*' << m_overrunFactor);
       m_timestampDelta += m_packetTime;
       // Do next case
 
