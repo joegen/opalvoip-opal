@@ -504,6 +504,7 @@ ostream & operator<<(ostream & strm, OpalMediaTransportChannelTypes::SubChannels
 OpalMediaTransport::OpalMediaTransport(const PString & name)
   : m_name(name)
   , m_remoteBehindNAT(false)
+  , m_remoteAddressSet(true)
   , m_packetSize(2048)
   , m_maxNoTransmitTime(0, 10)          // Sending data for 10 seconds, ICMP says still not there
   , m_started(false)
@@ -533,7 +534,7 @@ bool OpalMediaTransport::IsOpen() const
 
 bool OpalMediaTransport::IsEstablished() const
 {
-  return IsOpen();
+  return m_remoteAddressSet && IsOpen();
 }
 
 
@@ -635,6 +636,12 @@ void OpalMediaTransport::RemoveReadNotifier(PObject * target, SubChannels subcha
   }
 }
 
+
+void OpalMediaTransport::SetRemoteBehindNAT()
+{
+  m_remoteBehindNAT = true;
+  m_remoteAddressSet = !GetRemoteAddress().IsEmpty();
+}
 
 OpalMediaTransport::Transport::Transport(OpalMediaTransport * owner, SubChannels subchannel, PChannel * chan)
   : m_owner(owner)
@@ -818,12 +825,6 @@ OpalUDPMediaTransport::OpalUDPMediaTransport(const PString & name)
 }
 
 
-bool OpalUDPMediaTransport::IsEstablished() const
-{
-  return !GetRemoteAddress().IsEmpty() && OpalMediaTransport::IsEstablished();
-}
-
-
 OpalTransportAddress OpalUDPMediaTransport::GetLocalAddress(SubChannels subchannel) const
 {
   PSafeLockReadOnly lock(*this);
@@ -915,6 +916,7 @@ bool OpalUDPMediaTransport::InternalSetRemoteAddress(const PIPSocket::AddressAnd
   }
 
   socket->SetSendAddress(newAP);
+  m_remoteAddressSet = true;
 
   if (m_localHasRestrictedNAT) {
     // If have Port Restricted NAT on local host then send a datagram
