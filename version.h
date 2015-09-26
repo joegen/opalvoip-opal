@@ -35,9 +35,9 @@
  */
 
 #define MAJOR_VERSION 3
-#define MINOR_VERSION 15
-#define BUILD_TYPE AlphaCode
-#define BUILD_NUMBER 1
+#define MINOR_VERSION 16
+#define BUILD_TYPE ReleaseCode
+#define BUILD_NUMBER 0
 
 
 #endif  // _OPAL_VERSION_H
