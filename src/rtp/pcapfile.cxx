@@ -322,7 +322,7 @@ OpalPCAPFile::DiscoveredRTPInfo::DiscoveredRTPInfo(const DiscoveredRTPKey & key)
 
 void OpalPCAPFile::DiscoveredRTPInfo::PrintOn(ostream & strm) const
 {
-  strm << m_src << " -> " << m_dst << ", SSRC=" << RTP_TRACE_SRC(m_ssrc) << ", " << m_payloadType << ", ";
+  strm << m_src << " -> " << m_dst << ", SSRC=" << m_ssrc << ", " << m_payloadType << ", ";
   if (m_mediaFormat.IsValid())
     strm << ", " << m_mediaFormat;
   else
