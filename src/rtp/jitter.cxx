@@ -269,7 +269,9 @@ void OpalJitterBuffer::SetDelay(const Init & init)
 
 PFACTORY_CREATE(OpalJitterBufferFactory, OpalAudioJitterBuffer, OpalMediaType::Audio());
 
+#if PTRACING
 unsigned OpalAudioJitterBuffer::sm_EveryPacketLogLevel = 6;
+#endif
 
 OpalAudioJitterBuffer::OpalAudioJitterBuffer(const Init & init)
   : OpalJitterBuffer(init)
