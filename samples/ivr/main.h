@@ -51,8 +51,10 @@ class MyManager : public OpalManagerConsole
     PCLASSINFO(MyManager, OpalManagerConsole)
 
   public:
+    MyManager() : OpalManagerConsole(OPAL_CONSOLE_PREFIXES OPAL_PCSS_PREFIX) { }
     virtual bool Initialise(PArgList & args, bool verbose, const PString & defaultRoute = PString::Empty());
     virtual void Usage(ostream & strm, const PArgList & args);
+    virtual void OnEstablishedCall(OpalCall & call); // Callback override
     virtual void OnClearedCall(OpalCall & call); // Callback override
 };
 

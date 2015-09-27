@@ -589,6 +589,20 @@ class OpalPCSSConnection : public OpalLocalConnection
       bool isSource,            ///< Change source (recorder) or sink (player)
       unsigned sessionID = 0    ///< Session for media stream, 0 indicates first audio stream
     );
+
+    /**Read characters from the channel and produce User Input Indications.
+       Note that this will start a background thread to read the characters, so
+       the lifetime of the connection.
+      */
+    bool StartReadUserInput(
+      PChannel * channel,
+      bool autoDelete = true
+    );
+
+    /**Stop the background thread reading user input.
+       See StartReadUserInput().
+      */
+    void StopReadUserInput();
   //@}
 
   /**@name Member variable access */
@@ -663,6 +677,11 @@ class OpalPCSSConnection : public OpalLocalConnection
     PThread  * m_ringbackThread;
     PSyncPoint m_ringbackStop;
     void RingbackMain();
+
+    PThread  * m_userInputThread;
+    PChannel * m_userInputChannel;
+    bool       m_userInputAutoDelete;
+    void UserInputMain();
 };
 #endif // OPAL_HAS_PCSS
 #endif // OPAL_OPAL_PCSS_H
