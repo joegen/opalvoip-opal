@@ -482,6 +482,9 @@ OpalPCSSConnection::OpalPCSSConnection(OpalCall & call,
   , m_videoOnRingDevice(ep.GetVideoOnRingDevice())
 #endif
   , m_ringbackThread(NULL)
+  , m_userInputThread(NULL)
+  , m_userInputChannel(NULL)
+  , m_userInputAutoDelete(false)
 {
   silenceDetector = new OpalPCM16SilenceDetector(endpoint.GetManager().GetSilenceDetectParams());
   PTRACE_CONTEXT_ID_TO(silenceDetector);
@@ -511,6 +514,8 @@ void OpalPCSSConnection::OnReleased()
     delete m_ringbackThread;
     m_ringbackThread = NULL;
   }
+
+  StopReadUserInput();
 
   OpalLocalConnection::OnReleased();
 }
@@ -710,6 +715,92 @@ bool OpalPCSSConnection::ChangeSoundChannel(const PString & device, bool isSourc
 
   stream->SetChannel(m_endpoint.CreateSoundChannel(*this, stream->GetMediaFormat(), device, isSource));
   return true;
+}
+
+
+bool OpalPCSSConnection::StartReadUserInput(PChannel * channel, bool autoDelete)
+{
+  PSafeLockReadWrite lock(*this);
+  if (!lock.IsLocked())
+    return false;
+
+  if (m_userInputThread != NULL) {
+    PTRACE(2, "PCSS\tCannot start user input thread as already started.");
+    return channel == m_userInputChannel;
+  }
+
+  if (!PAssert(channel != NULL, PInvalidParameter))
+    return false;
+
+  m_userInputChannel = channel;
+  m_userInputAutoDelete = autoDelete;
+  m_userInputThread = new PThreadObj<OpalPCSSConnection>(*this, &OpalPCSSConnection::UserInputMain, false, "PCSS-UI");
+  PTRACE(3, "PCSS\tStarting user input thread.");
+  return true;
+}
+
+
+void OpalPCSSConnection::StopReadUserInput()
+{
+  PSafeLockReadWrite lock(*this);
+  if (!lock.IsLocked())
+    return;
+
+  if (m_userInputThread == NULL)
+    return;
+
+  PTRACE(3, "PCSS\tStopping user input thread.");
+  m_userInputChannel->Close();
+  m_userInputThread->WaitForTermination();
+  delete m_userInputThread;
+  m_userInputThread = NULL;
+  if (m_userInputAutoDelete)
+    delete m_userInputChannel;
+  m_userInputChannel = NULL;
+}
+
+
+void OpalPCSSConnection::UserInputMain()
+{
+  SafeReference();
+
+  PTRACE(4, "PCSS\tStarted user input thread.");
+  int input;
+  while ((input = m_userInputChannel->ReadChar()) >= 0) {
+    char c = (char)toupper(input);
+    switch (c) {
+      case '0' :
+      case '1' :
+      case '2' :
+      case '3' :
+      case '4' :
+      case '5' :
+      case '6' :
+      case '7' :
+      case '8' :
+      case '9' :
+      case 'A' :
+      case 'a' :
+      case 'B' :
+      case 'b' :
+      case 'C' :
+      case 'c' :
+      case 'D' :
+      case 'd' :
+      case '!' :
+        PTRACE(4, "PCSS\tEmulating user input '" << c << '\'');
+        OnUserInputTone(c, 100);
+        break;
+
+      case 'H' :
+      case 'h' :
+        PTRACE(4, "PCSS\tReleasing connection due to hang up from user input.");
+        Release();
+    }
+  }
+  PTRACE(4, "PCSS\tStopped user input thread.");
+
+  SafeDereference();
 }
 
 
