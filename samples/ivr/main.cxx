@@ -50,6 +50,7 @@ bool MyManager::Initialise(PArgList & args, bool verbose, const PString &)
   MyIVREndPoint * ivr  = new MyIVREndPoint(*this);
   ivr->SetDefaultVXML(args[0]);
 
+  FindEndPointAs<OpalLocalEndPoint>(OPAL_PCSS_PREFIX)->SetDeferredAnswer(false);
 
   switch (args.GetCount()) {
   default :
@@ -104,6 +105,18 @@ void MyManager::Usage(ostream & strm, const PArgList & args)
              "     " << args.GetCommandName() << " \"repeat=5;delay=2000;speak=Hello, this is IVR!\"\n"
              "\n";
 
+}
+
+
+void MyManager::OnEstablishedCall(OpalCall & call)
+{
+  OpalManagerConsole::OnEstablishedCall(call);
+  OpalPCSSConnection * pcss = call.GetConnectionAs<OpalPCSSConnection>();
+  if (pcss != NULL) {
+    PConsoleChannel * chan = new PConsoleChannel(PConsoleChannel::StandardInput);
+    chan->SetLineBuffered(false);
+    pcss->StartReadUserInput(chan);
+  }
 }
 
 
