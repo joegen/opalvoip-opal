@@ -568,9 +568,13 @@ void SIP_Presentity::Internal_SendLocalPresence(const OpalSetLocalPresenceComman
   sipPresence.m_contact =  m_aor;  // As required by OMA-TS-Presence_SIMPLE-V2_0-20090917-C
   sipPresence.m_presenceAgent = m_presenceAgentURL.AsString();
 
-  if (m_publishedTupleId.IsEmpty())
-    m_publishedTupleId = PGloballyUniqueID().AsString();
-  sipPresence.m_service = m_publishedTupleId;
+  if (!sipPresence.m_service.IsEmpty())
+    m_publishedTupleId = sipPresence.m_service;
+  else {
+    if (m_publishedTupleId.IsEmpty())
+      m_publishedTupleId = PGloballyUniqueID().AsString();
+    sipPresence.m_service = m_publishedTupleId;
+  }
 
   if (m_subProtocol != e_PeerToPeer)
     m_endpoint->PublishPresence(sipPresence, m_open ? GetExpiryTime() : 0);
