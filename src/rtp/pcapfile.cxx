@@ -266,15 +266,18 @@ int OpalPCAPFile::GetDecodedRTP(RTP_DataFrame & decodedRTP, OpalTranscoder * & t
     if (!srcFmt.IsValid())
       return -1;
 
-    OpalMediaFormat dstFmt =
 #if OPAL_VIDEO
-            srcFmt.GetMediaType() == OpalMediaType::Video() ? static_cast<OpalMediaFormat>(OpalYUV420P) :
+    if (srcFmt.GetMediaType() == OpalMediaType::Video()) {
+      if ((transcoder = OpalTranscoder::Create(srcFmt, OpalYUV420P)) == NULL)
+        return -2;
+    }
+    else
 #endif
-            static_cast<OpalMediaFormat>(GetOpalPCM16(srcFmt.GetClockRate(), srcFmt.GetOptionInteger(OpalAudioFormat::ChannelsOption())));
-
-    transcoder = OpalTranscoder::Create(srcFmt, dstFmt);
-    if (transcoder == NULL)
-      return -2;
+    {
+      transcoder = OpalTranscoder::Create(srcFmt, GetOpalPCM16(srcFmt.GetClockRate(), srcFmt.GetOptionInteger(OpalAudioFormat::ChannelsOption())));
+      if (transcoder == NULL && (transcoder = OpalTranscoder::Create(srcFmt, GetOpalPCM16(srcFmt.GetClockRate(), 1))) == NULL)
+        return -2;
+    }
   }
 
   RTP_DataFrameList output;
