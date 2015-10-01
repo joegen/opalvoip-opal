@@ -57,6 +57,7 @@ struct MyOptions
 {
   PwxString m_AudioDevice;
   int       m_VideoTiming;
+  OpalPCAPFile::PayloadMap m_mappings;
 
   MyOptions()
     : m_AudioDevice("Default")
@@ -74,10 +75,12 @@ class OptionsDialog : public wxDialog
 
   private:
     virtual bool TransferDataFromWindow();
+    void RefreshMappings();
 
     MyManager & m_manager;
     MyOptions   m_options;
-
+    PwxString   m_screenAudioDevice;
+    wxGrid    * m_mappings;
 
   wxDECLARE_EVENT_TABLE();
 };
@@ -177,8 +180,7 @@ class MyManager : public wxMDIParentFrame, public OpalManager
     bool Initialise(bool startMinimised);
     void Load(const PwxString & fname);
 
-    PString GetAudioDevice() const { return m_options.m_AudioDevice; }
-    bool UseFileVideoTiming() const { return m_options.m_VideoTiming == 0; }
+    const MyOptions GetOptions() const { return m_options; }
 
   private:
     void OnClose(wxCloseEvent &);
