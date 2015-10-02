@@ -266,15 +266,9 @@ int OpalPCAPFile::GetDecodedRTP(RTP_DataFrame & decodedRTP, OpalTranscoder * & t
     if (!srcFmt.IsValid())
       return -1;
 
-    OpalMediaFormat dstFmt =
-#if OPAL_VIDEO
-            srcFmt.GetMediaType() == OpalMediaType::Video() ? static_cast<OpalMediaFormat>(OpalYUV420P) :
-#endif
-            static_cast<OpalMediaFormat>(GetOpalPCM16(srcFmt.GetClockRate(), srcFmt.GetOptionInteger(OpalAudioFormat::ChannelsOption())));
-
-    transcoder = OpalTranscoder::Create(srcFmt, dstFmt);
-    if (transcoder == NULL)
-      return -2;
+    OpalMediaFormatList dstFmts = OpalTranscoder::GetDestinationFormats(srcFmt);
+    if (dstFmts.IsEmpty() || (transcoder = OpalTranscoder::Create(srcFmt, dstFmts.front())) == NULL)
+        return -2;
   }
 
   RTP_DataFrameList output;
@@ -381,7 +375,7 @@ struct OpalPCAPFile::DiscoveryInfo
     m_firstFrames.Append(newRTP);
   }
 
-  bool Finalise(DiscoveredRTPInfo & info)
+  bool Finalise(DiscoveredRTPInfo & info, const PayloadMap & payloadType2mediaFormat)
   {
     if (m_totalPackets < 100) // Not worth worrying about
       return false;
@@ -405,7 +399,11 @@ struct OpalPCAPFile::DiscoveryInfo
       return false;
 
     // look for known types
-    if (info.m_payloadType <= RTP_DataFrame::LastKnownPayloadType) {
+    PayloadMap::const_iterator pt2mf = payloadType2mediaFormat.find(info.m_payloadType);
+    if (pt2mf != payloadType2mediaFormat.end())
+      info.m_mediaFormat = pt2mf->second;
+
+    else if (info.m_payloadType <= RTP_DataFrame::LastKnownPayloadType) {
       OpalMediaFormatList formats = OpalMediaFormat::GetAllRegisteredMediaFormats();
       OpalMediaFormatList::const_iterator fmt = formats.FindFormat(info.m_payloadType);
       if (fmt != formats.end())
@@ -483,7 +481,7 @@ bool OpalPCAPFile::DiscoverRTP(DiscoveredRTP & discoveredRTP, const ProgressNoti
 
   for (map<DiscoveredRTPKey, DiscoveryInfo>::iterator it = discoveryMap.begin(); it != discoveryMap.end(); ++it) {
     DiscoveredRTPInfo * info = new DiscoveredRTPInfo(it->first);
-    if (it->second.Finalise(*info))
+    if (it->second.Finalise(*info, m_payloadType2mediaFormat))
       discoveredRTP.Append(info);
     else
       delete info;
@@ -505,6 +503,17 @@ bool OpalPCAPFile::SetFilters(const DiscoveredRTPInfo & info, const PString & fo
 }
 
 
+void OpalPCAPFile::SetPayloadMap(const PayloadMap & payloadMap, bool overwrite)
+{
+  if (overwrite)
+    m_payloadType2mediaFormat = payloadMap;
+  else {
+    for (PayloadMap::const_iterator it = payloadMap.begin(); it != payloadMap.end(); ++it)
+      m_payloadType2mediaFormat[it->first] = it->second;
+  }
+}
+
+
 bool OpalPCAPFile::SetPayloadMap(RTP_DataFrame::PayloadTypes pt, const OpalMediaFormat & format)
 {
   if (pt == RTP_DataFrame::IllegalPayloadType)
@@ -521,8 +530,7 @@ bool OpalPCAPFile::SetPayloadMap(RTP_DataFrame::PayloadTypes pt, const OpalMedia
 
 OpalMediaFormat OpalPCAPFile::GetMediaFormat(const RTP_DataFrame & rtp) const
 {
-  std::map<RTP_DataFrame::PayloadTypes, OpalMediaFormat>::const_iterator iter =
-                                          m_payloadType2mediaFormat.find(rtp.GetPayloadType());
+  PayloadMap::const_iterator iter = m_payloadType2mediaFormat.find(rtp.GetPayloadType());
   return iter != m_payloadType2mediaFormat.end() ? iter->second : OpalMediaFormat();
 }
 

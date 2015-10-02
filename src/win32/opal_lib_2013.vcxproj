@@ -1931,18 +1931,57 @@ exit 0
       <Outputs Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">%(RootDir)%(Directory)%(Filename)</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(RootDir)%(Directory)%(Filename)</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(RootDir)%(Directory)%(Filename)</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Checking SVN revision include file.</Message>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Checking SVN revision include file.</Message>
-      <Message Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">Checking SVN revision include file.</Message>
-      <Message Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">Checking SVN revision include file.</Message>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Checking SVN revision include file.</Message>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Checking SVN revision include file.</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectDir)..\..\svn_getrev "%(FullPath)" "%(RootDir)%(Directory)%(Filename)"</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)..\..\svn_getrev "%(FullPath)" "%(RootDir)%(Directory)%(Filename)"</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">$(ProjectDir)..\..\svn_getrev "%(FullPath)" "%(RootDir)%(Directory)%(Filename)"</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">$(ProjectDir)..\..\svn_getrev "%(FullPath)" "%(RootDir)%(Directory)%(Filename)"</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ProjectDir)..\..\svn_getrev "%(FullPath)" "%(RootDir)%(Directory)%(Filename)"</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)..\..\svn_getrev "%(FullPath)" "%(RootDir)%(Directory)%(Filename)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Updating SVN revision include file.</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Updating SVN revision include file.</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">Updating SVN revision include file.</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">Updating SVN revision include file.</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Updating SVN revision include file.</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Updating SVN revision include file.</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">PATH %PATH%;%ProgramFiles(x86)%\TortoiseSVN\bin;%ProgramW6432%\TortoiseSVN\bin
+del %(RootDir)%(Directory)%(Filename)
+SubWCRev %(RootDir)%(Directory) %(FullPath) %(RootDir)%(Directory)%(Filename)
+if errorlevel 1 "$(ProjectDir)..\..\..\svn_getrev" %(FullPath) %(RootDir)%(Directory)%(Filename)</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">PATH %PATH%;%ProgramFiles(x86)%\TortoiseSVN\bin;%ProgramW6432%\TortoiseSVN\bin
+del %(RootDir)%(Directory)%(Filename)
+SubWCRev %(RootDir)%(Directory) %(FullPath) %(RootDir)%(Directory)%(Filename)
+if errorlevel 1 "$(ProjectDir)..\..\..\svn_getrev" %(FullPath) %(RootDir)%(Directory)%(Filename)</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">PATH %PATH%;%ProgramFiles(x86)%\TortoiseSVN\bin;%ProgramW6432%\TortoiseSVN\bin
+del %(RootDir)%(Directory)%(Filename)
+SubWCRev %(RootDir)%(Directory) %(FullPath) %(RootDir)%(Directory)%(Filename)
+if errorlevel 1 "$(ProjectDir)..\..\..\svn_getrev" %(FullPath) %(RootDir)%(Directory)%(Filename)</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">PATH %PATH%;%ProgramFiles(x86)%\TortoiseSVN\bin;%ProgramW6432%\TortoiseSVN\bin
+del %(RootDir)%(Directory)%(Filename)
+SubWCRev %(RootDir)%(Directory) %(FullPath) %(RootDir)%(Directory)%(Filename)
+if errorlevel 1 "$(ProjectDir)..\..\..\svn_getrev" %(FullPath) %(RootDir)%(Directory)%(Filename)</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">PATH %PATH%;%ProgramFiles(x86)%\TortoiseSVN\bin;%ProgramW6432%\TortoiseSVN\bin
+del %(RootDir)%(Directory)%(Filename)
+SubWCRev %(RootDir)%(Directory) %(FullPath) %(RootDir)%(Directory)%(Filename)
+if errorlevel 1 "$(ProjectDir)..\..\..\svn_getrev" %(FullPath) %(RootDir)%(Directory)%(Filename)</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">PATH %PATH%;%ProgramFiles(x86)%\TortoiseSVN\bin;%ProgramW6432%\TortoiseSVN\bin
+del %(RootDir)%(Directory)%(Filename)
+SubWCRev %(RootDir)%(Directory) %(FullPath) %(RootDir)%(Directory)%(Filename)
+if errorlevel 1 "$(ProjectDir)..\..\..\svn_getrev" %(FullPath) %(RootDir)%(Directory)%(Filename)</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">PATH %PATH%;%ProgramFiles(x86)%\TortoiseSVN\bin;%ProgramW6432%\TortoiseSVN\bin
+del %(RootDir)%(Directory)%(Filename)
+SubWCRev %(RootDir)%(Directory) %(FullPath) %(RootDir)%(Directory)%(Filename)
+if errorlevel 1 "$(ProjectDir)..\..\..\svn_getrev" %(FullPath) %(RootDir)%(Directory)%(Filename)</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">PATH %PATH%;%ProgramFiles(x86)%\TortoiseSVN\bin;%ProgramW6432%\TortoiseSVN\bin
+del %(RootDir)%(Directory)%(Filename)
+SubWCRev %(RootDir)%(Directory) %(FullPath) %(RootDir)%(Directory)%(Filename)
+if errorlevel 1 "$(ProjectDir)..\..\..\svn_getrev" %(FullPath) %(RootDir)%(Directory)%(Filename)</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Android'">PATH %PATH%;%ProgramFiles(x86)%\TortoiseSVN\bin;%ProgramW6432%\TortoiseSVN\bin
+del %(RootDir)%(Directory)%(Filename)
+SubWCRev %(RootDir)%(Directory) %(FullPath) %(RootDir)%(Directory)%(Filename)
+if errorlevel 1 "$(ProjectDir)..\..\..\svn_getrev" %(FullPath) %(RootDir)%(Directory)%(Filename)</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">Updating SVN revision include file.</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">Updating SVN revision include file.</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Android'">Updating SVN revision include file.</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">%(RootDir)%(Directory)%(Filename)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">%(RootDir)%(Directory)%(Filename)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Android'">%(RootDir)%(Directory)%(Filename)</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">%(RootDir)%(Directory).svn\wc.db</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">%(RootDir)%(Directory).svn\wc.db</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Android'">%(RootDir)%(Directory).svn\wc.db</AdditionalInputs>
     </CustomBuild>
     <None Include="..\asn\gcc.asn" />
     <None Include="..\asn\h225.asn" />

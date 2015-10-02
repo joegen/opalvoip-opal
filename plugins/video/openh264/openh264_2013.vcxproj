@@ -146,7 +146,6 @@
       <ImportLibrary>$(IntDir)$(TargetName).lib</ImportLibrary>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
-      <AdditionalDependencies>openh264_x64.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Midl>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -218,7 +217,6 @@ xcopy /y/f "$(TargetDir)$(TargetName).*d*" "C:\Program Files (x86)\PTLib Plug In
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ImportLibrary>$(IntDir)$(TargetName).lib</ImportLibrary>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
-      <AdditionalDependencies>openh264_x64.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Midl>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -248,40 +246,40 @@ xcopy /y/f "$(TargetDir)$(TargetName).*d*" "C:\Program Files (x86)\PTLib Plug In
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="openh264_x86.def">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">lib /def:"%(FullPath)" /out:"$(IntDir)%(Filename)_$(PlatformTargetAsMSBuildArchitecture).lib" /machine:$(PlatformTargetAsMSBuildArchitecture)</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)\%(Filename)_$(PlatformTargetAsMSBuildArchitecture).lib</Outputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">lib /def:"%(FullPath)" /out:"$(IntDir)%(Filename)_$(PlatformTargetAsMSBuildArchitecture).lib" /machine:$(PlatformTargetAsMSBuildArchitecture)</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)\%(Filename)_$(PlatformTargetAsMSBuildArchitecture).lib</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">lib /def:"%(FullPath)" /out:"$(IntDir)%(Filename).lib" /machine:$(PlatformTargetAsMSBuildArchitecture)</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)%(Filename).lib</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">lib /def:"%(FullPath)" /out:"$(IntDir)%(Filename).lib" /machine:$(PlatformTargetAsMSBuildArchitecture)</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)%(Filename).lib</Outputs>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Creating stub library</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Creating stub library</Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)\%(Filename)_$(PlatformTargetAsMSBuildArchitecture).lib</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)\%(Filename)_$(PlatformTargetAsMSBuildArchitecture).lib</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)%(Filename).lib</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)%(Filename).lib</Outputs>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Creating stub library</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Creating stub library</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">lib /def:"%(FullPath)" /out:"$(IntDir)%(Filename)_$(PlatformTargetAsMSBuildArchitecture).lib" /machine:$(PlatformTargetAsMSBuildArchitecture)</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">lib /def:"%(FullPath)" /out:"$(IntDir)%(Filename)_$(PlatformTargetAsMSBuildArchitecture).lib" /machine:$(PlatformTargetAsMSBuildArchitecture)</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">lib /def:"%(FullPath)" /out:"$(IntDir)%(Filename).lib" /machine:$(PlatformTargetAsMSBuildArchitecture)</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">lib /def:"%(FullPath)" /out:"$(IntDir)%(Filename).lib" /machine:$(PlatformTargetAsMSBuildArchitecture)</Command>
     </CustomBuild>
     <CustomBuild Include="openh264_x64.def">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">lib /def:"%(FullPath)" /out:"$(IntDir)%(Filename)_$(PlatformTargetAsMSBuildArchitecture).lib" /machine:$(PlatformTargetAsMSBuildArchitecture)</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)\%(Filename)_$(PlatformTargetAsMSBuildArchitecture).lib</Outputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">lib /def:"%(FullPath)" /out:"$(IntDir)%(Filename)_$(PlatformTargetAsMSBuildArchitecture).lib" /machine:$(PlatformTargetAsMSBuildArchitecture)</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)\%(Filename)_$(PlatformTargetAsMSBuildArchitecture).lib</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">lib /def:"%(FullPath)" /out:"$(IntDir)%(Filename).lib" /machine:$(PlatformTargetAsMSBuildArchitecture)</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)%(Filename).lib</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">lib /def:"%(FullPath)" /out:"$(IntDir)%(Filename).lib" /machine:$(PlatformTargetAsMSBuildArchitecture)</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)%(Filename).lib</Outputs>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Creating stub library</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Creating stub library</Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)\%(Filename)_$(PlatformTargetAsMSBuildArchitecture).lib</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)\%(Filename)_$(PlatformTargetAsMSBuildArchitecture).lib</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)%(Filename).lib</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)%(Filename).lib</Outputs>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Creating stub library</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Creating stub library</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">lib /def:"%(FullPath)" /out:"$(IntDir)%(Filename)_$(PlatformTargetAsMSBuildArchitecture).lib" /machine:$(PlatformTargetAsMSBuildArchitecture)</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">lib /def:"%(FullPath)" /out:"$(IntDir)%(Filename)_$(PlatformTargetAsMSBuildArchitecture).lib" /machine:$(PlatformTargetAsMSBuildArchitecture)</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">lib /def:"%(FullPath)" /out:"$(IntDir)%(Filename).lib" /machine:$(PlatformTargetAsMSBuildArchitecture)</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">lib /def:"%(FullPath)" /out:"$(IntDir)%(Filename).lib" /machine:$(PlatformTargetAsMSBuildArchitecture)</Command>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
-    <Library Include="..\..\..\bin\plugins\Win32\Debug\Video - H.264 (Cisco OpenH264)\openh264_x86.lib">
+    <Library Include="..\..\..\bin\plugins\Win32\Release\Video - H.264 (Cisco OpenH264)\openh264_x86.lib">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </Library>
-    <Library Include="..\..\..\bin\plugins\x64\Debug\Video - H.264 (Cisco OpenH264)\openh264_x64.lib">
+    <Library Include="..\..\..\bin\plugins\x64\Release\Video - H.264 (Cisco OpenH264)\openh264_x64.lib">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
     </Library>
