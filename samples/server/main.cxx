@@ -432,6 +432,8 @@ SIPConsoleEndPoint * MyManager::CreateSIPEndPoint()
 
 PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
 {
+  DisableDetectInBandDTMF(true);
+
   // Make sure all endpoints created
   for (PINDEX i = 0; i < m_endpointPrefixes.GetSize(); ++i)
     GetConsoleEndPoint(m_endpointPrefixes[i]);
