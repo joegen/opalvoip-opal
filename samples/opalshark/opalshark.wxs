@@ -1,8 +1,7 @@
 <?xml version='1.0'?>
-<?include version.wxs ?>
 
 <?define ProductName = "OPAL Shark" ?>
-<?define ProductVersion = "$(var.OPAL_VERSION)" ?>
+<?define ProductVersion = "1.0.0" ?>
 <?define ProductManufacturer = "Vox Lucida Pty. Ltd." ?>
 
 <?include $(sys.CURRENTDIR)\config.wxs ?>
@@ -25,16 +24,16 @@
 <?define PluginReleaseDir = "$(var.OPALDir)\bin\plugins\$(var.Platform)\Release" ?>
 
 
-<Wix xmlns='http://wixtoolset.org/schemas/v4/wxs'>
+<Wix xmlns='http://schemas.microsoft.com/wix/2006/wi'>
 
    <Product Name='$(var.ProductName)'
             Language='1033'
             Version='$(var.ProductVersion)'
             Manufacturer='Vox Lucida Pty. Ltd.'
             Id='*'
-            UpgradeCode='56E04FF6-6AEB-4917-B8FC-6C0C1F5831F1'>
+            UpgradeCode='03198F5B-EC70-4DBF-A047-5A740C6B8109'>
       <Package Description='$(var.ProductName)'
-               Comments='$(var.Platform) VoIP client for OPAL Version $(var.ProductVersion)'
+               Comments='$(var.Platform) Media Player for RTP in PCAP files, Version $(var.ProductVersion)'
                Manufacturer='$(var.ProductManufacturer)'
                Platform="$(var.Architecture)"
                InstallScope="perMachine"
@@ -62,7 +61,8 @@
       <Property Id="WIXUI_INSTALLDIR"
                 Value="INSTALLDIR" />
 
-      <UIRef Id="WixUI_InstallDir" />
+     <WixVariable Id="WixUILicenseRtf" Value="./InstallerLicense.rtf" />
+     <UIRef Id="WixUI_InstallDir" />
       <UIRef Id="WixUI_ErrorProgressText" />
 
       <Directory Id='TARGETDIR'
@@ -260,33 +260,6 @@
                            DiskId='1'
                            KeyPath='yes' />
                   </Component>
-                  <Component Id='SpanDSPFax'
-                             Win64="$(var.IsWin64)"
-                             Guid='*'>
-                     <File Id='SpanDSPFax_DLL'
-                           Name='SpanDSPFax_ptplugin.dll'
-                           Source='$(var.PluginReleaseDir)\SpanDSPFax_ptplugin.dll'
-                           DiskId='1'
-                           KeyPath='yes' />
-                  </Component>
-                  <Component Id='SpanDSPLib'
-                             Win64="$(var.IsWin64)"
-                             Guid='*'>
-                     <File Id='SpanDSPLib_DLL'
-                           Name='libspandsp.dll'
-                           Source='$(var.SpanDspDir)\libspandsp.dll'
-                           DiskId='1'
-                           KeyPath='yes' />
-                  </Component>
-                  <Component Id='WindowsHID'
-                             Win64="$(var.IsWin64)"
-                             Guid='*'>
-                     <File Id='WinHID_DLL'
-                           Name='winxp_hid_lid_ptplugin.dll'
-                           Source='$(var.PluginReleaseDir)\winxp_hid_lid_ptplugin.dll'
-                           DiskId='1'
-                           KeyPath='yes' />
-                  </Component>
                   <Component Id='OPAL'
                              Win64="$(var.IsWin64)"
                              Guid='*'>
@@ -474,9 +447,6 @@
          <ComponentRef Id='AVUTIL' />
          <ComponentRef Id='SWRESAMPLE' />
          <ComponentRef Id='VP8' />
-         <ComponentRef Id='SpanDSPFax' />
-         <ComponentRef Id='SpanDSPLib' />
-         <ComponentRef Id='WindowsHID' />
       </Feature>
 
       <Feature Id='OPAL'

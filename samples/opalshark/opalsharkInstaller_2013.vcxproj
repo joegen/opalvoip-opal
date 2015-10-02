@@ -202,11 +202,9 @@ light -nologo -sice:ICE60 -sice:ICE61 -ext WixUIExtension -pdbout "$(IntDir)%(Fi
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(RootDir)%(Directory)%(Filename)</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(RootDir)%(Directory)%(Filename)</Outputs>
       <SubType>Designer</SubType>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">copy config.wxs.in config.wxs</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">copy config.wxs.in config.wxs</ExcludedFromBuild>
     </CustomBuild>
-    <None Include="version.wxs">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="version.wxs.in" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
