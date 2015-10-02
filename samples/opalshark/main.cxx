@@ -63,6 +63,8 @@ extern void InitXmlResource(); // From resource.cpp whichis compiled openphone.x
 
 static const wxChar OpalSharkString[] = wxT("OPAL Shark");
 static const wxChar OpalSharkErrorString[] = wxT("OPAL Shark Error");
+static const wxChar GridTrueString[] = wxT("Yes");
+static const wxChar GridFalseString[] = wxT("No");
 
 // Definitions of the configuration file section and key names
 
@@ -258,7 +260,7 @@ bool MyManager::Initialise(bool startMinimised)
   wxXmlResource::Get()->InitAllHandlers();
   InitXmlResource();
 
-  wxGridCellBoolEditor::UseStringValues(wxT("Yes"), wxT("No"));
+  wxGridCellBoolEditor::UseStringValues(GridTrueString, GridFalseString);
 
   // Make a menubar
   wxMenuBar * menubar;
@@ -657,7 +659,7 @@ void MyPlayer::Discover()
     m_rtpList->SetCellValue(row, ColSSRC,        wxString() << info.m_ssrc);
     m_rtpList->SetCellValue(row, ColPayloadType, PwxString(PSTRSTRM(info.m_payloadType)));
     m_rtpList->SetCellValue(row, ColFormat,      wxString() << info.m_mediaFormat);
-    m_rtpList->SetCellValue(row, ColPlay,        wxT("No"));
+    m_rtpList->SetCellValue(row, ColPlay,        m_discoveredRTP.size() > 1 ? GridFalseString : GridTrueString);
   }
 
   m_rtpList->AutoSizeColumns();
@@ -708,7 +710,7 @@ void MyPlayer::OnListChanged(wxGridEvent & evt)
         m_selectedRTP = evt.GetRow();
         for (size_t row = 0; row < m_discoveredRTP.size(); ++row) {
           if (m_selectedRTP != row && wxGridCellBoolEditor::IsTrueValue(m_rtpList->GetCellValue(row, ColPlay)))
-            m_rtpList->SetCellValue(row, ColPlay, "No");
+            m_rtpList->SetCellValue(row, ColPlay, GridFalseString);
         }
         m_play->Enable(m_discoveredRTP[m_selectedRTP].m_mediaFormat.IsTransportable());
       }
