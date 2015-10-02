@@ -62,7 +62,8 @@
       <Property Id="WIXUI_INSTALLDIR"
                 Value="INSTALLDIR" />
 
-      <UIRef Id="WixUI_InstallDir" />
+     <WixVariable Id="WixUILicenseRtf" Value="./InstallerLicense.rtf" />
+     <UIRef Id="WixUI_InstallDir" />
       <UIRef Id="WixUI_ErrorProgressText" />
 
       <Directory Id='TARGETDIR'
