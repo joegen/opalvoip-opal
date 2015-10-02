@@ -140,6 +140,12 @@ class OpalPCAPFile : public PFile
       const PString & format = PString::Empty()
     );
 
+    typedef std::map<RTP_DataFrame::PayloadTypes, OpalMediaFormat> PayloadMap;
+
+    void SetPayloadMap(
+      const PayloadMap & payloadMap,
+      bool overwrite = false
+    );
     bool SetPayloadMap(
       RTP_DataFrame::PayloadTypes pt,
       const OpalMediaFormat & format
@@ -190,7 +196,7 @@ class OpalPCAPFile : public PFile
     PIPSocketAddressAndPort m_packetSrc;
     PIPSocketAddressAndPort m_packetDst;
 
-    std::map<RTP_DataFrame::PayloadTypes, OpalMediaFormat> m_payloadType2mediaFormat;
+    PayloadMap m_payloadType2mediaFormat;
 
     struct DiscoveryInfo;
     typedef std::map<DiscoveredRTPKey, DiscoveryInfo> DiscoveryMap;
