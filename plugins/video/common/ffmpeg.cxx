@@ -177,7 +177,7 @@ bool FFMPEGCodec::InitContext()
     return false;
   }
 
-  m_picture->format = m_context->pix_fmt = PIX_FMT_YUV420P;
+  m_picture->format = m_context->pix_fmt = AV_PIX_FMT_YUV420P;
   m_context->workaround_bugs = FF_BUG_AUTODETECT;
 
   // debugging flags
