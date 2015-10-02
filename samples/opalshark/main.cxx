@@ -636,6 +636,7 @@ void MyPlayer::Discover()
   m_rtpList->SetColLabelSize(wxGRID_AUTOSIZE);
   m_rtpList->AutoSizeColLabelSize(0);
   m_rtpList->SetRowLabelAlignment(wxALIGN_LEFT, wxALIGN_TOP);
+  m_rtpList->SetColFormatBool(ColPlay);
   m_rtpList->HideRowLabels();
 
   wxArrayString formatNames = GetAllMediaFormatNames();
@@ -659,11 +660,14 @@ void MyPlayer::Discover()
     m_rtpList->SetCellValue(row, ColSSRC,        wxString() << info.m_ssrc);
     m_rtpList->SetCellValue(row, ColPayloadType, PwxString(PSTRSTRM(info.m_payloadType)));
     m_rtpList->SetCellValue(row, ColFormat,      wxString() << info.m_mediaFormat);
-    m_rtpList->SetCellValue(row, ColPlay,        m_discoveredRTP.size() > 1 ? GridFalseString : GridTrueString);
+    m_rtpList->SetCellValue(row, ColPlay,        row == 0 && m_discoveredRTP.size() == 2 ? GridTrueString : GridFalseString);
   }
 
   m_rtpList->AutoSizeColumns();
   m_rtpList->SetColSize(ColFormat, m_rtpList->GetColSize(ColFormat)+40);
+
+  m_selectedRTP = 0;
+  m_play->Enable(m_discoveredRTP.size() == 2 && m_discoveredRTP[m_selectedRTP].m_mediaFormat.IsTransportable());
 }
 
 
