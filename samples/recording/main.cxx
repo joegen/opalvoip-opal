@@ -156,13 +156,7 @@ bool MyLocalEndPoint::OnOpenMediaStream(OpalConnection & connection, OpalMediaSt
        it in the mixer. Note that we do this so all the calls get their audio
        synchronised correctly before writing to the WAV file. Without this you
        get littly clicks and pops due to slight timing mismatches. */
-    unsigned timeUnits = stream.GetMediaFormat().GetTimeUnits();
-    OpalJitterBuffer::Init init;
-    init.m_minJitterDelay = manager.GetMinAudioJitterDelay()*timeUnits;
-    init.m_maxJitterDelay = manager.GetMaxAudioJitterDelay()*timeUnits;
-    init.m_timeUnits = timeUnits;
-    init.m_packetSize = manager.GetMaxRtpPacketSize();
-    m_mixer.SetJitterBufferSize(mixerKey, init);
+    m_mixer.SetJitterBufferSize(mixerKey, OpalJitterBuffer::Init(manager, stream.GetMediaFormat().GetTimeUnits()));
   }
 
   return OpalLocalEndPoint::OnOpenMediaStream(connection, stream);
