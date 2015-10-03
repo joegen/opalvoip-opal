@@ -45,6 +45,7 @@ static const PConstString PreferredMediaKey("Preferred Media");
 static const PConstString RemovedMediaKey("Removed Media");
 static const PConstString MinJitterKey("Minimum Jitter");
 static const PConstString MaxJitterKey("Maximum Jitter");
+static const PConstString InBandDTMFKey("Disable In-band DTMF Detect");
 static const PConstString NoMediaTimeoutKey("No Media Timeout");
 static const PConstString TCPPortBaseKey("TCP Port Base");
 static const PConstString TCPPortMaxKey("TCP Port Max");
@@ -565,6 +566,9 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
 
   SetAudioJitterDelay(rsrc->AddIntegerField(MinJitterKey, 20, 2000, GetMinAudioJitterDelay(), "ms", "Minimum jitter buffer size"),
                       rsrc->AddIntegerField(MaxJitterKey, 20, 2000, GetMaxAudioJitterDelay(), "ms", "Maximum jitter buffer size"));
+
+  DisableDetectInBandDTMF(rsrc->AddBooleanField(InBandDTMFKey, DetectInBandDTMFDisabled(),
+                                                "Disable digital filter for in-band DTMF detection (saves CPU usage)"));
 
   SetNoMediaTimeout(PTimeInterval(0, rsrc->AddIntegerField(NoMediaTimeoutKey, 1, 365*24*60*60, GetNoMediaTimeout().GetSeconds(),
                                                            "seconds", "Clear call when no media is received from remote for this time")));
