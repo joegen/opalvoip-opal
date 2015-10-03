@@ -202,8 +202,8 @@ class H323Gatekeeper : public H225_RAS
     /**Disengage request to gatekeeper.
      */
     PBoolean DisengageRequest(
-      const H323Connection & connection,  ///<  Connection we wish admitted.
-      unsigned reason                     ///<  Reason code for disengage
+      H323Connection & connection,  ///<  Connection we wish admitted.
+      unsigned reason               ///<  Reason code for disengage
     );
 
     /**Bandwidth request to gatekeeper.
@@ -322,6 +322,7 @@ class H323Gatekeeper : public H225_RAS
     unsigned SetupGatekeeperRequest(H323RasPDU & request);
 	
     void Connect(const H323TransportAddress & address, const PString & gatekeeperIdentifier);
+    void ClearAllCalls();
 
     void SetInfoRequestRate(
       const PTimeInterval & rate
@@ -425,6 +426,8 @@ class H323Gatekeeper : public H225_RAS
     PSyncPoint    m_monitorTickle;
     void Monitor();
     PTimeInterval InternalRegister();
+
+    std::set< PSafePtr<H323Connection> > m_activeConnections;
 
   friend class H323EndPoint;
 };

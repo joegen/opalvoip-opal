@@ -861,10 +861,24 @@ PTimeInterval H323Gatekeeper::InternalRegister()
 }
 
 
+void H323Gatekeeper::ClearAllCalls()
+{
+  while (!m_activeConnections.empty()) {
+    PSafePtr<H323Connection> connection = *m_activeConnections.begin();
+    if (connection != NULL)
+      connection->Release(OpalConnection::EndedByGatekeeper, true);
+    else
+      m_activeConnections.erase(*m_activeConnections.begin());
+  }
+}
+
+
 PBoolean H323Gatekeeper::UnregistrationRequest(int reason)
 {
   if (PAssertNULL(transport) == NULL)
     return false;
+
+  ClearAllCalls();
 
   H323RasPDU pdu;
   H225_UnregistrationRequest & urq = pdu.BuildUnregistrationRequest(GetNextSequenceNumber());
@@ -960,8 +974,6 @@ PBoolean H323Gatekeeper::OnReceiveUnregistrationRequest(const H225_Unregistratio
     return false;
   }
 
-  endpoint.ClearAllCalls(H323Connection::EndedByGatekeeper, false);
-
   PTRACE(3, "Unregistered, calls cleared");
   SetRegistrationFailReason(UnregisteredByGatekeeper);
   m_currentTimeToLive = 0; // disables lightweight RRQ
@@ -972,6 +984,8 @@ PBoolean H323Gatekeeper::OnReceiveUnregistrationRequest(const H225_Unregistratio
   H323RasPDU response(m_authenticators);
   response.BuildUnregistrationConfirm(urq.m_requestSeqNum);
   PBoolean ok = WritePDU(response);
+
+  ClearAllCalls();
 
   if (m_autoReregister) {
     PTRACE(4, "Reregistering by setting timeToLive");
@@ -1259,6 +1273,7 @@ PBoolean H323Gatekeeper::AdmissionRequest(H323Connection & connection,
 
   connection.SetBandwidthAllocated(OpalBandwidth::RxTx, info.allocatedBandwidth);
   connection.SetUUIEsRequested(info.uuiesRequested);
+  m_activeConnections.insert(&connection);
 
   return true;
 }
@@ -1422,7 +1437,7 @@ static void SetRasUsageInformation(const H323Connection & connection,
 }
 
 
-PBoolean H323Gatekeeper::DisengageRequest(const H323Connection & connection, unsigned reason)
+PBoolean H323Gatekeeper::DisengageRequest(H323Connection & connection, unsigned reason)
 {
   H323RasPDU pdu;
   H225_DisengageRequest & drq = pdu.BuildDisengageRequest(GetNextSequenceNumber());
@@ -1454,7 +1469,11 @@ PBoolean H323Gatekeeper::DisengageRequest(const H323Connection & connection, uns
   }
 
   Request request(drq.m_requestSeqNum, pdu);
-  return MakeRequestWithReregister(request, H225_DisengageRejectReason::e_notRegistered);
+  bool ok = MakeRequestWithReregister(request, H225_DisengageRejectReason::e_notRegistered);
+
+  m_activeConnections.erase(&connection);
+
+  return ok;
 }
 
 

@@ -2792,8 +2792,9 @@ bool OpalManagerCLI::Initialise(PArgList & args, bool verbose, const PString & d
 #endif // OPAL_VIDEO
 
 
-  m_cli->SetCommand("pc vad", PCREATE_NOTIFIER(CmdSilenceDetect),
+  m_cli->SetCommand("audio vad", PCREATE_NOTIFIER(CmdSilenceDetect),
                     "Voice Activity Detection (aka Silence Detection)", "\"on\" | \"adaptive\" | <level>");
+  m_cli->SetCommand("audio in-band-dtmf-disable", disableDetectInBandDTMF, "In-band (digital filter) DTMF detection");
 
   m_cli->SetCommand("auto-start", PCREATE_NOTIFIER(CmdAutoStart),
                     "Set media type auto-start mode",
