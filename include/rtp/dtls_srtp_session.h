@@ -58,7 +58,7 @@
 #if OPAL_ICE
 typedef OpalICEMediaTransport OpalDTLSMediaTransportParent;
 #else
-typedef OpalUDPMediaStransport OpalDTLSMediaTransportParent;
+typedef OpalUDPMediaTransport OpalDTLSMediaTransportParent;
 #endif
 
 class OpalDTLSMediaTransport : public OpalDTLSMediaTransportParent

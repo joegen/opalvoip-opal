@@ -1257,6 +1257,7 @@ void OpalSkinnyConnection::OpenSimulatedMediaChannel(unsigned sessionId, const O
   if (sinkStream == NULL)
     return;
 
+#if OPAL_PTLIB_WAVFILE
   OpalMediaStreamPtr sourceStream;
   OpalWAVFile * wavFile = new OpalWAVFile(m_endpoint.GetSimulatedAudioFile(), PFile::ReadOnly, PFile::ModeDefault, PWAVFile::fmt_PCM, false);
   if (!wavFile->IsOpen()) {
@@ -1289,6 +1290,9 @@ void OpalSkinnyConnection::OpenSimulatedMediaChannel(unsigned sessionId, const O
 
   PTRACE(3, "Simulating transmit " << mediaFormat << " stream, session=" << sessionId << ", file=" << m_endpoint.GetSimulatedAudioFile());
   StartMediaStreams();
+#else
+  PTRACE(3, "Cannot simulate transmit " << mediaFormat << " stream, session=" << sessionId << ", file=" << m_endpoint.GetSimulatedAudioFile());
+#endif
 }
 
 
