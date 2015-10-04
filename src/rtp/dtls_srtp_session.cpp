@@ -174,7 +174,7 @@ bool OpalDTLSMediaTransport::IsEstablished() const
     if (m_keyInfo[i].get() == NULL)
       return false;
   }
-  return OpalICEMediaTransport::IsEstablished();
+  return OpalDTLSMediaTransportParent::IsEstablished();
 }
 
 
