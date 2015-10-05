@@ -1027,6 +1027,8 @@ bool OpalPluginVideoTranscoder::EncodeFrames(const RTP_DataFrame & src, RTP_Data
 }
 
 
+static unsigned VideoDecodeBufferFudgeFactor = 1000;  // Fudge factor in case of badly behaved codec
+
 bool OpalPluginVideoTranscoder::DecodeFrames(const RTP_DataFrame & src, RTP_DataFrameList & dstList)
 {
   // We use the data size indicated by plug in as a payload size, we do not adjust the size
@@ -1036,7 +1038,7 @@ bool OpalPluginVideoTranscoder::DecodeFrames(const RTP_DataFrame & src, RTP_Data
   int outputDataSize = getOutputDataSizeControl.Call((void *)NULL, (unsigned *)NULL, context);
   if (outputDataSize <= 0)
     outputDataSize = GetOptimalDataFrameSize(false); // Fail safe for badly behaved plug in
-  outputDataSize += sizeof(PluginCodec_Video_FrameHeader);
+  outputDataSize += VideoDecodeBufferFudgeFactor;
 
   if (m_bufferRTP == NULL) {
     if (dstList.IsEmpty())
@@ -1125,7 +1127,7 @@ bool OpalPluginVideoTranscoder::DecodeFrame(const RTP_DataFrame & src, RTP_DataF
     return false;
 
   if ((flags & PluginCodec_ReturnCoderBufferTooSmall) != 0) {
-    PINDEX newSize = getOutputDataSizeControl.Call((void *)NULL, (unsigned *)NULL, context);
+    PINDEX newSize = getOutputDataSizeControl.Call((void *)NULL, (unsigned *)NULL, context)+VideoDecodeBufferFudgeFactor;
     PTRACE(3, "OpalPlugin\tBuffer too small: needs=" << newSize << ", actual=" << m_bufferRTP->GetSize() << ", ptr=" << m_bufferRTP);
     if (!m_bufferRTP->SetMinSize(newSize))
       return false;
