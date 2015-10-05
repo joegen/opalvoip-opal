@@ -1,7 +1,7 @@
 <?xml version='1.0'?>
 
 <?define ProductName = "OPAL Shark" ?>
-<?define ProductVersion = "1.0.0" ?>
+<?define ProductVersion = "1.0.1" ?>
 <?define ProductManufacturer = "Vox Lucida Pty. Ltd." ?>
 
 <?include $(sys.CURRENTDIR)\config.wxs ?>
