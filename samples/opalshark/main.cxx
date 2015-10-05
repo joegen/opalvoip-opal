@@ -63,6 +63,8 @@ extern void InitXmlResource(); // From resource.cpp whichis compiled openphone.x
 
 static const wxChar OpalSharkString[] = wxT("OPAL Shark");
 static const wxChar OpalSharkErrorString[] = wxT("OPAL Shark Error");
+static const wxChar GridTrueString[] = wxT("Yes");
+static const wxChar GridFalseString[] = wxT("No");
 
 // Definitions of the configuration file section and key names
 
@@ -258,7 +260,7 @@ bool MyManager::Initialise(bool startMinimised)
   wxXmlResource::Get()->InitAllHandlers();
   InitXmlResource();
 
-  wxGridCellBoolEditor::UseStringValues(wxT("Yes"), wxT("No"));
+  wxGridCellBoolEditor::UseStringValues(GridTrueString, GridFalseString);
 
   // Make a menubar
   wxMenuBar * menubar;
@@ -634,6 +636,7 @@ void MyPlayer::Discover()
   m_rtpList->SetColLabelSize(wxGRID_AUTOSIZE);
   m_rtpList->AutoSizeColLabelSize(0);
   m_rtpList->SetRowLabelAlignment(wxALIGN_LEFT, wxALIGN_TOP);
+  m_rtpList->SetColFormatBool(ColPlay);
   m_rtpList->HideRowLabels();
 
   wxArrayString formatNames = GetAllMediaFormatNames();
@@ -657,11 +660,14 @@ void MyPlayer::Discover()
     m_rtpList->SetCellValue(row, ColSSRC,        wxString() << info.m_ssrc);
     m_rtpList->SetCellValue(row, ColPayloadType, PwxString(PSTRSTRM(info.m_payloadType)));
     m_rtpList->SetCellValue(row, ColFormat,      wxString() << info.m_mediaFormat);
-    m_rtpList->SetCellValue(row, ColPlay,        wxT("No"));
+    m_rtpList->SetCellValue(row, ColPlay,        row == 0 && m_discoveredRTP.size() == 2 ? GridTrueString : GridFalseString);
   }
 
   m_rtpList->AutoSizeColumns();
   m_rtpList->SetColSize(ColFormat, m_rtpList->GetColSize(ColFormat)+40);
+
+  m_selectedRTP = 0;
+  m_play->Enable(m_discoveredRTP.size() == 2 && m_discoveredRTP[m_selectedRTP].m_mediaFormat.IsTransportable());
 }
 
 
@@ -708,7 +714,7 @@ void MyPlayer::OnListChanged(wxGridEvent & evt)
         m_selectedRTP = evt.GetRow();
         for (size_t row = 0; row < m_discoveredRTP.size(); ++row) {
           if (m_selectedRTP != row && wxGridCellBoolEditor::IsTrueValue(m_rtpList->GetCellValue(row, ColPlay)))
-            m_rtpList->SetCellValue(row, ColPlay, "No");
+            m_rtpList->SetCellValue(row, ColPlay, GridFalseString);
         }
         m_play->Enable(m_discoveredRTP[m_selectedRTP].m_mediaFormat.IsTransportable());
       }
