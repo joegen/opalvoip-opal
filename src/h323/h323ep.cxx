@@ -652,6 +652,8 @@ H323Gatekeeper * H323EndPoint::CreateGatekeeper(H323Transport * transport)
 
 H323Gatekeeper * H323EndPoint::GetGatekeeper(const PString & alias) const
 {
+  PWaitAndSignal lock(m_gatekeeperMutex);
+
   if (m_gatekeepers.IsEmpty())
     return NULL;
 
