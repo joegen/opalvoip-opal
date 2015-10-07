@@ -147,7 +147,7 @@ static void destroy_encoder(const struct PluginCodec_Definition * /*codec*/, voi
   PluginSpeexContext * context = (PluginSpeexContext *)_context;
 
   speex_encoder_destroy(context->coderState); 
-  free(context);
+  delete context;
 }
 
 static void * create_decoder(const struct PluginCodec_Definition * codec)
