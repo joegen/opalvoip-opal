@@ -2391,32 +2391,34 @@ void OpalRTPSession::OnRxDataPacket(OpalMediaTransport &, PBYTEArray data)
     return;
 
   if (data.IsEmpty()) {
-    if (m_connection.OnMediaFailed(m_sessionId, true))
-      m_transport.SetNULL();
-    return;
-  }
-
-  if (m_sendEstablished && IsEstablished()) {
-    m_sendEstablished = false;
-    m_connection.GetEndPoint().GetManager().QueueDecoupledEvent(new PSafeWorkNoArg<OpalConnection, bool>(
-                                                      &m_connection, &OpalConnection::InternalOnEstablished));
-  }
-
-  // Check for single port operation, incoming RTCP on RTP
-  RTP_ControlFrame control(data, data.GetSize(), false);
-  unsigned type = control.GetPayloadType();
-  if (type >= RTP_ControlFrame::e_FirstValidPayloadType && type <= RTP_ControlFrame::e_LastValidPayloadType) {
-    if (OnReceiveControl(control) != e_AbortTransport)
+    if (!m_connection.OnMediaFailed(m_sessionId, true))
       return;
   }
   else {
-    RTP_DataFrame frame;
-    frame.PBYTEArray::operator=(data);
-    if (OnReceiveData(frame, data.GetSize()) != e_AbortTransport)
-      return;
+    if (m_sendEstablished && IsEstablished()) {
+      m_sendEstablished = false;
+      m_connection.GetEndPoint().GetManager().QueueDecoupledEvent(
+                new PSafeWorkNoArg<OpalConnection, bool>(&m_connection, &OpalConnection::InternalOnEstablished));
+    }
+
+    // Check for single port operation, incoming RTCP on RTP
+    RTP_ControlFrame control(data, data.GetSize(), false);
+    unsigned type = control.GetPayloadType();
+    if (type >= RTP_ControlFrame::e_FirstValidPayloadType && type <= RTP_ControlFrame::e_LastValidPayloadType) {
+      if (OnReceiveControl(control) != e_AbortTransport)
+        return;
+    }
+    else {
+      RTP_DataFrame frame;
+      frame.PBYTEArray::operator=(data);
+      if (OnReceiveData(frame, data.GetSize()) != e_AbortTransport)
+        return;
+    }
   }
 
-  m_transport.SetNULL();
+  PTRACE(4, *this << "aborting transport, queuing close of media session.");
+  m_connection.GetEndPoint().GetManager().QueueDecoupledEvent(
+              new PSafeWorkNoArg<OpalRTPSession, bool>(this, &OpalRTPSession::Close));
 }
 
 
