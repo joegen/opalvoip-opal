@@ -2434,8 +2434,11 @@ void OpalRTPSession::OnRxControlPacket(OpalMediaTransport &, PBYTEArray data)
   }
 
   RTP_ControlFrame control(data, data.GetSize(), false);
-  if (control.IsValid())
-    OnReceiveControl(control);
+  if (control.IsValid()) {
+    // This hack prevents lots of log warnings with Chrome WebRTC
+    if (control.GetSenderSyncSource() != 1)
+      OnReceiveControl(control);
+  }
   else {
     PTRACE_IF(2, data.GetSize() > 1 || m_rtcpPacketsReceived > 0,
               *this << "received control packet invalid: " << data.GetSize() << " bytes");
