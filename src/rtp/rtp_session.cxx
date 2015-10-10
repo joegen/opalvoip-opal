@@ -1354,7 +1354,7 @@ void OpalRTPSession::GetStatistics(OpalMediaStatistics & statistics, Direction d
   statistics.m_totalPackets      = 0;
   statistics.m_controlPacketsIn  = m_rtcpPacketsReceived;
   statistics.m_controlPacketsOut = m_rtcpPacketsSent;
-  statistics.m_NACKs             = (m_feedback&OpalMediaFormat::e_NACK) ? 0 : -1;
+  statistics.m_NACKs             = -1;
   statistics.m_packetsLost       = -1;
   statistics.m_packetsOutOfOrder = -1;
   statistics.m_packetsTooLate    = -1;
@@ -1388,9 +1388,7 @@ void OpalRTPSession::GetStatistics(OpalMediaStatistics & statistics, Direction d
         statistics.m_totalBytes   += ssrcStats.m_totalBytes;
         statistics.m_totalPackets += ssrcStats.m_totalPackets;
 
-        if (m_feedback&OpalMediaFormat::e_NACK)
-          statistics.m_NACKs += ssrcStats.m_NACKs;
-
+        AddSpecial(statistics.m_NACKs, ssrcStats.m_NACKs);
         AddSpecial(statistics.m_packetsLost, ssrcStats.m_packetsLost);
         AddSpecial(statistics.m_packetsOutOfOrder, ssrcStats.m_packetsOutOfOrder);
         AddSpecial(statistics.m_packetsTooLate, ssrcStats.m_packetsTooLate);
@@ -1439,7 +1437,8 @@ void OpalRTPSession::SyncSource::GetStatistics(OpalMediaStatistics & statistics)
   statistics.m_startTime         = m_firstPacketTime;
   statistics.m_totalBytes        = m_octets;
   statistics.m_totalPackets      = m_packets;
-  statistics.m_NACKs             = m_NACKs;
+  if (m_session.m_feedback&OpalMediaFormat::e_NACK)
+    statistics.m_NACKs           = m_NACKs;
   statistics.m_packetsLost       = m_packetsLost;
   if (m_direction == e_Receiver)
     statistics.m_packetsOutOfOrder = m_packetsOutOfOrder;
@@ -1476,7 +1475,8 @@ bool OpalRTPSession::CheckControlSSRC(RTP_SyncSourceId PTRACE_PARAM(senderSSRC),
   if (GetSyncSource(targetSSRC, e_Sender, info))
     return true;
 
-  PTRACE(2, *this << pduName << " for incorrect SSRC: " << RTP_TRACE_SRC(targetSSRC));
+  PTRACE(IsGroupMember(GetBundleGroupId()) ? 6 : 2,
+         *this << pduName << " for incorrect SSRC: " << RTP_TRACE_SRC(targetSSRC));
   return false;
 }
 
@@ -2391,32 +2391,34 @@ void OpalRTPSession::OnRxDataPacket(OpalMediaTransport &, PBYTEArray data)
     return;
 
   if (data.IsEmpty()) {
-    if (m_connection.OnMediaFailed(m_sessionId, true))
-      m_transport.SetNULL();
-    return;
-  }
-
-  if (m_sendEstablished && IsEstablished()) {
-    m_sendEstablished = false;
-    m_connection.GetEndPoint().GetManager().QueueDecoupledEvent(new PSafeWorkNoArg<OpalConnection, bool>(
-                                                      &m_connection, &OpalConnection::InternalOnEstablished));
-  }
-
-  // Check for single port operation, incoming RTCP on RTP
-  RTP_ControlFrame control(data, data.GetSize(), false);
-  unsigned type = control.GetPayloadType();
-  if (type >= RTP_ControlFrame::e_FirstValidPayloadType && type <= RTP_ControlFrame::e_LastValidPayloadType) {
-    if (OnReceiveControl(control) != e_AbortTransport)
+    if (!m_connection.OnMediaFailed(m_sessionId, true))
       return;
   }
   else {
-    RTP_DataFrame frame;
-    frame.PBYTEArray::operator=(data);
-    if (OnReceiveData(frame, data.GetSize()) != e_AbortTransport)
-      return;
+    if (m_sendEstablished && IsEstablished()) {
+      m_sendEstablished = false;
+      m_connection.GetEndPoint().GetManager().QueueDecoupledEvent(
+                new PSafeWorkNoArg<OpalConnection, bool>(&m_connection, &OpalConnection::InternalOnEstablished));
+    }
+
+    // Check for single port operation, incoming RTCP on RTP
+    RTP_ControlFrame control(data, data.GetSize(), false);
+    unsigned type = control.GetPayloadType();
+    if (type >= RTP_ControlFrame::e_FirstValidPayloadType && type <= RTP_ControlFrame::e_LastValidPayloadType) {
+      if (OnReceiveControl(control) != e_AbortTransport)
+        return;
+    }
+    else {
+      RTP_DataFrame frame;
+      frame.PBYTEArray::operator=(data);
+      if (OnReceiveData(frame, data.GetSize()) != e_AbortTransport)
+        return;
+    }
   }
 
-  m_transport.SetNULL();
+  PTRACE(4, *this << "aborting transport, queuing close of media session.");
+  m_connection.GetEndPoint().GetManager().QueueDecoupledEvent(
+              new PSafeWorkNoArg<OpalRTPSession, bool>(this, &OpalRTPSession::Close));
 }
 
 
@@ -2432,8 +2434,11 @@ void OpalRTPSession::OnRxControlPacket(OpalMediaTransport &, PBYTEArray data)
   }
 
   RTP_ControlFrame control(data, data.GetSize(), false);
-  if (control.IsValid())
-    OnReceiveControl(control);
+  if (control.IsValid()) {
+    // This hack prevents lots of log warnings with Chrome WebRTC
+    if (control.GetSenderSyncSource() != 1)
+      OnReceiveControl(control);
+  }
   else {
     PTRACE_IF(2, data.GetSize() > 1 || m_rtcpPacketsReceived > 0,
               *this << "received control packet invalid: " << data.GetSize() << " bytes");

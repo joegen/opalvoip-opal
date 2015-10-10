@@ -641,7 +641,7 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnSendData(RTP_DataFrame & fr
   frame.SetMinSize(len + SRTP_MAX_TRAILER_LEN);
 
   if (!CHECK_ERROR(srtp_protect, (m_context, frame.GetPointer(), &len), this, frame.GetSyncSource(), frame.GetSequenceNumber()))
-    return ++m_consecutiveErrors[e_Sender][e_Data] > MaxConsecutiveErrors ? e_AbortTransport : e_IgnorePacket;
+    return CheckConsecutiveErrors(e_Sender, e_Data);
 
   m_consecutiveErrors[e_Sender][e_Data] = 0;
 
@@ -677,7 +677,7 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnSendControl(RTP_ControlFram
   frame.SetMinSize(len + SRTP_MAX_TRAILER_LEN);
 
   if (!CHECK_ERROR(srtp_protect_rtcp, (m_context, frame.GetPointer(), &len), this, frame.GetSenderSyncSource()))
-    return ++m_consecutiveErrors[e_Sender][e_Control] > MaxConsecutiveErrors ? e_AbortTransport : e_IgnorePacket;
+    return CheckConsecutiveErrors(e_Sender, e_Control);
 
   m_consecutiveErrors[e_Sender][e_Control] = 0;
 
@@ -713,8 +713,9 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveData(RTP_DataFrame &
 
   frame.MakeUnique();
 
-  if (!CHECK_ERROR(srtp_unprotect, (m_context, frame.GetPointer(), &len), this, ssrc, frame.GetSequenceNumber()))
-    return ++m_consecutiveErrors[e_Receiver][e_Data] > MaxConsecutiveErrors ? e_AbortTransport : e_IgnorePacket;
+  if (!CHECK_ERROR(srtp_unprotect, (m_context, frame.GetPointer(), &len), this, ssrc, frame.GetSequenceNumber())) {
+    return CheckConsecutiveErrors(e_Receiver, e_Data);
+  }
 
   m_consecutiveErrors[e_Receiver][e_Data] = 0;
 
@@ -752,7 +753,7 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveControl(RTP_ControlF
   int len = decoded.GetSize();
 
   if (!CHECK_ERROR(srtp_unprotect_rtcp, (m_context, decoded.GetPointer(), &len), this, ssrc))
-    return ++m_consecutiveErrors[e_Receiver][e_Control] > MaxConsecutiveErrors ? e_AbortTransport : e_IgnorePacket;
+    return CheckConsecutiveErrors(e_Receiver, e_Control);
 
   m_consecutiveErrors[e_Receiver][e_Control] = 0;
 
@@ -764,6 +765,16 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveControl(RTP_ControlF
   decoded.SetPacketSize(len);
 
   return OpalRTPSession::OnReceiveControl(decoded);
+}
+
+
+OpalRTPSession::SendReceiveStatus OpalSRTPSession::CheckConsecutiveErrors(Direction dir, SubChannels subchannel)
+{
+    if (++m_consecutiveErrors[dir][subchannel] < MaxConsecutiveErrors)
+      return e_IgnorePacket;
+
+    PTRACE(2, "Exceeded maximum consecutive errors, aborting " << dir << ' ' << subchannel);
+    return e_AbortTransport;
 }
 
 
