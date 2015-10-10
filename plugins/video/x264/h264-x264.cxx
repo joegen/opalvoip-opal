@@ -749,7 +749,7 @@ class H264_Encoder : public PluginVideoEncoder<MY_CODEC>
 
       unsigned mode = m_isH323 ? m_packetisationModeH323 : m_packetisationModeSDP;
       if (mode == 0) {
-        unsigned size = std::min(m_maxRTPSize, m_maxNALUSize);
+        unsigned size = std::min(m_maxRTPSize-PluginCodec_RTP_MinHeaderSize, m_maxNALUSize);
         m_encoder.SetMaxRTPPayloadSize(size);
         m_encoder.SetMaxNALUSize(size);
       }
@@ -890,19 +890,13 @@ class H264_FlashEncoder : public H264_Encoder, protected H264FlashPacketizer
       : H264_Encoder(defn)
     {
       m_profile = H264_PROFILE_INT_MAIN;
-    }
-
-
-    virtual size_t GetOutputDataSize()
-    {
-      return 256000; // Need space to encode the enter video frame
+      m_maxRTPSize = 256000;
     }
 
 
     virtual bool OnChangedOptions()
     {
-      m_maxNALUSize = GetOutputDataSize();
-      m_maxRTPSize = m_maxNALUSize+PluginCodec_RTP_MinHeaderSize;
+      m_maxNALUSize = m_maxRTPSize-PluginCodec_RTP_MinHeaderSize-HeaderSize;
       m_packetisationModeSDP = m_packetisationModeH323 = 0;
       return H264_Encoder::OnChangedOptions();
     }

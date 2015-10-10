@@ -473,6 +473,8 @@ class H264FlashPacketizer
 
     virtual bool GetNALU(const void * fromPtr, unsigned & fromLen, const uint8_t * & naluPtr, unsigned & naluLen, unsigned & flags) = 0;
 
+    static const size_t HeaderSize = 5+5+6+4;
+
     bool FlashTranscode(const void * fromPtr,
                           unsigned & fromLen,
                               void * toPtr,
@@ -490,6 +492,10 @@ class H264FlashPacketizer
       bool bKey = (flags&PluginCodec_ReturnCoderIFrame) != 0;
 
       if (bKey && (naluPtr[0] & 0x1f) == 0x07) { // SPS
+        toLen -= 5+5+3+3;
+        if (naluLen > toLen)
+          return false;
+
         /* Pre-amble */
         *pBuffer++ = 0x17;
         *pBuffer++ = 0x00;
@@ -510,10 +516,14 @@ class H264FlashPacketizer
         *pBuffer++ = (uint8_t) naluLen;
         memcpy(pBuffer, naluPtr, naluLen);
         pBuffer += naluLen;
+        toLen -= naluLen;
 
         // We assume next thing is SPS
         if (!GetNALU(fromPtr, fromLen, naluPtr, naluLen, flags))
             return false;
+
+        if (naluLen > toLen)
+          return false;
 
         /* Write PPSs */
         *pBuffer++ = 0x01; // Only 1 for now
@@ -523,6 +533,10 @@ class H264FlashPacketizer
         pBuffer += naluLen;
       }
       else {
+        toLen -= HeaderSize;
+        if (naluLen > toLen)
+          return false;
+
         /* Pre-amble */
         *pBuffer++ = bKey ? 0x17 : 0x27;
         *pBuffer++ = 0x01;
@@ -554,11 +568,14 @@ class H264FlashPacketizer
           *pBuffer++ = (uint8_t) naluLen;
           memcpy(pBuffer, naluPtr, naluLen);
           pBuffer += naluLen;
+          toLen -= naluLen+4;
 
           if ((flags&PluginCodec_ReturnCoderLastFrame) != 0)
             break;
 
           if (!GetNALU(fromPtr, fromLen, naluPtr, naluLen, flags))
+            return false;
+          if (naluLen+4 > toLen)
             return false;
         }
 

@@ -31,7 +31,10 @@
 #ifndef _OpalShark_VERSION_H
 #define _OpalShark_VERSION_H
 
-#include "../../version.h"
+#define MAJOR_VERSION 1
+#define MINOR_VERSION 0
+#define BUILD_TYPE    AlphaCode
+#define BUILD_NUMBER  1
 
 #define	PRODUCT_NAME_TEXT	"OPAL Shark"
 #define	EXE_NAME_TEXT	    "opalshark"
