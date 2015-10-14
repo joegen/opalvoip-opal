@@ -726,7 +726,8 @@ PBoolean OpalAudioJitterBuffer::ReadData(RTP_DataFrame & frame, const PTimeInter
       if (m_frames.size() <= maxFramesInBuffer*m_overrunFactor)
         break;
 
-      PTRACE(4, "Clock overrun   " COMMON_TRACE_INFO << " greater than " << maxFramesInBuffer << '*' << m_overrunFactor);
+      PTRACE(m_overrunFactor < 10 ? 4 : 2, "Clock overrun   " COMMON_TRACE_INFO << " greater than "
+             << maxFramesInBuffer*m_overrunFactor << " (" << maxFramesInBuffer << '*' << m_overrunFactor << ')');
       m_timestampDelta += m_packetTime;
       // Do next case
 
