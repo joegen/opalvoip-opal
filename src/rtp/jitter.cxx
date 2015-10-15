@@ -412,8 +412,9 @@ PBoolean OpalAudioJitterBuffer::WriteData(const RTP_DataFrame & frame, PTimeInte
 
   // Check for remote switching media senders, they shouldn't do this but do anyway
   if (newSyncSource != m_lastSyncSource) {
-    PTRACE_IF(4, m_lastSyncSource != 0, "Buffer reset due to SSRC change from 0x"
-              << hex << m_lastSyncSource << " to 0x" << newSyncSource << " at sn=" << dec << currentSequenceNum);
+    PTRACE_IF(4, m_lastSyncSource != 0, "Buffer reset due to SSRC change from "
+              << RTP_TRACE_SRC(m_lastSyncSource) << " to " << RTP_TRACE_SRC(newSyncSource)
+              << " at sn=" << currentSequenceNum);
     Reset();
     m_lastSyncSource = newSyncSource;
   }
