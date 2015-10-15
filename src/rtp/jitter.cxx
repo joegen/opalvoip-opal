@@ -737,6 +737,7 @@ PBoolean OpalAudioJitterBuffer::ReadData(RTP_DataFrame & frame, const PTimeInter
       // Do next case
 
     case e_SynchronisationShrink :
+      m_synchronisationState = e_SynchronisationDone;
       requiredTimestamp = CalculateRequiredTimestamp(playOutTimestamp);
       while (requiredTimestamp >= oldestFrame->first + m_packetTime) {
         ANALYSE(Out, oldestFrame->first, "Shrink");
@@ -752,8 +753,6 @@ PBoolean OpalAudioJitterBuffer::ReadData(RTP_DataFrame & frame, const PTimeInter
 
         oldestFrame = m_frames.begin();
       }
-
-      m_synchronisationState = e_SynchronisationDone;
       break;
   }
 
