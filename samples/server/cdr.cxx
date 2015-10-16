@@ -679,12 +679,12 @@ void CDRListPage::CreateContent(PHTML & html, const PStringToString &) const
 {
   html << PHTML::TableStart(PHTML::Border1, PHTML::CellPad4)
        << PHTML::TableRow()
-       << PHTML::TableHeader() << "Call&nbsp;Identifier"
+       << PHTML::TableHeader() << "Call" << PHTML::NonBreakSpace() << "Identifier"
        << PHTML::TableHeader() << "Originator"
        << PHTML::TableHeader() << "Destination"
-       << PHTML::TableHeader() << "Start&nbsp;Time"
-       << PHTML::TableHeader() << "End&nbsp;Time"
-       << PHTML::TableHeader() << "Call&nbsp;Result";
+       << PHTML::TableHeader() << "Start" << PHTML::NonBreakSpace() << "Time"
+       << PHTML::TableHeader() << "End" << PHTML::NonBreakSpace() << "Time"
+       << PHTML::TableHeader() << "Call" << PHTML::NonBreakSpace() << "Result";
 
   for (MyManager::CDRList::const_iterator it = m_manager.BeginCDR(); m_manager.NotEndCDR(it); ++it)
     it->OutputSummaryHTML(html);
