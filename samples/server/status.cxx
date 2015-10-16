@@ -105,7 +105,7 @@ PBoolean BaseStatusPage::Post(PHTTPRequest & request,
 
   msg << PHTML::Paragraph()
       << PHTML::HotLink(request.url.AsString()) << "Reload page" << PHTML::HotLink()
-      << "&nbsp;&nbsp;&nbsp;&nbsp;"
+      << PHTML::NonBreakSpace(4)
       << PHTML::HotLink("/") << "Home page" << PHTML::HotLink();
 
   PServiceHTML::ProcessMacros(request, msg, "html/status.html",
@@ -322,7 +322,7 @@ static PString GetListenerStatus(PHTTPRequest & resource, const PString htmlBloc
 
   if (substitution.IsEmpty()) {
     substitution = htmlBlock;
-    PServiceHTML::SpliceMacro(substitution, "status Address", "&nbsp;");
+    PServiceHTML::SpliceMacro(substitution, "status Address", PHTML::GetNonBreakSpace());
     PServiceHTML::SpliceMacro(substitution, "status Status", "Not listening");
   }
 
@@ -364,7 +364,7 @@ static PString GetRegistrationStatus(PHTTPRequest & resource,
 
   if (substitution.IsEmpty()) {
     substitution = htmlBlock;
-    PServiceHTML::SpliceMacro(substitution, "status Name", "&nbsp;");
+    PServiceHTML::SpliceMacro(substitution, "status Name", PHTML::GetNonBreakSpace());
     PServiceHTML::SpliceMacro(substitution, "status Status", "Not registered");
   }
 
@@ -521,11 +521,11 @@ void CallStatusPage::CreateContent(PHTML & html, const PStringToString &) const
        << PHTML::TableStart(PHTML::Border1, PHTML::CellPad4)
        << PHTML::TableRow()
        << PHTML::TableHeader()
-       << "&nbsp;A&nbsp;Party&nbsp;"
+       << PHTML::NonBreakSpace() << "Party" << PHTML::NonBreakSpace()
        << PHTML::TableHeader()
-       << "&nbsp;B&nbsp;Party&nbsp;"
+       << PHTML::NonBreakSpace() << "Party" << PHTML::NonBreakSpace()
        << PHTML::TableHeader()
-       << "&nbsp;Duration&nbsp;"
+       << PHTML::NonBreakSpace() << "Duration" << PHTML::NonBreakSpace()
        << "<!--#macrostart CallStatus-->"
          << PHTML::TableRow()
          << PHTML::TableData(PHTML::NoWrap)
@@ -629,15 +629,15 @@ void GkStatusPage::CreateContent(PHTML & html, const PStringToString &) const
   html << PHTML::TableStart(PHTML::Border1)
        << PHTML::TableRow()
        << PHTML::TableHeader()
-       << "&nbsp;End&nbsp;Point&nbsp;Identifier&nbsp;"
+       << PHTML::NonBreakSpace() << "End" << PHTML::NonBreakSpace() << "Point" << PHTML::NonBreakSpace() << "Identifier" << PHTML::NonBreakSpace()
        << PHTML::TableHeader()
-       << "&nbsp;Call&nbsp;Signal&nbsp;Addresses&nbsp;"
+       << PHTML::NonBreakSpace() << "Call" << PHTML::NonBreakSpace() << "Signal" << PHTML::NonBreakSpace() << "Addresses" << PHTML::NonBreakSpace()
        << PHTML::TableHeader()
-       << "&nbsp;Aliases&nbsp;"
+       << PHTML::NonBreakSpace() << "Aliases" << PHTML::NonBreakSpace()
        << PHTML::TableHeader()
-       << "&nbsp;Application&nbsp;"
+       << PHTML::NonBreakSpace() << "Application" << PHTML::NonBreakSpace()
        << PHTML::TableHeader()
-       << "&nbsp;Active&nbsp;Calls&nbsp;"
+       << PHTML::NonBreakSpace() << "Active" << PHTML::NonBreakSpace() << "Calls" << PHTML::NonBreakSpace()
        << "<!--#macrostart EndPointStatus-->"
        << PHTML::TableRow()
        << PHTML::TableData()
