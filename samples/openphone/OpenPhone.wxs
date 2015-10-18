@@ -25,7 +25,7 @@
 <?define PluginReleaseDir = "$(var.OPALDir)\bin\plugins\$(var.Platform)\Release" ?>
 
 
-<Wix xmlns='http://wixtoolset.org/schemas/v4/wxs'>
+<Wix xmlns='http://schemas.microsoft.com/wix/2006/wi'>
 
    <Product Name='$(var.ProductName)'
             Language='1033'
