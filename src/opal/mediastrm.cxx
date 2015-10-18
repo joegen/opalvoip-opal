@@ -722,6 +722,7 @@ PBoolean OpalNullMediaStream::ReadData(BYTE * buffer, PINDEX size, PINDEX & leng
 
   memset(buffer, 0, size);
   length = size;
+  timestamp += OpalMediaStream::m_frameTime;
 
   if (m_isSynchronous)
     Pace(true, size, marker);
@@ -850,6 +851,7 @@ PBoolean OpalRawMediaStream::ReadData(BYTE * buffer, PINDEX size, PINDEX & lengt
 
     CollectAverage(buffer, lastReadCount);
 
+    timestamp += lastReadCount / sizeof(short);
     buffer += lastReadCount;
     length += lastReadCount;
     size -= lastReadCount;
