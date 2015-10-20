@@ -81,6 +81,7 @@ struct OpalNetworkStatistics
   int      m_NACKs;             // (-1 is N/A)
   int      m_packetsLost;       // (-1 is N/A)
   int      m_packetsOutOfOrder; // (-1 is N/A)
+  int      m_lateOutOfOrder;    // (-1 is N/A)
   int      m_packetsTooLate;    // (-1 is N/A)
   int      m_packetOverruns;    // (-1 is N/A)
   int      m_minimumPacketTime; // Milliseconds (-1 is N/A)

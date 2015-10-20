@@ -306,7 +306,7 @@ OpalRTPSession::SyncSource::SyncSource(OpalRTPSession & session, RTP_SyncSourceI
   , m_NACKs(0)
   , m_packetsLost(dir == e_Sender ? -1 : 0)
   , m_packetsOutOfOrder(0)
-  , m_packetsTooLate(dir == e_Sender ? -1 : 0)
+  , m_lateOutOfOrder(dir == e_Sender ? -1 : 0)
   , m_averagePacketTime(-1)
   , m_maximumPacketTime(-1)
   , m_minimumPacketTime(-1)
@@ -361,8 +361,10 @@ OpalRTPSession::SyncSource::~SyncSource()
                "    lostPackets          = " << m_packetsLost << '\n';
     if (m_direction == e_Receiver) {
       OpalJitterBuffer * jb = GetJitterBuffer();
-      trace << "    packets too late     = " << (jb != NULL ? jb->GetPacketsTooLate() : m_packetsTooLate) << "\n"
-               "    packets out of order = " << m_packetsOutOfOrder << '\n';
+      if (jb != NULL)
+        trace << "    packets too late     = " << jb->GetPacketsTooLate() << '\n';
+      trace << "    restored out of order= " << m_packetsOutOfOrder << "\n"
+               "    late out of order    = " << m_lateOutOfOrder << '\n';
     }
     trace <<   "    average time         = " << m_averagePacketTime << "\n"
                "    maximum time         = " << m_maximumPacketTime << "\n"
@@ -552,7 +554,9 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveData(RTP_
   }
   else if (sequenceDelta > SequenceReorderThreshold) {
     PTRACE(3, &m_session, *this << "late out of order packet, got " << sequenceNumber << " expected " << expectedSequenceNumber);
-    ++m_packetsTooLate;
+    ++m_lateOutOfOrder;
+    if (m_packetsLost > 0)
+      --m_packetsLost; // Previously marked as lost
   }
   else if (sequenceDelta > SequenceRestartThreshold) {
     // Check for where sequence numbers suddenly start incrementing from a different base.
@@ -1362,6 +1366,7 @@ void OpalRTPSession::GetStatistics(OpalMediaStatistics & statistics, Direction d
   statistics.m_NACKs             = -1;
   statistics.m_packetsLost       = -1;
   statistics.m_packetsOutOfOrder = -1;
+  statistics.m_lateOutOfOrder    = -1;
   statistics.m_packetsTooLate    = -1;
   statistics.m_packetOverruns    = -1;
   statistics.m_minimumPacketTime = -1;
@@ -1396,6 +1401,7 @@ void OpalRTPSession::GetStatistics(OpalMediaStatistics & statistics, Direction d
         AddSpecial(statistics.m_NACKs, ssrcStats.m_NACKs);
         AddSpecial(statistics.m_packetsLost, ssrcStats.m_packetsLost);
         AddSpecial(statistics.m_packetsOutOfOrder, ssrcStats.m_packetsOutOfOrder);
+        AddSpecial(statistics.m_lateOutOfOrder, ssrcStats.m_lateOutOfOrder);
         AddSpecial(statistics.m_packetsTooLate, ssrcStats.m_packetsTooLate);
         AddSpecial(statistics.m_packetOverruns, ssrcStats.m_packetOverruns);
         AddSpecial(statistics.m_minimumPacketTime, ssrcStats.m_minimumPacketTime);
@@ -1445,8 +1451,6 @@ void OpalRTPSession::SyncSource::GetStatistics(OpalMediaStatistics & statistics)
   if (m_session.m_feedback&OpalMediaFormat::e_NACK)
     statistics.m_NACKs           = m_NACKs;
   statistics.m_packetsLost       = m_packetsLost;
-  if (m_direction == e_Receiver)
-    statistics.m_packetsOutOfOrder = m_packetsOutOfOrder;
   statistics.m_minimumPacketTime = m_minimumPacketTime;
   statistics.m_averagePacketTime = m_averagePacketTime;
   statistics.m_maximumPacketTime = m_maximumPacketTime;
@@ -1455,16 +1459,16 @@ void OpalRTPSession::SyncSource::GetStatistics(OpalMediaStatistics & statistics)
   statistics.m_lastPacketTime    = m_lastPacketAbsTime;
   statistics.m_lastReportTime    = m_lastSenderReportTime;
 
-  OpalJitterBuffer * jb = GetJitterBuffer();
-  if (jb != NULL && jb->GetCurrentJitterDelay() > 0) {
-    statistics.m_packetsTooLate    = jb->GetPacketsTooLate() + m_packetsTooLate;
-    statistics.m_packetOverruns    = jb->GetBufferOverruns();
-    statistics.m_jitterBufferDelay = jb->GetCurrentJitterDelay()/jb->GetTimeUnits();
-  }
-  else {
-    statistics.m_packetsTooLate    = m_packetsTooLate;
-    statistics.m_packetOverruns    = -1;
-    statistics.m_jitterBufferDelay = -1;
+  if (m_direction == e_Receiver) {
+    statistics.m_packetsOutOfOrder = m_packetsOutOfOrder;
+    statistics.m_lateOutOfOrder = m_lateOutOfOrder;
+
+    OpalJitterBuffer * jb = GetJitterBuffer();
+    if (jb != NULL && jb->GetCurrentJitterDelay() > 0) {
+      statistics.m_packetsTooLate = jb->GetPacketsTooLate();
+      statistics.m_packetOverruns = jb->GetBufferOverruns();
+      statistics.m_jitterBufferDelay = jb->GetCurrentJitterDelay() / jb->GetTimeUnits();
+    }
   }
 }
 #endif // OPAL_STATISTICS
