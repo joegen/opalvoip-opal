@@ -459,6 +459,9 @@ OpalSRTPSession::~OpalSRTPSession()
 {
   Close();
 
+  for (int i = 0; i < 2; ++i)
+    delete m_keyInfo[i];
+
   if (m_context != NULL)
     CHECK_ERROR(srtp_dealloc,(m_context));
 }
