@@ -114,6 +114,10 @@ OpalMediaFormatList OpalSDPConnection::GetMediaFormats() const
 
 bool OpalSDPConnection::HoldRemote(bool placeOnHold)
 {
+  PSafeLockReadWrite lock(*this);
+  if (!lock.IsLocked())
+    return false;
+
   switch (m_holdToRemote) {
     case eHoldOff :
     case eRetrieveInProgress :
