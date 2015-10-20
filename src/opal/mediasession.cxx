@@ -66,6 +66,7 @@ OpalNetworkStatistics::OpalNetworkStatistics()
   , m_NACKs(-1)
   , m_packetsLost(-1)
   , m_packetsOutOfOrder(-1)
+  , m_lateOutOfOrder(-1)
   , m_packetsTooLate(-1)
   , m_packetOverruns(-1)
   , m_minimumPacketTime(-1)
@@ -360,14 +361,15 @@ void OpalMediaStatistics::PrintOn(ostream & strm) const
        << setw(indent) <<     "Average packet time" << " = " << m_averagePacketTime << "ms\n"
        << setw(indent) <<     "Maximum packet time" << " = " << m_maximumPacketTime << "ms\n"
        << setw(indent) <<            "Packets lost" << " = " << m_packetsLost << '\n'
-       << setw(indent) <<    "Packets out of order" << " = " << m_packetsOutOfOrder << '\n'
-       << setw(indent) <<        "Packets too late" << " = " << m_packetsTooLate << '\n';
+       << setw(indent) <<   "Restored out of order" << " = " << m_packetsOutOfOrder << '\n'
+       << setw(indent) <<       "Late out of order" << " = " << m_lateOutOfOrder << '\n';
 
   if (m_roundTripTime >= 0)
     strm << setw(indent) <<       "Round Trip Time" << " = " << m_roundTripTime << '\n';
 
   if (m_mediaType == OpalMediaType::Audio()) {
-    strm << setw(indent) <<       "Packet overruns" << " = " << m_packetOverruns << '\n';
+    strm << setw(indent) <<           "JB too late" << " = " << m_packetsTooLate << '\n'
+         << setw(indent) <<           "JB overruns" << " = " << m_packetOverruns << '\n';
     if (m_averageJitter >= 0 || m_maximumJitter >= 0)
       strm << setw(indent) <<      "Average jitter" << " = " << m_averageJitter << "ms\n"
            << setw(indent) <<      "Maximum jitter" << " = " << m_maximumJitter << "ms\n";
