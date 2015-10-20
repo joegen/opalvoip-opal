@@ -104,7 +104,7 @@ class OpalDTLSContext : public PSSLContext
 
 
 OpalDTLSMediaTransport::DTLSChannel::DTLSChannel(const OpalDTLSMediaTransport & transport)
-  : PSSLChannelDTLS(new OpalDTLSContext(transport))
+  : PSSLChannelDTLS(new OpalDTLSContext(transport), true)
 {
 }
 
