@@ -2121,7 +2121,8 @@ void SDPAudioMediaDescription::OutputAttributes(ostream & strm) const
   }
 
   unsigned largestFrameTime = 0;
-  unsigned maxptime = UINT_MAX;
+  unsigned minptimeMax = 0;
+  unsigned maxptimeMin = UINT_MAX;
 
   // output attributes for each payload type
   for (SDPMediaFormatList::const_iterator format = m_formats.begin(); format != m_formats.end(); ++format) {
@@ -2131,17 +2132,23 @@ void SDPAudioMediaDescription::OutputAttributes(ostream & strm) const
       if (largestFrameTime < frameTime)
         largestFrameTime = frameTime;
 
-      unsigned maxptime1 = mediaFormat.GetOptionInteger(OpalAudioFormat::RxFramesPerPacketOption())*frameTime;
-      if (maxptime > maxptime1)
-        maxptime = maxptime1;
+      unsigned maxptime = mediaFormat.GetOptionInteger("maxptime");
+      if (maxptime == 0)
+        maxptime = mediaFormat.GetOptionInteger(OpalAudioFormat::RxFramesPerPacketOption())*frameTime;
+      if (maxptime > 0 && maxptime < maxptimeMin)
+        maxptimeMin = maxptime;
+
+      unsigned minptime = mediaFormat.GetOptionInteger("minptime");
+      if (minptime > 0 && minptime > minptimeMax)
+        minptimeMax = minptime;
     }
   }
 
-  if (maxptime < UINT_MAX) {
-    if (maxptime < largestFrameTime)
-      maxptime = largestFrameTime;
-    strm << "a=maxptime:" << maxptime << CRLF;
-  }
+  if (minptimeMax > 0)
+    strm << "a=minptime:" << std::max(minptimeMax,largestFrameTime) << CRLF;
+
+  if (maxptimeMin < UINT_MAX)
+    strm << "a=maxptime:" << std::max(maxptimeMin,largestFrameTime) << CRLF;
 }
 
 
