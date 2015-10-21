@@ -2148,7 +2148,7 @@ void SDPAudioMediaDescription::OutputAttributes(ostream & strm) const
     strm << "a=minptime:" << std::max(minptimeMax,largestFrameTime) << CRLF;
 
   if (maxptimeMin < UINT_MAX)
-    strm << "a=maxptime:" << std::max(maxptimeMin,largestFrameTime) << CRLF;
+    strm << "a=maxptime:" << std::max(std::max(minptimeMax,maxptimeMin),largestFrameTime) << CRLF;
 }
 
 
