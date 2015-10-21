@@ -701,7 +701,7 @@ class OpalRTPSession : public OpalMediaSession
       unsigned m_NACKs;
       int      m_packetsLost;
       unsigned m_packetsOutOfOrder;
-      int      m_packetsTooLate;
+      int      m_lateOutOfOrder;
 
       int      m_averagePacketTime; // Milliseconds
       int      m_maximumPacketTime; // Milliseconds
