@@ -1413,6 +1413,10 @@ class OpalAudioFormat : public OpalMediaFormat
     static const PString & TxFramesPerPacketOption();
     static const PString & MaxFramesPerPacketOption();
     static const PString & ChannelsOption();
+#if OPAL_SDP
+    static const PString & MinPacketTimeOption();
+    static const PString & MaxPacketTimeOption();
+#endif
 };
 
 #if OPAL_VIDEO
