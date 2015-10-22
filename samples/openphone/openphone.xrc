@@ -5944,7 +5944,7 @@
 						<flag>wxRIGHT|wxTOP|wxBOTTOM|wxALIGN_CENTER_VERTICAL</flag>
 						<border>4</border>
 						<object class="wxTextCtrl" name="EnteredText">
-							<style>wxTE_PROCESS_ENTER|wxTE_LINEWRAP</style>
+							<style>wxTE_PROCESS_ENTER</style>
 							<value></value>
 							<maxlength>0</maxlength>
 						</object>
