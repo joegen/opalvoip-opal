@@ -234,6 +234,10 @@
     <None Include="App.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PreBuildEvent>copy %25PTLIBDIR%25\lib\ptlibd.dll $(TargetDir)ptlib.dll
+copy %25OPALDIR%25\lib\opald.dll $(TargetDir)opal.dll</PreBuildEvent>
+  </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
