@@ -1352,6 +1352,10 @@ static void AddSpecial(int & left, int right)
 
 void OpalRTPSession::GetStatistics(OpalMediaStatistics & statistics, Direction dir) const
 {
+  PSafeLockReadOnly lock(*this);
+  if (!lock.IsLocked())
+    return;
+
   OpalMediaSession::GetStatistics(statistics, dir);
 
   statistics.m_totalBytes        = 0;
