@@ -236,9 +236,12 @@ RTP_SyncSourceArray OpalRTPSession::GetSyncSources(Direction dir) const
 {
   RTP_SyncSourceArray ssrcs;
 
-  for (SyncSourceMap::const_iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
-    if (it->second->m_direction == dir)
-      ssrcs.push_back(it->first);
+  PSafeLockReadOnly lock(*this);
+  if (lock.IsLocked()) {
+    for (SyncSourceMap::const_iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
+      if (it->second->m_direction == dir)
+        ssrcs.push_back(it->first);
+    }
   }
 
   return ssrcs;
@@ -247,6 +250,7 @@ RTP_SyncSourceArray OpalRTPSession::GetSyncSources(Direction dir) const
 
 const OpalRTPSession::SyncSource & OpalRTPSession::GetSyncSource(RTP_SyncSourceId ssrc, Direction dir) const
 {
+  PSafeLockReadOnly lock(*this);
   SyncSource * info;
   return GetSyncSource(ssrc, dir, info) ? *info : m_dummySyncSource;
 }
