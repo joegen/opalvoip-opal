@@ -163,15 +163,20 @@ RTP_SyncSourceId OpalRTPSession::AddSyncSource(RTP_SyncSourceId id, Direction di
       id = PRandom::Number();
     } while (id < 4 || m_SSRC.find(id) != m_SSRC.end());
   }
+  else {
+    SyncSourceMap::iterator it = m_SSRC.find(id);
+    if (it != m_SSRC.end()) {
+      if (cname == NULL || it->second->m_canonicalName == cname)
+        return id;
+      PTRACE(2, *this << "could not add SSRC " << RTP_TRACE_SRC(id) << ","
+                " probable clash with " << it->second->m_direction << ","
+                " cname=" << it->second->m_canonicalName);
+      return 0;
+    }
+  }
 
-  SyncSource * ssrc = CreateSyncSource(id, dir, cname);
-  if (m_SSRC.insert(SyncSourceMap::value_type(id, ssrc)).second)
-    return id;
-
-  PTRACE(2, *this << "could not add SSRC "
-         << RTP_TRACE_SRC(id) << ", probable clash with receiver.");
-  delete ssrc;
-  return 0;
+  m_SSRC[id] = CreateSyncSource(id, dir, cname);
+  return id;
 }
 
 
@@ -231,9 +236,12 @@ RTP_SyncSourceArray OpalRTPSession::GetSyncSources(Direction dir) const
 {
   RTP_SyncSourceArray ssrcs;
 
-  for (SyncSourceMap::const_iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
-    if (it->second->m_direction == dir)
-      ssrcs.push_back(it->first);
+  PSafeLockReadOnly lock(*this);
+  if (lock.IsLocked()) {
+    for (SyncSourceMap::const_iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
+      if (it->second->m_direction == dir)
+        ssrcs.push_back(it->first);
+    }
   }
 
   return ssrcs;
@@ -242,6 +250,7 @@ RTP_SyncSourceArray OpalRTPSession::GetSyncSources(Direction dir) const
 
 const OpalRTPSession::SyncSource & OpalRTPSession::GetSyncSource(RTP_SyncSourceId ssrc, Direction dir) const
 {
+  PSafeLockReadOnly lock(*this);
   SyncSource * info;
   return GetSyncSource(ssrc, dir, info) ? *info : m_dummySyncSource;
 }
@@ -1183,9 +1192,9 @@ void OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & frame, SyncSource
 }
 
 
-bool OpalRTPSession::InternalSendReport(RTP_ControlFrame & report, SyncSource * sender, bool includeReceivers, bool forced)
+bool OpalRTPSession::InternalSendReport(RTP_ControlFrame & report, SyncSource & sender, bool includeReceivers, bool forced)
 {
-  if (sender != NULL && (sender->m_direction != e_Sender || (!forced && sender->m_packets == 0)))
+  if (sender.m_direction != e_Sender || (!forced && sender.m_packets == 0))
     return false;
 
 #if PTRACING
@@ -1207,27 +1216,27 @@ bool OpalRTPSession::InternalSendReport(RTP_ControlFrame & report, SyncSource * 
   }
 
   RTP_ControlFrame::ReceiverReport * rr = NULL;
-  if (sender == NULL) {
-    rr = report.AddReceiverReport(1, receivers);
+  if (sender.m_packets == 0) {
+    rr = report.AddReceiverReport(sender.m_sourceIdentifier, receivers);
 
-    PTRACE(logLevel, *this << "SSRC=1, sending " << forcedStr
+    PTRACE(logLevel, sender << "sending " << forcedStr
            << (receivers == 0 ? "empty " : "") << "ReceiverReport" << m_throttleTxReport);
   }
   else {
-    rr = report.AddSenderReport(sender->m_sourceIdentifier,
-                                sender->m_reportAbsoluteTime,
-                                sender->m_reportTimestamp,
-                                sender->m_packets,
-                                sender->m_octets,
+    rr = report.AddSenderReport(sender.m_sourceIdentifier,
+                                sender.m_reportAbsoluteTime,
+                                sender.m_reportTimestamp,
+                                sender.m_packets,
+                                sender.m_octets,
                                 receivers);
 
-    sender->m_lastSenderReportTime.SetCurrentTime();
+    sender.m_lastSenderReportTime.SetCurrentTime();
 
-    PTRACE(logLevel, *sender << "sending " << forcedStr << "SenderReport:"
-              " ntp=" << sender->m_reportAbsoluteTime.AsString(PTime::TodayFormat)
-           << " rtp=" << sender->m_reportTimestamp
-           << " psent=" << sender->m_packets
-           << " osent=" << sender->m_octets
+    PTRACE(logLevel, sender << "sending " << forcedStr << "SenderReport:"
+              " ntp=" << sender.m_reportAbsoluteTime.AsString(PTime::TodayFormat)
+           << " rtp=" << sender.m_reportTimestamp
+           << " psent=" << sender.m_packets
+           << " osent=" << sender.m_octets
            << m_throttleTxReport);
   }
 
@@ -1250,16 +1259,9 @@ bool OpalRTPSession::InternalSendReport(RTP_ControlFrame & report, SyncSource * 
   }
 #endif
 
-  if (sender != NULL) {
-    // Add the SDES part to compound RTCP packet
-    PTRACE(logLevel, *sender << "sending SDES cname=\"" << sender->m_canonicalName << '"');
-    report.AddSourceDescription(sender->m_sourceIdentifier, sender->m_canonicalName, m_toolName);
-  }
-  else {
-    PTime now;
-    report.AddReceiverReferenceTimeReport(1, now);
-    PTRACE(logLevel, *this << "SSRC=1, sending RRTR ntp=" << now.AsString(PTime::TodayFormat));
-  }
+  // Add the SDES part to compound RTCP packet
+  PTRACE(logLevel, sender << "sending SDES cname=\"" << sender.m_canonicalName << '"');
+  report.AddSourceDescription(sender.m_sourceIdentifier, sender.m_canonicalName, m_toolName);
 
   // Count receivers that have had a RRTR
   receivers = 0;
@@ -1269,8 +1271,7 @@ bool OpalRTPSession::InternalSendReport(RTP_ControlFrame & report, SyncSource * 
   }
 
   if (receivers != 0) {
-    RTP_ControlFrame::DelayLastReceiverReport::Receiver * dlrr =
-            report.AddDelayLastReceiverReport(sender != NULL ? sender->m_sourceIdentifier : 1, receivers);
+    RTP_ControlFrame::DelayLastReceiverReport::Receiver * dlrr = report.AddDelayLastReceiverReport(sender.m_sourceIdentifier, receivers);
 
     for (SyncSourceMap::iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it, ++dlrr) {
       if (it->second->OnSendDelayLastReceiverReport(dlrr)) {
@@ -1302,7 +1303,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SendReport(RTP_SyncSourceId ss
     SyncSource * sender;
     if (GetSyncSource(ssrc, e_Sender, sender)) {
       RTP_ControlFrame frame;
-      if (InternalSendReport(frame, sender, true, force))
+      if (InternalSendReport(frame, *sender, true, force))
         frames.push_back(frame);
     }
   }
@@ -1310,14 +1311,17 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SendReport(RTP_SyncSourceId ss
     bool includeReceivers = true;
     for (SyncSourceMap::iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
       RTP_ControlFrame frame;
-      if (InternalSendReport(frame, it->second, includeReceivers, force)) {
+      if (InternalSendReport(frame, *it->second, includeReceivers, force)) {
         frames.push_back(frame);
         includeReceivers = false;
       }
     }
     if (includeReceivers) {
       RTP_ControlFrame frame;
-      if (InternalSendReport(frame, NULL, true, force))
+      SyncSource * sender = NULL;
+      if (!GetSyncSource(0, e_Sender, sender))
+        GetSyncSource(AddSyncSource(0, e_Sender), e_Sender, sender); // Must always have one sender
+      if (sender != NULL && InternalSendReport(frame, *sender, true, true))
         frames.push_back(frame);
     }
   }
@@ -1348,6 +1352,10 @@ static void AddSpecial(int & left, int right)
 
 void OpalRTPSession::GetStatistics(OpalMediaStatistics & statistics, Direction dir) const
 {
+  PSafeLockReadOnly lock(*this);
+  if (!lock.IsLocked())
+    return;
+
   OpalMediaSession::GetStatistics(statistics, dir);
 
   statistics.m_totalBytes        = 0;

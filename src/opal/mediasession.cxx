@@ -1120,7 +1120,9 @@ bool OpalUDPMediaTransport::Write(const void * data, PINDEX length, SubChannels 
   if (dest == NULL || (socket = GetSocket(subchannel)) == NULL)
     return OpalMediaTransport::Write(data, length, subchannel, dest);
 
-  if (socket->WriteTo(data, length, *dest))
+  bool writeSuccess = socket->WriteTo(data, length, *dest);
+  // This insanity prevents a totally unbelievable CPU issue when under heavy load.
+  if (writeSuccess)
     return true;
 
   PTRACE(1, *this << "write (" << length << " bytes) error"
