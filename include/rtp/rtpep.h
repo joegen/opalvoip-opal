@@ -99,6 +99,28 @@ class OpalRTPEndPoint : public OpalEndPoint
 
   /**@name Overrides from OpalEndPoint */
   //@{
+    /**A call back function whenever a connection is broken.
+       This function can do any internal cleaning up and waiting on background
+       threads that may be using the connection object.
+
+       Note that there is not a one to one relationship with the
+       OnEstablishedConnection() function. This function may be called without
+       that function being called. For example if MakeConnection() was used
+       but the call never completed.
+
+       Classes that override this function should make sure they call the
+       ancestor version for correct operation.
+
+       An application will not typically call this function as it is used by
+       the OpalManager during a release of the connection.
+
+       The default behaviour removes the connection from the internal database
+       and calls the OpalManager function of the same name.
+      */
+    virtual void OnReleased(
+      OpalConnection & connection   ///<  Connection that was established
+    );
+
     /**Get the data formats this endpoint is capable of operating.
        This provides a list of media data format names that may be used by an
        OpalMediaStream may be created by a connection from this endpoint.
