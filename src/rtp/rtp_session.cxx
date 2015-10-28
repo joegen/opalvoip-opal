@@ -608,11 +608,11 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveData(RTP_
   PTime absTime(0);
   if (m_reportAbsoluteTime.IsValid()) {
     int64_t deltaTS = (int64_t)frame.GetTimestamp() - (int64_t)m_reportTimestamp;
-    if (deltaTS >= -500*m_session.m_timeUnits && deltaTS < (m_lastSenderReportTime.GetElapsed()+500).GetMilliSeconds()*m_session.m_timeUnits)
+    if (deltaTS > -500*(int)m_session.m_timeUnits && deltaTS < (m_lastSenderReportTime.GetElapsed().GetMilliSeconds()+500)*m_session.m_timeUnits)
       absTime = m_reportAbsoluteTime + PTimeInterval(deltaTS/m_session.m_timeUnits);
     else {
       PTRACE(4,  &m_session, *this << "unexpected jump in RTP timestamp (" << frame.GetTimestamp() << ")"
-                                      " from SenderReport (" << m_reportTimestamp << ')');
+                                      " from SenderReport (" << m_reportTimestamp << ") delta=" << deltaTS);
       m_reportAbsoluteTime = 0;
     }
   }
