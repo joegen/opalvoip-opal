@@ -745,6 +745,10 @@ bool OpalRTPSession::SyncSource::HandlePendingFrames()
     }
 #endif
 
+    // Still more packets, reset timer to allow for later out-of-order packets
+    if (!m_pendingPackets.empty())
+      m_waitOutOfOrderTimer = m_session.GetOutOfOrderWaitTime();
+
     if (OnReceiveData(resequencedPacket, false) == e_AbortTransport)
       return false;
   }
