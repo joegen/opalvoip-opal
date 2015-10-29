@@ -257,11 +257,11 @@ static PString InternalGetRate(const PTime & lastUpdate,
   PString str = "N/A";
 
   if (lastValue >= 0 && previousValue >= 0 && lastUpdate.IsValid() && previousUpdate.IsValid()) {
-    PTimeInterval interval = lastUpdate - previousUpdate;
-    if (interval == 0)
+    int64_t milliseconds = (lastUpdate - previousUpdate).GetMilliSeconds();
+    if (milliseconds == 0)
       str = '0';
     else {
-      double value = (lastValue - previousValue)*1000.0 / interval.GetMilliSeconds();
+      double value = (lastValue - previousValue)*1000.0/milliseconds;
       if (value == 0)
         str = '0';
       else
@@ -290,8 +290,11 @@ PString OpalMediaStatistics::GetRateStr(int64_t current, int64_t previous, const
 
 unsigned OpalMediaStatistics::GetRateInt(int64_t current, int64_t previous) const
 {
-  if (IsValid())
-    return (unsigned)((current - previous)*1000 / (m_updateInfo.m_lastUpdateTime - m_updateInfo.m_previousUpdateTime).GetMilliSeconds());
+  if (IsValid()) {
+    int64_t milliseconds = (m_updateInfo.m_lastUpdateTime - m_updateInfo.m_previousUpdateTime).GetMilliSeconds();
+    if (milliseconds > 0)
+      return (unsigned)((current - previous)*1000/milliseconds);
+  }
   return 0;
 }
 
@@ -316,15 +319,16 @@ PString OpalMediaStatistics::GetCurrentFrameRate(const char * units, unsigned si
 
 PString OpalMediaStatistics::GetCPU() const
 {
+  int64_t milliseconds;
   if (m_updateInfo.m_usedCPU <= 0 ||
       m_updateInfo.m_previousCPU <= 0 ||
      !m_updateInfo.m_lastUpdateTime.IsValid() ||
      !m_updateInfo.m_previousUpdateTime.IsValid() ||
-      m_updateInfo.m_lastUpdateTime <= m_updateInfo.m_previousUpdateTime)
+      m_updateInfo.m_lastUpdateTime <= m_updateInfo.m_previousUpdateTime ||
+      (milliseconds = (m_updateInfo.m_lastUpdateTime - m_updateInfo.m_previousUpdateTime).GetMilliSeconds()) == 0)
     return "N/A";
-
-  unsigned percentBy10 = (unsigned)((m_updateInfo.m_usedCPU - m_updateInfo.m_previousCPU).GetMilliSeconds() * 1000 /
-                                    (m_updateInfo.m_lastUpdateTime - m_updateInfo.m_previousUpdateTime).GetMilliSeconds());
+  
+  unsigned percentBy10 = (unsigned)((m_updateInfo.m_usedCPU - m_updateInfo.m_previousCPU).GetMilliSeconds()*1000/milliseconds);
   return psprintf("%u.%u%%", percentBy10/10, percentBy10%10);
 }
 
