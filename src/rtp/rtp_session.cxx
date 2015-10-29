@@ -120,7 +120,7 @@ OpalRTPSession::OpalRTPSession(const Init & init)
   , m_rtcpPacketsSent(0)
   , m_rtcpPacketsReceived(0)
   , m_roundTripTime(-1)
-  , m_reportTimer(0, 12)  // Seconds
+  , m_reportTimer(0, 4)  // Seconds
   , m_qos(m_manager.GetMediaQoS(init.m_mediaType))
   , m_packetOverhead(0)
   , m_remoteControlPort(0)
@@ -1340,6 +1340,8 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SendReport(RTP_SyncSourceId ss
       if (sender != NULL && InternalSendReport(frame, *sender, true, true))
         frames.push_back(frame);
     }
+    if (force)
+      m_reportTimer.RunContinuous(m_reportTimer.GetResetTime());
   }
 
   UnlockReadOnly();
