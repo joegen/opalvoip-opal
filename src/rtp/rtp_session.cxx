@@ -508,7 +508,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnSendData(RTP_Dat
 
   // Update absolute time and RTP timestamp for next SR that goes out
   if (m_synthesizeAbsTime && !frame.GetAbsoluteTime().IsValid())
-      frame.SetAbsoluteTime(PTime());
+      frame.SetAbsoluteTime();
 
   PTRACE_IF(3, !m_reportAbsoluteTime.IsValid() && frame.GetAbsoluteTime().IsValid(), &m_session,
             m_session << "sent first RTP with absolute time: " << frame.GetAbsoluteTime().AsString(PTime::TodayFormat));
