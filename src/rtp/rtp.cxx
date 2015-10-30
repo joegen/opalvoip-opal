@@ -195,6 +195,7 @@ void RTP_DataFrame::CopyHeader(const RTP_DataFrame & other)
     memcpy(theArray, other.theArray, m_headerSize);
   SetDiscontinuity(other.GetDiscontinuity());
   SetAbsoluteTime(other.GetAbsoluteTime());
+  SetLipSyncId(other.GetLipSyncId());
 }
 
 
@@ -208,6 +209,7 @@ void RTP_DataFrame::Copy(const RTP_DataFrame & other)
     m_paddingSize = other.m_paddingSize;
     SetDiscontinuity(other.GetDiscontinuity());
     SetAbsoluteTime(other.GetAbsoluteTime());
+    SetLipSyncId(other.GetLipSyncId());
   }
 }
 

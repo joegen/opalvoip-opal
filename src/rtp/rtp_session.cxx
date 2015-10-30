@@ -506,7 +506,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnSendData(RTP_Dat
 
   // Update absolute time and RTP timestamp for next SR that goes out
   if (m_synthesizeAbsTime && !frame.GetAbsoluteTime().IsValid())
-      frame.SetAbsoluteTime(PTime());
+      frame.SetAbsoluteTime();
 
   PTRACE_IF(3, !m_reportAbsoluteTime.IsValid() && frame.GetAbsoluteTime().IsValid(), &m_session,
             m_session << "sent first RTP with absolute time: " << frame.GetAbsoluteTime().AsString(PTime::TodayFormat));
@@ -602,8 +602,16 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveData(RTP_
   }
 
   PTime absTime(0);
-  if (m_reportAbsoluteTime.IsValid())
-    absTime = m_reportAbsoluteTime + PTimeInterval(((int64_t)frame.GetTimestamp() - (int64_t)m_reportTimestamp) / m_session.m_timeUnits);
+  if (m_reportAbsoluteTime.IsValid()) {
+    int64_t deltaTS = (int64_t)frame.GetTimestamp() - (int64_t)m_reportTimestamp;
+    if (deltaTS > -500*(int)m_session.m_timeUnits && deltaTS < (m_lastSenderReportTime.GetElapsed().GetMilliSeconds()+500)*m_session.m_timeUnits)
+      absTime = m_reportAbsoluteTime + PTimeInterval(deltaTS/m_session.m_timeUnits);
+    else {
+      PTRACE(4,  &m_session, *this << "unexpected jump in RTP timestamp (" << frame.GetTimestamp() << ")"
+                                      " from SenderReport (" << m_reportTimestamp << ") delta=" << deltaTS);
+      m_reportAbsoluteTime = 0;
+    }
+  }
   frame.SetAbsoluteTime(absTime);
 
 #if OPAL_RTCP_XR
@@ -1027,7 +1035,7 @@ void OpalRTPSession::SyncSource::OnRxSenderReport(const RTP_SenderReport & repor
             &m_session, m_session << "OnRxSenderReport: remote NTP time jumped by unexpectedly large amount,"
             " was " << m_reportAbsoluteTime.AsString(PTime::TodayFormat) << ","
             " now " << report.realTimestamp.AsString(PTime::TodayFormat) << ","
-                        " last report " << m_lastSenderReportTime.AsString(PTime::TodayFormat));
+            " last report " << m_lastSenderReportTime.AsString(PTime::TodayFormat));
   m_ntpPassThrough = report.ntpPassThrough;
   m_reportAbsoluteTime =  report.realTimestamp;
   m_reportTimestamp = report.rtpTimestamp;
@@ -1799,12 +1807,12 @@ void OpalRTPSession::OnRxDelayLastReceiverReport(const RTP_DelayLastReceiverRepo
 
 void OpalRTPSession::OnRxSenderReport(const RTP_SenderReport & senderReport)
 {
-  PTRACE(m_throttleRxSR, *this << "OnRxSenderReport: " << senderReport << m_throttleRxSR);
-
   // This is report for their sender, our receiver
-  SyncSource * receiver;
+  SyncSource * receiver = NULL;
   if (GetSyncSource(senderReport.sourceIdentifier, e_Receiver, receiver))
     receiver->OnRxSenderReport(senderReport);
+
+  PTRACE(m_throttleRxSR, *this << "OnRxSenderReport: " << senderReport << " rxptr=" << receiver << m_throttleRxSR);
 }
 
 
