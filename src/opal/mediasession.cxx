@@ -318,7 +318,7 @@ PString OpalMediaStatistics::GetCurrentFrameRate(const char * units, unsigned si
 
 PString OpalMediaStatistics::GetCPU() const
 {
-  int64_t milliseconds;
+  int64_t milliseconds = 1;
   if (m_updateInfo.m_usedCPU <= 0 ||
       m_updateInfo.m_previousCPU <= 0 ||
      !m_updateInfo.m_lastUpdateTime.IsValid() ||
