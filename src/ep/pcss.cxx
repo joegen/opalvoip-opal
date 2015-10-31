@@ -53,6 +53,8 @@
 
 
 #define new PNEW
+#define PTraceModule() "PCSS"
+
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -72,7 +74,7 @@ OpalPCSSEndPoint::OpalPCSSEndPoint(OpalManager & mgr, const char * prefix)
   , m_soundChannelBufferTime(40)
 #endif
 {
-  PTRACE(3, "PCSS\tCreated PC sound system endpoint.\n" << setfill('\n')
+  PTRACE(3, "Created PC sound system endpoint.\n" << setfill('\n')
          << "Player=" << m_soundChannelPlayDevice << ", available devices:\n"
          << PSoundChannel::GetDeviceNames(PSoundChannel::Player)
          << "Recorders=" << m_soundChannelRecordDevice << ", available devices:\n"
@@ -89,7 +91,7 @@ OpalPCSSEndPoint::OpalPCSSEndPoint(OpalManager & mgr, const char * prefix)
 
 OpalPCSSEndPoint::~OpalPCSSEndPoint()
 {
-  PTRACE(4, "PCSS\tDeleted PC sound system endpoint.");
+  PTRACE(4, "Deleted PC sound system endpoint.");
 }
 
 
@@ -176,18 +178,18 @@ static bool SetDeviceNames(const PString & remoteParty,
   if (playDevice.IsEmpty() || playDevice == "*")
     playDevice = playResult;
   if (!SetDeviceName(playDevice, PSoundChannel::Player, playResult)) {
-    PTRACE(2, "PCSS\tSound player device \"" << playDevice << "\" does not exist, " << operation << " aborted.");
+    PTRACE(2, "Sound player device \"" << playDevice << "\" does not exist, " << operation << " aborted.");
     return false;
   }
-  PTRACE(4, "PCSS\tSound player device is \"" << playDevice << '"');
+  PTRACE(4, "Sound player device is \"" << playDevice << '"');
 
   if (recordDevice.IsEmpty() || recordDevice == "*")
     recordDevice = recordResult;
   if (!SetDeviceName(recordDevice, PSoundChannel::Recorder, recordResult)) {
-    PTRACE(2, "PCSS\tSound recording device \"" << recordDevice << "\" does not exist, " << operation << " aborted.");
+    PTRACE(2, "Sound recording device \"" << recordDevice << "\" does not exist, " << operation << " aborted.");
     return false;
   }
-  PTRACE(4, "PCSS\tSound recording device is \"" << recordDevice << '"');
+  PTRACE(4, "Sound recording device is \"" << recordDevice << '"');
 
   return true;
 }
@@ -261,7 +263,7 @@ PSoundChannel * OpalPCSSEndPoint::CreateSoundChannel(const OpalPCSSConnection & 
 
   PTRACE_CONTEXT_ID_SET(*soundChannel, connection);
 
-  PTRACE(3, "PCSS\tOpened "
+  PTRACE(3, "Opened "
               << ((params.m_channels == 1) ? "mono" : ((params.m_channels == 2) ? "stereo" : "multi-channel"))
               << " sound channel \"" << params.m_device
               << "\" for " << (isSource ? "record" : "play") << "ing at "
@@ -333,20 +335,20 @@ bool OpalPCSSEndPoint::SetLocalRingbackTone(const PString & tone)
     if (code != OpalLineInterfaceDevice::UnknownCountry) {
       toneSpec = OpalLineInterfaceDevice::GetCountryInfo(code).m_tone[OpalLineInterfaceDevice::RingTone];
       if (toneSpec.IsEmpty()) {
-        PTRACE(2, "PCSS\tCountry code \"" << tone << "\" does not have a ringback tone specified");
+        PTRACE(2, "Country code \"" << tone << "\" does not have a ringback tone specified");
         return false;
       }
     }
 
     if (!PTones().Generate(toneSpec)) {
-      PTRACE(2, "PCSS\tIllegal country code or tone specification \"" << tone << '"');
+      PTRACE(2, "Illegal country code or tone specification \"" << tone << '"');
       return false;
     }
 
     m_localRingbackTone = toneSpec;
 #else
     if (!PTones().Generate(tone)) {
-      PTRACE(2, "PCSS\tIllegal tone specification \"" << tone << '"');
+      PTRACE(2, "Illegal tone specification \"" << tone << '"');
       return false;
     }
 
@@ -411,6 +413,7 @@ bool OpalPCSSEndPoint::CreateVideoInputDevice(const OpalConnection & connection,
     if (pcss != NULL) {
       PVideoDevice::OpenArgs args = pcss->GetVideoOnRingDevice();
       if (!args.deviceName.IsEmpty()) {
+        PTRACE(3, "Using Ring On Video device for " << *this);
         mediaFormat.AdjustVideoArgs(args);
         return manager.CreateVideoInputDevice(connection, args, device, autoDelete);
       }
@@ -494,14 +497,14 @@ OpalPCSSConnection::OpalPCSSConnection(OpalCall & call,
   PTRACE_CONTEXT_ID_TO(echoCanceler);
 #endif
 
-  PTRACE(4, "PCSS\tCreated PC sound system connection: token=\"" << callToken << "\" "
+  PTRACE(4, "Created PC sound system connection: token=\"" << callToken << "\" "
             "player=\"" << playDevice << "\" recorder=\"" << recordDevice << '"');
 }
 
 
 OpalPCSSConnection::~OpalPCSSConnection()
 {
-  PTRACE(4, "PCSS\tDeleted PC sound system connection.");
+  PTRACE(4, "Deleted PC sound system connection.");
 }
 
 
@@ -587,7 +590,7 @@ bool OpalPCSSConnection::TransferConnection(const PString & remoteParty)
 
   OnApplyStringOptions();
 
-  PTRACE(3, "PCSS\tTransfer to sound devices: " "play=\"" << playDevice << "\", " "record=\"" << recordDevice << '"');
+  PTRACE(3, "Transfer to sound devices: " "play=\"" << playDevice << "\", " "record=\"" << recordDevice << '"');
 
   m_soundChannelPlayDevice = playDevice;
   m_soundChannelRecordDevice = recordDevice;
@@ -703,13 +706,13 @@ bool OpalPCSSConnection::ChangeSoundChannel(const PString & device, bool isSourc
   PSafePtr<OpalAudioMediaStream> stream = PSafePtrCast<OpalMediaStream, OpalAudioMediaStream>(
                       sessionID != 0 ? GetMediaStream(sessionID, isSource) : GetMediaStream(OpalMediaType::Audio(), isSource));
   if (stream == NULL) {
-    PTRACE(4, "PCSS\tNo audio stream for change of sound channel to " << device);
+    PTRACE(4, "No audio stream for change of sound channel to " << device);
     return false;
   }
 
   PSoundChannel * channel = dynamic_cast<PSoundChannel *>(stream->GetChannel());
   if (channel != NULL && channel->GetName() == device) {
-    PTRACE(4, "PCSS\tNo change of sound channel required to " << device);
+    PTRACE(4, "No change of sound channel required to " << device);
     return true;
   }
 
@@ -725,7 +728,7 @@ bool OpalPCSSConnection::StartReadUserInput(PChannel * channel, bool autoDelete)
     return false;
 
   if (m_userInputThread != NULL) {
-    PTRACE(2, "PCSS\tCannot start user input thread as already started.");
+    PTRACE(2, "Cannot start user input thread as already started.");
     return channel == m_userInputChannel;
   }
 
@@ -735,7 +738,7 @@ bool OpalPCSSConnection::StartReadUserInput(PChannel * channel, bool autoDelete)
   m_userInputChannel = channel;
   m_userInputAutoDelete = autoDelete;
   m_userInputThread = new PThreadObj<OpalPCSSConnection>(*this, &OpalPCSSConnection::UserInputMain, false, "PCSS-UI");
-  PTRACE(3, "PCSS\tStarting user input thread.");
+  PTRACE(3, "Starting user input thread.");
   return true;
 }
 
@@ -749,7 +752,7 @@ void OpalPCSSConnection::StopReadUserInput()
   if (m_userInputThread == NULL)
     return;
 
-  PTRACE(3, "PCSS\tStopping user input thread.");
+  PTRACE(3, "Stopping user input thread.");
   m_userInputChannel->Close();
   m_userInputThread->WaitForTermination();
   delete m_userInputThread;
@@ -764,7 +767,7 @@ void OpalPCSSConnection::UserInputMain()
 {
   SafeReference();
 
-  PTRACE(4, "PCSS\tStarted user input thread.");
+  PTRACE(4, "Started user input thread.");
   int input;
   while ((input = m_userInputChannel->ReadChar()) >= 0) {
     char c = (char)toupper(input);
@@ -788,17 +791,17 @@ void OpalPCSSConnection::UserInputMain()
       case 'D' :
       case 'd' :
       case '!' :
-        PTRACE(4, "PCSS\tEmulating user input '" << c << '\'');
+        PTRACE(4, "Emulating user input '" << c << '\'');
         OnUserInputTone(c, 100);
         break;
 
       case 'H' :
       case 'h' :
-        PTRACE(4, "PCSS\tReleasing connection due to hang up from user input.");
+        PTRACE(4, "Releasing connection due to hang up from user input.");
         Release();
     }
   }
-  PTRACE(4, "PCSS\tStopped user input thread.");
+  PTRACE(4, "Stopped user input thread.");
 
   SafeDereference();
 }
