@@ -1345,7 +1345,9 @@ PBoolean OpalManager::CreateVideoInputDevice(const OpalConnection & connection,
                                          PBoolean & autoDelete)
 {
   // Make copy so we can adjust the size
-  PVideoDevice::OpenArgs args = m_videoInputDevice[mediaFormat.GetOptionEnum(OpalVideoFormat::ContentRoleOption(), OpalVideoFormat::eNoRole)];
+  OpalVideoFormat::ContentRole role = mediaFormat.GetOptionEnum(OpalVideoFormat::ContentRoleOption(), OpalVideoFormat::eNoRole);
+  PVideoDevice::OpenArgs args = m_videoInputDevice[role];
+  PTRACE(3, "Using " << role << " video device \"" << args.deviceName << "\" for " << *this);
   mediaFormat.AdjustVideoArgs(args);
   return CreateVideoInputDevice(connection, args, device, autoDelete);
 }
@@ -1358,7 +1360,7 @@ PBoolean OpalManager::CreateVideoInputDevice(const OpalConnection & /*connection
 {
   autoDelete = true;
   device = PVideoInputDevice::CreateOpenedDevice(args, false);
-  PTRACE_IF(4, device == NULL, "Could not open video input device \"" << args.deviceName << '"');
+  PTRACE_IF(3, device == NULL, "Could not open video input device \"" << args.deviceName << '"');
   return device != NULL;
 }
 
