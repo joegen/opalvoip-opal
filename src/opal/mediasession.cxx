@@ -663,7 +663,10 @@ void OpalMediaTransport::Transport::ThreadMain()
 {
   PTRACE(4, m_owner, *m_owner << m_subchannel << " media transport read thread starting");
 
+  if (!m_owner->LockReadWrite())
+      return;
   m_owner->InternalOnStart(m_subchannel);
+  m_owner->UnlockReadWrite();
 
   while (m_channel->IsOpen()) {
     PBYTEArray data(m_owner->m_packetSize);
@@ -675,7 +678,8 @@ void OpalMediaTransport::Transport::ThreadMain()
       data.SetSize(m_channel->GetLastReadCount());
 
       PSafeLockReadOnly lock(m_owner);
-      m_owner->InternalRxData(m_subchannel, data);
+      if (lock.IsLocked())
+        m_owner->InternalRxData(m_subchannel, data);
     }
     else {
       PSafeLockReadWrite lock(m_owner);
@@ -790,8 +794,10 @@ void OpalMediaTransport::Start()
 void OpalMediaTransport::InternalStop()
 {
   PTRACE(4, *this << "stopping");
+  LockReadOnly();
   for (vector<Transport>::iterator it = m_subchannels.begin(); it != m_subchannels.end(); ++it)
     it->Close();
+  UnlockReadOnly();
 
   for (vector<Transport>::iterator it = m_subchannels.begin(); it != m_subchannels.end(); ++it) {
     if (it->m_thread != NULL) {
