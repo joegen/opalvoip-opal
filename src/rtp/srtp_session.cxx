@@ -744,8 +744,10 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveControl(RTP_ControlF
     return OpalRTPSession::e_IgnorePacket;
   }
 
-  /* Need to have a receiver SSRC (their sender) even if we have never been
-      told about it, or we can't decrypt the RTCP packet. */
+  /* Need to have a receiver SSRC (their sender) or we can't decrypt the RTCP
+     packet. Generally, the SSRC info created on the fly, unless we are using
+     later SDP and that is disabled. However, for Chrome, we have a special
+     case of SSRC=1 which they send even though never indicated in SDP. */
   RTP_SyncSourceId ssrc = encoded.GetSenderSyncSource();
   if (UseSyncSource(ssrc, e_Receiver, ssrc == 1) == NULL)
     return e_IgnorePacket;
