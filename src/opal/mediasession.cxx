@@ -674,6 +674,7 @@ void OpalMediaTransport::Transport::ThreadMain()
     if (m_channel->Read(data.GetPointer(), data.GetSize())) {
       data.SetSize(m_channel->GetLastReadCount());
 
+      PSafeLockReadOnly lock(m_owner);
       m_owner->InternalRxData(m_subchannel, data);
     }
     else {
@@ -698,14 +699,14 @@ void OpalMediaTransport::Transport::ThreadMain()
 
         case PChannel::Timeout:
           PTRACE(1, m_owner, *m_owner << m_subchannel << " timed out (" << m_channel->GetReadTimeout() << "s)");
-          m_channel->Close();
+          Close();
           break;
 
         default:
           PTRACE(1, m_owner, *m_owner << m_subchannel
                  << " read error (" << m_channel->GetErrorNumber(PChannel::LastReadError) << "): "
                  << m_channel->GetErrorText(PChannel::LastReadError));
-          m_channel->Close();
+          Close();
           break;
       }
     }
@@ -733,8 +734,21 @@ bool OpalMediaTransport::Transport::HandleUnavailableError()
 
   PTRACE(2, m_owner, *m_owner << m_subchannel << ' ' << m_owner->m_maxNoTransmitTime
          << " seconds of transmit fails to " << m_owner->GetRemoteAddress(m_subchannel));
-  m_channel->Close();
+  Close();
   return false;
+}
+
+
+void OpalMediaTransport::Transport::Close()
+{
+  if (m_channel == NULL)
+    return;
+
+  PChannel * base = m_channel->GetBaseReadChannel();
+  if (base == NULL)
+    return;
+
+  base->Close();
 }
 
 
@@ -776,20 +790,22 @@ void OpalMediaTransport::Start()
 void OpalMediaTransport::InternalStop()
 {
   PTRACE(4, *this << "stopping");
-  for (vector<Transport>::iterator it = m_subchannels.begin(); it != m_subchannels.end(); ++it) {
-    if (it->m_channel != NULL)
-      it->m_channel->Close();
-  }
+  for (vector<Transport>::iterator it = m_subchannels.begin(); it != m_subchannels.end(); ++it)
+    it->Close();
 
   for (vector<Transport>::iterator it = m_subchannels.begin(); it != m_subchannels.end(); ++it) {
     if (it->m_thread != NULL) {
       PAssert(it->m_thread->WaitForTermination(2000), "RTP thread failed to terminate");
       delete it->m_thread;
     }
-    delete it->m_channel;
   }
 
+  LockReadWrite();
+  for (vector<Transport>::iterator it = m_subchannels.begin(); it != m_subchannels.end(); ++it)
+    delete it->m_channel;
   m_subchannels.clear();
+  UnlockReadWrite();
+
   PTRACE(4, *this << "stopped");
 }
 
