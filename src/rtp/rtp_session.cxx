@@ -168,7 +168,7 @@ RTP_SyncSourceId OpalRTPSession::AddSyncSource(RTP_SyncSourceId id, Direction di
     if (it != m_SSRC.end()) {
       if (cname == NULL || it->second->m_canonicalName == cname)
         return id;
-      PTRACE(2, *this << "could not add SSRC " << RTP_TRACE_SRC(id) << ","
+      PTRACE(2, *this << "could not add SSRC=" << RTP_TRACE_SRC(id) << ","
                 " probable clash with " << it->second->m_direction << ","
                 " cname=" << it->second->m_canonicalName);
       return 0;
@@ -206,7 +206,7 @@ OpalRTPSession::SyncSource * OpalRTPSession::UseSyncSource(RTP_SyncSourceId ssrc
     return it->second;
 
   if ((force || m_allowAnySyncSource) && AddSyncSource(ssrc, dir) == ssrc) {
-    PTRACE(4, *this << "automatically added " << dir << " SSRC " << RTP_TRACE_SRC(ssrc));
+    PTRACE(4, *this << "automatically added " << dir << " SSRC=" << RTP_TRACE_SRC(ssrc));
     return m_SSRC.find(ssrc)->second;
   }
 
@@ -1107,8 +1107,8 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendData(RTP_DataFrame & fra
           if (it->second->m_direction == e_Sender && it->second->m_loopbackIdentifier == 0) {
             it->second->m_loopbackIdentifier = ssrc;
             ssrc = it->second->m_sourceIdentifier;
-            PTRACE(4, *this << "using loopback SSRC " << RTP_TRACE_SRC(ssrc)
-                   << " for receiver SSRC " << RTP_TRACE_SRC(syncSource->m_sourceIdentifier));
+            PTRACE(4, *this << "using loopback SSRC=" << RTP_TRACE_SRC(ssrc)
+                   << " for receiver SSRC=" << RTP_TRACE_SRC(syncSource->m_sourceIdentifier));
             break;
           }
         }
@@ -1117,8 +1117,8 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendData(RTP_DataFrame & fra
           if ((ssrc = AddSyncSource(ssrc, e_Sender)) == 0)
             return e_AbortTransport;
 
-          PTRACE(4, *this << "added loopback SSRC " << RTP_TRACE_SRC(ssrc)
-                 << " for receiver SSRC " << RTP_TRACE_SRC(syncSource->m_sourceIdentifier));
+          PTRACE(4, *this << "added loopback SSRC=" << RTP_TRACE_SRC(ssrc)
+                 << " for receiver SSRC=" << RTP_TRACE_SRC(syncSource->m_sourceIdentifier));
         }
 
         syncSource->m_loopbackIdentifier = ssrc;
@@ -1130,7 +1130,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendData(RTP_DataFrame & fra
   else {
     if ((ssrc = AddSyncSource(ssrc, e_Sender)) == 0)
       return e_AbortTransport;
-    PTRACE(4, *this << "added sender SSRC " << RTP_TRACE_SRC(ssrc));
+    PTRACE(4, *this << "added sender SSRC=" << RTP_TRACE_SRC(ssrc));
     GetSyncSource(ssrc, e_Sender, syncSource);
   }
 
@@ -1490,14 +1490,13 @@ bool OpalRTPSession::CheckControlSSRC(RTP_SyncSourceId PTRACE_PARAM(senderSSRC),
                                       SyncSource * & info
                                       PTRACE_PARAM(, const char * pduName)) const
 {
-  PTRACE_IF(4, m_SSRC.find(senderSSRC) == m_SSRC.end(), *this << pduName << " from incorrect SSRC " << RTP_TRACE_SRC(senderSSRC));
+#if PTRACING
+  unsigned level = IsGroupMember(GetBundleGroupId()) ? 6 : 2;
+  PTRACE_IF(level, m_SSRC.find(senderSSRC) == m_SSRC.end(), *this << pduName << " from incorrect SSRC=" << RTP_TRACE_SRC(senderSSRC));
+  PTRACE_IF(level, m_SSRC.find(targetSSRC) == m_SSRC.end(), *this << pduName << " for incorrect SSRC=" << RTP_TRACE_SRC(targetSSRC));
+#endif
 
-  if (GetSyncSource(targetSSRC, e_Sender, info))
-    return true;
-
-  PTRACE(IsGroupMember(GetBundleGroupId()) ? 6 : 2,
-         *this << pduName << " for incorrect SSRC: " << RTP_TRACE_SRC(targetSSRC));
-  return false;
+  return GetSyncSource(targetSSRC, e_Sender, info);
 }
 
 
@@ -1534,7 +1533,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
         const RTP_ControlFrame::ReceiverReport * rr;
         unsigned count;
         if (frame.ParseReceiverReport(ssrc, rr, count)) {
-          PTRACE_IF(m_throttleRxRR, count == 0, *this << "received empty ReceiverReport for " << RTP_TRACE_SRC(ssrc));
+          PTRACE_IF(m_throttleRxRR, count == 0, *this << "received empty ReceiverReport: sender SSRC=" << RTP_TRACE_SRC(ssrc));
           for (unsigned i = 0; i < count; ++i)
             OnRxReceiverReport(ssrc, rr[i]);
         }
@@ -1612,7 +1611,10 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
             if (frame.ParseTMMB(senderSSRC, targetSSRC, maxBitRate, overhead)) {
               SyncSource * ssrc;
               if (CheckControlSSRC(senderSSRC, targetSSRC, ssrc PTRACE_PARAM(,"TMMBR"))) {
-                PTRACE(4, *this << "received TMMBR: rate=" << maxBitRate << ", SSRC=" << RTP_TRACE_SRC(targetSSRC));
+                PTRACE(4, *this << "received TMMBR:"
+                       " rate=" << maxBitRate << ","
+                       " receiver SSRC=" << RTP_TRACE_SRC(targetSSRC) << ","
+                       " sender SSRC=" << RTP_TRACE_SRC(senderSSRC));
                 m_connection.ExecuteMediaCommand(OpalMediaFlowControl(maxBitRate, m_mediaType, m_sessionId, targetSSRC), true);
               }
             }
@@ -1640,7 +1642,9 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
             if (frame.ParsePLI(senderSSRC, targetSSRC)) {
               SyncSource * ssrc;
               if (CheckControlSSRC(senderSSRC, targetSSRC, ssrc PTRACE_PARAM(,"PLI"))) {
-                PTRACE(4, *this << "received RFC4585 PLI, SSRC=" << RTP_TRACE_SRC(targetSSRC));
+                PTRACE(4, *this << "received RFC4585 PLI:"
+                       " receiver SSRC=" << RTP_TRACE_SRC(targetSSRC) << ","
+                       " sender SSRC=" << RTP_TRACE_SRC(senderSSRC));
                 m_connection.ExecuteMediaCommand(OpalVideoPictureLoss(0, 0, m_sessionId, targetSSRC), true);
               }
             }
@@ -1658,8 +1662,10 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
               SyncSource * ssrc;
               if (CheckControlSSRC(senderSSRC, targetSSRC, ssrc PTRACE_PARAM(,"FIR"))) {
                 PTRACE(4, *this << "received RFC5104 FIR:"
-                          " sn=" << sequenceNumber << ", last-sn=" << ssrc->m_lastFIRSequenceNumber
-                       << ", SSRC=" << RTP_TRACE_SRC(targetSSRC));
+                       " sn=" << sequenceNumber << ","
+                       " last-sn=" << ssrc->m_lastFIRSequenceNumber << ","
+                       " receiver SSRC=" << RTP_TRACE_SRC(targetSSRC) << ","
+                       " sender SSRC=" << RTP_TRACE_SRC(senderSSRC));
                 if (ssrc->m_lastFIRSequenceNumber != sequenceNumber) {
                   ssrc->m_lastFIRSequenceNumber = sequenceNumber;
                   m_connection.ExecuteMediaCommand(OpalVideoUpdatePicture(m_sessionId, targetSSRC), true);
@@ -1679,9 +1685,12 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
             if (frame.ParseTSTO(senderSSRC, targetSSRC, tradeOff, sequenceNumber)) {
               SyncSource * ssrc;
               if (CheckControlSSRC(senderSSRC, targetSSRC, ssrc PTRACE_PARAM(,"TSTOR"))) {
-                PTRACE(4, *this << "received TSTOR: " << ", tradeOff=" << tradeOff
-                       << ", sn=" << sequenceNumber << ", last-sn=" << ssrc->m_lastTSTOSequenceNumber
-                       << ", SSRC=" << RTP_TRACE_SRC(targetSSRC));
+                PTRACE(4, *this << "received TSTOR:"
+                       " tradeOff=" << tradeOff << ","
+                       " sn=" << sequenceNumber << ","
+                       " last-sn=" << ssrc->m_lastTSTOSequenceNumber << ","
+                       " receiver SSRC=" << RTP_TRACE_SRC(targetSSRC) << ","
+                       " sender SSRC=" << RTP_TRACE_SRC(senderSSRC));
                 if (ssrc->m_lastTSTOSequenceNumber != sequenceNumber) {
                   ssrc->m_lastTSTOSequenceNumber = sequenceNumber;
                   m_connection.ExecuteMediaCommand(OpalTemporalSpatialTradeOff(tradeOff, m_sessionId, targetSSRC), true);
@@ -1702,8 +1711,10 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
             if (frame.ParseREMB(senderSSRC, targetSSRC, maxBitRate)) {
               SyncSource * ssrc;
               if (CheckControlSSRC(senderSSRC, targetSSRC, ssrc PTRACE_PARAM(,"REMB"))) {
-                PTRACE(4, *this << "received REMB: maxBitRate=" << maxBitRate
-                       << ", SSRC=" << RTP_TRACE_SRC(targetSSRC));
+                PTRACE(4, *this << "received REMB:"
+                       " maxBitRate=" << maxBitRate << ","
+                       " receiver SSRC=" << RTP_TRACE_SRC(targetSSRC) << ","
+                       " sender SSRC=" << RTP_TRACE_SRC(senderSSRC));
                 m_connection.ExecuteMediaCommand(OpalMediaFlowControl(maxBitRate, m_mediaType, m_sessionId, targetSSRC), true);
               }
               break;
@@ -2454,11 +2465,8 @@ void OpalRTPSession::OnRxControlPacket(OpalMediaTransport &, PBYTEArray data)
   }
 
   RTP_ControlFrame control(data, data.GetSize(), false);
-  if (control.IsValid()) {
-    // This hack prevents lots of log warnings with Chrome WebRTC
-    if (control.GetSenderSyncSource() != 1)
-      OnReceiveControl(control);
-  }
+  if (control.IsValid())
+    OnReceiveControl(control);
   else {
     PTRACE_IF(2, data.GetSize() > 1 || m_rtcpPacketsReceived > 0,
               *this << "received control packet invalid: " << data.GetSize() << " bytes");

@@ -469,6 +469,7 @@ public:
       );
       void ThreadMain();
       bool HandleUnavailableError();
+      void Close();
 
       PNotifierListTemplate<PBYTEArray> m_notifiers;
 
