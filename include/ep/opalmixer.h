@@ -1038,7 +1038,7 @@ class OpalMediaStreamMixer
 {
   public:
     OpalMediaStreamMixer();
-    void Append(const PSafePtr<OpalMixerMediaStream> & stream) { m_outputStreams.Append(stream); }
+    void Append(const PSafePtr<OpalMixerMediaStream> & stream);
     void Remove(const PSafePtr<OpalMixerMediaStream> & stream) { m_outputStreams.Remove(stream); }
     void CloseOne(const PSafePtr<OpalMixerMediaStream> & stream);
 

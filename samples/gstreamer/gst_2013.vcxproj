@@ -44,7 +44,6 @@
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
-
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</LinkIncremental>
     <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectDir)..\..\lib\$(Platform)\include;$(ProjectDir)..\..\include;$(ProjectDir)..\..\..\ptlib\lib\$(Platform)\include;$(ProjectDir)..\..\..\ptlib\include;$(IncludePath)</IncludePath>
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectDir)..\..\lib;$(ProjectDir)..\..\..\ptlib\lib;$(LibraryPath)</LibraryPath>
@@ -114,7 +113,7 @@
       <WarningLevel>Level4</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
-      <AdditionalOptions>-Zm110 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>-Zm150 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>_DEBUG;_AFXDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
