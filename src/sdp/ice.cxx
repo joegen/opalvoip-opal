@@ -336,7 +336,7 @@ bool OpalICEMediaTransport::InternalHandleICE(SubChannels subchannel, const void
     if (m_state == e_Completed)
       return true;
 
-    PTRACE(5, *this << subchannel << ", invalid STUN message or data before ICE completed");
+    PTRACE(5, *this << subchannel << ", invalid STUN message or data before ICE completed: from=" << ap << " len=" << length);
     return false;
   }
 
