@@ -1938,7 +1938,7 @@ void OpalManager_C::HandleRegistration(const OpalMessage & command, OpalMessageB
 
   OpalEndPoint * ep = FindEndPoint(command.m_param.m_registrationInfo.m_protocol);
   if (ep == NULL) {
-    response.SetError(PSTRSTRM("No such protocol prefix as " << command.m_param.m_registrationInfo.m_protocol));
+    response.SetError(PSTRSTRM("No such protocol prefix as \"" << command.m_param.m_registrationInfo.m_protocol << '"'));
     return;
   }
 

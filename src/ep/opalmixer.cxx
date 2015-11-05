@@ -1202,7 +1202,7 @@ void OpalMixerMediaStream::InternalClose()
 
 PBoolean OpalMixerMediaStream::WritePacket(RTP_DataFrame & packet)
 {
-  return m_node->WritePacket(*this, packet);
+  return IsOpen() && m_node->WritePacket(*this, packet);
 }
 
 
@@ -1494,7 +1494,7 @@ bool OpalMixerNode::WritePacket(const OpalMixerMediaStream & stream, const RTP_D
 {
   PString id = stream.GetID();
   MixerByIdMap::iterator it = m_mixerById.find(id);
-  return it != m_mixerById.end() && it->second->WriteStream(id, input);
+  return it == m_mixerById.end() || it->second->WriteStream(id, input);
 }
 
 
@@ -1685,6 +1685,16 @@ PFACTORY_CREATE(SIPEventPackageFactory, SIPConferenceEventPackageHandler, SIPSub
 OpalMediaStreamMixer::OpalMediaStreamMixer()
 {
   m_outputStreams.DisallowDeleteObjects();
+}
+
+
+void OpalMediaStreamMixer::Append(const PSafePtr<OpalMixerMediaStream> & stream)
+{
+  for (PSafePtr<OpalMixerMediaStream> s(m_outputStreams); s != NULL; ++s) {
+    if (s == stream)
+      return;
+  }
+  m_outputStreams.Append(stream);
 }
 
 
