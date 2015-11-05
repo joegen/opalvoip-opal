@@ -674,12 +674,12 @@ void OpalMediaTransport::Transport::ThreadMain()
     if (m_channel->Read(data.GetPointer(), data.GetSize())) {
       data.SetSize(m_channel->GetLastReadCount());
 
-      PSafeLockReadOnly lock(m_owner);
+      PSafeLockReadOnly lock(*m_owner);
       if (lock.IsLocked())
         m_owner->InternalRxData(m_subchannel, data);
     }
     else {
-      PSafeLockReadWrite lock(m_owner);
+      PSafeLockReadWrite lock(*m_owner);
       switch (m_channel->GetErrorCode(PChannel::LastReadError)) {
         case PChannel::Unavailable:
           HandleUnavailableError();
