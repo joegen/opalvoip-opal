@@ -663,10 +663,7 @@ void OpalMediaTransport::Transport::ThreadMain()
 {
   PTRACE(4, m_owner, *m_owner << m_subchannel << " media transport read thread starting");
 
-  if (!m_owner->LockReadWrite())
-      return;
   m_owner->InternalOnStart(m_subchannel);
-  m_owner->UnlockReadWrite();
 
   while (m_channel->IsOpen()) {
     PBYTEArray data(m_owner->m_packetSize);
