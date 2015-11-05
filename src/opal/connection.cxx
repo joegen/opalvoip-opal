@@ -310,7 +310,7 @@ PBoolean OpalConnection::SetUpConnection()
   else if (ownerCall.IsEstablished()) {
     PTRACE(3, "Transfer of connection in call " << ownerCall);
     OnApplyStringOptions();
-    AutoStartMediaStreams();
+    AutoStartMediaStreams(true);
     InternalOnConnected();
   }
   else {
@@ -761,7 +761,7 @@ void OpalConnection::AutoStartMediaStreams(bool transfer)
                                        transfer);
   }
 
-  if (GetPhase() >= ConnectedPhase)
+  if (!transfer && GetPhase() >= ConnectedPhase)
     StartMediaStreams();
 }
 
