@@ -181,7 +181,7 @@ void OpalICEMediaTransport::SetCandidates(const PString & user, const PString & 
     m_server = new PSTUNServer();
     PTRACE_CONTEXT_ID_TO(m_server);
   }
-  m_server->Open(GetSocket(e_Data),GetSocket(e_Control));
+  m_server->Open(GetSubChannelAsSocket(e_Data), GetSubChannelAsSocket(e_Control));
   m_server->SetCredentials(m_localUsername + ':' + m_remoteUsername, m_localPassword, PString::Empty());
 
   if (m_client == NULL) {
@@ -193,7 +193,7 @@ void OpalICEMediaTransport::SetCandidates(const PString & user, const PString & 
   SetRemoteBehindNAT();
 
   for (size_t subchannel = 0; subchannel < m_subchannels.size(); ++subchannel) {
-    PUDPSocket * socket = GetSocket((SubChannels)subchannel);
+    PUDPSocket * socket = GetSubChannelAsSocket((SubChannels)subchannel);
     socket->SetSendAddress(PIPAddressAndPort());
 
     if (dynamic_cast<ICEChannel *>(m_subchannels[subchannel].m_channel) == NULL)
@@ -240,7 +240,7 @@ bool OpalICEMediaTransport::GetCandidates(PString & user, PString & pass, PNatCa
     // Only do ICE-Lite right now so just offer "host" type using local address.
     static const PNatMethod::Component ComponentId[2] = { PNatMethod::eComponent_RTP, PNatMethod::eComponent_RTCP };
     PNatCandidate candidate(PNatCandidate::HostType, ComponentId[subchannel], "xyzzy");
-    GetSocket((SubChannels)subchannel)->GetLocalAddress(candidate.m_baseTransportAddress);
+    GetSubChannelAsSocket((SubChannels)subchannel)->GetLocalAddress(candidate.m_baseTransportAddress);
     candidate.m_priority = (126 << 24) | (256 - candidate.m_component);
 
     if (candidate.m_baseTransportAddress.GetAddress().GetVersion() != 6)
@@ -327,7 +327,7 @@ bool OpalICEMediaTransport::InternalHandleICE(SubChannels subchannel, const void
   if (m_state == e_Disabled)
     return true;
 
-  PUDPSocket * socket = GetSocket(subchannel);
+  PUDPSocket * socket = GetSubChannelAsSocket(subchannel);
   PIPAddressAndPort ap;
   socket->GetLastReceiveAddress(ap);
 
