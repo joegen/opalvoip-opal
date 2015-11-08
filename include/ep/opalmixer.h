@@ -338,7 +338,7 @@ class OpalVideoMixer : public OpalBaseMixer
     /**Set output video frame rate.
        May be dynamically changed at any time.
       */
-    bool SetFrameRate(
+    virtual bool SetFrameRate(
       unsigned rate   // New frames per second.
     );
 
@@ -1100,10 +1100,12 @@ class OpalVideoStreamMixer : public OpalVideoMixer, public OpalMediaStreamMixer
     OpalVideoStreamMixer(const OpalMixerNodeInfo & info);
     ~OpalVideoStreamMixer();
 
+    virtual bool SetFrameRate(unsigned rate);
     virtual bool OnMixed(RTP_DataFrame * & output);
 
   protected:
-    PDictionary<PString, OpalTranscoder> m_transcoders;
+    typedef PDictionary<PString, OpalTranscoder> TranscoderMap;
+    TranscoderMap m_transcoders;
 };
 #endif // OPAL_VIDEO
 
