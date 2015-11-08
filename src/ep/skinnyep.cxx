@@ -910,6 +910,7 @@ OpalSkinnyConnection::OpalSkinnyConnection(OpalCall & call,
   , m_lineInstance(0)
   , m_callIdentifier(callIdentifier)
   , m_needSoftKeyEndcall(true)
+  , m_remoteHold(false)
 {
   m_calledPartyNumber = dialNumber;
   m_phoneDevice.m_activeConnection = this;
@@ -1033,6 +1034,11 @@ bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::CallStateMsg &
 
     case OpalSkinnyEndPoint::eStateRingOut :
       OnAlerting();
+      break;
+
+    case OpalSkinnyEndPoint::eStateHold :
+      m_remoteHold = true;
+      OnHold(true, true);
       break;
 
     case OpalSkinnyEndPoint::eStateConnected :
@@ -1351,7 +1357,7 @@ void OpalSkinnyConnection::OnClosedMediaStream(const OpalMediaStream & stream)
   if (IsReleased())
     return;
 
-  unsigned sessionId =stream.GetSessionID();
+  unsigned sessionId = stream.GetSessionID();
   if (m_simulatedTransmitters.find(sessionId) == m_simulatedTransmitters.end())
     OpenSimulatedMediaChannel(sessionId, stream.GetMediaFormat());
   else {
@@ -1368,6 +1374,10 @@ void OpalSkinnyConnection::DelayCloseMediaStream(OpalMediaStreamPtr mediaStream)
   for (PINDEX delay = 0; delay < 10; ++delay) {
     if (IsReleased())
       return;
+    if (m_remoteHold) {
+      PTRACE(3, "On HOLD, not really closing stream " << *mediaStream);
+      return;
+    }
     PThread::Sleep(50);
   }
 
