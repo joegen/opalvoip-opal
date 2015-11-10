@@ -81,10 +81,15 @@ class OpalDTLSMediaTransport : public OpalDTLSMediaTransportParent
         PCLASSINFO(DTLSChannel, PSSLChannelDTLS);
       public:
         DTLSChannel(const OpalDTLSMediaTransport & transport);
+        ~DTLSChannel() { Close(); }
+        virtual PBoolean OnOpen();
+        virtual PBoolean Close();
 #if PTRACING
         virtual int BioRead(char * buf, int len);
         virtual int BioWrite(const char * buf, int len);
 #endif
+      protected:
+        PTimeInterval m_originalReadTimeout;
     };
 
   protected:
