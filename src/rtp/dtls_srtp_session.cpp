@@ -109,6 +109,24 @@ OpalDTLSMediaTransport::DTLSChannel::DTLSChannel(const OpalDTLSMediaTransport & 
 }
 
 
+PBoolean OpalDTLSMediaTransport::DTLSChannel::OnOpen()
+{
+  PChannel * base = GetBaseReadChannel();
+  if (PAssertNULL(base) != NULL)
+    m_originalReadTimeout = base->GetReadTimeout();
+  return PSSLChannelDTLS::OnOpen();
+}
+
+
+PBoolean OpalDTLSMediaTransport::DTLSChannel::Close()
+{
+  PChannel * detached = Detach();
+  if (detached != NULL && m_originalReadTimeout != 0)
+    detached->SetReadTimeout(m_originalReadTimeout);
+  return PSSLChannelDTLS::Close();
+}
+
+
 #if PTRACING
 int OpalDTLSMediaTransport::DTLSChannel::BioRead(char * buf, int len)
 {
@@ -228,7 +246,6 @@ void OpalDTLSMediaTransport::InternalOnStart(SubChannels subchannel)
     return;
   }
 
-  PTimeInterval oldTimeout = sslChannel->GetReadTimeout();
   sslChannel->SetReadTimeout(m_handshakeTimeout);
 
   if (!sslChannel->ExecuteHandshake()) {
@@ -271,7 +288,6 @@ void OpalDTLSMediaTransport::InternalOnStart(SubChannels subchannel)
   keyInfo->SetAuthSalt(PBYTEArray(keyMaterial + keyLength*2 + saltLength, saltLength));
   m_keyInfo[sslChannel->IsServer() ? OpalRTPSession::e_Sender : OpalRTPSession::e_Receiver].reset(keyInfo);
 
-  sslChannel->Detach()->SetReadTimeout(oldTimeout);
   PTRACE(3, *this << "completed DTLS handshake.");
 }
 
