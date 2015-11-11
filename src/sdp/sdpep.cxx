@@ -610,8 +610,16 @@ bool OpalSDPConnection::OnSendOfferSDPSession(OpalMediaSession * mediaSession,
     unsigned sessionId = mediaSession->GetSessionID();
     OpalMediaStreamPtr recvStream = GetMediaStream(sessionId, true);
     OpalMediaStreamPtr sendStream = GetMediaStream(sessionId, false);
-    if (recvStream != NULL)
-      localMedia->AddMediaFormat(*m_localMediaFormats.FindFormat(recvStream->GetMediaFormat()));
+    if (recvStream != NULL) {
+      OpalMediaFormat rxFormat = recvStream->GetMediaFormat();
+      OpalMediaFormatList::const_iterator it = m_localMediaFormats.FindFormat(rxFormat);
+      if (it != m_localMediaFormats.end())
+        localMedia->AddMediaFormat(*it);
+      else {
+        PTRACE(2, "Could not find media format " << rxFormat << " from stream " << *recvStream << " in local media formats.");
+        localMedia->AddMediaFormat(rxFormat);
+      }
+    }
     else if (sendStream != NULL)
       localMedia->AddMediaFormat(sendStream->GetMediaFormat());
     else
