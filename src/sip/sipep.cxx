@@ -2204,6 +2204,8 @@ void SIPEndPoint::AdjustToRegistration(SIP_PDU & pdu, SIPConnection * connection
       PStringToString fieldParams = from.GetFieldParameters();
       from = registrar->GetAddressOfRecord();
       from.GetFieldParameters() = fieldParams;
+      if (connection != NULL)
+        from.SetDisplayName(connection->GetDisplayName());
       from.Sanitise(SIPURL::FromURI);
       mime.SetFrom(from);
       PTRACE(4, "Adjusted 'From' to " << from << " from registered user.");
