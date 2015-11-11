@@ -1037,12 +1037,14 @@ bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::CallStateMsg &
       break;
 
     case OpalSkinnyEndPoint::eStateHold :
-      m_remoteHold = true;
-      OnHold(true, true);
+      if (!m_remoteHold)
+        OnHold(true, m_remoteHold = true);
       break;
 
     case OpalSkinnyEndPoint::eStateConnected :
-      if (IsOriginating())
+      if (m_remoteHold)
+        OnHold(true, m_remoteHold = false);
+      else if (IsOriginating())
         InternalOnConnected();
       else {
         PTRACE_IF(2, GetPhase() < ConnectedPhase, "State connected before we answered - server probably configured for auto-answer");
