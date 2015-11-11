@@ -517,7 +517,7 @@ class OpalUDPMediaTransport : public OpalMediaTransport
     virtual bool SetRemoteAddress(const OpalTransportAddress & remoteAddress, SubChannels subchannel = e_Media);
     virtual bool Write(const void * data, PINDEX length, SubChannels = e_Media, const PIPSocketAddressAndPort * = NULL);
 
-    PUDPSocket * GetSocket(SubChannels subchannel = e_Media) const;
+    PUDPSocket * GetSubChannelAsSocket(SubChannels subchannel = e_Media) const;
 
   protected:
     virtual void InternalRxData(SubChannels subchannel, const PBYTEArray & data);

@@ -2335,7 +2335,7 @@ WORD OpalRTPSession::GetLocalDataPort() const
 {
   OpalMediaTransportPtr transport = m_transport; // This way avoids races
   OpalUDPMediaTransport * udp = transport != NULL ? dynamic_cast<OpalUDPMediaTransport *>(&*transport) : NULL;
-  PUDPSocket * socket = udp != NULL ? udp->GetSocket(e_Media) : NULL;
+  PUDPSocket * socket = udp != NULL ? udp->GetSubChannelAsSocket(e_Media) : NULL;
   return socket != NULL ? socket->GetPort() : 0;
 }
 
@@ -2344,7 +2344,7 @@ WORD OpalRTPSession::GetLocalControlPort() const
 {
   OpalMediaTransportPtr transport = m_transport; // This way avoids races
   OpalUDPMediaTransport * udp = transport != NULL ? dynamic_cast<OpalUDPMediaTransport *>(&*transport) : NULL;
-  PUDPSocket * socket = udp != NULL ? udp->GetSocket(e_Control) : NULL;
+  PUDPSocket * socket = udp != NULL ? udp->GetSubChannelAsSocket(e_Control) : NULL;
   return socket != NULL ? socket->GetPort() : 0;
 }
 
@@ -2353,7 +2353,7 @@ PUDPSocket & OpalRTPSession::GetDataSocket()
 {
   OpalMediaTransportPtr transport = m_transport; // This way avoids races
   OpalUDPMediaTransport * udp = transport != NULL ? dynamic_cast<OpalUDPMediaTransport *>(&*transport) : NULL;
-  return *PAssertNULL(udp)->GetSocket(e_Media);
+  return *PAssertNULL(udp)->GetSubChannelAsSocket(e_Media);
 }
 
 
@@ -2361,7 +2361,7 @@ PUDPSocket & OpalRTPSession::GetControlSocket()
 {
   OpalMediaTransportPtr transport = m_transport; // This way avoids races
   OpalUDPMediaTransport * udp = transport != NULL ? dynamic_cast<OpalUDPMediaTransport *>(&*transport) : NULL;
-  return *PAssertNULL(udp)->GetSocket(e_Control);
+  return *PAssertNULL(udp)->GetSubChannelAsSocket(e_Control);
 }
 
 

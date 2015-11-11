@@ -661,10 +661,7 @@ void OpalMediaTransport::Transport::ThreadMain()
 {
   PTRACE(4, m_owner, *m_owner << m_subchannel << " media transport read thread starting");
 
-  if (!m_owner->LockReadWrite())
-      return;
   m_owner->InternalOnStart(m_subchannel);
-  m_owner->UnlockReadWrite();
 
   while (m_channel->IsOpen()) {
     PBYTEArray data(m_owner->m_packetSize);
@@ -674,13 +671,9 @@ void OpalMediaTransport::Transport::ThreadMain()
 
     if (m_channel->Read(data.GetPointer(), data.GetSize())) {
       data.SetSize(m_channel->GetLastReadCount());
-
-      PSafeLockReadOnly lock(m_owner);
-      if (lock.IsLocked())
-        m_owner->InternalRxData(m_subchannel, data);
+      m_owner->InternalRxData(m_subchannel, data);
     }
     else {
-      PSafeLockReadWrite lock(m_owner);
       switch (m_channel->GetErrorCode(PChannel::LastReadError)) {
         case PChannel::Unavailable:
           HandleUnavailableError();
@@ -768,6 +761,10 @@ void OpalMediaTransport::InternalRxData(SubChannels subchannel, const PBYTEArray
 
 void OpalMediaTransport::Start()
 {
+  PSafeLockReadWrite lock(*this);
+  if (!lock.IsLocked())
+    return;
+
   if (m_started)
     return;
   m_started = true;
@@ -855,7 +852,7 @@ OpalTransportAddress OpalUDPMediaTransport::GetLocalAddress(SubChannels subchann
 {
   PSafeLockReadOnly lock(*this);
   if (lock.IsLocked()) {
-    PUDPSocket * socket = GetSocket(subchannel);
+    PUDPSocket * socket = GetSubChannelAsSocket(subchannel);
     if (socket != NULL) {
       PIPSocketAddressAndPort ap;
       if (socket->GetLocalAddress(ap) && ap.IsValid())
@@ -870,7 +867,7 @@ OpalTransportAddress OpalUDPMediaTransport::GetRemoteAddress(SubChannels subchan
 {
   PSafeLockReadOnly lock(*this);
   if (lock.IsLocked()) {
-    PUDPSocket * socket = GetSocket(subchannel);
+    PUDPSocket * socket = GetSubChannelAsSocket(subchannel);
     if (socket != NULL) {
       PIPSocketAddressAndPort ap;
       socket->GetSendAddress(ap);
@@ -904,7 +901,7 @@ void OpalUDPMediaTransport::InternalRxData(SubChannels subchannel, const PBYTEAr
     // If remote address never set from higher levels, then try and figure
     // it out from the first packet received.
     PIPAddressAndPort ap;
-    GetSocket(subchannel)->GetLastReceiveAddress(ap);
+    GetSubChannelAsSocket(subchannel)->GetLastReceiveAddress(ap);
     InternalSetRemoteAddress(ap, subchannel, true PTRACE_PARAM(, "first PDU"));
   }
 
@@ -921,7 +918,7 @@ bool OpalUDPMediaTransport::InternalSetRemoteAddress(const PIPSocket::AddressAnd
   if (!lock.IsLocked())
     return false;
 
-  PUDPSocket * socket = GetSocket(subchannel);
+  PUDPSocket * socket = GetSubChannelAsSocket(subchannel);
   if (socket == NULL)
     return false;
 
@@ -1120,7 +1117,7 @@ bool OpalUDPMediaTransport::Open(OpalMediaSession & session,
   }
 
   for (size_t subchannel = 0; subchannel < m_subchannels.size(); ++subchannel) {
-    PUDPSocket & socket = *GetSocket((SubChannels)subchannel);
+    PUDPSocket & socket = *GetSubChannelAsSocket((SubChannels)subchannel);
     PTRACE_CONTEXT_ID_TO(socket);
     PTimeInterval readTime = PMaxTimeInterval;
     if (subchannel == e_Media)
@@ -1143,7 +1140,7 @@ bool OpalUDPMediaTransport::Write(const void * data, PINDEX length, SubChannels 
     return false;
 
   PUDPSocket * socket;
-  if (dest == NULL || (socket = GetSocket(subchannel)) == NULL)
+  if (dest == NULL || (socket = GetSubChannelAsSocket(subchannel)) == NULL)
     return OpalMediaTransport::Write(data, length, subchannel, dest);
 
   bool writeSuccess = socket->WriteTo(data, length, *dest);
@@ -1159,7 +1156,7 @@ bool OpalUDPMediaTransport::Write(const void * data, PINDEX length, SubChannels 
 }
 
 
-PUDPSocket * OpalUDPMediaTransport::GetSocket(SubChannels subchannel) const
+PUDPSocket * OpalUDPMediaTransport::GetSubChannelAsSocket(SubChannels subchannel) const
 {
   PChannel * chanPtr = GetChannel(subchannel);
   if (chanPtr == NULL)
