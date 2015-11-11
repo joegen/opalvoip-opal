@@ -796,6 +796,7 @@ class OpalSkinnyConnection : public OpalRTPConnection
     uint32_t m_callIdentifier;
     PString  m_alertingType;
     bool     m_needSoftKeyEndcall;
+    bool     m_remoteHold;
 
     OpalMediaFormatList m_remoteMediaFormats;
     std::set<MediaInfo> m_passThruMedia;

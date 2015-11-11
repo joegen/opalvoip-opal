@@ -155,7 +155,7 @@ namespace OpalSharp
                         proto.interfaceAddresses = "0.0.0.0"; // All interfaces
                         proto.displayName = "OPAL C# Sample";
                         if (!m_opalContext.SendMessage(msg))
-                            MessageBox.Show("Could not set general parameters", "OPAL", MessageBoxButtons.OK);
+                            MessageBox.Show("Could not set protool parameters", "OPAL", MessageBoxButtons.OK);
                         else
                         {
                             Shutdown.Enabled = true;
