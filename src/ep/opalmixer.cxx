@@ -1891,6 +1891,20 @@ OpalVideoStreamMixer::~OpalVideoStreamMixer()
 }
 
 
+bool OpalVideoStreamMixer::SetFrameRate(unsigned rate)
+{
+  if (!OpalVideoMixer::SetFrameRate(rate))
+    return false;
+
+  for (TranscoderMap::iterator it = m_transcoders.begin(); it != m_transcoders.end(); ++it) {
+    OpalMediaFormat mediaFormat;
+    mediaFormat.SetOptionInteger(OpalMediaFormat::FrameTimeOption(), m_periodTS);
+    it->second.UpdateMediaFormats(OpalMediaFormat(), mediaFormat);
+  }
+  return true;
+}
+
+
 bool OpalVideoStreamMixer::OnMixed(RTP_DataFrame * & output)
 {
   typedef std::map<PString, RTP_DataFrameList> CachedPackets;
@@ -1938,6 +1952,7 @@ bool OpalVideoStreamMixer::OnMixed(RTP_DataFrame * & output)
       if (itPackets == cachedPackets.end()) {
         OpalTranscoder * transcoder = m_transcoders.GetAt(keyPackets);
         if (transcoder == NULL) {
+          mediaFormat.SetOptionInteger(OpalMediaFormat::FrameTimeOption(), m_periodTS);
           transcoder = OpalTranscoder::Create(OpalYUV420P, mediaFormat);
           if (transcoder == NULL) {
             PTRACE(2, "Could not create transcoder to " << mediaFormat << " for stream id " << stream->GetID());
