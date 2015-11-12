@@ -569,7 +569,9 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveData(RTP_
     // If get multiple late out of order packet inside a period of time
     bool running = m_lateOutOfOrderAdaptTimer.IsRunning();
     if (running && ++m_lateOutOfOrderAdaptCount > m_lateOutOfOrderAdaptMax) {
-      m_waitOutOfOrderTimer += m_lateOutOfOrderAdaptBoost;
+      PTimeInterval timeout = m_session.GetOutOfOrderWaitTime() + m_lateOutOfOrderAdaptBoost;
+      m_session.SetOutOfOrderWaitTime(timeout);
+      PTRACE(3, &m_session, *this << " increased out of order packet timeout to " << timeout);
       running = false;
     }
     if (!running) {
