@@ -264,9 +264,9 @@ class OpalSDPConnection : public OpalRTPConnection
       bool & multipleFormats
     );
     virtual bool OnReceivedAnswerSDPSession(
-      const SDPSessionDescription & sdp,
       const SDPMediaDescription * mediaDescription,
       unsigned sessionId,
+      SDPMediaDescription::Direction otherSidesDir,
       bool & multipleFormats,
       vector<bool> & allowPauseRecvMediaStream,
       vector<bool> & allowPauseSendMediaStream
