@@ -2919,9 +2919,8 @@ void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & respons
     // state locally and other half of call processing SetConnected()
     SetPhase(ConnectedPhase);
 
-    if (!OnReceivedAnswer(response, &transaction)) {
-      if (mediaStreams.IsEmpty())
-        Release(EndedByCapabilityExchange);
+    if (!OnReceivedAnswer(response, &transaction) && mediaStreams.IsEmpty()) {
+      Release(EndedByCapabilityExchange);
       return;
     }
 
