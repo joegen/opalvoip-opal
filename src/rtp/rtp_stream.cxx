@@ -214,10 +214,12 @@ bool OpalRTPMediaStream::InternalSetPaused(bool pause, bool fromUser, bool fromP
     return false; // Had not changed
 
   if (IsSource()) {
-    // We make referenced copy of pointer so can't be deleted out from under us
-    OpalMediaPatchPtr mediaPatch = m_mediaPatch;
-    if (mediaPatch != NULL)
-      mediaPatch->EnableJitterBuffer(!pause);
+    if (pause)
+      m_rtpSession.RemoveDataNotifier(m_receiveNotifier);
+    else if (m_jitterBuffer != NULL) {
+      m_jitterBuffer->Restart();
+      m_rtpSession.AddDataNotifier(100, m_receiveNotifier);
+    }
   }
 
   return true;
