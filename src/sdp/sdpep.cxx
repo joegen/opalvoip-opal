@@ -1101,7 +1101,8 @@ bool OpalSDPConnection::OnReceivedAnswerSDP(const SDPSessionDescription & sdp, b
       }
     }
 
-    if (OnReceivedAnswerSDPSession(sdp, mediaDescription, sessionId, multipleFormats, allowPauseRecvMediaStream, allowPauseSendMediaStream))
+    if (OnReceivedAnswerSDPSession(mediaDescription, sessionId, sdp.GetDirection(index),
+                                   multipleFormats, allowPauseRecvMediaStream, allowPauseSendMediaStream))
       ok = true;
     else {
       OpalMediaStreamPtr stream;
@@ -1129,9 +1130,9 @@ bool OpalSDPConnection::OnReceivedAnswerSDP(const SDPSessionDescription & sdp, b
 }
 
 
-bool OpalSDPConnection::OnReceivedAnswerSDPSession(const SDPSessionDescription & sdp,
-                                                   const SDPMediaDescription * mediaDescription,
+bool OpalSDPConnection::OnReceivedAnswerSDPSession(const SDPMediaDescription * mediaDescription,
                                                    unsigned sessionId,
+                                                   SDPMediaDescription::Direction otherSidesDir,
                                                    bool & multipleFormats,
                                                    vector<bool> & allowPauseRecvMediaStream,
                                                    vector<bool> & allowPauseSendMediaStream)
@@ -1193,8 +1194,6 @@ bool OpalSDPConnection::OnReceivedAnswerSDPSession(const SDPSessionDescription &
     }
   }
 #endif // OPAL_SRTP
-
-  SDPMediaDescription::Direction otherSidesDir = sdp.GetDirection(sessionId);
 
   // Check if we had a stream and the remote has either changed the codec or
   // changed the direction of the stream
