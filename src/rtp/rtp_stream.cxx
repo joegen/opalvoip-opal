@@ -216,8 +216,10 @@ bool OpalRTPMediaStream::InternalSetPaused(bool pause, bool fromUser, bool fromP
   if (IsSource()) {
     if (pause)
       m_rtpSession.RemoveDataNotifier(m_receiveNotifier);
-    else if (IsOpen())
+    else if (m_jitterBuffer != NULL) {
+      m_jitterBuffer->Restart();
       m_rtpSession.AddDataNotifier(100, m_receiveNotifier);
+    }
   }
 
   return true;
