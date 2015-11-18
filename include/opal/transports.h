@@ -981,6 +981,9 @@ class OpalTransport : public PSafeObject
       const PBYTEArray & data
     );
 
+    /// Indicate keep alive is active
+    bool HasKeepAlive() const { return !m_keepAliveData.IsEmpty() && m_keepAliveTimer.IsRunning(); }
+
     /**Attach a thread to the transport.
       */
     virtual void AttachThread(
