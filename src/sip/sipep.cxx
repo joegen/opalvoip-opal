@@ -397,20 +397,24 @@ void SIPEndPoint::HandlePDU(const OpalTransportPtr & transport)
 
   PTRACE(4, "Waiting for PDU on " << *transport);
   SIP_PDU::StatusCodes status = pdu->Read();
-  switch (status/100) {
-    case 0 :
-      if (status == SIP_PDU::Local_KeepAlive)
-        transport->Write("\r\n", 2); // Send PONG
+  switch (status) {
+    case SIP_PDU::Local_KeepAlive :
+      transport->Write("\r\n", 2); // Send PONG
       break;
 
-    case 2 :
+    case SIP_PDU::Local_TransportLost :
+      if (transport->IsOpen() && transport->IsReliable() && transport->HasKeepAlive())
+        transport->Connect(); // Reconnect
+      break;
+
+    case SIP_PDU::Successful_OK :
       if (OnReceivedPDU(pdu)) 
         return;
       break;
 
     default :
       const SIPMIMEInfo & mime = pdu->GetMIME();
-      if (pdu->GetMethod() != SIP_PDU::NumMethods &&
+      if (status >= 300 && pdu->GetMethod() != SIP_PDU::NumMethods &&
           !mime.GetCSeq().IsEmpty() &&
           !mime.GetVia().IsEmpty() &&
           !mime.GetCallID().IsEmpty() &&
