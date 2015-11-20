@@ -403,8 +403,17 @@ void SIPEndPoint::HandlePDU(const OpalTransportPtr & transport)
       break;
 
     case SIP_PDU::Local_TransportLost :
-      if (transport->IsOpen() && transport->IsReliable() && transport->HasKeepAlive())
-        transport->Connect(); // Reconnect
+      if (transport->IsReliable() && transport->HasKeepAlive()) {
+        PTRACE(4, "Trying to reconnect dropped transport " << *transport);
+        for (PSafePtr<SIPHandler> handler = activeSIPHandlers.GetFirstHandler(); handler != NULL; ++handler) {
+          SIPRegisterHandler * regHandler = dynamic_cast<SIPRegisterHandler *>(&*handler);
+          if (  regHandler != NULL &&
+                regHandler->GetState() == SIPHandler::Subscribed &&
+                regHandler->GetParams().m_compatibility == SIPRegister::e_RFC5626 &&
+                regHandler->GetRemoteTransportAddress().IsEquivalent(transport->GetRemoteAddress()))
+            handler->ActivateState(SIPHandler::Restoring);
+        }
+      }
       break;
 
     case SIP_PDU::Successful_OK :
