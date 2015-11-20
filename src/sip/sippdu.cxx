@@ -2244,16 +2244,24 @@ SIP_PDU::StatusCodes SIP_PDU::Parse(istream & stream, bool truncated)
 
   // get the message from transport/datagram into cmd and parse MIME
   PString cmd;
-  stream >> cmd >> m_mime;
+  stream >> cmd;
+  if (!stream.good())
+    return Local_TransportLost;
 
-  if (cmd.IsEmpty() || m_mime.IsEmpty()) {
+  // If empty string got CRLF, try again
+  if (cmd.IsEmpty()) {
+    stream >> cmd;
     if (!stream.good())
       return Local_TransportLost;
 
-    PTRACE(5, "Probable keep-alive" << transportName);
-    return Local_KeepAlive;
+    // Two CRLF's in a row is "ping"
+    if (cmd.IsEmpty()) {
+      PTRACE(5, "Probable keep-alive" << transportName);
+      return Local_KeepAlive;
+    }
   }
 
+  stream >> m_mime;
   if (stream.bad()) {
     PTRACE(1, "Invalid message from" << transportName
            << ", request \"" << cmd << "\", mime:\n" << m_mime);
