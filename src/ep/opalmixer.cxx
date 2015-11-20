@@ -1306,23 +1306,23 @@ void OpalMixerNode::PrintOn(ostream & strm) const
 }
 
 
-void OpalMixerNode::AddName(const PString & name)
+bool OpalMixerNode::AddName(const PString & name)
 {
   if (name.IsEmpty())
-    return;
+    return false;
 
   PSafeLockReadWrite mutex(*this);
   if (!mutex.IsLocked())
-    return;
+    return false;
 
-  if (m_names.Contains(name)) {
+  if (!m_manager.AddNodeName(name, this)) {
     PTRACE(4, "Name \"" << name << "\" already added to " << *this);
-    return;
+    return false;
   }
 
-  PTRACE(4, "Adding name \"" << name << "\" to " << *this);
+  PTRACE(4, "Added name \"" << name << "\" to " << *this);
   m_names += name;
-  m_manager.AddNodeName(name, this);
+  return true;
 }
 
 
@@ -2092,10 +2092,13 @@ void OpalMixerNodeManager::RemoveNode(OpalMixerNode & node)
 }
 
 
-void OpalMixerNodeManager::AddNodeName(PString name,
-                               OpalMixerNode * node)
+bool OpalMixerNodeManager::AddNodeName(PString name, OpalMixerNode * node)
 {
+  if (m_nodesByName.FindWithLock(name, PSafeReference) != NULL)
+    return false;
+
   m_nodesByName.SetAt(name, node);
+  return true;
 }
 
 
