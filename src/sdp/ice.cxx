@@ -349,7 +349,7 @@ bool OpalICEMediaTransport::InternalHandleICE(SubChannels subchannel, const void
   }
   if (candidate == NULL) {
     if (!m_promiscuous || !message.IsRequest()) {
-      PTRACE(2, *this << subchannel << ", ignoring STUN message for unknown ICE candidate: " << ap);
+      PTRACE(3, *this << subchannel << ", ignoring STUN message for unknown ICE candidate: " << ap);
       return false;
     }
 
