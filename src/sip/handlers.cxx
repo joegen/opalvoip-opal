@@ -741,6 +741,20 @@ void SIPRegisterHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & re
     return;
   }
 
+  if (m_parameters.m_compatibility == SIPRegister::e_RFC5626) {
+    bool notRFC5626 = true;
+    for (SIPURLList::iterator contact = replyContacts.begin(); contact != replyContacts.end(); ++contact) {
+      if (!contact->GetFieldParameters().GetString("+sip.instance").IsEmpty()) {
+        notRFC5626 = false;
+        break;
+      }
+    }
+    if (notRFC5626) {
+      PTRACE(3, "Registrar has not indicated support for RFC5626");
+      m_parameters.m_compatibility = SIPRegister::e_FullyCompliant;
+    }
+  }
+
   // If this is the final (possibly one and only) REGISTER, process it
   if (m_externalAddress == externalAddress) {
     int minExpiry = INT_MAX;
