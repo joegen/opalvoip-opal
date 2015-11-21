@@ -179,6 +179,10 @@ void SIPHandler::SetState(SIPHandler::State newState)
     case Unsubscribing :
       return;
 
+    case Unavailable :
+      RetryLater(m_offlineExpireTime);
+      break;
+
     default :
       break;
   }
@@ -402,7 +406,7 @@ void SIPHandler::OnReceivedTemporarilyUnavailable(SIPTransaction & /*transaction
 {
   OnFailed(SIP_PDU::Failure_TemporarilyUnavailable);
   SetState(Unavailable);
-  RetryLater(response.GetMIME().GetInteger("Retry-After", m_offlineExpireTime));
+  RetryLater(response.GetMIME().GetInteger("Retry-After"));
 }
 
 
@@ -497,7 +501,6 @@ void SIPHandler::OnFailed(SIP_PDU::StatusCodes code)
     case SIP_PDU::Failure_ServerTimeout:
       if (GetState() != Unsubscribing) {
         SetState(Unavailable);
-        RetryLater(m_offlineExpireTime);
         break;
       }
       // Do next case to finalise Unsubscribe even though there was an error
