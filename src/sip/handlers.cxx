@@ -54,6 +54,7 @@
 
 
 #define new PNEW
+#define PTraceModule() "SIP"
 
 
 #if PTRACING
@@ -114,7 +115,7 @@ SIPHandler::SIPHandler(SIP_PDU::Methods method,
   m_dialog.SetProxy(proxy, true);
   m_dialog.SetRemoteURI(remoteAddress);
 
-  PTRACE(4, "SIP\tConstructed " << m_method << " handler for " << m_addressOfRecord);
+  PTRACE(4, "Constructed " << m_method << " handler for " << m_addressOfRecord);
 }
 
 
@@ -123,7 +124,7 @@ SIPHandler::~SIPHandler()
   m_expireTimer.Stop();
 
   PTRACE_IF(4, !m_addressOfRecord.IsEmpty(),
-            "SIP\tDestroyed " << m_method << " handler for " << m_addressOfRecord);
+            "Destroyed " << m_method << " handler for " << m_addressOfRecord);
 }
 
 
@@ -166,7 +167,7 @@ void SIPHandler::SetState(SIPHandler::State newState)
   if (m_state == newState)
     return;
 
-  PTRACE(4, "SIP\tChanging " << GetMethod() << " handler from " << GetState() << " to " << newState
+  PTRACE(4, "Changing " << GetMethod() << " handler from " << GetState() << " to " << newState
          << ", target=" << GetAddressOfRecord() << ", id=" << GetCallID());
 
   m_state = newState;
@@ -237,13 +238,13 @@ bool SIPHandler::ActivateState(SIPHandler::State newState, bool resetInterface)
 
   switch (StateChangeActions[GetState()][newState]) {
     case e_Invalid :
-      PTRACE(2, "SIP\tCannot change state to " << newState << " for " << GetMethod()
+      PTRACE(2, "Cannot change state to " << newState << " for " << GetMethod()
              << " handler while in " << GetState() << " state, target="
              << GetAddressOfRecord() << ", id=" << GetCallID());
       return false;
 
     case e_NoChange :
-      PTRACE(4, "SIP\tAlready in state " << GetState() << " for " << GetMethod()
+      PTRACE(4, "Already in state " << GetState() << " for " << GetMethod()
              << " handler, target=" << GetAddressOfRecord() << ", id=" << GetCallID());
       break;
 
@@ -252,12 +253,12 @@ bool SIPHandler::ActivateState(SIPHandler::State newState, bool resetInterface)
       break;
 
     case e_Execute :
-      PTRACE(4, "SIP\tExecuting state change to " << newState << " for " << GetMethod()
+      PTRACE(4, "Executing state change to " << newState << " for " << GetMethod()
              << " handler, target=" << GetAddressOfRecord() << ", id=" << GetCallID());
       return SendRequest(newState);
 
     case e_Queue :
-      PTRACE(3, "SIP\tQueueing state change to " << newState << " for " << GetMethod()
+      PTRACE(3, "Queueing state change to " << newState << " for " << GetMethod()
              << " handler while in " << GetState() << " state, target="
              << GetAddressOfRecord() << ", id=" << GetCallID());
       m_stateQueue.push(newState);
@@ -286,7 +287,7 @@ PBoolean SIPHandler::SendRequest(SIPHandler::State newState)
 void SIPHandler::SetExpire(int e)
 {
   m_currentExpireTime = e;
-  PTRACE(3, "SIP\tExpiry time for " << GetMethod() << " set to " << e << " seconds.");
+  PTRACE(3, "Expiry time for " << GetMethod() << " set to " << e << " seconds.");
 
   // Only modify the m_originalExpireTime for future requests if IntervalTooBrief gives
   // a bigger expire time. expire itself will always reflect the proxy decision
@@ -313,7 +314,7 @@ void SIPHandler::SetExpire(int e)
         timeout /= 2; // Really short, just use half the expire time
     }
     m_expireTimer.SetInterval(0, timeout);
-    PTRACE(4, "SIP\tExpiry timer running: " << m_expireTimer);
+    PTRACE(4, "Expiry timer running: " << m_expireTimer);
   }
 }
 
@@ -322,7 +323,7 @@ void SIPHandler::WriteTransaction(OpalTransport & transport, bool & succeeded)
 {
   SIPTransaction * transaction = CreateTransaction(transport);
   if (transaction == NULL) {
-    PTRACE(2, "SIP\tCould not create transaction on " << transport);
+    PTRACE(2, "Could not create transaction on " << transport);
     return;
   }
 
@@ -418,7 +419,7 @@ void SIPHandler::OnReceivedAuthenticationRequired(SIPTransaction &, SIP_PDU & re
   // If we changed realm (or hadn't got one yet) update the handler database
   if (m_realm != m_authentication->GetAuthRealm()) {
     m_realm = m_authentication->GetAuthRealm();
-    PTRACE(3, "SIP\tAuth realm set to " << m_realm);
+    PTRACE(3, "Auth realm set to " << m_realm);
     GetEndPoint().UpdateHandlerIndexes(this);
   }
 
@@ -446,7 +447,7 @@ void SIPHandler::OnReceivedOK(SIPTransaction & /*transaction*/, SIP_PDU & respon
       break;
 
     default :
-      PTRACE(2, "SIP\tUnexpected 200 OK in handler with state " << GetState());
+      PTRACE(2, "Unexpected 200 OK in handler with state " << GetState());
   }
 }
 
@@ -456,12 +457,12 @@ void SIPHandler::OnTransactionFailed(SIPTransaction & transaction)
   SIPTransactionOwner::OnTransactionFailed(transaction);
 
   if (transaction.IsCanceled()) {
-    PTRACE(4, "SIP", "Not reporting canceled forked.");
+    PTRACE(4, "Not reporting canceled forked.");
     return;
   }
 
   if (!m_transactions.IsEmpty()) {
-    PTRACE(4, "SIP", "Not reporting failed forked transaction.");
+    PTRACE(4, "Not reporting failed forked transaction.");
     return;
   }
 
@@ -474,7 +475,7 @@ void SIPHandler::RetryLater(unsigned after)
   if (after == 0 || GetExpire() == 0)
     return;
 
-  PTRACE(3, "SIP\tRetrying " << GetMethod() << ' ' << GetAddressOfRecord() << " after " << after << " seconds.");
+  PTRACE(3, "Retrying " << GetMethod() << ' ' << GetAddressOfRecord() << " after " << after << " seconds.");
   m_expireTimer.SetInterval(0, after); // Keep trying to get it back
 }
 
@@ -502,7 +503,7 @@ void SIPHandler::OnFailed(SIP_PDU::StatusCodes code)
       // Do next case to finalise Unsubscribe even though there was an error
 
     default :
-      PTRACE(4, "SIP\tNot retrying " << GetMethod() << " due to error response " << code);
+      PTRACE(4, "Not retrying " << GetMethod() << " due to error response " << code);
       m_currentExpireTime = 0; // OK, stop trying
       m_expireTimer.Stop(false);
       if (GetState() != Unsubscribing)
@@ -521,13 +522,13 @@ void SIPHandler::OnExpireTimeout()
 {
   switch (GetState()) {
     case Subscribed :
-      PTRACE(2, "SIP\tStarting " << GetMethod() << " for binding refresh");
+      PTRACE(2, "Starting " << GetMethod() << " for binding refresh");
       if (SendRequest(Refreshing))
         return;
       break;
 
     case Unavailable :
-      PTRACE(2, "SIP\tStarting " << GetMethod() << " for offline retry");
+      PTRACE(2, "Starting " << GetMethod() << " for offline retry");
       if (SendRequest(Restoring))
         return;
       break;
@@ -687,7 +688,7 @@ void SIPRegisterHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & re
       break;
 
     default :
-      PTRACE(2, "SIP\tUnexpected 200 OK in handler with state " << previousState);
+      PTRACE(2, "Unexpected 200 OK in handler with state " << previousState);
       return;
   }
 
@@ -735,7 +736,7 @@ void SIPRegisterHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & re
 
   if (replyContacts.empty() && GetExpire() != 0) {
     // Huh? Nothing we tried to register, registered! How is that possible?
-    PTRACE(2, "SIP\tREGISTER returned no Contact addresses we requested, not really registered.");
+    PTRACE(2, "REGISTER returned no Contact addresses we requested, not really registered.");
     SendRequest(Unsubscribing);
     SendStatus(SIP_PDU::GlobalFailure_NotAcceptable, previousState);
     return;
@@ -771,13 +772,13 @@ void SIPRegisterHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & re
       return;
     }
 
-    PTRACE(4, "SIP\tNo Contact addresses we requested have non-zero expiry.");
+    PTRACE(4, "No Contact addresses we requested have non-zero expiry.");
     SetExpire(0);
   }
 
   if (GetExpire() == 0) {
     // If we had discovered we are behind NAT and had unregistered, re-REGISTER with new addresses
-    PTRACE(2, "SIP\tRe-registering NAT address change (" << m_contactAddresses << ") to " << externalAddress);
+    PTRACE(2, "Re-registering NAT address change (" << m_contactAddresses << ") to " << externalAddress);
     for (SIPURLList::iterator contact = m_contactAddresses.begin(); contact != m_contactAddresses.end(); ++contact)
       contact->SetHostAddress(externalAddress);
     m_contactAddresses.unique();
@@ -788,7 +789,7 @@ void SIPRegisterHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & re
        that we are behind firewall. Unregister what we just registered */
     for (SIPURLList::iterator contact = replyContacts.begin(); contact != replyContacts.end(); ++contact)
       contact->GetFieldParameters().Remove("expires");
-    PTRACE(2, "SIP\tRemote indicated change of REGISTER Contact address(s) (" << replyContacts
+    PTRACE(2, "Remote indicated change of REGISTER Contact address(s) (" << replyContacts
            << ") required due to NAT address " << externalAddress << ", previous=" << m_externalAddress);
     m_contactAddresses = replyContacts;
     SetExpire(0);
@@ -866,7 +867,7 @@ void SIPRegisterHandler::UpdateParameters(const SIPRegister::Params & params)
   m_parameters.m_contactAddress = params.m_contactAddress;
   m_contactAddresses.clear();
 
-  PTRACE(4, "SIP\tREGISTER parameters updated.");
+  PTRACE(4, "REGISTER parameters updated.");
 }
 
 
@@ -1034,13 +1035,13 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
   PStringToString subscriptionStateInfo;
   PCaselessString subscriptionState = requestMIME.GetSubscriptionState(subscriptionStateInfo);
   if (subscriptionState.IsEmpty()) {
-    PTRACE(2, "SIP\tNOTIFY received without Subscription-State, assuming 'active'");
+    PTRACE(2, "NOTIFY received without Subscription-State, assuming 'active'");
     subscriptionState = "active";
   }
 
   // Check the susbscription state
   if (subscriptionState == "terminated") {
-    PTRACE(3, "SIP\tSubscription is terminated, state=" << GetState());
+    PTRACE(3, "Subscription is terminated, state=" << GetState());
     response->SetStatusCode(SIP_PDU::Successful_OK);
     response->Send();
 
@@ -1064,7 +1065,7 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
 
   PString requestEvent = requestMIME.GetEvent();
   if (m_parameters.m_eventPackage != requestEvent) {
-    PTRACE(2, "SIP\tNOTIFY received for incorrect event \"" << requestEvent << "\", requires \"" << m_parameters.m_eventPackage << '"');
+    PTRACE(2, "NOTIFY received for incorrect event \"" << requestEvent << "\", requires \"" << m_parameters.m_eventPackage << '"');
     response->SetStatusCode(SIP_PDU::Failure_BadEvent);
     response->GetMIME().SetAt("Allow-Events", m_parameters.m_eventPackage);
     return response->Send();
@@ -1075,7 +1076,7 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
   if (m_parameters.m_eventList)
     require -= "eventlist";
   if (!require.IsEmpty()) {
-    PTRACE(2, "SIPPres\tNOTIFY contains unsupported Require field \"" << setfill(',') << require << '"');
+    PTRACE(2, "NOTIFY contains unsupported Require field \"" << setfill(',') << require << '"');
     response->SetStatusCode(SIP_PDU::Failure_BadExtension);
     response->GetMIME().SetUnsupported(require);
     response->SetInfo("Unsupported Require");
@@ -1084,14 +1085,14 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
 
   // Check if we know how to deal with this event
   if (m_packageHandler == NULL && m_parameters.m_onNotify.IsNULL()) {
-    PTRACE(2, "SIP\tNo handler for NOTIFY received for event \"" << requestEvent << '"');
+    PTRACE(2, "No handler for NOTIFY received for event \"" << requestEvent << '"');
     response->SetStatusCode(SIP_PDU::Failure_InternalServerError);
     return response->Send();
   }
 
   // Adjust timeouts if state is a go
   if (subscriptionState == "active" || subscriptionState == "pending") {
-    PTRACE(3, "SIP\tSubscription is " << GetState() << " for " << GetAddressOfRecord() << ' ' << GetEventPackage());
+    PTRACE(3, "Subscription is " << GetState() << " for " << GetAddressOfRecord() << ' ' << GetEventPackage());
     PString expire = SIPMIMEInfo::ExtractFieldParameter(GetState(), "expire");
     if (!expire.IsEmpty())
       SetExpire(expire.AsUnsigned());
@@ -1111,7 +1112,7 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
         !(m_parameters.m_eventList && (requestContentType == "multipart/related")) &&
         !((m_packageHandler != NULL) && m_packageHandler->ValidateContentType(requestContentType, requestMIME))
         ) {
-      PTRACE(2, "SIPPres\tNOTIFY contains unsupported Content-Type \""
+      PTRACE(2, "NOTIFY contains unsupported Content-Type \""
               << requestContentType << "\", expecting \"" << m_parameters.m_contentType << "\" or multipart/related or other validated type");
       response->SetStatusCode(SIP_PDU::Failure_UnsupportedMediaType);
       response->GetMIME().SetAt("Accept", m_parameters.m_contentType);
@@ -1133,7 +1134,7 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
 
   // First part is always Meta Information
   if (iter->m_mime.GetString(PMIMEInfo::ContentTypeTag) != "application/rlmi+xml") {
-    PTRACE(2, "SIP\tNOTIFY received without RLMI as first multipart body");
+    PTRACE(2, "NOTIFY received without RLMI as first multipart body");
     response->SetInfo("No Resource List Meta-Information");
     return response->Send();
   }
@@ -1141,7 +1142,7 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
 #if OPAL_PTLIB_EXPAT
   PXML xml;
   if (!xml.Load(iter->m_textBody)) {
-    PTRACE(2, "SIP\tNOTIFY received with illegal RLMI\n"
+    PTRACE(2, "NOTIFY received with illegal RLMI\n"
               "Line " << xml.GetErrorLine() << ", Column " << xml.GetErrorColumn() << ": " << xml.GetErrorString());
     response->SetInfo("Bad Resource List Meta-Information");
     return response->Send();
@@ -1203,18 +1204,18 @@ bool SIPSubscribeHandler::DispatchNOTIFY(SIP_PDU & request, SIP_PDU & response)
   SIPSubscribe::NotifyCallbackInfo notifyInfo(*this, GetEndPoint(), request, response);
 
   if (!m_parameters.m_onNotify.IsNULL()) {
-    PTRACE(4, "SIP\tCalling NOTIFY callback for " << GetEventPackage() << " of AOR \"" << GetAddressOfRecord() << "\"");
+    PTRACE(4, "Calling NOTIFY callback for " << GetEventPackage() << " of AOR \"" << GetAddressOfRecord() << "\"");
     m_parameters.m_onNotify(*this, notifyInfo);
     return notifyInfo.m_sendResponse;
   }
 
   if (m_packageHandler != NULL) {
-    PTRACE(4, "SIP\tCalling package NOTIFY handler for " << GetEventPackage() << " of AOR \"" << GetAddressOfRecord() << "\"");
+    PTRACE(4, "Calling package NOTIFY handler for " << GetEventPackage() << " of AOR \"" << GetAddressOfRecord() << "\"");
     m_packageHandler->OnReceivedNOTIFY(notifyInfo);
     return notifyInfo.m_sendResponse;
   }
 
-  PTRACE(2, "SIP\tNo NOTIFY handler for " << GetEventPackage() << " of AOR \"" << GetAddressOfRecord() << "\"");
+  PTRACE(2, "No NOTIFY handler for " << GetEventPackage() << " of AOR \"" << GetAddressOfRecord() << "\"");
   response.SetStatusCode(SIP_PDU::Failure_BadEvent);
   return true;
 }
@@ -1231,13 +1232,13 @@ bool SIPEventPackageHandler::ValidateContentType(const PString & type, const SIP
 bool SIPEventPackageHandler::ValidateNotificationSequence(SIPSubscribeHandler & handler, unsigned newSequenceNumber, bool fullUpdate)
 {
   if (m_expectedSequenceNumber != UINT_MAX && newSequenceNumber < m_expectedSequenceNumber) {
-    PTRACE(3, "SIP\tReceived repeated NOTIFY of " << handler.GetAddressOfRecord() << ", already processed.");
+    PTRACE(3, "Received repeated NOTIFY of " << handler.GetAddressOfRecord() << ", already processed.");
     return false;
   }
 
   // if this is a full list of watcher info, we can empty out our pending lists
   if (fullUpdate) {
-    PTRACE(3, "SIP\tReceived full update NOTIFY of " << handler.GetAddressOfRecord());
+    PTRACE(3, "Received full update NOTIFY of " << handler.GetAddressOfRecord());
     m_expectedSequenceNumber = newSequenceNumber+1;
     return true;
   }
@@ -1248,12 +1249,12 @@ bool SIPEventPackageHandler::ValidateNotificationSequence(SIPSubscribeHandler & 
   }
 
   if (newSequenceNumber == m_expectedSequenceNumber) {
-    PTRACE(3, "SIP\tReceived partial update NOTIFY of " << handler.GetAddressOfRecord());
+    PTRACE(3, "Received partial update NOTIFY of " << handler.GetAddressOfRecord());
     ++m_expectedSequenceNumber;
     return true;
   }
 
-  PTRACE(2, "SIP\tReceived out of sequence partial update, resubscribing " << handler.GetAddressOfRecord());
+  PTRACE(2, "Received out of sequence partial update, resubscribing " << handler.GetAddressOfRecord());
   m_expectedSequenceNumber = UINT_MAX;
   handler.ActivateState(SIPHandler::Refreshing);
   return false;
@@ -1331,7 +1332,7 @@ class SIPPresenceEventPackageHandler : public SIPEventPackageHandler
 
   virtual void OnReceivedNOTIFY(SIPSubscribe::NotifyCallbackInfo & notifyInfo)
   {
-    PTRACE(4, "SIP\tProcessing presence NOTIFY using old API");
+    PTRACE(4, "Processing presence NOTIFY using old API");
 
     list<SIPPresenceInfo> infoList;
     if (!SIPPresenceInfo::ParseNotify(notifyInfo, infoList))
@@ -2035,7 +2036,7 @@ static void OutputActivities(ostream & xml, const PStringSet & activities, bool 
 PString SIPPresenceInfo::AsXML() const
 {
   if (m_entity.IsEmpty() || m_service.IsEmpty()) {
-    PTRACE(1, "SIP\tCannot encode Presence XML as no address or no id.");
+    PTRACE(1, "Cannot encode Presence XML as no address or no id.");
     return PString::Empty();
   }
 
@@ -2184,7 +2185,7 @@ bool SIPPresenceInfo::ParseNotify(SIPSubscribe::NotifyCallbackInfo & notifyInfo,
   if (notifyInfo.m_handler.GetProductInfo().name.Find("Asterisk") != P_MAX_INDEX) {
     SIPURL from(notifyInfo.m_response.GetMIME().GetFrom());
     xml.GetRootElement()->SetAttribute("entity", from.AsString());
-    PTRACE2(3, NULL, "SIP\tCompensating for " << notifyInfo.m_handler.GetProductInfo().name
+    PTRACE2(3, NULL, "Compensating for " << notifyInfo.m_handler.GetProductInfo().name
             << ", replacing entity with " << from);
   }
 
@@ -2301,7 +2302,7 @@ SIPTransaction * SIPMessageHandler::CreateTransaction(OpalTransport & transport)
 
   // If message ID is zero, then it was sent once, don't do it again.
   if (m_messageSent) {
-    PTRACE(4, "SIP\tMessage was already sent, not sending again.");
+    PTRACE(4, "Message was already sent, not sending again.");
     return NULL;
   }
 
@@ -2510,7 +2511,7 @@ PSafePtr<SIPHandler> SIPHandlersList::FindBy(IndexMap & by, const PString & key,
   if (ptr && ptr->GetState() != SIPHandler::Unsubscribed)
     return ptr.SetSafetyMode(mode) ? ptr : NULL;
 
-  PTRACE(3, "SIP\tHandler " << *ptr << " unsubscribed, awaiting shutdown.");
+  PTRACE(3, "Handler " << *ptr << " unsubscribed, awaiting shutdown.");
   while (!ptr->ShutDown())
     PThread::Sleep(100);
 
@@ -2546,13 +2547,13 @@ PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByAuthRealm(const PString & 
          !handler->GetAuthID().IsEmpty() &&
          !handler->GetPassword().IsEmpty() &&
           handler.SetSafetyMode(mode)) {
-      PTRACE(3, "SIP\tLocated existing credentials for realm \"" << authRealm << "\" "
+      PTRACE(3, "Located existing credentials for realm \"" << authRealm << "\" "
              << handler->GetMethod() << " of aor=" << handler->GetAddressOfRecord() << ", id=" << handler->GetCallID());
       return handler;
     }
   }
 
-  PTRACE(4, "SIP\tNo existing credentials for realm \"" << authRealm << '"');
+  PTRACE(4, "No existing credentials for realm \"" << authRealm << '"');
   return NULL;
 }
 
@@ -2564,11 +2565,11 @@ PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByAuthRealm(const PString & 
   // look for a match to exact user name and realm
   if ((handler = FindBy(m_byAuthIdAndRealm, userName + '\n' + authRealm, mode)) == NULL &&
       (handler = FindBy(m_byAorUserAndRealm, userName + '\n' + authRealm, mode)) == NULL) {
-    PTRACE(5, "SIP\tNo existing credentials for ID \"" << userName << "\" at realm \"" << authRealm << '"');
+    PTRACE(5, "No existing credentials for ID \"" << userName << "\" at realm \"" << authRealm << '"');
     return NULL;
   }
 
-  PTRACE(4, "SIP\tLocated existing credentials for ID \"" << userName << "\" at realm \"" << authRealm << "\" "
+  PTRACE(4, "Located existing credentials for ID \"" << userName << "\" at realm \"" << authRealm << "\" "
          << handler->GetMethod() << " of aor=" << handler->GetAddressOfRecord() << ", id=" << handler->GetCallID());
   return handler;
 }
