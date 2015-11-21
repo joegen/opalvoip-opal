@@ -1079,6 +1079,7 @@ class OpalTransportIP : public OpalTransport
       */
     virtual const PCaselessString & GetProtoPrefix() const = 0;
 
+    PIPAddress              m_binding;
     PIPSocketAddressAndPort m_localAP;  // Address of the local (NAT adjusted)
     PIPSocketAddressAndPort m_remoteAP; // Address of the remote host
 };
