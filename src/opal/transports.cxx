@@ -1353,7 +1353,7 @@ PBoolean OpalTransportTCP::Connect()
   PSafeLockReadWrite mutex(*this);
 
   PTCPSocket * socket = dynamic_cast<PTCPSocket *>(m_channel);
-  if (socket == NULL)
+  if (!PAssert(socket != NULL, PLogicError))
     return false;
 
   socket->SetPort(m_remoteAP.GetPort());
@@ -1487,6 +1487,8 @@ bool OpalTransportTCP::OnConnectedSocket(PTCPSocket * socket)
     PTRACE(1, "SetOption(SO_LINGER) failed: " << socket->GetErrorText());
     return false;
   }
+
+  m_channel->clear();
 
   PTRACE(3, "Started connection: rem=" << m_remoteAP << " (if=" << m_localAP << ')');
   return true;

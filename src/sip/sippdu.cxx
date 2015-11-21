@@ -2256,9 +2256,12 @@ SIP_PDU::StatusCodes SIP_PDU::Parse(istream & stream, bool truncated)
 
     // Two CRLF's in a row is "ping"
     if (cmd.IsEmpty()) {
-      PTRACE(5, "Probable keep-alive" << transportName);
+      PTRACE(5, "Probable keep-alive ping" << transportName);
       return Local_KeepAlive;
     }
+
+    // Got here, is probably pong to our ping
+    PTRACE(5, "Probable keep-alive pong" << transportName);
   }
 
   stream >> m_mime;
