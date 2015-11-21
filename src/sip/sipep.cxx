@@ -410,8 +410,14 @@ void SIPEndPoint::HandlePDU(const OpalTransportPtr & transport)
           if (  regHandler != NULL &&
                 regHandler->GetState() == SIPHandler::Subscribed &&
                 regHandler->GetParams().m_compatibility == SIPRegister::e_RFC5626 &&
-                regHandler->GetRemoteTransportAddress().IsEquivalent(transport->GetRemoteAddress()))
+                regHandler->GetRemoteTransportAddress().IsEquivalent(transport->GetRemoteAddress())) {
+            if (!transport->IsGood()) {
+              transport->Close();
+              if (!transport->Connect())
+                break;
+            }
             handler->ActivateState(SIPHandler::Restoring);
+          }
         }
       }
       break;
