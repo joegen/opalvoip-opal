@@ -1258,6 +1258,7 @@ OpalTransportIP::OpalTransportIP(OpalEndPoint & end,
                                  PIPSocket::Address binding,
                                  WORD port)
   : OpalTransport(end, channel)
+  , m_binding(binding)
   , m_localAP(binding, port)
   , m_remoteAP(PIPSocket::Address::GetAny(binding.GetVersion()))
 {
@@ -1361,8 +1362,8 @@ PBoolean OpalTransportTCP::Connect()
   OpalManager & manager = m_endpoint.GetManager();
   socket->SetReadTimeout(manager.GetSignalingTimeout());
 
-  PTRACE(4, "Connecting to " << m_remoteAP);
-  if (!manager.GetTCPPortRange().Connect(*socket, m_remoteAP.GetAddress(), m_localAP.GetAddress())) {
+  PTRACE(4, "Connecting to " << m_remoteAP << " on interface " << m_binding);
+  if (!manager.GetTCPPortRange().Connect(*socket, m_remoteAP.GetAddress(), m_binding)) {
     PTRACE(1, "Could not connect to " << m_remoteAP
               << " (range=" << manager.GetTCPPortRange() << ") - "
               << socket->GetErrorText() << '(' << socket->GetErrorNumber() << ')');
