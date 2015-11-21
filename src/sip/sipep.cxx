@@ -413,8 +413,16 @@ void SIPEndPoint::HandlePDU(const OpalTransportPtr & transport)
                 regHandler->GetRemoteTransportAddress().IsEquivalent(transport->GetRemoteAddress())) {
             if (!transport->IsGood()) {
               transport->Close();
-              if (!transport->Connect())
-                break;
+              if (!transport->Connect()) {
+                // In case remote is bouncing, and is back up quickly, have another go
+                PThread::Sleep(1000);
+                if (!transport->Connect()) {
+                  // Remote has not come back quickly, possibly never, set register into Unavailable
+                  // mode where it periodically retries reconnect.
+                  handler->ActivateState(SIPHandler::Unavailable);
+                  break;
+                }
+              }
             }
             handler->ActivateState(SIPHandler::Restoring);
           }
