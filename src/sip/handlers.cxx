@@ -2016,26 +2016,6 @@ void SIPPresenceInfo::PrintOn(ostream & strm) const
 }
 
 
-static PConstCaselessString TupleActivityPrefix("service:");
-
-static void OutputActivities(ostream & xml, const PStringSet & activities, bool tuple)
-{
-  xml << "    <rpid:activities>\r\n";
-  for (PStringSet::const_iterator it = activities.begin(); it != activities.end(); ++it) {
-    if ((it->NumCompare(TupleActivityPrefix) == PObject::EqualTo) == tuple) {
-      if (RFC4480Activities.Contains(*it))
-        xml << "      <rpid:" << it->ToLower() <<"/>\r\n";
-      else if (CiscoActivities.Contains(*it))
-        xml << "      <ce:" << it->ToLower() <<" />\r\n";
-      else
-        xml << "      <rpid:other>" << *it << "</rpid:other>\r\n";
-    }
-  }
-
-  xml << "    </rpid:activities>\r\n";
-}
-
-
 PString SIPPresenceInfo::AsXML() const
 {
   if (m_entity.IsEmpty() || m_service.IsEmpty()) {
@@ -2052,9 +2032,20 @@ PString SIPPresenceInfo::AsXML() const
                   " xmlns:sc=\"urn:ietf:params:xml:ns:pidf:caps\""
                   " xmlns:ce=\"urn:cisco:params:xml:ns:pidf:rpid\""
                   " entity=\"" << m_entity << "\">\r\n";
-  if (!m_personId.IsEmpty() && !m_activities.IsEmpty()) {
+  if (!m_personId.IsEmpty()) {
     xml << "  <dm:person id=\"p" << m_personId << "\">\r\n";
-    OutputActivities(xml, m_activities, false);
+    if (!m_activities.IsEmpty()) {
+      xml << "    <rpid:activities>\r\n";
+      for (PStringSet::const_iterator it = m_activities.begin(); it != m_activities.end(); ++it) {
+        if (RFC4480Activities.Contains(*it))
+          xml << "      <rpid:" << it->ToLower() << "/>\r\n";
+        else if (CiscoActivities.Contains(*it))
+          xml << "      <ce:" << it->ToLower() << " />\r\n";
+        else
+          xml << "      <rpid:other>" << *it << "</rpid:other>\r\n";
+      }
+      xml << "    </rpid:activities>\r\n";
+    }
     xml << "  </dm:person>\r\n";
   }
 
@@ -2086,8 +2077,6 @@ PString SIPPresenceInfo::AsXML() const
     xml << "    </sc:servcaps>\r\n";
   }
 
-  OutputActivities(xml, m_activities, true);
-
   if (!m_note.IsEmpty()) {
     //xml << "    <note xml:lang=\"en\">" << PXML::EscapeSpecialChars(m_note) << "</note>\r\n";
     xml << "    <note>" << PXML::EscapeSpecialChars(m_note) << "</note>\r\n";
@@ -2113,33 +2102,6 @@ static void SetNoteFromElement(PXMLElement * element, PString & notes)
     if (!notes.IsEmpty())
       notes += '\n';
     notes += note;
-  }
-}
-
-
-static void AddActivities(PXMLElement * element, PStringSet & activitySet, PString & notes, const char * prefix)
-{
-  PXMLElement * activities;
-  if ((activities = element->GetElement("activities")) == NULL &&
-      (activities = element->GetElement("urn:ietf:params:xml:ns:pidf:rpid|activities")) == NULL &&
-      (activities = element->GetElement("urn:ietf:params:xml:ns:pidf:status:rpid|activities")) == NULL &&
-      (activities = element->GetElement("urn:cisco:params:xml:ns:pidf:rpid|activities")) == NULL)
-    return;
-
-  for (PINDEX i = 0; i < activities->GetSize(); ++i) {
-    PXMLElement * activity = dynamic_cast<PXMLElement *>(activities->GetElement(i));
-    if (activity == NULL)
-      continue;
-
-    PCaselessString name(activity->GetName());
-    name.Splice(prefix, 0, name.Find('|')+1);
-    PCaselessString data = activity->GetData().Trim();
-    if (data.IsEmpty())
-      activitySet += name;
-    else
-      activitySet += name + '=' + data;
-
-    SetNoteFromElement(activity, notes);
   }
 }
 
@@ -2221,7 +2183,26 @@ bool SIPPresenceInfo::ParseXML(const PXML & xml, list<SIPPresenceInfo> & infoLis
   if ((element = rootElement->GetElement("urn:ietf:params:xml:ns:pidf:data-model|person")) != NULL ||
       (element = rootElement->GetElement("urn:cisco:params:xml:ns:pidf:rpid|person")) != NULL) {
     SetNoteFromElement(element, personNote);
-    AddActivities(element, personActivities, personNote, "");
+    PXMLElement * activities;
+    if ((activities = element->GetElement("activities")) != NULL ||
+        (activities = element->GetElement("urn:ietf:params:xml:ns:pidf:rpid|activities")) != NULL ||
+        (activities = element->GetElement("urn:ietf:params:xml:ns:pidf:status:rpid|activities")) != NULL ||
+        (activities = element->GetElement("urn:cisco:params:xml:ns:pidf:rpid|activities")) != NULL) {
+      for (PINDEX i = 0; i < activities->GetSize(); ++i) {
+        PXMLElement * activity = dynamic_cast<PXMLElement *>(activities->GetElement(i));
+        if (activity == NULL)
+          continue;
+
+        PCaselessString name(activity->GetName());
+        PCaselessString data = activity->GetData().Trim();
+        if (data.IsEmpty())
+          personActivities += name;
+        else
+          personActivities += name + '=' + data;
+
+        SetNoteFromElement(activity, personNote);
+      }
+    }
   }
 
   // Now process all the <tuple> components.
@@ -2271,8 +2252,6 @@ bool SIPPresenceInfo::ParseXML(const PXML & xml, list<SIPPresenceInfo> & infoLis
         }
       }
     }
-
-    AddActivities(tupleElement, info.m_activities, info.m_note, TupleActivityPrefix);
 
     infoList.push_back(info);
     defaultTimestamp = info.m_when - PTimeInterval(0, 1); // One second older
