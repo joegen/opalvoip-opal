@@ -290,12 +290,6 @@ PBoolean OpalMediaStream::WritePackets(RTP_DataFrameList & packets)
 }
 
 
-void OpalMediaStream::IncrementTimestamp(PINDEX size)
-{
-  timestamp += m_frameTime * (m_frameSize != 0 ? ((size + m_frameSize - 1) / m_frameSize) : 1);
-}
-
-
 PBoolean OpalMediaStream::ReadPacket(RTP_DataFrame & packet)
 {
   if (!IsOpen())
@@ -315,11 +309,6 @@ PBoolean OpalMediaStream::ReadPacket(RTP_DataFrame & packet)
   PINDEX lastReadCount;
   if (!ReadData(packet.GetPayloadPtr(), maxSize, lastReadCount))
     return false;
-
-  // If the ReadData() function did not change the timestamp then use the default
-  // method or fixed frame times and sizes.
-  if (oldTimestamp == timestamp)
-    IncrementTimestamp(lastReadCount);
 
   if (oldSeqNumber == m_sequenceNumber)
     m_sequenceNumber++;
@@ -345,8 +334,10 @@ PBoolean OpalMediaStream::WritePacket(RTP_DataFrame & packet)
   int size = packet.GetPayloadSize();
   if (size == 0) {
     PINDEX dummy;
-    if (!InternalWriteData(NULL, 0, dummy))
+    if (!WriteData(NULL, 0, dummy)) {
+      PTRACE(2, "WriteData (silence) failed");
       return false;
+    }
   }
   else {
     marker = packet.GetMarker();
@@ -354,8 +345,10 @@ PBoolean OpalMediaStream::WritePacket(RTP_DataFrame & packet)
 
     while (size > 0) {
       PINDEX written;
-      if (!InternalWriteData(ptr, size, written))
+      if (!WriteData(ptr, size, written)) {
+        PTRACE(2, "WriteData failed, size=" << size << ", written=" << written);
         return false;
+      }
       size -= written;
       ptr += written;
     }
@@ -364,24 +357,6 @@ PBoolean OpalMediaStream::WritePacket(RTP_DataFrame & packet)
   }
 
   packet.SetTimestamp(timestamp);
-
-  return true;
-}
-
-
-bool OpalMediaStream::InternalWriteData(const BYTE * data, PINDEX length, PINDEX & written)
-{
-  unsigned oldTimestamp = timestamp;
-
-  if (!WriteData(data, length, written) || (length > 0 && written == 0)) {
-    PTRACE(2, "WriteData failed, written=" << written);
-    return false;
-  }
-
-  // If the Write() function did not change the timestamp then use the default
-  // method of fixed frame times and sizes.
-  if (oldTimestamp == timestamp)
-    IncrementTimestamp(written);
 
   return true;
 }
@@ -466,12 +441,11 @@ bool OpalMediaStream::EnableJitterBuffer(bool enab)
   if (!IsOpen())
     return false;
 
-  return InternalSetJitterBuffer(enab ? OpalJitterBuffer::Init(mediaFormat.GetMediaType(),
-                                                               connection.GetMinAudioJitterDelay()*mediaFormat.GetTimeUnits(),
-                                                               connection.GetMaxAudioJitterDelay()*mediaFormat.GetTimeUnits(),
-                                                               mediaFormat.GetTimeUnits(),
-                                                               connection.GetEndPoint().GetManager().GetMaxRtpPacketSize())
-                                      : OpalJitterBuffer::Init());
+  PTRACE(4, (enab ? "En" : "Dis") << "abling jitter buffer on " << *this);
+  OpalJitterBuffer::Init init(connection.GetEndPoint().GetManager(), mediaFormat.GetTimeUnits());
+  if (!enab)
+    init.m_minJitterDelay = init.m_maxJitterDelay = 0;
+  return InternalSetJitterBuffer(init);
 }
 
 
@@ -665,6 +639,7 @@ OpalMediaStreamPacing::OpalMediaStreamPacing(const OpalMediaFormat & mediaFormat
      the timeout for a whole second. Prevents too much bunching up of data
      in "bad" conditions, that really should not happen. */
   , m_delay(1000)
+  , m_previousDelay(m_frameTime/m_timeUnits)
 {
   PAssert(m_timeOnMarkers || m_frameSize > 0, PInvalidParameter);
   PTRACE(4, "Pacing " << mediaFormat << ", time=" << m_frameTime << " (" << (m_frameTime/m_timeUnits) << "ms), "
@@ -685,12 +660,18 @@ void OpalMediaStreamPacing::Pace(bool generated, PINDEX bytes, bool & marker)
       return;
   }
 
+  unsigned msToWait = timeToWait/m_timeUnits;
+  if (msToWait == 0)
+    msToWait = m_previousDelay;
+  else
+    m_previousDelay = msToWait;
+
   PTRACE(m_throttleLog, "Pacing delay: " << timeToWait
-         << " (" << (timeToWait / m_timeUnits) << "ms), "
+         << " (" << msToWait << "ms), "
             "time=" << m_frameTime << " (" << (m_frameTime/m_timeUnits) << "ms), "
             "bytes=" << bytes << ", size=" << m_frameSize
          << m_throttleLog);
-  m_delay.Delay(timeToWait/m_timeUnits);
+  m_delay.Delay(msToWait);
 }
 
 
@@ -741,6 +722,7 @@ PBoolean OpalNullMediaStream::ReadData(BYTE * buffer, PINDEX size, PINDEX & leng
 
   memset(buffer, 0, size);
   length = size;
+  timestamp += OpalMediaStream::m_frameTime;
 
   if (m_isSynchronous)
     Pace(true, size, marker);
@@ -869,6 +851,7 @@ PBoolean OpalRawMediaStream::ReadData(BYTE * buffer, PINDEX size, PINDEX & lengt
 
     CollectAverage(buffer, lastReadCount);
 
+    timestamp += lastReadCount / sizeof(short);
     buffer += lastReadCount;
     length += lastReadCount;
     size -= lastReadCount;

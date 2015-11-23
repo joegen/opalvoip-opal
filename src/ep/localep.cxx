@@ -700,6 +700,8 @@ PBoolean OpalLocalMediaStream::ReadData(BYTE * data, PINDEX size, PINDEX & lengt
   if (!m_connection.OnReadMediaData(*this, data, size, length))
     return false;
 
+  timestamp += OpalMediaStream::m_frameTime;
+
   if (m_synchronicity == OpalLocalEndPoint::e_SimulateSynchronous)
     Pace(false, size, marker);
   return true;

@@ -42,6 +42,7 @@
 #include <rtp/jitter.h>
 
 #include <rtp/metrics.h>
+#include <opal/manager.h>
 
 
 #define PTraceModule() "Jitter"
@@ -49,8 +50,10 @@
 const unsigned AverageFrameTimePackets = 4;
 const unsigned MaxConsecutiveOverflows = 10;
 
-#define EVERY_PACKET_TRACE_LEVEL 6
 #define ANALYSER_TRACE_LEVEL     5
+
+#define COMMON_TRACE_INFO ": ts=" << requiredTimestamp << " (" << playOutTimestamp << "), dT=" << removalDelta << ", size=" << m_frames.size()
+#define COMMON_TRACE_DELAY " delay=" << m_currentJitterDelay << " (" << (m_currentJitterDelay/m_timeUnits) << "ms)"
 
 
 #if !PTRACING && !defined(NO_ANALYSER)
@@ -102,6 +105,8 @@ const unsigned MaxConsecutiveOverflows = 10;
       {
         inPos = outPos = 0;
       }
+
+      bool HasData() const { return inPos > 0 || outPos > 0; }
 
       void In(const PTimeInterval & tick, RTP_Timestamp time, size_t depth, const char * extra)
       {
@@ -211,11 +216,18 @@ const unsigned MaxConsecutiveOverflows = 10;
 
 /////////////////////////////////////////////////////////////////////////////
 
+OpalJitterBuffer::Init::Init(const OpalManager & manager, unsigned timeUnits)
+  : Params(manager.GetJitterParameters())
+  , m_timeUnits(timeUnits)
+  , m_packetSize(manager.GetMaxRtpPacketSize())
+{
+}
+
 OpalJitterBuffer::OpalJitterBuffer(const Init & init)
   : m_timeUnits(init.m_timeUnits)
   , m_packetSize(init.m_packetSize)
-  , m_minJitterDelay(init.m_minJitterDelay)
-  , m_maxJitterDelay(init.m_maxJitterDelay)
+  , m_minJitterDelay(init.m_minJitterDelay*m_timeUnits)
+  , m_maxJitterDelay(init.m_maxJitterDelay*m_timeUnits)
   , m_packetsTooLate(0)
   , m_bufferOverruns(0)
 #ifdef NO_ANALYSER
@@ -235,9 +247,9 @@ OpalJitterBuffer::~OpalJitterBuffer()
 }
 
 
-OpalJitterBuffer * OpalJitterBuffer::Create(const Init & init)
+OpalJitterBuffer * OpalJitterBuffer::Create(const OpalMediaType & mediaType, const Init & init)
 {
-  OpalJitterBuffer * jb = OpalJitterBufferFactory::CreateInstance(init.m_mediaType, init);
+  OpalJitterBuffer * jb = OpalJitterBufferFactory::CreateInstance(mediaType, init);
   if (jb == NULL)
     jb = new OpalNonJitterBuffer(init);
   return jb;
@@ -246,9 +258,10 @@ OpalJitterBuffer * OpalJitterBuffer::Create(const Init & init)
 
 void OpalJitterBuffer::SetDelay(const Init & init)
 {
+  PAssert(m_timeUnits == init.m_timeUnits, PInvalidParameter);
   m_packetSize     = init.m_packetSize;
-  m_minJitterDelay = init.m_minJitterDelay;
-  m_maxJitterDelay = init.m_maxJitterDelay;
+  m_minJitterDelay = init.m_minJitterDelay*m_timeUnits;
+  m_maxJitterDelay = init.m_maxJitterDelay*m_timeUnits;
 }
 
 
@@ -256,16 +269,21 @@ void OpalJitterBuffer::SetDelay(const Init & init)
 
 PFACTORY_CREATE(OpalJitterBufferFactory, OpalAudioJitterBuffer, OpalMediaType::Audio());
 
+#if PTRACING
+unsigned OpalAudioJitterBuffer::sm_EveryPacketLogLevel = 6;
+#endif
+
 OpalAudioJitterBuffer::OpalAudioJitterBuffer(const Init & init)
   : OpalJitterBuffer(init)
-  , m_jitterGrowTime(10*init.m_timeUnits) // 10 milliseconds @ 8kHz
-  , m_jitterShrinkPeriod(2000*init.m_timeUnits) // 2 seconds @ 8kHz
-  , m_jitterShrinkTime(-5*init.m_timeUnits) // 5 milliseconds @ 8kHz
-  , m_silenceShrinkPeriod(5000*init.m_timeUnits) // 5 seconds @ 8kHz
-  , m_silenceShrinkTime(-20*init.m_timeUnits) // 20 milliseconds @ 8kHz
-  , m_jitterDriftPeriod(500*init.m_timeUnits) // 0.5 second @ 8kHz
+  , m_jitterGrowTime(init.m_jitterGrowTime*m_timeUnits)
+  , m_jitterShrinkPeriod(init.m_jitterShrinkPeriod*m_timeUnits)
+  , m_jitterShrinkTime(-(int)init.m_jitterShrinkTime*m_timeUnits)
+  , m_silenceShrinkPeriod(init.m_silenceShrinkPeriod*m_timeUnits)
+  , m_silenceShrinkTime(-(int)init.m_silenceShrinkTime*m_timeUnits)
+  , m_jitterDriftPeriod(init.m_jitterDriftPeriod*m_timeUnits)
+  , m_overrunFactor(init.m_overrunFactor)
   , m_closed(false)
-  , m_currentJitterDelay(init.m_minJitterDelay)
+  , m_currentJitterDelay(init.m_minJitterDelay*m_timeUnits)
   , m_consecutiveMarkerBits(0)
   , m_maxConsecutiveMarkerBits(10)
   , m_consecutiveLatePackets(0)
@@ -278,13 +296,13 @@ OpalAudioJitterBuffer::OpalAudioJitterBuffer(const Init & init)
 #endif
 {
   Reset();
-  PTRACE(4, "Audio buffer created:" << *this);
+  PTRACE(std::min(sm_EveryPacketLogLevel,4U), "Audio buffer created:" << *this);
 }
 
 
 OpalAudioJitterBuffer::~OpalAudioJitterBuffer()
 {
-  PTRACE(4, "Audio buffer destroyed:" << *this);
+  PTRACE(std::min(sm_EveryPacketLogLevel,4U), "Audio buffer destroyed:" << *this);
 }
 
 
@@ -293,7 +311,7 @@ void OpalAudioJitterBuffer::Close()
   m_closed = true;
   m_frameCount.Signal();
 #ifndef NO_ANALYSER
-  PTRACE(ANALYSER_TRACE_LEVEL, "Buffer analysis: " << *this << '\n' << *m_analyser);
+  PTRACE_IF(ANALYSER_TRACE_LEVEL, m_analyser->HasData(), "Buffer analysis: " << *this << '\n' << *m_analyser);
   m_analyser->Reset();
 #endif
 }
@@ -312,9 +330,13 @@ void OpalAudioJitterBuffer::PrintOn(ostream & strm) const
   strm << "this=" << (void *)this
        << " packets=" << m_frames.size()
        <<   " rate=" << m_timeUnits << "kHz"
-       << " delay=" << (m_minJitterDelay/m_timeUnits) << '-'
-                    << (m_currentJitterDelay/m_timeUnits) << '-'
-                    << (m_maxJitterDelay/m_timeUnits) << "ms";
+       <<  " delay=" << (m_minJitterDelay/m_timeUnits) << '-'
+                     << (m_currentJitterDelay/m_timeUnits) << '-'
+                     << (m_maxJitterDelay/m_timeUnits) << "ms"
+           " frame=" << (m_packetTime/m_timeUnits) << "ms"
+            " grow=" << (m_jitterGrowTime/m_timeUnits) << "ms"
+          " shrink=" << (-m_jitterShrinkTime/m_timeUnits) << "ms"
+                " (" << (m_jitterShrinkPeriod/m_timeUnits) << "ms)";
 }
 
 
@@ -323,9 +345,22 @@ void OpalAudioJitterBuffer::SetDelay(const Init & init)
   m_bufferMutex.Wait();
 
   OpalJitterBuffer::SetDelay(init);
-  m_currentJitterDelay = m_minJitterDelay;
 
-  PTRACE(3, "Delays set to " << *this);
+  m_currentJitterDelay = init.m_currentJitterDelay*m_timeUnits;
+  if (m_currentJitterDelay < (int)m_minJitterDelay)
+    m_currentJitterDelay = m_minJitterDelay;
+  else if (m_currentJitterDelay > (int)m_maxJitterDelay)
+    m_currentJitterDelay = m_maxJitterDelay;
+
+  m_jitterGrowTime = init.m_jitterGrowTime*m_timeUnits;
+  m_jitterShrinkPeriod = init.m_jitterShrinkPeriod*m_timeUnits;
+  m_jitterShrinkTime = -(int)init.m_jitterShrinkTime*m_timeUnits;
+  m_silenceShrinkPeriod = init.m_silenceShrinkPeriod*m_timeUnits;
+  m_silenceShrinkTime = -(int)init.m_silenceShrinkTime*m_timeUnits;
+  m_jitterDriftPeriod = init.m_jitterDriftPeriod*m_timeUnits;
+  m_overrunFactor = init.m_overrunFactor;
+
+  PTRACE(std::min(sm_EveryPacketLogLevel,3U), "Delays set to " << *this);
 
   Reset();
 
@@ -339,10 +374,11 @@ void OpalAudioJitterBuffer::Reset()
 
   m_frameTimeCount    = 0;
   m_frameTimeSum      = 0;
-  m_incomingFrameTime = 0;
+  m_packetTime = 0;
   m_lastSequenceNum   = USHRT_MAX;
   m_lastTimestamp     = UINT_MAX;
-  m_bufferFilledTime  = 0;
+  m_lastBufferSize    = 0;
+  m_bufferStaticTime  = 0;
   m_bufferLowTime     = 0;
   m_bufferEmptiedTime = 0;
 
@@ -376,8 +412,9 @@ PBoolean OpalAudioJitterBuffer::WriteData(const RTP_DataFrame & frame, PTimeInte
 
   // Check for remote switching media senders, they shouldn't do this but do anyway
   if (newSyncSource != m_lastSyncSource) {
-    PTRACE_IF(4, m_lastSyncSource != 0, "Buffer reset due to SSRC change from 0x"
-              << hex << m_lastSyncSource << " to 0x" << newSyncSource << " at sn=" << dec << currentSequenceNum);
+    PTRACE_IF(std::min(sm_EveryPacketLogLevel,4U), m_lastSyncSource != 0, "Buffer reset due to SSRC change from "
+              << RTP_TRACE_SRC(m_lastSyncSource) << " to " << RTP_TRACE_SRC(newSyncSource)
+              << " at sn=" << currentSequenceNum);
     Reset();
     m_lastSyncSource = newSyncSource;
   }
@@ -394,8 +431,7 @@ PBoolean OpalAudioJitterBuffer::WriteData(const RTP_DataFrame & frame, PTimeInte
       // Have been told there is explicit silence by marker, take opportunity
       // to reduce the current jitter delay.
       AdjustCurrentJitterDelay(m_silenceShrinkTime);
-      PTRACE(3, "Start talk burst: ts=" << timestamp << ", decreasing delay="
-             << m_currentJitterDelay << " (" << (m_currentJitterDelay/m_timeUnits) << "ms)");
+      PTRACE(std::min(sm_EveryPacketLogLevel,3U), "Start talk burst: ts=" << timestamp << ", decreasing " COMMON_TRACE_DELAY);
     }
     else
       m_consecutiveMarkerBits = 0;
@@ -415,16 +451,16 @@ PBoolean OpalAudioJitterBuffer::WriteData(const RTP_DataFrame & frame, PTimeInte
     a missing packet by inspecting sequence numbers. */
   if (m_lastSequenceNum != USHRT_MAX) {
     if (timestamp < m_lastTimestamp) {
-      PTRACE(3, "Timestamps abruptly changed from "
+      PTRACE(std::min(sm_EveryPacketLogLevel,3U), "Timestamps abruptly changed from "
               << m_lastTimestamp << " to " << timestamp << ", resynching");
       Reset();
     }
     else if (m_lastSequenceNum+1 == currentSequenceNum) {
       RTP_Timestamp delta = timestamp - m_lastTimestamp;
-      PTRACE_IF(5, m_incomingFrameTime == 0,
-                "Wait frame time : ts=" << timestamp << ","
-                " delta=" << delta << " (" << (delta/m_timeUnits) << "ms),"
-                  " sn=" << currentSequenceNum);
+      PTRACE_IF(std::min(sm_EveryPacketLogLevel,5U), m_packetTime == 0, "Wait frame time :"
+                     " ts=" << timestamp << ","
+                  " delta=" << delta << " (" << (delta/m_timeUnits) << "ms),"
+                     " sn=" << currentSequenceNum);
 
       /* Average the deltas. Most systems are "normalised" and the timestamp
           goes up by a constant on consecutive packets. Not not all. */
@@ -435,17 +471,19 @@ PBoolean OpalAudioJitterBuffer::WriteData(const RTP_DataFrame & frame, PTimeInte
         m_frameTimeCount = 0;
 
         // If new average changed by more than millisecond, start using it.
-        if (std::abs(newFrameTime - (int)m_incomingFrameTime) >= (int)m_timeUnits) {
-          m_incomingFrameTime = newFrameTime;
+        if (std::abs(newFrameTime - (int)m_packetTime) >= (int)m_timeUnits) {
+          m_packetTime = newFrameTime;
           AdjustCurrentJitterDelay(0);
-          PTRACE(4, "Frame time set  : ts=" << timestamp << ", size=" << m_frames.size() << ","
-                    " time=" << newFrameTime << " (" << (newFrameTime/m_timeUnits) << "ms),"
-                    " delay=" << m_currentJitterDelay << " (" << (m_currentJitterDelay/m_timeUnits) << "ms)");
+          PTRACE(std::min(sm_EveryPacketLogLevel,4U), "Frame time set  :"
+                 " ts=" << timestamp << ","
+                 " size=" << m_frames.size() << ","
+                 " time=" << newFrameTime << " (" << (newFrameTime/m_timeUnits) << "ms),"
+                 COMMON_TRACE_DELAY);
         }
       }
     }
     else {
-      PTRACE(5, "Lost packet(s), resetting frame time average, sn=" << currentSequenceNum);
+      PTRACE(std::min(sm_EveryPacketLogLevel,4U), "Lost packet(s), resetting frame time average, sn=" << currentSequenceNum);
       m_frameTimeSum = 0;
       m_frameTimeCount = 0;
     }
@@ -464,9 +502,9 @@ PBoolean OpalAudioJitterBuffer::WriteData(const RTP_DataFrame & frame, PTimeInte
       m_consecutiveOverflows = 0;
     else {
       ANALYSE(In, timestamp, "Overflow");
-      PTRACE(4, "Buffer overflow : ts=" << timestamp << ", delta=" << delta << ", size=" << m_frames.size());
-      if (++m_consecutiveOverflows > (m_incomingFrameTime == 0 ? AverageFrameTimePackets : MaxConsecutiveOverflows)) {
-        PTRACE(3, "Consecutive overlow packets, resynching");
+      PTRACE(std::min(sm_EveryPacketLogLevel,4U), "Buffer overflow : ts=" << timestamp << ", delta=" << delta << ", size=" << m_frames.size());
+      if (++m_consecutiveOverflows > (m_packetTime == 0 ? AverageFrameTimePackets : MaxConsecutiveOverflows)) {
+        PTRACE(2, "Consecutive overflow packets, resynching");
         Reset();
       }
       return true;
@@ -478,7 +516,11 @@ PBoolean OpalAudioJitterBuffer::WriteData(const RTP_DataFrame & frame, PTimeInte
   pair<FrameMap::iterator,bool> result = m_frames.insert(FrameMap::value_type(timestamp, frame));
   if (result.second) {
     ANALYSE(In, timestamp, m_synchronisationState != e_SynchronisationDone ? "PreBuf" : "");
-    PTRACE(EVERY_PACKET_TRACE_LEVEL, "Inserted packet : ts=" << timestamp << ", dT=" << (tick - m_lastInsertTick) << ", sz=" << frame.GetPayloadSize());
+    PTRACE_IF(sm_EveryPacketLogLevel, m_maxJitterDelay > 0, "Inserted packet :"
+           " ts=" << timestamp << ","
+           " dT=" << (tick - m_lastInsertTick) << ","
+           " payload=" << frame.GetPayloadSize() << ","
+           " size=" << m_frames.size());
 #if PTRACING
     m_lastInsertTick = tick;
 #endif
@@ -501,7 +543,7 @@ RTP_Timestamp OpalAudioJitterBuffer::CalculateRequiredTimestamp(RTP_Timestamp pl
 
 bool OpalAudioJitterBuffer::AdjustCurrentJitterDelay(int delta)
 {
-  int minJitterDelay = max(m_minJitterDelay, 2*m_incomingFrameTime);
+  int minJitterDelay = max(m_minJitterDelay, 2*m_packetTime);
   int maxJitterDelay = max(m_minJitterDelay, m_maxJitterDelay);
 
   if (delta < 0 && m_currentJitterDelay <= minJitterDelay)
@@ -519,8 +561,6 @@ bool OpalAudioJitterBuffer::AdjustCurrentJitterDelay(int delta)
 }
 
 
-#define COMMON_TRACE_INFO ": ts=" << requiredTimestamp << " (" << playOutTimestamp << "), dT=" << removalDelta << ", size=" << m_frames.size()
-
 PBoolean OpalAudioJitterBuffer::ReadData(RTP_DataFrame & frame, const PTimeInterval & PTRACE_PARAM(, PTimeInterval tick))
 {
   // Default response is an empty frame, ie silence with possible comfort noise
@@ -528,6 +568,7 @@ PBoolean OpalAudioJitterBuffer::ReadData(RTP_DataFrame & frame, const PTimeInter
   frame.SetPayloadSize(0);
 
   if (m_maxJitterDelay == 0) {
+    m_currentJitterDelay = 0;
     m_frameCount.Wait(); // Go synchronous
     PWaitAndSignal mutex(m_bufferMutex);
     if (!m_frames.empty()) {
@@ -563,56 +604,60 @@ PBoolean OpalAudioJitterBuffer::ReadData(RTP_DataFrame & frame, const PTimeInter
 
     if ((playOutTimestamp - m_bufferEmptiedTime) > m_silenceShrinkPeriod &&
          AdjustCurrentJitterDelay(m_silenceShrinkTime)) {
-      PTRACE(4, "Long silence    " COMMON_TRACE_INFO << ", decreasing delay="
-             << m_currentJitterDelay << " (" << (m_currentJitterDelay/m_timeUnits) << "ms)");
+      PTRACE(std::min(sm_EveryPacketLogLevel,4U), "Long silence    " COMMON_TRACE_INFO << ", decreasing" COMMON_TRACE_DELAY);
       m_bufferEmptiedTime = playOutTimestamp;
     }
 
     ++m_consecutiveEmpty;
-    PTRACE_IF(4, m_consecutiveEmpty == 100, "Always empty    " COMMON_TRACE_INFO);
-    PTRACE(m_consecutiveEmpty < 100 && m_synchronisationState == e_SynchronisationDone ? 4 : EVERY_PACKET_TRACE_LEVEL,
+    PTRACE_IF(std::min(sm_EveryPacketLogLevel,4U), m_consecutiveEmpty == 100, "Always empty    " COMMON_TRACE_INFO);
+    PTRACE(m_consecutiveEmpty < 100 && m_synchronisationState == e_SynchronisationDone ? std::min(sm_EveryPacketLogLevel,4U) : sm_EveryPacketLogLevel,
            "Buffer is empty " COMMON_TRACE_INFO);
     return true;
   }
   m_consecutiveEmpty  = 0;
   m_bufferEmptiedTime = playOutTimestamp;
 
-  size_t framesInBuffer = m_frames.size(); // Disable Clock overrun check if no m_incomingFrameTime yet
-  if (m_incomingFrameTime == 0)
+  size_t maxFramesInBuffer;
+  if (m_packetTime == 0) {
     m_synchronisationState = e_SynchronisationStart; // Can't start until we have an average packet time
+    maxFramesInBuffer = 1000000;                     // Disable clock overrun check later in code as well
+  }
   else {
-    framesInBuffer = m_currentJitterDelay/m_incomingFrameTime;
-    if (framesInBuffer < 2)
-      framesInBuffer = 2;
+    maxFramesInBuffer = m_currentJitterDelay/m_packetTime;
+    if (maxFramesInBuffer < 2)
+      maxFramesInBuffer = 2;
+
+    int currentFramesInBuffer = m_frames.size(); // Must be signed int for later abs()
 
     /* Check for buffer low (one packet) for prologed period, then that generally
        means we have a sample clock drift problem, that is we have a clock of 8.01kHz and
        the remote has 7.99kHz so gradually the buffer drains as we take things out faster
        than they arrive. */
-    if (m_bufferLowTime == 0 || m_frames.size() > 1)
+    if (m_bufferLowTime == 0 || currentFramesInBuffer > 1)
       m_bufferLowTime = playOutTimestamp;
     else if ((playOutTimestamp - m_bufferLowTime) > m_jitterDriftPeriod) {
       m_bufferLowTime = playOutTimestamp;
-      PTRACE(4, "Clock underrun  " COMMON_TRACE_INFO << " <= " << framesInBuffer << "/2");
-      m_timestampDelta -= m_incomingFrameTime;
+      PTRACE(std::min(sm_EveryPacketLogLevel,4U), "Clock underrun  " COMMON_TRACE_INFO);
+      m_timestampDelta -= m_packetTime;
       ANALYSE(Out, requiredTimestamp, "Drift");
       return true;
     }
 
-    /* Check for buffer full (or nearly so) and count them. If full for a while
-       then it is time to reduce the size of the jitter buffer */
-    if (m_bufferFilledTime == 0 || m_frames.size() < framesInBuffer-1)
-      m_bufferFilledTime = playOutTimestamp;
-    else if ((playOutTimestamp - m_bufferFilledTime) > m_jitterShrinkPeriod) {
-      m_bufferFilledTime = playOutTimestamp;
+    /* Check for buffer has been consistently the same size. If so for a while
+       then it is time to reduce the size of the jitter buffer as packets are
+       arriving with little jitter. */
+    if (m_bufferStaticTime == 0 || std::abs(currentFramesInBuffer - m_lastBufferSize) > 1)
+      m_bufferStaticTime = playOutTimestamp;
+    else if ((playOutTimestamp - m_bufferStaticTime) > m_jitterShrinkPeriod) {
+      m_bufferStaticTime = playOutTimestamp;
 
       bool adjusted = AdjustCurrentJitterDelay(m_jitterShrinkTime);
-      PTRACE(4, "Packets on time " COMMON_TRACE_INFO << ", "
-             << (adjusted ? "decreasing" : "cannot decrease") << " delay="
-             << m_currentJitterDelay << " (" << (m_currentJitterDelay/m_timeUnits) << "ms)");
-      if (adjusted && m_frames.size() > 1)
+      PTRACE(std::min(sm_EveryPacketLogLevel,4U), "Packets on time " COMMON_TRACE_INFO << ", "
+             << (adjusted ? "decreasing" : "cannot decrease") << COMMON_TRACE_DELAY);
+      if (adjusted && currentFramesInBuffer > 1)
         m_synchronisationState = e_SynchronisationShrink;
     }
+    m_lastBufferSize = currentFramesInBuffer;
   }
 
   // Get the oldest packet
@@ -626,14 +671,14 @@ PBoolean OpalAudioJitterBuffer::ReadData(RTP_DataFrame & frame, const PTimeInter
       m_timestampDelta = oldestFrame->first - playOutTimestamp;
       requiredTimestamp = CalculateRequiredTimestamp(playOutTimestamp);
       m_synchronisationState = e_SynchronisationFill;
-      PTRACE(5, "Synchronising   " COMMON_TRACE_INFO << ", oldest=" << oldestFrame->first);
+      PTRACE(std::min(sm_EveryPacketLogLevel,5U), "Synchronising   " COMMON_TRACE_INFO << ", oldest=" << oldestFrame->first);
       ANALYSE(Out, oldestFrame->first, "PreBuf");
       return true;
 
     case e_SynchronisationFill :
       /* Now see if we have buffered enough yet */
       if (requiredTimestamp < oldestFrame->first) {
-        PTRACE(EVERY_PACKET_TRACE_LEVEL, "Pre-buffering   " COMMON_TRACE_INFO << ", oldest=" << oldestFrame->first);
+        PTRACE(sm_EveryPacketLogLevel, "Pre-buffering   " COMMON_TRACE_INFO << ", oldest=" << oldestFrame->first);
         /* Nope, play out some silence */
         ANALYSE(Out, oldestFrame->first, "PreBuf");
         return true;
@@ -644,31 +689,30 @@ PBoolean OpalAudioJitterBuffer::ReadData(RTP_DataFrame & frame, const PTimeInter
          timstamp of this oldest packet, plus the amount of audio data that
          is in it. */
       m_synchronisationState = e_SynchronisationDone;
-      PTRACE(5, "Synchronise done" COMMON_TRACE_INFO << ", delay="
-             << m_currentJitterDelay << " (" << (m_currentJitterDelay/m_timeUnits) << "ms)");
+      PTRACE(std::min(sm_EveryPacketLogLevel,4U), "Synchronise done" COMMON_TRACE_INFO << "," COMMON_TRACE_DELAY);
       break;
 
     case e_SynchronisationDone :
       // Get rid of all the frames that are too late
-      while (requiredTimestamp >= oldestFrame->first + m_incomingFrameTime) {
+      while (requiredTimestamp >= oldestFrame->first + m_packetTime) {
         if (++m_consecutiveLatePackets > 10) {
-          PTRACE(3, "Too many late   " COMMON_TRACE_INFO);
+          PTRACE(std::min(sm_EveryPacketLogLevel,3U), "Too many late   " COMMON_TRACE_INFO);
           Reset();
           return true;
         }
 
         // Packets late, need a bigger jitter buffer
         PTRACE_PARAM(bool adjusted =) AdjustCurrentJitterDelay(m_jitterGrowTime);
-        PTRACE(4, "Packet too late " COMMON_TRACE_INFO
+        PTRACE(std::min(sm_EveryPacketLogLevel,4U), "Packet too late " COMMON_TRACE_INFO
                   << ", oldest=" << oldestFrame->first << ", "
-                  << (adjusted ? "increasing" : "cannot increase") << " delay="
-                  << m_currentJitterDelay << " (" << (m_currentJitterDelay/m_timeUnits) << "ms)");
+                  << (adjusted ? "increasing" : "cannot increase") << COMMON_TRACE_DELAY);
         ANALYSE(Out, oldestFrame->first, "Late");
+        m_bufferStaticTime = playOutTimestamp;
         m_frames.erase(oldestFrame);
         ++m_packetsTooLate;
 
         if (m_frames.empty()) {
-          PTRACE(5, "Buffer emptied  " COMMON_TRACE_INFO);
+          PTRACE(sm_EveryPacketLogLevel, "Buffer emptied  " COMMON_TRACE_INFO);
           ANALYSE(Out, requiredTimestamp, "Emptied");
           return true;
         }
@@ -683,24 +727,32 @@ PBoolean OpalAudioJitterBuffer::ReadData(RTP_DataFrame & frame, const PTimeInter
          to have a clock of 8.01kHz and the receiver 7.99kHz so gradually the remote
          sends more data than we take out over time, gradually building up in the
          jitter buffer. So, drop a frame every now and then. */
-      if (m_frames.size() <= framesInBuffer*2)
+      if (m_frames.size() <= maxFramesInBuffer*m_overrunFactor)
         break;
 
-      PTRACE(4, "Clock overrun   " COMMON_TRACE_INFO << " greater than " << framesInBuffer << "*2");
-      m_timestampDelta += m_incomingFrameTime;
+      PTRACE(m_overrunFactor < 10 ? std::min(sm_EveryPacketLogLevel,4U) : 2,
+             "Clock overrun   " COMMON_TRACE_INFO << " greater than "
+             << maxFramesInBuffer*m_overrunFactor << " (" << maxFramesInBuffer << '*' << m_overrunFactor << ')');
+      m_timestampDelta += m_packetTime;
       // Do next case
 
     case e_SynchronisationShrink :
+      m_synchronisationState = e_SynchronisationDone;
       requiredTimestamp = CalculateRequiredTimestamp(playOutTimestamp);
-      if (requiredTimestamp >= oldestFrame->first + m_incomingFrameTime) {
+      while (requiredTimestamp >= oldestFrame->first + m_packetTime) {
         ANALYSE(Out, oldestFrame->first, "Shrink");
+        PTRACE(sm_EveryPacketLogLevel, "Dropping packet " COMMON_TRACE_INFO << ", actual-ts=" << oldestFrame->first);
         m_frames.erase(oldestFrame);
         ++m_bufferOverruns;
-        oldestFrame = m_frames.begin();
-        PAssert(oldestFrame != m_frames.end(), PLogicError);
-      }
 
-      m_synchronisationState = e_SynchronisationDone;
+        if (m_frames.empty()) {
+          PTRACE(sm_EveryPacketLogLevel, "Buffer emptied  " COMMON_TRACE_INFO);
+          ANALYSE(Out, requiredTimestamp, "Emptied");
+          return true;
+        }
+
+        oldestFrame = m_frames.begin();
+      }
       break;
   }
 
@@ -710,11 +762,11 @@ PBoolean OpalAudioJitterBuffer::ReadData(RTP_DataFrame & frame, const PTimeInter
      too late section above. */
   if (requiredTimestamp < oldestFrame->first) {
     if (oldestFrame->first - requiredTimestamp > m_timeUnits*1000) {
-      PTRACE(3, "Too far in ahead" COMMON_TRACE_INFO);
+      PTRACE(std::min(sm_EveryPacketLogLevel,3U), "Too far in ahead" COMMON_TRACE_INFO);
       Reset();
     }
     else {
-      PTRACE(5, "Packet not ready" COMMON_TRACE_INFO << ", oldest=" << oldestFrame->first);
+      PTRACE(sm_EveryPacketLogLevel, "Packet not ready" COMMON_TRACE_INFO << ", oldest=" << oldestFrame->first);
       ANALYSE(Out, requiredTimestamp, "Wait");
     }
     return true;
@@ -723,7 +775,8 @@ PBoolean OpalAudioJitterBuffer::ReadData(RTP_DataFrame & frame, const PTimeInter
   // Finally can return the frame we have
   ANALYSE(Out, oldestFrame->first, "");
   frame = oldestFrame->second;
-  PTRACE(EVERY_PACKET_TRACE_LEVEL, "Delivered packet" COMMON_TRACE_INFO << ", payload=" << frame.GetPayloadSize());
+  PTRACE(sm_EveryPacketLogLevel, "Delivered packet" COMMON_TRACE_INFO
+         << ", payload=" << frame.GetPayloadSize() << ", actual-ts=" << frame.GetTimestamp());
   m_frames.erase(oldestFrame);
   frame.SetTimestamp(playOutTimestamp);
   m_consecutiveLatePackets = 0;

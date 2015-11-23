@@ -444,7 +444,6 @@ exit 1
     <ResourceCompile Include="openphone.rc" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="openphone.wxg" />
     <CustomBuild Include="openphone.xrc">
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Creating C++ source from XML resource file</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Creating C++ source from XML resource file</Message>
@@ -477,6 +476,9 @@ wxrc -c %(FullPath)
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">resource.cpp;%(Outputs)</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">resource.cpp;%(Outputs)</Outputs>
     </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="openphone.fbp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

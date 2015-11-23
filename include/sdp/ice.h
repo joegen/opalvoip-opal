@@ -42,6 +42,7 @@
 #include <opal/mediasession.h>
 
 
+class PSTUNServer;
 class PSTUNClient;
 
 
@@ -124,8 +125,7 @@ class OpalICEMediaTransport : public OpalUDPMediaTransport
       e_Answering
     } m_state;
 
-    class Server;
-    Server      * m_server;
+    PSTUNServer * m_server;
     PSTUNClient * m_client;
 };
 

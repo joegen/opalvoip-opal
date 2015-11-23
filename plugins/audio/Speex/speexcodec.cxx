@@ -147,7 +147,7 @@ static void destroy_encoder(const struct PluginCodec_Definition * /*codec*/, voi
   PluginSpeexContext * context = (PluginSpeexContext *)_context;
 
   speex_encoder_destroy(context->coderState); 
-  free(context);
+  delete context;
 }
 
 static void * create_decoder(const struct PluginCodec_Definition * codec)
@@ -214,7 +214,7 @@ static void destroy_decoder(const struct PluginCodec_Definition * /*codec*/, voi
 
   //speex_bits_destroy(&context->speexBits);  // speex_decoder_destroy does this
   speex_decoder_destroy(context->coderState); 
-  free(context);
+  delete context;
 }
 
 static int valid_for_sip(

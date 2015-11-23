@@ -78,18 +78,19 @@ struct OpalNetworkStatistics
   unsigned m_totalPackets;
   unsigned m_controlPacketsIn;  // RTCP received for this channel
   unsigned m_controlPacketsOut; // RTCP sent for this channel
-  unsigned m_NACKs;
-  unsigned m_packetsLost;
-  unsigned m_packetsOutOfOrder;
-  unsigned m_packetsTooLate;
-  unsigned m_packetOverruns;
-  unsigned m_minimumPacketTime; // Milliseconds
-  unsigned m_averagePacketTime; // Milliseconds
-  unsigned m_maximumPacketTime; // Milliseconds
-  unsigned m_averageJitter;     // Milliseconds
-  unsigned m_maximumJitter;     // Milliseconds
-  unsigned m_jitterBufferDelay; // Milliseconds
-  unsigned m_roundTripTime;     // Milliseconds
+  int      m_NACKs;             // (-1 is N/A)
+  int      m_packetsLost;       // (-1 is N/A)
+  int      m_packetsOutOfOrder; // (-1 is N/A)
+  int      m_lateOutOfOrder;    // (-1 is N/A)
+  int      m_packetsTooLate;    // (-1 is N/A)
+  int      m_packetOverruns;    // (-1 is N/A)
+  int      m_minimumPacketTime; // Milliseconds (-1 is N/A)
+  int      m_averagePacketTime; // Milliseconds (-1 is N/A)
+  int      m_maximumPacketTime; // Milliseconds (-1 is N/A)
+  int      m_averageJitter;     // Milliseconds (-1 is N/A)
+  int      m_maximumJitter;     // Milliseconds (-1 is N/A)
+  int      m_jitterBufferDelay; // Milliseconds (-1 is N/A)
+  int      m_roundTripTime;     // Milliseconds (-1 is N/A)
   PTime    m_lastPacketTime;
   PTime    m_lastReportTime;
   unsigned m_targetBitRate;    // As configured, not actual, which is calculated from m_totalBytes
@@ -201,7 +202,7 @@ class OpalMediaStatistics : public PObject, public OpalNetworkStatistics, public
     unsigned GetRateInt(int64_t current, int64_t previous) const;
     unsigned GetBitRate() const { return GetRateInt(m_totalBytes*8, m_updateInfo.m_previousBytes*8); }
     unsigned GetPacketRate() const { return GetRateInt(m_totalPackets, m_updateInfo.m_previousPackets); }
-    unsigned GetLossRate() const { return GetRateInt(m_packetsLost, m_updateInfo.m_previousLost); }
+    unsigned GetLossRate() const { return m_packetsLost <= 0 ? 0 : GetRateInt(m_packetsLost, m_updateInfo.m_previousLost); }
 
     PString GetRateStr(int64_t total, const char * units = "", unsigned significantFigures = 0) const;
     PString GetRateStr(int64_t current, int64_t previous, const char * units = "", unsigned significantFigures = 0) const;
@@ -448,13 +449,14 @@ public:
       */
     PChannel * GetChannel(SubChannels subchannel = e_Media) const { return (size_t)subchannel < m_subchannels.size() ? m_subchannels[subchannel].m_channel : NULL; }
 
-    void SetRemoteBehindNAT() { m_remoteBehindNAT = true; }
+    void SetRemoteBehindNAT();
 
   protected:
     virtual void InternalStop();
 
     PString       m_name;
     bool          m_remoteBehindNAT;
+    bool          m_remoteAddressSet;
     PINDEX        m_packetSize;
     PTimeInterval m_maxNoTransmitTime;
     bool          m_started;
@@ -468,6 +470,7 @@ public:
       );
       void ThreadMain();
       bool HandleUnavailableError();
+      void Close();
 
       PNotifierListTemplate<PBYTEArray> m_notifiers;
 
@@ -510,13 +513,12 @@ class OpalUDPMediaTransport : public OpalMediaTransport
     ~OpalUDPMediaTransport() { InternalStop(); }
 
     virtual bool Open(OpalMediaSession & session, PINDEX count, const PString & localInterface, const OpalTransportAddress & remoteAddress);
-    virtual bool IsEstablished() const;
     virtual OpalTransportAddress GetLocalAddress(SubChannels subchannel = e_Media) const;
     virtual OpalTransportAddress GetRemoteAddress(SubChannels subchannel = e_Media) const;
     virtual bool SetRemoteAddress(const OpalTransportAddress & remoteAddress, SubChannels subchannel = e_Media);
     virtual bool Write(const void * data, PINDEX length, SubChannels = e_Media, const PIPSocketAddressAndPort * = NULL);
 
-    PUDPSocket * GetSocket(SubChannels subchannel = e_Media) const;
+    PUDPSocket * GetSubChannelAsSocket(SubChannels subchannel = e_Media) const;
 
   protected:
     virtual void InternalRxData(SubChannels subchannel, const PBYTEArray & data);
@@ -628,30 +630,37 @@ class OpalMediaSession : public PSafeObject, public OpalMediaTransportChannelTyp
       const OpalMediaFormat & mediaFormat
     );
 
-#if OPAL_SDP
     static const PString & GetBundleGroupId();
-
-    /**Get the "group" id for the RTP session.
-       This is typically a mechanism for connecting audio and video together via BUNDLE.
-    */
-    virtual PString GetGroupId() const;
 
     /**Set the "group" id for the RTP session.
        This is typically a mechanism for connecting audio and video together via BUNDLE.
     */
-    virtual bool SetGroupId(const PString & id, bool overwrite = true);
+    virtual bool AddGroup(
+        const PString & groupId,  ///< Identifier of the "group"
+        const PString & mediaId,  ///< Identifier of the session within the "group"
+        bool overwrite = true     ///< Allow overwrite of the mediaId
+    );
 
-    /**Get the "group media" id for the RTP session.
+    /**Indicate if the RTP session is a member of the "group".
+       This is typically a mechanism for connecting audio and video together via BUNDLE.
+    */
+    bool IsGroupMember(
+      const PString & groupId
+    ) const;
+
+    /**Get all groups this session belongs to.
+      */
+    PStringArray GetGroups() const;
+
+    /**Get the "group media" id for the group in this RTP session.
        This is typically a mechanism for connecting audio and video together via BUNDLE.
        If not set, uses the media type.
     */
-    virtual PString GetGroupMediaId() const;
+    PString GetGroupMediaId(
+      const PString & groupId
+    ) const;
 
-    /**Set the "group media" id for the RTP session.
-       This is typically a mechanism for connecting audio and video together via BUNDLE.
-    */
-    virtual bool SetGroupMediaId(const PString & id, bool overwrite = true);
-
+#if OPAL_SDP
     /**Create an appropriate SDP media description object for this media session.
       */
     virtual SDPMediaDescription * CreateSDPMediaDescription();
@@ -721,10 +730,7 @@ class OpalMediaSession : public PSafeObject, public OpalMediaTransportChannelTyp
     OpalMediaType    m_mediaType;  // media type for session
     bool             m_remoteBehindNAT;
     PStringOptions   m_stringOptions;
-#if OPAL_SDP
-    PString          m_groupId;
-    PString          m_groupMediaId;
-#endif    
+    PStringToString  m_groups;
 
     OpalMediaTransportPtr  m_transport;
     OpalMediaCryptoKeyList m_offeredCryptokeys;

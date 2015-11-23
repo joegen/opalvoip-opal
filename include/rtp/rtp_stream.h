@@ -177,7 +177,7 @@ class OpalRTPMediaStream : public OpalMediaStream
     void SetSyncSource(RTP_SyncSourceId ssrc) { m_syncSource = ssrc; }
 
     const PTimeInterval & GetReadTimeout() const { return m_readTimeout; }
-    void SetReadTimeout(const PTimeInterval & t) { m_readTimeout = t; }
+    void SetReadTimeout(const PTimeInterval & t);
 
     void SetRewriteHeaders(bool v) { m_rewriteHeaders = v; }
 

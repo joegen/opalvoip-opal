@@ -310,8 +310,6 @@ OpalManager::OpalManager()
   , defaultDisplayName(defaultUserName)
   , rtpPayloadSizeMax(1400) // RFC879 recommends 576 bytes, but that is ancient history, 99.999% of the time 1400+ bytes is used.
   , rtpPacketSizeMax(10*1024)
-  , minAudioJitterDelay(50)  // milliseconds
-  , maxAudioJitterDelay(250) // milliseconds
   , mediaFormatOrder(PARRAYSIZE(DefaultMediaFormatOrder), DefaultMediaFormatOrder)
   , mediaFormatMask(PARRAYSIZE(DefaultMediaFormatMask), DefaultMediaFormatMask)
   , disableDetectInBandDTMF(false)
@@ -342,7 +340,7 @@ OpalManager::OpalManager()
   , m_clearingAllCallsCount(0)
   , m_garbageCollector(NULL)
   , m_garbageCollectSkip(false)
-  , m_decoupledEventPool(5, 0, "Event Pool")
+  , m_decoupledEventPool(5, 0, "OPAL-Event")
 #if OPAL_SCRIPT
   , m_script(NULL)
 #endif
@@ -1347,7 +1345,9 @@ PBoolean OpalManager::CreateVideoInputDevice(const OpalConnection & connection,
                                          PBoolean & autoDelete)
 {
   // Make copy so we can adjust the size
-  PVideoDevice::OpenArgs args = m_videoInputDevice[mediaFormat.GetOptionEnum(OpalVideoFormat::ContentRoleOption(), OpalVideoFormat::eNoRole)];
+  OpalVideoFormat::ContentRole role = mediaFormat.GetOptionEnum(OpalVideoFormat::ContentRoleOption(), OpalVideoFormat::eNoRole);
+  PVideoDevice::OpenArgs args = m_videoInputDevice[role];
+  PTRACE(3, "Using " << role << " video device \"" << args.deviceName << "\" for " << *this);
   mediaFormat.AdjustVideoArgs(args);
   return CreateVideoInputDevice(connection, args, device, autoDelete);
 }
@@ -1360,7 +1360,7 @@ PBoolean OpalManager::CreateVideoInputDevice(const OpalConnection & /*connection
 {
   autoDelete = true;
   device = PVideoInputDevice::CreateOpenedDevice(args, false);
-  PTRACE_IF(4, device == NULL, "Could not open video input device \"" << args.deviceName << '"');
+  PTRACE_IF(3, device == NULL, "Could not open video input device \"" << args.deviceName << '"');
   return device != NULL;
 }
 
@@ -2148,7 +2148,7 @@ void OpalManager::SetAudioJitterDelay(unsigned minDelay, unsigned maxDelay)
 {
   if (minDelay == 0) {
     // Disable jitter buffer completely if minimum is zero.
-    minAudioJitterDelay = maxAudioJitterDelay = 0;
+    m_jitterParams.m_minJitterDelay = m_jitterParams.m_maxJitterDelay = 0;
     return;
   }
 
@@ -2156,11 +2156,11 @@ void OpalManager::SetAudioJitterDelay(unsigned minDelay, unsigned maxDelay)
 
   if (minDelay < 10)
     minDelay = 10;
-  minAudioJitterDelay = minDelay;
+  m_jitterParams.m_minJitterDelay = minDelay;
 
   if (maxDelay < minDelay)
     maxDelay = minDelay;
-  maxAudioJitterDelay = maxDelay;
+  m_jitterParams.m_maxJitterDelay = maxDelay;
 }
 
 

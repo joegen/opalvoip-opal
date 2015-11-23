@@ -129,7 +129,7 @@ class OpalIntraFrameControl : public PObject
 
     unsigned m_stuckCount;
 
-    PMutex m_mutex;
+   PDECLARE_MUTEX(m_mutex);
     PTime  m_lastRequest;
     PTimer m_requestTimer;
     PDECLARE_NOTIFIER(PTimer, OpalIntraFrameControl, OnTimedRequest);

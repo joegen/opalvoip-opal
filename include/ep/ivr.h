@@ -202,7 +202,7 @@ class OpalIVREndPoint : public OpalLocalEndPoint
     PString             m_defaultVXML;
     OpalMediaFormatList m_defaultMediaFormats;
     PString             m_defaultTTS;
-    PMutex              m_defaultsMutex;
+    PDECLARE_MUTEX(m_defaultsMutex);
     PVXMLCache          m_ttsCache;
     PDirectory          m_recordDirectory;
 

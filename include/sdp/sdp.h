@@ -208,6 +208,7 @@ class SDPCommonAttributes
     typedef std::vector<RTP_SyncSourceId> SyncSourceArray;
     typedef std::map<PINDEX, SyncSourceArray> MediaStreamDescriptionMap;
     typedef std::map<PString, MediaStreamDescriptionMap> MediaStreamMap;
+    typedef PDictionary<PString, PStringSet> GroupDict;
 
     SDPCommonAttributes()
       : m_direction(Undefined)
@@ -333,10 +334,10 @@ class SDPMediaDescription : public PObject, public SDPCommonAttributes
 
     virtual bool FromSession(OpalMediaSession * session, const SDPMediaDescription * offer, RTP_SyncSourceId ssrc);
     virtual bool ToSession(OpalMediaSession * session) const;
-    virtual PString GetGroupId() const { return m_groupId; }
-    virtual void SetGroupId(const PString & id) { m_groupId = id; }
-    virtual PString GetGroupMediaId() const { return m_groupMediaId; }
-    virtual void SetGroupMediaId(const PString & id) { m_groupMediaId = id; }
+    virtual bool IsGroupMember(const PString & groupId) const { return m_groups.Contains(groupId); }
+    virtual PStringArray GetGroups() const { return m_groups.GetKeys(); }
+    virtual PString GetGroupMediaId(const PString & groupId) const { return m_groups(groupId); }
+    virtual void MatchGroupInfo(const GroupDict & groups);
 
     const OpalTransportAddress & GetMediaAddress() const { return m_mediaAddress; }
     const OpalTransportAddress & GetControlAddress() const { return m_controlAddress; }
@@ -380,8 +381,8 @@ class SDPMediaDescription : public PObject, public SDPCommonAttributes
     WORD                 m_port;
     WORD                 m_portCount;
     OpalMediaType        m_mediaType;
-    PString              m_groupId;
-    PString              m_groupMediaId;
+    PStringList          m_mids;
+    PStringToString      m_groups;
 #if OPAL_ICE
     PNatCandidateList    m_candidates;
 #endif //OPAL_ICE
@@ -665,7 +666,6 @@ class SDPSessionDescription : public PObject, public SDPCommonAttributes
     OpalTransportAddress GetOwnerAddress() const { return ownerAddress; }
     void SetOwnerAddress(OpalTransportAddress addr) { ownerAddress = addr; }
 
-    typedef PDictionary<PString, PStringSet> GroupDict;
     GroupDict GetGroups() const { return m_groups; }
 
     bool GetMediaStreams(MediaStreamMap & info) const;

@@ -66,7 +66,7 @@ IAX2Connection::IAX2Connection(OpalCall & call,               /* Owner call for 
   : OpalConnection(call, ep, token)
   , endpoint(ep)
   , iax2Processor(*new IAX2CallProcessor(ep))
-  , m_jitterBuffer(OpalJitterBuffer::Create(OpalJitterBuffer::Init(OpalMediaType::Audio(), 400, 2000)))
+  , m_jitterBuffer(OpalJitterBuffer::Create(OpalMediaType::Audio(), OpalJitterBuffer::Init(ep.GetManager(), 8)))
 {  
   opalPayloadType = RTP_DataFrame::IllegalPayloadType;
 
@@ -176,9 +176,7 @@ PBoolean IAX2Connection::SetConnected()
     if (otherParty != NULL)
       ownerCall.OpenSourceMediaStreams(*otherParty, OpalMediaType::Audio(), 1);
 
-    m_jitterBuffer->SetDelay(OpalJitterBuffer::Init(OpalMediaType::Audio(), 
-                                                 endpoint.GetManager().GetMinAudioJitterDelay() * 8, 
-                                                 endpoint.GetManager().GetMaxAudioJitterDelay() * 8));
+    m_jitterBuffer->SetDelay(OpalJitterBuffer::Init(endpoint.GetManager(), 8));
     PTRACE(5, "Iax2Con\t Start jitter buffer");
   }  
   return OpalConnection::SetConnected();
@@ -216,10 +214,7 @@ void IAX2Connection::OnConnected()
     if (otherParty != NULL)
       ownerCall.OpenSourceMediaStreams(*otherParty, OpalMediaType::Audio(), 1);
 
-
-    m_jitterBuffer->SetDelay(OpalJitterBuffer::Init(OpalMediaType::Audio(),
-                                                 endpoint.GetManager().GetMinAudioJitterDelay() * 8, 
-			                                           endpoint.GetManager().GetMaxAudioJitterDelay() * 8));
+    m_jitterBuffer->SetDelay(OpalJitterBuffer::Init(endpoint.GetManager(), 8));
     PTRACE(5, "Iax2Con\t Start jitter buffer");
   }
 

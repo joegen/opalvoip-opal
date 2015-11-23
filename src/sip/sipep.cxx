@@ -397,20 +397,47 @@ void SIPEndPoint::HandlePDU(const OpalTransportPtr & transport)
 
   PTRACE(4, "Waiting for PDU on " << *transport);
   SIP_PDU::StatusCodes status = pdu->Read();
-  switch (status/100) {
-    case 0 :
-      if (status == SIP_PDU::Local_KeepAlive)
-        transport->Write("\r\n", 2); // Send PONG
+  switch (status) {
+    case SIP_PDU::Local_KeepAlive :
+      transport->Write("\r\n", 2); // Send PONG
       break;
 
-    case 2 :
+    case SIP_PDU::Local_TransportLost :
+      if (transport->IsReliable() && transport->HasKeepAlive()) {
+        PTRACE(4, "Trying to reconnect dropped transport " << *transport);
+        for (PSafePtr<SIPHandler> handler = activeSIPHandlers.GetFirstHandler(); handler != NULL; ++handler) {
+          SIPRegisterHandler * regHandler = dynamic_cast<SIPRegisterHandler *>(&*handler);
+          if (  regHandler != NULL &&
+                regHandler->GetState() == SIPHandler::Subscribed &&
+                regHandler->GetParams().m_compatibility == SIPRegister::e_RFC5626 &&
+                regHandler->GetRemoteTransportAddress().IsEquivalent(transport->GetRemoteAddress())) {
+            if (!transport->IsGood()) {
+              transport->Close();
+              if (!transport->Connect()) {
+                // In case remote is bouncing, and is back up quickly, have another go
+                PThread::Sleep(1000);
+                if (!transport->Connect()) {
+                  // Remote has not come back quickly, possibly never, set register into Unavailable
+                  // mode where it periodically retries reconnect.
+                  handler->ActivateState(SIPHandler::Unavailable);
+                  break;
+                }
+              }
+            }
+            handler->ActivateState(SIPHandler::Restoring);
+          }
+        }
+      }
+      break;
+
+    case SIP_PDU::Successful_OK :
       if (OnReceivedPDU(pdu)) 
         return;
       break;
 
     default :
       const SIPMIMEInfo & mime = pdu->GetMIME();
-      if (pdu->GetMethod() != SIP_PDU::NumMethods &&
+      if (status >= 300 && pdu->GetMethod() != SIP_PDU::NumMethods &&
           !mime.GetCSeq().IsEmpty() &&
           !mime.GetVia().IsEmpty() &&
           !mime.GetCallID().IsEmpty() &&
@@ -1393,7 +1420,7 @@ PBoolean SIPEndPoint::Unregister(const PString & token)
   if (handler != NULL)
     return handler->ActivateState(SIPHandler::Unsubscribing);
 
-  PTRACE(1, "Could not find active REGISTER for " << token);
+  PTRACE(1, "Could not find active REGISTER for \"" << token << '"');
   return false;
 }
 
@@ -2204,6 +2231,8 @@ void SIPEndPoint::AdjustToRegistration(SIP_PDU & pdu, SIPConnection * connection
       PStringToString fieldParams = from.GetFieldParameters();
       from = registrar->GetAddressOfRecord();
       from.GetFieldParameters() = fieldParams;
+      if (connection != NULL)
+        from.SetDisplayName(connection->GetDisplayName());
       from.Sanitise(SIPURL::FromURI);
       mime.SetFrom(from);
       PTRACE(4, "Adjusted 'From' to " << from << " from registered user.");

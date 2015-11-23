@@ -99,6 +99,11 @@ endif
 
 OPAL_LIBS = -L$(OPAL_LIBDIR) -l$(OPAL_LIB_BASE)$(LIB_DEBUG_SUFFIX)$(LIB_STATIC_SUFFIX)
 
+BUNDLE_FILES += $(OPAL_SHARED_LIB_FILE) $(OPAL_SHARED_LIB_LINK)
+ifneq ($(OPAL_LIBDIR),$(PTLIB_LIBDIR))
+  BUNDLE_FILES += `find $(OPAL_LIBDIR) -name \*$(PTLIB_PLUGIN_SUFFIX).$(SHAREDLIBEXT)`
+endif
+
 
 ###############################################################################
 # Add common directory to include path

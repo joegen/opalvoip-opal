@@ -821,16 +821,31 @@ bool SDPMediaDescription::ToSession(OpalMediaSession * session) const
   session->SetRemoteAddress(m_mediaAddress, true);
   session->SetRemoteAddress(m_controlAddress, false);
 
-  // If no group yet in session, set to SDP version
-  session->SetGroupId(GetGroupId(), false);
-
-  // Make sure on answer, "mid" values correspond to offer
-  if (session->GetGroupId() == GetGroupId())
-    session->SetGroupMediaId(GetGroupMediaId(), false);
-  else
-    PTRACE(4, *session << "group id \"" << session->GetGroupId() << "\", not same as SDP \"" << GetGroupId() << '"');
+  // Add group yet in session, set to SDP version
+  for (PStringToString::const_iterator it = m_groups.begin(); it != m_groups.end(); ++it)
+    session->AddGroup(it->first, it->second, false);
 
   return true;
+}
+
+
+void SDPMediaDescription::MatchGroupInfo(const GroupDict & groups)
+{
+  for (PStringList::iterator mid = m_mids.begin(); mid != m_mids.end(); ++mid) {
+    GroupDict::const_iterator it;
+    for (it = groups.begin(); it != groups.end(); ++it) {
+      if (it->second.Contains(*mid)) {
+        m_groups.SetAt(it->first, *mid);
+        break;
+      }
+    }
+
+    // Had a "mid" but no "group", assume a BUNDLE (naughty system!)
+    if (it == groups.end()) {
+      m_groups.SetAt(OpalMediaSession::GetBundleGroupId(), *mid);
+      PTRACE(4, "No group attribute, assuming BUNDLE for session");
+    }
+  }
 }
 
 
@@ -993,7 +1008,7 @@ void SDPMediaDescription::SetAttribute(const PString & attr, const PString & val
   }
 
   if (attr *= "mid") {
-    SetGroupMediaId(value);
+    m_mids += value;
     return;
   }
 
@@ -1133,11 +1148,8 @@ void SDPMediaDescription::OutputAttributes(ostream & strm) const
 {
   SDPCommonAttributes::OutputAttributes(strm);
 
-  if (!GetGroupId().IsEmpty()) {
-    PString id = GetGroupMediaId();
-    if (!id.IsEmpty())
-      strm << "a=mid:" << id << CRLF;
-  }
+  for (PStringToString::const_iterator it = m_groups.begin(); it != m_groups.end(); ++it) 
+    strm << "a=mid:" << it->second << CRLF;
 
 #if OPAL_ICE
   if (m_username.IsEmpty() || m_password.IsEmpty())
@@ -1177,10 +1189,10 @@ bool SDPMediaDescription::HasICE() const
   if (m_password.IsEmpty())
     return false;
 
-  /* The following is ugly and firced by Firefox not putting candidates in
+  /* The following is ugly and forced by Firefox not putting candidates in
      all bundled media descriptions. We then lose the check if NONE of them
      have any candidates. */
-  if (!GetGroupMediaId().IsEmpty())
+  if (!m_groups.IsEmpty())
     return true;
 
   if (m_candidates.IsEmpty())
@@ -1267,7 +1279,7 @@ void SDPMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat)
   for (SDPMediaFormatList::iterator format = m_formats.begin(); format != m_formats.end(); ++format) {
     const OpalMediaFormat & sdpMediaFormat = format->GetMediaFormat();
     if (mediaFormat == sdpMediaFormat) {
-      PTRACE(2, "Not including " << mediaFormat << " as already included");
+      PTRACE(3, "Not including " << mediaFormat << " as already included");
       return;
     }
 
@@ -1981,11 +1993,13 @@ bool SDPRTPAVPMediaDescription::FromSession(OpalMediaSession * session,
       }
     }
 
-    SetGroupId(rtpSession->GetGroupId());
-    if (ssrc != 0)
-      SetGroupMediaId(PSTRSTRM(rtpSession->GetGroupMediaId() << '_' << ssrc));
-    else
-      SetGroupMediaId(rtpSession->GetGroupMediaId());
+    PStringList groups = rtpSession->GetGroups();
+    for (PStringList::iterator it = groups.begin(); it != groups.end(); ++it) {
+      if (ssrc != 0)
+        m_groups.SetAt(*it, PSTRSTRM(rtpSession->GetGroupMediaId(*it) << '_' << ssrc));
+      else
+        m_groups.SetAt(*it, rtpSession->GetGroupMediaId(*it));
+    }
   }
 
 #if OPAL_SRTP
@@ -2107,7 +2121,8 @@ void SDPAudioMediaDescription::OutputAttributes(ostream & strm) const
   }
 
   unsigned largestFrameTime = 0;
-  unsigned maxptime = UINT_MAX;
+  unsigned minptimeMax = 0;
+  unsigned maxptimeMin = UINT_MAX;
 
   // output attributes for each payload type
   for (SDPMediaFormatList::const_iterator format = m_formats.begin(); format != m_formats.end(); ++format) {
@@ -2117,17 +2132,23 @@ void SDPAudioMediaDescription::OutputAttributes(ostream & strm) const
       if (largestFrameTime < frameTime)
         largestFrameTime = frameTime;
 
-      unsigned maxptime1 = mediaFormat.GetOptionInteger(OpalAudioFormat::RxFramesPerPacketOption())*frameTime;
-      if (maxptime > maxptime1)
-        maxptime = maxptime1;
+      unsigned maxptime = mediaFormat.GetOptionInteger("maxptime");
+      if (maxptime == 0)
+        maxptime = mediaFormat.GetOptionInteger(OpalAudioFormat::RxFramesPerPacketOption())*frameTime;
+      if (maxptime > 0 && maxptime < maxptimeMin)
+        maxptimeMin = maxptime;
+
+      unsigned minptime = mediaFormat.GetOptionInteger("minptime");
+      if (minptime > 0 && minptime > minptimeMax)
+        minptimeMax = minptime;
     }
   }
 
-  if (maxptime < UINT_MAX) {
-    if (maxptime < largestFrameTime)
-      maxptime = largestFrameTime;
-    strm << "a=maxptime:" << maxptime << CRLF;
-  }
+  if (minptimeMax > 0)
+    strm << "a=minptime:" << std::max(minptimeMax,largestFrameTime) << CRLF;
+
+  if (maxptimeMin < UINT_MAX)
+    strm << "a=maxptime:" << std::max(std::max(minptimeMax,maxptimeMin),largestFrameTime) << CRLF;
 }
 
 
@@ -2601,15 +2622,18 @@ void SDPSessionDescription::PrintOn(ostream & strm) const
 
   // find groups, e.g. BUNDLE
   GroupDict groups;
-  for (PINDEX i = 0; i < mediaDescriptions.GetSize(); i++) {
-    PString gid = mediaDescriptions[i].GetGroupId();
-    PString mid = mediaDescriptions[i].GetGroupMediaId();
-    if (!gid.IsEmpty() && !mid.IsEmpty()) {
-      GroupDict::iterator git = groups.find(gid);
-      if (git != groups.end())
-        git->second += mid;
-      else
-        groups.SetAt(gid, new PStringSet(mid));
+  for (PINDEX mdIdx = 0; mdIdx < mediaDescriptions.GetSize(); mdIdx++) {
+    PStringArray mdGroups = mediaDescriptions[mdIdx].GetGroups();
+    for (PINDEX mdgIdx = 0; mdgIdx < mdGroups.GetSize(); ++mdgIdx) {
+      PString gid = mdGroups[mdgIdx];
+      PString mid = mediaDescriptions[mdIdx].GetGroupMediaId(gid);
+      if (!mid.IsEmpty()) {
+        GroupDict::iterator git = groups.find(gid);
+        if (git != groups.end())
+          git->second += mid;
+        else
+          groups.SetAt(gid, new PStringSet(mid));
+      }
     }
   }
   if (!groups.IsEmpty()) {
@@ -2818,25 +2842,8 @@ bool SDPSessionDescription::Decode(const PStringArray & lines, const OpalMediaFo
   }
 
   // Match up groups and mid's
-  for (PINDEX i = 0; i < mediaDescriptions.GetSize(); ++i) {
-    PString mid = mediaDescriptions[i].GetGroupMediaId();
-    if (mid.IsEmpty())
-      continue;
-
-    GroupDict::iterator it;
-    for (it = m_groups.begin(); it != m_groups.end(); ++it) {
-      if (it->second.Contains(mid)) {
-        mediaDescriptions[i].SetGroupId(it->first);
-        break;
-      }
-    }
-
-    // Had a "mid" but no "group", assume a BUNDLE (naughty system!)
-    if (it == m_groups.end()) {
-      mediaDescriptions[i].SetGroupId(OpalMediaSession::GetBundleGroupId());
-      PTRACE(4, "No group attribute, assuming BUNDLE for session " << i+1);
-    }
-  }
+  for (PINDEX i = 0; i < mediaDescriptions.GetSize(); ++i)
+    mediaDescriptions[i].MatchGroupInfo(m_groups);
 
   if (m_mediaStreamIds.GetSize() == 1 && m_mediaStreamIds[0] == "*") {
     m_mediaStreamIds.RemoveAll();

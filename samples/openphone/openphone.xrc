@@ -103,7 +103,7 @@
 		<object class="wxBoxSizer">
 			<orient>wxVERTICAL</orient>
 			<object class="sizeritem">
-				<option>0</option>
+				<option>1</option>
 				<flag>wxEXPAND</flag>
 				<border>0</border>
 				<object class="wxFlexGridSizer">
@@ -134,6 +134,7 @@
 								<flag>wxALIGN_CENTER_VERTICAL</flag>
 								<border>20</border>
 								<object class="wxTextCtrl" name="SpeedDialName">
+									<size>200,-1</size>
 									<value></value>
 									<maxlength>0</maxlength>
 								</object>
@@ -143,6 +144,7 @@
 								<flag>wxALIGN_CENTER_VERTICAL|wxLEFT|wxRIGHT</flag>
 								<border>20</border>
 								<object class="wxStaticText" name="SpeedDialInUse">
+									<size>150,-1</size>
 									<label>Name already in use.</label>
 									<wrap>150</wrap>
 								</object>
@@ -170,15 +172,17 @@
 								<flag>wxALIGN_CENTER_VERTICAL</flag>
 								<border>0</border>
 								<object class="wxTextCtrl" name="SpeedDialNumber">
+									<size>200,-1</size>
 									<value></value>
 									<maxlength>0</maxlength>
 								</object>
 							</object>
 							<object class="sizeritem">
-								<option>1</option>
+								<option>0</option>
 								<flag>wxALIGN_CENTER_VERTICAL|wxLEFT|wxRIGHT</flag>
 								<border>20</border>
 								<object class="wxStaticText" name="SpeedDialAmbiguous">
+									<size>150,-1</size>
 									<label>This number cannot be dialled from a keypad.</label>
 									<wrap>150</wrap>
 								</object>
@@ -196,10 +200,11 @@
 						</object>
 					</object>
 					<object class="sizeritem">
-						<option>0</option>
-						<flag>wxALIGN_CENTER_VERTICAL</flag>
-						<border>0</border>
+						<option>1</option>
+						<flag>wxALIGN_CENTER_VERTICAL|wxEXPAND|wxRIGHT</flag>
+						<border>20</border>
 						<object class="wxTextCtrl" name="SpeedDialAddress">
+							<size>300,-1</size>
 							<value></value>
 							<maxlength>0</maxlength>
 						</object>
@@ -215,10 +220,11 @@
 						</object>
 					</object>
 					<object class="sizeritem">
-						<option>0</option>
-						<flag>wxRIGHT|wxALIGN_CENTER_VERTICAL</flag>
+						<option>1</option>
+						<flag>wxALIGN_CENTER_VERTICAL|wxEXPAND|wxRIGHT</flag>
 						<border>20</border>
 						<object class="wxTextCtrl" name="SpeedDialDescription">
+							<size>300,-1</size>
 							<value></value>
 							<maxlength>0</maxlength>
 						</object>
@@ -234,10 +240,11 @@
 						</object>
 					</object>
 					<object class="sizeritem">
-						<option>0</option>
-						<flag></flag>
-						<border>0</border>
+						<option>1</option>
+						<flag>wxALIGN_CENTER_VERTICAL|wxEXPAND|wxRIGHT</flag>
+						<border>20</border>
 						<object class="wxChoice" name="SpeedDialStateURL">
+							<size>300,-1</size>
 							<selection>0</selection>
 							<content />
 						</object>
@@ -1265,7 +1272,7 @@
 											</object>
 											<object class="notebookpage">
 												<label>Tx Video</label>
-												<selected>0</selected>
+												<selected>1</selected>
 												<object class="wxPanel" name="TxVideoStatistics">
 													<style>wxTAB_TRAVERSAL</style>
 													<object class="wxBoxSizer">
@@ -1549,7 +1556,7 @@
 											</object>
 											<object class="notebookpage">
 												<label>Fax</label>
-												<selected>1</selected>
+												<selected>0</selected>
 												<object class="wxPanel" name="FaxStatistics">
 													<style>wxTAB_TRAVERSAL</style>
 													<object class="wxBoxSizer">
@@ -5944,7 +5951,7 @@
 						<flag>wxRIGHT|wxTOP|wxBOTTOM|wxALIGN_CENTER_VERTICAL</flag>
 						<border>4</border>
 						<object class="wxTextCtrl" name="EnteredText">
-							<style>wxTE_PROCESS_ENTER|wxTE_LINEWRAP</style>
+							<style>wxTE_PROCESS_ENTER</style>
 							<value></value>
 							<maxlength>0</maxlength>
 						</object>
@@ -6524,9 +6531,10 @@
 					</object>
 					<object class="sizeritem">
 						<option>1</option>
-						<flag>wxRIGHT|wxTOP|wxBOTTOM|wxALIGN_CENTER_VERTICAL</flag>
+						<flag>wxALIGN_CENTER_VERTICAL|wxBOTTOM|wxRIGHT|wxTOP</flag>
 						<border>20</border>
 						<object class="wxComboBox" name="Address">
+							<size>300,-1</size>
 							<value></value>
 							<content />
 						</object>
@@ -6610,6 +6618,7 @@
 						<flag>wxRIGHT|wxTOP|wxALIGN_CENTER_VERTICAL</flag>
 						<border>16</border>
 						<object class="wxChoice" name="Presentity">
+							<size>300,-1</size>
 							<selection>0</selection>
 							<content />
 						</object>
@@ -6636,6 +6645,7 @@
 						<flag>wxRIGHT|wxTOP|wxBOTTOM|wxALIGN_CENTER_VERTICAL</flag>
 						<border>16</border>
 						<object class="wxComboBox" name="Address">
+							<size>300,-1</size>
 							<value></value>
 							<content />
 						</object>
@@ -6753,6 +6763,7 @@
 						<flag>wxTOP|wxBOTTOM|wxALIGN_CENTER_VERTICAL</flag>
 						<border>12</border>
 						<object class="wxButton" name="AnswerCall">
+							<size>120,40</size>
 							<font>
 								<size>12</size>
 								<family>swiss</family>
@@ -6775,6 +6786,7 @@
 						<flag>wxTOP|wxBOTTOM|wxALIGN_CENTER_VERTICAL</flag>
 						<border>12</border>
 						<object class="wxButton" name="RejectCall">
+							<size>120,40</size>
 							<font>
 								<size>12</size>
 								<family>swiss</family>
@@ -6913,6 +6925,7 @@
 						<flag>wxLEFT|wxRIGHT|wxTOP|wxEXPAND|wxALIGN_CENTER_VERTICAL</flag>
 						<border>16</border>
 						<object class="wxComboBox" name="VideoGrabDevice">
+							<size>300,-1</size>
 							<value></value>
 							<content />
 						</object>
