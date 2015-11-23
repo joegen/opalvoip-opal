@@ -519,7 +519,7 @@ class OpalMixerNodeManager
 
     /**Add node name to association list.
       */
-    void AddNodeName(
+    bool AddNodeName(
       PString name,        ///< alias name for node
       OpalMixerNode * node ///< node associated with name
     );
@@ -1235,7 +1235,7 @@ class OpalMixerNode : public PSafeObject
 
     /**Add a name for this node.
       */
-    void AddName(
+    bool AddName(
       const PString & name
     );
 

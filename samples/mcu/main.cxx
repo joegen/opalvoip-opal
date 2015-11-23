@@ -237,8 +237,10 @@ void MyMixerEndPoint::CmdConfAdd(PCLI::Arguments & args, P_INT_PTR)
   if (node == NULL)
     args.WriteError() << "Could not create conference \"" << args[0] << '"' << endl;
   else {
-    for (PINDEX i = 1; i < args.GetCount(); ++i)
-      node->AddName(args[i]);
+    for (PINDEX i = 1; i < args.GetCount(); ++i) {
+      if (!node->AddName(args[i]))
+        args.GetContext() << "Could not add conference alias \"" << args[i] << '"' << endl;
+    }
     args.GetContext() << "Added conference " << *node << endl;
   }
 }

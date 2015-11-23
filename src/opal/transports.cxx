@@ -1258,6 +1258,7 @@ OpalTransportIP::OpalTransportIP(OpalEndPoint & end,
                                  PIPSocket::Address binding,
                                  WORD port)
   : OpalTransport(end, channel)
+  , m_binding(binding)
   , m_localAP(binding, port)
   , m_remoteAP(PIPSocket::Address::GetAny(binding.GetVersion()))
 {
@@ -1353,7 +1354,7 @@ PBoolean OpalTransportTCP::Connect()
   PSafeLockReadWrite mutex(*this);
 
   PTCPSocket * socket = dynamic_cast<PTCPSocket *>(m_channel);
-  if (socket == NULL)
+  if (!PAssert(socket != NULL, PLogicError))
     return false;
 
   socket->SetPort(m_remoteAP.GetPort());
@@ -1361,8 +1362,8 @@ PBoolean OpalTransportTCP::Connect()
   OpalManager & manager = m_endpoint.GetManager();
   socket->SetReadTimeout(manager.GetSignalingTimeout());
 
-  PTRACE(4, "Connecting to " << m_remoteAP);
-  if (!manager.GetTCPPortRange().Connect(*socket, m_remoteAP.GetAddress(), m_localAP.GetAddress())) {
+  PTRACE(4, "Connecting to " << m_remoteAP << " on interface " << m_binding);
+  if (!manager.GetTCPPortRange().Connect(*socket, m_remoteAP.GetAddress(), m_binding)) {
     PTRACE(1, "Could not connect to " << m_remoteAP
               << " (range=" << manager.GetTCPPortRange() << ") - "
               << socket->GetErrorText() << '(' << socket->GetErrorNumber() << ')');
@@ -1487,6 +1488,8 @@ bool OpalTransportTCP::OnConnectedSocket(PTCPSocket * socket)
     PTRACE(1, "SetOption(SO_LINGER) failed: " << socket->GetErrorText());
     return false;
   }
+
+  m_channel->clear();
 
   PTRACE(3, "Started connection: rem=" << m_remoteAP << " (if=" << m_localAP << ')');
   return true;
