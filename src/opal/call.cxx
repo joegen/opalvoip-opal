@@ -434,7 +434,8 @@ bool OpalCall::Transfer(const PString & newAddress, OpalConnection * connection)
   if (newConnection->SetUpConnection() && newConnection->OnSetUpConnection()) {
     connectionToKeep->AutoStartMediaStreams(true);
     connection->Release(OpalConnection::EndedByCallForwarded, true);
-    connectionToKeep->StartMediaStreams(); // Just in case ...
+    newConnection->StartMediaStreams();
+    connectionToKeep->StartMediaStreams();
     return true;
   }
 

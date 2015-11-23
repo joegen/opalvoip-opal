@@ -460,9 +460,9 @@ OpalConnection * OpalEndPoint::AddConnection(OpalConnection * connection)
 
   connection->SetStringOptions(m_defaultStringOptions, false);
 
-  OnNewConnection(connection->GetCall(), *connection);
-
   connectionsActive.SetAt(token, connection);
+
+  OnNewConnection(connection->GetCall(), *connection);
 
   return connection;
 }

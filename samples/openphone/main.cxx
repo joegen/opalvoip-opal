@@ -3474,7 +3474,7 @@ void MyManager::OnDefVidWinPos(wxCommandEvent & /*event*/)
       int w = 0;
       int h = 0;
       PSafePtr<OpalVideoMediaStream> stream = ::PSafePtrCast<OpalMediaStream, OpalVideoMediaStream>(connection->GetMediaStream(OpalMediaType::Video(), preview));
-      if (stream != NULL) {
+      if (stream != NULL && stream->GetMediaFormat().GetOptionEnum(OpalVideoFormat::ContentRoleOption(), OpalVideoFormat::eNoRole) == role) {
         PVideoOutputDevice * device = stream->GetVideoOutputDevice();
         if (device != NULL) {
           w = device->GetFrameWidth();
@@ -3482,11 +3482,7 @@ void MyManager::OnDefVidWinPos(wxCommandEvent & /*event*/)
           device->SetPosition(x, y);
         }
       }
-
-      if (preview)
-        y += h;
-      else
-        x += w;
+      x += 352;
     }
   }
 

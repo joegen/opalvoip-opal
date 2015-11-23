@@ -21,11 +21,15 @@
    <?define WxPlatform  = "$(var.MSVCRT_VER)_$(var.Architecture)" ?>
 <?endif?>
 
+<?define AVCODEC    = "AVCODEC-57.DLL" ?>
+<?define AVUTIL     = "AVUTIL-55.DLL" ?>
+<?define SWRESAMPLE = "SWRESAMPLE-2.DLL" ?>
+
 <?define WxDllDir         = "$(var.WxDir)\lib\vc$(var.WxPlatform)_dll" ?>
 <?define PluginReleaseDir = "$(var.OPALDir)\bin\plugins\$(var.Platform)\Release" ?>
 
 
-<Wix xmlns='http://wixtoolset.org/schemas/v4/wxs'>
+<Wix xmlns='http://schemas.microsoft.com/wix/2006/wi'>
 
    <Product Name='$(var.ProductName)'
             Language='1033'
@@ -62,7 +66,8 @@
       <Property Id="WIXUI_INSTALLDIR"
                 Value="INSTALLDIR" />
 
-      <UIRef Id="WixUI_InstallDir" />
+     <WixVariable Id="WixUILicenseRtf" Value="./InstallerLicense.rtf" />
+     <UIRef Id="WixUI_InstallDir" />
       <UIRef Id="WixUI_ErrorProgressText" />
 
       <Directory Id='TARGETDIR'
@@ -228,8 +233,8 @@
                              Win64="$(var.IsWin64)"
                              Guid='*'>
                      <File Id='AVCODEC_DLL'
-                           Name='AVCODEC-56.DLL'
-                           Source='$(var.PluginDir)\AVCODEC-56.DLL'
+                           Name='$(var.AVCODEC)'
+                           Source='$(var.PluginDir)\$(var.AVCODEC)'
                            DiskId='1'
                            KeyPath='yes' />
                   </Component>
@@ -237,8 +242,8 @@
                              Win64="$(var.IsWin64)"
                              Guid='*'>
                      <File Id='AVUTIL_DLL'
-                           Name='AVUTIL-54.DLL'
-                           Source='$(var.PluginDir)\AVUTIL-54.DLL'
+                           Name='$(var.AVUTIL)'
+                           Source='$(var.PluginDir)\$(var.AVUTIL)'
                            DiskId='1'
                            KeyPath='yes' />
                   </Component>
@@ -246,8 +251,8 @@
                              Win64="$(var.IsWin64)"
                              Guid='*'>
                      <File Id='SWRESAMPLE_DLL'
-                           Name='SWRESAMPLE-1.DLL'
-                           Source='$(var.PluginDir)\SWRESAMPLE-1.DLL'
+                           Name='$(var.SWRESAMPLE)'
+                           Source='$(var.PluginDir)\$(var.SWRESAMPLE)'
                            DiskId='1'
                            KeyPath='yes' />
                   </Component>

@@ -42,6 +42,9 @@
 #include <ptlib/sockets.h>
 
 
+class OpalTranscoder;
+
+
 /**Class for a reading RTP from an Ethernet Capture (PCAP) file.
  */
 class OpalPCAPFile : public PFile
@@ -62,6 +65,8 @@ class OpalPCAPFile : public PFile
     int GetTCP(PBYTEArray & payload);
     int GetUDP(PBYTEArray & payload);
     int GetRTP(RTP_DataFrame & rtp);
+    int GetDecodedRTP(RTP_DataFrame & decodedRTP, OpalTranscoder * & transcoder);
+
 
     const PTime & GetPacketTime() const { return m_rawPacket.GetTimestamp(); }
     const PIPSocket::Address & GetSrcIP() const { return m_packetSrc.GetAddress(); }
@@ -91,52 +96,56 @@ class OpalPCAPFile : public PFile
     WORD GetFilterDstPort() const { return m_filterDst.GetPort(); }
 
 
-    struct DiscoveredRTPInfo {
-
-      struct DirInfo
-      {
-        DirInfo();
-
-        PIPSocketAddressAndPort     m_addr;
-        RTP_DataFrame::PayloadTypes m_payload;
-        bool                        m_found;
-
-        DWORD m_ssrc;
-        WORD  m_seq;
-        DWORD m_ts;
-
-        unsigned m_ssrc_matches;
-        unsigned m_seq_matches;
-        unsigned m_ts_matches;
-
-        RTP_DataFrameList m_firstFrames;
-
-        PString m_type;
-        PString m_format;
-
-        size_t m_index;
-      } m_direction[2];
-    };
-    class DiscoveredRTPMap : public PObject, public std::map<std::string, DiscoveredRTPInfo>
+    struct DiscoveredRTPKey : PObject
     {
-        PCLASSINFO(DiscoveredRTPMap, PObject);
-      public:
-        void PrintOn(ostream & strm) const;
+      PIPAddressAndPort m_src;
+      PIPAddressAndPort m_dst;
+      RTP_SyncSourceId  m_ssrc;
+
+      DiscoveredRTPKey();
+      Comparison Compare(const PObject & obj) const;
     };
 
-    bool DiscoverRTP(DiscoveredRTPMap & discoveredRTPMap);
+    struct DiscoveredRTPInfo : DiscoveredRTPKey {
+      RTP_DataFrame::PayloadTypes m_payloadType;
+      OpalMediaFormat             m_mediaFormat;
+
+      DiscoveredRTPInfo();
+      DiscoveredRTPInfo(const DiscoveredRTPKey & key);
+      void PrintOn(ostream & strm) const;
+    };
+
+    typedef PArray<DiscoveredRTPInfo> DiscoveredRTP;
+
+    struct Progress
+    {
+      Progress(off_t length)
+        : m_fileLength(length)
+        , m_filePosition(0)
+        , m_packets(0)
+        , m_abort(false)
+      { }
+
+      off_t    m_fileLength;
+      off_t    m_filePosition;
+      unsigned m_packets;
+      bool     m_abort;
+    };
+    typedef PNotifierTemplate<Progress &> ProgressNotifier;
+
+    bool DiscoverRTP(DiscoveredRTP & discoveredRTP, const ProgressNotifier & progressNotifier = NULL);
 
     bool SetFilters(
-      const DiscoveredRTPInfo & rtp,
-      int dir,
-      const PString & format = PString::Empty()
-    );
-    bool SetFilters(
-      const DiscoveredRTPMap & rtp,
-      size_t index,
+      const DiscoveredRTPInfo & discoveredRTP,
       const PString & format = PString::Empty()
     );
 
+    typedef std::map<RTP_DataFrame::PayloadTypes, OpalMediaFormat> PayloadMap;
+
+    void SetPayloadMap(
+      const PayloadMap & payloadMap,
+      bool overwrite = false
+    );
     bool SetPayloadMap(
       RTP_DataFrame::PayloadTypes pt,
       const OpalMediaFormat & format
@@ -183,10 +192,14 @@ class OpalPCAPFile : public PFile
 
     PIPSocketAddressAndPort m_filterSrc;
     PIPSocketAddressAndPort m_filterDst;
+    RTP_SyncSourceId        m_filterSSRC;
     PIPSocketAddressAndPort m_packetSrc;
     PIPSocketAddressAndPort m_packetDst;
 
-    std::map<RTP_DataFrame::PayloadTypes, OpalMediaFormat> m_payloadType2mediaFormat;
+    PayloadMap m_payloadType2mediaFormat;
+
+    struct DiscoveryInfo;
+    typedef std::map<DiscoveredRTPKey, DiscoveryInfo> DiscoveryMap;
 };
 
 

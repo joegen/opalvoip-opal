@@ -910,6 +910,7 @@ OpalSkinnyConnection::OpalSkinnyConnection(OpalCall & call,
   , m_lineInstance(0)
   , m_callIdentifier(callIdentifier)
   , m_needSoftKeyEndcall(true)
+  , m_remoteHold(false)
 {
   m_calledPartyNumber = dialNumber;
   m_phoneDevice.m_activeConnection = this;
@@ -1035,8 +1036,15 @@ bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::CallStateMsg &
       OnAlerting();
       break;
 
+    case OpalSkinnyEndPoint::eStateHold :
+      if (!m_remoteHold)
+        OnHold(true, m_remoteHold = true);
+      break;
+
     case OpalSkinnyEndPoint::eStateConnected :
-      if (IsOriginating())
+      if (m_remoteHold)
+        OnHold(true, m_remoteHold = false);
+      else if (IsOriginating())
         InternalOnConnected();
       else {
         PTRACE_IF(2, GetPhase() < ConnectedPhase, "State connected before we answered - server probably configured for auto-answer");
@@ -1257,6 +1265,7 @@ void OpalSkinnyConnection::OpenSimulatedMediaChannel(unsigned sessionId, const O
   if (sinkStream == NULL)
     return;
 
+#if OPAL_PTLIB_WAVFILE
   OpalMediaStreamPtr sourceStream;
   OpalWAVFile * wavFile = new OpalWAVFile(m_endpoint.GetSimulatedAudioFile(), PFile::ReadOnly, PFile::ModeDefault, PWAVFile::fmt_PCM, false);
   if (!wavFile->IsOpen()) {
@@ -1289,6 +1298,9 @@ void OpalSkinnyConnection::OpenSimulatedMediaChannel(unsigned sessionId, const O
 
   PTRACE(3, "Simulating transmit " << mediaFormat << " stream, session=" << sessionId << ", file=" << m_endpoint.GetSimulatedAudioFile());
   StartMediaStreams();
+#else
+  PTRACE(3, "Cannot simulate transmit " << mediaFormat << " stream, session=" << sessionId << ", file=" << m_endpoint.GetSimulatedAudioFile());
+#endif
 }
 
 
@@ -1347,7 +1359,7 @@ void OpalSkinnyConnection::OnClosedMediaStream(const OpalMediaStream & stream)
   if (IsReleased())
     return;
 
-  unsigned sessionId =stream.GetSessionID();
+  unsigned sessionId = stream.GetSessionID();
   if (m_simulatedTransmitters.find(sessionId) == m_simulatedTransmitters.end())
     OpenSimulatedMediaChannel(sessionId, stream.GetMediaFormat());
   else {
@@ -1364,6 +1376,10 @@ void OpalSkinnyConnection::DelayCloseMediaStream(OpalMediaStreamPtr mediaStream)
   for (PINDEX delay = 0; delay < 10; ++delay) {
     if (IsReleased())
       return;
+    if (m_remoteHold) {
+      PTRACE(3, "On HOLD, not really closing stream " << *mediaStream);
+      return;
+    }
     PThread::Sleep(50);
   }
 

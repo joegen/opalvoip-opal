@@ -372,7 +372,7 @@ bool OpalAudioMixer::SetJitterBufferSize(const Key_T & key, const OpalJitterBuff
     jitter->SetDelay(init);
   else {
     PTRACE(4, "Jitter buffer enabled");
-    jitter = OpalJitterBuffer::Create(init);
+    jitter = OpalJitterBuffer::Create(OpalMediaType::Audio(), init);
     PTRACE_CONTEXT_ID_SET(*jitter, audioStream);
   }
 
@@ -1202,7 +1202,7 @@ void OpalMixerMediaStream::InternalClose()
 
 PBoolean OpalMixerMediaStream::WritePacket(RTP_DataFrame & packet)
 {
-  return m_node->WritePacket(*this, packet);
+  return IsOpen() && m_node->WritePacket(*this, packet);
 }
 
 
@@ -1306,23 +1306,23 @@ void OpalMixerNode::PrintOn(ostream & strm) const
 }
 
 
-void OpalMixerNode::AddName(const PString & name)
+bool OpalMixerNode::AddName(const PString & name)
 {
   if (name.IsEmpty())
-    return;
+    return false;
 
   PSafeLockReadWrite mutex(*this);
   if (!mutex.IsLocked())
-    return;
+    return false;
 
-  if (m_names.Contains(name)) {
+  if (!m_manager.AddNodeName(name, this)) {
     PTRACE(4, "Name \"" << name << "\" already added to " << *this);
-    return;
+    return false;
   }
 
-  PTRACE(4, "Adding name \"" << name << "\" to " << *this);
+  PTRACE(4, "Added name \"" << name << "\" to " << *this);
   m_names += name;
-  m_manager.AddNodeName(name, this);
+  return true;
 }
 
 
@@ -1494,7 +1494,7 @@ bool OpalMixerNode::WritePacket(const OpalMixerMediaStream & stream, const RTP_D
 {
   PString id = stream.GetID();
   MixerByIdMap::iterator it = m_mixerById.find(id);
-  return it != m_mixerById.end() && it->second->WriteStream(id, input);
+  return it == m_mixerById.end() || it->second->WriteStream(id, input);
 }
 
 
@@ -1685,6 +1685,16 @@ PFACTORY_CREATE(SIPEventPackageFactory, SIPConferenceEventPackageHandler, SIPSub
 OpalMediaStreamMixer::OpalMediaStreamMixer()
 {
   m_outputStreams.DisallowDeleteObjects();
+}
+
+
+void OpalMediaStreamMixer::Append(const PSafePtr<OpalMixerMediaStream> & stream)
+{
+  for (PSafePtr<OpalMixerMediaStream> s(m_outputStreams); s != NULL; ++s) {
+    if (s == stream)
+      return;
+  }
+  m_outputStreams.Append(stream);
 }
 
 
@@ -1881,6 +1891,20 @@ OpalVideoStreamMixer::~OpalVideoStreamMixer()
 }
 
 
+bool OpalVideoStreamMixer::SetFrameRate(unsigned rate)
+{
+  if (!OpalVideoMixer::SetFrameRate(rate))
+    return false;
+
+  for (TranscoderMap::iterator it = m_transcoders.begin(); it != m_transcoders.end(); ++it) {
+    OpalMediaFormat mediaFormat;
+    mediaFormat.SetOptionInteger(OpalMediaFormat::FrameTimeOption(), m_periodTS);
+    it->second.UpdateMediaFormats(OpalMediaFormat(), mediaFormat);
+  }
+  return true;
+}
+
+
 bool OpalVideoStreamMixer::OnMixed(RTP_DataFrame * & output)
 {
   typedef std::map<PString, RTP_DataFrameList> CachedPackets;
@@ -1928,6 +1952,7 @@ bool OpalVideoStreamMixer::OnMixed(RTP_DataFrame * & output)
       if (itPackets == cachedPackets.end()) {
         OpalTranscoder * transcoder = m_transcoders.GetAt(keyPackets);
         if (transcoder == NULL) {
+          mediaFormat.SetOptionInteger(OpalMediaFormat::FrameTimeOption(), m_periodTS);
           transcoder = OpalTranscoder::Create(OpalYUV420P, mediaFormat);
           if (transcoder == NULL) {
             PTRACE(2, "Could not create transcoder to " << mediaFormat << " for stream id " << stream->GetID());
@@ -2067,10 +2092,13 @@ void OpalMixerNodeManager::RemoveNode(OpalMixerNode & node)
 }
 
 
-void OpalMixerNodeManager::AddNodeName(PString name,
-                               OpalMixerNode * node)
+bool OpalMixerNodeManager::AddNodeName(PString name, OpalMixerNode * node)
 {
+  if (m_nodesByName.FindWithLock(name, PSafeReference) != NULL)
+    return false;
+
   m_nodesByName.SetAt(name, node);
+  return true;
 }
 
 

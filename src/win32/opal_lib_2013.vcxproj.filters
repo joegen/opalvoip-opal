@@ -1666,11 +1666,11 @@
     <None Include="..\csharp\SWIGTYPE_p_void.cs">
       <Filter>Source Files\SWIG\C#</Filter>
     </None>
-    <None Include="..\java\java_swig_wrapper.inc">
-      <Filter>Source Files\SWIG\Java Files</Filter>
-    </None>
     <None Include="..\csharp\csharp_swig_wrapper.inc">
       <Filter>Source Files\SWIG\C#</Filter>
+    </None>
+    <None Include="..\java\java_swig_wrapper.inc">
+      <Filter>Source Files\SWIG\Java Files</Filter>
     </None>
   </ItemGroup>
 </Project>

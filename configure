@@ -5541,6 +5541,9 @@ case "$target_os" in
       CPPFLAGS="-stdlib=libc++ $CPPFLAGS"
       LDFLAGS="${LDFLAGS} -stdlib=libc++"
       LIBS="-framework AudioToolbox -framework CoreAudio -framework SystemConfiguration -framework Foundation -lobjc $LIBS"
+      if ${DEBUG_FLAG+:} false; then :
+
+else
 
    oldCPPFLAGS="$CPPFLAGS"
    CPPFLAGS="$CPPFLAGS -gdwarf-4"
@@ -5574,6 +5577,8 @@ $as_echo "$usable" >&6; }
 fi
 
 
+
+fi
    ;;
 
    cygwin* | mingw* )
@@ -6216,8 +6221,16 @@ $as_echo "$usable" >&6; }
 
 
 
-   CFLAGS="-pg $CFLAGS"
-   CXXFLAGS="-pg $CXXFLAGS"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Adding CFLAGS: -pg" >&5
+$as_echo "$as_me: Adding CFLAGS: -pg" >&6;}
+      CFLAGS="-pg $CFLAGS"
+
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Adding CXXFLAGS: -pg" >&5
+$as_echo "$as_me: Adding CXXFLAGS: -pg" >&6;}
+      CXXFLAGS="-pg $CXXFLAGS"
+
+
 
 else
   as_fn_error $? "Compiler does not support gprof profiling" "$LINENO" 5
@@ -6294,9 +6307,13 @@ $as_echo "$usable" >&6; }
    if test "x$usable" = "xyes"; then :
 
 
-   LIBS="-lEProfiler $LIBS"
 
 
+
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Adding LIBS: -lEProfiler" >&5
+$as_echo "$as_me: Adding LIBS: -lEProfiler" >&6;}
+      LIBS="-lEProfiler $LIBS"
 
 
 
@@ -6311,8 +6328,16 @@ fi
 
 
 
-   CFLAGS="-finstrument-functions $CFLAGS"
-   CXXFLAGS="-finstrument-functions $CXXFLAGS"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Adding CFLAGS: -finstrument-functions" >&5
+$as_echo "$as_me: Adding CFLAGS: -finstrument-functions" >&6;}
+      CFLAGS="-finstrument-functions $CFLAGS"
+
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Adding CXXFLAGS: -finstrument-functions" >&5
+$as_echo "$as_me: Adding CXXFLAGS: -finstrument-functions" >&6;}
+      CXXFLAGS="-finstrument-functions $CXXFLAGS"
+
+
 
 
 else
@@ -7057,9 +7082,17 @@ $as_echo "$usable" >&6; }
    if test "x$usable" = "xyes"; then :
 
 
-   LIBS="$SRTP_LIBS $LIBS"
-   CPPFLAGS="$SRTP_CFLAGS $CPPFLAGS"
 
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Adding CPPFLAGS: $SRTP_CFLAGS" >&5
+$as_echo "$as_me: Adding CPPFLAGS: $SRTP_CFLAGS" >&6;}
+      CPPFLAGS="$SRTP_CFLAGS $CPPFLAGS"
+
+
+
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Adding LIBS: $SRTP_LIBS" >&5
+$as_echo "$as_me: Adding LIBS: $SRTP_LIBS" >&6;}
+      LIBS="$SRTP_LIBS $LIBS"
 
 
 
@@ -7318,9 +7351,17 @@ $as_echo "$usable" >&6; }
    if test "x$usable" = "xyes"; then :
 
 
-   LIBS="$ZRTP_LIBS $LIBS"
-   CPPFLAGS="$ZRTP_CFLAGS $CPPFLAGS"
 
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Adding CPPFLAGS: $ZRTP_CFLAGS" >&5
+$as_echo "$as_me: Adding CPPFLAGS: $ZRTP_CFLAGS" >&6;}
+      CPPFLAGS="$ZRTP_CFLAGS $CPPFLAGS"
+
+
+
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Adding LIBS: $ZRTP_LIBS" >&5
+$as_echo "$as_me: Adding LIBS: $ZRTP_LIBS" >&6;}
+      LIBS="$ZRTP_LIBS $LIBS"
 
 
 
@@ -7563,9 +7604,17 @@ $as_echo "$usable" >&6; }
    if test "x$usable" = "xyes"; then :
 
 
-   LIBS="$SPEEXDSP_LIBS $LIBS"
-   CPPFLAGS="$SPEEXDSP_CFLAGS $CPPFLAGS"
 
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Adding CPPFLAGS: $SPEEXDSP_CFLAGS" >&5
+$as_echo "$as_me: Adding CPPFLAGS: $SPEEXDSP_CFLAGS" >&6;}
+      CPPFLAGS="$SPEEXDSP_CFLAGS $CPPFLAGS"
+
+
+
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Adding LIBS: $SPEEXDSP_LIBS" >&5
+$as_echo "$as_me: Adding LIBS: $SPEEXDSP_LIBS" >&6;}
+      LIBS="$SPEEXDSP_LIBS $LIBS"
 
 
 
@@ -7920,9 +7969,17 @@ $as_echo "$usable" >&6; }
    if test "x$usable" = "xyes"; then :
 
 
-   LIBS="$CAPI_LIBS $LIBS"
-   CPPFLAGS="$CAPI_CFLAGS $CPPFLAGS"
 
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Adding CPPFLAGS: $CAPI_CFLAGS" >&5
+$as_echo "$as_me: Adding CPPFLAGS: $CAPI_CFLAGS" >&6;}
+      CPPFLAGS="$CAPI_CFLAGS $CPPFLAGS"
+
+
+
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Adding LIBS: $CAPI_LIBS" >&5
+$as_echo "$as_me: Adding LIBS: $CAPI_LIBS" >&6;}
+      LIBS="$CAPI_LIBS $LIBS"
 
 
 
@@ -8192,9 +8249,17 @@ $as_echo "$usable" >&6; }
    if test "x$usable" = "xyes"; then :
 
 
-   LIBS="$JAVA_LIBS $LIBS"
-   CPPFLAGS="$JAVA_CFLAGS $CPPFLAGS"
 
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Adding CPPFLAGS: $JAVA_CFLAGS" >&5
+$as_echo "$as_me: Adding CPPFLAGS: $JAVA_CFLAGS" >&6;}
+      CPPFLAGS="$JAVA_CFLAGS $CPPFLAGS"
+
+
+
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Adding LIBS: $JAVA_LIBS" >&5
+$as_echo "$as_me: Adding LIBS: $JAVA_LIBS" >&6;}
+      LIBS="$JAVA_LIBS $LIBS"
 
 
 
@@ -8481,9 +8546,17 @@ $as_echo "$usable" >&6; }
    if test "x$usable" = "xyes"; then :
 
 
-   LIBS="$RUBY_LIBS $LIBS"
-   CPPFLAGS="$RUBY_CFLAGS $CPPFLAGS"
 
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Adding CPPFLAGS: $RUBY_CFLAGS" >&5
+$as_echo "$as_me: Adding CPPFLAGS: $RUBY_CFLAGS" >&6;}
+      CPPFLAGS="$RUBY_CFLAGS $CPPFLAGS"
+
+
+
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Adding LIBS: $RUBY_LIBS" >&5
+$as_echo "$as_me: Adding LIBS: $RUBY_LIBS" >&6;}
+      LIBS="$RUBY_LIBS $LIBS"
 
 
 
@@ -10332,9 +10405,17 @@ $as_echo "$usable" >&6; }
    if test "x$usable" = "xyes"; then :
 
 
-   LIBS="$DAHDI_LIBS $LIBS"
-   CPPFLAGS="$DAHDI_CFLAGS $CPPFLAGS"
 
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Adding CPPFLAGS: $DAHDI_CFLAGS" >&5
+$as_echo "$as_me: Adding CPPFLAGS: $DAHDI_CFLAGS" >&6;}
+      CPPFLAGS="$DAHDI_CFLAGS $CPPFLAGS"
+
+
+
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Adding LIBS: $DAHDI_LIBS" >&5
+$as_echo "$as_me: Adding LIBS: $DAHDI_LIBS" >&6;}
+      LIBS="$DAHDI_LIBS $LIBS"
 
 
 

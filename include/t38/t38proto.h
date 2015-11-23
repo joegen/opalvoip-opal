@@ -338,7 +338,7 @@ class OpalFaxSession : public OpalMediaSession
     bool               m_optimiseOnRetransmit;
     std::vector<int>   m_sentPacketRedundancy;
     T38_UDPTLPacket  * m_sentPacket;
-    PMutex             m_writeMutex;
+    PDECLARE_MUTEX(m_writeMutex);
     PTimer             m_timerWriteDataIdle;
     PDECLARE_NOTIFIER(PTimer,  OpalFaxSession, OnWriteDataIdle);
 

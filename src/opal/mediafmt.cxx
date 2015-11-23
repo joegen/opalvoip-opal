@@ -288,7 +288,7 @@ bool OpalMediaOption::ValidateMerge(const OpalMediaOption & option) const
       return true;
   }
 
-  PTRACE(2, "MediaFormat\tValidation of merge for media option \"" << m_name << "\" failed.");
+  PTRACE(3, "MediaFormat\tValidation of merge for media option \"" << m_name << "\" failed.");
   return false;
 }
 
@@ -1751,6 +1751,10 @@ const PString & OpalAudioFormat::RxFramesPerPacketOption() { static const PConst
 const PString & OpalAudioFormat::TxFramesPerPacketOption() { static const PConstString s(PLUGINCODEC_OPTION_TX_FRAMES_PER_PACKET); return s; }
 const PString & OpalAudioFormat::MaxFramesPerPacketOption(){ static const PConstString s("Max Frames Per Packet"); return s; }
 const PString & OpalAudioFormat::ChannelsOption()          { static const PConstString s("Channels"); return s; }
+#if OPAL_SDP
+const PString & OpalAudioFormat::MinPacketTimeOption()     { static const PConstString s("minptime"); return s; }
+const PString & OpalAudioFormat::MaxPacketTimeOption()     { static const PConstString s("maxptime"); return s; }
+#endif
 
 OpalAudioFormat::OpalAudioFormat(const char * fullName,
                                  RTP_DataFrame::PayloadTypes rtpPayloadType,
@@ -1807,6 +1811,10 @@ OpalAudioFormatInternal::OpalAudioFormatInternal(const char * fullName,
 
   AddOption(new OpalMediaOptionUnsigned(OpalAudioFormat::MaxFramesPerPacketOption(), true,  OpalMediaOption::NoMerge,  maxFrames));
   AddOption(new OpalMediaOptionUnsigned(OpalAudioFormat::ChannelsOption(),           false, OpalMediaOption::NoMerge,  channels, 1, 5));
+#if OPAL_SDP
+  AddOption(new OpalMediaOptionUnsigned(OpalAudioFormat::MinPacketTimeOption(),      false, OpalMediaOption::NoMerge));
+  AddOption(new OpalMediaOptionUnsigned(OpalAudioFormat::MaxPacketTimeOption(),      false, OpalMediaOption::NoMerge));
+#endif
 }
 
 

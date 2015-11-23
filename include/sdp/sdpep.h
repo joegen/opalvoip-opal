@@ -248,11 +248,13 @@ class OpalSDPConnection : public OpalRTPConnection
 
     virtual bool OnSendAnswerSDP(
       const SDPSessionDescription & sdpOffer,
-      SDPSessionDescription & sdpAnswer
+      SDPSessionDescription & sdpAnswer,
+      bool transfer = false
     );
     virtual SDPMediaDescription * OnSendAnswerSDPSession(
       SDPMediaDescription * incomingMedia,
       unsigned sessionId,
+      bool transfer,
       SDPMediaDescription::Direction otherSidesDir,
       OpalMediaTransportPtr & bundledTransport
     );
@@ -262,10 +264,12 @@ class OpalSDPConnection : public OpalRTPConnection
       bool & multipleFormats
     );
     virtual bool OnReceivedAnswerSDPSession(
-      const SDPSessionDescription & sdp,
       const SDPMediaDescription * mediaDescription,
       unsigned sessionId,
-      bool & multipleFormats
+      SDPMediaDescription::Direction otherSidesDir,
+      bool & multipleFormats,
+      vector<bool> & allowPauseRecvMediaStream,
+      vector<bool> & allowPauseSendMediaStream
     );
 
     virtual bool SetActiveMediaFormats(
@@ -279,11 +283,6 @@ class OpalSDPConnection : public OpalRTPConnection
       OpalTransportAddress & localAddress,
       OpalMediaTransportPtr & bundledTransport
     );
-#if OPAL_VIDEO
-    virtual void SetAudioVideoGroup(
-      const PString & id = OpalMediaSession::GetBundleGroupId()
-    );
-#endif
 
     void RetryHoldRemote(bool placeOnHold);
     virtual bool OnHoldStateChanged(bool placeOnHold);

@@ -631,7 +631,7 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
 
     typedef PDictionary<PString, PhoneDevice> PhoneDeviceDict;
     PhoneDeviceDict           m_phoneDevices;
-    PMutex                    m_phoneDevicesMutex;
+    PDECLARE_MUTEX(m_phoneDevicesMutex);
     OpalTransportAddressArray m_serverInterfaces;
     PFilePath                 m_simulatedAudioFile;
     bool                      m_secondaryAudioAlwaysSimulated;
@@ -796,6 +796,7 @@ class OpalSkinnyConnection : public OpalRTPConnection
     uint32_t m_callIdentifier;
     PString  m_alertingType;
     bool     m_needSoftKeyEndcall;
+    bool     m_remoteHold;
 
     OpalMediaFormatList m_remoteMediaFormats;
     std::set<MediaInfo> m_passThruMedia;

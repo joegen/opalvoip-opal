@@ -1082,6 +1082,12 @@ class PluginVideoEncoder : public PluginVideoCodec<NAME>
     }
 
 
+    virtual size_t GetOutputDataSize()
+    {
+      return this->m_maxRTPSize;
+    }
+
+
     virtual bool SetOption(const char * optionName, const char * optionValue)
     {
       if (strcasecmp(optionName, PLUGINCODEC_OPTION_FRAME_WIDTH) == 0)
@@ -1091,7 +1097,7 @@ class PluginVideoEncoder : public PluginVideoCodec<NAME>
         return this->SetOptionUnsigned(this->m_height, optionValue, 16, this->m_maxHeight);
 
       if (strcasecmp(optionName, PLUGINCODEC_OPTION_MAX_TX_PACKET_SIZE) == 0)
-        return this->SetOptionUnsigned(this->m_maxRTPSize, optionValue, 256, 8192);
+        return this->SetOptionUnsigned(this->m_maxRTPSize, optionValue, 256);
 
       if (strcasecmp(optionName, PLUGINCODEC_OPTION_TEMPORAL_SPATIAL_TRADE_OFF) == 0)
         return this->SetOptionUnsigned(this->m_tsto, optionValue, 1, 31);

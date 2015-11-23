@@ -445,8 +445,6 @@ class OpalMediaStream : public PSafeObject
     virtual bool InternalExecuteCommand(const OpalMediaCommand & command);
 
   protected:
-    void IncrementTimestamp(PINDEX size);
-    bool InternalWriteData(const BYTE * data, PINDEX length, PINDEX & written);
     OpalMediaPatchPtr InternalSetPatchPart1(OpalMediaPatch * newPatch);
     void InternalSetPatchPart2(const OpalMediaPatchPtr & oldPatch);
     virtual bool InternalSetJitterBuffer(const OpalJitterBuffer::Init & init);
@@ -516,6 +514,7 @@ class OpalMediaStreamPacing
     PINDEX         m_frameSize;
     unsigned       m_timeUnits;
     PAdaptiveDelay m_delay;
+    unsigned       m_previousDelay;
 
     PTRACE_THROTTLE(m_throttleLog, 4, 5000);
 };
@@ -655,7 +654,7 @@ class OpalRawMediaStream : public OpalMediaStream
 
     PChannel * m_channel;
     bool       m_autoDelete;
-    PMutex     m_channelMutex;
+    PDECLARE_MUTEX(m_channelMutex);
 
     PBYTEArray m_silence;
 
@@ -922,7 +921,7 @@ class OpalVideoMediaStream : public OpalMediaStream
     bool                 m_autoDeleteOutput;
     PTimeInterval        m_lastGrabTime;
     bool                 m_needKeyFrame;
-    PMutex               m_devicesMutex;
+    PDECLARE_MUTEX(m_devicesMutex);
     PBYTEArray           m_watermarkData;
 };
 

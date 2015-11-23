@@ -1775,6 +1775,14 @@ class OpalConnection : public PSafeObject
       */
     const PString & GetCalledPartyName() const { return m_calledPartyName; }
 
+    /**Set the called alias name (for incoming calls). This is useful for gateway
+       applications where the destination name may not be the same as the local name.
+
+       Note that if the called party is anm E.164 address and there are no alternative
+       names, such as aliases in H.323, then this field will be empty.
+      */
+    void SetCalledPartyName(const PString & name) { m_calledPartyName = name; }
+
     /**Get the called E.164 number (for incoming calls). This is useful for gateway
        applications where the destination number may not be the same as the local number.
 
@@ -1846,12 +1854,12 @@ class OpalConnection : public PSafeObject
     /**Get the default maximum audio jitter delay parameter.
        Defaults to 50ms
      */
-    unsigned GetMinAudioJitterDelay() const { return m_minAudioJitterDelay; }
+    unsigned GetMinAudioJitterDelay() const { return m_jitterParams.m_minJitterDelay; }
 
     /**Get the default maximum audio delay jitter parameter.
        Defaults to 250ms.
      */
-    unsigned GetMaxAudioJitterDelay() const { return m_maxAudioJitterDelay; }
+    unsigned GetMaxAudioJitterDelay() const { return m_jitterParams.m_maxJitterDelay; }
 
     /**Set the maximum audio delay jitter parameter.
      */
@@ -1957,8 +1965,8 @@ class OpalConnection : public PSafeObject
     OpalMediaFormatList        m_localMediaFormats;
     PSafeList<OpalMediaStream> mediaStreams;
 
-    unsigned            m_minAudioJitterDelay;
-    unsigned            m_maxAudioJitterDelay;
+    OpalJitterBuffer::Params m_jitterParams;
+
     OpalBandwidth       m_rxBandwidthAvailable;
     OpalBandwidth       m_txBandwidthAvailable;
 
@@ -1976,7 +1984,7 @@ class OpalConnection : public PSafeObject
     OpalMediaFormat m_dtmfSendFormat;
     PBYTEArray      m_inBandDTMF;
     PINDEX          m_emittedInBandDTMF;
-    PMutex          m_inBandMutex;
+    PDECLARE_MUTEX(m_inBandMutex);
     PNotifier       m_dtmfSendNotifier;
     PDECLARE_NOTIFIER(RTP_DataFrame, OpalConnection, OnSendInBandDTMF);
 #endif

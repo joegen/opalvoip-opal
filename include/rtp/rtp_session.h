@@ -94,7 +94,7 @@ class OpalRTPSession : public OpalMediaSession
     virtual bool SetRemoteAddress(const OpalTransportAddress & remoteAddress, bool isMediaAddress = true);
     virtual void AttachTransport(const OpalMediaTransportPtr & transport);
     virtual OpalMediaTransportPtr DetachTransport();
-    virtual bool SetGroupId(const PString & id, bool overwrite = true);
+    virtual bool AddGroup(const PString & groupId, const PString & mediaId, bool overwrite = true);
 
     virtual bool UpdateMediaFormat(const OpalMediaFormat & mediaFormat);
 
@@ -462,9 +462,9 @@ class OpalRTPSession : public OpalMediaSession
     unsigned GetPacketsLost(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Receiver).m_packetsLost; }
 
     /**Get total number transmitted packets lost by remote in session.
-       Determined via RTCP.
+       Determined via RTCP. -1 indicates no RTCP received yet.
       */
-    unsigned GetPacketsLostByRemote(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Sender).m_packetsLost; }
+    int GetPacketsLostByRemote(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Sender).m_packetsLost; }
 
     /**Get total number of packets received out of order in session.
       */
@@ -472,9 +472,9 @@ class OpalRTPSession : public OpalMediaSession
 
     /**Get average time between sent packets.
        This is averaged over the last txStatisticsInterval packets and is in
-       milliseconds.
+       milliseconds. -1 indicated no packets sent.
       */
-    unsigned GetAverageSendTime(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Sender).m_averagePacketTime; }
+    int GetAverageSendTime(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Sender).m_averagePacketTime; }
 
     /**Get the number of marker packets received this session.
        This can be used to find out the number of frames received in a video
@@ -490,55 +490,55 @@ class OpalRTPSession : public OpalMediaSession
 
     /**Get maximum time between sent packets.
        This is over the last txStatisticsInterval packets and is in
-       milliseconds.
+       milliseconds. -1 indicated no packets sent.
       */
-    unsigned GetMaximumSendTime(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Sender).m_maximumPacketTime; }
+    int GetMaximumSendTime(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Sender).m_maximumPacketTime; }
 
     /**Get minimum time between sent packets.
        This is over the last txStatisticsInterval packets and is in
-       milliseconds.
+       milliseconds. -1 indicated no packets sent.
       */
-    unsigned GetMinimumSendTime(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Sender).m_minimumPacketTime; }
+    int GetMinimumSendTime(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Sender).m_minimumPacketTime; }
 
     /**Get average time between received packets.
        This is averaged over the last rxStatisticsInterval packets and is in
-       milliseconds.
+       milliseconds. -1 indicated no packets received.
       */
-    unsigned GetAverageReceiveTime(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Receiver).m_averagePacketTime; }
+    int GetAverageReceiveTime(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Receiver).m_averagePacketTime; }
 
     /**Get maximum time between received packets.
        This is over the last rxStatisticsInterval packets and is in
-       milliseconds.
+       milliseconds. -1 indicated no packets received.
       */
-    unsigned GetMaximumReceiveTime(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Receiver).m_maximumPacketTime; }
+    int GetMaximumReceiveTime(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Receiver).m_maximumPacketTime; }
 
     /**Get minimum time between received packets.
        This is over the last rxStatisticsInterval packets and is in
-       milliseconds.
+       milliseconds. -1 indicated no packets received.
       */
-    unsigned GetMinimumReceiveTime(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Receiver).m_minimumPacketTime; }
+    int GetMinimumReceiveTime(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Receiver).m_minimumPacketTime; }
 
     /**Get averaged jitter time for received packets.
        This is the calculated statistical variance of the interarrival
-       time of received packets in milliseconds.
+       time of received packets in milliseconds. -1 indicated no packets received.
       */
-    unsigned GetAvgJitterTime(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Receiver).m_jitter; }
+    int GetAvgJitterTime(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Receiver).m_currentjitter; }
 
     /**Get averaged jitter time for received packets.
-       This is the maximum value of jitterLevel for the session.
+       This is the maximum value of jitterLevel for the session. -1 indicated no packets received.
       */
-    unsigned GetMaxJitterTime(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Receiver).m_maximumJitter; }
+    int GetMaxJitterTime(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Receiver).m_maximumJitter; }
 
     /**Get jitter time for received packets on remote.
        This is the calculated statistical variance of the interarrival
-       time of received packets in milliseconds.
+       time of received packets in milliseconds. -1 indicated no RTCP received.
       */
-    unsigned GetJitterTimeOnRemote(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Sender).m_jitter; }
+    int GetJitterTimeOnRemote(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Sender).m_currentjitter; }
 
     /**Get round trip time to remote.
        This is calculated according to the RFC 3550 algorithm.
       */
-    unsigned GetRoundTripTime() const { return m_roundTripTime; }
+    int GetRoundTripTime() const { return m_roundTripTime; }
   //@}
 
     /// Send BYE command
@@ -611,6 +611,8 @@ class OpalRTPSession : public OpalMediaSession
     unsigned            m_rxStatisticsInterval;
     OpalMediaFormat::RTCPFeedback m_feedback;
 
+    OpalJitterBuffer  * m_jitterBuffer;
+
 #if OPAL_RTP_FEC
     RTP_DataFrame::PayloadTypes m_redundencyPayloadType;
     RTP_DataFrame::PayloadTypes m_ulpFecPayloadType;
@@ -682,6 +684,11 @@ class OpalRTPSession : public OpalMediaSession
       PSimpleTimer       m_consecutiveOutOfOrderTimer;
       RTP_SequenceNumber m_nextOutOfOrderPacket;
       PSimpleTimer       m_waitOutOfOrderTimer;
+      PSimpleTimer       m_lateOutOfOrderAdaptTimer;
+      unsigned           m_lateOutOfOrderAdaptCount;
+      unsigned           m_lateOutOfOrderAdaptMax;
+      PTimeInterval      m_lateOutOfOrderAdaptBoost;
+      PTimeInterval      m_lateOutOfOrderAdaptPeriod;
       RTP_DataFrameList  m_pendingPackets;
 
       // Generating real time stamping in RTP packets
@@ -697,15 +704,15 @@ class OpalRTPSession : public OpalMediaSession
       uint64_t m_octets;
       unsigned m_senderReports;
       unsigned m_NACKs;
-      unsigned m_packetsLost;
+      int      m_packetsLost;
       unsigned m_packetsOutOfOrder;
-      unsigned m_packetsTooLate;
+      int      m_lateOutOfOrder;
 
-      unsigned m_averagePacketTime; // Milliseconds
-      unsigned m_maximumPacketTime; // Milliseconds
-      unsigned m_minimumPacketTime; // Milliseconds
-      unsigned m_jitter;            // Milliseconds
-      unsigned m_maximumJitter;     // Milliseconds
+      int      m_averagePacketTime; // Milliseconds
+      int      m_maximumPacketTime; // Milliseconds
+      int      m_minimumPacketTime; // Milliseconds
+      int      m_currentjitter;     // Milliseconds
+      int      m_maximumJitter;     // Milliseconds
       unsigned m_markerCount;
 
       // Working for calculating statistics
@@ -734,6 +741,7 @@ class OpalRTPSession : public OpalMediaSession
 #endif
 
       OpalJitterBuffer * m_jitterBuffer;
+      OpalJitterBuffer * GetJitterBuffer() const;
 
       PTRACE_THROTTLE(m_throttleSendData,3,20000);
       PTRACE_THROTTLE(m_throttleReceiveData,3,20000);
@@ -755,13 +763,13 @@ class OpalRTPSession : public OpalMediaSession
     virtual bool ResequenceOutOfOrderPackets(SyncSource & ssrc) const;
 
     /// Set up RTCP as per RFC rules
-    virtual bool InternalSendReport(RTP_ControlFrame & report, SyncSource * sender, bool includeReceivers, bool forced);
+    virtual bool InternalSendReport(RTP_ControlFrame & report, SyncSource & sender, bool includeReceivers, bool forced);
     virtual void InitialiseControlFrame(RTP_ControlFrame & frame, SyncSource & sender);
 
     // Some statitsics not SSRC related
     unsigned m_rtcpPacketsSent;
     unsigned m_rtcpPacketsReceived;
-    unsigned m_roundTripTime;
+    int      m_roundTripTime;
 
     PTimer m_reportTimer;
     PDECLARE_NOTIFIER(PTimer, OpalRTPSession, TimedSendReport);

@@ -135,8 +135,7 @@ OpalConnection::OpalConnection(OpalCall & call,
   , echoCanceler(NULL)
 #endif
 #if OPAL_PTLIB_DTMF
-  , m_minAudioJitterDelay(endpoint.GetManager().GetMinAudioJitterDelay())
-  , m_maxAudioJitterDelay(endpoint.GetManager().GetMaxAudioJitterDelay())
+  , m_jitterParams(endpoint.GetManager().GetJitterParameters())
   , m_rxBandwidthAvailable(endpoint.GetInitialBandwidth(OpalBandwidth::Rx))
   , m_txBandwidthAvailable(endpoint.GetInitialBandwidth(OpalBandwidth::Tx))
   , m_dtmfScaleMultiplier(1)
@@ -311,7 +310,7 @@ PBoolean OpalConnection::SetUpConnection()
   else if (ownerCall.IsEstablished()) {
     PTRACE(3, "Transfer of connection in call " << ownerCall);
     OnApplyStringOptions();
-    AutoStartMediaStreams();
+    AutoStartMediaStreams(true);
     InternalOnConnected();
   }
   else {
@@ -517,6 +516,10 @@ PBoolean OpalConnection::OnIncomingConnection(unsigned options, OpalConnection::
 
 PString OpalConnection::GetDestinationAddress()
 {
+  PSafePtr<OpalConnection> partyA = ownerCall.GetConnection(0);
+  if (partyA != this)
+    return partyA->GetDestinationAddress();
+
   if (!IsOriginating()) {
     if (!m_calledPartyNumber)
       return m_calledPartyNumber;
@@ -758,7 +761,7 @@ void OpalConnection::AutoStartMediaStreams(bool transfer)
                                        transfer);
   }
 
-  if (GetPhase() >= ConnectedPhase)
+  if (!transfer && GetPhase() >= ConnectedPhase)
     StartMediaStreams();
 }
 
@@ -1594,8 +1597,8 @@ void OpalConnection::SetAudioJitterDelay(unsigned minDelay, unsigned maxDelay)
     maxDelay = std::max(minDelay, std::min(maxDelay, 999U));
   }
 
-  m_minAudioJitterDelay = minDelay;
-  m_maxAudioJitterDelay = maxDelay;
+  m_jitterParams.m_minJitterDelay = minDelay;
+  m_jitterParams.m_maxJitterDelay = maxDelay;
 }
 
 
