@@ -981,6 +981,9 @@ class OpalTransport : public PSafeObject
       const PBYTEArray & data
     );
 
+    /// Indicate keep alive is active
+    bool HasKeepAlive() const { return !m_keepAliveData.IsEmpty() && m_keepAliveTimer.IsRunning(); }
+
     /**Attach a thread to the transport.
       */
     virtual void AttachThread(
@@ -1076,6 +1079,7 @@ class OpalTransportIP : public OpalTransport
       */
     virtual const PCaselessString & GetProtoPrefix() const = 0;
 
+    PIPAddress              m_binding;
     PIPSocketAddressAndPort m_localAP;  // Address of the local (NAT adjusted)
     PIPSocketAddressAndPort m_remoteAP; // Address of the remote host
 };
