@@ -288,7 +288,7 @@ bool OpalMediaOption::ValidateMerge(const OpalMediaOption & option) const
       return true;
   }
 
-  PTRACE(2, "MediaFormat\tValidation of merge for media option \"" << m_name << "\" failed.");
+  PTRACE(3, "MediaFormat\tValidation of merge for media option \"" << m_name << "\" failed.");
   return false;
 }
 

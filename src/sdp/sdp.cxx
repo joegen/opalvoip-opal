@@ -1279,7 +1279,7 @@ void SDPMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat)
   for (SDPMediaFormatList::iterator format = m_formats.begin(); format != m_formats.end(); ++format) {
     const OpalMediaFormat & sdpMediaFormat = format->GetMediaFormat();
     if (mediaFormat == sdpMediaFormat) {
-      PTRACE(2, "Not including " << mediaFormat << " as already included");
+      PTRACE(3, "Not including " << mediaFormat << " as already included");
       return;
     }
 
