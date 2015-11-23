@@ -1072,6 +1072,8 @@ bool OpalSDPConnection::OnReceivedAnswerSDP(const SDPSessionDescription & sdp, b
   unsigned mediaDescriptionCount = sdp.GetMediaDescriptions().GetSize();
 
   bool ok = false;
+  vector<bool> allowPauseRecvMediaStream(mediaDescriptionCount, true);
+  vector<bool> allowPauseSendMediaStream(mediaDescriptionCount, true);
   for (unsigned index = 1; index <= mediaDescriptionCount; ++index) {
     SDPMediaDescription * mediaDescription = sdp.GetMediaDescriptionByIndex(index);
     if (PAssertNULL(mediaDescription) == NULL)
@@ -1099,7 +1101,8 @@ bool OpalSDPConnection::OnReceivedAnswerSDP(const SDPSessionDescription & sdp, b
       }
     }
 
-    if (OnReceivedAnswerSDPSession(sdp, mediaDescription, sessionId, multipleFormats))
+    if (OnReceivedAnswerSDPSession(mediaDescription, sessionId, sdp.GetDirection(index),
+                                   multipleFormats, allowPauseRecvMediaStream, allowPauseSendMediaStream))
       ok = true;
     else {
       OpalMediaStreamPtr stream;
@@ -1127,10 +1130,12 @@ bool OpalSDPConnection::OnReceivedAnswerSDP(const SDPSessionDescription & sdp, b
 }
 
 
-bool OpalSDPConnection::OnReceivedAnswerSDPSession(const SDPSessionDescription & sdp,
-                                                   const SDPMediaDescription * mediaDescription,
+bool OpalSDPConnection::OnReceivedAnswerSDPSession(const SDPMediaDescription * mediaDescription,
                                                    unsigned sessionId,
-                                                   bool & multipleFormats)
+                                                   SDPMediaDescription::Direction otherSidesDir,
+                                                   bool & multipleFormats,
+                                                   vector<bool> & allowPauseRecvMediaStream,
+                                                   vector<bool> & allowPauseSendMediaStream)
 {
   if (!PAssert(mediaDescription != NULL, "SDP Media description list changed"))
     return false;
@@ -1190,16 +1195,16 @@ bool OpalSDPConnection::OnReceivedAnswerSDPSession(const SDPSessionDescription &
   }
 #endif // OPAL_SRTP
 
-  SDPMediaDescription::Direction otherSidesDir = sdp.GetDirection(sessionId);
-
   // Check if we had a stream and the remote has either changed the codec or
   // changed the direction of the stream
   OpalMediaStreamPtr sendStream = GetMediaStream(sessionId, false);
-  bool sendDisabled = (otherSidesDir&SDPMediaDescription::RecvOnly) == 0;
+  bool sendDisabled = allowPauseSendMediaStream[sessionId] && (otherSidesDir&SDPMediaDescription::RecvOnly) == 0;
+  allowPauseSendMediaStream[sessionId] = sendDisabled;
   PauseOrCloseMediaStream(sendStream, m_activeFormatList, false, sendDisabled);
 
   OpalMediaStreamPtr recvStream = GetMediaStream(sessionId, true);
-  bool recvDisabled = (otherSidesDir&SDPMediaDescription::SendOnly) == 0;
+  bool recvDisabled = allowPauseRecvMediaStream[sessionId] && (otherSidesDir&SDPMediaDescription::SendOnly) == 0;
+  allowPauseRecvMediaStream[sessionId] = recvDisabled;
   PauseOrCloseMediaStream(recvStream, m_activeFormatList, false, recvDisabled);
 
   /* After (possibly) closing streams, we now open them again if necessary,
