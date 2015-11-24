@@ -319,7 +319,7 @@ OpalManager::OpalManager()
   , m_transportIdleTime(0, 0, 1)  // Minute
   , m_natKeepAliveTime(0, 30)     // Seconds
 #if OPAL_ICE
-  , m_iceTimeout(0, 5)            // Seconds
+  , m_iceTimeout(0, 15)           // Seconds, as per RFC 5245
 #endif
 #if OPAL_SRTP
   , m_dtlsTimeout(0, 3)           // Seconds
