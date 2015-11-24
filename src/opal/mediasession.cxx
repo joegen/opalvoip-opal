@@ -678,7 +678,8 @@ void OpalMediaTransport::Transport::ThreadMain()
     else {
       switch (m_channel->GetErrorCode(PChannel::LastReadError)) {
         case PChannel::Unavailable:
-          HandleUnavailableError();
+          if (!HandleUnavailableError())
+            m_owner->InternalRxData(m_subchannel, PBYTEArray());
           break;
 
         case PChannel::BufferTooSmall:
@@ -727,12 +728,11 @@ bool OpalMediaTransport::Transport::HandleUnavailableError()
     return true;
   }
 
-  if (m_consecutiveUnavailableErrors < 10)
+  if (m_consecutiveUnavailableErrors != 10)
     return true;
 
   PTRACE(2, m_owner, *m_owner << m_subchannel << ' ' << m_owner->m_maxNoTransmitTime
          << " seconds of transmit fails to " << m_owner->GetRemoteAddress(m_subchannel));
-  Close();
   return false;
 }
 
