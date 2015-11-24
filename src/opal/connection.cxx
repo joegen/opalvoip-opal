@@ -1747,8 +1747,10 @@ bool OpalConnection::OnMediaFailed(unsigned sessionId, bool source)
 {
   if (IsReleased())
     return false;
+
   m_mediaSessionFailed.insert(sessionId*2 + source);
-  return GetEndPoint().GetManager().OnMediaFailed(*this, sessionId, source);
+  return GetEndPoint().GetManager().OnMediaFailed(*this, sessionId, source) &&
+         m_mediaSessionFailed.find(sessionId*2 + !source) != m_mediaSessionFailed.end();
 }
 
 

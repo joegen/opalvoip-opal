@@ -588,6 +588,7 @@ class OpalRTPSession : public OpalMediaSession
 
     PDECLARE_MediaReadNotifier(OpalRTPSession, OnRxDataPacket);
     PDECLARE_MediaReadNotifier(OpalRTPSession, OnRxControlPacket);
+    void CheckMediaFailed(SubChannels subchannel, Direction dir);
 
     virtual SendReceiveStatus WriteRawPDU(
       const BYTE * framePtr,
