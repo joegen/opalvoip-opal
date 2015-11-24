@@ -568,12 +568,17 @@ PString SIPRegisterHandler::CreateRegisterContact(const OpalTransportAddress & a
   SIPURL contact(m_addressOfRecord.GetUserName(), address, 0, m_addressOfRecord.GetScheme());
   contact.Sanitise(SIPURL::RegContactURI);
 
-  if (m_parameters.m_compatibility == SIPRegister::e_RFC5626) {
+  if (m_parameters.m_compatibility == SIPRegister::e_RFC5626 || m_parameters.m_compatibility == SIPRegister::e_Cisco) {
     if (m_parameters.m_instanceId.IsNULL())
       m_parameters.m_instanceId = PGloballyUniqueID();
 
-    contact.GetFieldParameters().Set("+sip.instance", "<urn:uuid:" + m_parameters.m_instanceId.AsString() + '>');
-    contact.GetFieldParameters().SetInteger("reg-id", m_rfc5626_reg_id);
+    PStringOptions & params = contact.GetFieldParameters();
+    params.Set("+sip.instance", "<urn:uuid:" + m_parameters.m_instanceId.AsString() + '>');
+    params.SetInteger("reg-id", m_rfc5626_reg_id);
+    if (m_parameters.m_compatibility == SIPRegister::e_Cisco) {
+      params.Set("+u.sip!devicename.ccm.features.cisco.com", "SEP000C299130BE");
+      params.SetInteger("+u.sip!model.ccm.cisco.com", 30016);
+    }
   }
 
   if (q >= 0)
@@ -634,6 +639,51 @@ SIPTransaction * SIPRegisterHandler::CreateTransaction(OpalTransport & transport
           case SIPRegister::e_RFC5626 :
             singleContact = true;
             localAddress = transport.GetInterface();
+            break;
+
+          case SIPRegister::e_Cisco :
+            singleContact = true;
+            localAddress = transport.GetInterface();
+            params.m_body.AddPart("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                                  "<x-cisco-remotecc-request>"
+                                  "<bulkregisterreq>"
+                                  "<contact all=\"true\">"
+                                  "<register></register>"
+                                  "</contact>"
+                                  "</bulkregisterreq>"
+                                  "</x-cisco-remotecc-request>",
+                                  "application/x-cisco-remotecc-request+xml",
+                                  "session;handling=optional");
+            params.m_body.AddPart("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                                  "<x-cisco-remotecc-request>"
+                                  " <optionsind>"
+                                  "  <combine max=\"6\">"
+                                  "   <remotecc>"
+                                  "    <status></status>"
+                                  "   </remotecc>"
+                                  "   <service-control></service-control>"
+                                  "  </combine>"
+                                  "  <dialog usage=\"hook status\">"
+                                  "   <unot></unot>"
+                                  "   <sub></sub>"
+                                  "  </dialog>"
+                                  "  <dialog usage=\"shared line\">"
+                                  "   <unot></unot>"
+                                  "   <sub></sub>"
+                                  "  </dialog>"
+                                  "  <presence usage=\"blf speed dial\">"
+                                  "   <unot></unot>"
+                                  "   <sub></sub>"
+                                  "  </presence>"
+                                  "  <joinreq></joinreq>"
+                                  "  <cfwdall-anyline>No</cfwdall-anyline>"
+                                  "  <coaching></coaching>"
+                                  "  <oosalarm></oosalarm>"
+                                  " </optionsind>"
+                                  "</x-cisco-remotecc-request>",
+                                  "application/x-cisco-remotecc-request+xml",
+                                  "session;handling=optional");
+            params.m_mime.AddMultiPartList(params.m_body);
             break;
         }
 

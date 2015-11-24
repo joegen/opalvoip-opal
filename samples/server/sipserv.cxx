@@ -49,6 +49,7 @@ static const char SIPAutoRegisterSkinnyKey[] = "SIP Auto-Register Skinny";
 static const char SIPAddressofRecordKey[] = "Address of Record";
 static const char SIPAuthIDKey[] = "Auth ID";
 static const char SIPPasswordKey[] = "Password";
+static const char SIPCompatibilityKey[] = "Compatibility";
 
 
 ///////////////////////////////////////////////////////////////
@@ -85,9 +86,14 @@ bool MySIPEndPoint::Configure(PConfig & cfg, PConfigPage * rsrc)
   // Registrars
   PHTTPCompositeField * registrationsFields = new PHTTPCompositeField(REGISTRATIONS_KEY, REGISTRATIONS_SECTION,
                                                   "Registration of SIP username at domain/hostname/IP address");
-  registrationsFields->Append(new PHTTPStringField(SIPAddressofRecordKey, 0, NULL, NULL, 1, 40));
-  registrationsFields->Append(new PHTTPStringField(SIPAuthIDKey, 0, NULL, NULL, 1, 25));
+  registrationsFields->Append(new PHTTPStringField(SIPAddressofRecordKey, 0, NULL, NULL, 1, 20));
+  registrationsFields->Append(new PHTTPStringField(SIPAuthIDKey, 0, NULL, NULL, 1, 15));
   registrationsFields->Append(new PHTTPPasswordField(SIPPasswordKey, 15));
+  static const char * const compatibilityModes[] = {
+      "Compliant", "Single Contact", "No Private", "ALGw", "RFC 5626", "Cisco"
+  };
+  registrationsFields->Append(new PHTTPEnumField<SIPRegister::CompatibilityModes>(SIPCompatibilityKey,
+                                                   PARRAYSIZE(compatibilityModes), compatibilityModes));
   PHTTPFieldArray * registrationsArray = new PHTTPFieldArray(registrationsFields, false);
   rsrc->Add(registrationsArray);
 
@@ -100,6 +106,7 @@ bool MySIPEndPoint::Configure(PConfig & cfg, PConfigPage * rsrc)
       if (!registrar.m_addressOfRecord.IsEmpty()) {
         registrar.m_authID = item[1].GetValue();
         registrar.m_password = item[2].GetValue();
+        registrar.m_compatibility = (SIPRegister::CompatibilityModes)item[3].GetValue().AsUnsigned();
         PString aor;
         if (Register(registrar, aor))
           PSYSTEMLOG(Info, "Started register of " << aor);
