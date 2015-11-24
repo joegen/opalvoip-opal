@@ -2545,8 +2545,9 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::WriteRawPDU(const BYTE * frame
 
 void OpalRTPSession::CheckMediaFailed(SubChannels subchannel, Direction dir)
 {
+  PTRACE(4, *this << "media failed for " << subchannel << ' ' << dir);
   if (subchannel == e_Data && m_connection.OnMediaFailed(m_sessionId, dir == e_Receiver)) {
-    PTRACE(4, *this << "aborting transport, queuing close of media session.");
+    PTRACE(3, *this << "aborting transport, queuing close of media session.");
     m_connection.GetEndPoint().GetManager().QueueDecoupledEvent(
                 new PSafeWorkNoArg<OpalRTPSession, bool>(this, &OpalRTPSession::Close));
   }

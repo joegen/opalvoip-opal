@@ -678,8 +678,7 @@ void OpalMediaTransport::Transport::ThreadMain()
     else {
       switch (m_channel->GetErrorCode(PChannel::LastReadError)) {
         case PChannel::Unavailable:
-          if (!HandleUnavailableError())
-            m_owner->InternalRxData(m_subchannel, PBYTEArray());
+          HandleUnavailableError();
           break;
 
         case PChannel::BufferTooSmall:
@@ -719,7 +718,7 @@ bool OpalMediaTransport::Transport::HandleUnavailableError()
 {
   if (++m_consecutiveUnavailableErrors == 1) {
     PTRACE(2, m_owner, *m_owner << m_subchannel << " port on remote not ready: " << m_owner->GetRemoteAddress(m_subchannel));
-    m_timeForUnavailableErrors = m_owner->m_maxNoTransmitTime;
+    m_timeForUnavailableErrors = m_channel->GetReadTimeout();
     return true;
   }
 
@@ -728,11 +727,12 @@ bool OpalMediaTransport::Transport::HandleUnavailableError()
     return true;
   }
 
-  if (m_consecutiveUnavailableErrors != 10)
+  if (m_consecutiveUnavailableErrors < 10)
     return true;
 
   PTRACE(2, m_owner, *m_owner << m_subchannel << ' ' << m_owner->m_maxNoTransmitTime
          << " seconds of transmit fails to " << m_owner->GetRemoteAddress(m_subchannel));
+  Close();
   return false;
 }
 
