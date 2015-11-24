@@ -1187,8 +1187,19 @@ void OpalSkinnyConnection::OpenMediaChannel(const MediaInfo & info)
 
   OpalMediaType mediaType = mediaFormat.GetMediaType();
 
-  if (info.m_sessionId == 0)
-    info.m_sessionId = GetNextSessionID(mediaType, info.m_receiver);
+  if (info.m_sessionId == 0) {
+    // Check for existing session, due to hold/resume
+    OpalMediaStreamPtr existingStream = GetMediaStream(mediaType, info.m_receiver);
+    if (existingStream == NULL)
+      existingStream = GetMediaStream(mediaType, !info.m_receiver);
+    if (existingStream == NULL) {
+      OpalMediaSession * existingSession = FindSessionByMediaType(mediaType);
+      if (existingSession != NULL)
+        info.m_sessionId = existingSession->GetSessionID();
+    }
+    if (info.m_sessionId == 0)
+      info.m_sessionId = GetNextSessionID(mediaType, info.m_receiver);
+  }
 
   OpalMediaSession * mediaSession = UseMediaSession(info.m_sessionId, mediaType);
   if (mediaSession == NULL) {
@@ -1374,8 +1385,10 @@ void OpalSkinnyConnection::DelayCloseMediaStream(OpalMediaStreamPtr mediaStream)
     before sending the "on hook" message for ending the call. This means that
     phantom re-INVITE or CLC gets sent when in gateway mode */
   for (PINDEX delay = 0; delay < 10; ++delay) {
-    if (IsReleased())
+    if (IsReleased()) {
+      PTRACE(3, "Released, not really closing stream " << *mediaStream);
       return;
+    }
     if (m_remoteHold) {
       PTRACE(3, "On HOLD, not really closing stream " << *mediaStream);
       return;
@@ -1383,6 +1396,7 @@ void OpalSkinnyConnection::DelayCloseMediaStream(OpalMediaStreamPtr mediaStream)
     PThread::Sleep(50);
   }
 
+  PTRACE(4, "Delayed close of media stream " << *mediaStream);
   mediaStream->Close();
 }
 
