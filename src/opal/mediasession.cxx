@@ -709,6 +709,7 @@ void OpalMediaTransport::Transport::ThreadMain()
     }
   }
 
+  m_owner->InternalRxData(m_subchannel, PBYTEArray());
   PTRACE(4, m_owner, *m_owner << m_subchannel << " media transport read thread ended");
 }
 
@@ -1123,7 +1124,7 @@ bool OpalUDPMediaTransport::Open(OpalMediaSession & session,
     PTRACE_CONTEXT_ID_TO(socket);
     PTimeInterval readTime = PMaxTimeInterval;
     if (subchannel == e_Media)
-      readTime = session.GetStringOptions().GetVar(OPAL_OPT_MEDIA_RX_TIMEOUT, manager.GetNoMediaTimeout());
+      readTime = GetMediaTimeout(session);
     socket.SetReadTimeout(readTime);
 
     // Increase internal buffer size on media UDP sockets
@@ -1132,6 +1133,12 @@ bool OpalUDPMediaTransport::Open(OpalMediaSession & session,
   }
 
   return true;
+}
+
+
+PTimeInterval OpalUDPMediaTransport::GetMediaTimeout(const OpalMediaSession & session) const
+{
+  return session.GetStringOptions().GetVar(OPAL_OPT_MEDIA_RX_TIMEOUT, session.GetConnection().GetEndPoint().GetManager().GetNoMediaTimeout());
 }
 
 

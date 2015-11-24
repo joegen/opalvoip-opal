@@ -68,6 +68,7 @@ class OpalICEMediaTransport : public OpalUDPMediaTransport
     ~OpalICEMediaTransport();
 
     virtual bool Open(OpalMediaSession & session, PINDEX count, const PString & localInterface, const OpalTransportAddress & remoteAddress);
+    virtual PTimeInterval GetMediaTimeout(const OpalMediaSession & session) const;
     virtual bool IsEstablished() const;
     virtual void InternalRxData(SubChannels subchannel, const PBYTEArray & data);
     virtual void SetCandidates(const PString & user, const PString & pass, const PNatCandidateList & candidates);
@@ -90,7 +91,6 @@ class OpalICEMediaTransport : public OpalUDPMediaTransport
     PString       m_localPassword;    // ICE password sent to remote
     PString       m_remoteUsername;   // ICE username expected from remote
     PString       m_remotePassword;   // ICE password expected from remote
-    PTimeInterval m_readTimeout;
     bool          m_promiscuous;
 
     enum CandidateStates
