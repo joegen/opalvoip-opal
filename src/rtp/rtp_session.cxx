@@ -2438,16 +2438,14 @@ bool OpalRTPSession::SetRemoteAddress(const OpalTransportAddress & remoteAddress
 }
 
 
-void OpalRTPSession::OnRxDataPacket(OpalMediaTransport & transport, PBYTEArray data)
+void OpalRTPSession::OnRxDataPacket(OpalMediaTransport &, PBYTEArray data)
 {
   PSafeLockReadWrite lock(*this);
   if (!lock.IsLocked())
     return;
 
   if (data.IsEmpty()) {
-    CheckMediaFailed(e_Data,e_Sender);
-    if (!transport.IsOpen())
-      CheckMediaFailed(e_Data, e_Receiver);
+    CheckMediaFailed(e_Data);
     return;
   }
 
@@ -2462,34 +2460,32 @@ void OpalRTPSession::OnRxDataPacket(OpalMediaTransport & transport, PBYTEArray d
   unsigned type = control.GetPayloadType();
   if (type >= RTP_ControlFrame::e_FirstValidPayloadType && type <= RTP_ControlFrame::e_LastValidPayloadType) {
     if (OnReceiveControl(control) == e_AbortTransport)
-      CheckMediaFailed(e_Control, e_Receiver);
+      CheckMediaFailed(e_Control);
   }
   else {
     RTP_DataFrame frame;
     frame.PBYTEArray::operator=(data);
     if (OnReceiveData(frame, data.GetSize()) == e_AbortTransport)
-      CheckMediaFailed(e_Data, e_Receiver);
+      CheckMediaFailed(e_Data);
   }
 }
 
 
-void OpalRTPSession::OnRxControlPacket(OpalMediaTransport & transport, PBYTEArray data)
+void OpalRTPSession::OnRxControlPacket(OpalMediaTransport &, PBYTEArray data)
 {
   PSafeLockReadWrite lock(*this);
   if (!lock.IsLocked())
     return;
 
   if (data.IsEmpty()) {
-    CheckMediaFailed(e_Data,e_Sender);
-    if (!transport.IsOpen())
-      CheckMediaFailed(e_Data, e_Receiver);
+    CheckMediaFailed(e_Control);
     return;
   }
 
   RTP_ControlFrame control(data, data.GetSize(), false);
   if (control.IsValid()) {
     if (OnReceiveControl(control) == e_AbortTransport)
-      CheckMediaFailed(e_Control, e_Receiver);
+      CheckMediaFailed(e_Control);
   }
   else {
     PTRACE_IF(2, data.GetSize() > 1 || m_rtcpPacketsReceived > 0,
@@ -2507,6 +2503,8 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::WriteData(RTP_DataFrame & fram
   SendReceiveStatus status = OnSendData(frame, rewrite);
   if (status == e_ProcessPacket)
     status = WriteRawPDU(frame.GetPointer(), frame.GetPacketSize(), e_Data, remote);
+  if (status == e_AbortTransport)
+    CheckMediaFailed(e_Data);
   return status;
 }
 
@@ -2526,6 +2524,8 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::WriteControl(RTP_ControlFrame 
   SendReceiveStatus status = OnSendControl(frame);
   if (status == e_ProcessPacket)
     status = WriteRawPDU(frame.GetPointer(), frame.GetPacketSize(), m_singlePortRx ? e_Data : e_Control, remote);
+  if (status == e_AbortTransport)
+    CheckMediaFailed(e_Control);
   return status;
 }
 
@@ -2543,10 +2543,12 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::WriteRawPDU(const BYTE * frame
 }
 
 
-void OpalRTPSession::CheckMediaFailed(SubChannels subchannel, Direction dir)
+void OpalRTPSession::CheckMediaFailed(SubChannels subchannel)
 {
-  PTRACE(4, *this << "media failed for " << subchannel << ' ' << dir);
-  if (subchannel == e_Data && m_connection.OnMediaFailed(m_sessionId, dir == e_Receiver)) {
+  PTRACE(4, *this << "media failed for " << subchannel);
+  /* Really should test if both data and control fail, but as it is unlikely we would
+     get one failed without the other, we don't bother. */
+  if (subchannel == e_Data && m_connection.OnMediaFailed(m_sessionId)) {
     PTRACE(3, *this << "aborting transport, queuing close of media session.");
     m_connection.GetEndPoint().GetManager().QueueDecoupledEvent(
                 new PSafeWorkNoArg<OpalRTPSession, bool>(this, &OpalRTPSession::Close));
