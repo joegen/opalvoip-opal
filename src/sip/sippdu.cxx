@@ -3220,6 +3220,8 @@ void SIPTransaction::SetParameters(const SIPParameters & params)
   if (!params.m_proxyAddress.IsEmpty())
     SetRoute(params.m_proxyAddress);
 
+  SetEntityBody(params.m_body.AsString());
+
   m_mime.AddMIME(params.m_mime);
 }
 

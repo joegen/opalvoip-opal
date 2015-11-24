@@ -849,6 +849,7 @@ struct SIPParameters
   PCaselessString m_contactAddress;
   PCaselessString m_interface;
   SIPMIMEInfo     m_mime;
+  PMultiPartList  m_body;
   PString         m_authID;
   PString         m_password;
   PString         m_realm;
@@ -1239,9 +1240,10 @@ class SIPRegister : public SIPTransaction
                                              is doing address transations, so we do not try
                                              to do it ourselves as well or it goes horribly
                                              wrong. */
-      e_RFC5626                         /**< Connect using RFC 5626 rules. Only a single
+      e_RFC5626,                        /**< Connect using RFC 5626 rules. Only a single
                                              contact is included and this will contain the
                                              m_instance field as it's GUID. */
+      e_Cisco                           /**< Special Cisco compatibility mode */
     );
 
     /// Registrar parameters
