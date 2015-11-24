@@ -1743,21 +1743,20 @@ void OpalConnection::OnStopMediaPatch(OpalMediaPatch & patch)
 }
 
 
-bool OpalConnection::OnMediaFailed(unsigned sessionId, bool source)
+bool OpalConnection::OnMediaFailed(unsigned sessionId)
 {
   if (IsReleased())
     return false;
 
-  m_mediaSessionFailed.insert(sessionId*2 + source);
-  return GetEndPoint().GetManager().OnMediaFailed(*this, sessionId, source) &&
-         m_mediaSessionFailed.find(sessionId*2 + !source) != m_mediaSessionFailed.end();
+  m_mediaSessionFailed.insert(sessionId);
+  return GetEndPoint().GetManager().OnMediaFailed(*this, sessionId);
 }
 
 
 bool OpalConnection::AllMediaFailed() const
 {
   for (OpalMediaStreamPtr mediaStream(mediaStreams, PSafeReference); mediaStream != NULL; ++mediaStream) {
-    if (m_mediaSessionFailed.find(mediaStream->GetSessionID() * 2 + mediaStream->IsSource()) == m_mediaSessionFailed.end()) {
+    if (m_mediaSessionFailed.find(mediaStream->GetSessionID()) == m_mediaSessionFailed.end()) {
       PTRACE(3, "Checking for all media failed: no, still have media stream " << *mediaStream << " for " << *this);
       return false;
     }

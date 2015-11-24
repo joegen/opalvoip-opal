@@ -1243,8 +1243,7 @@ class OpalManager : public PObject
       */
     virtual bool OnMediaFailed(
       OpalConnection & connection,  ///< Connection session is in
-      unsigned sessionId,           ///< Session ID of media that stopped.
-      bool source                   ///< Indicates the direction of stream.
+      unsigned sessionId            ///< Session ID of media that stopped.
     );
   //@}
 
@@ -2172,6 +2171,7 @@ class OpalManager : public PObject
 #endif
     P_REMOVE_VIRTUAL(bool,OnLocalIncomingCall(OpalCall &),false);
     P_REMOVE_VIRTUAL(bool,OnLocalOutgoingCall(OpalCall &),false);
+    P_REMOVE_VIRTUAL(bool,OnMediaFailed(OpalConnection &,unsigned,bool),false);
 };
 
 
