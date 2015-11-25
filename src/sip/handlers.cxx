@@ -576,8 +576,8 @@ PString SIPRegisterHandler::CreateRegisterContact(const OpalTransportAddress & a
     params.Set("+sip.instance", "<urn:uuid:" + m_parameters.m_instanceId.AsString() + '>');
     params.SetInteger("reg-id", m_rfc5626_reg_id);
     if (m_parameters.m_compatibility == SIPRegister::e_Cisco) {
-      params.Set("+u.sip!devicename.ccm.features.cisco.com", "SEP000C299130BE");
-      params.SetInteger("+u.sip!model.ccm.cisco.com", 30016);
+      params.Set("+u.sip!devicename.ccm.features.cisco.com", "\"SEP000C299130BE\"");
+      params.Set("+u.sip!model.ccm.cisco.com", "\"30016\"");
     }
   }
 
