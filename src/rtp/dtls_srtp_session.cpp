@@ -212,6 +212,29 @@ PSSLCertificateFingerprint OpalDTLSMediaTransport::GetLocalFingerprint(PSSLCerti
 }
 
 
+bool OpalDTLSMediaTransport::SetRemoteFingerprint(const PSSLCertificateFingerprint& fp)
+{
+  PSafeLockReadWrite lock(*this);
+  if (!lock.IsLocked())
+    return false;
+
+  if (m_remoteFingerprint == fp)
+    return false;
+
+  bool firstTime = !m_remoteFingerprint.IsValid();
+
+  m_remoteFingerprint = fp;
+
+  if (firstTime)
+    return false;
+
+  PTRACE(2, "Remote fingerprint changed, renegotiating DTLS");
+  for (vector<Transport>::iterator it = m_subchannels.begin(); it != m_subchannels.end(); ++it)
+    PerformHandshake(it->m_channel);
+  return true;
+}
+
+
 OpalDTLSMediaTransport::DTLSChannel * OpalDTLSMediaTransport::CreateDTLSChannel()
 {
   return new DTLSChannel(*this);
@@ -221,8 +244,12 @@ OpalDTLSMediaTransport::DTLSChannel * OpalDTLSMediaTransport::CreateDTLSChannel(
 void OpalDTLSMediaTransport::InternalOnStart(SubChannels subchannel)
 {
   OpalDTLSMediaTransportParent::InternalOnStart(subchannel);
+  PerformHandshake(GetChannel(subchannel));
+}
 
-  PChannel * baseChannel = GetChannel(subchannel);
+
+void OpalDTLSMediaTransport::PerformHandshake(PChannel * baseChannel)
+{
   if (baseChannel == NULL)
     return;
 
@@ -356,16 +383,17 @@ void OpalDTLSSRTPSession::SetRemoteFingerprint(const PSSLCertificateFingerprint&
   }
 
   OpalMediaTransportPtr transport = m_transport;
-  if (transport != NULL)
-    dynamic_cast<OpalDTLSMediaTransport &>(*transport).SetRemoteFingerprint(fp);
+  if (transport == NULL)
+    m_earlyRemoteFingerprint = fp;
+  else if (dynamic_cast<OpalDTLSMediaTransport &>(*transport).SetRemoteFingerprint(fp))
+    ApplyKeysToSRTP(*transport);
 
-  m_remoteFingerprint = fp;
 }
 
 
 OpalMediaTransport * OpalDTLSSRTPSession::CreateMediaTransport(const PString & name)
 {
-  return new OpalDTLSMediaTransport(name, m_passiveMode, m_remoteFingerprint);
+  return new OpalDTLSMediaTransport(name, m_passiveMode, m_earlyRemoteFingerprint);
 }
 
 
