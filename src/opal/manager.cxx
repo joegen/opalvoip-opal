@@ -319,7 +319,7 @@ OpalManager::OpalManager()
   , m_transportIdleTime(0, 0, 1)  // Minute
   , m_natKeepAliveTime(0, 30)     // Seconds
 #if OPAL_ICE
-  , m_iceTimeout(0, 5)            // Seconds
+  , m_iceTimeout(0, 15)           // Seconds, as per RFC 5245
 #endif
 #if OPAL_SRTP
   , m_dtlsTimeout(0, 3)           // Seconds
@@ -1470,7 +1470,7 @@ void OpalManager::OnStopMediaPatch(OpalConnection & connection, OpalMediaPatch &
 }
 
 
-bool OpalManager::OnMediaFailed(OpalConnection & connection, unsigned, bool)
+bool OpalManager::OnMediaFailed(OpalConnection & connection, unsigned)
 {
   if (connection.AllMediaFailed()) {
     PTRACE(2, "All media failed, releasing " << connection);
@@ -2055,16 +2055,25 @@ PBoolean OpalManager::TranslateIPAddress(PIPSocket::Address & localAddress,
 bool OpalManager::SetNATServer(const PString & method, const PString & server, bool activate, unsigned priority)
 {
   PNatMethod * natMethod = m_natMethods->GetMethodByName(method);
-  if (natMethod == NULL)
+  if (natMethod == NULL) {
+    PTRACE(2, "Unknown NAT method \"" << method << '"');
     return false;
+  }
 
   natMethod->Activate(activate);
   m_natMethods->SetMethodPriority(method, priority);
 
   natMethod->SetPortRanges(GetUDPPortRange().GetBase(), GetUDPPortRange().GetMax(),
                            GetRtpIpPortRange().GetBase(), GetRtpIpPortRange().GetMax());
-  if (!natMethod->SetServer(server) || !natMethod->Open(PIPSocket::GetDefaultIpAny()))
+  if (!natMethod->SetServer(server)) {
+    PTRACE(2, "Invalid server \"" << server << " for " << method << " NAT method");
     return false;
+  }
+
+  if (!natMethod->Open(PIPSocket::GetDefaultIpAny())) {
+    PTRACE(2, "Could not open server \"" << server << " for " << method << " NAT method");
+    return false;
+  }
 
   PTRACE(3, "NAT " << *natMethod);
   return true;

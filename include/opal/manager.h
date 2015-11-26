@@ -1243,8 +1243,7 @@ class OpalManager : public PObject
       */
     virtual bool OnMediaFailed(
       OpalConnection & connection,  ///< Connection session is in
-      unsigned sessionId,           ///< Session ID of media that stopped.
-      bool source                   ///< Indicates the direction of stream.
+      unsigned sessionId            ///< Session ID of media that stopped.
     );
   //@}
 
@@ -1588,9 +1587,11 @@ class OpalManager : public PObject
     ) const;
 
     // Backward compatibility
-    void SetTranslationAddress(const PString & addr) { SetNATServer("Fixed", addr); }
+    void SetTranslationAddress(const PString & addr) { SetNATServer(PNatMethod_Fixed::MethodName(), addr); }
+#if P_STUN
     PNatMethod::NatTypes SetSTUNServer(const PString & addr)
-	{ return SetNATServer("STUN", addr) ? GetNatMethods().GetMethodByName("STUN")->GetNatType() : PNatMethod::UnknownNat; }
+	{ return SetNATServer(PSTUNClient::MethodName(), addr) ? GetNatMethods().GetMethodByName(PSTUNClient::MethodName())->GetNatType() : PNatMethod::UnknownNat; }
+#endif // P_STUN
 #endif // OPAL_PTLIB_NAT
 
     /**Get the TCP port number base.
@@ -2172,6 +2173,7 @@ class OpalManager : public PObject
 #endif
     P_REMOVE_VIRTUAL(bool,OnLocalIncomingCall(OpalCall &),false);
     P_REMOVE_VIRTUAL(bool,OnLocalOutgoingCall(OpalCall &),false);
+    P_REMOVE_VIRTUAL(bool,OnMediaFailed(OpalConnection &,unsigned,bool),false);
 };
 
 

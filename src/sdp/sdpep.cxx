@@ -1072,8 +1072,8 @@ bool OpalSDPConnection::OnReceivedAnswerSDP(const SDPSessionDescription & sdp, b
   unsigned mediaDescriptionCount = sdp.GetMediaDescriptions().GetSize();
 
   bool ok = false;
-  vector<bool> allowPauseRecvMediaStream(mediaDescriptionCount, true);
-  vector<bool> allowPauseSendMediaStream(mediaDescriptionCount, true);
+  vector<bool> allowPauseRecvMediaStream(mediaDescriptionCount+1, true);
+  vector<bool> allowPauseSendMediaStream(mediaDescriptionCount+1, true);
   for (unsigned index = 1; index <= mediaDescriptionCount; ++index) {
     SDPMediaDescription * mediaDescription = sdp.GetMediaDescriptionByIndex(index);
     if (PAssertNULL(mediaDescription) == NULL)
