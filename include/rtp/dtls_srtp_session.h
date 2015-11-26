@@ -74,7 +74,7 @@ class OpalDTLSMediaTransport : public OpalDTLSMediaTransportParent
 
     void SetPassiveMode(bool passive) { m_passiveMode = passive; }
     PSSLCertificateFingerprint GetLocalFingerprint(PSSLCertificateFingerprint::HashType hashType) const;
-    void SetRemoteFingerprint(const PSSLCertificateFingerprint& fp) { m_remoteFingerprint = fp; }
+    bool SetRemoteFingerprint(const PSSLCertificateFingerprint& fp);
 
     class DTLSChannel : public PSSLChannelDTLS
     {
@@ -94,6 +94,7 @@ class OpalDTLSMediaTransport : public OpalDTLSMediaTransportParent
 
   protected:
     virtual void InternalOnStart(SubChannels subchannel);
+    virtual void PerformHandshake(PChannel * baseChannel);
     virtual DTLSChannel * CreateDTLSChannel();
     PDECLARE_SSLVerifyNotifier(OpalDTLSMediaTransport, OnVerify);
 
@@ -132,7 +133,7 @@ class OpalDTLSSRTPSession : public OpalSRTPSession
     virtual OpalMediaTransport * CreateMediaTransport(const PString & name);
 
     bool                       m_passiveMode;
-    PSSLCertificateFingerprint m_remoteFingerprint;
+    PSSLCertificateFingerprint m_earlyRemoteFingerprint;
 };
 
 
