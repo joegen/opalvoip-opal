@@ -776,6 +776,13 @@ void SIPRegisterHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & re
      original as well as the extra Contact. But it doesn't, so we have to deal.
      */
   for (SIPURLList::iterator reply = replyContacts.begin(); reply != replyContacts.end(); ) {
+    PStringOptions & params = reply->GetFieldParameters();
+    // More Cisco idiocy
+    for (PStringOptions::iterator it = params.begin(); it != params.end(); ++it) {
+      if (it->first.Find("cisco.com") != P_MAX_INDEX)
+        it->second = it->second.ToLiteral();
+    }
+
     if (reply->GetTransportAddress() == externalAddress) {
       externalAddress.MakeEmpty(); // Clear this so no further action taken
       m_externalAddress.MakeEmpty();
