@@ -684,6 +684,11 @@ class OpalRTPSession : public OpalMediaSession
       PSimpleTimer       m_consecutiveOutOfOrderTimer;
       RTP_SequenceNumber m_nextOutOfOrderPacket;
       PSimpleTimer       m_waitOutOfOrderTimer;
+      PSimpleTimer       m_lateOutOfOrderAdaptTimer;
+      unsigned           m_lateOutOfOrderAdaptCount;
+      unsigned           m_lateOutOfOrderAdaptMax;
+      PTimeInterval      m_lateOutOfOrderAdaptBoost;
+      PTimeInterval      m_lateOutOfOrderAdaptPeriod;
       RTP_DataFrameList  m_pendingPackets;
 
       // Generating real time stamping in RTP packets

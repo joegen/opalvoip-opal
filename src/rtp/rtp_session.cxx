@@ -300,6 +300,10 @@ OpalRTPSession::SyncSource::SyncSource(OpalRTPSession & session, RTP_SyncSourceI
   , m_lastTSTOSequenceNumber(0)
   , m_consecutiveOutOfOrderPackets(0)
   , m_nextOutOfOrderPacket(0)
+  , m_lateOutOfOrderAdaptCount(0)
+  , m_lateOutOfOrderAdaptMax(2)
+  , m_lateOutOfOrderAdaptBoost(10)
+  , m_lateOutOfOrderAdaptPeriod(0, 1)
   , m_reportTimestamp(0)
   , m_reportAbsoluteTime(0)
   , m_synthesizeAbsTime(true)
@@ -530,7 +534,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveData(RTP_
   RTP_SequenceNumber sequenceDelta = sequenceNumber - expectedSequenceNumber;
 
   if (newData && !m_pendingPackets.empty() && sequenceNumber == expectedSequenceNumber) {
-    PTRACE(5, &m_session, *this << ", received out of order packet " << sequenceNumber);
+    PTRACE(5, &m_session, *this << "received out of order packet " << sequenceNumber);
     ++m_packetsOutOfOrder; // it arrived after all!
   }
 
@@ -557,6 +561,19 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveData(RTP_
   else if (sequenceDelta > SequenceReorderThreshold) {
     PTRACE(3, &m_session, *this << "late out of order packet, got " << sequenceNumber << " expected " << expectedSequenceNumber);
     ++m_packetsTooLate;
+
+    // If get multiple late out of order packet inside a period of time
+    bool running = m_lateOutOfOrderAdaptTimer.IsRunning();
+    if (running && ++m_lateOutOfOrderAdaptCount >= m_lateOutOfOrderAdaptMax) {
+      PTimeInterval timeout = m_session.GetOutOfOrderWaitTime() + m_lateOutOfOrderAdaptBoost;
+      m_session.SetOutOfOrderWaitTime(timeout);
+      PTRACE(3, &m_session, *this << " increased out of order packet timeout to " << timeout);
+      running = false;
+    }
+    if (!running) {
+      m_lateOutOfOrderAdaptTimer = m_lateOutOfOrderAdaptPeriod;
+      m_lateOutOfOrderAdaptCount = 0;
+    }
   }
   else if (sequenceDelta > SequenceRestartThreshold) {
     // Check for where sequence numbers suddenly start incrementing from a different base.
