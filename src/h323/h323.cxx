@@ -358,6 +358,7 @@ void H323Connection::OnReleased()
   if (m_signallingChannel != NULL) {
     if (m_maintainConnection) {
       PTRACE(4, "H323\tMaintaining signalling channel.");
+      m_signallingChannel->SetReadTimeout(MonitorCallStartTime);
       m_signallingChannel->AttachThread(NULL);
     }
     else {
@@ -471,6 +472,10 @@ void H323Connection::HandleSignallingChannel()
       break;
     }
     else {
+      // On way out already, just exit thread on timeout
+      if (IsReleased())
+        break;
+
       switch (connectionState) {
         case AwaitingSignalConnect :
           // Had time out waiting for remote to send a CONNECT
