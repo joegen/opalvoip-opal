@@ -301,8 +301,15 @@ OpalTransportPtr SIPEndPoint::GetTransport(const SIPTransactionOwner & transacto
 
         PSafePtr<SIPRegisterHandler> handler = PSafePtrCast<SIPHandler, SIPRegisterHandler>(activeSIPHandlers.FindSIPHandlerByDomain(domain, SIP_PDU::Method_REGISTER, PSafeReadOnly));
 
-        if (handler != NULL && handler->GetParams().m_compatibility == SIPRegister::e_RFC5626)
-          keepAliveType = KeepAliveByCRLF;
+        if (handler != NULL) {
+          switch (handler->GetParams().m_compatibility) {
+            case SIPRegister::e_RFC5626:
+            case SIPRegister::e_Cisco:
+              keepAliveType = KeepAliveByCRLF;
+            default :
+              break;
+          }
+        }
 
         // Lock it again, as the rest of this must be atomic
         m_transportsTable.GetMutex().Wait();
