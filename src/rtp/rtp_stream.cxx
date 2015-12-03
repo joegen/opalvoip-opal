@@ -300,7 +300,7 @@ PBoolean OpalRTPMediaStream::ReadPacket(RTP_DataFrame & packet)
     if (packetTime > 0)
       timestamp += packetTime;
     else
-      timestamp += m_frameTime;
+      timestamp += ((20*GetMediaFormat().GetTimeUnits() + m_frameTime - 1)/m_frameTime) * m_frameTime;
     packet.SetTimestamp(timestamp);
   }
 
