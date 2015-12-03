@@ -644,6 +644,7 @@ SIPTransaction * SIPRegisterHandler::CreateTransaction(OpalTransport & transport
           case SIPRegister::e_Cisco :
             singleContact = true;
             localAddress = transport.GetInterface();
+            params.m_body.RemoveAll();
             params.m_body.AddPart("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                                   "<x-cisco-remotecc-request>"
                                   "<bulkregisterreq>"
@@ -683,7 +684,6 @@ SIPTransaction * SIPRegisterHandler::CreateTransaction(OpalTransport & transport
                                   "</x-cisco-remotecc-request>",
                                   "application/x-cisco-remotecc-request+xml",
                                   "session;handling=optional");
-            params.m_mime.AddMultiPartList(params.m_body);
             break;
         }
 

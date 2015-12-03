@@ -1533,7 +1533,6 @@ class SIPMessage : public SIPTransaction
 
       PCaselessString   m_contentType;
       PString           m_id;
-      PString           m_body;
 #if OPAL_HAS_IM
       OpalIM::MessageID m_messageId;
 #endif
@@ -1555,8 +1554,6 @@ class SIPMessage : public SIPTransaction
     const SIPURL & GetLocalAddress() const { return m_localAddress; }
 
   private:
-    void Construct(const Params & params);
-
     Params m_parameters;
     SIPURL m_localAddress;
 };
@@ -1580,7 +1577,6 @@ class SIPOptions : public SIPTransaction
 
       PCaselessString m_acceptContent;
       PCaselessString m_contentType;
-      PString         m_body;
     };
 
     SIPOptions(
@@ -1608,17 +1604,14 @@ class SIPInfo : public SIPTransaction
     PCLASSINFO(SIPInfo, SIPTransaction);
     
   public:
-    struct Params
+    struct Params : public SIPParameters
     {
       Params(const PString & contentType = PString::Empty(),
              const PString & body = PString::Empty())
-        : m_contentType(contentType)
-        , m_body(body)
       {
+        if (!contentType.IsEmpty() || !body.IsEmpty())
+          m_body.AddPart(body, contentType);
       }
-
-      PCaselessString m_contentType;
-      PString         m_body;
     };
 
     SIPInfo(
