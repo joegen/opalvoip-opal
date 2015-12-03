@@ -1248,6 +1248,23 @@ void SIPEndPoint::OnTransactionFailed(SIPTransaction &)
 }
 
 
+bool SIPEndPoint::OnReceivedREFER(SIP_PDU & request)
+{
+  // REFER outside of a connect dialog is bizarre, but that's Cisco for you
+
+  SIPURL to = request.GetMIME().GetTo();
+  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(to, SIP_PDU::Method_REGISTER, PSafeReference);
+  if (handler == NULL || dynamic_cast<SIPRegisterHandler *>(&*handler)->GetParams().m_compatibility != SIPRegister::e_Cisco) {
+    PTRACE(3, "Could not find a Cisco REGISTER corresponding to the REFER " << to);
+    return false; // Returns method not allowed
+  }
+
+  SIPResponse * response = new SIPResponse(*this, request, SIP_PDU::Successful_OK);
+  response->Send();
+  return true;
+}
+
+
 bool SIPEndPoint::OnReceivedNOTIFY(SIP_PDU & request)
 {
   const SIPMIMEInfo & mime = request.GetMIME();
@@ -2331,6 +2348,11 @@ void SIP_PDU_Work::Work()
       if (m_endpoint.OnReceivedSUBSCRIBE(*m_pdu, NULL))
         sendResponse = false;
       break;
+
+    case SIP_PDU::Method_REFER :
+       if (m_endpoint.OnReceivedREFER(*m_pdu))
+        sendResponse = false;
+       break;
 
     case SIP_PDU::Method_NOTIFY :
        if (m_endpoint.OnReceivedNOTIFY(*m_pdu))
