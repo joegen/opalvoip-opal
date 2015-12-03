@@ -454,12 +454,15 @@ class H323RasPDU : public H225_RasMessage, public H323TransactionPDU
     H225_InfoRequestNak          & BuildInfoRequestNak(unsigned seqNum, unsigned reason = H225_InfoRequestNakReason::e_undefinedReason);
     H225_ServiceControlIndication& BuildServiceControlIndication(unsigned seqNum, const OpalGloballyUniqueID * id = NULL);
     H225_ServiceControlResponse  & BuildServiceControlResponse(unsigned seqNum);
+    H225_NonStandardMessage      & BuildNonStandardMessage(unsigned seqNum, const PString & identifier, const PBYTEArray & data);
     H225_UnknownMessageResponse  & BuildUnknownMessageResponse(unsigned seqNum);
     H225_RequestInProgress       & BuildRequestInProgress(unsigned seqNum, unsigned delay);
 };
 
 
 /////////////////////////////////////////////////////////////////////////////
+
+bool H323SetNonStandard(H225_NonStandardParameter & param, const PString & identifier, const PBYTEArray & data);
 
 void H323SetAliasAddresses(const H323TransportAddressArray & addresses, H225_ArrayOf_AliasAddress & aliases);
 void H323SetAliasAddresses(const PStringArray & names, H225_ArrayOf_AliasAddress & aliases, int tag = -1);

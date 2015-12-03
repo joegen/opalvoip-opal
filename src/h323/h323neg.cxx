@@ -896,8 +896,9 @@ H323Channel * H245NegLogicalChannel::GetChannel() const
 
 H245NegLogicalChannels::H245NegLogicalChannels(H323EndPoint & end,
                                                H323Connection & conn)
-  : H245Negotiator(end, conn),
-    lastChannelNumber(100, false)
+  : H245Negotiator(end, conn)
+  , m_lastChannelNumberToRemote(100, false)
+  , m_lastChannelNumberFromRemote(100, true)
 {
 }
 
@@ -913,10 +914,8 @@ PBoolean H245NegLogicalChannels::Open(const H323Capability & capability,
                                   unsigned replacementFor,
                                   OpalMediaStreamPtr mediaStream)
 {
-  lastChannelNumber++;
-
-  H245NegLogicalChannel * negChan = new H245NegLogicalChannel(endpoint, connection, lastChannelNumber);
-  channels.SetAt(lastChannelNumber, negChan);
+  H245NegLogicalChannel * negChan = new H245NegLogicalChannel(endpoint, connection, GetNextChannelNumber());
+  channels.SetAt(negChan->channelNumber, negChan);
 
   return negChan->Open(capability, sessionID, replacementFor, mediaStream);
 }
@@ -1059,8 +1058,9 @@ PBoolean H245NegLogicalChannels::HandleRequestCloseRelease(const H245_RequestCha
 }
 
 
-H323ChannelNumber H245NegLogicalChannels::GetNextChannelNumber()
+H323ChannelNumber H245NegLogicalChannels::GetNextChannelNumber(bool fromRemote)
 {
+  H323ChannelNumber & lastChannelNumber = fromRemote ? m_lastChannelNumberFromRemote : m_lastChannelNumberToRemote;
   lastChannelNumber++;
   return lastChannelNumber;
 }
@@ -1086,13 +1086,12 @@ H245NegLogicalChannel * H245NegLogicalChannels::FindNegLogicalChannel(unsigned c
 }
 
 
-H323Channel * H245NegLogicalChannels::FindChannelBySession(unsigned rtpSessionId,
-                                                           PBoolean fromRemote)
+H323Channel * H245NegLogicalChannels::FindChannelBySession(unsigned rtpSessionId, bool fromRemote, bool anyState)
 {
   H323Channel::Directions desiredDirection = fromRemote ? H323Channel::IsReceiver : H323Channel::IsTransmitter;
   for (H245LogicalChannelDict::iterator it = channels.begin(); it != channels.end(); ++it) {
     H245NegLogicalChannel & logChan = it->second;
-    if (logChan.IsAwaitingEstablishment() || logChan.IsEstablished()) {
+    if (anyState || logChan.IsAwaitingEstablishment() || logChan.IsEstablished()) {
       H323Channel * channel = logChan.GetChannel();
       if (channel != NULL && (rtpSessionId == 0 || channel->GetSessionID() == rtpSessionId) &&
                                                    channel->GetDirection() == desiredDirection)

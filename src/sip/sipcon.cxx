@@ -3378,8 +3378,7 @@ PBoolean SIPConnection::SendUserInputString(const PString & value)
 {
   if (GetRealSendUserInputMode() == SendUserInputAsString) {
     SIPInfo::Params params;
-    params.m_contentType = ApplicationDTMFKey;
-    params.m_body = value;
+    params.m_body.AddPart(value, ApplicationDTMFKey);
     if (SendINFO(params))
       return true;
   }
@@ -3402,16 +3401,14 @@ PBoolean SIPConnection::SendUserInputTone(char tone, unsigned duration)
   switch (mode) {
     case SendUserInputAsTone :
       {
-        params.m_contentType = ApplicationDTMFRelayKey;
         PStringStream strm;
         strm << "Signal= " << tone << "\r\n" << "Duration= " << duration << "\r\n";  // spaces are important. Who can guess why?
-        params.m_body = strm;
+        params.m_body.Set(strm, ApplicationDTMFRelayKey);
       }
       break;
 
     case SendUserInputAsString :
-      params.m_contentType = ApplicationDTMFKey;
-      params.m_body = tone;
+      params.m_body.Set(PString(tone), ApplicationDTMFKey);
       break;
 
     default :

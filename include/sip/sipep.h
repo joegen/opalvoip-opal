@@ -268,6 +268,13 @@ class SIPEndPoint : public OpalSDPEndPoint
       SIP_PDU * pdu
     );
 
+    /**Handle an incoming REFER PDU.
+       @return true if handled and response sent.
+      */
+    virtual bool OnReceivedREFER(
+      SIP_PDU & request
+    );
+
     /**Handle an incoming NOTIFY PDU.
        @return true if handled and response sent.
       */

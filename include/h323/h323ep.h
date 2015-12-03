@@ -91,6 +91,7 @@ class H323EndPoint : public OpalRTPEndPoint
     enum {
       DefaultTcpSignalPort = 1720
     };
+    static const OpalProductInfo & AvayaPhone();
 
   /**@name Construction */
   //@{
@@ -940,7 +941,7 @@ class H323EndPoint : public OpalRTPEndPoint
     /**Get the default H.245 tunneling mode.
       */
     PBoolean IsH245TunnelingDisabled() const
-      { return disableH245Tunneling; }
+      { return disableH245Tunneling || GetProductInfo() == AvayaPhone(); }
 
     /**Set the default H.245 tunneling mode.
       */
@@ -974,7 +975,7 @@ class H323EndPoint : public OpalRTPEndPoint
       * @return true if h245 is disabled 
       */
     PBoolean IsH245Disabled() const
-    { return m_bH245Disabled; }
+    { return m_bH245Disabled || GetProductInfo() == AvayaPhone(); }
 
     /**Disable/Enable H.245, used at least for h450.7 calls
      * @param  bH245Disabled true if h245 has to be disabled 
