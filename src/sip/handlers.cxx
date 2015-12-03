@@ -609,8 +609,11 @@ SIPTransaction * SIPRegisterHandler::CreateTransaction(OpalTransport & transport
     params.m_expire = GetExpire();
 
     if (params.m_contactAddress.IsEmpty()) {
-      if (GetState() == Refreshing && !m_contactAddresses.empty())
+      if (GetState() == Refreshing && !m_contactAddresses.empty()) {
         params.m_contactAddress = m_contactAddresses.ToString();
+        if (params.m_compatibility == SIPRegister::e_Cisco)
+          params.m_body.RemoveAll();
+      }
       else {
         bool singleContact;
         PString localAddress;
