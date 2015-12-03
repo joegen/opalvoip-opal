@@ -1907,6 +1907,7 @@ void SIP_PDU::SetTransport(const OpalTransportPtr & transport)
     return;
 
   if (m_transport != NULL) {
+    PTRACE_IF(3, transport == NULL, "Setting PDU transport to NULL: 0x" << this << ' ' << *this);
     PTRACE(5, "Dereferenced transport 0x" << m_transport << " from 0x" << this << ' ' << *this);
     m_transport->Dereference();
   }
