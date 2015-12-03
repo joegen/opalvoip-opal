@@ -601,6 +601,27 @@ bool H323Gatekeeper::RegistrationRequest(bool autoReg, bool didGkDiscovery, bool
       rrq.m_callCreditCapability.IncludeOptionalField(H225_CallCreditCapability::e_canEnforceDurationLimit);
       rrq.m_callCreditCapability.m_canEnforceDurationLimit = true;
     }
+
+    if (endpoint.GetProductInfo() == H323EndPoint::AvayaPhone()) {
+      PTRACE(4, "Adding Avaya IP Phone non standard data to registration");
+      rrq.IncludeOptionalField(H225_RegistrationRequest::e_nonStandardData);
+      rrq.m_nonStandardData.m_nonStandardIdentifier.SetTag(H225_NonStandardIdentifier::e_object);
+      PASN_ObjectId & nonStandardIdentifier = rrq.m_nonStandardData.m_nonStandardIdentifier;
+      nonStandardIdentifier = H323EndPoint::AvayaPhone().oid + ".1";
+#pragma pack(1)
+      struct
+      {
+		  BYTE unknown1[13];
+		  PEthSocket::Address macAddress;
+		  BYTE unknown2[12];
+      } data = {
+        { 0x0b, 0x81, 0x01, 0x00, 0x24, 0x1e, 0x89, 0x00, 0x01, 0x20, 0x01, 0x00, 0x06 },    // force logout = 0x0b no force logout = 0x09
+        PIPSocket::GetInterfaceMACAddress(),
+        { 0x01, 0x00, 0x05, 0xc0, 0xff, 0xff, 0xff, 0xff, 0x01, 0x80, 0x01, 0x00 }
+      };
+#pragma pack()
+      rrq.m_nonStandardData.m_data = PBYTEArray((const BYTE *)&data, sizeof(data), false);
+    }
   }
 
   Request request(rrq.m_requestSeqNum, pdu);
@@ -671,6 +692,8 @@ PBoolean H323Gatekeeper::OnReceiveRegistrationConfirm(const H225_RegistrationCon
   // If gk does not include timetoLive then we assume it accepted what we offered
   if (rcf.HasOptionalField(H225_RegistrationConfirm::e_timeToLive))
     m_currentTimeToLive = AdjustTimeout(rcf.m_timeToLive);
+  else if (endpoint.GetProductInfo() == H323EndPoint::AvayaPhone())
+    m_currentTimeToLive = 0; // Avaya IP emulation cannot handle lightweight RRQ, so don't
   else
     m_currentTimeToLive = endpoint.GetGatekeeperTimeToLive();
 
@@ -853,11 +876,25 @@ PTimeInterval H323Gatekeeper::InternalRegister()
     didGkDiscovery = true;
   }
 
-  if (RegistrationRequest(m_autoReregister, didGkDiscovery, !m_forceRegister))
+  if (!RegistrationRequest(m_autoReregister, didGkDiscovery, !m_forceRegister)) {
+    PTRACE_IF(2, !m_forceRegister, "Time To Live reregistration failed, retrying in " << OffLineRetryTime);
+    return OffLineRetryTime;
+  }
+
+  if (endpoint.GetProductInfo() != H323EndPoint::AvayaPhone())
     return m_currentTimeToLive;
 
-  PTRACE_IF(2, !m_forceRegister, "Time To Live reregistration failed, retrying in " << OffLineRetryTime);
-  return OffLineRetryTime;
+  PString oid = H323EndPoint::AvayaPhone().oid + ".10";
+  PBYTEArray reply;
+
+  static const BYTE msg1[] = { 0x40, 0x10, 0x7f, 0x00, 0x00, 0x27, 0x00 };
+  NonStandardMessage(oid, PBYTEArray(msg1, sizeof(msg1), false), reply);
+
+  PTRACE(3, "Starting Avaya IP Phone registration call");
+  OpalConnection::StringOptions options;
+  options.Set(OPAL_OPT_CALLING_PARTY_NAME, m_aliases[0]);
+  endpoint.GetManager().SetUpCall("ivr:", "h323:register", NULL, 0, &options);
+  return m_currentTimeToLive;
 }
 
 
@@ -905,6 +942,23 @@ PBoolean H323Gatekeeper::UnregistrationRequest(int reason)
   if (reason >= 0) {
     urq.IncludeOptionalField(H225_UnregistrationRequest::e_reason);
     urq.m_reason = reason;
+  }
+
+  if (endpoint.GetProductInfo() == H323EndPoint::AvayaPhone()) {
+    PTRACE(4, "Adding Avaya IP Phone non standard data to unregistration");
+    urq.IncludeOptionalField(H225_UnregistrationRequest::e_nonStandardData);
+    urq.m_nonStandardData.m_nonStandardIdentifier.SetTag(H225_NonStandardIdentifier::e_object);
+    PASN_ObjectId & nonStandardIdentifier = urq.m_nonStandardData.m_nonStandardIdentifier;
+    nonStandardIdentifier = H323EndPoint::AvayaPhone().oid + ".1";
+#pragma pack(1)
+    struct
+    {
+      BYTE unknown1[1];
+    } data = {
+      { 0x10 }
+    };
+#pragma pack()
+    urq.m_nonStandardData.m_data = PBYTEArray((const BYTE *)&data, sizeof(data), false);
   }
 
   Request request(urq.m_requestSeqNum, pdu);
@@ -1890,6 +1944,37 @@ void H323Gatekeeper::OnTerminalAliasChanged()
   // Do a non-lightweight RRQ. Treat the GK as unregistered and immediately send a RRQ
   SetRegistrationFailReason(UnregisteredLocally);
   ReRegisterNow();
+}
+
+
+bool H323Gatekeeper::NonStandardMessage(const PString & identifer, const PBYTEArray & outData, PBYTEArray & replyData)
+{
+  H323RasPDU pdu;
+  H225_NonStandardMessage & nsm = pdu.BuildNonStandardMessage(GetNextSequenceNumber(), identifer, outData);
+
+  Request request(nsm.m_requestSeqNum, pdu);  
+  request.responseInfo = &replyData;
+  return MakeRequest(request);
+}
+
+
+bool H323Gatekeeper::SendNonStandardMessage(const PString & identifer, const PBYTEArray & outData)
+{
+  H323RasPDU pdu;
+  pdu.BuildNonStandardMessage(GetNextSequenceNumber(), identifer, outData);
+  return WritePDU(pdu);
+}
+
+
+PBoolean H323Gatekeeper::OnReceiveNonStandardMessage(const H225_NonStandardMessage & nsm)
+{
+  if (!H225_RAS::OnReceiveNonStandardMessage(nsm))
+    return false;
+
+  if (lastRequest->responseInfo != NULL)
+    *(PBYTEArray *)lastRequest->responseInfo = nsm.m_nonStandardData.m_data;
+
+  return true;
 }
 
 

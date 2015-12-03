@@ -3220,6 +3220,12 @@ void SIPTransaction::SetParameters(const SIPParameters & params)
   if (!params.m_proxyAddress.IsEmpty())
     SetRoute(params.m_proxyAddress);
 
+  if (!params.m_body.IsEmpty()) {
+    PMultiPartList body = params.m_body;
+    m_mime.AddMultiPartList(body);
+    SetEntityBody(body.AsString());
+  }
+
   m_mime.AddMIME(params.m_mime);
 }
 
@@ -4278,7 +4284,7 @@ SIPMessage::SIPMessage(SIPTransactionOwner & owner,
 
   InitialiseHeaders(addr, addr, m_localAddress, params.m_id, GetEndPoint().GetNextCSeq());
 
-  Construct(params);
+  SetParameters(m_parameters);
 
   GetEndPoint().AdjustToRegistration(*this);
 }
@@ -4288,18 +4294,7 @@ SIPMessage::SIPMessage(SIPConnection & conn, const Params & params)
   : SIPTransaction(Method_MESSAGE, &conn, NULL)
   , m_parameters(params)
 {
-  Construct(params);
-}
-
-
-void SIPMessage::Construct(const Params & params)
-{
-  if (!params.m_contentType.IsEmpty()) {
-    m_mime.SetContentType(params.m_contentType);
-    m_entityBody = params.m_body;
-  }
-
-  SetParameters(params);
+  SetParameters(m_parameters);
 }
 
 
@@ -4345,11 +4340,6 @@ void SIPOptions::Construct(const Params & params)
   SetAllow(m_owner->GetAllowedMethods());
   m_mime.SetAccept(params.m_acceptContent);
 
-  if (!params.m_contentType.IsEmpty()) {
-    m_mime.SetContentType(params.m_contentType);
-    m_entityBody = params.m_body;
-  }
-
   SetParameters(params);
 }
 
@@ -4365,10 +4355,7 @@ SIPTransaction * SIPOptions::CreateDuplicate() const
 SIPInfo::SIPInfo(SIPConnection & connection, const Params & params)
   : SIPTransaction(Method_INFO, &connection, NULL)
 {
-  if (!params.m_contentType.IsEmpty()) {
-    m_mime.SetContentType(params.m_contentType);
-    m_entityBody = params.m_body;
-  }
+  SetParameters(params);
 }
 
 

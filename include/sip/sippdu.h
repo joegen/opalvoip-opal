@@ -849,6 +849,7 @@ struct SIPParameters
   PCaselessString m_contactAddress;
   PCaselessString m_interface;
   SIPMIMEInfo     m_mime;
+  PMultiPartList  m_body;
   PString         m_authID;
   PString         m_password;
   PString         m_realm;
@@ -1239,9 +1240,10 @@ class SIPRegister : public SIPTransaction
                                              is doing address transations, so we do not try
                                              to do it ourselves as well or it goes horribly
                                              wrong. */
-      e_RFC5626                         /**< Connect using RFC 5626 rules. Only a single
+      e_RFC5626,                        /**< Connect using RFC 5626 rules. Only a single
                                              contact is included and this will contain the
                                              m_instance field as it's GUID. */
+      e_Cisco                           /**< Special Cisco compatibility mode */
     );
 
     /// Registrar parameters
@@ -1531,7 +1533,6 @@ class SIPMessage : public SIPTransaction
 
       PCaselessString   m_contentType;
       PString           m_id;
-      PString           m_body;
 #if OPAL_HAS_IM
       OpalIM::MessageID m_messageId;
 #endif
@@ -1553,8 +1554,6 @@ class SIPMessage : public SIPTransaction
     const SIPURL & GetLocalAddress() const { return m_localAddress; }
 
   private:
-    void Construct(const Params & params);
-
     Params m_parameters;
     SIPURL m_localAddress;
 };
@@ -1578,7 +1577,6 @@ class SIPOptions : public SIPTransaction
 
       PCaselessString m_acceptContent;
       PCaselessString m_contentType;
-      PString         m_body;
     };
 
     SIPOptions(
@@ -1606,17 +1604,14 @@ class SIPInfo : public SIPTransaction
     PCLASSINFO(SIPInfo, SIPTransaction);
     
   public:
-    struct Params
+    struct Params : public SIPParameters
     {
       Params(const PString & contentType = PString::Empty(),
              const PString & body = PString::Empty())
-        : m_contentType(contentType)
-        , m_body(body)
       {
+        if (!contentType.IsEmpty() || !body.IsEmpty())
+          m_body.AddPart(body, contentType);
       }
-
-      PCaselessString m_contentType;
-      PString         m_body;
     };
 
     SIPInfo(
