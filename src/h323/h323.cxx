@@ -743,12 +743,12 @@ static bool BuildFastStartList(const H323Channel & channel,
                 H245_OpenLogicalChannel_forwardLogicalChannelParameters_multiplexParameters::e_none);
   }
 
-  PTRACE(4, "H225\tBuild fastStart:\n  " << setprecision(2) << open);
+  PTRACE(4, &channel, "H225\tBuild fastStart:\n  " << setprecision(2) << open);
   PINDEX last = array.GetSize();
   array.SetSize(last+1);
   array[last].EncodeSubType(open);
 
-  PTRACE(3, "H225\tBuilt fastStart for " << channel << ' ' << channel.GetCapability());
+  PTRACE(3, &channel, "H225\tBuilt fastStart for " << channel << ' ' << channel.GetCapability());
   return true;
 }
 
@@ -1251,8 +1251,77 @@ PBoolean H323Connection::OnReceivedSignalSetupAck(const H323SignalPDU & /*setupa
 }
 
 
-PBoolean H323Connection::OnReceivedSignalInformation(const H323SignalPDU & /*infoPDU*/)
+PBoolean H323Connection::OnReceivedSignalInformation(const H323SignalPDU & infoPDU)
 {
+  for (PINDEX i = 0; i < infoPDU.m_h323_uu_pdu.m_nonStandardControl.GetSize(); ++i) {
+    const H225_NonStandardParameter & param = infoPDU.m_h323_uu_pdu.m_nonStandardControl[i];
+    if (param.m_nonStandardIdentifier.GetTag() == H225_NonStandardIdentifier::e_object &&
+        ((const PASN_ObjectId &)param.m_nonStandardIdentifier).AsString().NumCompare(H323EndPoint::AvayaPhone().oid) == EqualTo) {
+      PBYTEArray data = param.m_data.GetValue();
+      BYTE *data_ptr = data.GetPointer();
+
+#pragma pack(1)
+      struct
+      {
+        BYTE length;
+        BYTE function;
+        BYTE length2;
+        BYTE choice;
+      } header;
+
+      static BYTE ringerSetEvent[] = { 0x4B };
+      static BYTE offHookEvent[] = { 0x89 };
+      static BYTE ringerClearEvent[] = { 0xa3, 0x80, 0x18, 0x40, 0x40 };
+      static BYTE disconnectedEvent[] = { 0x84 };
+      static BYTE stationUnlockEvent[] = { 0xa3, 0x80, 0x11, 0x02 };
+
+      static BYTE const select_button[] = { 0x05, 0x38, 0x00, 0x60, 0x07 };
+      static BYTE const off_hook[] = { 0x05, 0x38, 0x00, 0x80, 0x02 };
+      static BYTE const on_hook[] = { 0x05, 0x38, 0x00, 0x80, 0x01 };
+#pragma pack()
+
+      memcpy(&header, data_ptr, sizeof(header));
+      data_ptr += sizeof(header);
+
+      if ((header.function != 0x38) || (header.choice != 0x20))
+        return true;
+
+      // Unlocked station from login
+      if (memcmp(data_ptr, stationUnlockEvent, sizeof stationUnlockEvent) == 0) {
+        PTRACE(4, "Received Avaya NonStandard UU Information event - Station unlock - sand line, offhook, onhook sequence to initialise");
+
+        //				SendNonStandardControl(H323EndPoint::AvayaPhone().oid + ".10", PBYTEArray(select_button, sizeof(select_button), false));
+        //				SendNonStandardControl(H323EndPoint::AvayaPhone().oid + ".10", PBYTEArray(off_hook, sizeof(off_hook), false));
+        //				SendNonStandardControl(H323EndPoint::AvayaPhone().oid + ".10", PBYTEArray(on_hook, sizeof(on_hook), false));
+
+      }
+      // Is this the ringer set event
+      else if (memcmp(data_ptr, ringerSetEvent, sizeof ringerSetEvent) == 0) {
+
+        PTRACE(4, "Received Avaya NonStandard UU Information event - Ringer Set - Sending line button press");
+        // Select answer button (0t7)
+        SendNonStandardControl(H323EndPoint::AvayaPhone().oid + ".10", PBYTEArray(select_button, sizeof(select_button), false));
+      }
+      // Is this the off hook event
+      else if (memcmp(data_ptr, offHookEvent, sizeof offHookEvent) == 0) {
+
+        PTRACE(4, "Received Avaya NonStandard UU Information event - Off Hook - sending off hook request");
+        // Reply with off hook response
+        SendNonStandardControl(H323EndPoint::AvayaPhone().oid + ".10", PBYTEArray(off_hook, sizeof(off_hook), false));
+      }
+      // Is this the ringer clear event
+      else if (memcmp(data_ptr, ringerClearEvent, sizeof ringerClearEvent) == 0) {
+        PTRACE(4, "Received Avaya NonStandard UU Information event - Ringer Clear");
+        // call is now fully established
+      }
+      // Is this the ringer clear event
+      else if (memcmp(data_ptr, disconnectedEvent, sizeof disconnectedEvent) == 0) {
+        PTRACE(4, "Received Avaya NonStandard UU Information event - Disconnected - Sending on hook");
+        // Send on hook to hangup
+        SendNonStandardControl(H323EndPoint::AvayaPhone().oid + ".10", PBYTEArray(on_hook, sizeof(on_hook), false));
+      }
+    }
+  }
   return true;
 }
 
@@ -1408,7 +1477,9 @@ PBoolean H323Connection::OnReceivedSignalConnect(const H323SignalPDU & pdu)
 #endif
 
   // have answer, so set timeout to interval for monitoring calls health
-  m_signallingChannel->SetReadTimeout(connectionState < EstablishedConnection ? MonitorCallStartTime : MonitorCallStatusTime);
+  m_signallingChannel->SetReadTimeout(connectionState < EstablishedConnection &&
+                                      endpoint.GetProductInfo() != H323EndPoint::AvayaPhone()
+                                                ? MonitorCallStartTime : MonitorCallStatusTime);
 
   // Set connected phase now so logic for not sending media before connected is not triggered
   PSafePtr<OpalConnection> otherParty = GetOtherPartyConnection();
@@ -1418,8 +1489,7 @@ PBoolean H323Connection::OnReceivedSignalConnect(const H323SignalPDU & pdu)
   // Check for fastStart data and start fast
   if (connect.HasOptionalField(H225_Connect_UUIE::e_fastStart))
     HandleFastStartAcknowledge(connect.m_fastStart);
-
-  if (m_fastStartState != FastStartAcknowledged) {
+  else if (m_fastStartState != FastStartAcknowledged) {
     // If didn't get fast start channels accepted by remote then clear our
     // proposed channels
     m_fastStartState = FastStartDisabled;
@@ -1436,7 +1506,7 @@ PBoolean H323Connection::OnReceivedSignalConnect(const H323SignalPDU & pdu)
   }
 
   /* do not start h245 negotiation if it is disabled */
-  if (endpoint.IsH245Disabled()){
+  if (endpoint.IsH245Disabled()) {
     PTRACE(3, "H245\tOnReceivedSignalConnect: h245 is disabled, do not start negotiation");
     return true;
   }
@@ -2047,6 +2117,18 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
     }
   }
 
+  if (alias == "register" && endpoint.GetProductInfo() == H323EndPoint::AvayaPhone()) {
+    PTRACE(4, "Setting SETUP goal for Avaya IP Phone");
+    setup.m_conferenceGoal = H225_Setup_UUIE_conferenceGoal::e_callIndependentSupplementaryService;
+    setup.RemoveOptionalField(H225_Setup_UUIE::e_sourceAddress);
+    setup.RemoveOptionalField(H225_Setup_UUIE::e_sourceCallSignalAddress);
+    setup.RemoveOptionalField(H225_Setup_UUIE::e_destinationAddress);
+    setup.RemoveOptionalField(H225_Setup_UUIE::e_destCallSignalAddress);
+    setup.m_mediaWaitForConnect = true;
+    setup.m_canOverlapSend = true;
+    setup.m_multipleCalls = true;
+  }
+
   if (!OnSendSignalSetup(setupPDU))
     return EndedByNoAccept;
 
@@ -2476,84 +2558,160 @@ PBoolean H323Connection::SendFastStartAcknowledge(H225_ArrayOf_PASN_OctetString 
 
 PBoolean H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_OctetString & array)
 {
-  if (m_fastStartState == FastStartAcknowledged)
-    return true;
+  if (connectionState < EstablishedConnection) {
+    if (m_fastStartState == FastStartAcknowledged)
+      return true;
 
-  if (m_fastStartChannels.IsEmpty()) {
-    PTRACE(2, "H225\tFast start response with no channels to open");
-    return false;
+    if (m_fastStartChannels.IsEmpty()) {
+      PTRACE(2, "H225\tFast start response with no channels to open");
+      return false;
+    }
+
+    PTRACE(3, "H225\tFast start accepted by remote endpoint");
   }
 
-  PTRACE(3, "H225\tFast start accepted by remote endpoint");
-
-  PINDEX i;
+  bool nothingToOpen = true;
+  bool pauseChannels = true;
 
   H323LogicalChannelList replyFastStartChannels;
 
   // Go through provided list of structures, if can decode it and match it up
   // with a channel we requested AND it has all the information needed in the
   // m_multiplexParameters, then we can start the channel.
-  for (i = 0; i < array.GetSize(); i++) {
+  for (PINDEX i = 0; i < array.GetSize(); i++) {
     H245_OpenLogicalChannel open;
-    if (array[i].DecodeSubType(open)) {
-      PTRACE(4, "H225\tFast start open:\n  " << setprecision(2) << open);
-      bool reverse = open.HasOptionalField(H245_OpenLogicalChannel::e_reverseLogicalChannelParameters);
-      const H245_DataType & dataType = reverse ? open.m_reverseLogicalChannelParameters.m_dataType
-                                               : open.m_forwardLogicalChannelParameters.m_dataType;
-      H323Capability * replyCapability = localCapabilities.FindCapability(dataType);
-      if (replyCapability != NULL) {
-        for (H323LogicalChannelList::iterator channel = m_fastStartChannels.begin(); channel != m_fastStartChannels.end(); ++channel) {
-          H323Channel & channelToStart = *channel;
-          H323Channel::Directions dir = channelToStart.GetDirection();
-          if ((dir == H323Channel::IsTransmitter) == reverse && channelToStart.GetCapability() == *replyCapability) {
-            unsigned error = 1000;
-            if (channelToStart.OnReceivedPDU(open, error)) {
-              H323Capability * channelCapability;
-              if (dir == H323Channel::IsReceiver)
-                channelCapability = replyCapability;
-              else {
-                // For transmitter, need to fake a capability into the remote table
-                channelCapability = remoteCapabilities.FindCapability(channelToStart.GetCapability());
-                if (channelCapability == NULL) {
-                  channelCapability = remoteCapabilities.Copy(channelToStart.GetCapability());
-                  remoteCapabilities.SetCapability(0, channelCapability->GetDefaultSessionID()-1, channelCapability);
-                }
-              }
-              // Must use the actual capability instance from the
-              // localCapability or remoteCapability structures.
-              if (OnCreateLogicalChannel(*channelCapability, dir, error)) {
-                if (channelToStart.SetInitialBandwidth()) {
-                  PTRACE(4, "H225\tFast start channel opened: " << *channel);
-                  replyFastStartChannels.Append(&*channel);
-                  m_fastStartChannels.DisallowDeleteObjects();
-                  m_fastStartChannels.erase(channel);
-                  m_fastStartChannels.AllowDeleteObjects();
-                  break;
-                }
-                else
-                  PTRACE(2, "H225\tFast start channel open fail: insufficent bandwidth");
-              }
-              else
-                PTRACE(2, "H225\tFast start channel open error: " << error);
-            }
-            else
-              PTRACE(2, "H225\tFast start capability error: " << error);
-          }
+    if (!array[i].DecodeSubType(open)) {
+      PTRACE(1, "H225\tInvalid fast start PDU decode:\n  " << setprecision(2) << open);
+      continue;
+    }
+
+    PTRACE(4, "H225\tFast start open:\n  " << setprecision(2) << open);
+    bool transmitter = open.HasOptionalField(H245_OpenLogicalChannel::e_reverseLogicalChannelParameters);
+    const H245_DataType & dataType =
+          transmitter ? open.m_reverseLogicalChannelParameters.m_dataType
+                   : open.m_forwardLogicalChannelParameters.m_dataType;
+
+    const H245_H2250LogicalChannelParameters * param = NULL;
+    if (transmitter && open.m_reverseLogicalChannelParameters.m_multiplexParameters.GetTag() ==
+                H245_OpenLogicalChannel_reverseLogicalChannelParameters_multiplexParameters::e_h2250LogicalChannelParameters)
+      param = &(const H245_H2250LogicalChannelParameters &)open.m_reverseLogicalChannelParameters.m_multiplexParameters;
+    else if (open.m_forwardLogicalChannelParameters.m_multiplexParameters.GetTag() ==
+                H245_OpenLogicalChannel_forwardLogicalChannelParameters_multiplexParameters::e_h2250LogicalChannelParameters)
+      param = &(const H245_H2250LogicalChannelParameters &)open.m_forwardLogicalChannelParameters.m_multiplexParameters;
+
+    if (param != NULL) {
+      H323Channel * channel = FindChannel(param->m_sessionID, !transmitter, true);
+      if (channel != NULL) {
+        OpalMediaStreamPtr mediaStream = channel->GetMediaStream();
+        if (mediaStream == NULL) {
+          PTRACE(2, "H225\tFast restart has logical channel but no media stream!");
+          continue;
+        }
+
+        if (dataType.GetTag() == H245_DataType::e_nullData) {
+          PTRACE(3, "H225\tFast restart pausing " << *mediaStream);
+          channel->GetMediaStream()->SetPaused(true);
+          continue;
+        }
+
+        unsigned error = 1000;
+        if (!channel->OnReceivedPDU(open, error)) {
+          PTRACE(2, "H225\tFast restart capability error: " << error);
+          continue;
+        }
+
+        PTRACE(3, "H225\tFast restart resuming " << *mediaStream);
+        channel->GetMediaStream()->SetPaused(false);
+        pauseChannels = false;
+        continue;
+      }
+      PTRACE(4, "H225\tFast restart could not find session " << (unsigned)param->m_sessionID << (transmitter ? " from" : " to") << " remote");
+    }
+    else
+      PTRACE(4, "H225\tFast restart cannot be performed without multiplexParameters");
+
+    if (dataType.GetTag() == H245_DataType::e_nullData)
+      continue;
+
+    nothingToOpen = false;
+
+    H323Capability * replyCapability = localCapabilities.FindCapability(dataType);
+    if (replyCapability == NULL)
+      continue;
+
+    for (H323LogicalChannelList::iterator iterChannel = m_fastStartChannels.begin(); iterChannel != m_fastStartChannels.end(); ++iterChannel) {
+      H323Channel & channelToStart = *iterChannel;
+      H323Channel::Directions dir = channelToStart.GetDirection();
+      if ((dir == H323Channel::IsTransmitter) != transmitter || channelToStart.GetCapability() != *replyCapability)
+        continue;
+
+      unsigned error = 1000;
+      if (!channelToStart.OnReceivedPDU(open, error)) {
+        PTRACE(2, "H225\tFast start capability error: " << error);
+        continue;
+      }
+
+      H323Capability * channelCapability;
+      if (dir == H323Channel::IsReceiver)
+        channelCapability = replyCapability;
+      else {
+        // For transmitter, need to fake a capability into the remote table
+        channelCapability = remoteCapabilities.FindCapability(channelToStart.GetCapability());
+        if (channelCapability == NULL) {
+          channelCapability = remoteCapabilities.Copy(channelToStart.GetCapability());
+          remoteCapabilities.SetCapability(0, channelCapability->GetDefaultSessionID() - 1, channelCapability);
+        }
+      }
+
+      // Must use the actual capability instance from the
+      // localCapability or remoteCapability structures.
+      if (!OnCreateLogicalChannel(*channelCapability, dir, error)) {
+        PTRACE(2, "H225\tFast start channel open error: " << error);
+        continue;
+      }
+
+      if (!channelToStart.SetInitialBandwidth()) {
+        PTRACE(2, "H225\tFast start channel open fail: insufficent bandwidth");
+        continue;
+      }
+
+      PTRACE(4, "H225\tFast start channel opened: " << channelToStart);
+      replyFastStartChannels.Append(&channelToStart);
+      m_fastStartChannels.DisallowDeleteObjects();
+      m_fastStartChannels.erase(iterChannel);
+      m_fastStartChannels.AllowDeleteObjects();
+      break;
+    }
+  }
+
+  if (nothingToOpen) {
+    if (mediaStreams.IsEmpty())
+      PTRACE(3, "H225\tAll fast start OLC's nullData, deferring open");
+    else if (pauseChannels) {
+      PTRACE(3, "H225\tFast restart, pausing media streams");
+      for (OpalMediaStreamPtr stream(mediaStreams); stream != NULL; ++stream) {
+        stream->SetPaused(true);
+        OpalRTPSession * session = dynamic_cast<OpalRTPSession *>(GetMediaSession(stream->GetSessionID()));
+        if (session != NULL) {
+          const RTP_SyncSourceArray ssrcs = session->GetSyncSources(OpalRTPSession::e_Receiver);
+          for (RTP_SyncSourceArray::const_iterator it = ssrcs.begin(); it != ssrcs.end(); ++it)
+            session->RemoveSyncSource(*it);
         }
       }
     }
-    else {
-      PTRACE(1, "H225\tInvalid fast start PDU decode:\n  " << setprecision(2) << open);
-    }
+    return true;
   }
 
   // Delete all the ones we couldn't open
   m_fastStartChannels.RemoveAll();
 
-  PTRACE(3, "H225\tFast start opening " << replyFastStartChannels.GetSize() << " channels");
-  if (replyFastStartChannels.IsEmpty())
+  if (replyFastStartChannels.IsEmpty()) {
+    PTRACE(3, "H225\tFast start open failed, no suitable channels.");
+    m_fastStartState = FastStartDisabled;
     return false;
+  }
 
+  PTRACE(3, "H225\tFast start opening " << replyFastStartChannels.GetSize() << " channels");
   m_fastStartState = FastStartAcknowledged;
 
   /* Need to put the opened channels back into the m_fastStartChannels member
@@ -3536,10 +3694,10 @@ H323Channel * H323Connection::GetLogicalChannel(unsigned number, PBoolean fromRe
 }
 
 
-H323Channel * H323Connection::FindChannel(unsigned rtpSessionId, PBoolean fromRemote) const
+H323Channel * H323Connection::FindChannel(unsigned rtpSessionId, bool fromRemote, bool anyState) const
 {
   PSafeLockReadWrite mutex(*this);
-  return logicalChannels->FindChannelBySession(rtpSessionId, fromRemote);
+  return logicalChannels->FindChannelBySession(rtpSessionId, fromRemote, anyState);
 }
 
 
@@ -4041,11 +4199,11 @@ void H323Connection::InternalEstablishedConnectionCheck()
     m_endSessionNeeded = true;
 
     if (m_holdFromRemote != eOnHoldFromRemote) {
-      H323Channel * chan = logicalChannels->FindChannelBySession(0, false);
+      H323Channel * chan = FindChannel(0, false);
 
       // Delay handling of off hold until we finish redoing TCS, MSD & OLC.
       if (m_holdFromRemote == eRetrieveFromRemote) {
-        if (chan != NULL && (chan = logicalChannels->FindChannelBySession(chan->GetSessionID(), true)) != NULL) {
+        if (chan != NULL && (chan = FindChannel(chan->GetSessionID(), true)) != NULL) {
           m_holdFromRemote = eOffHoldFromRemote;
           OnHold(true, false);
         }
@@ -4077,8 +4235,9 @@ void H323Connection::InternalEstablishedConnectionCheck()
       break;
 
     case ConnectedPhase :
-      SetPhase(EstablishedPhase);
-      OnEstablished();
+      if (!InternalOnEstablished())
+        break;
+
       // Set established in next case
 
     case EstablishedPhase :
@@ -4619,8 +4778,7 @@ PBoolean H323Connection::OpenLogicalChannel(const H323Capability & capability,
   if (channel == NULL)
     return false;
 
-  if (dir != H323Channel::IsReceiver)
-    channel->SetNumber(logicalChannels->GetNextChannelNumber());
+  channel->SetNumber(logicalChannels->GetNextChannelNumber(dir == H323Channel::IsReceiver));
 
   m_fastStartChannels.Append(channel);
   return true;
@@ -4828,8 +4986,7 @@ H323Channel * H323Connection::CreateLogicalChannel(const H245_OpenLogicalChannel
 
   if (startingFast && open.HasOptionalField(H245_OpenLogicalChannel::e_reverseLogicalChannelParameters)) {
     if (open.m_reverseLogicalChannelParameters.m_multiplexParameters.GetTag() !=
-              H245_OpenLogicalChannel_reverseLogicalChannelParameters_multiplexParameters
-                                                      ::e_h2250LogicalChannelParameters) {
+              H245_OpenLogicalChannel_reverseLogicalChannelParameters_multiplexParameters::e_h2250LogicalChannelParameters) {
       errorCode = H245_OpenLogicalChannelReject_cause::e_unsuitableReverseParameters;
       PTRACE(1, "H323\tCreateLogicalChannel - reverse channel, H225.0 only supported");
       OnFailedMediaStream(true, "Unsupported multiplex");
@@ -4847,8 +5004,7 @@ H323Channel * H323Connection::CreateLogicalChannel(const H245_OpenLogicalChannel
   }
   else {
     if (open.m_forwardLogicalChannelParameters.m_multiplexParameters.GetTag() !=
-              H245_OpenLogicalChannel_forwardLogicalChannelParameters_multiplexParameters
-                                                      ::e_h2250LogicalChannelParameters) {
+              H245_OpenLogicalChannel_forwardLogicalChannelParameters_multiplexParameters::e_h2250LogicalChannelParameters) {
       PTRACE(1, "H323\tCreateLogicalChannel - forward channel, H225.0 only supported");
       errorCode = H245_OpenLogicalChannelReject_cause::e_unspecified;
       OnFailedMediaStream(true, "Unsupported multiplex");
@@ -4924,13 +5080,15 @@ H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability 
   const H323Transport & transport = GetControlChannel();
 
   // We only support RTP over UDP at this point in time ...
-  H323TransportAddress remoteControlAddress(transport.GetRemoteAddress().GetHostName(), 0, OpalTransportAddress::UdpPrefix());
+  H323TransportAddress remoteHostAddress(transport.GetRemoteAddress().GetHostName(), 0, OpalTransportAddress::UdpPrefix());
+  H323TransportAddress remoteControlAddress;
   if (param != NULL && param->HasOptionalField(H245_H2250LogicalChannelParameters::e_mediaControlChannel)) {
     remoteControlAddress = H323TransportAddress(param->m_mediaControlChannel);
     if (remoteControlAddress.IsEmpty() || !transport.GetRemoteAddress().IsCompatible(remoteControlAddress)) {
       OnFailedMediaStream(dir == H323Channel::IsReceiver, "Invalid transport address");
       return NULL;
     }
+    remoteHostAddress = remoteControlAddress;
   }
 
   PCaselessString sessionType = mediaType->GetMediaSessionType();
@@ -4960,7 +5118,7 @@ H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability 
   }
 #endif // OPAL_T38_CAPABILITY
 
-  if (!session->Open(transport.GetInterface(), remoteControlAddress)) {
+  if (!session->Open(transport.GetInterface(), remoteHostAddress)) {
     ReleaseMediaSession(sessionID);
     OnFailedMediaStream(dir == H323Channel::IsReceiver, "Could not open session transports");
     return NULL;
@@ -5041,8 +5199,7 @@ PBoolean H323Connection::OnStartLogicalChannel(H323Channel & channel)
 {
 #if OPAL_T38_CAPABILITY
   if (ownerCall.IsSwitchingT38()) {
-    H323Channel * other = logicalChannels->FindChannelBySession(channel.GetSessionID(),
-                                                   !channel.GetNumber().IsFromRemote());
+    H323Channel * other = FindChannel(channel.GetSessionID(), !channel.GetNumber().IsFromRemote());
     if (other != NULL && other->IsOpen()) {
       if (t38ModeChangeCapabilities.IsEmpty()) {
         PTRACE(4, "H323\tCompleted remote switch of T.38");
@@ -5555,6 +5712,23 @@ PBoolean H323Connection::GetAdmissionRequestAuthentication(const H225_AdmissionR
                                                        H235Authenticators & /*authenticators*/)
 {
   return false;
+}
+
+
+bool H323Connection::SendNonStandardControl(const PString & identifier, const PBYTEArray & data)
+{
+  if (identifier.IsEmpty())
+    return false;
+
+  H323SignalPDU pdu;
+  pdu.BuildInformation(*this);
+  pdu.m_h323_uu_pdu.m_h323_message_body.SetTag(H225_H323_UU_PDU_h323_message_body::e_empty);
+  pdu.m_h323_uu_pdu.IncludeOptionalField(H225_H323_UU_PDU::e_nonStandardControl);
+  if (!pdu.m_h323_uu_pdu.m_nonStandardControl.SetSize(1))
+    return false;
+
+  H323SetNonStandard(pdu.m_h323_uu_pdu.m_nonStandardControl[0], identifier, data);
+  return WriteSignalPDU(pdu);
 }
 
 

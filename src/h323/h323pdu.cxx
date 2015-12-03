@@ -2317,6 +2317,51 @@ H225_ServiceControlResponse & H323RasPDU::BuildServiceControlResponse(unsigned s
 }
 
 
+H225_NonStandardMessage & H323RasPDU::BuildNonStandardMessage(unsigned seqNum, const PString & identifier, const PBYTEArray & data)
+{
+  SetTag(e_nonStandardMessage);
+  H225_NonStandardMessage & nms = *this;
+  nms.m_requestSeqNum = seqNum;
+  H323SetNonStandard(nms.m_nonStandardData, identifier, data);
+  return nms;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+bool H323SetNonStandard(H225_NonStandardParameter & param, const PString & identifier, const PBYTEArray & data)
+{
+  if (identifier.IsEmpty())
+    return false;
+
+  PASN_ObjectId oid;
+  oid.SetValue(identifier);
+  if (oid.AsString() == identifier) {
+    param.m_nonStandardIdentifier.SetTag(H225_NonStandardIdentifier::e_object);
+    PASN_ObjectId & nonStandardIdentifier = param.m_nonStandardIdentifier;
+    nonStandardIdentifier = oid;
+  }
+  else {
+    param.m_nonStandardIdentifier.SetTag(H225_NonStandardIdentifier::e_h221NonStandard);
+    H225_H221NonStandard & nonStandardIdentifier = param.m_nonStandardIdentifier;
+    PStringArray fields = identifier.Tokenise(',');
+    switch (fields.GetSize()) {
+      default :
+        return false;
+
+      case 3 :
+        nonStandardIdentifier.m_t35Extension.SetValue(fields[2].AsUnsigned());
+      case 2 :
+        nonStandardIdentifier.m_t35CountryCode.SetValue(fields[0].AsUnsigned());
+        nonStandardIdentifier.m_manufacturerCode.SetValue(fields[1].AsUnsigned());
+    }
+  }
+
+  param.m_data = data;
+  return true;
+}
+
+
 ///////////////////////////////////////////////////////////////////////////////
 
 OpalBandwidth::OpalBandwidth(const H225_BandWidth & bw)

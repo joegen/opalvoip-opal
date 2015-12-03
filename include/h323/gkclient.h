@@ -111,6 +111,7 @@ class H323Gatekeeper : public H225_RAS
     PBoolean OnReceiveInfoRequest(const H225_InfoRequest & irq);
     PBoolean OnReceiveInfoRequestResponse(const H225_InfoRequestResponse & irr);
     PBoolean OnReceiveServiceControlIndication(const H225_ServiceControlIndication &);
+    PBoolean OnReceiveNonStandardMessage(const H225_NonStandardMessage &);
     void OnSendGatekeeperRequest(H225_GatekeeperRequest & grq);
     void OnSendAdmissionRequest(H225_AdmissionRequest & arq);
 #if OPAL_H460
@@ -229,6 +230,21 @@ class H323Gatekeeper : public H225_RAS
       const H323Connection & connection,  ///<  Connection to send info about
       const H225_H323_UU_PDU & pdu,       ///<  PDU that was sent or received
       PBoolean sent                           ///<  Flag for PDU was sent or received
+    );
+
+    /**Send a non-standard message and wait for non-standard reply.
+      */
+    bool NonStandardMessage(
+      const PString & identifer,
+      const PBYTEArray & outData,
+      PBYTEArray & replyData
+    );
+
+    /**Send a non-standard message and dont wait for a reply.
+      */
+    bool SendNonStandardMessage(
+      const PString & identifer,
+      const PBYTEArray & outData
     );
 
     /**Handle incoming service control session information.
