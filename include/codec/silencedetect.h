@@ -40,6 +40,10 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
+/**Implement silence detection of audio.
+   This is the complement of Voice Activity Detection (VAD) and can be used for
+   that purpose.
+  */
 class OpalSilenceDetector : public PObject
 {
     PCLASSINFO(OpalSilenceDetector, PObject);
@@ -87,7 +91,7 @@ class OpalSilenceDetector : public PObject
 
   /**@name Basic operations */
   //@{
-    const PNotifier & GetReceiveHandler() const { return receiveHandler; }
+    const PNotifier & GetReceiveHandler() const { return m_receiveHandler; }
 
     /**Set the silence detector parameters.
        This adjusts the silence detector "agression". The deadband and 
@@ -118,20 +122,32 @@ class OpalSilenceDetector : public PObject
 
     /**Get the current sampling clock rate.
       */
-    unsigned GetClockRate() const { return clockRate; }
+    unsigned GetClockRate() const { return m_clockRate; }
+
+    enum Result
+    {
+      IsSilent,
+      VoiceActivated,
+      VoiceActive
+    };
 
     /**Get silence detection status
 
-       The inTalkBurst value is true if packet transmission is enabled and
-       false if it is being suppressed due to silence.
-
-       The currentThreshold value is the value from 0 to 32767 which is used
-       as the threshold value for 16 bit PCM data.
+       The \p currentThreshold value for energy value as logarithmic scale
+       from 0 to 255 (actually a u-Law value) which is used as the threshold
+       value for audio signal.
       */
-    Mode GetStatus(
-      PBoolean * isInTalkBurst,
-      unsigned * currentThreshold
+    Result GetResult(
+      unsigned * currentThreshold = NULL
     ) const;
+
+    /**Detemine (in context) if audio stream is currently silent.
+      */
+    Result Detect(
+      BYTE * audioPtr,
+      PINDEX audioLen,
+      unsigned timestamp
+    );
 
     /**Get the average signal level in the stream.
        This is called from within the silence detection algorithm to
@@ -154,23 +170,23 @@ class OpalSilenceDetector : public PObject
   protected:
     PDECLARE_NOTIFIER(RTP_DataFrame, OpalSilenceDetector, ReceivedPacket);
 
-    PNotifier receiveHandler;
+    PNotifier m_receiveHandler;
 
-    Mode     mode;
-    unsigned signalDeadband;        // #samples of signal needed
-    unsigned silenceDeadband;       // #samples of silence needed
-    unsigned adaptivePeriod;        // #samples window for adaptive threshold
-    unsigned clockRate;             // audio sampling rate
+    Mode     m_mode;
+    unsigned m_signalDeadband;        // #samples of signal needed
+    unsigned m_silenceDeadband;       // #samples of silence needed
+    unsigned m_adaptivePeriod;        // #samples window for adaptive threshold
+    unsigned m_clockRate;             // audio sampling rate
 
-    unsigned lastTimestamp;         // Last timestamp received
-    unsigned receivedTime;          // Signal/Silence duration received so far.
-    unsigned levelThreshold;        // Threshold level for silence/signal
-    unsigned signalMinimum;         // Minimum of frames above threshold
-    unsigned silenceMaximum;        // Maximum of frames below threshold
-    unsigned signalReceivedTime;    // Duration of signal received
-    unsigned silenceReceivedTime;   // Duration of silence received
-    bool     inTalkBurst;           // Currently sending RTP data
-    PMutex   inUse;                 // Protects values to allow change while running
+    unsigned m_lastTimestamp;         // Last timestamp received
+    unsigned m_receivedTime;          // Signal/Silence duration received so far.
+    unsigned m_levelThreshold;        // Threshold level for silence/signal
+    unsigned m_signalMinimum;         // Minimum of frames above threshold
+    unsigned m_silenceMaximum;        // Maximum of frames below threshold
+    unsigned m_signalReceivedTime;    // Duration of signal received
+    unsigned m_silenceReceivedTime;   // Duration of silence received
+    Result   m_lastResult;            // What it says
+    PMutex   m_inUse;                 // Protects values to allow change while running
 };
 
 
