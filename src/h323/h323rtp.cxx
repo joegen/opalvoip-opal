@@ -114,9 +114,13 @@ PBoolean H323_RTPChannel::OnSendingPDU(H245_H2250LogicalChannelParameters & para
       PSafePtr<OpalConnection> otherConnection = connection.GetOtherPartyConnection();
       if (otherConnection != NULL) {
         OpalSilenceDetector * silenceDetector = otherConnection->GetSilenceDetector();
-        if (silenceDetector != NULL && silenceDetector->GetStatus(NULL, NULL) != OpalSilenceDetector::NoSilenceDetection) {
-          param.IncludeOptionalField(H245_H2250LogicalChannelParameters::e_silenceSuppression);
-          param.m_silenceSuppression = true;
+        if (silenceDetector != NULL) {
+          OpalSilenceDetector::Params params;
+          silenceDetector->GetParameters(params);
+          if (params.m_mode != OpalSilenceDetector::NoSilenceDetection) {
+            param.IncludeOptionalField(H245_H2250LogicalChannelParameters::e_silenceSuppression);
+            param.m_silenceSuppression = true;
+          }
         }
       }
     }
