@@ -136,15 +136,19 @@ class OpalSilenceDetector : public PObject
        The \p currentThreshold value for energy value as logarithmic scale
        from 0 to 255 (actually a u-Law value) which is used as the threshold
        value for audio signal.
+
+       The \p currentLevel value is the energy as logarithmic scale from 0 to
+       255 (actually a u-Law value) for last audio frame.
       */
     Result GetResult(
-      unsigned * currentThreshold = NULL
+      unsigned * currentThreshold = NULL,
+      unsigned * currentLevel = NULL
     ) const;
 
     /**Detemine (in context) if audio stream is currently silent.
       */
     Result Detect(
-      BYTE * audioPtr,
+      const BYTE * audioPtr,
       PINDEX audioLen,
       unsigned timestamp
     );
@@ -185,6 +189,7 @@ class OpalSilenceDetector : public PObject
     unsigned m_silenceMaximum;        // Maximum of frames below threshold
     unsigned m_signalReceivedTime;    // Duration of signal received
     unsigned m_silenceReceivedTime;   // Duration of silence received
+    unsigned m_lastSignalLevel;       // Energy level from last data frame
     Result   m_lastResult;            // What it says
     PMutex   m_inUse;                 // Protects values to allow change while running
 };
