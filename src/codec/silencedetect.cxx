@@ -153,10 +153,13 @@ void OpalSilenceDetector::Params::FromString(const PString & str)
 }
 
 
-OpalSilenceDetector::Result OpalSilenceDetector::GetResult(unsigned * currentThreshold) const
+OpalSilenceDetector::Result OpalSilenceDetector::GetResult(unsigned * currentThreshold, unsigned * currentLevel) const
 {
   if (currentThreshold != NULL)
     *currentThreshold = m_levelThreshold;
+
+  if (currentLevel != NULL)
+    *currentLevel = m_lastSignalLevel;
 
   return m_lastResult;
 }
@@ -177,7 +180,7 @@ void OpalSilenceDetector::ReceivedPacket(RTP_DataFrame & frame, P_INT_PTR)
 }
 
 
-OpalSilenceDetector::Result OpalSilenceDetector::Detect(BYTE * audioPtr, PINDEX audioLen, unsigned timestamp)
+OpalSilenceDetector::Result OpalSilenceDetector::Detect(const BYTE * audioPtr, PINDEX audioLen, unsigned timestamp)
 {
   // Already silent
   if (audioLen == 0)
@@ -198,18 +201,18 @@ OpalSilenceDetector::Result OpalSilenceDetector::Detect(BYTE * audioPtr, PINDEX 
   m_lastTimestamp = timestamp;
 
   // Average is absolute value up to 32767
-  unsigned level = GetAverageSignalLevel(audioPtr, audioLen);
+  unsigned rawSignalLevel = GetAverageSignalLevel(audioPtr, audioLen);
 
   // Can never have average signal level that high, this indicates that the
   // GetAverageSignalLevel (possibly hardware) cannot do energy calculation.
-  if (level == UINT_MAX)
+  if (m_lastSignalLevel == UINT_MAX)
     return m_lastResult = VoiceActive;
 
   // Convert to a logarithmic scale - use uLaw which is complemented
-  level = linear2ulaw(level) ^ 0xff;
+  m_lastSignalLevel = linear2ulaw(rawSignalLevel) ^ 0xff;
 
   // Now if signal level above threshold we are "talking"
-  bool haveSignal = level > m_levelThreshold;
+  bool haveSignal = m_lastSignalLevel > m_levelThreshold;
 
   // If no change ie still talking or still silent, reset frame counter
   if ((m_lastResult != IsSilent) == haveSignal) {
@@ -223,7 +226,7 @@ OpalSilenceDetector::Result OpalSilenceDetector::Detect(BYTE * audioPtr, PINDEX 
       m_lastResult = m_lastResult != IsSilent ? IsSilent : VoiceActivated;
       PTRACE(4, "Silence\tDetector transition: "
              << (m_lastResult != IsSilent ? "Talk" : "Silent")
-             << " level=" << level << " threshold=" << m_levelThreshold);
+             << " level=" << m_lastSignalLevel << " threshold=" << m_levelThreshold);
 
       // If we had talk/silence transition restart adaptive threshold measurements
       m_signalMinimum = UINT_MAX;
@@ -238,9 +241,9 @@ OpalSilenceDetector::Result OpalSilenceDetector::Detect(BYTE * audioPtr, PINDEX 
 
   // Adaptive silence detection
   if (m_levelThreshold == 0) {
-    if (level > 1) {
+    if (m_lastSignalLevel > 1) {
       // Bootstrap condition, use first frame level as silence level
-      m_levelThreshold = level/2;
+      m_levelThreshold = m_lastSignalLevel/2;
       PTRACE(4, "Silence\tThreshold initialised to: " << m_levelThreshold);
     }
     return m_lastResult;
@@ -248,13 +251,13 @@ OpalSilenceDetector::Result OpalSilenceDetector::Detect(BYTE * audioPtr, PINDEX 
 
   // Count the number of silent and signal frames and calculate min/max
   if (haveSignal) {
-    if (level < m_signalMinimum)
-      m_signalMinimum = level;
+    if (m_lastSignalLevel < m_signalMinimum)
+      m_signalMinimum = m_lastSignalLevel;
     m_signalReceivedTime = m_signalReceivedTime + timeSinceLastFrame;
   }
   else {
-    if (level > m_silenceMaximum)
-      m_silenceMaximum = level;
+    if (m_lastSignalLevel > m_silenceMaximum)
+      m_silenceMaximum = m_lastSignalLevel;
     m_silenceReceivedTime = m_silenceReceivedTime + timeSinceLastFrame;
   }
 
