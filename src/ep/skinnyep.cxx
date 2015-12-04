@@ -1381,6 +1381,11 @@ void OpalSkinnyConnection::OnClosedMediaStream(const OpalMediaStream & stream)
 
 void OpalSkinnyConnection::DelayCloseMediaStream(OpalMediaStreamPtr mediaStream)
 {
+  if (mediaStream == NULL) {
+    PTRACE(4, "DelayCloseMediaStream already closed.");
+    return;
+  }
+
   /* We delay closing the media stream slightly as Skinny server closes them
     before sending the "on hook" message for ending the call. This means that
     phantom re-INVITE or CLC gets sent when in gateway mode */
