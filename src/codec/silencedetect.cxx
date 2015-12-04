@@ -155,6 +155,8 @@ void OpalSilenceDetector::Params::FromString(const PString & str)
 
 OpalSilenceDetector::Result OpalSilenceDetector::GetResult(unsigned * currentThreshold, unsigned * currentLevel) const
 {
+  PWaitAndSignal mutex(m_inUse);
+
   if (currentThreshold != NULL)
     *currentThreshold = m_levelThreshold;
 
