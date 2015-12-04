@@ -1516,7 +1516,10 @@ bool OpalRTPSession::CheckControlSSRC(RTP_SyncSourceId PTRACE_PARAM(senderSSRC),
 #if PTRACING
   unsigned level = IsGroupMember(GetBundleGroupId()) ? 6 : 2;
   PTRACE_IF(level, m_SSRC.find(senderSSRC) == m_SSRC.end(), *this << pduName << " from incorrect SSRC=" << RTP_TRACE_SRC(senderSSRC));
-  PTRACE_IF(level, m_SSRC.find(targetSSRC) == m_SSRC.end(), *this << pduName << " for incorrect SSRC=" << RTP_TRACE_SRC(targetSSRC));
+  if (m_SSRC.find(targetSSRC) == m_SSRC.end()) {
+    PTRACE(level, *this << pduName << " for incorrect SSRC=" << RTP_TRACE_SRC(targetSSRC));
+    return false;
+  }
 #endif
 
   return GetSyncSource(targetSSRC, e_Sender, info);
