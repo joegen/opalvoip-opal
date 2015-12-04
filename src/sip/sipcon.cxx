@@ -124,6 +124,7 @@ static SIP_PDU::StatusCodes GetStatusCodeFromReason(OpalConnection::CallEndReaso
     { OpalConnection::EndedByNoUser            , SIP_PDU::Failure_NotFound               }, // Unallocated number
     { OpalConnection::EndedByLocalBusy         , SIP_PDU::Failure_BusyHere               }, // user busy                            
     { OpalConnection::EndedByLocalCongestion   , SIP_PDU::Failure_BusyHere               }, // user busy                            
+    { OpalConnection::EndedBySecurityDenial    , SIP_PDU::Failure_Forbidden              }, // Not allowed                            
     { OpalConnection::EndedByNoAnswer          , SIP_PDU::Failure_RequestTimeout         }, // no user responding                   
     { OpalConnection::EndedByTemporaryFailure  , SIP_PDU::Failure_TemporarilyUnavailable }, // subscriber absent                    
     { OpalConnection::EndedByCapabilityExchange, SIP_PDU::Failure_NotAcceptableHere      }, // bearer capability not implemented
