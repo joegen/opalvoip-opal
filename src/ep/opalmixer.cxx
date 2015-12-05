@@ -1527,10 +1527,12 @@ void OpalMixerNode::GetConferenceState(OpalConferenceState & state) const
     state.m_accessURI.push_back(newURI);
   }
 
-  for (PSafePtr<OpalConnection> conn(m_connections, PSafeReadOnly); conn != NULL; ++conn) {
+  for (PSafePtr<OpalConnection> conn(m_connections, PSafeReference); conn != NULL; ++conn) {
     PSafePtr<OpalConnection> other = conn->GetOtherPartyConnection();
     if (other != NULL && other->IsNetworkConnection()) {
       OpalConferenceState::User user;
+      /* Should readlly use readonly lock here, but can cause deadlock, and at
+         this point inprocessing the remote party info should be static. */
       user.m_uri = other->GetRemotePartyURL();
       user.m_displayText = other->GetRemotePartyName();
       user.m_roles += "participant";
