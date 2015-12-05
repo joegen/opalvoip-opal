@@ -4224,7 +4224,9 @@ SIPRefer::SIPRefer(SIPConnection & connection,
     m_mime.SetReferredBy(adjustedReferredBy.AsQuotedString());
   }
 
-  m_mime.SetBoolean("Refer-Sub", referSub); // Use RFC4488 to indicate we doing NOTIFYs or not ...
+  // Rely on using default for "true", as some endpoint, *cough*Cisco*cough*, don't like the field
+  if (!referSub)
+    m_mime.SetBoolean("Refer-Sub", false); // Use RFC4488 to indicate we doing NOTIFYs or not ...
   m_mime.AddSupported("norefersub");
 }
 
