@@ -255,24 +255,43 @@ int OpalPCAPFile::GetRTP(RTP_DataFrame & rtp)
 }
 
 
-int OpalPCAPFile::GetDecodedRTP(RTP_DataFrame & decodedRTP, OpalTranscoder * & transcoder)
+int OpalPCAPFile::GetDecodedRTP(RTP_DataFrame & decodedRTP, DecodeContext & context)
 {
   RTP_DataFrame encodedRTP;
   if (GetRTP(encodedRTP) < 0)
     return 0;
 
-  if (transcoder == NULL) {
+  if (context.m_transcoder == NULL) {
     OpalMediaFormat srcFmt = GetMediaFormat(encodedRTP);
     if (!srcFmt.IsValid())
       return -1;
 
     OpalMediaFormatList dstFmts = OpalTranscoder::GetDestinationFormats(srcFmt);
-    if (dstFmts.IsEmpty() || (transcoder = OpalTranscoder::Create(srcFmt, dstFmts.front())) == NULL)
+    if (dstFmts.IsEmpty() || (context.m_transcoder = OpalTranscoder::Create(srcFmt, dstFmts.front())) == NULL)
         return -2;
   }
 
+  unsigned lost = 0;
+  RTP_SequenceNumber thisSequenceNumber = encodedRTP.GetSequenceNumber();
+
+  if (context.m_lastSequenceNumber != 0) {
+    RTP_SequenceNumber expectedSequenceNumber = context.m_lastSequenceNumber + 1;
+    if (thisSequenceNumber > expectedSequenceNumber) {
+      lost = thisSequenceNumber - expectedSequenceNumber;
+      PTRACE(3, "Detected " << lost << " missing RTP packets:"
+                " expected=" << expectedSequenceNumber << ", got=" << thisSequenceNumber);
+    }
+    else if (thisSequenceNumber < expectedSequenceNumber) {
+      PTRACE(3, "Detected out of order RTP packet:"
+                " expected=" << expectedSequenceNumber << ", got=" << thisSequenceNumber);
+    }
+  }
+
+  context.m_lastSequenceNumber = thisSequenceNumber;
+  encodedRTP.SetDiscontinuity(lost);
+
   RTP_DataFrameList output;
-  if (!transcoder->ConvertFrames(encodedRTP, output))
+  if (!context.m_transcoder->ConvertFrames(encodedRTP, output))
     return -3;
 
   if (output.IsEmpty())
@@ -282,6 +301,11 @@ int OpalPCAPFile::GetDecodedRTP(RTP_DataFrame & decodedRTP, OpalTranscoder * & t
   return 1;
 }
 
+
+OpalPCAPFile::DecodeContext::~DecodeContext()
+{
+  delete m_transcoder;
+}
 
 OpalPCAPFile::DiscoveredRTPKey::DiscoveredRTPKey()
   : m_ssrc(0)
