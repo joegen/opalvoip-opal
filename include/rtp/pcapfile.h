@@ -65,7 +65,18 @@ class OpalPCAPFile : public PFile
     int GetTCP(PBYTEArray & payload);
     int GetUDP(PBYTEArray & payload);
     int GetRTP(RTP_DataFrame & rtp);
-    int GetDecodedRTP(RTP_DataFrame & decodedRTP, OpalTranscoder * & transcoder);
+
+    struct DecodeContext
+    {
+      OpalTranscoder   * m_transcoder;
+      RTP_SequenceNumber m_lastSequenceNumber;
+      DecodeContext()
+        : m_transcoder(NULL)
+        , m_lastSequenceNumber(0)
+      { }
+      ~DecodeContext();
+    };
+    int GetDecodedRTP(RTP_DataFrame & decodedRTP, DecodeContext & context);
 
 
     const PTime & GetPacketTime() const { return m_rawPacket.GetTimestamp(); }
