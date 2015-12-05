@@ -483,7 +483,7 @@ void MyManager::OnMenuOpenPCAP(wxCommandEvent &)
                    wxT("Capture file to play"),
                    wxEmptyString,
                    wxEmptyString,
-                   "Capture Files (*.pcap)|*.pcap");
+                   "Capture Files (*.pcap)|*.pcap|All Files (*.*)|*.*");
   if (dlg.ShowModal() == wxID_OK)
     Load(dlg.GetPath());
 }
@@ -803,18 +803,18 @@ void MyPlayer::PlayAudio()
   PTRACE(3, "Started audio player thread.");
 
   PSoundChannel * soundChannel = NULL;
-  OpalTranscoder * transcoder = NULL;
+  OpalPCAPFile::DecodeContext decodeContext;
   while (m_playThreadCtrl != CtlStop && !m_pcapFile.IsEndOfFile()) {
     while (m_playThreadCtrl == CtlPause) {
       PThread::Sleep(200);
     }
 
     RTP_DataFrame data;
-    if (m_pcapFile.GetDecodedRTP(data, transcoder) <= 0)
+    if (m_pcapFile.GetDecodedRTP(data, decodeContext) <= 0)
       continue;
 
     if (soundChannel == NULL) {
-      OpalMediaFormat format = transcoder->GetOutputFormat();
+      OpalMediaFormat format = decodeContext.m_transcoder->GetOutputFormat();
       soundChannel = new PSoundChannel(m_manager.GetOptions().m_AudioDevice,
                                        PSoundChannel::Player,
                                        format.GetOptionInteger(OpalAudioFormat::ChannelsOption(), 1),
@@ -826,7 +826,6 @@ void MyPlayer::PlayAudio()
       break;
   }
 
-  delete transcoder;
   delete soundChannel;
 
   QueueEvent(new wxCommandEvent(VideoEndedEvent, wxID_HIGHEST));
@@ -842,7 +841,7 @@ void MyPlayer::PlayVideo()
   PTime fileStartTime(0);
   RTP_Timestamp startTimestamp = 0;
 
-  OpalTranscoder * transcoder = NULL;
+  OpalPCAPFile::DecodeContext decodeContext;
   while (m_playThreadCtrl != CtlStop && !m_pcapFile.IsEndOfFile()) {
     while (m_playThreadCtrl == CtlPause) {
       PThread::Sleep(200);
@@ -852,8 +851,10 @@ void MyPlayer::PlayVideo()
     }
 
     RTP_DataFrame data;
-    if (m_pcapFile.GetDecodedRTP(data, transcoder) <= 0)
+    if (m_pcapFile.GetDecodedRTP(data, decodeContext) <= 0)
       continue;
+
+    PTRACE(4, "Decoded " << setw(1) << data);
 
     PTimeInterval delay;
     if (m_manager.GetOptions().m_VideoTiming == 0) {
@@ -873,8 +874,6 @@ void MyPlayer::PlayVideo()
 
     m_videoOutput->OutputVideo(data);
   }
-
-  delete transcoder;
 
   QueueEvent(new wxCommandEvent(VideoEndedEvent, wxID_HIGHEST));
   PTRACE(3, "Ended video player thread.");
@@ -927,11 +926,11 @@ void VideoOutputWindow::OutputVideo(const RTP_DataFrame & data)
       bool flipped = bmdata.GetRowStride() < 0;
       if (flipped)
         it.Offset(bmdata, 0, header->height - 1);
-      m_converter->SetVFlipState(flipped);
+      //m_converter->SetVFlipState(flipped);
 
       if (PAssertNULL(m_converter)->Convert(OPAL_VIDEO_FRAME_DATA_PTR(header), (BYTE *)&it.Data())) {
         QueueEvent(new wxCommandEvent(VideoUpdateEvent, wxID_HIGHEST));
-        PTRACE(4, "Posted video update event: " << header->width << 'x' << header->height << '@' << m_bitmap.GetDepth());
+        PTRACE(5, "Posted video update event: " << header->width << 'x' << header->height << '@' << m_bitmap.GetDepth());
       }
     }
     else
@@ -944,7 +943,7 @@ void VideoOutputWindow::OutputVideo(const RTP_DataFrame & data)
 
 void VideoOutputWindow::OnVideoUpdate(wxCommandEvent &)
 {
-  PTRACE(4, "VideoOutputWindow::OnVideoUpdate");
+  PTRACE(5, "VideoOutputWindow::OnVideoUpdate");
   Refresh(false);
 }
 
