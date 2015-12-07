@@ -350,14 +350,14 @@ bool OpalICEMediaTransport::InternalHandleICE(SubChannels subchannel, const void
   }
   if (candidate == NULL) {
     if (!m_promiscuous || !message.IsRequest()) {
-      PTRACE(3, *this << subchannel << ", ignoring STUN message for unknown ICE candidate: " << ap);
+      PTRACE(2, *this << subchannel << ", ignoring STUN message for unknown ICE candidate: " << ap);
       return false;
     }
 
     m_remoteCandidates[subchannel].push_back(PNatCandidate(PNatCandidate::HostType, (PNatMethod::Component)(subchannel+1)));
     candidate = &m_remoteCandidates[subchannel].back();
     candidate->m_baseTransportAddress = ap;
-    PTRACE(2, *this << subchannel << ", received STUN request for unknown ICE candidate, adding: " << ap);
+    PTRACE(3, *this << subchannel << ", received STUN request for unknown ICE candidate, adding: " << ap);
   }
 
   if (message.IsRequest()) {
