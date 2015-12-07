@@ -149,7 +149,7 @@ int OpalDTLSMediaTransport::DTLSChannel::BioWrite(const char * buf, int len)
     PTRACE(5, "Written " << result << " bytes to "
             << dynamic_cast<PUDPSocket *>(GetBaseReadChannel())->GetSendAddress());
   else
-    PTRACE(2, "Write error: " << GetErrorText(PChannel::LastWriteError));
+    PTRACE_IF(2, IsOpen(), "Write error: " << GetErrorText(PChannel::LastWriteError));
   return result;
 }
 #endif // PTRACING
