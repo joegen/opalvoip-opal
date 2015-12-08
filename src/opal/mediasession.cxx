@@ -525,7 +525,7 @@ void OpalMediaTransport::PrintOn(ostream & strm) const
 bool OpalMediaTransport::IsOpen() const
 {
   PSafeLockReadOnly lock(*this);
-  if (!lock.IsLocked())
+  if (!lock.IsLocked() || m_subchannels.empty())
     return false;
 
   for (vector<Transport>::const_iterator it = m_subchannels.begin(); it != m_subchannels.end(); ++it) {
