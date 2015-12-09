@@ -51,6 +51,7 @@ class MyManager;
 class wxProgressDialog;
 class wxGrid;
 class wxGridEvent;
+class wxListCtrl;
 
 
 struct MyOptions
@@ -120,6 +121,7 @@ class MyPlayer : public wxMDIChildFrame
     void OnPause(wxCommandEvent &);
     void OnResume(wxCommandEvent &);
     void OnStep(wxCommandEvent &);
+    void OnAnalyse(wxCommandEvent &);
 
     void Discover();
     PDECLARE_NOTIFIER2(OpalPCAPFile, MyPlayer, DiscoverProgress, OpalPCAPFile::Progress &);
@@ -151,6 +153,8 @@ class MyPlayer : public wxMDIChildFrame
     wxGrid * m_rtpList;
     unsigned m_selectedRTP;
 
+    wxListCtrl * m_analysisList;
+
     enum
     {
       CtlIdle,
@@ -166,6 +170,7 @@ class MyPlayer : public wxMDIChildFrame
     wxButton * m_pause;
     wxButton * m_resume;
     wxButton * m_step;
+    wxButton * m_analyse;
 
   wxDECLARE_EVENT_TABLE();
 };
