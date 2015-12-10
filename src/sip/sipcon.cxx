@@ -489,12 +489,14 @@ bool SIPConnection::TransferConnection(const PString & remoteParty)
   // Tell the REFER processing UA if it should suppress NOTIFYs about the REFER processing.
   // If we want to get NOTIFYs we have to clear the old connection on the progress message
   // where the connection is transfered. See OnTransferNotify().
-  bool referSub = extra.GetBoolean(OPAL_OPT_REFER_SUB, m_stringOptions.GetBoolean(OPAL_OPT_REFER_SUB, true));
+  SIPRefer::ReferSubMode referSubMode = SIPRefer::SubModeFromBooleans(
+            extra.GetBoolean(OPAL_OPT_NO_REFER_SUB, m_stringOptions.GetBoolean(OPAL_OPT_NO_REFER_SUB, false)),
+            extra.GetBoolean(OPAL_OPT_REFER_SUB, m_stringOptions.GetBoolean(OPAL_OPT_REFER_SUB, true)));
 
   // Check for valid RFC2396 scheme
   if (!PURL::ExtractScheme(remoteParty).IsEmpty()) {
-    PTRACE(3, "Blind transfer of " << *this << " to " << remoteParty);
-    SIPRefer * referTransaction = new SIPRefer(*this, remoteParty, m_dialog.GetLocalURI(), referSub);
+      PTRACE(3, "Blind transfer of " << *this << " to " << remoteParty << ", referSubMode=" << referSubMode);
+      SIPRefer * referTransaction = new SIPRefer(*this, remoteParty, m_dialog.GetLocalURI(), referSubMode);
     m_referOfRemoteInProgress = referTransaction->Start();
     return m_referOfRemoteInProgress;
   }
@@ -518,7 +520,7 @@ bool SIPConnection::TransferConnection(const PString & remoteParty)
       /* Note that the order of to-tag and remote-tag is counter intuitive. This is because
         the call being referred to by the call token in remoteParty is not the A party in
         the consultation transfer, but the B party. */
-      PTRACE(4, "Transferring " << *this << " to remote of " << *sip);
+        PTRACE(4, "Transferring " << *this << " to remote of " << *sip << ", referSubMode=" << referSubMode);
 
       /* The following is to compensate for Avaya who send a Contact without a
          username in the URL and then get upset later in th REFER when we use
@@ -535,7 +537,7 @@ bool SIPConnection::TransferConnection(const PString & remoteParty)
          << ";from-tag=" << sip->GetDialog().GetLocalTag();
       referTo.SetQueryVar("Replaces", id);
 
-      SIPRefer * referTransaction = new SIPRefer(*this, referTo, m_dialog.GetLocalURI(), referSub);
+      SIPRefer * referTransaction = new SIPRefer(*this, referTo, m_dialog.GetLocalURI(), referSubMode);
       referTransaction->GetMIME().AddSupported("replaces");
       m_referOfRemoteInProgress = referTransaction->Start();
       return m_referOfRemoteInProgress;
