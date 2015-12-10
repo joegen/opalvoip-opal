@@ -1484,11 +1484,19 @@ class SIPRefer : public SIPTransaction
 {
   PCLASSINFO(SIPRefer, SIPTransaction);
   public:
+    enum ReferSubMode
+    {
+      e_NoSubMode,
+      e_DisableSubMode,
+      e_EnableSubMode,
+    };
+    static ReferSubMode SubModeFromBooleans(bool avoid, bool sub) { return avoid ? e_NoSubMode : (sub ? e_EnableSubMode : e_DisableSubMode); }
+
     SIPRefer(
       SIPConnection & connection,
       const SIPURL & referTo,
       const SIPURL & referred_by,
-      bool referSub
+      ReferSubMode referSubMode
     );
 
     virtual SIPTransaction * CreateDuplicate() const;
