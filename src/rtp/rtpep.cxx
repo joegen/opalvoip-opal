@@ -313,8 +313,8 @@ void OpalRTPEndPoint::RegisterLocalRTP(OpalRTPSession * rtp, bool removed)
 
   OpalTransportAddress localAddr = rtp->GetLocalAddress();
   m_connectionsByRtpMutex.Wait();
+  LocalRtpInfoMap::iterator it = m_connectionsByRtpLocalAddr.find(localAddr);
   if (removed) {
-    LocalRtpInfoMap::iterator it = m_connectionsByRtpLocalAddr.find(localAddr);
     if (it != m_connectionsByRtpLocalAddr.end()) {
       PTRACE(4, "RTPEp\tSession " << rtp->GetSessionID() << ", "
                 "forgetting local RTP at " << localAddr << " on connection " << it->second.m_connection);
@@ -322,11 +322,13 @@ void OpalRTPEndPoint::RegisterLocalRTP(OpalRTPSession * rtp, bool removed)
     }
   }
   else {
-    std::pair<LocalRtpInfoMap::iterator, bool> insertResult =
-              m_connectionsByRtpLocalAddr.insert(LocalRtpInfoMap::value_type(localAddr, rtp->GetConnection()));
-    PTRACE_IF(4, insertResult.second, "RTPEp", *rtp << "remembering local RTP at " << localAddr << " on connection " << rtp->GetConnection());
-    PTRACE_IF(1, &insertResult.first->second.m_connection != &rtp->GetConnection(), "RTPEp", *rtp <<
-              "did not remove local RTP at " << localAddr << " on connection " << insertResult.first->second.m_connection);
+    if (it == m_connectionsByRtpLocalAddr.end())
+      PTRACE(4, "RTPEp", *rtp << "remembering local RTP at " << localAddr << " on connection " << rtp->GetConnection());
+    else {
+      PTRACE(4, "RTPEp", *rtp << "overwriting local RTP at " << localAddr << " with connection " << rtp->GetConnection());
+      m_connectionsByRtpLocalAddr.erase(it);
+    }
+    m_connectionsByRtpLocalAddr.insert(LocalRtpInfoMap::value_type(localAddr, rtp->GetConnection()));
   }
   m_connectionsByRtpMutex.Signal();
 }
