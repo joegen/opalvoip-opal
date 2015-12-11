@@ -31,17 +31,15 @@ SOURCES		:= main.cxx opalshark.cxx
 
 VERSION_FILE    := version.h
 
-# Need this before the include of opal_inc.mak
-.DEFAULT_GOAL := bundle
-
-WX_CONFIG := wx-config
-WXRC := wxrc
-ifeq (,$(shell which $(WX_CONFIG) 2>&1))
-  WX_CONFIG := wxgtk2u-2.8-config
-  WXRC := wxrc-gtk2u-2.8
+WX_CONFIG := $(firstword $(wildcard $(addsuffix /wx-config,$(subst :, ,$(PATH):/opt/local/Library/Frameworks/wxWidgets.framework/Versions/wxWidgets/3.0/bin))))
+ifneq (,$(WX_CONFIG))
+  WXRC := $(dir $(WX_CONFIG))/wxrc
+else
+  WX_CONFIG := $(firstword $(wildcard $(addsuffix /wxgtk2u-2.8-config,$(subst :, ,$(PATH)))))
   ifeq (,$(shell which $(WX_CONFIG) 2>&1))
     $(error Could not find wx-config)
   endif
+  WXRC := $(dir $(WX_CONFIG))/wxrc-gtk2u-2.8
 endif
 
 ifneq (,$(DEBUG_BUILD))
@@ -56,6 +54,11 @@ CPPFLAGS += $(shell $(WX_CONFIG) --cppflags)
 CXXFLAGS += $(shell $(WX_CONFIG) --cxxflags)
 CFLAGS   += $(shell $(WX_CONFIG) --cflags)
 LDFLAGS  += $(shell $(WX_CONFIG) --libs)
+
+
+# Need this before the include of opal.mak
+.DEFAULT_GOAL := bundle
+
 
 ifdef OPALDIR
   include $(OPALDIR)/make/opal.mak
