@@ -155,10 +155,13 @@ void OpalMediaPatch::Start()
 {
   PWaitAndSignal m(m_patchThreadMutex);
 	
-  if(m_patchThread != NULL) {
+  if(m_patchThread != NULL && !m_patchThread->IsTerminated()) {
     PTRACE(5, "Already started thread " << m_patchThread->GetThreadName());
     return;
   }
+
+  delete m_patchThread;
+  m_patchThread = NULL;
 
   if (CanStart()) {
     PString threadName = m_source.GetPatchThreadName();
