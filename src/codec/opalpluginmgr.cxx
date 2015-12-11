@@ -1821,9 +1821,9 @@ void OpalPluginCodecHandler::RegisterAudioTranscoder(const PString & src, const 
 {
   OpalTranscoderKey key(src, dst);
   if ((codec->flags&PluginCodec_MediaTypeMask) == PluginCodec_MediaTypeAudioStreamed)
-    new OpalPluginTranscoderFactory<OpalPluginStreamedAudioTranscoder>::Worker(key, codec, isEnc);
+    OpalPluginTranscoderFactory<OpalPluginStreamedAudioTranscoder>::Register(key, codec, isEnc);
   else
-    new OpalPluginTranscoderFactory<OpalPluginFramedAudioTranscoder>::Worker(key, codec, isEnc);
+    OpalPluginTranscoderFactory<OpalPluginFramedAudioTranscoder>::Register(key, codec, isEnc);
 }
 
 
@@ -1840,7 +1840,7 @@ OpalMediaFormatInternal * OpalPluginCodecHandler::OnCreateVideoFormat(OpalPlugin
 
 void OpalPluginCodecHandler::RegisterVideoTranscoder(const PString & src, const PString & dst, const PluginCodec_Definition * codec, bool isEnc)
 {
-  new OpalPluginTranscoderFactory<OpalPluginVideoTranscoder>::Worker(OpalTranscoderKey(src, dst), codec, isEnc);
+  OpalPluginTranscoderFactory<OpalPluginVideoTranscoder>::Register(OpalTranscoderKey(src, dst), codec, isEnc);
 }
 #endif
 
@@ -1859,7 +1859,7 @@ OpalMediaFormatInternal * OpalPluginCodecHandler::OnCreateFaxFormat(OpalPluginCo
 
 void OpalPluginCodecHandler::RegisterFaxTranscoder(const PString & src, const PString & dst, const PluginCodec_Definition * codec, bool isEnc)
 {
-  new OpalPluginTranscoderFactory<OpalFaxTranscoder>::Worker(OpalTranscoderKey(src, dst), codec, isEnc);
+  OpalPluginTranscoderFactory<OpalFaxTranscoder>::Register(OpalTranscoderKey(src, dst), codec, isEnc);
 }
 #endif // OPAL_FAX
 
