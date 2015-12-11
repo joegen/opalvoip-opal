@@ -1291,7 +1291,7 @@ void SDPMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat)
     if (format->GetEncodingName() == encodingName &&
         format->GetClockRate() == clockRate &&
         mediaFormat.ValidateMerge(sdpMediaFormat)) {
-      PTRACE(2, "Not including " << mediaFormat << " as an equivalent (" << sdpMediaFormat << ") is already included");
+      PTRACE(3, "Not including " << mediaFormat << " as an equivalent (" << sdpMediaFormat << ") is already included");
       return;
     }
   }

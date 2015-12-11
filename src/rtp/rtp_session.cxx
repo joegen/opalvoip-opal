@@ -1510,7 +1510,10 @@ bool OpalRTPSession::CheckControlSSRC(RTP_SyncSourceId PTRACE_PARAM(senderSSRC),
 #if PTRACING
   unsigned level = IsGroupMember(GetBundleGroupId()) ? 6 : 2;
   PTRACE_IF(level, m_SSRC.find(senderSSRC) == m_SSRC.end(), *this << pduName << " from incorrect SSRC=" << RTP_TRACE_SRC(senderSSRC));
-  PTRACE_IF(level, m_SSRC.find(targetSSRC) == m_SSRC.end(), *this << pduName << " for incorrect SSRC=" << RTP_TRACE_SRC(targetSSRC));
+  if (m_SSRC.find(targetSSRC) == m_SSRC.end()) {
+    PTRACE(level, *this << pduName << " for incorrect SSRC=" << RTP_TRACE_SRC(targetSSRC));
+    return false;
+  }
 #endif
 
   return GetSyncSource(targetSSRC, e_Sender, info);
@@ -2439,34 +2442,29 @@ void OpalRTPSession::OnRxDataPacket(OpalMediaTransport &, PBYTEArray data)
     return;
 
   if (data.IsEmpty()) {
-    if (!m_connection.OnMediaFailed(m_sessionId, true))
-      return;
+    CheckMediaFailed(e_Data);
+    return;
+  }
+
+  if (m_sendEstablished && IsEstablished()) {
+    m_sendEstablished = false;
+    m_connection.GetEndPoint().GetManager().QueueDecoupledEvent(
+              new PSafeWorkNoArg<OpalConnection, bool>(&m_connection, &OpalConnection::InternalOnEstablished));
+  }
+
+  // Check for single port operation, incoming RTCP on RTP
+  RTP_ControlFrame control(data, data.GetSize(), false);
+  unsigned type = control.GetPayloadType();
+  if (type >= RTP_ControlFrame::e_FirstValidPayloadType && type <= RTP_ControlFrame::e_LastValidPayloadType) {
+    if (OnReceiveControl(control) == e_AbortTransport)
+      CheckMediaFailed(e_Control);
   }
   else {
-    if (m_sendEstablished && IsEstablished()) {
-      m_sendEstablished = false;
-      m_connection.GetEndPoint().GetManager().QueueDecoupledEvent(
-                new PSafeWorkNoArg<OpalConnection, bool>(&m_connection, &OpalConnection::InternalOnEstablished));
-    }
-
-    // Check for single port operation, incoming RTCP on RTP
-    RTP_ControlFrame control(data, data.GetSize(), false);
-    unsigned type = control.GetPayloadType();
-    if (type >= RTP_ControlFrame::e_FirstValidPayloadType && type <= RTP_ControlFrame::e_LastValidPayloadType) {
-      if (OnReceiveControl(control) != e_AbortTransport)
-        return;
-    }
-    else {
-      RTP_DataFrame frame;
-      frame.PBYTEArray::operator=(data);
-      if (OnReceiveData(frame, data.GetSize()) != e_AbortTransport)
-        return;
-    }
+    RTP_DataFrame frame;
+    frame.PBYTEArray::operator=(data);
+    if (OnReceiveData(frame, data.GetSize()) == e_AbortTransport)
+      CheckMediaFailed(e_Data);
   }
-
-  PTRACE(4, *this << "aborting transport, queuing close of media session.");
-  m_connection.GetEndPoint().GetManager().QueueDecoupledEvent(
-              new PSafeWorkNoArg<OpalRTPSession, bool>(this, &OpalRTPSession::Close));
 }
 
 
@@ -2477,13 +2475,15 @@ void OpalRTPSession::OnRxControlPacket(OpalMediaTransport &, PBYTEArray data)
     return;
 
   if (data.IsEmpty()) {
-    m_connection.OnMediaFailed(m_sessionId, false);
+    CheckMediaFailed(e_Control);
     return;
   }
 
   RTP_ControlFrame control(data, data.GetSize(), false);
-  if (control.IsValid())
-    OnReceiveControl(control);
+  if (control.IsValid()) {
+    if (OnReceiveControl(control) == e_AbortTransport)
+      CheckMediaFailed(e_Control);
+  }
   else {
     PTRACE_IF(2, data.GetSize() > 1 || m_rtcpPacketsReceived > 0,
               *this << "received control packet invalid: " << data.GetSize() << " bytes");
@@ -2493,19 +2493,50 @@ void OpalRTPSession::OnRxControlPacket(OpalMediaTransport &, PBYTEArray data)
 
 OpalRTPSession::SendReceiveStatus OpalRTPSession::WriteData(RTP_DataFrame & frame, RewriteMode rewrite, const PIPSocketAddressAndPort * remote)
 {
+  /* Note, copy to local safe pointer before the lock, so if is closed and
+     destroyed via this pointer going out of scope, we avoid a deadlock as
+     it is dstroyed after the lock is released. */
+  OpalMediaTransportPtr transport = m_transport; // This way avoids races
+  if (transport == NULL)
+    return e_AbortTransport;
+
+  if (!transport->IsEstablished())
+    return e_IgnorePacket;
+
   PSafeLockReadWrite lock(*this);
   if (!lock.IsLocked())
     return e_AbortTransport;
 
-  SendReceiveStatus status = OnSendData(frame, rewrite);
-  if (status == e_ProcessPacket)
-    status = WriteRawPDU(frame.GetPointer(), frame.GetPacketSize(), e_Data, remote);
-  return status;
+  switch (OnSendData(frame, rewrite)) {
+    case e_IgnorePacket :
+      return e_IgnorePacket;
+
+    case e_ProcessPacket :
+      if (transport->Write(frame.GetPointer(), frame.GetPacketSize(), e_Data, remote))
+        return e_ProcessPacket;
+
+      // Do abort case
+    default :
+      break;
+  }
+
+  CheckMediaFailed(e_Data);
+  return e_AbortTransport;
 }
 
 
 OpalRTPSession::SendReceiveStatus OpalRTPSession::WriteControl(RTP_ControlFrame & frame, const PIPSocketAddressAndPort * remote)
 {
+  /* Note, copy to local safe pointer before the lock, so if is closed and
+     destroyed via this pointer going out of scope, we avoid a deadlock as
+     it is dstroyed after the lock is released. */
+  OpalMediaTransportPtr transport = m_transport;
+  if (transport == NULL)
+    return e_AbortTransport;
+
+  if (!transport->IsEstablished())
+    return e_IgnorePacket;
+
   PSafeLockReadWrite lock(*this);
   if (!lock.IsLocked())
     return e_AbortTransport;
@@ -2516,23 +2547,34 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::WriteControl(RTP_ControlFrame 
     remote = &remoteRTCP;
   }
 
-  SendReceiveStatus status = OnSendControl(frame);
-  if (status == e_ProcessPacket)
-    status = WriteRawPDU(frame.GetPointer(), frame.GetPacketSize(), m_singlePortRx ? e_Data : e_Control, remote);
-  return status;
+  switch (OnSendControl(frame)) {
+    case e_IgnorePacket :
+      return e_IgnorePacket;
+
+    case e_ProcessPacket :
+      if (transport->Write(frame.GetPointer(), frame.GetPacketSize(), m_singlePortRx ? e_Data : e_Control, remote))
+        return e_ProcessPacket;
+
+      // Do abort case
+    default :
+      break;
+  }
+
+  CheckMediaFailed(e_Control);
+  return e_AbortTransport;
 }
 
 
-OpalRTPSession::SendReceiveStatus OpalRTPSession::WriteRawPDU(const BYTE * framePtr, PINDEX frameSize, SubChannels subchannel, const PIPSocketAddressAndPort * remote)
+void OpalRTPSession::CheckMediaFailed(SubChannels subchannel)
 {
-  OpalMediaTransportPtr transport = m_transport; // This way avoids races
-  if (transport == NULL)
-    return e_AbortTransport;
-
-  if (!transport->IsEstablished())
-    return e_IgnorePacket;
-
-  return transport->Write(framePtr, frameSize, subchannel, remote) ? e_ProcessPacket : e_AbortTransport;
+  PTRACE(4, *this << "media failed for " << subchannel);
+  /* Really should test if both data and control fail, but as it is unlikely we would
+     get one failed without the other, we don't bother. */
+  if (subchannel == e_Data && m_connection.OnMediaFailed(m_sessionId, true)) {
+    PTRACE(3, *this << "aborting transport, queuing close of media session.");
+    m_connection.GetEndPoint().GetManager().QueueDecoupledEvent(
+                new PSafeWorkNoArg<OpalRTPSession, bool>(this, &OpalRTPSession::Close));
+  }
 }
 
 
