@@ -463,8 +463,8 @@ class OpalPluginTranscoderFactory : public OpalTranscoderFactory
   public:
     static void Register(const OpalTranscoderKey & key, const PluginCodec_Definition * codec, bool enc)
     {
-      Worker * worker = new Worker(key, codec, enc);
-      if (!OpalTranscoderFactory::Register(key, worker)) {
+      Worker * worker = PNEW Worker(key, codec, enc);
+      if (!OpalTranscoderFactory::Register(key, worker, true)) {
         delete worker;
         PTRACE(3, "OpalTranscoderFactory worker for " << key.first << '/' << key.second << " already registered.");
       }
