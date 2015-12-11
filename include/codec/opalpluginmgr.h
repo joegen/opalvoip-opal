@@ -442,7 +442,7 @@ class OpalPluginTranscoderFactory : public OpalTranscoderFactory
     {
       public:
         Worker(const OpalTranscoderKey & key, const PluginCodec_Definition * codec, bool enc)
-          : OpalTranscoderFactory::WorkerBase(true)
+          : OpalTranscoderFactory::WorkerBase()
           , m_key(key)
           , m_codecDefn(codec)
           , m_isEncoder(enc)
