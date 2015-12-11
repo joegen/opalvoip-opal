@@ -604,7 +604,16 @@ bool OpalPCSSConnection::TransferConnection(const PString & remoteParty)
 void OpalPCSSConnection::OnHold(bool fromRemote, bool onHold)
 {
   if (!fromRemote) {
-    ChangeSoundChannel(onHold ? m_soundChannelOnHoldDevice : m_soundChannelRecordDevice, true);
+    if (!onHold)
+      ChangeSoundChannel(m_soundChannelRecordDevice, true);
+    else if (!m_soundChannelOnHoldDevice.IsEmpty() && m_soundChannelOnHoldDevice != P_NULL_AUDIO_DEVICE)
+      ChangeSoundChannel(m_soundChannelOnHoldDevice, true);
+    else {
+      OpalMediaStreamPtr stream = GetMediaStream(OpalMediaType::Audio(), true);
+      if (stream != NULL)
+        stream->InternalSetPaused(true, false, false);
+    }
+
 #if OPAL_VIDEO
     ChangeVideoInputDevice(onHold ? m_videoOnHoldDevice : m_endpoint.GetManager().GetVideoInputDevice());
 #endif // OPAL_VIDEO
