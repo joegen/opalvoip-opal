@@ -561,6 +561,8 @@ class OpalMediaSession : public PSafeObject, public OpalMediaTransportChannelTyp
     OpalMediaSession(const Init & init);
 
   public:
+    ~OpalMediaSession();
+
     virtual void PrintOn(ostream & strm) const;
 
     /** Get the session type string (for factory).
