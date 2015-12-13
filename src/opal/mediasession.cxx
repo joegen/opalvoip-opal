@@ -510,7 +510,7 @@ ostream & operator<<(ostream & strm, OpalMediaTransportChannelTypes::SubChannels
 OpalMediaTransport::OpalMediaTransport(const PString & name)
   : m_name(name)
   , m_remoteBehindNAT(false)
-  , m_remoteAddressSet(true)
+  , m_remoteAddressSet(false)
   , m_packetSize(2048)
   , m_maxNoTransmitTime(0, 10)          // Sending data for 10 seconds, ICMP says still not there
   , m_started(false)
@@ -527,7 +527,7 @@ void OpalMediaTransport::PrintOn(ostream & strm) const
 bool OpalMediaTransport::IsOpen() const
 {
   PSafeLockReadOnly lock(*this);
-  if (!lock.IsLocked())
+  if (!lock.IsLocked() || m_subchannels.empty())
     return false;
 
   for (vector<Transport>::const_iterator it = m_subchannels.begin(); it != m_subchannels.end(); ++it) {
@@ -646,7 +646,6 @@ void OpalMediaTransport::RemoveReadNotifier(PObject * target, SubChannels subcha
 void OpalMediaTransport::SetRemoteBehindNAT()
 {
   m_remoteBehindNAT = true;
-  m_remoteAddressSet = !GetRemoteAddress().IsEmpty();
 }
 
 OpalMediaTransport::Transport::Transport(OpalMediaTransport * owner, SubChannels subchannel, PChannel * chan)
@@ -838,7 +837,11 @@ bool OpalTCPMediaTransport::SetRemoteAddress(const OpalTransportAddress & remote
 
   PTCPSocket & socket = dynamic_cast<PTCPSocket &>(*m_subchannels[0].m_channel);
   socket.SetPort(ap.GetPort());
-  return socket.Connect(ap.GetAddress());
+  if (!socket.Connect(ap.GetAddress()))
+    return false;
+
+  m_remoteAddressSet = true;
+  return true;
 }
 
 
@@ -1157,7 +1160,7 @@ bool OpalUDPMediaTransport::Write(const void * data, PINDEX length, SubChannels 
   if (writeSuccess)
     return true;
 
-  PTRACE(1, *this << "write (" << length << " bytes) error"
+  PTRACE(1, *this << "write to " << *dest << " (" << length << " bytes) error"
             " on " << subchannel << " subchannel to " << *dest <<
             " (" << socket->GetErrorNumber(PChannel::LastWriteError) << "):"
             " " << socket->GetErrorText(PChannel::LastWriteError));

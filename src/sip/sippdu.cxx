@@ -4217,7 +4217,7 @@ SIPTransaction * SIPPublish::CreateDuplicate() const
 SIPRefer::SIPRefer(SIPConnection & connection,
                    const SIPURL & referTo,
                    const SIPURL & referredBy,
-                   bool referSub)
+                   ReferSubMode subMode)
   : SIPTransaction(Method_REFER, &connection, NULL)
 {
   m_mime.SetProductInfo(connection.GetEndPoint().GetUserAgent(), connection.GetProductInfo());
@@ -4230,10 +4230,12 @@ SIPRefer::SIPRefer(SIPConnection & connection,
     m_mime.SetReferredBy(adjustedReferredBy.AsQuotedString());
   }
 
-  // Rely on using default for "true", as some endpoint, *cough*Cisco*cough*, don't like the field
-  if (!referSub)
-    m_mime.SetBoolean("Refer-Sub", false); // Use RFC4488 to indicate we doing NOTIFYs or not ...
-  m_mime.AddSupported("norefersub");
+  /* Allow for not including RFC4488 fields at all, as some brain dead endpoints,
+    *cough*Cisco*cough*, don't like the field and fail to process the REFER */
+  if (subMode != e_NoSubMode) {
+	  m_mime.SetBoolean("Refer-Sub", subMode == e_EnableSubMode);
+	  m_mime.AddSupported("norefersub");
+  }
 }
 
 
@@ -4242,7 +4244,7 @@ SIPTransaction * SIPRefer::CreateDuplicate() const
   return new SIPRefer(*GetConnection(),
                       m_mime.GetReferTo(),
                       m_mime.GetReferredBy(),
-                      m_mime.GetBoolean("Refer-Sub"));
+                      SubModeFromBooleans(!m_mime.Contains("Refer-Sub"), m_mime.GetBoolean("Refer-Sub")));
 }
 
 
