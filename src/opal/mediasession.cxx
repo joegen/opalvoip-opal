@@ -1190,6 +1190,12 @@ OpalMediaSession::OpalMediaSession(const Init & init)
 }
 
 
+OpalMediaSession::~OpalMediaSession()
+{
+  PTRACE(5, *this << "destroyed.");
+}
+
+
 void OpalMediaSession::PrintOn(ostream & strm) const
 {
   strm << "Session " << m_sessionId << ", ";
