@@ -389,13 +389,12 @@ static struct PWAVFilePluginValidFormat {
 template <class Factory, class Instance>
 class PWAVFilePluginFactory : public PObject, public Factory::WorkerBase
 {
-  public:
-    PWAVFilePluginFactory(const typename Factory::Key_T & key, const PWAVFilePluginValidFormat & info)
+  protected:
+    PWAVFilePluginFactory(const PWAVFilePluginValidFormat & info)
       : m_wavFormatCode(info.m_code)
       , m_mediaFormat(info.m_name)
       , m_extendedHeader(info.m_extendedHeaderData, info.m_extendedHeaderSize)
     {
-      Factory::Register(key, this);
     }
 
     virtual typename Factory::Abstract_T * Create(const typename Factory::Key_T & /*key*/) const
@@ -403,10 +402,19 @@ class PWAVFilePluginFactory : public PObject, public Factory::WorkerBase
       return new Instance(m_wavFormatCode, m_mediaFormat, m_extendedHeader);
     }
 
-  protected:
     unsigned         m_wavFormatCode;
     OpalMediaFormat  m_mediaFormat;
     PBYTEArray       m_extendedHeader;
+
+  public:
+    static void Register(const typename Factory::Key_T & key, const PWAVFilePluginValidFormat & info)
+    {
+      PWAVFilePluginFactory * worker = new PWAVFilePluginFactory(info);
+      if (!Factory::Register(key, worker, true)) {
+        delete worker;
+        PTRACE(3, NULL, PTraceModule(), "PWAVFilePluginFactory worker for " << key << " already registered.");
+      }
+    }
 };
 
 
@@ -417,11 +425,11 @@ bool OpalWAVFile::AddMediaFormat(const OpalMediaFormat & mediaFormat)
       PWAVFileFormat * formatHandler = PWAVFileFormatByFormatFactory::CreateInstance(mediaFormat.GetName());
       if (formatHandler == NULL) {
         // Deleted by factory infrastructure
-        new PWAVFilePluginFactory<PWAVFileFormatByIDFactory, PWAVFileFormatPlugin>(fmt->m_code, *fmt);
-        new PWAVFilePluginFactory<PWAVFileFormatByFormatFactory, PWAVFileFormatPlugin>(fmt->m_name, *fmt);
+        PWAVFilePluginFactory<PWAVFileFormatByIDFactory, PWAVFileFormatPlugin>::Register(fmt->m_code, *fmt);
+        PWAVFilePluginFactory<PWAVFileFormatByFormatFactory, PWAVFileFormatPlugin>::Register(fmt->m_name, *fmt);
       }
 
-      new PWAVFilePluginFactory<PWAVFileConverterFactory, PWAVFileConverterPlugin>(fmt->m_code, *fmt);
+      PWAVFilePluginFactory<PWAVFileConverterFactory, PWAVFileConverterPlugin>::Register(fmt->m_code, *fmt);
       return true;
     }
   }

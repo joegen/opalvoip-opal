@@ -437,7 +437,7 @@ class OpalFactoryCodec : public PObject {
 template<class TranscoderClass>
 class OpalPluginTranscoderFactory : public OpalTranscoderFactory
 {
-  public:
+  protected:
     class Worker : public OpalTranscoderFactory::WorkerBase 
     {
       public:
@@ -447,7 +447,6 @@ class OpalPluginTranscoderFactory : public OpalTranscoderFactory
           , m_codecDefn(codec)
           , m_isEncoder(enc)
         {
-          OpalTranscoderFactory::Register(key, this);
         }
 
       protected:
@@ -460,6 +459,16 @@ class OpalPluginTranscoderFactory : public OpalTranscoderFactory
         const PluginCodec_Definition * m_codecDefn;
         bool                           m_isEncoder;
     };
+
+  public:
+    static void Register(const OpalTranscoderKey & key, const PluginCodec_Definition * codec, bool enc)
+    {
+      Worker * worker = PNEW Worker(key, codec, enc);
+      if (!OpalTranscoderFactory::Register(key, worker, true)) {
+        delete worker;
+        PTRACE(3, "OpalTranscoderFactory worker for " << key.first << '/' << key.second << " already registered.");
+      }
+    }
 };
 
 //////////////////////////////////////////////////////////////////////////////
