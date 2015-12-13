@@ -1190,15 +1190,12 @@ void OpalSkinnyConnection::OpenMediaChannel(const MediaInfo & info)
   if (info.m_sessionId == 0) {
     // Check for existing session, due to hold/resume
     OpalMediaStreamPtr existingStream = GetMediaStream(mediaType, info.m_receiver);
-    if (existingStream == NULL)
-      existingStream = GetMediaStream(mediaType, !info.m_receiver);
-    if (existingStream == NULL) {
-      OpalMediaSession * existingSession = FindSessionByMediaType(mediaType);
-      if (existingSession != NULL)
-        info.m_sessionId = existingSession->GetSessionID();
+    if (existingStream != NULL && existingStream->IsPaused()) {
+      existingStream->SetPaused(false);
+      return;
     }
-    if (info.m_sessionId == 0)
-      info.m_sessionId = GetNextSessionID(mediaType, info.m_receiver);
+
+    info.m_sessionId = GetNextSessionID(mediaType, info.m_receiver);
   }
 
   OpalMediaSession * mediaSession = UseMediaSession(info.m_sessionId, mediaType);
