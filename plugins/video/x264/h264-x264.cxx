@@ -896,7 +896,7 @@ class H264_FlashEncoder : public H264_Encoder, protected H264FlashPacketizer
 
     virtual bool OnChangedOptions()
     {
-      m_maxNALUSize = m_maxRTPSize-PluginCodec_RTP_MinHeaderSize-HeaderSize;
+      m_maxNALUSize = m_maxRTPSize - PluginCodec_RTP_MinHeaderSize - H264FlashPacketizer::HeaderSize;
       m_packetisationModeSDP = m_packetisationModeH323 = 0;
       return H264_Encoder::OnChangedOptions();
     }
