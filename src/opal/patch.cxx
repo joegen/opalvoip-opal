@@ -648,7 +648,7 @@ PBoolean OpalMediaPatch::ExecuteCommand(const OpalMediaCommand & command)
 #if PTRACING
   if (PTrace::CanTrace(5)) {
     ostream & trace = PTRACE_BEGIN(5);
-    trace << "Execute" << (atLeastOne ? "d" : "fail for ")
+    trace << "Execute" << (atLeastOne ? "d" : " cancelled for ")
           << " command \"" << command << '"';
     if (fromPatch != this)
       trace << " bypassing " << *fromPatch << " to " << *this;
