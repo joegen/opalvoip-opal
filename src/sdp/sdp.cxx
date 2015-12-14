@@ -798,9 +798,15 @@ bool SDPMediaDescription::FromSession(OpalMediaSession * session,
 
 #if OPAL_ICE
   if (offer != NULL ? offer->HasICE() : m_stringOptions.GetBoolean(OPAL_OPT_OFFER_ICE)) {
+    OpalMediaTransportPtr transport = session->GetTransport();
+    if (transport == NULL) {
+        PTRACE(2, "Could not do ICE offer as no transport avaiable.");
+        return false;
+    }
+
     PString user, pass;
     PNatCandidateList candidates;
-    session->GetTransport()->GetCandidates(user, pass, candidates, offer == NULL);
+    transport->GetCandidates(user, pass, candidates, offer == NULL);
     SetICE(user, pass, candidates);
   }
 #endif // OPAL_ICE

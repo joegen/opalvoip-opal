@@ -2305,7 +2305,7 @@ bool OpalRTPSession::Close()
   if (!IsOpen())
     return false;
 
-  PTRACE(4, *this << "closing RTP.");
+  PTRACE(3, *this << "closing RTP.");
 
   if (LockReadOnly()) {
     for (SyncSourceMap::iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
