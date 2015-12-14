@@ -472,7 +472,8 @@ public:
       bool HandleUnavailableError();
       void Close();
 
-      PNotifierListTemplate<PBYTEArray> m_notifiers;
+      typedef PNotifierListTemplate<PBYTEArray> NotifierList;
+      NotifierList m_notifiers;
 
       OpalMediaTransport * m_owner;
       SubChannels          m_subchannel;
