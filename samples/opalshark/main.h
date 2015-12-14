@@ -126,6 +126,16 @@ class MyPlayer : public wxMDIChildFrame
     void Discover();
     PDECLARE_NOTIFIER2(OpalPCAPFile, MyPlayer, DiscoverProgress, OpalPCAPFile::Progress &);
 
+    enum Controls
+    {
+      CtlIdle,
+      CtlRunning,
+      CtlPause,
+      CtlStep,
+      CtlStop
+    };
+    void StartPlaying(Controls ctrl);
+
     void PlayAudio();
     void PlayVideo();
 
@@ -155,14 +165,7 @@ class MyPlayer : public wxMDIChildFrame
 
     wxListCtrl * m_analysisList;
 
-    enum
-    {
-      CtlIdle,
-      CtlRunning,
-      CtlPause,
-      CtlStep,
-      CtlStop
-    }         m_playThreadCtrl;
+    Controls  m_playThreadCtrl;
     PThread * m_playThread;
 
     wxButton * m_play;
