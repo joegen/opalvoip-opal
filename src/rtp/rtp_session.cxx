@@ -484,7 +484,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnSendData(RTP_Dat
   if (m_packets == 0) {
     m_firstPacketTime.SetCurrentTime();
     if (rewrite == e_RewriteHeader)
-      frame.SetSequenceNumber(m_lastSequenceNumber = (RTP_SequenceNumber)PRandom::Number(1, 65535));
+      frame.SetSequenceNumber(m_lastSequenceNumber = (RTP_SequenceNumber)PRandom::Number(1, 32768));
     PTRACE(3, &m_session, m_session << "first sent data: "
             << setw(1) << frame
             << " rem=" << m_session.GetRemoteAddress()
