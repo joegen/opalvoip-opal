@@ -1205,8 +1205,10 @@ void OpalTransport::SetKeepAlive(const PTimeInterval & timeout, const PBYTEArray
   m_keepAliveData = data;
   UnlockReadWrite();
 
-  if (data.IsEmpty())
+  if (data.IsEmpty()) {
     m_keepAliveTimer.Stop(false);
+    PTRACE(4, "Transport keep alive disabled on " << *this);
+  }
   else {
     static const PTimeInterval MinKeepAlive(0, 10);
     if (timeout < MinKeepAlive) {
@@ -1223,16 +1225,16 @@ void OpalTransport::SetKeepAlive(const PTimeInterval & timeout, const PBYTEArray
 
 void OpalTransport::KeepAlive(PTimer &, P_INT_PTR)
 {
-  if (!IsOpen())
+  if (!IsOpen()) {
+    PTRACE(4, "Keep alive attempt while not open on " << *this);
     return;
+  }
 
+  PTRACE(5, "Sending keep alive (" << m_channel->GetLastWriteCount() << " bytes) on " << *this);
   if (!LockReadOnly())
     return;
 
-  if (Write(m_keepAliveData, m_keepAliveData.GetSize())) {
-    PTRACE(5, "Transport keep alive (" << m_channel->GetLastWriteCount() << " bytes) sent on " << *this);
-  }
-  else {
+  if (!Write(m_keepAliveData, m_keepAliveData.GetSize())) {
     PTRACE(2, "Transport keep alive failed on " << *this << ": " << m_channel->GetErrorText(PChannel::LastWriteError));
   }
 

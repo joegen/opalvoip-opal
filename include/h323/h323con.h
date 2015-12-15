@@ -1616,7 +1616,8 @@ class H323Connection : public OpalRTPConnection
       */
     H323Channel * FindChannel(
       unsigned sessionId,   ///<  Session ID to search for.
-      PBoolean fromRemote       ///<  Indicates the direction of RTP data.
+      bool fromRemote,      ///<  Indicates the direction of RTP data.
+      bool anyState = false ///< Logical channel can be in any state, normally must be established
     ) const;
   //@}
 
@@ -1847,6 +1848,13 @@ class H323Connection : public OpalRTPConnection
     virtual PBoolean GetAdmissionRequestAuthentication(
       const H225_AdmissionRequest & arq,  ///<  ARQ being constructed
       H235Authenticators & authenticators ///<  New authenticators for ARQ
+    );
+
+    /**Send a Non-Standard command.
+      */
+    virtual bool SendNonStandardControl(
+      const PString & identifier,
+      const PBYTEArray & data
     );
   //@}
 

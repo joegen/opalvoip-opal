@@ -60,6 +60,11 @@ class OpalSIPIMContext;
   */
 #define OPAL_OPT_REFER_SUB       "Refer-Sub"
 
+/**OpalConnection::StringOption key to a boolean indicating whether to not 
+use RFC4488 ("Refer-Sub" header) at all, in the REFER request. Default false.
+*/
+#define OPAL_OPT_NO_REFER_SUB    "No-Refer-Sub"
+
 /**OpalConnection::StringOption key to an integer indicating the the mode
    for the reliable provisional response system. See PRACKMode for more
    information. Default is from SIPEndPoint::GetDefaultPRACKMode() which

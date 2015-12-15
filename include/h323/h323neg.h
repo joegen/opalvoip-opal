@@ -232,16 +232,17 @@ class H245NegLogicalChannels : public H245Negotiator
     virtual PBoolean HandleRequestCloseReject(const H245_RequestChannelCloseReject & pdu);
     virtual PBoolean HandleRequestCloseRelease(const H245_RequestChannelCloseRelease & pdu);
 
-    H323ChannelNumber GetNextChannelNumber();
+    H323ChannelNumber GetNextChannelNumber(bool toRemote = false);
     H245LogicalChannelDict & GetChannels() { return channels; }
     const H245LogicalChannelDict & GetChannels() const { return channels; }
     H323Channel * FindChannel(unsigned channelNumber, PBoolean fromRemote);
     H245NegLogicalChannel * FindNegLogicalChannel(unsigned channelNumber, PBoolean fromRemote);
-    H323Channel * FindChannelBySession(unsigned rtpSessionId, PBoolean fromRemote);
+    H323Channel * FindChannelBySession(unsigned rtpSessionId, bool fromRemote, bool anyState);
     void RemoveAll();
 
   protected:
-    H323ChannelNumber      lastChannelNumber;
+    H323ChannelNumber     m_lastChannelNumberToRemote;
+    H323ChannelNumber     m_lastChannelNumberFromRemote;
     H245LogicalChannelDict channels;
 };
 

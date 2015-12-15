@@ -177,15 +177,15 @@
 	</object>
 	<object class="wxPanel" name="PlayerPanel">
 		<style>wxTAB_TRAVERSAL</style>
-		<size>556,300</size>
+		<size>681,404</size>
 		<object class="wxBoxSizer">
 			<orient>wxVERTICAL</orient>
 			<object class="sizeritem">
 				<option>1</option>
 				<flag>wxEXPAND</flag>
 				<border>5</border>
-				<object class="wxSplitterWindow" name="Splitter">
-					<style>wxSP_3D</style>
+				<object class="wxSplitterWindow" name="TopSplitter">
+					<style>wxSP_3DSASH</style>
 					<sashpos>100</sashpos>
 					<gravity>0</gravity>
 					<minsize>0</minsize>
@@ -202,9 +202,41 @@
 							</object>
 						</object>
 					</object>
-					<object class="wxScrolledWindow" name="VideoOutput" subclass="VideoOutputWindow">
-						<style>wxHSCROLL|wxVSCROLL</style>
-						<scrollrate>5,5</scrollrate>
+					<object class="wxPanel" name="m_panel4">
+						<style>wxTAB_TRAVERSAL</style>
+						<object class="wxBoxSizer">
+							<orient>wxVERTICAL</orient>
+							<object class="sizeritem">
+								<option>1</option>
+								<flag>wxEXPAND</flag>
+								<border>5</border>
+								<object class="wxSplitterWindow" name="BottomSplitter">
+									<style>wxSP_3DSASH</style>
+									<sashpos>100</sashpos>
+									<gravity>0</gravity>
+									<minsize>0</minsize>
+									<orientation>vertical</orientation>
+									<object class="wxPanel" name="m_panel5">
+										<style>wxTAB_TRAVERSAL</style>
+										<object class="wxBoxSizer">
+											<orient>wxVERTICAL</orient>
+											<object class="sizeritem">
+												<option>1</option>
+												<flag>wxALL|wxEXPAND</flag>
+												<border>5</border>
+												<object class="wxListCtrl" name="Analysis">
+													<style>wxLC_REPORT</style>
+												</object>
+											</object>
+										</object>
+									</object>
+									<object class="wxScrolledWindow" name="VideoOutput" subclass="VideoOutputWindow">
+										<style>wxHSCROLL|wxVSCROLL</style>
+										<scrollrate>5,5</scrollrate>
+									</object>
+								</object>
+							</object>
+						</object>
 					</object>
 				</object>
 			</object>
@@ -241,6 +273,10 @@
 					<object class="wxButton" name="Step">
 						<enabled>0</enabled>
 						<label>Step</label>
+						<default>0</default>
+					</object>
+					<object class="wxButton" name="Analyse">
+						<label>Analyse</label>
 						<default>0</default>
 					</object>
 				</object>

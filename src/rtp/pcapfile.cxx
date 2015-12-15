@@ -40,6 +40,9 @@
 #include <codec/vidcodec.h>
 
 
+#define PTraceModule() "PCAPFile"
+
+
 void Reverse(char * ptr, size_t sz)
 {
   char * top = ptr+sz-1;
@@ -85,12 +88,12 @@ bool OpalPCAPFile::InternalOpen(OpenMode mode, OpenOptions opts, PFileInfo::Perm
     m_fileHeader.network = 1;
     if (Write(&m_fileHeader, sizeof(m_fileHeader)))
       return true;
-    PTRACE(1, "PCAPFile\tCould not write header to \"" << GetFilePath() << '"');
+    PTRACE(1, "Could not write header to \"" << GetFilePath() << '"');
     return false;
   }
 
   if (!Read(&m_fileHeader, sizeof(m_fileHeader))) {
-    PTRACE(1, "PCAPFile\tCould not read header from \"" << GetFilePath() << '"');
+    PTRACE(1, "Could not read header from \"" << GetFilePath() << '"');
     return false;
   }
 
@@ -99,7 +102,7 @@ bool OpalPCAPFile::InternalOpen(OpenMode mode, OpenOptions opts, PFileInfo::Perm
   else if (m_fileHeader.magic_number == 0xd4c3b2a1)
     m_rawPacket.m_otherEndian = true;
   else {
-    PTRACE(1, "PCAPFile\tFile \"" << GetFilePath() << "\" is not a PCAP file, bad magic number.");
+    PTRACE(1, "File \"" << GetFilePath() << "\" is not a PCAP file, bad magic number.");
     return false;
   }
 
@@ -121,7 +124,7 @@ bool OpalPCAPFile::Restart()
   if (SetPosition(sizeof(m_fileHeader)))
     return true;
 
-  PTRACE(2, "PCAPFile\tCould not seek beginning of \"" << GetFilePath() << '"');
+  PTRACE(2, "Could not seek beginning of \"" << GetFilePath() << '"');
   return false;
 }
 
@@ -161,7 +164,7 @@ bool OpalPCAPFile::Frame::Read(PChannel & channel, PINDEX)
 
   RecordHeader recordHeader;
   if (!channel.Read(&recordHeader, sizeof(recordHeader))) {
-    PTRACE(1, "PCAPFile\tTruncated file \"" << channel.GetName() << '"');
+    PTRACE(1, "Truncated file \"" << channel.GetName() << '"');
     return false;
   }
 
@@ -175,7 +178,7 @@ bool OpalPCAPFile::Frame::Read(PChannel & channel, PINDEX)
   m_timestamp.SetTimestamp(recordHeader.ts_sec, recordHeader.ts_usec);
 
   if (!channel.Read(m_rawData.GetPointer(recordHeader.incl_len), recordHeader.incl_len)) {
-    PTRACE(1, "PCAPFile\tTruncated file \"" << channel.GetName() << '"');
+    PTRACE(1, "Truncated file \"" << channel.GetName() << '"');
     return false;
   }
 
@@ -255,24 +258,60 @@ int OpalPCAPFile::GetRTP(RTP_DataFrame & rtp)
 }
 
 
-int OpalPCAPFile::GetDecodedRTP(RTP_DataFrame & decodedRTP, OpalTranscoder * & transcoder)
+int OpalPCAPFile::GetDecodedRTP(RTP_DataFrame & decodedRTP, DecodeContext & context)
 {
+  off_t thisPacketsFilePosition  = GetPosition();
+
   RTP_DataFrame encodedRTP;
   if (GetRTP(encodedRTP) < 0)
     return 0;
 
-  if (transcoder == NULL) {
+  if (context.m_transcoder == NULL) {
     OpalMediaFormat srcFmt = GetMediaFormat(encodedRTP);
     if (!srcFmt.IsValid())
       return -1;
 
     OpalMediaFormatList dstFmts = OpalTranscoder::GetDestinationFormats(srcFmt);
-    if (dstFmts.IsEmpty() || (transcoder = OpalTranscoder::Create(srcFmt, dstFmts.front())) == NULL)
+    if (dstFmts.IsEmpty() || (context.m_transcoder = OpalTranscoder::Create(srcFmt, dstFmts.front())) == NULL)
         return -2;
   }
 
+  RTP_SequenceNumber thisSequenceNumber = encodedRTP.GetSequenceNumber();
+  RTP_SequenceNumber expectedSequenceNumber = context.m_lastSequenceNumber + 1;
+  RTP_SequenceNumber sequenceDelta = thisSequenceNumber - expectedSequenceNumber;
+
+  if (context.m_lastSequenceNumber != 0) {
+    if (sequenceDelta > (1<<16)-100) {
+      PTRACE(3, "Skipping duplicate or out of order RTP packet " << thisSequenceNumber);
+      return 0;
+    }
+
+    if (sequenceDelta > 3000)
+      PTRACE(3, "Restarting RTP sequence numbers from " << thisSequenceNumber);
+    else if (sequenceDelta > 0) {
+      bool missing = true;
+      off_t nextPacketsFilePosition  = GetPosition();
+      // Scan ahead 100 packets looking for out of order one
+      for (PINDEX i = 0; i < 100; ++i) {
+        if (GetRTP(encodedRTP) >= 0 && encodedRTP.GetSequenceNumber() == thisSequenceNumber) {
+          // Found it, move file back to the packet we just read, to read again next time
+          SetPosition(thisPacketsFilePosition);
+          missing = false;
+        }
+      }
+      if (missing) {
+        SetPosition(nextPacketsFilePosition);
+        encodedRTP.SetDiscontinuity(sequenceDelta);
+        PTRACE(3, "Detected " << sequenceDelta << " missing RTP packets:"
+               " expected=" << expectedSequenceNumber << ", got=" << thisSequenceNumber);
+      }
+    }
+  }
+
+  context.m_lastSequenceNumber = thisSequenceNumber;
+
   RTP_DataFrameList output;
-  if (!transcoder->ConvertFrames(encodedRTP, output))
+  if (!context.m_transcoder->ConvertFrames(encodedRTP, output))
     return -3;
 
   if (output.IsEmpty())
@@ -282,6 +321,11 @@ int OpalPCAPFile::GetDecodedRTP(RTP_DataFrame & decodedRTP, OpalTranscoder * & t
   return 1;
 }
 
+
+OpalPCAPFile::DecodeContext::~DecodeContext()
+{
+  delete m_transcoder;
+}
 
 OpalPCAPFile::DiscoveredRTPKey::DiscoveredRTPKey()
   : m_ssrc(0)
@@ -451,6 +495,8 @@ bool OpalPCAPFile::DiscoverRTP(DiscoveredRTP & discoveredRTP, const ProgressNoti
   if (!Restart())
     return false;
 
+  PTRACE(4, "Starting RTP discovery");
+
   map<DiscoveredRTPKey, DiscoveryInfo> discoveryMap;
 
   Progress progress(GetLength());
@@ -479,6 +525,8 @@ bool OpalPCAPFile::DiscoverRTP(DiscoveredRTP & discoveredRTP, const ProgressNoti
       it->second.ProcessPacket(rtp);
   }
 
+  PTRACE(4, "Finalising RTP discovery: " << discoveryMap.size() << " possibilities");
+
   for (map<DiscoveredRTPKey, DiscoveryInfo>::iterator it = discoveryMap.begin(); it != discoveryMap.end(); ++it) {
     DiscoveredRTPInfo * info = new DiscoveredRTPInfo(it->first);
     if (it->second.Finalise(*info, m_payloadType2mediaFormat))
@@ -486,6 +534,8 @@ bool OpalPCAPFile::DiscoverRTP(DiscoveredRTP & discoveredRTP, const ProgressNoti
     else
       delete info;
   }
+
+  PTRACE(4, "Completed RTP discovery: " << discoveredRTP << " streams");
 
   return Restart();
 }

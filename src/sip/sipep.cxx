@@ -301,8 +301,15 @@ OpalTransportPtr SIPEndPoint::GetTransport(const SIPTransactionOwner & transacto
 
         PSafePtr<SIPRegisterHandler> handler = PSafePtrCast<SIPHandler, SIPRegisterHandler>(activeSIPHandlers.FindSIPHandlerByDomain(domain, SIP_PDU::Method_REGISTER, PSafeReadOnly));
 
-        if (handler != NULL && handler->GetParams().m_compatibility == SIPRegister::e_RFC5626)
-          keepAliveType = KeepAliveByCRLF;
+        if (handler != NULL) {
+          switch (handler->GetParams().m_compatibility) {
+            case SIPRegister::e_RFC5626:
+            case SIPRegister::e_Cisco:
+              keepAliveType = KeepAliveByCRLF;
+            default :
+              break;
+          }
+        }
 
         // Lock it again, as the rest of this must be atomic
         m_transportsTable.GetMutex().Wait();
@@ -1245,6 +1252,23 @@ bool SIPEndPoint::OnReceivedINVITE(SIP_PDU * request)
 
 void SIPEndPoint::OnTransactionFailed(SIPTransaction &)
 {
+}
+
+
+bool SIPEndPoint::OnReceivedREFER(SIP_PDU & request)
+{
+  // REFER outside of a connect dialog is bizarre, but that's Cisco for you
+
+  SIPURL to = request.GetMIME().GetTo();
+  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(to, SIP_PDU::Method_REGISTER, PSafeReference);
+  if (handler == NULL || dynamic_cast<SIPRegisterHandler *>(&*handler)->GetParams().m_compatibility != SIPRegister::e_Cisco) {
+    PTRACE(3, "Could not find a Cisco REGISTER corresponding to the REFER " << to);
+    return false; // Returns method not allowed
+  }
+
+  SIPResponse * response = new SIPResponse(*this, request, SIP_PDU::Successful_OK);
+  response->Send();
+  return true;
 }
 
 
@@ -2331,6 +2355,11 @@ void SIP_PDU_Work::Work()
       if (m_endpoint.OnReceivedSUBSCRIBE(*m_pdu, NULL))
         sendResponse = false;
       break;
+
+    case SIP_PDU::Method_REFER :
+       if (m_endpoint.OnReceivedREFER(*m_pdu))
+        sendResponse = false;
+       break;
 
     case SIP_PDU::Method_NOTIFY :
        if (m_endpoint.OnReceivedNOTIFY(*m_pdu))

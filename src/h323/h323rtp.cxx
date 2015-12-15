@@ -221,7 +221,7 @@ PBoolean H323_RTPChannel::OnReceivedPDU(const H245_H2250LogicalChannelParameters
       ap.SetPort(ap.GetPort() & 0xfffe);
       OpalTransportAddress mediaAddress(ap, controlAddress.GetProto());
       m_session->SetRemoteAddress(mediaAddress);
-      PTRACE(3, "RTP_UDP\tNo mediaChannel, using " << mediaAddress << " for " << *this);
+      PTRACE(3, "RTP_UDP\tNo mediaChannel in PDU, using " << mediaAddress << " for " << *this);
     }
   }
 
@@ -287,8 +287,11 @@ bool H323_RTPChannel::ExtractTransport(const H245_TransportAddress & pdu,
     return false;
   }
 
-  if (!isDataPort && !m_session->GetRemoteAddress().IsEmpty())
-    return true; // Ignore
+  if (!isDataPort && !m_session->GetRemoteAddress().IsEmpty()) {
+    // Ignore due to random bad implementation out there giving wrong info
+    PTRACE(4, "RTP_UDP\tIgnoring mediaControlAddress as already set.");
+    return true;
+  }
 
   H323TransportAddress transAddr = pdu;
 
