@@ -219,7 +219,8 @@ OpalSilenceDetector::Result OpalSilenceDetector::Detect(const BYTE * audioPtr, P
   // If no change ie still talking or still silent, reset frame counter
   if ((m_lastResult != IsSilent) == haveSignal) {
     m_receivedTime = 0;
-    if (m_lastResult == VoiceActivated)m_lastResult = VoiceActive;
+    if (m_lastResult == VoiceActivated)
+      m_lastResult = VoiceActive;
   }
   else {
     m_receivedTime += timeSinceLastFrame;
@@ -235,6 +236,10 @@ OpalSilenceDetector::Result OpalSilenceDetector::Detect(const BYTE * audioPtr, P
       m_silenceMaximum = 0;
       m_signalReceivedTime = 0;
       m_silenceReceivedTime = 0;
+    }
+    else {
+      if (m_lastResult == VoiceActivated)
+        m_lastResult = VoiceActive;
     }
   }
 
