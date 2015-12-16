@@ -809,7 +809,7 @@ void OpalMediaPatch::Main()
         PTRACE(cpuCheckCount++ % 30 == 0 ? 3 : 5, "CPU for " << *this << " since start is " << threadTimes
                << " last " << CheckCPUTimeMS << "ms is " << delta);
         if ((delta.m_user + delta.m_kernel) > delta.m_real*ThresholdPercent/100) {
-          PTRACE(2, "Greater that 90% CPU usage for " << *this);
+          PTRACE(2, "Greater than 90% CPU usage for " << *this);
           PThread::Sleep(CheckCPUTimeMS*(100-ThresholdPercent)/100);
         }
         lastThreadTimes = threadTimes;
