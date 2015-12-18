@@ -193,6 +193,7 @@ bool OpalRTPSession::RemoveSyncSource(RTP_SyncSourceId ssrc)
   if (it->second->m_direction == e_Sender)
     it->second->SendBYE();
 
+  PTRACE(3, *this << "removed " << it->second->m_direction << " SSRC=" << RTP_TRACE_SRC(ssrc));
   delete it->second;
   m_SSRC.erase(it);
   return true;
