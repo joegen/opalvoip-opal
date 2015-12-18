@@ -2038,20 +2038,29 @@ bool SDPRTPAVPMediaDescription::ToSession(OpalMediaSession * session) const
       rtpSession->SetSinglePortRx();
     rtpSession->SetExtensionHeader(GetExtensionHeaders());
 
-    for (SsrcInfo::const_iterator it = m_ssrcInfo.begin(); it != m_ssrcInfo.end(); ++it) {
-      RTP_SyncSourceId ssrc = it->first;
-      PString cname(it->second.GetString("cname"));
-      if (!cname.IsEmpty()) {
-        PString oldCname = rtpSession->GetCanonicalName(ssrc, OpalRTPSession::e_Receiver);
-        if (!oldCname.IsEmpty() && oldCname != cname) {
-          rtpSession->RemoveSyncSource(ssrc);
-          PTRACE(4, "Session " << session->GetSessionID() << ", removed receiver SSRC " << RTP_TRACE_SRC(ssrc));
+    if (!m_ssrcInfo.empty()) {
+      for (SsrcInfo::const_iterator it = m_ssrcInfo.begin(); it != m_ssrcInfo.end(); ++it) {
+        RTP_SyncSourceId ssrc = it->first;
+        PString cname(it->second.GetString("cname"));
+        if (!cname.IsEmpty()) {
+          PString oldCname = rtpSession->GetCanonicalName(ssrc, OpalRTPSession::e_Receiver);
+          if (!oldCname.IsEmpty() && oldCname != cname) {
+            rtpSession->RemoveSyncSource(ssrc);
+            PTRACE(4, "Session " << session->GetSessionID() << ", removed receiver SSRC " << RTP_TRACE_SRC(ssrc));
+          }
+          if (rtpSession->AddSyncSource(ssrc, OpalRTPSession::e_Receiver, cname) == ssrc) {
+            rtpSession->SetAnySyncSource(false);
+            PTRACE(4, "Session " << session->GetSessionID() << ", added receiver SSRC " << RTP_TRACE_SRC(ssrc));
+          }
+          rtpSession->SetMediaStreamId(it->second.GetString("mslabel"), ssrc, OpalRTPSession::e_Receiver);
         }
-        if (rtpSession->AddSyncSource(ssrc, OpalRTPSession::e_Receiver, cname) == ssrc) {
-          rtpSession->SetAnySyncSource(false);
-          PTRACE(4, "Session " << session->GetSessionID() << ", added receiver SSRC " << RTP_TRACE_SRC(ssrc));
-        }
-        rtpSession->SetMediaStreamId(it->second.GetString("mslabel"), ssrc, OpalRTPSession::e_Receiver);
+      }
+
+      // Remove any SSRCs not indicated in SDP
+      RTP_SyncSourceArray ssrcs = rtpSession->GetSyncSources(OpalRTPSession::e_Receiver);
+      for (RTP_SyncSourceArray::iterator ssrc = ssrcs.begin(); ssrc != ssrcs.end(); ++ssrc) {
+        if (m_ssrcInfo.find(*ssrc) == m_ssrcInfo.end())
+          rtpSession->RemoveSyncSource(*ssrc);
       }
     }
   }
