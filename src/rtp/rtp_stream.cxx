@@ -61,6 +61,7 @@ OpalRTPMediaStream::OpalRTPMediaStream(OpalRTPConnection & conn,
   , m_rtpSession(rtp)
   , m_rewriteHeaders(true)
   , m_syncSource(0)
+  , m_notifierPriority(100)
   , m_jitterBuffer(NULL)
   , m_readTimeout(PMaxTimeInterval)
 #if OPAL_VIDEO
@@ -102,7 +103,7 @@ PBoolean OpalRTPMediaStream::Open()
     OpalJitterBuffer::Init init(connection.GetEndPoint().GetManager(), mediaFormat.GetTimeUnits());
     m_jitterBuffer = OpalJitterBuffer::Create(mediaFormat.GetMediaType(), init);
     m_rtpSession.SetJitterBuffer(m_jitterBuffer, m_syncSource);
-    m_rtpSession.AddDataNotifier(100, m_receiveNotifier);
+    m_rtpSession.AddDataNotifier(m_notifierPriority, m_receiveNotifier, m_syncSource);
     PTRACE(4, "Opening source stream " << *this << " jb=" << *m_jitterBuffer);
   }
   else if (m_syncSource == 0) {
@@ -185,6 +186,26 @@ bool OpalRTPMediaStream::SetMediaPassThrough(OpalMediaStream & otherStream, bool
 }
 
 
+void OpalRTPMediaStream::SetSyncSource(RTP_SyncSourceId ssrc)
+{
+  if (m_syncSource == ssrc)
+    return;
+
+  if (IsSource()) {
+      m_rtpSession.SetJitterBuffer(NULL, m_syncSource);
+      m_rtpSession.RemoveDataNotifier(m_receiveNotifier, m_syncSource);
+  }
+
+  PTRACE(3, "Changing SSRC=" << RTP_TRACE_SRC(m_syncSource) << " to SSRC=" << RTP_TRACE_SRC(ssrc) << " on stream " << *this);
+  m_syncSource = ssrc;
+
+  if (IsSource()) {
+    m_rtpSession.SetJitterBuffer(m_jitterBuffer, m_syncSource);
+    m_rtpSession.AddDataNotifier(m_notifierPriority, m_receiveNotifier, m_syncSource);
+  }
+}
+
+
 void OpalRTPMediaStream::SetReadTimeout(const PTimeInterval & timeout)
 {
   if (m_readTimeout != timeout) {
@@ -218,7 +239,7 @@ bool OpalRTPMediaStream::InternalSetPaused(bool pause, bool fromUser, bool fromP
       m_rtpSession.RemoveDataNotifier(m_receiveNotifier);
     else if (m_jitterBuffer != NULL) {
       m_jitterBuffer->Restart();
-      m_rtpSession.AddDataNotifier(100, m_receiveNotifier);
+      m_rtpSession.AddDataNotifier(m_notifierPriority, m_receiveNotifier, m_syncSource);
     }
   }
 
