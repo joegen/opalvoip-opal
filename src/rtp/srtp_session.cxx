@@ -542,6 +542,17 @@ bool OpalSRTPSession::IsCryptoSecured(Direction dir) const
 }
 
 
+bool OpalSRTPSession::Open(const PString & localInterface, const OpalTransportAddress & remoteAddress)
+{
+  for (int i = 0; i < 2; ++i) {
+    for (int j = 0; j < 2; j++)
+      m_consecutiveErrors[i][j] = 0;
+  }
+
+  return OpalRTPSession::Open(localInterface, remoteAddress);
+}
+
+
 RTP_SyncSourceId OpalSRTPSession::AddSyncSource(RTP_SyncSourceId ssrc, Direction dir, const char * cname)
 {
   PSafeLockReadWrite lock(*this);
@@ -643,10 +654,14 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnSendData(RTP_DataFrame & fr
   frame.MakeUnique();
   frame.SetMinSize(len + SRTP_MAX_TRAILER_LEN);
 
-  if (!CHECK_ERROR(srtp_protect, (m_context, frame.GetPointer(), &len), this, frame.GetSyncSource(), frame.GetSequenceNumber()))
-    return CheckConsecutiveErrors(e_Sender, e_Data);
-
-  m_consecutiveErrors[e_Sender][e_Data] = 0;
+  status = CheckConsecutiveErrors(
+              CHECK_ERROR(
+                  srtp_protect, (m_context, frame.GetPointer(), &len),
+                  this, frame.GetSyncSource(), frame.GetSequenceNumber()
+              ),
+              e_Sender, e_Data);
+  if (status != e_ProcessPacket)
+    return status;
 
   PTRACE(GetThrottle(e_Sender, e_Data, frame.GetSyncSource()),
          *this << "protected RTP packet: " << frame.GetPacketSize()
@@ -679,10 +694,14 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnSendControl(RTP_ControlFram
   frame.MakeUnique();
   frame.SetMinSize(len + SRTP_MAX_TRAILER_LEN);
 
-  if (!CHECK_ERROR(srtp_protect_rtcp, (m_context, frame.GetPointer(), &len), this, frame.GetSenderSyncSource()))
-    return CheckConsecutiveErrors(e_Sender, e_Control);
-
-  m_consecutiveErrors[e_Sender][e_Control] = 0;
+  status = CheckConsecutiveErrors(
+              CHECK_ERROR(
+                  srtp_protect_rtcp, (m_context, frame.GetPointer(), &len),
+                  this, frame.GetSenderSyncSource()
+              ),
+              e_Sender, e_Control);
+  if (status != e_ProcessPacket)
+    return status;
 
   PTRACE(GetThrottle(e_Sender, e_Control, frame.GetSenderSyncSource()),
          *this << "protected RTCP packet: " << frame.GetPacketSize()
@@ -716,11 +735,14 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveData(RTP_DataFrame &
 
   frame.MakeUnique();
 
-  if (!CHECK_ERROR(srtp_unprotect, (m_context, frame.GetPointer(), &len), this, ssrc, frame.GetSequenceNumber())) {
-    return CheckConsecutiveErrors(e_Receiver, e_Data);
-  }
-
-  m_consecutiveErrors[e_Receiver][e_Data] = 0;
+  SendReceiveStatus status = CheckConsecutiveErrors(
+                                CHECK_ERROR(
+                                    srtp_unprotect, (m_context, frame.GetPointer(), &len),
+                                    this, ssrc, frame.GetSequenceNumber()
+                                ),
+                                e_Receiver, e_Data);
+  if (status != e_ProcessPacket)
+    return status;
 
   PTRACE(GetThrottle(e_Receiver, e_Data, ssrc),
          *this << "unprotected RTP packet: " << frame.GetPacketSize()
@@ -757,10 +779,15 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveControl(RTP_ControlF
 
   int len = decoded.GetSize();
 
-  if (!CHECK_ERROR(srtp_unprotect_rtcp, (m_context, decoded.GetPointer(), &len), this, ssrc))
-    return CheckConsecutiveErrors(e_Receiver, e_Control);
+  SendReceiveStatus status = CheckConsecutiveErrors(
+                                CHECK_ERROR(
+                                    srtp_unprotect_rtcp, (m_context, decoded.GetPointer(), &len),
+                                    this, ssrc
+                                ),
+                                e_Receiver, e_Control);
+  if (status != e_ProcessPacket)
+    return status;
 
-  m_consecutiveErrors[e_Receiver][e_Control] = 0;
 
   PTRACE(GetThrottle(e_Receiver, e_Control, ssrc),
          *this << "unprotected RTCP packet: " << decoded.GetPacketSize()
@@ -773,12 +800,18 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveControl(RTP_ControlF
 }
 
 
-OpalRTPSession::SendReceiveStatus OpalSRTPSession::CheckConsecutiveErrors(Direction dir, SubChannels subchannel)
+OpalRTPSession::SendReceiveStatus OpalSRTPSession::CheckConsecutiveErrors(bool ok, Direction dir, SubChannels subchannel)
 {
+    if (ok) {
+      PTRACE_IF(3, m_consecutiveErrors[dir][subchannel] > 0, *this << "reset consecutive errors on " << dir << ' ' << subchannel);
+      m_consecutiveErrors[dir][subchannel] = 0;
+      return e_ProcessPacket;
+    }
+
     if (++m_consecutiveErrors[dir][subchannel] < MaxConsecutiveErrors)
       return e_IgnorePacket;
 
-    PTRACE(2, "Exceeded maximum consecutive errors, aborting " << dir << ' ' << subchannel);
+    PTRACE(2, *this << "exceeded maximum consecutive errors, aborting " << dir << ' ' << subchannel);
     return e_AbortTransport;
 }
 

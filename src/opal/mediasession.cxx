@@ -751,8 +751,13 @@ void OpalMediaTransport::InternalOnStart(SubChannels)
 
 void OpalMediaTransport::InternalRxData(SubChannels subchannel, const PBYTEArray & data)
 {
-  // Already locked read-only
-  m_subchannels[subchannel].m_notifiers(*this, data);
+  if (!LockReadOnly())
+    return;
+
+  Transport::NotifierList notifiers = m_subchannels[subchannel].m_notifiers;
+  UnlockReadOnly();
+
+  notifiers(*this, data);
 }
 
 
@@ -1179,6 +1184,12 @@ OpalMediaSession::OpalMediaSession(const Init & init)
 }
 
 
+OpalMediaSession::~OpalMediaSession()
+{
+  PTRACE(5, *this << "destroyed.");
+}
+
+
 void OpalMediaSession::PrintOn(ostream & strm) const
 {
   strm << "Session " << m_sessionId << ", ";
@@ -1243,13 +1254,13 @@ void OpalMediaSession::AttachTransport(const OpalMediaTransportPtr & transport)
 
 OpalMediaTransportPtr OpalMediaSession::DetachTransport()
 {
-  PTRACE_IF(2, !IsOpen(), *this << "detaching transport from closed session.");
-
   OpalMediaTransportPtr transport = m_transport;
   m_transport.SetNULL();
 
-  if (transport != NULL)
+  if (transport != NULL) {
+    PTRACE(3, *transport << "detaching from session " << GetSessionID());
     transport->RemoveReadNotifier(this, e_AllSubChannels);
+  }
 
   return transport;
 }

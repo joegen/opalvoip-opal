@@ -471,7 +471,8 @@ public:
       bool HandleUnavailableError();
       void Close();
 
-      PNotifierListTemplate<PBYTEArray> m_notifiers;
+      typedef PNotifierListTemplate<PBYTEArray> NotifierList;
+      NotifierList m_notifiers;
 
       OpalMediaTransport * m_owner;
       SubChannels          m_subchannel;
@@ -559,6 +560,8 @@ class OpalMediaSession : public PSafeObject, public OpalMediaTransportChannelTyp
     OpalMediaSession(const Init & init);
 
   public:
+    ~OpalMediaSession();
+
     virtual void PrintOn(ostream & strm) const;
 
     /** Get the session type string (for factory).

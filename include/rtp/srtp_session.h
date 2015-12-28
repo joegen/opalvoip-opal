@@ -129,6 +129,7 @@ class OpalSRTPSession : public OpalRTPSession
     virtual bool ApplyCryptoKey(OpalMediaCryptoKeyList & keys, Direction dir);
     virtual bool IsCryptoSecured(Direction dir) const;
 
+    virtual bool Open(const PString & localInterface, const OpalTransportAddress & remoteAddress);
     virtual RTP_SyncSourceId AddSyncSource(RTP_SyncSourceId id, Direction dir, const char * cname = NULL);
 
     virtual SendReceiveStatus OnSendData(RTP_DataFrame & frame, RewriteMode rewrite);
@@ -147,7 +148,7 @@ class OpalSRTPSession : public OpalRTPSession
     struct srtp_ctx_t * m_context;
     OpalSRTPKeyInfo   * m_keyInfo[2]; // rx & tx
     unsigned            m_consecutiveErrors[2][2];
-    SendReceiveStatus CheckConsecutiveErrors(Direction dir, SubChannels subchannel);
+    SendReceiveStatus CheckConsecutiveErrors(bool ok, Direction dir, SubChannels subchannel);
 
 #if PTRACING
     map< uint64_t, PTrace::Throttle<3> > m_throttle;
