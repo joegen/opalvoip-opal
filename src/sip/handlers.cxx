@@ -2194,6 +2194,10 @@ bool SIPPresenceInfo::ParseXML(const PXML & xml, list<SIPPresenceInfo> & infoLis
           continue;
 
         PCaselessString name(activity->GetName());
+        PINDEX pos = name.Find('|');
+        if (pos != P_MAX_INDEX)
+          name.Delete(0, pos+1);
+
         PCaselessString data = activity->GetData().Trim();
         if (data.IsEmpty())
           personActivities += name;
