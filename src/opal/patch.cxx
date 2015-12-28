@@ -912,6 +912,11 @@ bool OpalMediaPatch::DispatchFrame(RTP_DataFrame & frame)
     return true;
   }
 
+  if (patch->m_sinks.empty()) {
+    PTRACE(2, "No sinks available on " << *this);
+    return false;
+  }
+
   bool written = false;
   for (PList<Sink>::iterator s = patch->m_sinks.begin(); s != patch->m_sinks.end(); ++s) {
     if (s->WriteFrame(frame, patch != this))
