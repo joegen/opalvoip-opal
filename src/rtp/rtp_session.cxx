@@ -2504,8 +2504,10 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::WriteData(RTP_DataFrame & fram
      destroyed via this pointer going out of scope, we avoid a deadlock as
      it is dstroyed after the lock is released. */
   OpalMediaTransportPtr transport = m_transport; // This way avoids races
-  if (transport == NULL)
+  if (transport == NULL) {
+    PTRACE(2, *this << "could not write data frame, no transport");
     return e_AbortTransport;
+  }
 
   if (!transport->IsEstablished())
     return e_IgnorePacket;
@@ -2538,8 +2540,10 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::WriteControl(RTP_ControlFrame 
      destroyed via this pointer going out of scope, we avoid a deadlock as
      it is dstroyed after the lock is released. */
   OpalMediaTransportPtr transport = m_transport;
-  if (transport == NULL)
+  if (transport == NULL) {
+    PTRACE(2, *this << "could not write control frame, no transport");
     return e_AbortTransport;
+  }
 
   if (!transport->IsEstablished())
     return e_IgnorePacket;

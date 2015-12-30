@@ -181,6 +181,16 @@ public class OpalStatusIncomingCall : global::System.IDisposable {
     } 
   }
 
+  public string remoteIdentity {
+    set {
+      OPALPINVOKE.OpalStatusIncomingCall_remoteIdentity_set(swigCPtr, value);
+    } 
+    get {
+      string ret = OPALPINVOKE.OpalStatusIncomingCall_remoteIdentity_get(swigCPtr);
+      return ret;
+    } 
+  }
+
   public OpalStatusIncomingCall() : this(OPALPINVOKE.new_OpalStatusIncomingCall(), true) {
   }
 
