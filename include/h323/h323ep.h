@@ -394,6 +394,11 @@ class H323EndPoint : public OpalRTPEndPoint
     /**Called when the gatekeeper status changes.
       */
     virtual void OnGatekeeperStatus(
+      H323Gatekeeper & gk,
+      H323Gatekeeper::RegistrationFailReasons status
+    );
+    // For backward compatibility
+    virtual void OnGatekeeperStatus(
       H323Gatekeeper::RegistrationFailReasons status
     );
   //@}
