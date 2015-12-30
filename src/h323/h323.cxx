@@ -485,7 +485,7 @@ void H323Connection::HandleSignallingChannel()
           // Have had minimum MonitorCallStartTime delay since CONNECT but
           // still no media to move it to EstablishedConnection state. Must
           // thus not have any common codecs to use!
-          PTRACE(1, "H225\tTook too long to start media");
+          PTRACE(1, "H225\tTook too long to negotiate media");
           ClearCall(EndedByCapabilityExchange);
           break;
         default :
@@ -1481,10 +1481,12 @@ PBoolean H323Connection::OnReceivedSignalConnect(const H323SignalPDU & pdu)
   }
 #endif
 
-  // have answer, so set timeout to interval for monitoring calls health
-  m_signallingChannel->SetReadTimeout(connectionState < EstablishedConnection &&
-                                      endpoint.GetProductInfo() != H323EndPoint::AvayaPhone()
-                                                ? MonitorCallStartTime : MonitorCallStatusTime);
+  // have answer, so set timeout to interval for monitoring calls health, except fopr Avaya
+  m_signallingChannel->SetReadTimeout(endpoint.GetProductInfo() != H323EndPoint::AvayaPhone()
+                                        ? (connectionState < EstablishedConnection
+                                                ? MonitorCallStartTime
+                                                : MonitorCallStatusTime)
+                                        : PMaxTimeInterval);
 
   // Set connected phase now so logic for not sending media before connected is not triggered
   PSafePtr<OpalConnection> otherParty = GetOtherPartyConnection();
