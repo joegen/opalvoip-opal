@@ -271,7 +271,6 @@ class OpalMediaPatch : public PSafeObject
         OpalTranscoder   * m_secondaryCodec;
         RTP_DataFrameList  m_intermediateFrames;
         RTP_DataFrameList  m_finalFrames;
-        bool               m_writeSuccessful;
 
 #if OPAL_VIDEO
         void SetRateControlParameters(const OpalMediaFormat & mediaFormat);
