@@ -551,9 +551,17 @@ PBoolean OpalEndPoint::OnForwarded(OpalConnection & connection,
 }
 
 
-bool OpalEndPoint::OnTransferNotify(OpalConnection & connection, const PStringToString & info)
+bool OpalEndPoint::OnTransferNotify(OpalConnection & connection, const PStringToString & info, const OpalConnection * transferringConnection)
 {
-  return manager.OnTransferNotify(connection, info);
+  if (&connection != transferringConnection)
+    return false;
+
+  bool stayConnected = false;
+  PSafePtr<OpalConnection> otherConnection = connection.GetOtherPartyConnection();
+  if (otherConnection != NULL)
+    stayConnected = otherConnection->OnTransferNotify(info, transferringConnection);
+
+  return manager.OnTransferNotify(connection, info) || stayConnected;
 }
 
 

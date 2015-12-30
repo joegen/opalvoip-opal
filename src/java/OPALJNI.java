@@ -237,6 +237,8 @@ public class OPALJNI {
   public final static native long OpalStatusIncomingCall_extraCount_get(long jarg1, OpalStatusIncomingCall jarg1_);
   public final static native void OpalStatusIncomingCall_extras_set(long jarg1, OpalStatusIncomingCall jarg1_, long jarg2, OpalMIME jarg2_);
   public final static native long OpalStatusIncomingCall_extras_get(long jarg1, OpalStatusIncomingCall jarg1_);
+  public final static native void OpalStatusIncomingCall_remoteIdentity_set(long jarg1, OpalStatusIncomingCall jarg1_, String jarg2);
+  public final static native String OpalStatusIncomingCall_remoteIdentity_get(long jarg1, OpalStatusIncomingCall jarg1_);
   public final static native long new_OpalStatusIncomingCall();
   public final static native void delete_OpalStatusIncomingCall(long jarg1);
   public final static native void OpalParamAnswerCall_callToken_set(long jarg1, OpalParamAnswerCall jarg1_, String jarg2);

@@ -726,6 +726,7 @@ class SIPConnection : public OpalSDPConnection, public SIPTransactionOwner
 
     PString               m_forwardParty;
     OpalTransportAddress  m_remoteAddress;
+    SIPURL                m_assertedIdentity;
     SIPURL                m_remoteIdentity;
     SIPURL                m_contactAddress;
     SIPURL                m_ciscoRemotePartyID;
