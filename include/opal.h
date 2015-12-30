@@ -80,7 +80,7 @@ typedef struct OpalHandleStruct * OpalHandle;
 typedef struct OpalMessage OpalMessage;
 
 /// Current API version
-#define OPAL_C_API_VERSION 32
+#define OPAL_C_API_VERSION 33
 
 
 ///////////////////////////////////////
@@ -1171,7 +1171,10 @@ typedef struct OpalParamSetUpCall {
 typedef struct OpalStatusIncomingCall {
   const char * m_callToken;         ///< Call token for new call.
   const char * m_localAddress;      ///< URL of local interface. e.g. "sip:me@here.com"
-  const char * m_remoteAddress;     ///< URL of calling party. e.g. "sip:them@there.com"
+  const char * m_remoteAddress;     /**< URL of calling party. e.g. "sip:them@there.com", this is
+                                         the best guess on how to call the remote party back. This
+                                         may not be the same as the non server specific "identity"
+                                         of the remote user, see m_remoteIdentity. */
   const char * m_remotePartyNumber; ///< This is the E.164 number of the caller, if available.
   const char * m_remoteDisplayName; ///< Display name calling party. e.g. "Fred Nurk"
   const char * m_calledAddress;     ///< URL of called party the remote is trying to contact.
@@ -1198,6 +1201,11 @@ typedef struct OpalStatusIncomingCall {
                                  typically be protocol specific. For example, for SIP, this is the
                                  multi-part MIME data that may be in the INVITE. */
   const OpalMIME * m_extras; /**<Data for each extra piece of extra information. */
+  const char * m_remoteIdentity; /**< This is the identity of the remote user. Usually it is
+                                      identical to m_remoteAddress, but depending on the protocol
+                                      and system configuration, it may be different. A simple
+                                      example is where the identity is "fred@nurk.com" but the
+                                      address is "sip:fred@10.11.12.13:1415" */
 } OpalStatusIncomingCall;
 
 

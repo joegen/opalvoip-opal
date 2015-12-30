@@ -715,18 +715,16 @@ void OpalMediaTransport::Transport::ThreadMain()
 
 bool OpalMediaTransport::Transport::HandleUnavailableError()
 {
+  if (m_timeForUnavailableErrors.HasExpired() && m_consecutiveUnavailableErrors < 10)
+    m_consecutiveUnavailableErrors = 0;
+
   if (++m_consecutiveUnavailableErrors == 1) {
     PTRACE(2, m_owner, *m_owner << m_subchannel << " port on remote not ready: " << m_owner->GetRemoteAddress(m_subchannel));
     m_timeForUnavailableErrors = m_channel->GetReadTimeout();
     return true;
   }
 
-  if (m_timeForUnavailableErrors.HasExpired()) {
-    m_consecutiveUnavailableErrors = 0;
-    return true;
-  }
-
-  if (m_consecutiveUnavailableErrors < 10)
+  if (m_timeForUnavailableErrors.IsRunning() || m_consecutiveUnavailableErrors < 10)
     return true;
 
   PTRACE(2, m_owner, *m_owner << m_subchannel << ' ' << m_owner->m_maxNoTransmitTime

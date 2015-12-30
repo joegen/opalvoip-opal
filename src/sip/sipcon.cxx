@@ -1259,13 +1259,7 @@ PBoolean SIPConnection::SetUpConnection()
 
 PString SIPConnection::GetRemoteIdentity() const
 {
-  if (!m_remoteIdentity.IsEmpty())
-    return m_remoteIdentity;
-
-  if (!m_ciscoRemotePartyID.IsEmpty())
-    return m_ciscoRemotePartyID;
-
-  return m_remotePartyURL;
+  return m_remoteIdentity;
 }
 
 
@@ -1501,7 +1495,7 @@ bool SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
 
   const SIPMIMEInfo & responseMIME = response.GetMIME();
 
-  m_remoteIdentity = responseMIME.GetPAssertedIdentity();
+  m_assertedIdentity = responseMIME.GetPAssertedIdentity();
 
   {
     SIPURL newRemotePartyID(responseMIME, RemotePartyID);
@@ -1751,20 +1745,21 @@ void SIPConnection::UpdateRemoteAddresses()
      username, display name and domain name, as well as a union of all
      paramaters. A domain name will be used in preference to an IP
      address in higher priority URLs.  */
-  SIPURL remote = m_remoteIdentity;
-  MergeIdentityURL(remote, m_ciscoRemotePartyID);
-  MergeIdentityURL(remote, m_dialog.GetRemoteURI());
-  remote.Sanitise(SIPURL::ExternalURI);
+  m_remoteIdentity = m_assertedIdentity;
+  MergeIdentityURL(m_remoteIdentity, m_ciscoRemotePartyID);
+  MergeIdentityURL(m_remoteIdentity, m_dialog.GetRemoteURI());
+  MergeIdentityURL(m_remoteIdentity, m_dialog.GetRequestURI());
+  m_remoteIdentity.Sanitise(SIPURL::ExternalURI);
 
-  m_remotePartyURL = remote.AsString();
+  m_remotePartyURL = m_dialog.GetRequestURI().AsString(); // This is effectively the remote "Contact" field
 
-  remotePartyNumber = remote.GetUserName();
+  remotePartyNumber = m_remoteIdentity.GetUserName();
   if (!OpalIsE164(remotePartyNumber))
     remotePartyNumber.MakeEmpty();
 
-  remotePartyName = remote.GetDisplayName();
+  remotePartyName = m_remoteIdentity.GetDisplayName();
   if (remotePartyName.IsEmpty())
-    remotePartyName = remotePartyNumber.IsEmpty() ? remote.GetUserName() : remote.AsString();
+    remotePartyName = remotePartyNumber.IsEmpty() ? m_remoteIdentity.GetUserName() : m_remoteIdentity.AsString();
 
   // If no local name, then use what the remote thinks we are
   if (localPartyName.IsEmpty())
@@ -2186,7 +2181,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
 
   SIPMIMEInfo & mime = m_lastReceivedINVITE->GetMIME();
 
-  m_remoteIdentity = mime.GetPAssertedIdentity();
+  m_assertedIdentity = mime.GetPAssertedIdentity();
 
   // update the dialog context
   m_dialog.SetLocalTag(GetToken());
