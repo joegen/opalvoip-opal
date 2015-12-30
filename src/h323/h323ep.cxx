@@ -56,7 +56,7 @@
 
 const OpalProductInfo & H323EndPoint::AvayaPhone()
 {
-	static OpalProductInfo instance(NULL, "oneX_Comm", NULL, 181, 19540, "2.16.840.1.113778.4.2");
+	static OpalProductInfo instance(NULL, "IP_Phone", NULL, 181, 19540, "2.16.840.1.113778.4.2");
 	return instance;
 }
 
