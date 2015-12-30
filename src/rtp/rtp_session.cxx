@@ -129,7 +129,7 @@ OpalRTPSession::OpalRTPSession(const Init & init)
   , m_controlNotifier(PCREATE_NOTIFIER(OnRxControlPacket))
 {
   PTRACE_CONTEXT_ID_TO(m_reportTimer);
-  m_reportTimer.SetNotifier(PCREATE_NOTIFIER(TimedSendReport));
+  m_reportTimer.SetNotifier(PCREATE_NOTIFIER(TimedSendReport), "RTP-Report");
   m_reportTimer.Stop();
 }
 
