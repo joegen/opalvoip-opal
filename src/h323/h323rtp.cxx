@@ -295,6 +295,16 @@ bool H323_RTPChannel::ExtractTransport(const H245_TransportAddress & pdu,
 
   H323TransportAddress transAddr = pdu;
 
+  // Handle Avaya test rig which use bizarre loopback addresses for media
+  if (endpoint.GetProductInfo() == H323EndPoint::AvayaPhone()) {
+    PIPAddressAndPort ap;
+    if (transAddr.GetIpAndPort(ap) && ap.GetAddress().IsLoopback()) {
+      PIPAddress ip;
+      if (connection.GetControlChannel().GetRemoteAddress().GetIpAddress(ip))
+        transAddr = H323TransportAddress(ip, ap.GetPort(), transAddr.GetProto());
+    }
+  }
+
   if (m_session->SetRemoteAddress(transAddr, isDataPort))
     return true;
 
