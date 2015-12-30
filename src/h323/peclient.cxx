@@ -489,7 +489,7 @@ H323PeerElement::Error H323PeerElement::ServiceRequestByAddr(const H323Transport
   // send the request
   Request request(pdu.GetSequenceNumber(), pdu, peer);
   H501PDU reply;
-  request.responseInfo = &reply;
+  request.m_responseInfo = &reply;
   if (!MakeRequest(request))  {
     delete sr;
     switch (request.responseResult) {
@@ -576,7 +576,7 @@ H323PeerElement::Error H323PeerElement::ServiceRequestByID(OpalGloballyUniqueID 
   pdu.m_common.m_serviceID = sr->serviceID;
   Request request(pdu.GetSequenceNumber(), pdu, sr->peer);
   H501PDU reply;
-  request.responseInfo = &reply;
+  request.m_responseInfo = &reply;
 
   if (MakeRequest(request)) {
     H501_ServiceConfirmation & replyBody = reply.m_body;
@@ -707,8 +707,8 @@ PBoolean H323PeerElement::OnReceiveServiceConfirmation(const H501PDU & pdu, cons
   if (!H323_AnnexG::OnReceiveServiceConfirmation(pdu, pduBody))
     return false;
 
-  if (lastRequest->responseInfo != NULL)
-    *(H501PDU *)lastRequest->responseInfo = pdu;
+  if (lastRequest->m_responseInfo != NULL)
+    dynamic_cast<H501PDU &>(*lastRequest->m_responseInfo) = pdu;
 
   return true;
 }
@@ -1159,8 +1159,8 @@ PBoolean H323PeerElement::OnReceiveDescriptorUpdateACK(const H501PDU & pdu, cons
   if (!H323_AnnexG::OnReceiveDescriptorUpdateACK(pdu, pduBody))
     return false;
 
-  if (lastRequest->responseInfo != NULL)
-    *(H501_MessageCommonInfo *)lastRequest->responseInfo = pdu.m_common;
+  if (lastRequest->m_responseInfo != NULL)
+    dynamic_cast<H501_MessageCommonInfo &>(*lastRequest->m_responseInfo) = pdu.m_common;
 
   return true;
 }
@@ -1356,7 +1356,7 @@ H323PeerElement::Error H323PeerElement::SendAccessRequestByID(const OpalGlobally
 
     // make the request
     Request request(pdu.GetSequenceNumber(), pdu, peer);
-    request.responseInfo = &confirmPDU;
+    request.m_responseInfo = &confirmPDU;
     if (MakeRequest(request))
       break;
 
@@ -1397,7 +1397,7 @@ H323PeerElement::Error H323PeerElement::SendAccessRequestByAddr(const H323Transp
 
   // make the request
   Request request(pdu.GetSequenceNumber(), pdu, peerAddr);
-  request.responseInfo = &confirmPDU;
+  request.m_responseInfo = &confirmPDU;
   if (MakeRequest(request))
     return Confirmed;
 
@@ -1439,8 +1439,8 @@ PBoolean H323PeerElement::OnReceiveAccessConfirmation(const H501PDU & pdu, const
   if (!H323_AnnexG::OnReceiveAccessConfirmation(pdu, pduBody))
     return false;
 
-  if (lastRequest->responseInfo != NULL)
-    *(H501PDU *)lastRequest->responseInfo = pdu;
+  if (lastRequest->m_responseInfo != NULL)
+    dynamic_cast<H501PDU &>(*lastRequest->m_responseInfo) = pdu;
 
   return true;
 }

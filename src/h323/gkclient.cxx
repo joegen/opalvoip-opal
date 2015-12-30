@@ -49,6 +49,25 @@
 #include <h460/h460_std18.h>
 
 
+class AdmissionRequestResponseInfo : public PObject
+{
+  PCLASSINFO(AdmissionRequestResponseInfo, PObject);
+public:
+  AdmissionRequestResponseInfo(
+    H323Gatekeeper::AdmissionResponse & r,
+    H323Connection & c
+  ) : param(r), connection(c) { }
+
+  H323Gatekeeper::AdmissionResponse & param;
+  H323Connection & connection;
+  OpalBandwidth allocatedBandwidth;
+  unsigned uuiesRequested;
+  PString      accessTokenOID1;
+  PString      accessTokenOID2;
+};
+
+
+
 #define new PNEW
 #define PTraceModule() "GkClient"
 
@@ -254,7 +273,7 @@ bool H323Gatekeeper::DiscoverGatekeeper()
     Request request(SetupGatekeeperRequest(pdu), pdu);
   
     H323TransportAddress address = transport->GetRemoteAddress();
-    request.responseInfo = &address;
+    request.m_responseInfo = &address;
   
     requestsMutex.Wait();
     requests.SetAt(request.sequenceNumber, &request);
@@ -1104,7 +1123,7 @@ PBoolean H323Gatekeeper::LocationRequest(const PStringList & aliases,
   }
 
   Request request(lrq.m_requestSeqNum, pdu);
-  request.responseInfo = &address;
+  request.m_responseInfo = &address;
   if (!MakeRequest(request))
     return false;
 
@@ -1127,21 +1146,6 @@ H323Gatekeeper::AdmissionResponse::AdmissionResponse()
   aliasAddresses = NULL;
   destExtraCallInfo = NULL;
 }
-
-
-struct AdmissionRequestResponseInfo {
-  AdmissionRequestResponseInfo(
-    H323Gatekeeper::AdmissionResponse & r,
-    H323Connection & c
-  ) : param(r), connection(c) { }
-
-  H323Gatekeeper::AdmissionResponse & param;
-  H323Connection & connection;
-  OpalBandwidth allocatedBandwidth;
-  unsigned uuiesRequested;
-  PString      accessTokenOID1;
-  PString      accessTokenOID2;
-};
 
 
 PBoolean H323Gatekeeper::AdmissionRequest(H323Connection & connection,
@@ -1250,7 +1254,7 @@ PBoolean H323Gatekeeper::AdmissionRequest(H323Connection & connection,
   connection.OnSendARQ(arq);
 
   Request request(arq.m_requestSeqNum, pdu);
-  request.responseInfo = &info;
+  request.m_responseInfo = &info;
 
   if (!m_authenticators.IsEmpty()) {
     H235Authenticators adjustedAuthenticators;
@@ -1402,7 +1406,7 @@ PBoolean H323Gatekeeper::OnReceiveAdmissionConfirm(const H225_AdmissionConfirm &
   if (!H225_RAS::OnReceiveAdmissionConfirm(acf))
     return false;
 
-  AdmissionRequestResponseInfo & info = *(AdmissionRequestResponseInfo *)lastRequest->responseInfo;
+  AdmissionRequestResponseInfo & info = dynamic_cast<AdmissionRequestResponseInfo &>(*lastRequest->m_responseInfo);
   info.allocatedBandwidth = acf.m_bandWidth;
   if (info.param.transportAddress != NULL)
     *info.param.transportAddress = acf.m_destCallSignalAddress;
@@ -1458,8 +1462,7 @@ PBoolean H323Gatekeeper::OnReceiveAdmissionReject(const H225_AdmissionReject & a
     return false;
 
   if (arj.HasOptionalField(H225_AdmissionConfirm::e_serviceControl))
-    OnServiceControlSessions(arj.m_serviceControl,
-              &((AdmissionRequestResponseInfo *)lastRequest->responseInfo)->connection);
+    OnServiceControlSessions(arj.m_serviceControl, &dynamic_cast<AdmissionRequestResponseInfo &>(*lastRequest->m_responseInfo).connection);
 
   if (lastRequest->rejectReason == H225_AdmissionRejectReason::e_callerNotRegistered)
     lastRequest->responseResult = Request::TryAlternate;
@@ -1591,7 +1594,7 @@ PBoolean H323Gatekeeper::BandwidthRequest(H323Connection & connection, OpalBandw
   Request request(brq.m_requestSeqNum, pdu);
   
   OpalBandwidth allocatedBandwidth;
-  request.responseInfo = &allocatedBandwidth;
+  request.m_responseInfo = &allocatedBandwidth;
 
   if (!MakeRequestWithReregister(request, H225_BandRejectReason::e_notBound))
     return false;
@@ -1606,8 +1609,8 @@ PBoolean H323Gatekeeper::OnReceiveBandwidthConfirm(const H225_BandwidthConfirm &
   if (!H225_RAS::OnReceiveBandwidthConfirm(bcf))
     return false;
 
-  if (lastRequest->responseInfo != NULL)
-    *(OpalBandwidth *)lastRequest->responseInfo = bcf.m_bandWidth;
+  if (lastRequest->m_responseInfo != NULL)
+    dynamic_cast<OpalBandwidth &>(*lastRequest->m_responseInfo) = bcf.m_bandWidth;
 
   return true;
 }
@@ -1953,7 +1956,7 @@ bool H323Gatekeeper::NonStandardMessage(const PString & identifer, const PBYTEAr
   H225_NonStandardMessage & nsm = pdu.BuildNonStandardMessage(GetNextSequenceNumber(), identifer, outData);
 
   Request request(nsm.m_requestSeqNum, pdu);  
-  request.responseInfo = &replyData;
+  request.m_responseInfo = &replyData;
   return MakeRequest(request);
 }
 
@@ -1971,8 +1974,8 @@ PBoolean H323Gatekeeper::OnReceiveNonStandardMessage(const H225_NonStandardMessa
   if (!H225_RAS::OnReceiveNonStandardMessage(nsm))
     return false;
 
-  if (lastRequest != NULL && lastRequest->responseInfo != NULL)
-    *(PBYTEArray *)lastRequest->responseInfo = nsm.m_nonStandardData.m_data;
+  if (lastRequest != NULL && lastRequest->m_responseInfo != NULL)
+    dynamic_cast<PBYTEArray &>(*lastRequest->m_responseInfo) = nsm.m_nonStandardData.m_data;
 
   return true;
 }

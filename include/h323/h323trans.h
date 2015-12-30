@@ -234,7 +234,7 @@ class H323Transactor : public PObject
 
         // Inter-thread transfer variables
         unsigned rejectReason;
-        void   * responseInfo;
+        PObject * m_responseInfo;
 
         enum {
           AwaitingResponse,

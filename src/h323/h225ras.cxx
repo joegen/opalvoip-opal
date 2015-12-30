@@ -1145,8 +1145,8 @@ PBoolean H225_RAS::OnReceiveLocationConfirm(const H323RasPDU &, const H225_Locat
   if (!CheckForResponse(H225_RasMessage::e_locationRequest, lcf.m_requestSeqNum))
     return false;
 
-  if (lastRequest->responseInfo != NULL) {
-    H323TransportAddress & locatedAddress = *(H323TransportAddress *)lastRequest->responseInfo;
+  if (lastRequest->m_responseInfo != NULL) {
+    H323TransportAddress & locatedAddress = dynamic_cast<H323TransportAddress &>(*lastRequest->m_responseInfo);
     locatedAddress = lcf.m_callSignalAddress;
   }
   

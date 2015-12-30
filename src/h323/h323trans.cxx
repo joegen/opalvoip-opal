@@ -516,7 +516,7 @@ H323Transactor::Request::Request(unsigned seqNum,
   , requestPDU(pdu)
   , requestAddresses(addresses)
   , rejectReason(0)
-  , responseInfo(NULL)
+  , m_responseInfo(NULL)
   , responseResult(NoResponseReceived)
 {
 }
