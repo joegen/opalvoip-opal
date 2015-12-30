@@ -1037,14 +1037,14 @@ bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::CallStateMsg &
       break;
 
     case OpalSkinnyEndPoint::eStateHold :
-      if (!m_remoteHold)
-        OnHold(true, m_remoteHold = true);
+      if (!m_remoteHold) {
+        m_remoteHold = true;
+        OnHold(true, true);
+      }
       break;
 
     case OpalSkinnyEndPoint::eStateConnected :
-      if (m_remoteHold)
-        OnHold(true, m_remoteHold = false);
-      else if (IsOriginating())
+      if (IsOriginating())
         InternalOnConnected();
       else {
         PTRACE_IF(2, GetPhase() < ConnectedPhase, "State connected before we answered - server probably configured for auto-answer");
@@ -1189,9 +1189,20 @@ void OpalSkinnyConnection::OpenMediaChannel(const MediaInfo & info)
 
   if (info.m_sessionId == 0) {
     // Check for existing session, due to hold/resume
-    OpalMediaStreamPtr existingStream = GetMediaStream(mediaType, info.m_receiver);
-    if (existingStream != NULL && existingStream->IsPaused()) {
-      existingStream->SetPaused(false);
+    if (m_remoteHold) {
+      OpalMediaStreamPtr existingStream = GetMediaStream(mediaType, info.m_receiver);
+      if (existingStream != NULL) {
+        existingStream->SetPaused(false);
+        existingStream = GetMediaStream(mediaType, !info.m_receiver);
+        if (existingStream == NULL || !existingStream->IsPaused()) {
+          m_remoteHold = false;
+          OnHold(true, false);
+        }
+        else
+          PTRACE(3, "Delayed off hold indication, waiting for other media channel.");
+      }
+      else
+        PTRACE(2, "No existing media stream when going off hold.");
       return;
     }
 
@@ -1274,22 +1285,29 @@ void OpalSkinnyConnection::OpenSimulatedMediaChannel(unsigned sessionId, const O
     return;
 
 #if OPAL_PTLIB_WAVFILE
-  OpalMediaStreamPtr sourceStream;
-  OpalWAVFile * wavFile = new OpalWAVFile(m_endpoint.GetSimulatedAudioFile(), PFile::ReadOnly, PFile::ModeDefault, PWAVFile::fmt_PCM, false);
-  if (!wavFile->IsOpen()) {
-    PTRACE(3, "Could not simulate transmit " << mediaFormat << " stream, session=" << sessionId
-            << ", file=" << m_endpoint.GetSimulatedAudioFile() << ": " << wavFile->GetErrorText());
-    return;
-  }
-  if (wavFile->GetFormatString() == mediaFormat)
-    sourceStream = new OpalFileMediaStream(*this, mediaFormat, sessionId, true, wavFile);
-  else {
-    if (!wavFile->SetAutoconvert()) {
+  std::auto_ptr<OpalMediaStream> sourceStream;
+  {
+    std::auto_ptr<OpalWAVFile> wavFile(new OpalWAVFile(m_endpoint.GetSimulatedAudioFile(),
+                                                       PFile::ReadOnly,
+                                                       PFile::ModeDefault,
+                                                       PWAVFile::fmt_PCM,
+                                                       false));
+    if (!wavFile->IsOpen()) {
       PTRACE(3, "Could not simulate transmit " << mediaFormat << " stream, session=" << sessionId
-              << ", file=" << m_endpoint.GetSimulatedAudioFile() << ": unsupported codec");
+             << ", file=" << m_endpoint.GetSimulatedAudioFile() << ": " << wavFile->GetErrorText());
       return;
     }
-    sourceStream = new OpalFileMediaStream(*this, OpalPCM16, sessionId, true, wavFile);
+
+    if (wavFile->GetFormatString() == mediaFormat)
+      sourceStream.reset(new OpalFileMediaStream(*this, mediaFormat, sessionId, true, wavFile.release()));
+    else {
+      if (!wavFile->SetAutoconvert()) {
+        PTRACE(3, "Could not simulate transmit " << mediaFormat << " stream, session=" << sessionId
+               << ", file=" << m_endpoint.GetSimulatedAudioFile() << ": unsupported codec");
+        return;
+      }
+      sourceStream.reset(new OpalFileMediaStream(*this, OpalPCM16, sessionId, true, wavFile.release()));
+    }
   }
 
   if (!sourceStream->Open()) {
@@ -1297,12 +1315,13 @@ void OpalSkinnyConnection::OpenSimulatedMediaChannel(unsigned sessionId, const O
     return;
   }
 
-  mediaStreams.Append(sourceStream);
   OpalMediaPatchPtr patch = m_endpoint.GetManager().CreateMediaPatch(*sourceStream, true);
   if (patch == NULL || !patch->AddSink(sinkStream)) {
     PTRACE(2, "Could not create patch for simulated transmit " << mediaFormat << " stream, session=" << sessionId);
     return;
   }
+
+  mediaStreams.Append(sourceStream.release());
 
   PTRACE(3, "Simulating transmit " << mediaFormat << " stream, session=" << sessionId << ", file=" << m_endpoint.GetSimulatedAudioFile());
   StartMediaStreams();
@@ -1332,6 +1351,7 @@ bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::CloseReceiveCh
     m_endpoint.GetManager().QueueDecoupledEvent(
                      new PSafeWorkArg1<OpalSkinnyConnection, OpalMediaStreamPtr>(this,
                             mediaStream, &OpalSkinnyConnection::DelayCloseMediaStream));
+  m_passThruMedia.erase(it);
   return true;
 }
 
@@ -1356,6 +1376,7 @@ bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::StopMediaTrans
     m_endpoint.GetManager().QueueDecoupledEvent(
                      new PSafeWorkArg1<OpalSkinnyConnection, OpalMediaStreamPtr>(this,
                             mediaStream, &OpalSkinnyConnection::DelayCloseMediaStream));
+  m_passThruMedia.erase(it);
   return true;
 }
 
