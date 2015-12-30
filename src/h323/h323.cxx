@@ -1496,7 +1496,7 @@ PBoolean H323Connection::OnReceivedSignalConnect(const H323SignalPDU & pdu)
   // Check for fastStart data and start fast
   if (connect.HasOptionalField(H225_Connect_UUIE::e_fastStart))
     HandleFastStartAcknowledge(connect.m_fastStart);
-  else if (m_fastStartState != FastStartAcknowledged) {
+  else if (m_fastStartState != FastStartAcknowledged && endpoint.GetProductInfo() != H323EndPoint::AvayaPhone()) {
     // If didn't get fast start channels accepted by remote then clear our
     // proposed channels
     m_fastStartState = FastStartDisabled;
