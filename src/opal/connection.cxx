@@ -677,14 +677,7 @@ void OpalConnection::OnEstablished()
 bool OpalConnection::OnTransferNotify(const PStringToString & info,
                                       const OpalConnection * transferringConnection)
 {
-  if (transferringConnection == this) {
-    PSafePtr<OpalConnection> otherConnection = GetOtherPartyConnection();
-    if (otherConnection != NULL)
-      otherConnection->OnTransferNotify(info, transferringConnection);
-  }
-
-  return endpoint.OnTransferNotify(*this, info);
-
+  return endpoint.OnTransferNotify(*this, info, transferringConnection);
 }
 
 
