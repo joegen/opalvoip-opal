@@ -77,16 +77,16 @@ bool OpalICEMediaTransport::Open(OpalMediaSession & session,
                                  const OpalTransportAddress & remoteAddress)
 {
   m_promiscuous = session.GetStringOptions().GetBoolean(OPAL_OPT_ICE_PROMISCUOUS);
+  m_iceTimeout = session.GetStringOptions().GetVar(OPAL_OPT_ICE_TIMEOUT, session.GetConnection().GetEndPoint().GetManager().GetICETimeout());
+
+  // As per RFC 5425
+  static const PTimeInterval MinTimeout(0,15);
+  if (m_iceTimeout < MinTimeout)
+    m_iceTimeout = MinTimeout;
+  if (m_mediaTimeout < MinTimeout)
+    m_mediaTimeout = MinTimeout;
 
   return OpalUDPMediaTransport::Open(session, count, localInterface, remoteAddress);
-}
-
-
-PTimeInterval OpalICEMediaTransport::GetMediaTimeout(const OpalMediaSession & session) const
-{
-  PTimeInterval timeout = session.GetStringOptions().GetVar(OPAL_OPT_ICE_TIMEOUT, session.GetConnection().GetEndPoint().GetManager().GetICETimeout());
-  static const PTimeInterval MinTimeout(0,15); // As per RFC 5425
-  return timeout < MinTimeout ? MinTimeout : timeout;
 }
 
 
@@ -311,11 +311,13 @@ OpalICEMediaTransport::ICEChannel::ICEChannel(OpalICEMediaTransport & owner, Sub
 
 PBoolean OpalICEMediaTransport::ICEChannel::Read(void * data, PINDEX size)
 {
-  while (PIndirectChannel::Read(data, size)) {
+  for (;;) {
+    SetReadTimeout(m_owner.m_state <= e_Completed ? m_owner.m_mediaTimeout : m_owner.m_iceTimeout);
+    if (!PIndirectChannel::Read(data, size))
+      return false;
     if (m_owner.InternalHandleICE(m_subchannel, data, GetLastReadCount()))
       return true;
   }
-  return false;
 }
 
 
