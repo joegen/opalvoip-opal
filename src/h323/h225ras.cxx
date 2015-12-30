@@ -1295,9 +1295,11 @@ void H225_RAS::OnSendNonStandardMessage(H225_NonStandardMessage & /*nsm*/)
 
 PBoolean H225_RAS::OnReceiveNonStandardMessage(const H323RasPDU & pdu, const H225_NonStandardMessage & nsm)
 {
+  CheckForResponse(H225_RasMessage::e_nonStandardMessage, nsm.m_requestSeqNum);
+
   if (!CheckCryptoTokens(pdu, nsm))
     return false;
-    
+
 #if OPAL_H460
   ReceiveGenericData(this, H460_MessageType::e_nonStandardMessage, nsm);
 #endif
