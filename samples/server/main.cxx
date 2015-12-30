@@ -47,6 +47,7 @@ static const PConstString MinJitterKey("Minimum Jitter");
 static const PConstString MaxJitterKey("Maximum Jitter");
 static const PConstString InBandDTMFKey("Disable In-band DTMF Detect");
 static const PConstString NoMediaTimeoutKey("No Media Timeout");
+static const PConstString TxMediaTimeoutKey("Transmit Media Timeout");
 static const PConstString TransportIdleTimeoutKey("Transport Idle Timeout");
 static const PConstString TCPPortBaseKey("TCP Port Base");
 static const PConstString TCPPortMaxKey("TCP Port Max");
@@ -572,6 +573,8 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
 
   SetNoMediaTimeout(PTimeInterval(0, rsrc->AddIntegerField(NoMediaTimeoutKey, 1, 365*24*60*60, GetNoMediaTimeout().GetSeconds(),
                                                            "seconds", "Clear call when no media is received from remote for this time")));
+  SetTxMediaTimeout(PTimeInterval(0, rsrc->AddIntegerField(TxMediaTimeoutKey, 1, 365*24*60*60, GetTxMediaTimeout().GetSeconds(),
+                                                           "seconds", "Clear call when no media can be sent to remote for this time")));
   SetTransportIdleTime(PTimeInterval(0, rsrc->AddIntegerField(TransportIdleTimeoutKey, 1, 365*24*60*60, GetTransportIdleTime().GetSeconds(),
                                                               "seconds", "Disconnect cached singalling transport after no use for this time")));
 
