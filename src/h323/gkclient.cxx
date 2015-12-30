@@ -1971,7 +1971,7 @@ PBoolean H323Gatekeeper::OnReceiveNonStandardMessage(const H225_NonStandardMessa
   if (!H225_RAS::OnReceiveNonStandardMessage(nsm))
     return false;
 
-  if (lastRequest->responseInfo != NULL)
+  if (lastRequest != NULL && lastRequest->responseInfo != NULL)
     *(PBYTEArray *)lastRequest->responseInfo = nsm.m_nonStandardData.m_data;
 
   return true;
