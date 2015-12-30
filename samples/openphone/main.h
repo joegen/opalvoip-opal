@@ -116,7 +116,7 @@ class MyH323EndPoint : public H323EndPoint
     PStringList m_configuredAliasNames;
 
   private:
-    virtual void OnGatekeeperStatus(H323Gatekeeper::RegistrationFailReasons);
+    virtual void OnGatekeeperStatus(H323Gatekeeper & gk, H323Gatekeeper::RegistrationFailReasons);
 
     MyManager & m_manager;
 };

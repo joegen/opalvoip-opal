@@ -8309,9 +8309,9 @@ MyH323EndPoint::MyH323EndPoint(MyManager & manager)
 }
 
 
-void MyH323EndPoint::OnGatekeeperStatus(H323Gatekeeper::RegistrationFailReasons status)
+void MyH323EndPoint::OnGatekeeperStatus(H323Gatekeeper & gk, H323Gatekeeper::RegistrationFailReasons status)
 {
-  LogWindow << "H.323 registration: " << status << endl;
+  LogWindow << "H.323 registration: " << gk << " - " << status << endl;
 }
 
 #endif
