@@ -116,7 +116,7 @@ void H323Gatekeeper::SetRegistrationFailReason(RegistrationFailReasons reason)
 {
   if (m_registrationFailReason != reason) {
     m_registrationFailReason = reason;
-    endpoint.OnGatekeeperStatus(reason);
+    endpoint.OnGatekeeperStatus(*this, reason);
   }
 }
 

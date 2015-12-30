@@ -178,7 +178,7 @@ public:
   virtual void AddCommands(PCLI & cli);
 #endif // P_CLI
 
-  virtual void OnGatekeeperStatus(H323Gatekeeper::RegistrationFailReasons status);
+  virtual void OnGatekeeperStatus(H323Gatekeeper & gk, H323Gatekeeper::RegistrationFailReasons status);
   bool UseGatekeeperFromArgs(const PArgList & args, const char * host, const char * ident, const char * pass, const char * inter);
 };
 #endif // OPAL_H323
