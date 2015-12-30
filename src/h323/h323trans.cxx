@@ -439,7 +439,8 @@ PBoolean H323Transactor::CheckForResponse(unsigned reqTag, unsigned seqNum, cons
   requestsMutex.Signal();
 
   if (lastRequest == NULL) {
-    PTRACE(2, "Trans\tTimed out or received sequence number (" << seqNum << ") for PDU we never requested");
+    PTRACE_IF(2, reqTag != H225_RasMessage::e_nonStandardMessage, "Trans",
+              "Timed out or received sequence number (" << seqNum << ") for PDU we never requested");
     return false;
   }
 
