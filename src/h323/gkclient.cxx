@@ -884,7 +884,7 @@ PTimeInterval H323Gatekeeper::InternalRegister()
   if (endpoint.GetProductInfo() != H323EndPoint::AvayaPhone())
     return m_currentTimeToLive;
 
-  PString oid = H323EndPoint::AvayaPhone().oid + ".10";
+  PString oid = H323EndPoint::AvayaPhone().oid + ".1";
   PBYTEArray reply;
 
   static const BYTE msg1[] = { 0x40, 0x10, 0x7f, 0x00, 0x00, 0x27, 0x00 };
