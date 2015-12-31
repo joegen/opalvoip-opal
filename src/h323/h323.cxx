@@ -1293,7 +1293,7 @@ PBoolean H323Connection::OnReceivedSignalInformation(const H323SignalPDU & infoP
 
       // Unlocked station from login
       if (memcmp(data_ptr, stationUnlockEvent, sizeof stationUnlockEvent) == 0) {
-        PTRACE(4, "Received Avaya NonStandard UU Information event - Station unlock - sand line, offhook, onhook sequence to initialise");
+        PTRACE(4, "Avaya", "Received NonStandard UU Information event - Station unlock - sand line, offhook, onhook sequence to initialise");
 
         //				SendNonStandardControl(H323EndPoint::AvayaPhone().oid + ".10", PBYTEArray(select_button, sizeof(select_button), false));
         //				SendNonStandardControl(H323EndPoint::AvayaPhone().oid + ".10", PBYTEArray(off_hook, sizeof(off_hook), false));
@@ -1303,25 +1303,25 @@ PBoolean H323Connection::OnReceivedSignalInformation(const H323SignalPDU & infoP
       // Is this the ringer set event
       else if (memcmp(data_ptr, ringerSetEvent, sizeof ringerSetEvent) == 0) {
 
-        PTRACE(4, "Received Avaya NonStandard UU Information event - Ringer Set - Sending line button press");
+        PTRACE(4, "Avaya", "Received NonStandard UU Information event - Ringer Set - Sending line button press");
         // Select answer button (0t7)
         SendNonStandardControl(H323EndPoint::AvayaPhone().oid + ".10", PBYTEArray(select_button, sizeof(select_button), false));
       }
       // Is this the off hook event
       else if (memcmp(data_ptr, offHookEvent, sizeof offHookEvent) == 0) {
 
-        PTRACE(4, "Received Avaya NonStandard UU Information event - Off Hook - sending off hook request");
+        PTRACE(4, "Avaya", "Received NonStandard UU Information event - Off Hook - sending off hook request");
         // Reply with off hook response
         SendNonStandardControl(H323EndPoint::AvayaPhone().oid + ".10", PBYTEArray(off_hook, sizeof(off_hook), false));
       }
       // Is this the ringer clear event
       else if (memcmp(data_ptr, ringerClearEvent, sizeof ringerClearEvent) == 0) {
-        PTRACE(4, "Received Avaya NonStandard UU Information event - Ringer Clear");
+        PTRACE(4, "Avaya", "Received NonStandard UU Information event - Ringer Clear");
         // call is now fully established
       }
       // Is this the ringer clear event
       else if (memcmp(data_ptr, disconnectedEvent, sizeof disconnectedEvent) == 0) {
-        PTRACE(4, "Received Avaya NonStandard UU Information event - Disconnected - Sending on hook");
+        PTRACE(4, "Avaya", "Received NonStandard UU Information event - Disconnected - Sending on hook");
         // Send on hook to hangup
         SendNonStandardControl(H323EndPoint::AvayaPhone().oid + ".10", PBYTEArray(on_hook, sizeof(on_hook), false));
       }
