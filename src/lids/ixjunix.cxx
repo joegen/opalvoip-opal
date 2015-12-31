@@ -226,7 +226,7 @@ void OpalIxJDevice::SignalHandler(int sig)
           if (newHookState != info.hookState) {
             timeval now;
             gettimeofday(&now, NULL);
-            long diff = (now.tv_sec - info.lastHookChange.tv_sec) * 1000000;
+            long long diff = (now.tv_sec - info.lastHookChange.tv_sec) * 1000000ULL;
             diff += now.tv_usec - info.lastHookChange.tv_usec;
             diff = (diff + 500) / 1000;
             if (newHookState && (diff < FLASH_TIME))
