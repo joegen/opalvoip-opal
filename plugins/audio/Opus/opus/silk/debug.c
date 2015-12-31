@@ -54,11 +54,11 @@ unsigned long silk_GetHighResolutionTime(void) /* O  time in usec*/
     return (unsigned long)((1000000*(lpPerformanceCount.QuadPart)) / lpFrequency.QuadPart);
 }
 #else   /* Linux or Mac*/
-unsigned long GetHighResolutionTime(void) /* O  time in usec*/
+unsigned long long GetHighResolutionTime(void) /* O  time in usec*/
 {
     struct timeval tv;
     gettimeofday(&tv, 0);
-    return((tv.tv_sec*1000000)+(tv.tv_usec));
+    return((tv.tv_sec*1000000ULL)+(tv.tv_usec));
 }
 #endif
 
