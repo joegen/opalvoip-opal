@@ -304,12 +304,12 @@ void OpalRTPMediaStream::OnReceivedPacket(OpalRTPSession &, OpalRTPSession::Data
 PBoolean OpalRTPMediaStream::ReadPacket(RTP_DataFrame & packet)
 {
   if (!IsOpen()) {
-    PTRACE(4, "Read from closed stream");
+    PTRACE(4, "Read from closed media stream " << *this);
     return false;
   }
 
   if (IsSink()) {
-    PTRACE(1, "Tried to read from sink media stream");
+    PTRACE(1, "Tried to read from sink media stream " << *this);
     return false;
   }
 
@@ -343,12 +343,12 @@ PBoolean OpalRTPMediaStream::ReadPacket(RTP_DataFrame & packet)
 PBoolean OpalRTPMediaStream::WritePacket(RTP_DataFrame & packet)
 {
   if (!IsOpen()) {
-    PTRACE(4, "Write to closed stream");
+    PTRACE(4, "Write to closed media stream " << *this);
     return false;
   }
 
   if (IsSource()) {
-    PTRACE(1, "Tried to write to source media stream");
+    PTRACE(1, "Tried to write to source media stream " << *this);
     return false;
   }
 
@@ -389,12 +389,12 @@ PBoolean OpalRTPMediaStream::WritePacket(RTP_DataFrame & packet)
         return true;
 
       case OpalRTPSession::e_IgnorePacket :
-        PTRACE(m_throttleWriteData, m_rtpSession << "write data delayed.");
+        PTRACE(m_throttleWriteData, m_rtpSession << "write data delayed on  " << *this);
         PThread::Sleep(20);
         break;
     }
     if (failsafe.HasExpired()) {
-        PTRACE(2, m_rtpSession << "write data failed, delayed for too long.");
+        PTRACE(2, m_rtpSession << "write data failed, delayed for too long on  " << *this);
         return false;
     }
   }
