@@ -1275,6 +1275,7 @@ PBoolean H323Connection::OnReceivedSignalInformation(const H323SignalPDU & infoP
       } header;
 
       static BYTE ringerSetEvent[] = { 0x4B };
+      static BYTE ringerSetEventInbound[] = { 0x4C };
       static BYTE offHookEvent[] = { 0x89 };
       static BYTE ringerClearEvent[] = { 0xa3, 0x80, 0x18, 0x40, 0x40 };
       static BYTE disconnectedEvent[] = { 0x84 };
@@ -1301,7 +1302,8 @@ PBoolean H323Connection::OnReceivedSignalInformation(const H323SignalPDU & infoP
 
       }
       // Is this the ringer set event
-      else if (memcmp(data_ptr, ringerSetEvent, sizeof ringerSetEvent) == 0) {
+      else if (memcmp(data_ptr, ringerSetEvent, sizeof ringerSetEvent) == 0
+          || memcmp(data_ptr, ringerSetEventInbound, sizeof ringerSetEventInbound) == 0) {
 
         PTRACE(4, "Avaya", "Received NonStandard UU Information event - Ringer Set - Sending line button press");
         // Select answer button (0t7)
