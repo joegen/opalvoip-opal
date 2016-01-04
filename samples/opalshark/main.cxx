@@ -613,7 +613,7 @@ void MyPlayer::Discover()
 {
   wxProgressDialog progress(OpalSharkString,
                             PwxString(PSTRSTRM("Loading " << m_pcapFile.GetFilePath())),
-                            m_pcapFile.GetLength(),
+                            1000,
                             this,
                             wxPD_CAN_ABORT|wxPD_AUTO_HIDE);
   m_discoverProgress = &progress;
@@ -696,7 +696,7 @@ void  MyPlayer::DiscoverProgress(OpalPCAPFile &, OpalPCAPFile::Progress & progre
     progress.m_abort = true;
   else {
     progress.m_abort = m_discoverProgress->WasCancelled();
-    m_discoverProgress->Update(progress.m_filePosition);
+    m_discoverProgress->Update(progress.m_filePosition*1000LL/progress.m_fileLength);
   }
 }
 
@@ -878,6 +878,13 @@ void MyPlayer::OnAnalyse(wxCommandEvent &)
     return;
   }
 
+  off_t fileLength = m_pcapFile.GetLength();
+  wxProgressDialog progress(OpalSharkString,
+                            PwxString(PSTRSTRM("Analysing " << m_pcapFile.GetFilePath())),
+                            1000,
+                            this,
+                            wxPD_CAN_ABORT|wxPD_AUTO_HIDE);
+
   Analyser analysis(m_analysisList);
   while (!m_pcapFile.IsEndOfFile()) {
     ++analysis.m_packetNumber;
@@ -887,6 +894,8 @@ void MyPlayer::OnAnalyse(wxCommandEvent &)
       continue;
 
     analysis.Analyse(data, m_pcapFile.GetPacketTime());
+    if (!progress.Update(m_pcapFile.GetPosition()*1000LL/fileLength))
+      break;
   }
 }
 
