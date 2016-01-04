@@ -324,8 +324,17 @@ bool MyManager::Initialise(bool startMinimised)
 }
 
 
-void MyManager::OnClose(wxCloseEvent &)
+void MyManager::OnClose(wxCloseEvent & closeEvent)
 {
+  for (wxWindowList::const_iterator it = GetChildren().begin(); it != GetChildren().end(); ++it) {
+    if (wxDynamicCast(*it, wxMDIChildFrame)) {
+      if (!(*it)->Close()) {
+        closeEvent.Veto();
+        return;
+      }
+    }
+  }
+
   ::wxBeginBusyCursor();
 
   wxProgressDialog progress(OpalSharkString, wxT("Exiting ..."));
@@ -597,7 +606,7 @@ MyPlayer::~MyPlayer()
 
 void MyPlayer::OnCloseWindow(wxCloseEvent& closeEvent)
 {
-  if (wxMessageBox("Really close?", OpalSharkString, wxICON_QUESTION | wxYES_NO) != wxYES)
+  if (closeEvent.CanVeto() && wxMessageBox("Really close?", OpalSharkString, wxICON_QUESTION | wxYES_NO) != wxYES)
     closeEvent.Veto();
   else
     closeEvent.Skip();
@@ -817,6 +826,8 @@ void MyPlayer::OnStep(wxCommandEvent &)
 struct Analyser
 {
   wxListCtrl * m_analysisListCtrl;
+  bool         m_isVideo;
+  bool         m_isDecoded;
   bool         m_firstPacket;
   PTime        m_firstTime;
   unsigned     m_firstTimestamp;
@@ -824,8 +835,10 @@ struct Analyser
   unsigned     m_lastTimestamp;
   unsigned     m_packetNumber;
 
-  Analyser(wxListCtrl * analysisList)
+  Analyser(wxListCtrl * analysisList, bool video, bool decoded = false)
     : m_analysisListCtrl(analysisList)
+    , m_isVideo(video)
+    , m_isDecoded(decoded)
     , m_firstPacket(true)
     , m_firstTime(0)
     , m_firstTimestamp(0)
@@ -837,7 +850,7 @@ struct Analyser
   }
 
 
-  void Analyse(const RTP_DataFrame & data, const PTime & thisTime)
+  void Analyse(const RTP_DataFrame & data, const PTime & thisTime, bool intra = false)
   {
     RTP_SequenceNumber thisSequenceNumber = data.GetSequenceNumber();
     RTP_Timestamp thisTimestamp = data.GetTimestamp();
@@ -849,10 +862,18 @@ struct Analyser
       m_firstTimestamp = thisTimestamp;
     }
     else {
-      delta << (thisTimestamp - m_lastTimestamp);
-      jitter << (thisTime - (m_firstTime + (thisTimestamp - m_firstTimestamp)/48)).GetMilliSeconds();
-      if (m_lastSequenceNumber != UINT_MAX && thisSequenceNumber != (m_lastSequenceNumber + 1))
-        notes << "Out of sequence";
+      if (m_isVideo && data.GetMarker()) {
+        delta << (thisTimestamp - m_lastTimestamp);
+        jitter << (thisTime - (m_firstTime + (thisTimestamp - m_firstTimestamp) / 48)).GetMilliSeconds();
+      }
+      if (m_isDecoded) {
+        if (intra)
+          notes << "Key frame";
+      }
+      else {
+        if (m_lastSequenceNumber != UINT_MAX && thisSequenceNumber != (m_lastSequenceNumber + 1))
+          notes << "Out of sequence";
+      }
     }
 
     long pos = m_analysisListCtrl->InsertItem(INT_MAX, wxString() << m_packetNumber);
@@ -864,7 +885,8 @@ struct Analyser
     m_analysisListCtrl->SetItem(pos, 6, notes);
 
     m_lastSequenceNumber = thisSequenceNumber;
-    m_lastTimestamp = thisTimestamp;
+    if (m_isVideo && data.GetMarker())
+      m_lastTimestamp = thisTimestamp;
   }
 };
 
@@ -885,7 +907,7 @@ void MyPlayer::OnAnalyse(wxCommandEvent &)
                             this,
                             wxPD_CAN_ABORT|wxPD_AUTO_HIDE);
 
-  Analyser analysis(m_analysisList);
+  Analyser analysis(m_analysisList, m_discoveredRTP[m_selectedRTP].m_mediaFormat.GetMediaType() == OpalMediaType::Video());
   while (!m_pcapFile.IsEndOfFile()) {
     ++analysis.m_packetNumber;
 
@@ -965,7 +987,7 @@ void MyPlayer::PlayVideo()
   PTime fileStartTime(0);
   RTP_Timestamp startTimestamp = 0;
 
-  Analyser analysis(m_analysisList);
+  Analyser analysis(m_analysisList, true, true);
 
   OpalPCAPFile::DecodeContext decodeContext;
   while (m_playThreadCtrl != CtlStop && !m_pcapFile.IsEndOfFile()) {
@@ -982,7 +1004,8 @@ void MyPlayer::PlayVideo()
     if (m_pcapFile.GetDecodedRTP(data, decodeContext) <= 0)
       continue;
 
-    analysis.Analyse(data, m_pcapFile.GetPacketTime());
+    analysis.Analyse(data, m_pcapFile.GetPacketTime(),
+                     dynamic_cast<OpalVideoTranscoder *>(decodeContext.m_transcoder)->WasLastFrameIFrame());
 
     PTRACE(4, "Decoded " << setw(1) << data);
 
