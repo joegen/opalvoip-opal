@@ -167,6 +167,8 @@ void OpalSkinnyEndPoint::ShutDown()
   for (it = m_phoneDevices.begin(); it != m_phoneDevices.end(); ++it)
     it->second.Close();
 
+  m_phoneDevices.RemoveAll();
+
   m_phoneDevicesMutex.Signal();
 
   PTRACE(4, "Endpoint shut down.");
@@ -255,12 +257,14 @@ PSafePtr<OpalConnection> OpalSkinnyEndPoint::MakeConnection(OpalCall & call,
 
 PBoolean OpalSkinnyEndPoint::GarbageCollection()
 {
+  m_phoneDevicesMutex.Wait();
   for (PhoneDeviceDict::iterator it = m_phoneDevices.begin(); it != m_phoneDevices.end(); ) {
     if (it->second.m_transport.IsRunning())
       ++it;
     else
       m_phoneDevices.erase(it++);
   }
+  m_phoneDevicesMutex.Signal();
 
   return OpalRTPEndPoint::GarbageCollection();
 }
