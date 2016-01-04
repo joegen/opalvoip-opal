@@ -895,13 +895,19 @@ PTimeInterval H323Gatekeeper::InternalRegister()
     didGkDiscovery = true;
   }
 
-  if (!RegistrationRequest(m_autoReregister, didGkDiscovery, !m_forceRegister)) {
+  if (endpoint.GetProductInfo() != H323EndPoint::AvayaPhone()) {
+    if (RegistrationRequest(m_autoReregister, didGkDiscovery, !m_forceRegister))
+      return m_currentTimeToLive;
+
     PTRACE_IF(2, !m_forceRegister, "Time To Live reregistration failed, retrying in " << OffLineRetryTime);
     return OffLineRetryTime;
   }
 
-  if (endpoint.GetProductInfo() != H323EndPoint::AvayaPhone())
-    return m_currentTimeToLive;
+  if (IsRegistered())
+    return 0;
+
+  if (!RegistrationRequest(m_autoReregister, didGkDiscovery, false))
+    return OffLineRetryTime;
 
   PString oid = H323EndPoint::AvayaPhone().oid + ".1";
   PBYTEArray reply;
@@ -913,7 +919,7 @@ PTimeInterval H323Gatekeeper::InternalRegister()
   OpalConnection::StringOptions options;
   options.Set(OPAL_OPT_CALLING_PARTY_NAME, m_aliases[0]);
   endpoint.GetManager().SetUpCall("ivr:", "h323:register", NULL, 0, &options);
-  return m_currentTimeToLive;
+  return 0;
 }
 
 
