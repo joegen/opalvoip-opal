@@ -145,9 +145,10 @@ class OpalSRTPSession : public OpalRTPSession
     virtual void OnRxDataPacket(OpalMediaTransport & transport, PBYTEArray data);
     virtual void OnRxControlPacket(OpalMediaTransport & transport, PBYTEArray data);
 
-    struct srtp_ctx_t * m_context;
-    OpalSRTPKeyInfo   * m_keyInfo[2]; // rx & tx
-    unsigned            m_consecutiveErrors[2][2];
+    struct srtp_ctx_t        * m_context;
+    std::set<RTP_SyncSourceId> m_addedStream;
+    OpalSRTPKeyInfo          * m_keyInfo[2]; // rx & tx
+    unsigned                   m_consecutiveErrors[2][2];
     SendReceiveStatus CheckConsecutiveErrors(bool ok, Direction dir, SubChannels subchannel);
 
 #if PTRACING

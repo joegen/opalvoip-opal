@@ -579,6 +579,11 @@ bool OpalSRTPSession::AddStreamToSRTP(RTP_SyncSourceId ssrc, Direction dir)
 {
   // Aleady locked on entry
 
+  if (m_addedStream.find(ssrc) != m_addedStream.end()) {
+    PTRACE(4, *this << "already have " << dir << " SRTP stream for SSRC=" << RTP_TRACE_SRC(ssrc));
+    return true;
+  }
+
   // Get policy, create blank one if needed
   srtp_policy_t policy;
   memset(&policy, 0, sizeof(policy));
@@ -596,6 +601,7 @@ bool OpalSRTPSession::AddStreamToSRTP(RTP_SyncSourceId ssrc, Direction dir)
     return false;
 
   PTRACE(4, *this << "added " << dir << " SRTP stream for SSRC=" << RTP_TRACE_SRC(ssrc));
+  m_addedStream.insert(ssrc);
   return true;
 }
 
