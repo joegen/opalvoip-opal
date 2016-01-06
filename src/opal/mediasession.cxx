@@ -715,18 +715,16 @@ void OpalMediaTransport::Transport::ThreadMain()
 
 bool OpalMediaTransport::Transport::HandleUnavailableError()
 {
+  if (m_timeForUnavailableErrors.HasExpired() && m_consecutiveUnavailableErrors < 10)
+    m_consecutiveUnavailableErrors = 0;
+
   if (++m_consecutiveUnavailableErrors == 1) {
     PTRACE(2, m_owner, *m_owner << m_subchannel << " port on remote not ready: " << m_owner->GetRemoteAddress(m_subchannel));
     m_timeForUnavailableErrors = m_channel->GetReadTimeout();
     return true;
   }
 
-  if (m_timeForUnavailableErrors.HasExpired()) {
-    m_consecutiveUnavailableErrors = 0;
-    return true;
-  }
-
-  if (m_consecutiveUnavailableErrors < 10)
+  if (m_timeForUnavailableErrors.IsRunning() || m_consecutiveUnavailableErrors < 10)
     return true;
 
   PTRACE(2, m_owner, *m_owner << m_subchannel << ' ' << m_owner->m_maxNoTransmitTime
@@ -1045,6 +1043,7 @@ bool OpalUDPMediaTransport::Open(OpalMediaSession & session,
   m_packetSize = manager.GetMaxRtpPacketSize();
   if (session.IsRemoteBehindNAT())
     SetRemoteBehindNAT();
+  m_mediaTimeout = session.GetStringOptions().GetVar(OPAL_OPT_MEDIA_RX_TIMEOUT, manager.GetNoMediaTimeout());
   m_maxNoTransmitTime = session.GetStringOptions().GetVar(OPAL_OPT_MEDIA_TX_TIMEOUT, manager.GetTxMediaTimeout());
 
   PIPAddress bindingIP(localInterface);
@@ -1130,10 +1129,7 @@ bool OpalUDPMediaTransport::Open(OpalMediaSession & session,
   for (size_t subchannel = 0; subchannel < m_subchannels.size(); ++subchannel) {
     PUDPSocket & socket = *GetSubChannelAsSocket((SubChannels)subchannel);
     PTRACE_CONTEXT_ID_TO(socket);
-    PTimeInterval readTime = PMaxTimeInterval;
-    if (subchannel == e_Media)
-      readTime = GetMediaTimeout(session);
-    socket.SetReadTimeout(readTime);
+    socket.SetReadTimeout(m_mediaTimeout);
 
     // Increase internal buffer size on media UDP sockets
     SetMinBufferSize(socket, SO_RCVBUF, session.GetMediaType() == OpalMediaType::Audio() ? 0x4000 : 0x100000);
@@ -1141,12 +1137,6 @@ bool OpalUDPMediaTransport::Open(OpalMediaSession & session,
   }
 
   return true;
-}
-
-
-PTimeInterval OpalUDPMediaTransport::GetMediaTimeout(const OpalMediaSession & session) const
-{
-  return session.GetStringOptions().GetVar(OPAL_OPT_MEDIA_RX_TIMEOUT, session.GetConnection().GetEndPoint().GetManager().GetNoMediaTimeout());
 }
 
 

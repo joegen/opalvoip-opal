@@ -49,6 +49,25 @@
 #include <h460/h460_std18.h>
 
 
+class AdmissionRequestResponseInfo : public PObject
+{
+  PCLASSINFO(AdmissionRequestResponseInfo, PObject);
+public:
+  AdmissionRequestResponseInfo(
+    H323Gatekeeper::AdmissionResponse & r,
+    H323Connection & c
+  ) : param(r), connection(c) { }
+
+  H323Gatekeeper::AdmissionResponse & param;
+  H323Connection & connection;
+  OpalBandwidth allocatedBandwidth;
+  unsigned uuiesRequested;
+  PString      accessTokenOID1;
+  PString      accessTokenOID2;
+};
+
+
+
 #define new PNEW
 #define PTraceModule() "GkClient"
 
@@ -116,7 +135,7 @@ void H323Gatekeeper::SetRegistrationFailReason(RegistrationFailReasons reason)
 {
   if (m_registrationFailReason != reason) {
     m_registrationFailReason = reason;
-    endpoint.OnGatekeeperStatus(reason);
+    endpoint.OnGatekeeperStatus(*this, reason);
   }
 }
 
@@ -254,7 +273,7 @@ bool H323Gatekeeper::DiscoverGatekeeper()
     Request request(SetupGatekeeperRequest(pdu), pdu);
   
     H323TransportAddress address = transport->GetRemoteAddress();
-    request.responseInfo = &address;
+    request.m_responseInfo = &address;
   
     requestsMutex.Wait();
     requests.SetAt(request.sequenceNumber, &request);
@@ -620,7 +639,7 @@ bool H323Gatekeeper::RegistrationRequest(bool autoReg, bool didGkDiscovery, bool
         { 0x01, 0x00, 0x05, 0xc0, 0xff, 0xff, 0xff, 0xff, 0x01, 0x80, 0x01, 0x00 }
       };
 #pragma pack()
-      rrq.m_nonStandardData.m_data = PBYTEArray((const BYTE *)&data, sizeof(data), false);
+      rrq.m_nonStandardData.m_data.SetValue((const BYTE *)&data, sizeof(data));
     }
   }
 
@@ -841,6 +860,11 @@ void H323Gatekeeper::Monitor()
 
 PTimeInterval H323Gatekeeper::InternalRegister()
 {
+  // Don't do further registrations if Avaya mode
+  bool isAvayaPhone = endpoint.GetProductInfo() == H323EndPoint::AvayaPhone();
+  if (isAvayaPhone && IsRegistered())
+    return 0;
+
   static PTimeInterval const OffLineRetryTime(0, 0, 1);
 
   PTRACE(3, (m_forceRegister ? "Forced" : "Time To Live") << " registration of \"" << GetEndpointIdentifier() << "\" with " << *this);
@@ -876,15 +900,18 @@ PTimeInterval H323Gatekeeper::InternalRegister()
     didGkDiscovery = true;
   }
 
-  if (!RegistrationRequest(m_autoReregister, didGkDiscovery, !m_forceRegister)) {
+  if (!isAvayaPhone) {
+    if (RegistrationRequest(m_autoReregister, didGkDiscovery, !m_forceRegister))
+      return m_currentTimeToLive;
+
     PTRACE_IF(2, !m_forceRegister, "Time To Live reregistration failed, retrying in " << OffLineRetryTime);
     return OffLineRetryTime;
   }
 
-  if (endpoint.GetProductInfo() != H323EndPoint::AvayaPhone())
-    return m_currentTimeToLive;
+  if (!RegistrationRequest(m_autoReregister, didGkDiscovery, false))
+    return OffLineRetryTime;
 
-  PString oid = H323EndPoint::AvayaPhone().oid + ".10";
+  PString oid = H323EndPoint::AvayaPhone().oid + ".1";
   PBYTEArray reply;
 
   static const BYTE msg1[] = { 0x40, 0x10, 0x7f, 0x00, 0x00, 0x27, 0x00 };
@@ -893,8 +920,8 @@ PTimeInterval H323Gatekeeper::InternalRegister()
   PTRACE(3, "Starting Avaya IP Phone registration call");
   OpalConnection::StringOptions options;
   options.Set(OPAL_OPT_CALLING_PARTY_NAME, m_aliases[0]);
-  endpoint.GetManager().SetUpCall("ivr:", "h323:register", NULL, 0, &options);
-  return m_currentTimeToLive;
+  endpoint.GetManager().SetUpCall("ivr:", "h323:register", NULL, OpalConnection::SynchronousSetUp, &options);
+  return 0;
 }
 
 
@@ -1104,7 +1131,7 @@ PBoolean H323Gatekeeper::LocationRequest(const PStringList & aliases,
   }
 
   Request request(lrq.m_requestSeqNum, pdu);
-  request.responseInfo = &address;
+  request.m_responseInfo = &address;
   if (!MakeRequest(request))
     return false;
 
@@ -1127,21 +1154,6 @@ H323Gatekeeper::AdmissionResponse::AdmissionResponse()
   aliasAddresses = NULL;
   destExtraCallInfo = NULL;
 }
-
-
-struct AdmissionRequestResponseInfo {
-  AdmissionRequestResponseInfo(
-    H323Gatekeeper::AdmissionResponse & r,
-    H323Connection & c
-  ) : param(r), connection(c) { }
-
-  H323Gatekeeper::AdmissionResponse & param;
-  H323Connection & connection;
-  OpalBandwidth allocatedBandwidth;
-  unsigned uuiesRequested;
-  PString      accessTokenOID1;
-  PString      accessTokenOID2;
-};
 
 
 PBoolean H323Gatekeeper::AdmissionRequest(H323Connection & connection,
@@ -1250,7 +1262,7 @@ PBoolean H323Gatekeeper::AdmissionRequest(H323Connection & connection,
   connection.OnSendARQ(arq);
 
   Request request(arq.m_requestSeqNum, pdu);
-  request.responseInfo = &info;
+  request.m_responseInfo = &info;
 
   if (!m_authenticators.IsEmpty()) {
     H235Authenticators adjustedAuthenticators;
@@ -1402,7 +1414,7 @@ PBoolean H323Gatekeeper::OnReceiveAdmissionConfirm(const H225_AdmissionConfirm &
   if (!H225_RAS::OnReceiveAdmissionConfirm(acf))
     return false;
 
-  AdmissionRequestResponseInfo & info = *(AdmissionRequestResponseInfo *)lastRequest->responseInfo;
+  AdmissionRequestResponseInfo & info = dynamic_cast<AdmissionRequestResponseInfo &>(*lastRequest->m_responseInfo);
   info.allocatedBandwidth = acf.m_bandWidth;
   if (info.param.transportAddress != NULL)
     *info.param.transportAddress = acf.m_destCallSignalAddress;
@@ -1458,8 +1470,7 @@ PBoolean H323Gatekeeper::OnReceiveAdmissionReject(const H225_AdmissionReject & a
     return false;
 
   if (arj.HasOptionalField(H225_AdmissionConfirm::e_serviceControl))
-    OnServiceControlSessions(arj.m_serviceControl,
-              &((AdmissionRequestResponseInfo *)lastRequest->responseInfo)->connection);
+    OnServiceControlSessions(arj.m_serviceControl, &dynamic_cast<AdmissionRequestResponseInfo &>(*lastRequest->m_responseInfo).connection);
 
   if (lastRequest->rejectReason == H225_AdmissionRejectReason::e_callerNotRegistered)
     lastRequest->responseResult = Request::TryAlternate;
@@ -1591,7 +1602,7 @@ PBoolean H323Gatekeeper::BandwidthRequest(H323Connection & connection, OpalBandw
   Request request(brq.m_requestSeqNum, pdu);
   
   OpalBandwidth allocatedBandwidth;
-  request.responseInfo = &allocatedBandwidth;
+  request.m_responseInfo = &allocatedBandwidth;
 
   if (!MakeRequestWithReregister(request, H225_BandRejectReason::e_notBound))
     return false;
@@ -1606,8 +1617,8 @@ PBoolean H323Gatekeeper::OnReceiveBandwidthConfirm(const H225_BandwidthConfirm &
   if (!H225_RAS::OnReceiveBandwidthConfirm(bcf))
     return false;
 
-  if (lastRequest->responseInfo != NULL)
-    *(OpalBandwidth *)lastRequest->responseInfo = bcf.m_bandWidth;
+  if (lastRequest->m_responseInfo != NULL)
+    dynamic_cast<OpalBandwidth &>(*lastRequest->m_responseInfo) = bcf.m_bandWidth;
 
   return true;
 }
@@ -1953,7 +1964,7 @@ bool H323Gatekeeper::NonStandardMessage(const PString & identifer, const PBYTEAr
   H225_NonStandardMessage & nsm = pdu.BuildNonStandardMessage(GetNextSequenceNumber(), identifer, outData);
 
   Request request(nsm.m_requestSeqNum, pdu);  
-  request.responseInfo = &replyData;
+  request.m_responseInfo = &replyData;
   return MakeRequest(request);
 }
 
@@ -1971,8 +1982,8 @@ PBoolean H323Gatekeeper::OnReceiveNonStandardMessage(const H225_NonStandardMessa
   if (!H225_RAS::OnReceiveNonStandardMessage(nsm))
     return false;
 
-  if (lastRequest->responseInfo != NULL)
-    *(PBYTEArray *)lastRequest->responseInfo = nsm.m_nonStandardData.m_data;
+  if (lastRequest != NULL && lastRequest->m_responseInfo != NULL)
+    dynamic_cast<PBYTEArray &>(*lastRequest->m_responseInfo) = nsm.m_nonStandardData.m_data;
 
   return true;
 }

@@ -485,7 +485,7 @@ void H323Connection::HandleSignallingChannel()
           // Have had minimum MonitorCallStartTime delay since CONNECT but
           // still no media to move it to EstablishedConnection state. Must
           // thus not have any common codecs to use!
-          PTRACE(1, "H225\tTook too long to start media");
+          PTRACE(1, "H225\tTook too long to negotiate media");
           ClearCall(EndedByCapabilityExchange);
           break;
         default :
@@ -1275,6 +1275,7 @@ PBoolean H323Connection::OnReceivedSignalInformation(const H323SignalPDU & infoP
       } header;
 
       static BYTE ringerSetEvent[] = { 0x4B };
+      static BYTE ringerSetEventInbound[] = { 0x4C };
       static BYTE offHookEvent[] = { 0x89 };
       static BYTE ringerClearEvent[] = { 0xa3, 0x80, 0x18, 0x40, 0x40 };
       static BYTE disconnectedEvent[] = { 0x84 };
@@ -1293,7 +1294,7 @@ PBoolean H323Connection::OnReceivedSignalInformation(const H323SignalPDU & infoP
 
       // Unlocked station from login
       if (memcmp(data_ptr, stationUnlockEvent, sizeof stationUnlockEvent) == 0) {
-        PTRACE(4, "Received Avaya NonStandard UU Information event - Station unlock - sand line, offhook, onhook sequence to initialise");
+        PTRACE(4, "Avaya", "Received NonStandard UU Information event - Station unlock - sand line, offhook, onhook sequence to initialise");
 
         //				SendNonStandardControl(H323EndPoint::AvayaPhone().oid + ".10", PBYTEArray(select_button, sizeof(select_button), false));
         //				SendNonStandardControl(H323EndPoint::AvayaPhone().oid + ".10", PBYTEArray(off_hook, sizeof(off_hook), false));
@@ -1301,27 +1302,28 @@ PBoolean H323Connection::OnReceivedSignalInformation(const H323SignalPDU & infoP
 
       }
       // Is this the ringer set event
-      else if (memcmp(data_ptr, ringerSetEvent, sizeof ringerSetEvent) == 0) {
+      else if (memcmp(data_ptr, ringerSetEvent, sizeof ringerSetEvent) == 0
+          || memcmp(data_ptr, ringerSetEventInbound, sizeof ringerSetEventInbound) == 0) {
 
-        PTRACE(4, "Received Avaya NonStandard UU Information event - Ringer Set - Sending line button press");
+        PTRACE(4, "Avaya", "Received NonStandard UU Information event - Ringer Set - Sending line button press");
         // Select answer button (0t7)
         SendNonStandardControl(H323EndPoint::AvayaPhone().oid + ".10", PBYTEArray(select_button, sizeof(select_button), false));
       }
       // Is this the off hook event
       else if (memcmp(data_ptr, offHookEvent, sizeof offHookEvent) == 0) {
 
-        PTRACE(4, "Received Avaya NonStandard UU Information event - Off Hook - sending off hook request");
+        PTRACE(4, "Avaya", "Received NonStandard UU Information event - Off Hook - sending off hook request");
         // Reply with off hook response
         SendNonStandardControl(H323EndPoint::AvayaPhone().oid + ".10", PBYTEArray(off_hook, sizeof(off_hook), false));
       }
       // Is this the ringer clear event
       else if (memcmp(data_ptr, ringerClearEvent, sizeof ringerClearEvent) == 0) {
-        PTRACE(4, "Received Avaya NonStandard UU Information event - Ringer Clear");
+        PTRACE(4, "Avaya", "Received NonStandard UU Information event - Ringer Clear");
         // call is now fully established
       }
       // Is this the ringer clear event
       else if (memcmp(data_ptr, disconnectedEvent, sizeof disconnectedEvent) == 0) {
-        PTRACE(4, "Received Avaya NonStandard UU Information event - Disconnected - Sending on hook");
+        PTRACE(4, "Avaya", "Received NonStandard UU Information event - Disconnected - Sending on hook");
         // Send on hook to hangup
         SendNonStandardControl(H323EndPoint::AvayaPhone().oid + ".10", PBYTEArray(on_hook, sizeof(on_hook), false));
       }
@@ -1481,10 +1483,12 @@ PBoolean H323Connection::OnReceivedSignalConnect(const H323SignalPDU & pdu)
   }
 #endif
 
-  // have answer, so set timeout to interval for monitoring calls health
-  m_signallingChannel->SetReadTimeout(connectionState < EstablishedConnection &&
-                                      endpoint.GetProductInfo() != H323EndPoint::AvayaPhone()
-                                                ? MonitorCallStartTime : MonitorCallStatusTime);
+  // have answer, so set timeout to interval for monitoring calls health, except fopr Avaya
+  m_signallingChannel->SetReadTimeout(endpoint.GetProductInfo() != H323EndPoint::AvayaPhone()
+                                        ? (connectionState < EstablishedConnection
+                                                ? MonitorCallStartTime
+                                                : MonitorCallStatusTime)
+                                        : PMaxTimeInterval);
 
   // Set connected phase now so logic for not sending media before connected is not triggered
   PSafePtr<OpalConnection> otherParty = GetOtherPartyConnection();
@@ -1494,7 +1498,7 @@ PBoolean H323Connection::OnReceivedSignalConnect(const H323SignalPDU & pdu)
   // Check for fastStart data and start fast
   if (connect.HasOptionalField(H225_Connect_UUIE::e_fastStart))
     HandleFastStartAcknowledge(connect.m_fastStart);
-  else if (m_fastStartState != FastStartAcknowledged) {
+  else if (m_fastStartState != FastStartAcknowledged && endpoint.GetProductInfo() != H323EndPoint::AvayaPhone()) {
     // If didn't get fast start channels accepted by remote then clear our
     // proposed channels
     m_fastStartState = FastStartDisabled;

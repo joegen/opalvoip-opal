@@ -37,7 +37,7 @@ extern "C"
 {
 #endif
 
-unsigned long GetHighResolutionTime(void); /* O  time in usec*/
+unsigned long long GetHighResolutionTime(void); /* O  time in usec*/
 
 /* make SILK_DEBUG dependent on compiler's _DEBUG */
 #if defined _WIN32
@@ -97,7 +97,7 @@ extern char          silk_Timer_tags[silk_NUM_TIMERS_MAX][silk_NUM_TIMERS_MAX_TA
 #ifdef _WIN32
 extern LARGE_INTEGER silk_Timer_start[silk_NUM_TIMERS_MAX];
 #else
-extern unsigned long silk_Timer_start[silk_NUM_TIMERS_MAX];
+extern unsigned long long silk_Timer_start[silk_NUM_TIMERS_MAX];
 #endif
 extern unsigned int  silk_Timer_cnt[silk_NUM_TIMERS_MAX];
 extern opus_int64    silk_Timer_sum[silk_NUM_TIMERS_MAX];
@@ -195,7 +195,7 @@ extern opus_int64    silk_Timer_depth[silk_NUM_TIMERS_MAX];
 }
 #else
 #define TOC(TAG_NAME) {                                             \
-    unsigned long endTime;                                          \
+    unsigned long long endTime;                                     \
     static int init = 0;                                            \
     static int ID = 0;                                              \
     if( init == 0 )                                                 \

@@ -149,6 +149,14 @@ public class OpalStatusIncomingCall {
     return (cPtr == 0) ? null : new OpalMIME(cPtr, false);
   }
 
+  public void setRemoteIdentity(String value) {
+    OPALJNI.OpalStatusIncomingCall_remoteIdentity_set(swigCPtr, this, value);
+  }
+
+  public String getRemoteIdentity() {
+    return OPALJNI.OpalStatusIncomingCall_remoteIdentity_get(swigCPtr, this);
+  }
+
   public OpalStatusIncomingCall() {
     this(OPALJNI.new_OpalStatusIncomingCall(), true);
   }

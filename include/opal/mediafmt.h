@@ -61,7 +61,9 @@ class PASN_Integer;
     Currently 32 bit unsigned, but could be set to 64 bit if we ever need
     more than 4Gb/s
   */
-class OpalBandwidth {
+class OpalBandwidth : public PObject
+{
+    PCLASSINFO(OpalBandwidth, PObject)
   public:
     enum Direction {
       Rx = 1,

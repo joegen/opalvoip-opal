@@ -412,11 +412,9 @@ H323ConsoleEndPoint::H323ConsoleEndPoint(OpalConsoleManager & manager)
 }
 
 
-void H323ConsoleEndPoint::OnGatekeeperStatus(H323Gatekeeper::RegistrationFailReasons status)
+void H323ConsoleEndPoint::OnGatekeeperStatus(H323Gatekeeper & gk, H323Gatekeeper::RegistrationFailReasons status)
 {
-  H323Gatekeeper * gk = GetGatekeeper();
-  if (gk != NULL)
-    m_console.Broadcast(PSTRSTRM("\nH.323 registration: " << *gk << " - " << status));
+  m_console.Broadcast(PSTRSTRM("\nH.323 registration: " << gk << " - " << status));
 }
 
 

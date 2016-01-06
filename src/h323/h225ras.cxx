@@ -1145,8 +1145,8 @@ PBoolean H225_RAS::OnReceiveLocationConfirm(const H323RasPDU &, const H225_Locat
   if (!CheckForResponse(H225_RasMessage::e_locationRequest, lcf.m_requestSeqNum))
     return false;
 
-  if (lastRequest->responseInfo != NULL) {
-    H323TransportAddress & locatedAddress = *(H323TransportAddress *)lastRequest->responseInfo;
+  if (lastRequest->m_responseInfo != NULL) {
+    H323TransportAddress & locatedAddress = dynamic_cast<H323TransportAddress &>(*lastRequest->m_responseInfo);
     locatedAddress = lcf.m_callSignalAddress;
   }
   
@@ -1295,9 +1295,11 @@ void H225_RAS::OnSendNonStandardMessage(H225_NonStandardMessage & /*nsm*/)
 
 PBoolean H225_RAS::OnReceiveNonStandardMessage(const H323RasPDU & pdu, const H225_NonStandardMessage & nsm)
 {
+  CheckForResponse(H225_RasMessage::e_nonStandardMessage, nsm.m_requestSeqNum);
+
   if (!CheckCryptoTokens(pdu, nsm))
     return false;
-    
+
 #if OPAL_H460
   ReceiveGenericData(this, H460_MessageType::e_nonStandardMessage, nsm);
 #endif

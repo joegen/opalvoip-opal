@@ -521,7 +521,6 @@ OpalMediaPatch::Sink::Sink(OpalMediaPatch & p, const OpalMediaStreamPtr & s)
   , m_stream(s)
   , m_primaryCodec(NULL)
   , m_secondaryCodec(NULL)
-  , m_writeSuccessful(true)
 #if OPAL_VIDEO
   , m_rateController(NULL)
 #endif
@@ -779,12 +778,12 @@ void OpalMediaPatch::Main()
     }
 
     if (!m_source.ReadPacket(sourceFrame)) {
-      PTRACE(4, "Thread ended because source read failed");
+      PTRACE(4, "Thread ended because source read failed on " << *this);
       break;
     }
  
     if (!DispatchFrame(sourceFrame)) {
-      PTRACE(4, "Thread ended because all sink writes failed");
+      PTRACE(4, "Thread ended because all sink writes failed on " << *this);
       break;
     }
  
@@ -912,6 +911,11 @@ bool OpalMediaPatch::DispatchFrame(RTP_DataFrame & frame)
     return true;
   }
 
+  if (patch->m_sinks.empty()) {
+    PTRACE(2, "No sinks available on " << *this);
+    return false;
+  }
+
   bool written = false;
   for (PList<Sink>::iterator s = patch->m_sinks.begin(); s != patch->m_sinks.end(); ++s) {
     if (s->WriteFrame(frame, patch != this))
@@ -1008,9 +1012,6 @@ bool OpalMediaPatch::Sink::RateControlExceeded(bool & forceIFrame)
 
 bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame, bool bypassing)
 {
-  if (!m_writeSuccessful)
-    return false;
-  
   if (m_stream->IsPaused())
     return true;
 
@@ -1028,7 +1029,7 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame, bool bypassin
           for (RTP_DataFrameList::iterator interFrame = m_intermediateFrames.begin(); interFrame != m_intermediateFrames.end(); ++interFrame) {
             m_patch.FilterFrame(*interFrame, m_primaryCodec->GetOutputFormat());
             if (!m_stream->WritePacket(*interFrame))
-              return (m_writeSuccessful = false);
+              return false;
             sourceFrame.SetTimestamp(interFrame->GetTimestamp());
             continue;
           }
@@ -1047,8 +1048,7 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame, bool bypassin
 #endif // OPAL_VIDEO
 
   if (bypassing || m_primaryCodec == NULL) {
-    m_writeSuccessful = m_stream->WritePacket(sourceFrame);
-    if (!m_writeSuccessful)
+    if (!m_stream->WritePacket(sourceFrame))
       return false;
 
 #if OPAL_VIDEO
@@ -1101,7 +1101,7 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame, bool bypassin
       for (RTP_DataFrameList::iterator interFrame = m_intermediateFrames.begin(); interFrame != m_intermediateFrames.end(); ++interFrame) {
         m_patch.FilterFrame(*interFrame, m_primaryCodec->GetOutputFormat());
         if (!m_stream->WritePacket(*interFrame))
-          return (m_writeSuccessful = false);
+          return false;
         if (m_primaryCodec == NULL)
           return true;
         m_primaryCodec->CopyTimestamp(sourceFrame, *interFrame, false);
@@ -1117,7 +1117,7 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame, bool bypassin
 
     if (m_secondaryCodec == NULL) {
       if (!m_stream->WritePacket(*interFrame))
-        return (m_writeSuccessful = false);
+        return false;
       if (m_primaryCodec == NULL)
         return true;
       m_primaryCodec->CopyTimestamp(sourceFrame, *interFrame, false);
@@ -1132,7 +1132,7 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame, bool bypassin
     for (RTP_DataFrameList::iterator finalFrame = m_finalFrames.begin(); finalFrame != m_finalFrames.end(); ++finalFrame) {
       m_patch.FilterFrame(*finalFrame, m_secondaryCodec->GetOutputFormat());
       if (!m_stream->WritePacket(*finalFrame))
-        return (m_writeSuccessful = false);
+        return false;
       if (m_secondaryCodec == NULL)
         return true;
       m_secondaryCodec->CopyTimestamp(sourceFrame, *finalFrame, false);

@@ -56,7 +56,7 @@
 
 const OpalProductInfo & H323EndPoint::AvayaPhone()
 {
-	static OpalProductInfo instance(NULL, "oneX_Comm", NULL, 181, 19540, "2.16.840.1.113778.4.2");
+	static OpalProductInfo instance(NULL, "IP_Phone", NULL, 181, 19540, "2.16.840.1.113778.4.2");
 	return instance;
 }
 
@@ -692,20 +692,21 @@ PBoolean H323EndPoint::RemoveGatekeeper(int reason)
 {
   PTRACE(3, "H323\tRemoving gatekeeper");
 
+  m_gatekeeperMutex.Wait();
+  GatekeeperList removedGatekeepers = m_gatekeepers;
+  m_gatekeepers = GatekeeperList(); // Don't use RemoveAll, this just breaks the reference
+  m_gatekeeperByAlias.RemoveAll();
+  m_gatekeeperMutex.Signal();
+
   bool ok = true;
 
-  PWaitAndSignal mutex(m_gatekeeperMutex);
-
-  for (GatekeeperList::iterator it = m_gatekeepers.begin(); it != m_gatekeepers.end(); ++it) {
+  for (GatekeeperList::iterator it = removedGatekeepers.begin(); it != removedGatekeepers.end(); ++it) {
     if (it->IsRegistered()) { // If we are registered send a URQ
       ClearAllCalls();
       if (!it->UnregistrationRequest(reason))
         ok = false;
     }
   }
-
-  m_gatekeepers.RemoveAll();
-  m_gatekeeperByAlias.RemoveAll();
 
   return ok;
 }
@@ -732,6 +733,12 @@ void H323EndPoint::SetGatekeeperAliasLimit(PINDEX limit)
 
   m_gatekeeperAliasLimit = limit;
   InternalRestartGatekeeper();
+}
+
+
+void H323EndPoint::OnGatekeeperStatus(H323Gatekeeper &, H323Gatekeeper::RegistrationFailReasons reason)
+{
+  OnGatekeeperStatus(reason);
 }
 
 
