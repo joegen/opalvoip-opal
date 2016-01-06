@@ -639,7 +639,7 @@ bool H323Gatekeeper::RegistrationRequest(bool autoReg, bool didGkDiscovery, bool
         { 0x01, 0x00, 0x05, 0xc0, 0xff, 0xff, 0xff, 0xff, 0x01, 0x80, 0x01, 0x00 }
       };
 #pragma pack()
-      rrq.m_nonStandardData.m_data = PBYTEArray((const BYTE *)&data, sizeof(data), false);
+      rrq.m_nonStandardData.m_data.SetValue((const BYTE *)&data, sizeof(data));
     }
   }
 
@@ -860,6 +860,11 @@ void H323Gatekeeper::Monitor()
 
 PTimeInterval H323Gatekeeper::InternalRegister()
 {
+  // Don't do further registrations if Avaya mode
+  bool isAvayaPhone = endpoint.GetProductInfo() == H323EndPoint::AvayaPhone();
+  if (isAvayaPhone && IsRegistered())
+    return 0;
+
   static PTimeInterval const OffLineRetryTime(0, 0, 1);
 
   PTRACE(3, (m_forceRegister ? "Forced" : "Time To Live") << " registration of \"" << GetEndpointIdentifier() << "\" with " << *this);
@@ -895,16 +900,13 @@ PTimeInterval H323Gatekeeper::InternalRegister()
     didGkDiscovery = true;
   }
 
-  if (endpoint.GetProductInfo() != H323EndPoint::AvayaPhone()) {
+  if (!isAvayaPhone) {
     if (RegistrationRequest(m_autoReregister, didGkDiscovery, !m_forceRegister))
       return m_currentTimeToLive;
 
     PTRACE_IF(2, !m_forceRegister, "Time To Live reregistration failed, retrying in " << OffLineRetryTime);
     return OffLineRetryTime;
   }
-
-  if (IsRegistered())
-    return 0;
 
   if (!RegistrationRequest(m_autoReregister, didGkDiscovery, false))
     return OffLineRetryTime;
@@ -918,7 +920,7 @@ PTimeInterval H323Gatekeeper::InternalRegister()
   PTRACE(3, "Starting Avaya IP Phone registration call");
   OpalConnection::StringOptions options;
   options.Set(OPAL_OPT_CALLING_PARTY_NAME, m_aliases[0]);
-  endpoint.GetManager().SetUpCall("ivr:", "h323:register", NULL, 0, &options);
+  endpoint.GetManager().SetUpCall("ivr:", "h323:register", NULL, OpalConnection::SynchronousSetUp, &options);
   return 0;
 }
 
