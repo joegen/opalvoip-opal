@@ -862,7 +862,7 @@ struct Analyser
       m_firstTimestamp = thisTimestamp;
     }
     else {
-      if (m_isVideo && data.GetMarker()) {
+      if (!m_isVideo || data.GetMarker()) {
         delta << (thisTimestamp - m_lastTimestamp);
         jitter << (thisTime - (m_firstTime + (thisTimestamp - m_firstTimestamp) / 48)).GetMilliSeconds();
       }
