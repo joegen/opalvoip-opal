@@ -1036,7 +1036,7 @@ OpalTransport::OpalTransport(OpalEndPoint & end, PChannel * channel)
   , m_idleTimer(m_endpoint.GetManager().GetTransportIdleTime())
   , m_referenceCount(0)
 {
-  m_keepAliveTimer.SetNotifier(PCREATE_NOTIFIER(KeepAlive));
+  m_keepAliveTimer.SetNotifier(PCREATE_NOTIFIER(KeepAlive), "OpalTransKeepAlive");
   PTRACE(5, "Transport constructed: " << m_channel);
 }
 
