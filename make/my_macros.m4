@@ -477,15 +477,6 @@ case "$target_os" in
       CPPFLAGS="-stdlib=libc++ $CPPFLAGS"
       LDFLAGS="${LDFLAGS} -stdlib=libc++"
       LIBS="-framework AudioToolbox -framework CoreAudio -framework SystemConfiguration -framework Foundation -lobjc $LIBS"
-      AS_VAR_SET_IF([DEBUG_FLAG], ,
-         MY_COMPILE_IFELSE(
-            [debug build (-gdwarf-4)],
-            [-gdwarf-4],
-            [],
-            [],
-            [DEBUG_FLAG="-gdwarf-4"]
-         )
-      )
    ;;
 
    cygwin* | mingw* )
@@ -660,11 +651,11 @@ dnl debug coredumps and macros.
 AC_SUBST(DEBUG_CPPFLAGS, "-D_DEBUG $DEBUG_CPPFLAGS")
 AS_VAR_SET_IF([DEBUG_FLAG], ,
    MY_COMPILE_IFELSE(
-      [debug build (-ggdb3)],
-      [-ggdb3],
+      [debug build (-gdwarf-4)],
+      [-gdwarf-4],
       [],
       [],
-      [DEBUG_FLAG="-ggdb3"],
+      [DEBUG_FLAG="-gdwarf-4"],
       MY_COMPILE_IFELSE(
          [debug build (-g3)],
          [-g3],
