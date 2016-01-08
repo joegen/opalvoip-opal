@@ -234,7 +234,7 @@ OpalIntraFrameControl::OpalIntraFrameControl(const PTimeInterval & minThrottle,
   , m_stuckCount(0)
   , m_lastRequest(0)
 {
-  m_requestTimer.SetNotifier(PCREATE_NOTIFIER(OnTimedRequest));
+  m_requestTimer.SetNotifier(PCREATE_NOTIFIER(OnTimedRequest), "OpalIntraCtrl");
   PTRACE(4, "Constructed I-Frame request control: this=" << this);
 }
 
