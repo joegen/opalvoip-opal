@@ -349,7 +349,7 @@ OpalSkinnyEndPoint::PhoneDevice::PhoneDevice(OpalSkinnyEndPoint & ep, const PStr
   , m_transport(ep, binding.GetAddress(), binding.GetPort())
 {
   m_transport.SetPDULengthFormat(-4, 4);
-  m_keepAliveTimer.SetNotifier(PCREATE_NOTIFIER(OnKeepAlive));
+  m_keepAliveTimer.SetNotifier(PCREATE_NOTIFIER(OnKeepAlive), "SkinnyKeepAlive");
 }
 
 
