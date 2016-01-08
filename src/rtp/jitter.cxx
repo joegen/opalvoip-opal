@@ -416,6 +416,7 @@ PBoolean OpalAudioJitterBuffer::WriteData(const RTP_DataFrame & frame, PTimeInte
               << RTP_TRACE_SRC(m_lastSyncSource) << " to " << RTP_TRACE_SRC(newSyncSource)
               << " at sn=" << currentSequenceNum);
     Reset();
+    m_packetsTooLate = m_bufferOverruns = 0; // Reset these stats for new SSRC
     m_lastSyncSource = newSyncSource;
   }
 
