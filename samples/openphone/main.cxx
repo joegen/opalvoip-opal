@@ -397,7 +397,6 @@ DEF_XRCID(MenuCallLastReceived);
 DEF_XRCID(MenuAnswer);
 DEF_XRCID(MenuHangUp);
 DEF_XRCID(MenuHold);
-DEF_XRCID(MenuSpeedDialsEdit);
 DEF_XRCID(MenuTransfer);
 DEF_XRCID(MenuStartRecording);
 DEF_XRCID(MenuStopRecording);
@@ -3471,16 +3470,11 @@ void MyManager::OnDefVidWinPos(wxCommandEvent & /*event*/)
       m_videoWindowInfo[preview][role].y = y;
       m_videoWindowInfo[preview][role].WriteConfig(config, VideoWindowKeyBase[preview][role]);
 
-      int w = 0;
-      int h = 0;
       PSafePtr<OpalVideoMediaStream> stream = ::PSafePtrCast<OpalMediaStream, OpalVideoMediaStream>(connection->GetMediaStream(OpalMediaType::Video(), preview));
       if (stream != NULL && stream->GetMediaFormat().GetOptionEnum(OpalVideoFormat::ContentRoleOption(), OpalVideoFormat::eNoRole) == role) {
         PVideoOutputDevice * device = stream->GetVideoOutputDevice();
-        if (device != NULL) {
-          w = device->GetFrameWidth();
-          h = device->GetFrameHeight();
+        if (device != NULL)
           device->SetPosition(x, y);
-        }
       }
       x += 352;
     }
