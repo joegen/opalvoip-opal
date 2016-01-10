@@ -234,9 +234,9 @@ OpalRFC2833Proto::OpalRFC2833Proto(const PNotifier & rx, const OpalMediaFormat &
 {
   PTRACE(4, "Handler created");
 
-  m_receiveTimer.SetNotifier(PCREATE_NOTIFIER(ReceiveTimeout));
-  m_transmitUpdateTimer.SetNotifier(PCREATE_NOTIFIER(TransmitTimeout));
-  m_transmitDurationTimer.SetNotifier(PCREATE_NOTIFIER(TransmitTimeout));
+  m_receiveTimer.SetNotifier(PCREATE_NOTIFIER(ReceiveTimeout), "RFC2833-Rx");
+  m_transmitUpdateTimer.SetNotifier(PCREATE_NOTIFIER(TransmitTimeout), "RFC2833-TxUp");
+  m_transmitDurationTimer.SetNotifier(PCREATE_NOTIFIER(TransmitTimeout), "RFC2833-TxDur");
 
   m_rxEvents.assign(16, true);
   m_rxEvents.resize(256);
