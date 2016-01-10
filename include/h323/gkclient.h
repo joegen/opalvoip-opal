@@ -239,6 +239,12 @@ class H323Gatekeeper : public H225_RAS
       const PBYTEArray & outData,
       PBYTEArray & replyData
     );
+    bool NonStandardMessage(
+      const PString & identifer,
+      const void * outDataPtr,
+      PINDEX outDataSize,
+      PBYTEArray & replyData
+      ) { return NonStandardMessage(identifer, PBYTEArray((const BYTE *)outDataPtr, outDataSize), replyData); }
 
     /**Send a non-standard message and dont wait for a reply.
       */
