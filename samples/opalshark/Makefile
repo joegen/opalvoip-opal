@@ -36,10 +36,21 @@ ifneq (,$(WX_CONFIG))
   WXRC := $(dir $(WX_CONFIG))/wxrc
 else
   WX_CONFIG := $(firstword $(wildcard $(addsuffix /wxgtk2u-2.8-config,$(subst :, ,$(PATH)))))
-  ifeq (,$(shell which $(WX_CONFIG) 2>&1))
-    $(error Could not find wx-config)
+  ifneq (,$(WX_CONFIG))
+    WXRC := $(dir $(WX_CONFIG))/wxrc-gtk2u-2.8
+  else
+    WX_CONFIG := wx-config-3.0
+    ifneq (,$(shell which $(WX_CONFIG) 2>&1))
+      WXRC := wxrc-3.0
+    else
+      WX_CONFIG := wx-config
+      ifneq (,$(shell which $(WX_CONFIG) 2>&1))
+        WXRC := wxrc
+      else
+        $(error Could not find wx-config)
+      endif
+    endif
   endif
-  WXRC := $(dir $(WX_CONFIG))/wxrc-gtk2u-2.8
 endif
 
 ifneq (,$(DEBUG_BUILD))
