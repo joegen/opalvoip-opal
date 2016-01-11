@@ -914,8 +914,20 @@ PTimeInterval H323Gatekeeper::InternalRegister()
   PString oid = H323EndPoint::AvayaPhone().oid + ".1";
   PBYTEArray reply;
 
-  static const BYTE msg1[] = { 0x40, 0x10, 0x7f, 0x00, 0x00, 0x27, 0x00 };
-  NonStandardMessage(oid, PBYTEArray(msg1, sizeof(msg1), false), reply);
+#pragma pack(1)
+  struct
+  {
+	  BYTE prefix[2];
+	  PUInt16b endpointIdentifier[2];
+	  BYTE suffix[1];
+  } msg1 = {
+    0x40, 0x10,
+    m_endpointIdentifier[0],
+    m_endpointIdentifier[1],
+    0x00
+  };
+#pragma pack()
+  NonStandardMessage(oid, &msg1, sizeof(msg1), reply);
 
   PTRACE(3, "Starting Avaya IP Phone registration call");
   OpalConnection::StringOptions options;
