@@ -797,7 +797,8 @@ void OpalRTPSession::InternalAttachTransport(const OpalMediaTransportPtr & newTr
 
   SetQoS(m_qos);
 
-  m_reportTimer.RunContinuous(m_reportTimer.GetResetTime());
+  if (!m_reportTimer.IsRunning())
+    m_reportTimer.RunContinuous(m_reportTimer.GetResetTime());
 
   RTP_SyncSourceId ssrc = GetSyncSourceOut();
   if (ssrc == 0)
@@ -1358,7 +1359,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SendReport(RTP_SyncSourceId ss
       if (sender != NULL && InternalSendReport(frame, *sender, true, true))
         frames.push_back(frame);
     }
-    if (force)
+    if (force && !frames.empty() && !m_reportTimer.IsRunning())
       m_reportTimer.RunContinuous(m_reportTimer.GetResetTime());
   }
 
