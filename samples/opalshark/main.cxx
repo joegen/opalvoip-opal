@@ -85,7 +85,6 @@ static const wxChar MappingsGroup[] = wxT("/PayloadMappings");
 // Menu and command identifiers
 #define DEF_XRCID(name) static int ID_##name = XRCID(#name)
 DEF_XRCID(MenuFullScreen);
-DEF_XRCID(MenuCloseAll);
 DEF_XRCID(Play);
 DEF_XRCID(Stop);
 DEF_XRCID(Pause);
@@ -572,7 +571,7 @@ MyPlayer::MyPlayer(MyManager * manager, const PFilePath & filename)
   FindWindowByNameAs(m_step,    this, wxT("Step"));
   FindWindowByNameAs(m_analyse, this, wxT("Analyse"));
 
-  wxSplitterWindow * splitter;
+  wxSplitterWindow * splitter = 0;
   FindWindowByNameAs(splitter, this, wxT("BottomSplitter"));
   splitter->SetSashPosition(GetClientSize().GetX()/2);
 
