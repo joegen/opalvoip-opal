@@ -744,6 +744,7 @@ void OpalMediaTransport::Transport::Close()
     return;
 
   base->Close();
+  m_owner->InternalRxData(m_subchannel, PBYTEArray());
 }
 
 
