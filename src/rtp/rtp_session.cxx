@@ -2347,14 +2347,14 @@ void OpalRTPSession::SetSinglePortTx(bool singlePortTx)
     return;
 
   OpalTransportAddress remoteDataAddress = transport->GetRemoteAddress(e_Data);
-  if (singlePortTx) {
+  if (singlePortTx)
+    transport->SetRemoteAddress(remoteDataAddress, e_Control);
+  else {
     PIPAddressAndPort ap;
     remoteDataAddress.GetIpAndPort(ap);
     ap.SetPort(ap.GetPort()+1);
     transport->SetRemoteAddress(ap, e_Control);
   }
-  else
-    transport->SetRemoteAddress(remoteDataAddress, e_Control);
 }
 
 
