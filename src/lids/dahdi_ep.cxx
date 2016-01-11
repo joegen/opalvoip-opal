@@ -99,8 +99,6 @@ bool DahdiLineInterfaceDevice::Open(const PString &)
         if (ioctl(fd, DAHDI_GET_PARAMS, &chanInfo))
           continue;
 
-        bool ok = true;
-
         ChannelInfo * channelInfo = NULL;
 
         switch (chanInfo.sigcap & (__DAHDI_SIG_FXO | __DAHDI_SIG_FXS)) {
