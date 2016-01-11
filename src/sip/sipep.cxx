@@ -804,8 +804,12 @@ bool SIPEndPoint::OnReceivedPDU(SIP_PDU * pdu)
               case SIPConnection::IsDuplicateINVITE: // Completely ignore duplicate INVITE
                 return false;
 
-              case SIPConnection::IsReINVITE: // Pass on to worker thread if re-INVITE
-                new SIP_PDU_Work(*this, token, pdu);
+              case SIPConnection::IsReINVITE:
+                if (connection->IsReleased()) {
+                  pdu->SendResponse(SIP_PDU::Failure_RequestPending);  /// Pending request will be the BYE
+                  return false;
+                }
+                new SIP_PDU_Work(*this, token, pdu); // Pass on to worker thread if re-INVITE
                 return true;
 
               case SIPConnection::IsLoopedINVITE: // Send back error if looped INVITE
