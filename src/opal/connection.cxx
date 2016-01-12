@@ -1736,10 +1736,13 @@ void OpalConnection::OnStopMediaPatch(OpalMediaPatch & patch)
 }
 
 
-bool OpalConnection::OnMediaFailed(unsigned sessionId, bool source)
+bool OpalConnection::OnMediaFailed(unsigned sessionId)
 {
-  m_mediaSessionFailed.insert(sessionId*2 + source);
-  return GetEndPoint().GetManager().OnMediaFailed(*this, sessionId, source);
+  if (IsReleased())
+    return false;
+
+  m_mediaSessionFailed.insert(sessionId);
+  return GetEndPoint().GetManager().OnMediaFailed(*this, sessionId);
 }
 
 

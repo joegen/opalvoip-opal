@@ -1243,8 +1243,7 @@ class OpalManager : public PObject
       */
     virtual bool OnMediaFailed(
       OpalConnection & connection,  ///< Connection session is in
-      unsigned sessionId,           ///< Session ID of media that stopped.
-      bool source                   ///< Indicates the direction of stream.
+      unsigned sessionId            ///< Session ID of media that stopped.
     );
   //@}
 
