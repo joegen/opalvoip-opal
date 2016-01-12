@@ -1301,8 +1301,7 @@ class OpalConnection : public PSafeObject
        @Return true if the specific media session is to be aborted.
       */
     virtual bool OnMediaFailed(
-      unsigned sessionId,  ///< Session ID of media that stopped.
-      bool source          ///< Indicates the direction of stream.
+      unsigned sessionId   ///< Session ID of media that stopped.
     );
 
     /**Indicate all media sessions have failed.

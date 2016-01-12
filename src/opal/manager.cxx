@@ -1470,7 +1470,7 @@ void OpalManager::OnStopMediaPatch(OpalConnection & connection, OpalMediaPatch &
 }
 
 
-bool OpalManager::OnMediaFailed(OpalConnection & connection, unsigned, bool)
+bool OpalManager::OnMediaFailed(OpalConnection & connection, unsigned)
 {
   if (connection.AllMediaFailed()) {
     PTRACE(2, "All media failed, releasing " << connection);
