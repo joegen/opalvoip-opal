@@ -792,7 +792,8 @@ void OpalRTPSession::InternalAttachTransport(const OpalMediaTransportPtr & newTr
 
   SetQoS(m_qos);
 
-  m_reportTimer.RunContinuous(m_reportTimer.GetResetTime());
+  if (!m_reportTimer.IsRunning())
+    m_reportTimer.RunContinuous(m_reportTimer.GetResetTime());
 
   RTP_SyncSourceId ssrc = GetSyncSourceOut();
   if (ssrc == 0)
@@ -1353,6 +1354,9 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SendReport(RTP_SyncSourceId ss
       if (sender != NULL && InternalSendReport(frame, *sender, true, true))
         frames.push_back(frame);
     }
+
+    if (force && !frames.empty() && !m_reportTimer.IsRunning())
+      m_reportTimer.RunContinuous(m_reportTimer.GetResetTime());
   }
 
   UnlockReadOnly();
@@ -2337,14 +2341,14 @@ void OpalRTPSession::SetSinglePortTx(bool singlePortTx)
     return;
 
   OpalTransportAddress remoteDataAddress = transport->GetRemoteAddress(e_Data);
-  if (singlePortTx) {
+  if (singlePortTx)
+    transport->SetRemoteAddress(remoteDataAddress, e_Control);
+  else {
     PIPAddressAndPort ap;
     remoteDataAddress.GetIpAndPort(ap);
     ap.SetPort(ap.GetPort()+1);
     transport->SetRemoteAddress(ap, e_Control);
   }
-  else
-    transport->SetRemoteAddress(remoteDataAddress, e_Control);
 }
 
 
