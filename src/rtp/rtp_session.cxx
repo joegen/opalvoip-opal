@@ -2296,12 +2296,9 @@ bool OpalRTPSession::SetQoS(const PIPSocket::QoS & qos)
 
 bool OpalRTPSession::Close()
 {
-  if (!IsOpen())
-    return false;
-
   PTRACE(3, *this << "closing RTP.");
 
-  if (LockReadOnly()) {
+  if (IsOpen() && LockReadOnly()) {
     for (SyncSourceMap::iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
       if (it->second->m_direction == e_Sender && it->second->m_packets > 0)
         it->second->SendBYE();
