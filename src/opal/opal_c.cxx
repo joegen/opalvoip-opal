@@ -1693,7 +1693,7 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
 }
 
 
-void FillOpalProductInfo(const OpalMessage & command, OpalMessageBuffer & response, OpalProductInfo & info)
+static void FillOpalProductInfo(const OpalMessage & command, OpalMessageBuffer & response, OpalProductInfo & info)
 {
   SET_MESSAGE_STRING(response, m_param.m_protocol.m_product.m_vendor,  info.vendor);
   SET_MESSAGE_STRING(response, m_param.m_protocol.m_product.m_name,    BuildProductName(info));
@@ -1703,22 +1703,28 @@ void FillOpalProductInfo(const OpalMessage & command, OpalMessageBuffer & respon
   response->m_param.m_protocol.m_product.m_t35Extension     = info.t35Extension;
   response->m_param.m_protocol.m_product.m_manufacturerCode = info.manufacturerCode;
 
-  if (command.m_param.m_protocol.m_product.m_vendor != NULL)
+  if (command.m_param.m_protocol.m_product.m_vendor != NULL && info.vendor != command.m_param.m_protocol.m_product.m_vendor) {
     info.vendor = command.m_param.m_protocol.m_product.m_vendor;
+    PTRACE(4, "Set product vendor to \"" << info.vendor << '"');
+  }
 
   if (command.m_param.m_protocol.m_product.m_name != NULL) {
-    PString str = command.m_param.m_protocol.m_product.m_name;
-    PINDEX paren = str.Find('(');
-    if (paren == P_MAX_INDEX)
-      info.name = str;
-    else {
-      info.name = str.Left(paren).Trim();
-      info.comments = str.Mid(paren);
+    PString name, comments;
+    PString(command.m_param.m_protocol.m_product.m_name).Split('(', name, comments, PString::SplitDefaultToBefore|PString::SplitTrimBefore);
+    if (info.name != name) {
+      info.name = name;
+      PTRACE(4, "Set product name to \"" << info.name << '"');
+    }
+    if (info.comments != comments) {
+      info.comments = comments;
+      PTRACE(4, "Set product comments to \"" << info.comments << '"');
     }
   }
 
-  if (command.m_param.m_protocol.m_product.m_version != NULL)
+  if (command.m_param.m_protocol.m_product.m_version != NULL && info.version != command.m_param.m_protocol.m_product.m_version) {
     info.version = command.m_param.m_protocol.m_product.m_version;
+    PTRACE(4, "Set product version to \"" << info.version << '"');
+  }
 
   if (command.m_param.m_protocol.m_product.m_t35CountryCode != 0 && command.m_param.m_protocol.m_product.m_manufacturerCode != 0) {
     info.t35CountryCode   = (BYTE)command.m_param.m_protocol.m_product.m_t35CountryCode;

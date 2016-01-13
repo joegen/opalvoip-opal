@@ -54,7 +54,7 @@ else
 endif
 
 ifneq (,$(DEBUG_BUILD))
-  ifneq (,$(shell wx-config --list | grep debug))
+  ifneq (,$(shell $(WX_CONFIG) --list | grep debug))
     WX_CONFIG += --debug=$(DEBUG_BUILD)
   else
     CPPFLAGS += -DOPAL_WX_DEBUG_HACK
