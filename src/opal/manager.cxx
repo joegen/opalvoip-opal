@@ -673,9 +673,9 @@ static void SynchCallSetUp(PSafePtr<OpalConnection> connection)
   if (connection->SetUpConnection())
     return;
 
-  PTRACE(2, "Could not set up connection on " << *connection);
   if (connection->GetCallEndReason() == OpalConnection::NumCallEndReasons)
     connection->Release(OpalConnection::EndedByTemporaryFailure);
+  PTRACE(2, "Could not set up connection on " << *connection << ' ' << connection->GetCallEndReason());
 }
 
 
@@ -910,7 +910,7 @@ PBoolean OpalManager::OnIncomingConnection(OpalConnection & connection, unsigned
   if (destination.IsEmpty()) {
     destination = connection.GetDestinationAddress();
     if (destination.IsEmpty()) {
-      PTRACE(3, "Cannot complete call, no destination address from connection " << connection);
+      PTRACE(2, "Cannot complete call, no destination address from connection " << connection);
       return false;
     }
   }
@@ -982,7 +982,7 @@ bool OpalManager::OnRouteConnection(PStringSet & routesTried,
     PString route = ApplyRouteTable(a_party, b_party, tableEntry);
     if (route.IsEmpty()) {
       if (a_party == b_party) {
-        PTRACE(3, "Circular route a=b=\"" << a_party << "\", call=" << call);
+        PTRACE(2, "Circular route a=b=\"" << a_party << "\", call=" << call);
         return false;
       }
 
@@ -998,7 +998,7 @@ bool OpalManager::OnRouteConnection(PStringSet & routesTried,
         }
       }
 
-      PTRACE(3, "Could not route a=\"" << a_party << "\", b=\"" << b_party << "\", call=" << call);
+      PTRACE(2, "Could not route a=\"" << a_party << "\", b=\"" << b_party << "\", call=" << call);
       return false;
     }
 
