@@ -1562,9 +1562,10 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
         const RTP_ControlFrame::ReceiverReport * rr;
         unsigned count;
         if (frame.ParseReceiverReport(ssrc, rr, count)) {
-          PTRACE_IF(m_throttleRxRR, count == 0, *this << "received empty ReceiverReport: sender SSRC=" << RTP_TRACE_SRC(ssrc));
           for (unsigned i = 0; i < count; ++i)
             OnRxReceiverReport(ssrc, rr[i]);
+          // Do below trace after above or above doesn't print RR trace due to throttle
+          PTRACE_IF(m_throttleRxRR, count == 0, *this << "received empty ReceiverReport: sender SSRC=" << RTP_TRACE_SRC(ssrc));
         }
         else {
           PTRACE(2, *this << "ReceiverReport packet truncated - " << frame);
