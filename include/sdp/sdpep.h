@@ -251,29 +251,31 @@ class OpalSDPConnection : public OpalRTPConnection
       SDPSessionDescription & sdpAnswer,
       bool transfer = false
     );
+
+    struct BundleMergeInfo;
     virtual SDPMediaDescription * OnSendAnswerSDPSession(
       SDPMediaDescription * incomingMedia,
       unsigned sessionId,
       bool transfer,
       SDPMediaDescription::Direction otherSidesDir,
-      OpalMediaTransportPtr & bundledTransport
+      BundleMergeInfo & bundleMergeInfo
     );
 
     virtual bool OnReceivedAnswerSDP(
       const SDPSessionDescription & sdp,
       bool & multipleFormats
     );
+
     virtual bool OnReceivedAnswerSDPSession(
       const SDPMediaDescription * mediaDescription,
       unsigned sessionId,
       SDPMediaDescription::Direction otherSidesDir,
       bool & multipleFormats,
-      vector<bool> & allowPauseRecvMediaStream,
-      vector<bool> & allowPauseSendMediaStream
+      BundleMergeInfo & bundleMergeInfo
     );
 
     virtual bool SetActiveMediaFormats(
-        const OpalMediaFormatList & formats
+      const OpalMediaFormatList & formats
     );
 
     virtual OpalMediaSession * SetUpMediaSession(
@@ -281,7 +283,7 @@ class OpalSDPConnection : public OpalRTPConnection
       const OpalMediaType & mediaType,
       const SDPMediaDescription & mediaDescription,
       OpalTransportAddress & localAddress,
-      OpalMediaTransportPtr & bundledTransport
+      BundleMergeInfo & bundleMergeInfo
     );
 
     void RetryHoldRemote(bool placeOnHold);
