@@ -333,7 +333,7 @@ class SDPMediaDescription : public PObject, public SDPCommonAttributes
     virtual Direction GetDirection() const { return m_mediaAddress.IsEmpty() ? Inactive : m_direction; }
 
     virtual bool FromSession(OpalMediaSession * session, const SDPMediaDescription * offer, RTP_SyncSourceId ssrc);
-    virtual bool ToSession(OpalMediaSession * session) const;
+    virtual bool ToSession(OpalMediaSession * session, RTP_SyncSourceArray & ssrcs) const;
     virtual bool IsGroupMember(const PString & groupId) const { return m_groups.Contains(groupId); }
     virtual PStringArray GetGroups() const { return m_groups.GetKeys(); }
     virtual PString GetGroupMediaId(const PString & groupId) const { return m_groups(groupId); }
@@ -482,7 +482,7 @@ class SDPRTPAVPMediaDescription : public SDPMediaDescription
 #endif
     virtual void SetAttribute(const PString & attr, const PString & value);
     virtual bool FromSession(OpalMediaSession * session, const SDPMediaDescription * offer, RTP_SyncSourceId ssrc);
-    virtual bool ToSession(OpalMediaSession * session) const;
+    virtual bool ToSession(OpalMediaSession * session, RTP_SyncSourceArray & ssrcs) const;
 
     typedef std::map<RTP_SyncSourceId, PStringOptions> SsrcInfo;
     const SsrcInfo & GetSsrcInfo() const { return m_ssrcInfo; }
