@@ -815,7 +815,7 @@ bool SDPMediaDescription::FromSession(OpalMediaSession * session,
 }
 
 
-bool SDPMediaDescription::ToSession(OpalMediaSession * session) const
+bool SDPMediaDescription::ToSession(OpalMediaSession * session, RTP_SyncSourceArray &) const
 {
 #if OPAL_ICE
   OpalMediaTransportPtr transport = session->GetTransport();
@@ -2027,7 +2027,7 @@ bool SDPRTPAVPMediaDescription::FromSession(OpalMediaSession * session,
 }
 
 
-bool SDPRTPAVPMediaDescription::ToSession(OpalMediaSession * session) const
+bool SDPRTPAVPMediaDescription::ToSession(OpalMediaSession * session, RTP_SyncSourceArray & ssrcs) const
 {
   OpalRTPSession * rtpSession = dynamic_cast<OpalRTPSession *>(session);
   if (rtpSession != NULL) {
@@ -2040,6 +2040,7 @@ bool SDPRTPAVPMediaDescription::ToSession(OpalMediaSession * session) const
 
     for (SsrcInfo::const_iterator it = m_ssrcInfo.begin(); it != m_ssrcInfo.end(); ++it) {
       RTP_SyncSourceId ssrc = it->first;
+      ssrcs.push_back(ssrc);
       PString cname(it->second.GetString("cname"));
       if (!cname.IsEmpty()) {
         PString oldCname = rtpSession->GetCanonicalName(ssrc, OpalRTPSession::e_Receiver);
@@ -2065,7 +2066,7 @@ bool SDPRTPAVPMediaDescription::ToSession(OpalMediaSession * session) const
   }
 #endif // OPAL_SRTP
 
-  return SDPMediaDescription::ToSession(session);
+  return SDPMediaDescription::ToSession(session, ssrcs);
 }
 
 
