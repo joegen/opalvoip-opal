@@ -739,6 +739,8 @@ class OpalRTPSession : public OpalMediaSession
 
       PTRACE_THROTTLE(m_throttleSendData,3,20000);
       PTRACE_THROTTLE(m_throttleReceiveData,3,20000);
+      PTRACE_THROTTLE(m_throttleRxSR,3,60000,5);
+      PTRACE_THROTTLE(m_throttleRxRR,3,60000, 5);
       PTRACE_THROTTLE(m_throttleTxRED,3,60000);
       PTRACE_THROTTLE(m_throttleRxRED,3,60000);
       PTRACE_THROTTLE(m_throttleRxUnknownFEC,3,10000);
@@ -779,8 +781,7 @@ class OpalRTPSession : public OpalMediaSession
     ApplDefinedNotifierList m_applDefinedNotifiers;
 
     PTRACE_THROTTLE(m_throttleTxReport,3,60000,5);
-    PTRACE_THROTTLE(m_throttleRxSR,3,60000,5);
-    PTRACE_THROTTLE(m_throttleRxRR,4,60000);
+    PTRACE_THROTTLE(m_throttleRxEmptyRR,3,60000);
     PTRACE_THROTTLE(m_throttleRxSDES,4,60000);
 
   private:
