@@ -3744,15 +3744,16 @@ class SIPTransactionOwnerDummy : public PSafeObject, public SIPTransactionOwner
   public:
     SIPTransactionOwnerDummy(SIPEndPoint & endpoint, const SIPURL & targetURI)
       : P_DISABLE_MSVC_WARNING_4355(SIPTransactionOwner(*this, endpoint))
-      , m_targetURI(targetURI)
     {
+      m_dialog.SetRequestURI(targetURI);
+    }
+    SIPTransactionOwnerDummy(SIPEndPoint & endpoint, const SIPDialogContext & context)
+      : P_DISABLE_MSVC_WARNING_4355(SIPTransactionOwner(*this, endpoint))
+    {
+      m_dialog = context;
     }
 
-    virtual SIPURL GetTargetURI() const { return m_targetURI; }
     virtual PString GetAuthID() const { return PString::Empty(); }
-
-  protected:
-    SIPURL m_targetURI;
 };
 
 
@@ -3890,7 +3891,7 @@ SIPTransaction * SIPAck::CreateDuplicate() const
 /////////////////////////////////////////////////////////////////////////
 
 SIPBye::SIPBye(SIPEndPoint & endpoint, SIPDialogContext & dialog)
-  : SIPTransaction(Method_BYE, new SIPTransactionOwnerDummy(endpoint, dialog.GetRemoteURI()), NULL, true)
+  : SIPTransaction(Method_BYE, new SIPTransactionOwnerDummy(endpoint, dialog), NULL, true)
 {
   InitialiseHeaders(dialog);
 }
