@@ -786,11 +786,11 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveControl(RTP_ControlF
   int len = decoded.GetSize();
 
   SendReceiveStatus status = CheckConsecutiveErrors(
-                                CHECK_ERROR(
-                                    srtp_unprotect_rtcp, (m_context, decoded.GetPointer(), &len),
-                                    this, ssrc
-                                ),
-                                e_Receiver, e_Control);
+    CHECK_ERROR(
+    srtp_unprotect_rtcp, (m_context, decoded.GetPointer(), &len),
+    this, ssrc
+    ),
+    e_Receiver, e_Control);
   if (status != e_ProcessPacket)
     return status;
 
@@ -802,7 +802,13 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveControl(RTP_ControlF
 
   decoded.SetPacketSize(len);
 
-  return OpalRTPSession::OnReceiveControl(decoded);
+  return OnReceiveDecodedControl(decoded);
+}
+
+
+OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveDecodedControl(RTP_ControlFrame & frame)
+{
+  return OpalRTPSession::OnReceiveControl(frame);
 }
 
 
