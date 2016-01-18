@@ -1074,7 +1074,7 @@ void OpalRTPSession::SyncSource::OnRxSenderReport(const RTP_SenderReport & repor
 
 void OpalRTPSession::SyncSource::OnRxReceiverReport(const RTP_ReceiverReport & report)
 {
-  PTRACE(m_throttleRxRR, &m_session, m_session << "OnReceiverReport: " << report << m_throttleRxSR);
+  PTRACE(m_throttleRxRR, &m_session, m_session << "OnReceiverReport: " << report << m_throttleRxRR);
 
   m_packetsLost = report.totalLost;
   m_currentjitter = (report.jitter + m_session.m_timeUnits -1)/m_session.m_timeUnits;
