@@ -1055,6 +1055,7 @@ __inline PTimeInterval abs(const PTimeInterval & i) { return i < 0 ? -i : i; }
 void OpalRTPSession::SyncSource::OnRxSenderReport(const RTP_SenderReport & report)
 {
   PAssert(m_direction == e_Receiver, PLogicError);
+  PTRACE(m_throttleRxSR, &m_session, m_session << "OnRxSenderReport: " << report << m_throttleRxSR);
 
   PTime now;
   PTRACE_IF(2, m_reportAbsoluteTime.IsValid() && m_lastSenderReportTime.IsValid() && report.realTimestamp.IsValid() &&
@@ -1073,6 +1074,8 @@ void OpalRTPSession::SyncSource::OnRxSenderReport(const RTP_SenderReport & repor
 
 void OpalRTPSession::SyncSource::OnRxReceiverReport(const RTP_ReceiverReport & report)
 {
+  PTRACE(m_throttleRxRR, &m_session, m_session << "OnReceiverReport: " << report << m_throttleRxRR);
+
   m_packetsLost = report.totalLost;
   m_currentjitter = (report.jitter + m_session.m_timeUnits -1)/m_session.m_timeUnits;
   if (m_maximumJitter < m_currentjitter)
@@ -1562,10 +1565,13 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
         const RTP_ControlFrame::ReceiverReport * rr;
         unsigned count;
         if (frame.ParseReceiverReport(ssrc, rr, count)) {
-          for (unsigned i = 0; i < count; ++i)
-            OnRxReceiverReport(ssrc, rr[i]);
-          // Do below trace after above or above doesn't print RR trace due to throttle
-          PTRACE_IF(m_throttleRxRR, count == 0, *this << "received empty ReceiverReport: sender SSRC=" << RTP_TRACE_SRC(ssrc));
+          if (count != 0) {
+            for (unsigned i = 0; i < count; ++i)
+              OnRxReceiverReport(ssrc, rr[i]);
+          }
+          else {
+            PTRACE(m_throttleRxEmptyRR, this << "received empty ReceiverReport: sender SSRC=" << RTP_TRACE_SRC(ssrc));
+          }
         }
         else {
           PTRACE(2, *this << "ReceiverReport packet truncated - " << frame);
@@ -1852,23 +1858,23 @@ void OpalRTPSession::OnRxDelayLastReceiverReport(const RTP_DelayLastReceiverRepo
 
 void OpalRTPSession::OnRxSenderReport(const RTP_SenderReport & senderReport)
 {
-  // This is report for their sender, our receiver
-  SyncSource * receiver = NULL;
-  if (GetSyncSource(senderReport.sourceIdentifier, e_Receiver, receiver))
-    receiver->OnRxSenderReport(senderReport);
-
-  PTRACE(m_throttleRxSR, *this << "OnRxSenderReport: " << senderReport << " rxptr=" << receiver << m_throttleRxSR);
+  // This is report for their sender, our receiver, don't use GetSyncSource() due to log level noise
+  SyncSourceMap::const_iterator it = m_SSRC.find(senderReport.sourceIdentifier);
+  if (it != m_SSRC.end())
+    it->second->OnRxSenderReport(senderReport);
+  else {
+    PTRACE(IsGroupMember(GetBundleGroupId()) ? 6 : 2,
+           *this << "OnRxSenderReport: unknown SSRC=" << RTP_TRACE_SRC(senderReport.sourceIdentifier));
+  }
 }
 
 
-void OpalRTPSession::OnRxReceiverReport(RTP_SyncSourceId, const RTP_ReceiverReport & report)
+void OpalRTPSession::OnRxReceiverReport(RTP_SyncSourceId ssrc, const RTP_ReceiverReport & report)
 {
-  PTRACE(m_throttleRxRR, *this << "OnReceiverReport: " << report << m_throttleRxSR);
-
-  SyncSource * sender;
-  if (GetSyncSource(report.sourceIdentifier, e_Sender, sender)) {
+  SyncSource * sender = NULL;
+  if (CheckControlSSRC(ssrc, report.sourceIdentifier, sender PTRACE_PARAM(, "RR"))) {
     sender->OnRxReceiverReport(report);
-    m_connection.ExecuteMediaCommand(OpalMediaPacketLoss(report.fractionLost*100/255, m_mediaType, m_sessionId, report.sourceIdentifier), true);
+    m_connection.ExecuteMediaCommand(OpalMediaPacketLoss(report.fractionLost * 100 / 255, m_mediaType, m_sessionId, report.sourceIdentifier), true);
   }
 }
 
