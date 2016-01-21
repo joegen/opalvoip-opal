@@ -1609,17 +1609,19 @@ PINDEX OpalConnection::GetMaxRtpPayloadSize() const
 
 void OpalConnection::SetPhase(Phases phaseToSet)
 {
-  PTRACE(3, "SetPhase from " << m_phase << " to " << phaseToSet << " for " << *this);
-
   PWaitAndSignal mutex(m_phaseMutex);
 
   // With next few lines we will prevent phase to ever go down when it
   // reaches ReleasingPhase - end result - once you call Release you never
   // go back.
   if (m_phase < ReleasingPhase || (m_phase == ReleasingPhase && phaseToSet == ReleasedPhase)) {
+    PTRACE(3, "Setting phase from " << m_phase << " to " << phaseToSet << " for " << *this);
     m_phase = phaseToSet;
     if (!m_phaseTime[m_phase].IsValid())
       m_phaseTime[m_phase].SetCurrentTime();
+  }
+  else {
+    PTRACE(2, "Cannot set phase from " << m_phase << " to " << phaseToSet << " for " << *this);
   }
 }
 

@@ -610,13 +610,13 @@ class OpalConnection : public PSafeObject
        This indicates the current phase of the connection sequence. Whether
        all phases and the transitions between phases is protocol dependent.
       */
-    __inline Phases GetPhase() const { return m_phase; }
+    __inline Phases GetPhase() const { PWaitAndSignal mutex(m_phaseMutex); return m_phase; }
 
     /// Return true if connection is in the established phase.
-    __inline bool IsEstablished() const { return m_phase == EstablishedPhase; }
+    __inline bool IsEstablished() const { return GetPhase() == EstablishedPhase; }
 
     /// Return true if connection is in the established phase.
-    __inline bool IsReleased() const { return m_phase >= ReleasingPhase; }
+    __inline bool IsReleased() const { return GetPhase() >= ReleasingPhase; }
 
     /**Set the phase of the connection.
        Note that this is primarily for internal use and calling from user code
