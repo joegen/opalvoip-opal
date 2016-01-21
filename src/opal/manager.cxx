@@ -992,6 +992,7 @@ bool OpalManager::OnRouteConnection(PStringSet & routesTried,
         return MakeConnection(call, b_party, NULL, options, stringOptions) != NULL;
 
       if (scheme.IsEmpty()) {
+        PReadWaitAndSignal mutex(endpointsMutex);
         for (PList<OpalEndPoint>::iterator it = endpointList.begin(); it != endpointList.end(); ++it) {
           if (it->HasAttribute(OpalEndPoint::IsNetworkEndPoint) == (call.GetConnectionCount() > 0))
             return MakeConnection(call, it->GetPrefixName() + ':' + b_party, NULL, options, stringOptions) != NULL;
