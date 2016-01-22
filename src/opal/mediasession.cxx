@@ -1041,6 +1041,7 @@ bool OpalUDPMediaTransport::Open(OpalMediaSession & session,
   m_packetSize = manager.GetMaxRtpPacketSize();
   if (session.IsRemoteBehindNAT())
     SetRemoteBehindNAT();
+  m_mediaTimeout = session.GetStringOptions().GetVar(OPAL_OPT_MEDIA_RX_TIMEOUT, manager.GetNoMediaTimeout());
   m_maxNoTransmitTime = session.GetStringOptions().GetVar(OPAL_OPT_MEDIA_TX_TIMEOUT, manager.GetTxMediaTimeout());
 
   PIPAddress bindingIP(localInterface);
@@ -1126,10 +1127,7 @@ bool OpalUDPMediaTransport::Open(OpalMediaSession & session,
   for (size_t subchannel = 0; subchannel < m_subchannels.size(); ++subchannel) {
     PUDPSocket & socket = *GetSubChannelAsSocket((SubChannels)subchannel);
     PTRACE_CONTEXT_ID_TO(socket);
-    PTimeInterval readTime = PMaxTimeInterval;
-    if (subchannel == e_Media)
-      readTime = session.GetStringOptions().GetVar(OPAL_OPT_MEDIA_RX_TIMEOUT, manager.GetNoMediaTimeout());
-    socket.SetReadTimeout(readTime);
+    socket.SetReadTimeout(m_mediaTimeout);
 
     // Increase internal buffer size on media UDP sockets
     SetMinBufferSize(socket, SO_RCVBUF, session.GetMediaType() == OpalMediaType::Audio() ? 0x4000 : 0x100000);
