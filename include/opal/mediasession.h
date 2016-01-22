@@ -525,6 +525,7 @@ class OpalUDPMediaTransport : public OpalMediaTransport
     virtual bool InternalSetRemoteAddress(const PIPSocket::AddressAndPort & ap, SubChannels subchannel, bool dontOverride PTRACE_PARAM(, const char * source));
 
     bool m_localHasRestrictedNAT;
+    PTimeInterval m_mediaTimeout;
 };
 
 

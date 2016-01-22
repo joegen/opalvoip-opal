@@ -90,7 +90,7 @@ class OpalICEMediaTransport : public OpalUDPMediaTransport
     PString       m_localPassword;    // ICE password sent to remote
     PString       m_remoteUsername;   // ICE username expected from remote
     PString       m_remotePassword;   // ICE password expected from remote
-    PTimeInterval m_readTimeout;
+    PTimeInterval m_iceTimeout;
     bool          m_promiscuous;
 
     enum CandidateStates
