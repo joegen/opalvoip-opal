@@ -587,9 +587,6 @@ bool OpalMediaTransport::Write(const void * data, PINDEX length, SubChannels sub
   if (channel->Write(data, length))
     return true;
 
-  if (channel->GetErrorCode(PChannel::LastWriteError) == PChannel::Unavailable && m_subchannels[subchannel].HandleUnavailableError())
-    return true;
-
   PTRACE(1, *this << "write (" << length << " bytes) error"
             " on " << subchannel << " subchannel"
             " (" << channel->GetErrorNumber(PChannel::LastWriteError) << "):"
@@ -1150,13 +1147,16 @@ bool OpalUDPMediaTransport::Write(const void * data, PINDEX length, SubChannels 
   if (!lock.IsLocked())
     return false;
 
-  PUDPSocket * socket;
-  if (dest == NULL || (socket = GetSubChannelAsSocket(subchannel)) == NULL)
-    return OpalMediaTransport::Write(data, length, subchannel, dest);
+  PUDPSocket * socket = GetSubChannelAsSocket(subchannel);
+  if (PAssertNULL(socket) == NULL)
+    return false;
 
-  bool writeSuccess = socket->WriteTo(data, length, *dest);
+  bool writeSuccess = dest != NULL ? socket->WriteTo(data, length, *dest) : socket->Write(data, length);
   // This insanity prevents a totally unbelievable CPU issue when under heavy load.
   if (writeSuccess)
+    return true;
+
+  if (socket->GetErrorCode(PChannel::LastWriteError) == PChannel::Unavailable && m_subchannels[subchannel].HandleUnavailableError())
     return true;
 
   PTRACE(1, *this << "write to " << *dest << " (" << length << " bytes) error"
