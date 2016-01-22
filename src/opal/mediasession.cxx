@@ -512,7 +512,8 @@ OpalMediaTransport::OpalMediaTransport(const PString & name)
   , m_remoteBehindNAT(false)
   , m_remoteAddressSet(false)
   , m_packetSize(2048)
-  , m_maxNoTransmitTime(0, 10)          // Sending data for 10 seconds, ICMP says still not there
+  , m_mediaTimeout(0, 0, 5)       // Nothing received for 5 minutes
+  , m_maxNoTransmitTime(0, 10)    // Sending data for 10 seconds, ICMP says still not there
   , m_opened(false)
   , m_started(false)
 {
@@ -579,9 +580,6 @@ bool OpalMediaTransport::Write(const void * data, PINDEX length, SubChannels sub
   }
 
   if (channel->Write(data, length))
-    return true;
-
-  if (channel->GetErrorCode(PChannel::LastWriteError) == PChannel::Unavailable && m_subchannels[subchannel].HandleUnavailableError())
     return true;
 
   PTRACE(1, *this << "write (" << length << " bytes) error"
@@ -657,6 +655,7 @@ void OpalMediaTransport::Transport::ThreadMain()
 
   m_owner->InternalOnStart(m_subchannel);
 
+  PSimpleTimer noMediaTimer = m_owner->m_mediaTimeout;
   while (m_channel->IsOpen()) {
     PBYTEArray data(m_owner->m_packetSize);
 
@@ -666,13 +665,10 @@ void OpalMediaTransport::Transport::ThreadMain()
     if (m_channel->Read(data.GetPointer(), data.GetSize())) {
       data.SetSize(m_channel->GetLastReadCount());
       m_owner->InternalRxData(m_subchannel, data);
+      noMediaTimer = m_owner->m_mediaTimeout;
     }
     else {
       switch (m_channel->GetErrorCode(PChannel::LastReadError)) {
-        case PChannel::Unavailable:
-          HandleUnavailableError();
-          break;
-
         case PChannel::BufferTooSmall:
           PTRACE(2, m_owner, *m_owner << m_subchannel << " read packet too large for buffer of " << data.GetSize() << " bytes.");
           break;
@@ -685,6 +681,13 @@ void OpalMediaTransport::Transport::ThreadMain()
         case PChannel::NoError:
           PTRACE(3, m_owner, *m_owner << m_subchannel << " received UDP packet with no payload.");
           break;
+
+        case PChannel::Unavailable:
+          if (noMediaTimer.IsRunning()) {
+            HandleUnavailableError();
+            break;
+          }
+          // Do timeout case
 
         case PChannel::Timeout:
           PTRACE(1, m_owner, *m_owner << m_subchannel << " timed out (" << m_channel->GetReadTimeout() << "s)");
@@ -1145,13 +1148,16 @@ bool OpalUDPMediaTransport::Write(const void * data, PINDEX length, SubChannels 
   if (!lock.IsLocked())
     return false;
 
-  PUDPSocket * socket;
-  if (dest == NULL || (socket = GetSubChannelAsSocket(subchannel)) == NULL)
-    return OpalMediaTransport::Write(data, length, subchannel, dest);
+  PUDPSocket * socket = GetSubChannelAsSocket(subchannel);
+  if (PAssertNULL(socket) == NULL)
+    return false;
 
-  bool writeSuccess = socket->WriteTo(data, length, *dest);
+  bool writeSuccess = dest != NULL ? socket->WriteTo(data, length, *dest) : socket->Write(data, length);
   // This insanity prevents a totally unbelievable CPU issue when under heavy load.
   if (writeSuccess)
+    return true;
+
+  if (socket->GetErrorCode(PChannel::LastWriteError) == PChannel::Unavailable && m_subchannels[subchannel].HandleUnavailableError())
     return true;
 
   PTRACE(1, *this << "write to " << *dest << " (" << length << " bytes) error"
