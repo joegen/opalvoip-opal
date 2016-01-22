@@ -458,6 +458,7 @@ public:
     bool          m_remoteBehindNAT;
     bool          m_remoteAddressSet;
     PINDEX        m_packetSize;
+    PTimeInterval m_mediaTimeout;
     PTimeInterval m_maxNoTransmitTime;
     atomic<bool>  m_opened;
     bool          m_started;
@@ -527,7 +528,6 @@ class OpalUDPMediaTransport : public OpalMediaTransport
     virtual bool InternalSetRemoteAddress(const PIPSocket::AddressAndPort & ap, SubChannels subchannel, bool dontOverride PTRACE_PARAM(, const char * source));
 
     bool m_localHasRestrictedNAT;
-    PTimeInterval m_mediaTimeout;
 };
 
 
