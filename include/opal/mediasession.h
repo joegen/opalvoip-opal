@@ -459,6 +459,7 @@ public:
     bool          m_remoteAddressSet;
     PINDEX        m_packetSize;
     PTimeInterval m_maxNoTransmitTime;
+    atomic<bool>  m_opened;
     bool          m_started;
 
     struct Transport

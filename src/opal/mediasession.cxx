@@ -513,6 +513,7 @@ OpalMediaTransport::OpalMediaTransport(const PString & name)
   , m_remoteAddressSet(false)
   , m_packetSize(2048)
   , m_maxNoTransmitTime(0, 10)          // Sending data for 10 seconds, ICMP says still not there
+  , m_opened(false)
   , m_started(false)
 {
 }
@@ -526,15 +527,7 @@ void OpalMediaTransport::PrintOn(ostream & strm) const
 
 bool OpalMediaTransport::IsOpen() const
 {
-  PSafeLockReadOnly lock(*this);
-  if (!lock.IsLocked() || m_subchannels.empty())
-    return false;
-
-  for (vector<Transport>::const_iterator it = m_subchannels.begin(); it != m_subchannels.end(); ++it) {
-    if (it->m_channel == NULL || !it->m_channel->IsOpen())
-      return false;
-  }
-  return true;
+  return m_opened;
 }
 
 
@@ -744,6 +737,7 @@ void OpalMediaTransport::Transport::Close()
     return;
 
   base->Close();
+  m_owner->m_opened = false;
   m_owner->InternalRxData(m_subchannel, PBYTEArray());
 }
 
@@ -829,7 +823,7 @@ OpalTCPMediaTransport::OpalTCPMediaTransport(const PString & name)
 
 bool OpalTCPMediaTransport::Open(OpalMediaSession &, PINDEX, const PString & localInterface, const OpalTransportAddress &)
 {
-  return dynamic_cast<PTCPSocket &>(*m_subchannels[0].m_channel).Listen(PIPAddress(localInterface));
+  return m_opened = dynamic_cast<PTCPSocket &>(*m_subchannels[0].m_channel).Listen(PIPAddress(localInterface));
 }
 
 
@@ -1039,6 +1033,9 @@ bool OpalUDPMediaTransport::Open(OpalMediaSession & session,
 {
   PTRACE_CONTEXT_ID_FROM(session);
 
+  if (!PAssert(subchannelCount > 0, PInvalidParameter))
+    return false;
+
   OpalManager & manager = session.GetConnection().GetEndPoint().GetManager();
 
   m_packetSize = manager.GetMaxRtpPacketSize();
@@ -1137,6 +1134,7 @@ bool OpalUDPMediaTransport::Open(OpalMediaSession & session,
     SetMinBufferSize(socket, SO_SNDBUF, 0x2000);
   }
 
+  m_opened = true;
   return true;
 }
 
