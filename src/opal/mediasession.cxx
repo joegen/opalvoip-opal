@@ -510,7 +510,8 @@ OpalMediaTransport::OpalMediaTransport(const PString & name)
   , m_remoteBehindNAT(false)
   , m_remoteAddressSet(false)
   , m_packetSize(2048)
-  , m_maxNoTransmitTime(0, 10)          // Sending data for 10 seconds, ICMP says still not there
+  , m_mediaTimeout(0, 0, 5)       // Nothing received for 5 minutes
+  , m_maxNoTransmitTime(0, 10)    // Sending data for 10 seconds, ICMP says still not there
   , m_started(false)
 {
 }
@@ -662,6 +663,7 @@ void OpalMediaTransport::Transport::ThreadMain()
 
   m_owner->InternalOnStart(m_subchannel);
 
+  PSimpleTimer noMediaTimer = m_owner->m_mediaTimeout;
   while (m_channel->IsOpen()) {
     PBYTEArray data(m_owner->m_packetSize);
 
@@ -671,13 +673,10 @@ void OpalMediaTransport::Transport::ThreadMain()
     if (m_channel->Read(data.GetPointer(), data.GetSize())) {
       data.SetSize(m_channel->GetLastReadCount());
       m_owner->InternalRxData(m_subchannel, data);
+      noMediaTimer = m_owner->m_mediaTimeout;
     }
     else {
       switch (m_channel->GetErrorCode(PChannel::LastReadError)) {
-        case PChannel::Unavailable:
-          HandleUnavailableError();
-          break;
-
         case PChannel::BufferTooSmall:
           PTRACE(2, m_owner, *m_owner << m_subchannel << " read packet too large for buffer of " << data.GetSize() << " bytes.");
           break;
@@ -690,6 +689,13 @@ void OpalMediaTransport::Transport::ThreadMain()
         case PChannel::NoError:
           PTRACE(3, m_owner, *m_owner << m_subchannel << " received UDP packet with no payload.");
           break;
+
+        case PChannel::Unavailable:
+          if (noMediaTimer.IsRunning()) {
+            HandleUnavailableError();
+            break;
+          }
+          // Do timeout case
 
         case PChannel::Timeout:
           PTRACE(1, m_owner, *m_owner << m_subchannel << " timed out (" << m_channel->GetReadTimeout() << "s)");
