@@ -940,7 +940,13 @@ void SIPMIMEInfo::SetCallID(const PString & v)
 
 SIPURL SIPMIMEInfo::GetContact() const
 {
-  return SIPURL(*this, "Contact");
+  SIPURL contact(*this, "Contact");
+  PIPAddress ip(contact.GetHostName());
+  if (!ip.IsValid() || !(ip.IsAny() || ip.IsBroadcast()))
+    return contact;
+
+  PTRACE(2, "Contact header does not have valid IP address.");
+  return SIPURL();
 }
 
 
