@@ -802,7 +802,7 @@ void OpalMediaTransport::InternalStop()
 
   for (vector<Transport>::iterator it = m_subchannels.begin(); it != m_subchannels.end(); ++it) {
     if (it->m_thread != NULL) {
-      PAssert(it->m_thread->WaitForTermination(2000), "RTP thread failed to terminate");
+      PAssert(it->m_thread->WaitForTermination(10000), "RTP thread failed to terminate");
       delete it->m_thread;
     }
   }
