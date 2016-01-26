@@ -1784,7 +1784,7 @@ bool OpalRTPSession::OnReceiveExtendedReports(const RTP_ControlFrame & frame)
 
   while (size >= sizeof(RTP_ControlFrame::ExtendedReport)) {
     const RTP_ControlFrame::ExtendedReport & xr = *(const RTP_ControlFrame::ExtendedReport *)payload;
-    size_t blockSize = (xr.length + 1) * 4;
+    size_t blockSize = xr.length*4 + sizeof(RTP_ControlFrame::ExtendedReport);
     if (size < blockSize)
       return false;
 
