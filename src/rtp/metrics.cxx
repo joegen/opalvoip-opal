@@ -672,7 +672,7 @@ void RTCP_XR_Metrics::InsertMetricsReport(RTP_ControlFrame & report,
                                           OpalJitterBuffer * jitter)
 {
   report.StartNewPacket(RTP_ControlFrame::e_ExtendedReport);
-  report.SetPayloadSize(sizeof(PUInt32b) + sizeof(RTP_ControlFrame::ExtendedReport));  // length is SSRC of packet sender plus XR
+  report.SetPayloadSize(sizeof(PUInt32b) + sizeof(RTP_ControlFrame::MetricsReport));  // length is SSRC of packet sender plus MR
   report.SetCount(1);
   BYTE * payload = report.GetPayloadPtr();
 
@@ -681,9 +681,9 @@ void RTCP_XR_Metrics::InsertMetricsReport(RTP_ControlFrame & report,
   
   RTP_ControlFrame::MetricsReport & xr = *(RTP_ControlFrame::MetricsReport *)(payload+4);
   
-  xr.bt = 0x07;
+  xr.bt = 0x07; // Code for Metrics Report
   xr.type_specific = 0x00;
-  xr.length = 0x08;
+  xr.length = (sizeof(RTP_ControlFrame::MetricsReport)-sizeof(RTP_ControlFrame::ExtendedReport)+3)/4;
   xr.ssrc = syncSourceOut;
   
   xr.loss_rate = (uint8_t)GetLossRate();

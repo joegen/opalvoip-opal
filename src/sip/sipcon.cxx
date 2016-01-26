@@ -497,8 +497,10 @@ bool SIPConnection::TransferConnection(const PString & remoteParty)
 
   // Check for valid RFC2396 scheme
   if (!PURL::ExtractScheme(remoteParty).IsEmpty()) {
-      PTRACE(3, "Blind transfer of " << *this << " to " << remoteParty << ", referSubMode=" << referSubMode);
-      SIPRefer * referTransaction = new SIPRefer(*this, remoteParty, m_dialog.GetLocalURI(), referSubMode);
+    SIPURL referTo(remoteParty);
+    referTo.Sanitise(SIPURL::RedirectURI);
+    PTRACE(3, "Blind transfer of " << *this << " to " << referTo << ", referSubMode=" << referSubMode);
+    SIPRefer * referTransaction = new SIPRefer(*this, referTo, m_dialog.GetLocalURI(), referSubMode);
     m_referOfRemoteInProgress = referTransaction->Start();
     return m_referOfRemoteInProgress;
   }
@@ -530,6 +532,7 @@ bool SIPConnection::TransferConnection(const PString & remoteParty)
          part, but they never gave us a username to give them. Give me a break!
        */
       SIPURL referTo = sip->GetRemotePartyURL();
+      referTo.Sanitise(SIPURL::RedirectURI);
       if (remoteProductInfo.name == "Avaya" && referTo.GetUserName().IsEmpty())
         referTo.SetUserName("anonymous");
 
