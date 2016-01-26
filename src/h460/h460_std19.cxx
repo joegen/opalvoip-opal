@@ -520,7 +520,7 @@ PBoolean H46019UDPSocket::InternalWriteTo(const Slice * slices, size_t sliceCoun
 {
   if (sliceCount == 1 && slices[0].GetLength() <= 1) {
     PTRACE(5, "Ignoring old NAT opening packet for " << (m_component == PNatMethod::eComponent_RTP ? "RTP" : "RTCP"));
-    lastWriteCount = 1;
+    SetLastWriteCount(1);
     return true;
   }
 
