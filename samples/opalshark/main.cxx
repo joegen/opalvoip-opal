@@ -561,7 +561,7 @@ MyPlayer::MyPlayer(MyManager * manager, const PFilePath & filename)
   m_analysisList->AppendColumn("Sequence");
   m_analysisList->AppendColumn("Timestamp");
   m_analysisList->AppendColumn("Delta");
-  m_analysisList->AppendColumn("Jitter");
+  m_analysisList->AppendColumn("Jitter (ms)");
   m_analysisList->AppendColumn("Notes");
 
   FindWindowByNameAs(m_play,    this, wxT("Play"));
@@ -863,7 +863,12 @@ struct Analyser
     else {
       if (!m_isVideo || data.GetMarker()) {
         delta << (thisTimestamp - m_lastTimestamp);
-        jitter << (thisTime - (m_firstTime + (thisTimestamp - m_firstTimestamp) / 48)).GetMilliSeconds();
+        int usJit = (thisTime - (m_firstTime + (thisTimestamp - m_firstTimestamp) / 48)).GetMicroSeconds();
+        if (usJit < -100) {
+          usJit = -usJit;
+          jitter << '-';
+        }
+        jitter << usJit/1000 << '.' << (usJit%1000)/100;
       }
       if (m_isDecoded) {
         if (intra)
@@ -884,7 +889,7 @@ struct Analyser
     m_analysisListCtrl->SetItem(pos, 6, notes);
 
     m_lastSequenceNumber = thisSequenceNumber;
-    if (m_isVideo && data.GetMarker())
+    if (!m_isVideo || data.GetMarker())
       m_lastTimestamp = thisTimestamp;
   }
 };
