@@ -1416,6 +1416,7 @@ void OpalRTPSession::GetStatistics(OpalMediaStatistics & statistics, Direction d
   statistics.m_maximumJitter     = -1;
   statistics.m_jitterBufferDelay = -1;
   statistics.m_roundTripTime     = m_roundTripTime;
+  statistics.m_lastPacketRTP     = -1;
   statistics.m_lastPacketTime    = 0;
   statistics.m_lastReportTime    = 0;
 
@@ -1466,6 +1467,9 @@ void OpalRTPSession::GetStatistics(OpalMediaStatistics & statistics, Direction d
         if (!statistics.m_startTime.IsValid() || statistics.m_startTime > ssrcStats.m_startTime)
           statistics.m_startTime = ssrcStats.m_startTime;
 
+        if (statistics.m_lastPacketRTP < ssrcStats.m_lastPacketRTP)
+          statistics.m_lastPacketRTP = ssrcStats.m_lastPacketRTP;
+
         if (statistics.m_lastPacketTime < ssrcStats.m_lastPacketTime)
           statistics.m_lastPacketTime = ssrcStats.m_lastPacketTime;
 
@@ -1496,6 +1500,8 @@ void OpalRTPSession::SyncSource::GetStatistics(OpalMediaStatistics & statistics)
   statistics.m_maximumPacketTime = m_maximumPacketTime;
   statistics.m_averageJitter     = m_currentjitter;
   statistics.m_maximumJitter     = m_maximumJitter;
+  if (m_packets > 0)
+    statistics.m_lastPacketRTP   = m_lastPacketTimestamp;
   statistics.m_lastPacketTime    = m_lastPacketAbsTime;
   statistics.m_lastReportTime    = m_lastSenderReportTime;
 
