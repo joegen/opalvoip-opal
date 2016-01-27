@@ -90,20 +90,6 @@ static struct PluginCodec_Option const Profile =
   H264_PROFILE_STR_HIGH
 };                                  
 
-static struct PluginCodec_Option const HiProfile =
-{
-  PluginCodec_EnumOption,             // Option type
-  ProfileName,                        // User visible name
-  false,                              // User Read/Only flag
-  PluginCodec_EqualMerge,             // Merge mode
-  H264_PROFILE_STR_HIGH,              // Initial value
-  NULL,                               // FMTP option name
-  NULL,                               // FMTP default value
-  0,                                  // H.245 generic capability code and bit mask
-  // Enum values, single string of value separated by colons
-  H264_PROFILE_STR_HIGH
-};                                  
-
 static struct PluginCodec_Option const Level =
 {
   PluginCodec_EnumOption,             // Option type
@@ -133,6 +119,21 @@ static struct PluginCodec_Option const Level =
   H264_LEVEL_STR_5_1
 };
 
+#if HAS_HI_PROFILE
+static struct PluginCodec_Option const HiProfile =
+{
+  PluginCodec_EnumOption,             // Option type
+  ProfileName,                        // User visible name
+  false,                              // User Read/Only flag
+  PluginCodec_EqualMerge,             // Merge mode
+  H264_PROFILE_STR_HIGH,              // Initial value
+  NULL,                               // FMTP option name
+  NULL,                               // FMTP default value
+  0,                                  // H.245 generic capability code and bit mask
+  // Enum values, single string of value separated by colons
+  H264_PROFILE_STR_HIGH
+};                                  
+
 static struct PluginCodec_Option const HiH241Profiles =
 {
   PluginCodec_IntegerOption,          // Option type
@@ -146,6 +147,7 @@ static struct PluginCodec_Option const HiH241Profiles =
   "1",                                // Minimum value
   "127"                               // Maximum value
 };
+#endif
 
 static struct PluginCodec_Option const H241Profiles =
 {
