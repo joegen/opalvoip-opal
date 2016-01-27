@@ -933,7 +933,7 @@ PTimeInterval H323Gatekeeper::InternalRegister()
   options.Set(OPAL_OPT_CALLING_PARTY_NAME, m_aliases[0]);
   options.SetInteger(OPAL_OPT_MEDIA_RX_TIMEOUT, 1000000000);
   options.SetInteger(OPAL_OPT_MEDIA_TX_TIMEOUT, 1000000000);
-  endpoint.GetManager().SetUpCall("ivr:delay=1000000000", "h323:register", NULL, OpalConnection::SynchronousSetUp, &options);
+  endpoint.GetManager().SetUpCall("ivr:", "h323:register", NULL, OpalConnection::SynchronousSetUp, &options);
   return 0;
 }
 
