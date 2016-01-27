@@ -921,10 +921,9 @@ PTimeInterval H323Gatekeeper::InternalRegister()
 	  PUInt16b endpointIdentifier[2];
 	  BYTE suffix[1];
   } msg1 = {
-    0x40, 0x10,
-    m_endpointIdentifier[0],
-    m_endpointIdentifier[1],
-    0x00
+    { 0x40, 0x10 },
+    { m_endpointIdentifier[0], m_endpointIdentifier[1] },
+    { 0x00 }
   };
 #pragma pack()
   NonStandardMessage(oid, &msg1, sizeof(msg1), reply);
