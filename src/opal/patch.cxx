@@ -579,18 +579,14 @@ PBoolean OpalMediaPatch::RemoveFilter(const PNotifier & filter, const OpalMediaF
 }
 
 
-void OpalMediaPatch::FilterFrame(RTP_DataFrame & frame,
-                                 const OpalMediaFormat & mediaFormat)
+void OpalMediaPatch::FilterFrame(RTP_DataFrame & frame, const OpalMediaFormat & mediaFormat)
 {
-  if (!LockReadOnly())
-    return;
+  // Should already be locked for read
 
   for (PList<Filter>::iterator f = m_filters.begin(); f != m_filters.end(); ++f) {
     if (f->m_stage.IsEmpty() || f->m_stage == mediaFormat)
       f->m_notifier(frame, (P_INT_PTR)this);
   }
-
-  UnlockReadOnly();
 }
 
 
@@ -898,27 +894,35 @@ bool OpalMediaPatch::DispatchFrame(RTP_DataFrame & frame)
   FilterFrame(frame, m_source.GetMediaFormat());
 
   OpalMediaPatchPtr patch = m_bypassToPatch;
-  if (patch == NULL)
-    patch = this;
+  if (patch == NULL) {
+    bool result = DispatchFrameLocked(frame, false);
+    UnlockReadOnly();
+    return result;
+  }
 
   UnlockReadOnly();
 
   PSafeLockReadOnly guard(*patch);
+  return guard.IsLocked() && patch->DispatchFrameLocked(frame, true);
+}
 
-  if (patch->m_transcoderChanged) {
-    patch->m_transcoderChanged = false;
+
+bool OpalMediaPatch::DispatchFrameLocked(RTP_DataFrame & frame, bool bypassing)
+{
+  if (m_transcoderChanged) {
+    m_transcoderChanged = false;
     PTRACE(3, "Ignoring source data with transcoder change on " << *this);
     return true;
   }
 
-  if (patch->m_sinks.empty()) {
+  if (m_sinks.empty()) {
     PTRACE(2, "No sinks available on " << *this);
     return false;
   }
 
   bool written = false;
-  for (PList<Sink>::iterator s = patch->m_sinks.begin(); s != patch->m_sinks.end(); ++s) {
-    if (s->WriteFrame(frame, patch != this))
+  for (PList<Sink>::iterator s = m_sinks.begin(); s != m_sinks.end(); ++s) {
+    if (s->WriteFrame(frame, bypassing))
       written = true;
   }
 
