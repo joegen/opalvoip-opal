@@ -249,6 +249,7 @@ class OpalMediaPatch : public PSafeObject
     virtual void Main();
     void StopThread();
     bool DispatchFrame(RTP_DataFrame & frame);
+    bool DispatchFrameLocked(RTP_DataFrame & frame, bool bypassing);
 
     OpalMediaStream & m_source;
 
