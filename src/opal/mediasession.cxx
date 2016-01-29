@@ -1156,10 +1156,21 @@ bool OpalUDPMediaTransport::Write(const void * data, PINDEX length, SubChannels 
   if (writeSuccess)
     return true;
 
-  PTRACE(1, *this << "write to " << *dest << " (" << length << " bytes) error"
-            " on " << subchannel << " subchannel to " << *dest <<
-            " (" << socket->GetErrorNumber(PChannel::LastWriteError) << "):"
-            " " << socket->GetErrorText(PChannel::LastWriteError));
+#if PTRACING
+  if (PTrace::CanTrace(1)) {
+    ostream & trace = PTRACE_BEGIN(1);
+    trace << *this << "error writing to ";
+    if (dest != NULL)
+      trace << *dest;
+    else
+      trace << socket->GetSendAddress();
+    trace  << " (" << length << " bytes)"
+              " on " << subchannel << " subchannel"
+              " (" << socket->GetErrorNumber(PChannel::LastWriteError) << "):"
+              " " << socket->GetErrorText(PChannel::LastWriteError)
+           << PTrace::End;
+  }
+#endif
   return false;
 }
 
