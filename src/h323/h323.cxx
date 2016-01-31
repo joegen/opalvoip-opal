@@ -356,10 +356,9 @@ void H323Connection::OnReleased()
 
   // Do not close m_signallingChannel as H323Endpoint can take it back for possible re-use
   if (m_signallingChannel != NULL) {
-    if (m_maintainConnection) {
+    if (m_maintainConnection && endpoint.GetProductInfo() != H323EndPoint::AvayaPhone()) {
       PTRACE(4, "H323\tMaintaining signalling channel.");
       m_signallingChannel->SetReadTimeout(MonitorCallStartTime);
-      m_signallingChannel->AttachThread(NULL);
     }
     else {
       PTRACE(4, "H323\tClosing signalling channel.");
