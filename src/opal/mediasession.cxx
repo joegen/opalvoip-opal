@@ -1051,7 +1051,8 @@ bool OpalUDPMediaTransport::Open(OpalMediaSession & session,
   PIPAddress remoteIP;
   remoteAddress.GetIpAddress(remoteIP);
 
-  PTRACE(4, session << "opening: interface=\"" << localInterface << "\" local=" << bindingIP << " remote=" << remoteIP);
+  PTRACE(4, session << "opening " << subchannelCount << " subchannel(s):"
+            " interface=\"" << localInterface << "\" local=" << bindingIP << " remote=" << remoteIP);
 
 #if OPAL_PTLIB_NAT
   if (!manager.IsLocalAddress(remoteIP)) {
@@ -1130,7 +1131,9 @@ bool OpalUDPMediaTransport::Open(OpalMediaSession & session,
   for (size_t subchannel = 0; subchannel < m_subchannels.size(); ++subchannel) {
     PUDPSocket & socket = *GetSubChannelAsSocket((SubChannels)subchannel);
     PTRACE_CONTEXT_ID_TO(socket);
-    socket.SetReadTimeout(m_mediaTimeout);
+
+    if (subchannel != e_Control)
+      socket.SetReadTimeout(m_mediaTimeout);
 
     // Increase internal buffer size on media UDP sockets
     SetMinBufferSize(socket, SO_RCVBUF, session.GetMediaType() == OpalMediaType::Audio() ? 0x4000 : 0x100000);
