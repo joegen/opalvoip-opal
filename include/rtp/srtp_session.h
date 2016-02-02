@@ -50,6 +50,14 @@ class OpalSRTPCryptoSuite;
 struct srtp_ctx_t;
 
 
+/**String option key to a boolean indicating that we should accept
+   any Sender SSRC in RTCP packets over SRTP. This is primarily a
+   workaround for Chrome WebRTC, but leaves the system open to DoS
+   attack. Default false.
+  */
+#define OPAL_OPT_SRTP_RTCP_ANY_SSRC "SRTP-RTCP-Any-SSRC"
+
+
 ////////////////////////////////////////////////////////////////////
 //
 //  this class holds the parameters required for an SRTP session
@@ -147,6 +155,7 @@ class OpalSRTPSession : public OpalRTPSession
     virtual void OnRxDataPacket(OpalMediaTransport & transport, PBYTEArray data);
     virtual void OnRxControlPacket(OpalMediaTransport & transport, PBYTEArray data);
 
+    bool                       m_anyRTCP_SSRC;
     struct srtp_ctx_t        * m_context;
     std::set<RTP_SyncSourceId> m_addedStream;
     OpalSRTPKeyInfo          * m_keyInfo[2]; // rx & tx

@@ -444,6 +444,7 @@ PBYTEArray OpalSRTPKeyInfo::GetAuthSalt() const
 
 OpalSRTPSession::OpalSRTPSession(const Init & init)
   : OpalRTPSession(init)
+  , m_anyRTCP_SSRC(false)
 {
   CHECK_ERROR(srtp_create, (&m_context, NULL));
 
@@ -548,6 +549,8 @@ bool OpalSRTPSession::Open(const PString & localInterface, const OpalTransportAd
     for (int j = 0; j < 2; j++)
       m_consecutiveErrors[i][j] = 0;
   }
+
+  m_anyRTCP_SSRC = m_stringOptions.GetBoolean(OPAL_OPT_SRTP_RTCP_ANY_SSRC, m_anyRTCP_SSRC);
 
   return OpalRTPSession::Open(localInterface, remoteAddress);
 }
@@ -777,7 +780,7 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveControl(RTP_ControlF
      later SDP and that is disabled. However, for Chrome, we have a special
      case of SSRC=1 which they send even though never indicated in SDP. */
   RTP_SyncSourceId ssrc = encoded.GetSenderSyncSource();
-  if (UseSyncSource(ssrc, e_Receiver, ssrc == 1) == NULL)
+  if (UseSyncSource(ssrc, e_Receiver, m_anyRTCP_SSRC) == NULL)
     return e_IgnorePacket;
 
   RTP_ControlFrame decoded(encoded);
@@ -786,11 +789,11 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveControl(RTP_ControlF
   int len = decoded.GetSize();
 
   SendReceiveStatus status = CheckConsecutiveErrors(
-    CHECK_ERROR(
-    srtp_unprotect_rtcp, (m_context, decoded.GetPointer(), &len),
-    this, ssrc
-    ),
-    e_Receiver, e_Control);
+                                CHECK_ERROR(
+                                    srtp_unprotect_rtcp, (m_context, decoded.GetPointer(), &len),
+                                    this, ssrc
+                                ),
+                                e_Receiver, e_Control);
   if (status != e_ProcessPacket)
     return status;
 
