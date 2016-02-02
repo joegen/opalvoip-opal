@@ -1576,7 +1576,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
               OnRxReceiverReport(ssrc, rr[i]);
           }
           else {
-            PTRACE(m_throttleRxEmptyRR, this << "received empty ReceiverReport: sender SSRC=" << RTP_TRACE_SRC(ssrc));
+            PTRACE(m_throttleRxEmptyRR, *this << "received empty ReceiverReport: sender SSRC=" << RTP_TRACE_SRC(ssrc));
           }
         }
         else {
