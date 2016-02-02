@@ -146,7 +146,7 @@ OpalFaxSession::OpalFaxSession(const Init & init)
   , m_rxPackets(0)
   , m_missingPackets(0)
 {
-  m_timerWriteDataIdle.SetNotifier(PCREATE_NOTIFIER(OnWriteDataIdle));
+  m_timerWriteDataIdle.SetNotifier(PCREATE_NOTIFIER(OnWriteDataIdle), "T38Idle");
 
   m_sentPacket->m_error_recovery.SetTag(T38_UDPTLPacket_error_recovery::e_secondary_ifp_packets);
   m_sentPacket->m_seq_number = (unsigned)-1;
@@ -666,7 +666,7 @@ OpalFaxConnection::OpalFaxConnection(OpalCall        & call,
 {
   SetFaxMediaFormatOptions(m_tiffFileFormat);
 
-  m_switchTimer.SetNotifier(PCREATE_NOTIFIER(OnSwitchTimeout));
+  m_switchTimer.SetNotifier(PCREATE_NOTIFIER(OnSwitchTimeout), "T38Switch");
 
   PTRACE(3, "FAX\tCreated fax connection with token \"" << callToken << "\","
             " receiving=" << receiving << ","

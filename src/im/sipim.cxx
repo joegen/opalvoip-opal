@@ -240,8 +240,8 @@ OpalSIPIMContext::OpalSIPIMContext()
 {
   m_conversationId += ConversationIdSeparator + SIPURL::GenerateTag();
   m_attributes.Set("acceptable-content-types", "text/plain\ntext/html\napplication/im-iscomposing+xml");
-  m_rxCompositionIdleTimeout.SetNotifier(PCREATE_NOTIFIER(OnRxCompositionIdleTimer));
-  m_txCompositionIdleTimeout.SetNotifier(PCREATE_NOTIFIER(OnTxCompositionIdleTimer));
+  m_rxCompositionIdleTimeout.SetNotifier(PCREATE_NOTIFIER(OnRxCompositionIdleTimer), "SIPIMRx");
+  m_txCompositionIdleTimeout.SetNotifier(PCREATE_NOTIFIER(OnTxCompositionIdleTimer), "SIPIMTx");
 }
 
 
