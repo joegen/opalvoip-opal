@@ -149,7 +149,7 @@ H323Connection::H323Connection(OpalCall & call,
   PTRACE_CONTEXT_ID_TO(localCapabilities);
   PTRACE_CONTEXT_ID_TO(remoteCapabilities);
 
-  m_UserInputIndicationTimer.SetNotifier(PCREATE_NOTIFIER(UserInputIndicationTimeout));
+  m_UserInputIndicationTimer.SetNotifier(PCREATE_NOTIFIER(UserInputIndicationTimeout), "UII");
 
   localAliasNames.MakeUnique();
   gkAccessTokenOID.MakeUnique();

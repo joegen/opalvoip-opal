@@ -442,7 +442,7 @@ H46019UDPSocket::H46019UDPSocket(PNatMethod::Component component, OpalRTPSession
   , m_keepAliveSequence(0)
   , m_multiplexedTransmit(false)
 {
-  m_keepAliveTimer.SetNotifier(PCREATE_NOTIFIER(KeepAliveTimeout));
+  m_keepAliveTimer.SetNotifier(PCREATE_NOTIFIER(KeepAliveTimeout), "H460KeepAlive");
 }
 
 
