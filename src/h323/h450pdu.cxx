@@ -795,7 +795,7 @@ H4502Handler::H4502Handler(H323Connection & conn, H450xDispatcher & disp)
   CallToken = PString();
   consultationTransfer = false;
 
-  ctTimer.SetNotifier(PCREATE_NOTIFIER(OnCallTransferTimeOut));
+  ctTimer.SetNotifier(PCREATE_NOTIFIER(OnCallTransferTimeOut), "H450Transfer");
 }
 
 
@@ -1746,7 +1746,7 @@ H45011Handler::H45011Handler(H323Connection & conn, H450xDispatcher & disp)
   ciState = e_ci_Idle;
   ciSendState = e_ci_sIdle;
   ciReturnState = e_ci_rIdle;
-  ciTimer.SetNotifier(PCREATE_NOTIFIER(OnCallIntrudeTimeOut));
+  ciTimer.SetNotifier(PCREATE_NOTIFIER(OnCallIntrudeTimeOut), "H450Intrude");
 }
 
 

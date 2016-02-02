@@ -278,7 +278,7 @@ H460_FeatureStd24AnnexA::H460_FeatureStd24AnnexA()
   , m_probeInfo("24.1")
   , m_probeNotifier(PCREATE_NOTIFIER(ProbeResponse))
 {
-  m_probeTimer.SetNotifier(PCREATE_NOTIFIER(ProbeTimeout));
+  m_probeTimer.SetNotifier(PCREATE_NOTIFIER(ProbeTimeout), "H460Probe");
 }
 
 
