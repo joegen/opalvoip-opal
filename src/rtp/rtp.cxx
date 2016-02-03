@@ -590,7 +590,7 @@ void RTP_ReceiverReport::PrintOn(ostream & strm) const
        << " lost=" << totalLost
        << " last_seq=" << lastSequenceNumber
        << " jitter=" << jitter
-       << " lsr=" << lastTimestamp
+       << " lsr=" << lastTimestamp.AsString(PTime::TodayFormat)
        << " dlsr=" << delay;
 }
 
@@ -598,7 +598,7 @@ void RTP_ReceiverReport::PrintOn(ostream & strm) const
 void RTP_SenderReport::PrintOn(ostream & strm) const
 {
   strm << "SSRC=" << RTP_TRACE_SRC(sourceIdentifier)
-       << " ntp=" << realTimestamp.AsString("yyyy/M/d hh:mm:ss.uuuu")
+       << " ntp=" << realTimestamp.AsString(PTime::TodayFormat)
        << " (" << (realTimestamp - PTime()) << ")"
           " rtp=" << rtpTimestamp
        << " psent=" << packetsSent
