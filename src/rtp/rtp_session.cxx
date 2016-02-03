@@ -1018,9 +1018,9 @@ bool OpalRTPSession::SyncSource::OnSendReceiverReport(RTP_ControlFrame::Receiver
   report->jitter = m_jitterAccum >> JitterRoundingGuardBits; // Allow for rounding protection bits
 
   /* Time remote sent us in SR. Note this has to be IDENTICAL to what we
-     received in SR as some implementations (WebRTC!) do not use it as a NTP
-     time, but as a lookup key in a table to find the NTP value. Why? Why? Why? */
-  report->lsr = m_ntpPassThrough;
+     received in SR as it is used as a de-facto sequence number for the
+     SR that was sent. We match RR's to SR's this way. */
+  report->lsr = (uint32_t)(m_ntpPassThrough >> 16);
 
   // Delay since last received SR
   report->dlsr = m_lastSenderReportTime.IsValid() ? (uint32_t)((PTime() - m_lastSenderReportTime).GetMilliSeconds()*65536/1000) : 0;
@@ -1091,21 +1091,24 @@ void OpalRTPSession::SyncSource::OnRxReceiverReport(const RTP_ReceiverReport & r
 
 void OpalRTPSession::SyncSource::CalculateRTT(const PTime & reportTime, const PTimeInterval & reportDelay)
 {
-  if (reportTime.IsValid()) {
-    PTimeInterval myDelay = PTime() - reportTime;
-    if (m_session.m_roundTripTime > 0 && myDelay <= reportDelay)
-      PTRACE(4, &m_session, *this << "not calculating round trip time, RR arrived too soon after SR.");
-    else if (myDelay <= reportDelay) {
-      m_session.m_roundTripTime = 1;
-      PTRACE(4, &m_session, *this << "very small round trip time, using 1ms");
-    }
-    else if (myDelay > 1000) {
-      PTRACE(4, &m_session, *this << "very large round trip time, ignoring");
-    }
-    else {
-      m_session.m_roundTripTime = (myDelay - reportDelay).GetInterval();
-      PTRACE(4, &m_session, *this << "determined round trip time: " << m_session.m_roundTripTime << "ms");
-    }
+  if (!reportTime.IsValid()) {
+    PTRACE(4, &m_session, *this << "not calculating round trip time, NTP in RR does not match SR.");
+    return;
+  }
+
+  PTimeInterval myDelay = PTime() - reportTime;
+  if (m_session.m_roundTripTime > 0 && myDelay <= reportDelay)
+    PTRACE(4, &m_session, *this << "not calculating round trip time, RR arrived too soon after SR.");
+  else if (myDelay <= reportDelay) {
+    m_session.m_roundTripTime = 1;
+    PTRACE(4, &m_session, *this << "very small round trip time, using 1ms");
+  }
+  else if (myDelay > 2000) {
+    PTRACE(4, &m_session, *this << "very large round trip time, ignoring");
+  }
+  else {
+    m_session.m_roundTripTime = (myDelay - reportDelay).GetInterval();
+    PTRACE(4, &m_session, *this << "determined round trip time: " << m_session.m_roundTripTime << "ms");
   }
 }
 
@@ -1268,10 +1271,12 @@ bool OpalRTPSession::InternalSendReport(RTP_ControlFrame & report, SyncSource & 
                                 sender.m_octets,
                                 receivers);
 
+    sender.m_ntpPassThrough = sender.m_reportAbsoluteTime.GetNTP();
     sender.m_lastSenderReportTime.SetCurrentTime();
 
     PTRACE(logLevel, sender << "sending " << forcedStr << "SenderReport:"
               " ntp=" << sender.m_reportAbsoluteTime.AsString(PTime::TodayFormat)
+           << " 0x" << hex << sender.m_ntpPassThrough << dec
            << " rtp=" << sender.m_reportTimestamp
            << " psent=" << sender.m_packets
            << " osent=" << sender.m_octets
@@ -1875,13 +1880,20 @@ void OpalRTPSession::OnRxSenderReport(const RTP_SenderReport & senderReport)
 }
 
 
-void OpalRTPSession::OnRxReceiverReport(RTP_SyncSourceId ssrc, const RTP_ReceiverReport & report)
+void OpalRTPSession::OnRxReceiverReport(RTP_SyncSourceId ssrc, const RTP_ControlFrame::ReceiverReport & rr)
 {
   SyncSource * sender = NULL;
-  if (CheckControlSSRC(ssrc, report.sourceIdentifier, sender PTRACE_PARAM(, "RR"))) {
+  if (CheckControlSSRC(ssrc, rr.ssrc, sender PTRACE_PARAM(, "RR"))) {
+    RTP_ReceiverReport report(rr, sender->m_ntpPassThrough);
     sender->OnRxReceiverReport(report);
-    m_connection.ExecuteMediaCommand(OpalMediaPacketLoss(report.fractionLost * 100 / 255, m_mediaType, m_sessionId, report.sourceIdentifier), true);
+    OnRxReceiverReport(ssrc, report);
   }
+}
+
+
+void OpalRTPSession::OnRxReceiverReport(RTP_SyncSourceId, const RTP_ReceiverReport & report)
+{
+  m_connection.ExecuteMediaCommand(OpalMediaPacketLoss(report.fractionLost * 100 / 255, m_mediaType, m_sessionId, report.sourceIdentifier), true);
 }
 
 
