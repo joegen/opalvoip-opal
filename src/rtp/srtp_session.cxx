@@ -550,7 +550,7 @@ bool OpalSRTPSession::Open(const PString & localInterface, const OpalTransportAd
       m_consecutiveErrors[i][j] = 0;
   }
 
-  m_anyRTCP_SSRC = m_stringOptions.GetBoolean(OPAL_OPT_SRTP_RTCP_ANY_SSRC, m_anyRTCP_SSRC);
+  m_anyRTCP_SSRC = GetSyncSourceIn() == 0 && m_stringOptions.GetBoolean(OPAL_OPT_SRTP_RTCP_ANY_SSRC, m_anyRTCP_SSRC);
 
   return OpalRTPSession::Open(localInterface, remoteAddress);
 }
@@ -775,12 +775,26 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveControl(RTP_ControlF
     return OpalRTPSession::e_IgnorePacket;
   }
 
+  RTP_SyncSourceId ssrc = encoded.GetSenderSyncSource();
+  bool force = false;
+
   /* Need to have a receiver SSRC (their sender) or we can't decrypt the RTCP
      packet. Generally, the SSRC info created on the fly, unless we are using
-     later SDP and that is disabled. However, for Chrome, we have a special
-     case of SSRC=1 which they send even though never indicated in SDP. */
-  RTP_SyncSourceId ssrc = encoded.GetSenderSyncSource();
-  if (UseSyncSource(ssrc, e_Receiver, m_anyRTCP_SSRC) == NULL)
+     later SDP and that is disabled. This case is handed within useSyncSource.
+     However, for Chrome, we have a special cases of SSRC=1 for video and a
+     random number for audio, neither of which they indicate in the SDP when
+     in recvonly mode. So, we try and compensate. */
+  if (m_anyRTCP_SSRC) {
+    if ((ssrc == 1) != (GetMediaType() == OpalMediaType::Video())) {
+      PTRACE(4, *this << "not automatically adding SSRC=" << RTP_TRACE_SRC(ssrc) << " for " << GetMediaType());
+      return e_IgnorePacket;
+    }
+
+    m_anyRTCP_SSRC = false;
+    force = true;
+  }
+
+  if (UseSyncSource(ssrc, e_Receiver, force) == NULL)
     return e_IgnorePacket;
 
   RTP_ControlFrame decoded(encoded);

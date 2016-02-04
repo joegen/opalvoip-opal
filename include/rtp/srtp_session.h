@@ -51,9 +51,10 @@ struct srtp_ctx_t;
 
 
 /**String option key to a boolean indicating that we should accept
-   any Sender SSRC in RTCP packets over SRTP. This is primarily a
-   workaround for Chrome WebRTC, but leaves the system open to DoS
-   attack. Default false.
+   any Sender SSRC in the first RTCP packets when over SRTP. This is
+   primarily a workaround for Chrome WebRTC, which fails to put this in
+   the SDP. Note, this leaves the system open to possible DoS attack.
+   Default false.
   */
 #define OPAL_OPT_SRTP_RTCP_ANY_SSRC "SRTP-RTCP-Any-SSRC"
 
