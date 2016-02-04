@@ -207,7 +207,7 @@ OpalRTPSession::SyncSource * OpalRTPSession::UseSyncSource(RTP_SyncSourceId ssrc
     return it->second;
 
   if ((force || m_allowAnySyncSource) && AddSyncSource(ssrc, dir) == ssrc) {
-    PTRACE(4, *this << "automatically added " << dir << " SSRC=" << RTP_TRACE_SRC(ssrc));
+    PTRACE(4, *this << "automatically added " << GetMediaType() << ' ' << dir << " SSRC=" << RTP_TRACE_SRC(ssrc));
     return m_SSRC.find(ssrc)->second;
   }
 
