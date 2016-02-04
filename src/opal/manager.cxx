@@ -1443,13 +1443,10 @@ static void OnStartStopMediaPatch(PScriptLanguage * script, const char * fn, Opa
 #endif // OPAL_SCRIPT
 
 
-#if OPAL_SCRIPT
 void OpalManager::OnStartMediaPatch(OpalConnection & connection, OpalMediaPatch & patch)
 {
+#if OPAL_SCRIPT
   OnStartStopMediaPatch(m_script, "OnStartMedia", connection, patch);
-#else
-void OpalManager::OnStartMediaPatch(OpalConnection & PTRACE_PARAM(connection), OpalMediaPatch & PTRACE_PARAM(patch))
-{
 #endif
   PTRACE(3, "OnStartMediaPatch " << patch << " on " << connection);
 
