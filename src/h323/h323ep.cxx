@@ -93,7 +93,7 @@ H323EndPoint::H323EndPoint(OpalManager & manager)
   , roundTripDelayTimeout(0, 10)           // Seconds
   , roundTripDelayRate(0, 0, 1)            // Minutes
   , gatekeeperRequestTimeout(0, 5)         // Seconds
-  , gatekeeperRequestRetries(2)
+  , gatekeeperRequestRetries(3)
   , rasRequestTimeout(0, 3)                // Seconds
   , rasRequestRetries(2)
   , registrationTimeToLive(0, 0, 10)       // Minutes
