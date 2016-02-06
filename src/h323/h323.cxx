@@ -1305,6 +1305,9 @@ PBoolean H323Connection::OnReceivedSignalInformation(const H323SignalPDU & infoP
           || memcmp(data_ptr, ringerSetEventInbound, sizeof ringerSetEventInbound) == 0) {
 
         PTRACE(4, "Avaya", "Received NonStandard UU Information event - Ringer Set - Sending line button press");
+
+        PThread::Sleep(1000);  //Avaya server race ondition means we have to wait a bit
+
         // Select answer button (0t7)
         SendNonStandardControl(H323EndPoint::AvayaPhone().oid + ".10", PBYTEArray(select_button, sizeof(select_button), false));
       }
