@@ -660,7 +660,6 @@ void OpalMediaTransport::Transport::ThreadMain()
 
   m_owner->InternalOnStart(m_subchannel);
 
-  PSimpleTimer noMediaTimer = m_owner->m_mediaTimeout;
   while (m_channel->IsOpen()) {
     PBYTEArray data(m_owner->m_packetSize);
 
@@ -670,7 +669,6 @@ void OpalMediaTransport::Transport::ThreadMain()
     if (m_channel->Read(data.GetPointer(), data.GetSize())) {
       data.SetSize(m_channel->GetLastReadCount());
       m_owner->InternalRxData(m_subchannel, data);
-      noMediaTimer = m_owner->m_mediaTimeout;
     }
     else {
       switch (m_channel->GetErrorCode(PChannel::LastReadError)) {
@@ -688,7 +686,7 @@ void OpalMediaTransport::Transport::ThreadMain()
           break;
 
         case PChannel::Unavailable:
-          if (noMediaTimer.IsRunning()) {
+          if (m_owner->m_mediaTimer.IsRunning()) {
             HandleUnavailableError();
             break;
           }
@@ -762,6 +760,8 @@ void OpalMediaTransport::InternalRxData(SubChannels subchannel, const PBYTEArray
   UnlockReadOnly();
 
   notifiers(*this, data);
+
+  m_mediaTimer = m_mediaTimeout;
 }
 
 
@@ -1132,8 +1132,7 @@ bool OpalUDPMediaTransport::Open(OpalMediaSession & session,
     PUDPSocket & socket = *GetSubChannelAsSocket((SubChannels)subchannel);
     PTRACE_CONTEXT_ID_TO(socket);
 
-    if (subchannel != e_Control)
-      socket.SetReadTimeout(m_mediaTimeout);
+    socket.SetReadTimeout(m_mediaTimeout);
 
     // Increase internal buffer size on media UDP sockets
     SetMinBufferSize(socket, SO_RCVBUF, session.GetMediaType() == OpalMediaType::Audio() ? 0x4000 : 0x100000);
