@@ -300,7 +300,7 @@ class OpalManager_C : public OpalManager
     ~OpalManager_C();
 
     void PostMessage(OpalMessageBuffer & message);
-    OpalMessage * GetMessage(unsigned timeout);
+    OpalMessage * GetMessage(unsigned timeout, const char * & error);
     OpalMessage * SendMessage(const OpalMessage * message);
 
     virtual void OnEstablishedCall(OpalCall & call);
@@ -1140,16 +1140,20 @@ void OpalManager_C::PostMessage(OpalMessageBuffer & message)
 }
 
 
-OpalMessage * OpalManager_C::GetMessage(unsigned timeout)
+OpalMessage * OpalManager_C::GetMessage(unsigned timeout, const char * & error)
 {
-  if (m_shuttingDown)
+  if (m_shuttingDown) {
+    error = "System shut down";
     return NULL;
+  }
 
   PTRACE(5, "GetMessage: timeout=" << timeout);
   OpalMessage * msg = NULL;
   if (m_messageQueue.Dequeue(msg, timeout)) {
     PTRACE(4, "Giving message " << msg->m_type << " to application");
   }
+  else
+    error = "Timeout getting message.";
   return msg;
 }
 
@@ -2922,7 +2926,8 @@ extern "C" {
 
   OpalMessage * OPAL_EXPORT OpalGetMessage(OpalHandle handle, unsigned timeout)
   {
-    return handle == NULL ? NULL : handle->m_manager->GetMessage(timeout);
+    const char * error;
+    return handle == NULL ? NULL : handle->m_manager->GetMessage(timeout, error);
   }
 
 
@@ -2982,13 +2987,14 @@ bool OpalContext::GetMessage(OpalMessagePtr & message, unsigned timeout)
     return false;
   }
 
-  message.m_message = OpalGetMessage(m_handle, timeout);
+  const char * error;
+  message.m_message = m_handle->m_manager->GetMessage(timeout, error);
   if (message.m_message != NULL)
     return true;
 
-  PTRACE_IF(4, timeout > 0, "OpalContext::GetMessage() timeout");
+  PTRACE_IF(4, timeout > 0, "OpalContext::GetMessage() " << error);
   message.SetType(OpalIndCommandError);
-  message.m_message->m_param.m_commandError = "Timeout getting message.";
+  message.m_message->m_param.m_commandError = error;
   return false;
 }
 
