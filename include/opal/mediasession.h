@@ -458,6 +458,7 @@ public:
     bool          m_remoteAddressSet;
     PINDEX        m_packetSize;
     PTimeInterval m_mediaTimeout;
+    PSimpleTimer  m_mediaTimer;
     PTimeInterval m_maxNoTransmitTime;
     bool          m_started;
 
