@@ -453,7 +453,7 @@ class RTP_SenderReport : public PObject
 #endif
 
     RTP_SyncSourceId sourceIdentifier;
-    uint32_t         ntpPassThrough;
+    uint64_t         ntpPassThrough;
     PTime            realTimestamp;
     RTP_Timestamp    rtpTimestamp;
     unsigned         packetsSent;
@@ -465,7 +465,7 @@ class RTP_ReceiverReport : public PObject
 {
     PCLASSINFO(RTP_ReceiverReport, PObject);
   public:
-    RTP_ReceiverReport(const RTP_ControlFrame::ReceiverReport & report);
+    RTP_ReceiverReport(const RTP_ControlFrame::ReceiverReport & report, uint64_t ntpPassThru);
 #if PTRACING
     void PrintOn(ostream &) const;
 #endif
@@ -475,7 +475,7 @@ class RTP_ReceiverReport : public PObject
     unsigned         totalLost;	          /* cumulative number of packets lost (signed!) */
     unsigned         lastSequenceNumber;   /* extended last sequence number received */
     unsigned         jitter;               /* interarrival jitter */
-    PTime            lastTimestamp;        /* last SR packet from this source */
+    PTime            lastTimestamp;        /* last SR time from this source */
     PTimeInterval    delay;                /* delay since last SR packet */
 };
 

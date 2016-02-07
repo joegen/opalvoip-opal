@@ -220,6 +220,7 @@ class OpalRTPSession : public OpalMediaSession
     virtual SendReceiveStatus OnOutOfOrderPacket(RTP_DataFrame & frame);
 
     virtual void OnRxSenderReport(const RTP_SenderReport & sender);
+    virtual void OnRxReceiverReport(RTP_SyncSourceId src, const RTP_ControlFrame::ReceiverReport & rr);
     virtual void OnRxReceiverReport(RTP_SyncSourceId src, const RTP_ReceiverReport & report);
     virtual void OnRxSourceDescription(const RTP_SourceDescriptionArray & descriptions);
     virtual void OnRxGoodbye(const RTP_SyncSourceArray & sources, const PString & reason);
@@ -723,8 +724,8 @@ class OpalRTPSession : public OpalMediaSession
       // Things to remember for filling in fields of sent SR/RR/DLRR
       unsigned           m_packetsLostSinceLastRR;
       uint32_t           m_lastRRSequenceNumber;
-      uint32_t           m_ntpPassThrough;
-      PTime              m_lastSenderReportTime;
+      uint64_t           m_ntpPassThrough;       // The NTP time from SR
+      PTime              m_lastSenderReportTime; // Local time that SR was sent/received
       PTime              m_referenceReportTime;
       PTime              m_referenceReportNTP;
 
