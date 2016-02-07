@@ -590,7 +590,7 @@ void RTP_ReceiverReport::PrintOn(ostream & strm) const
        << " lost=" << totalLost
        << " last_seq=" << lastSequenceNumber
        << " jitter=" << jitter
-       << " lsr=" << lastTimestamp
+       << " lsr=" << lastTimestamp.AsString(PTime::TodayFormat)
        << " dlsr=" << delay;
 }
 
@@ -598,7 +598,7 @@ void RTP_ReceiverReport::PrintOn(ostream & strm) const
 void RTP_SenderReport::PrintOn(ostream & strm) const
 {
   strm << "SSRC=" << RTP_TRACE_SRC(sourceIdentifier)
-       << " ntp=" << realTimestamp.AsString("yyyy/M/d hh:mm:ss.uuuu")
+       << " ntp=" << realTimestamp.AsString(PTime::TodayFormat)
        << " (" << (realTimestamp - PTime()) << ")"
           " rtp=" << rtpTimestamp
        << " psent=" << packetsSent
@@ -826,17 +826,17 @@ RTP_SenderReport::RTP_SenderReport()
 
 RTP_SenderReport::RTP_SenderReport(const RTP_ControlFrame::SenderReport & sr)
   : sourceIdentifier(sr.ssrc)
-  , ntpPassThrough((uint32_t)(((uint64_t)sr.ntp_ts)>>16))
+  , ntpPassThrough(sr.ntp_ts)
   , realTimestamp(0)
   , rtpTimestamp(sr.rtp_ts)
   , packetsSent(sr.psent)
   , octetsSent(sr.osent)
 {
-  realTimestamp.SetNTP(sr.ntp_ts);
+  realTimestamp.SetNTP(ntpPassThrough);
 }
 
 
-RTP_ReceiverReport::RTP_ReceiverReport(const RTP_ControlFrame::ReceiverReport & rr)
+RTP_ReceiverReport::RTP_ReceiverReport(const RTP_ControlFrame::ReceiverReport & rr, uint64_t ntpPassThru)
   : sourceIdentifier(rr.ssrc)
   ,  fractionLost(rr.fraction)
   , totalLost(rr.GetLostPackets())
@@ -845,7 +845,8 @@ RTP_ReceiverReport::RTP_ReceiverReport(const RTP_ControlFrame::ReceiverReport & 
   , lastTimestamp(0)
   , delay(((uint32_t)rr.dlsr*1000LL)/65536) // units of 1/65536 seconds
 {
-  lastTimestamp.SetNTP((uint64_t)(uint32_t)rr.lsr << 16);
+  if ((uint32_t)(ntpPassThru>>16) == rr.lsr)
+    lastTimestamp.SetNTP(ntpPassThru);
 }
 
 
