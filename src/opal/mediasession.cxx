@@ -689,7 +689,8 @@ void OpalMediaTransport::Transport::ThreadMain()
 
         case PChannel::Timeout:
           PTRACE(1, m_owner, *m_owner << m_subchannel << " timed out (" << m_channel->GetReadTimeout() << "s)");
-          Close();
+          if (!m_owner->m_mediaTimer.IsRunning())
+            Close();
           break;
 
         default:
