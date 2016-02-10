@@ -921,10 +921,9 @@ PTimeInterval H323Gatekeeper::InternalRegister()
 	  PUInt16b endpointIdentifier[2];
 	  BYTE suffix[1];
   } msg1 = {
-    0x40, 0x10,
-    m_endpointIdentifier[0],
-    m_endpointIdentifier[1],
-    0x00
+    { 0x40, 0x10 },
+    { m_endpointIdentifier[0], m_endpointIdentifier[1] },
+    { 0x00 }
   };
 #pragma pack()
   NonStandardMessage(oid, &msg1, sizeof(msg1), reply);
@@ -932,6 +931,8 @@ PTimeInterval H323Gatekeeper::InternalRegister()
   PTRACE(3, "Starting Avaya IP Phone registration call");
   OpalConnection::StringOptions options;
   options.Set(OPAL_OPT_CALLING_PARTY_NAME, m_aliases[0]);
+  options.SetInteger(OPAL_OPT_MEDIA_RX_TIMEOUT, 1000000000);
+  options.SetInteger(OPAL_OPT_MEDIA_TX_TIMEOUT, 1000000000);
   endpoint.GetManager().SetUpCall("ivr:", "h323:register", NULL, OpalConnection::SynchronousSetUp, &options);
   return 0;
 }

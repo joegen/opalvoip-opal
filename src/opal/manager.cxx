@@ -992,6 +992,7 @@ bool OpalManager::OnRouteConnection(PStringSet & routesTried,
         return MakeConnection(call, b_party, NULL, options, stringOptions) != NULL;
 
       if (scheme.IsEmpty()) {
+        PReadWaitAndSignal mutex(endpointsMutex);
         for (PList<OpalEndPoint>::iterator it = endpointList.begin(); it != endpointList.end(); ++it) {
           if (it->HasAttribute(OpalEndPoint::IsNetworkEndPoint) == (call.GetConnectionCount() > 0))
             return MakeConnection(call, it->GetPrefixName() + ':' + b_party, NULL, options, stringOptions) != NULL;
@@ -1442,13 +1443,10 @@ static void OnStartStopMediaPatch(PScriptLanguage * script, const char * fn, Opa
 #endif // OPAL_SCRIPT
 
 
-#if OPAL_SCRIPT
 void OpalManager::OnStartMediaPatch(OpalConnection & connection, OpalMediaPatch & patch)
 {
+#if OPAL_SCRIPT
   OnStartStopMediaPatch(m_script, "OnStartMedia", connection, patch);
-#else
-void OpalManager::OnStartMediaPatch(OpalConnection & PTRACE_PARAM(connection), OpalMediaPatch & PTRACE_PARAM(patch))
-{
 #endif
   PTRACE(3, "OnStartMediaPatch " << patch << " on " << connection);
 

@@ -149,7 +149,7 @@ H323Connection::H323Connection(OpalCall & call,
   PTRACE_CONTEXT_ID_TO(localCapabilities);
   PTRACE_CONTEXT_ID_TO(remoteCapabilities);
 
-  m_UserInputIndicationTimer.SetNotifier(PCREATE_NOTIFIER(UserInputIndicationTimeout));
+  m_UserInputIndicationTimer.SetNotifier(PCREATE_NOTIFIER(UserInputIndicationTimeout), "UII");
 
   localAliasNames.MakeUnique();
   gkAccessTokenOID.MakeUnique();
@@ -356,10 +356,9 @@ void H323Connection::OnReleased()
 
   // Do not close m_signallingChannel as H323Endpoint can take it back for possible re-use
   if (m_signallingChannel != NULL) {
-    if (m_maintainConnection) {
+    if (m_maintainConnection && endpoint.GetProductInfo() != H323EndPoint::AvayaPhone()) {
       PTRACE(4, "H323\tMaintaining signalling channel.");
       m_signallingChannel->SetReadTimeout(MonitorCallStartTime);
-      m_signallingChannel->AttachThread(NULL);
     }
     else {
       PTRACE(4, "H323\tClosing signalling channel.");
@@ -1306,6 +1305,9 @@ PBoolean H323Connection::OnReceivedSignalInformation(const H323SignalPDU & infoP
           || memcmp(data_ptr, ringerSetEventInbound, sizeof ringerSetEventInbound) == 0) {
 
         PTRACE(4, "Avaya", "Received NonStandard UU Information event - Ringer Set - Sending line button press");
+
+        PThread::Sleep(1000);  //Avaya server race ondition means we have to wait a bit
+
         // Select answer button (0t7)
         SendNonStandardControl(H323EndPoint::AvayaPhone().oid + ".10", PBYTEArray(select_button, sizeof(select_button), false));
       }

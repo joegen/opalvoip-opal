@@ -572,7 +572,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveData(RTP_
     if (running && ++m_lateOutOfOrderAdaptCount >= m_lateOutOfOrderAdaptMax) {
       PTimeInterval timeout = m_session.GetOutOfOrderWaitTime() + m_lateOutOfOrderAdaptBoost;
       m_session.SetOutOfOrderWaitTime(timeout);
-      PTRACE(3, &m_session, *this << " increased out of order packet timeout to " << timeout);
+      PTRACE(2, &m_session, *this << " increased out of order packet timeout to " << timeout);
       running = false;
     }
     if (!running) {
@@ -1581,7 +1581,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
               OnRxReceiverReport(ssrc, rr[i]);
           }
           else {
-            PTRACE(m_throttleRxEmptyRR, this << "received empty ReceiverReport: sender SSRC=" << RTP_TRACE_SRC(ssrc));
+            PTRACE(m_throttleRxEmptyRR, *this << "received empty ReceiverReport: sender SSRC=" << RTP_TRACE_SRC(ssrc));
           }
         }
         else {
@@ -1795,7 +1795,7 @@ bool OpalRTPSession::OnReceiveExtendedReports(const RTP_ControlFrame & frame)
 
   while (size >= sizeof(RTP_ControlFrame::ExtendedReport)) {
     const RTP_ControlFrame::ExtendedReport & xr = *(const RTP_ControlFrame::ExtendedReport *)payload;
-    size_t blockSize = (xr.length + 1) * 4;
+    size_t blockSize = xr.length*4 + sizeof(RTP_ControlFrame::ExtendedReport);
     if (size < blockSize)
       return false;
 

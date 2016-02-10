@@ -344,9 +344,9 @@ OpalH281Client::OpalH281Client()
   m_transmitFrame.SetBS(true);
   m_transmitFrame.SetES(true);
 
-  m_continueTimer.SetNotifier(PCREATE_NOTIFIER(ContinueAction));
-  m_stopTimer.SetNotifier(PCREATE_NOTIFIER(StopAction));
-  m_receiveTimer.SetNotifier(PCREATE_NOTIFIER(ReceiveActionTimeout));
+  m_continueTimer.SetNotifier(PCREATE_NOTIFIER(ContinueAction), "H281Continue");
+  m_stopTimer.SetNotifier(PCREATE_NOTIFIER(StopAction), "H281Stop");
+  m_receiveTimer.SetNotifier(PCREATE_NOTIFIER(ReceiveActionTimeout), "H281Receive");
 }
 
 
@@ -720,7 +720,7 @@ OpalFarEndCameraControl::OpalFarEndCameraControl()
   memset(m_videoInputDevices, 0, sizeof(m_videoInputDevices));
   memset(m_step, 0, sizeof(m_step));
 
-  m_stepTimer.SetNotifier(PCREATE_NOTIFIER(StepCamera));
+  m_stepTimer.SetNotifier(PCREATE_NOTIFIER(StepCamera), "FECCStep");
 }
 
 

@@ -565,6 +565,11 @@ class TextCtrlChannel : public PChannel
     TextCtrlChannel()
       { }
 
+    virtual PString GetName() const
+    {
+      return "TextCtrl";
+    }
+
     static void SetFrame(wxFrame * frame)
     {
       sm_frame = frame;

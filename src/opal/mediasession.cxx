@@ -512,7 +512,9 @@ OpalMediaTransport::OpalMediaTransport(const PString & name)
   , m_remoteBehindNAT(false)
   , m_remoteAddressSet(false)
   , m_packetSize(2048)
-  , m_maxNoTransmitTime(0, 10)          // Sending data for 10 seconds, ICMP says still not there
+  , m_mediaTimeout(0, 0, 5)       // Nothing received for 5 minutes
+  , m_maxNoTransmitTime(0, 10)    // Sending data for 10 seconds, ICMP says still not there
+  , m_opened(false)
   , m_started(false)
 {
 }
@@ -526,15 +528,7 @@ void OpalMediaTransport::PrintOn(ostream & strm) const
 
 bool OpalMediaTransport::IsOpen() const
 {
-  PSafeLockReadOnly lock(*this);
-  if (!lock.IsLocked() || m_subchannels.empty())
-    return false;
-
-  for (vector<Transport>::const_iterator it = m_subchannels.begin(); it != m_subchannels.end(); ++it) {
-    if (it->m_channel == NULL || !it->m_channel->IsOpen())
-      return false;
-  }
-  return true;
+  return m_opened;
 }
 
 
@@ -586,9 +580,6 @@ bool OpalMediaTransport::Write(const void * data, PINDEX length, SubChannels sub
   }
 
   if (channel->Write(data, length))
-    return true;
-
-  if (channel->GetErrorCode(PChannel::LastWriteError) == PChannel::Unavailable && m_subchannels[subchannel].HandleUnavailableError())
     return true;
 
   PTRACE(1, *this << "write (" << length << " bytes) error"
@@ -676,10 +667,6 @@ void OpalMediaTransport::Transport::ThreadMain()
     }
     else {
       switch (m_channel->GetErrorCode(PChannel::LastReadError)) {
-        case PChannel::Unavailable:
-          HandleUnavailableError();
-          break;
-
         case PChannel::BufferTooSmall:
           PTRACE(2, m_owner, *m_owner << m_subchannel << " read packet too large for buffer of " << data.GetSize() << " bytes.");
           break;
@@ -692,6 +679,13 @@ void OpalMediaTransport::Transport::ThreadMain()
         case PChannel::NoError:
           PTRACE(3, m_owner, *m_owner << m_subchannel << " received UDP packet with no payload.");
           break;
+
+        case PChannel::Unavailable:
+          if (m_owner->m_mediaTimer.IsRunning()) {
+            HandleUnavailableError();
+            break;
+          }
+          // Do timeout case
 
         case PChannel::Timeout:
           PTRACE(1, m_owner, *m_owner << m_subchannel << " timed out (" << m_channel->GetReadTimeout() << "s)");
@@ -744,6 +738,7 @@ void OpalMediaTransport::Transport::Close()
     return;
 
   base->Close();
+  m_owner->m_opened = false;
   m_owner->InternalRxData(m_subchannel, PBYTEArray());
 }
 
@@ -762,6 +757,8 @@ void OpalMediaTransport::InternalRxData(SubChannels subchannel, const PBYTEArray
   UnlockReadOnly();
 
   notifiers(*this, data);
+
+  m_mediaTimer = m_mediaTimeout;
 }
 
 
@@ -802,7 +799,7 @@ void OpalMediaTransport::InternalStop()
 
   for (vector<Transport>::iterator it = m_subchannels.begin(); it != m_subchannels.end(); ++it) {
     if (it->m_thread != NULL) {
-      PAssert(it->m_thread->WaitForTermination(2000), "RTP thread failed to terminate");
+      PAssert(it->m_thread->WaitForTermination(10000), "RTP thread failed to terminate");
       delete it->m_thread;
     }
   }
@@ -829,7 +826,7 @@ OpalTCPMediaTransport::OpalTCPMediaTransport(const PString & name)
 
 bool OpalTCPMediaTransport::Open(OpalMediaSession &, PINDEX, const PString & localInterface, const OpalTransportAddress &)
 {
-  return dynamic_cast<PTCPSocket &>(*m_subchannels[0].m_channel).Listen(PIPAddress(localInterface));
+  return m_opened = dynamic_cast<PTCPSocket &>(*m_subchannels[0].m_channel).Listen(PIPAddress(localInterface));
 }
 
 
@@ -1039,6 +1036,9 @@ bool OpalUDPMediaTransport::Open(OpalMediaSession & session,
 {
   PTRACE_CONTEXT_ID_FROM(session);
 
+  if (!PAssert(subchannelCount > 0, PInvalidParameter))
+    return false;
+
   OpalManager & manager = session.GetConnection().GetEndPoint().GetManager();
 
   m_packetSize = manager.GetMaxRtpPacketSize();
@@ -1051,7 +1051,8 @@ bool OpalUDPMediaTransport::Open(OpalMediaSession & session,
   PIPAddress remoteIP;
   remoteAddress.GetIpAddress(remoteIP);
 
-  PTRACE(4, session << "opening: interface=\"" << localInterface << "\" local=" << bindingIP << " remote=" << remoteIP);
+  PTRACE(4, session << "opening " << subchannelCount << " subchannel(s):"
+            " interface=\"" << localInterface << "\" local=" << bindingIP << " remote=" << remoteIP);
 
 #if OPAL_PTLIB_NAT
   if (!manager.IsLocalAddress(remoteIP)) {
@@ -1130,6 +1131,7 @@ bool OpalUDPMediaTransport::Open(OpalMediaSession & session,
   for (size_t subchannel = 0; subchannel < m_subchannels.size(); ++subchannel) {
     PUDPSocket & socket = *GetSubChannelAsSocket((SubChannels)subchannel);
     PTRACE_CONTEXT_ID_TO(socket);
+
     socket.SetReadTimeout(m_mediaTimeout);
 
     // Increase internal buffer size on media UDP sockets
@@ -1137,6 +1139,7 @@ bool OpalUDPMediaTransport::Open(OpalMediaSession & session,
     SetMinBufferSize(socket, SO_SNDBUF, 0x2000);
   }
 
+  m_opened = true;
   return true;
 }
 
@@ -1147,13 +1150,16 @@ bool OpalUDPMediaTransport::Write(const void * data, PINDEX length, SubChannels 
   if (!lock.IsLocked())
     return false;
 
-  PUDPSocket * socket;
-  if (dest == NULL || (socket = GetSubChannelAsSocket(subchannel)) == NULL)
-    return OpalMediaTransport::Write(data, length, subchannel, dest);
+  PUDPSocket * socket = GetSubChannelAsSocket(subchannel);
+  if (PAssertNULL(socket) == NULL)
+    return false;
 
-  bool writeSuccess = socket->WriteTo(data, length, *dest);
+  bool writeSuccess = dest != NULL ? socket->WriteTo(data, length, *dest) : socket->Write(data, length);
   // This insanity prevents a totally unbelievable CPU issue when under heavy load.
   if (writeSuccess)
+    return true;
+
+  if (socket->GetErrorCode(PChannel::LastWriteError) == PChannel::Unavailable && m_subchannels[subchannel].HandleUnavailableError())
     return true;
 
 #if PTRACING
