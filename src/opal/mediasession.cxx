@@ -951,6 +951,7 @@ bool OpalUDPMediaTransport::InternalSetRemoteAddress(const PIPSocket::AddressAnd
 
   socket->SetSendAddress(newAP);
   m_remoteAddressSet = true;
+  m_subchannels[subchannel].m_consecutiveUnavailableErrors = 0; // Prevent errors from previous address.
 
   if (m_localHasRestrictedNAT) {
     // If have Port Restricted NAT on local host then send a datagram
