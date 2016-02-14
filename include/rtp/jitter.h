@@ -287,7 +287,7 @@ class OpalAudioJitterBuffer : public OpalJitterBuffer
   //@}
 
   protected:
-    void Reset();
+    void InternalReset();
     RTP_Timestamp CalculateRequiredTimestamp(RTP_Timestamp playOutTimestamp) const;
     bool AdjustCurrentJitterDelay(int delta);
 
