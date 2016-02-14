@@ -1161,7 +1161,7 @@ bool OpalUDPMediaTransport::Write(const void * data, PINDEX length, SubChannels 
   else
     socket->GetSendAddress(sendAddr);
 
-  if (dest->IsValid()) {
+  if (sendAddr.IsValid()) {
     if (socket->WriteTo(data, length, sendAddr))
       return true;
   }
