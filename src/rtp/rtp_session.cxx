@@ -404,6 +404,8 @@ void OpalRTPSession::SyncSource::CalculateStatistics(const RTP_DataFrame & frame
   PTimeInterval tick = PTimer::Tick();
   m_lastPacketTick = tick;
   m_lastPacketAbsTime = frame.GetAbsoluteTime();
+  if (!m_lastPacketAbsTime.IsValid())
+    m_lastPacketAbsTime.SetCurrentTime();
   m_lastPacketTimestamp = frame.GetTimestamp();
 
 
