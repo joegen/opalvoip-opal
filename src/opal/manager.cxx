@@ -155,11 +155,8 @@ ostream & operator<<(ostream & strm, OpalConferenceState::ChangeType type)
 
 PString OpalGetVersion()
 {
-#define AlphaCode   "alpha"
-#define BetaCode    "beta"
-#define ReleaseCode "."
-
-  return psprintf("%u.%u%s%u (svn:%u)", MAJOR_VERSION, MINOR_VERSION, BUILD_TYPE, BUILD_NUMBER, SVN_REVISION);
+  PProcess::VersionInfo ver = { MAJOR_VERSION, MINOR_VERSION, PProcess::BUILD_TYPE, BUILD_NUMBER, SVN_REVISION, GIT_COMMIT };
+  return ver.AsString();
 }
 
 
