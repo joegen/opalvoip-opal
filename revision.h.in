@@ -29,6 +29,7 @@
 #define _OPAL_REVISION_H
 
 #define SVN_REVISION $WCREV$
+#define GIT_COMMIT ""
 
 #endif  // _OPAL_REVISION_H
 

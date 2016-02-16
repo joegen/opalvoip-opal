@@ -948,6 +948,7 @@ bool OpalUDPMediaTransport::InternalSetRemoteAddress(const PIPSocket::AddressAnd
 
   socket->SetSendAddress(newAP);
   m_remoteAddressSet = true;
+  m_subchannels[subchannel].m_consecutiveUnavailableErrors = 0; // Prevent errors from previous address.
 
   if (m_localHasRestrictedNAT) {
     // If have Port Restricted NAT on local host then send a datagram
@@ -1155,29 +1156,32 @@ bool OpalUDPMediaTransport::Write(const void * data, PINDEX length, SubChannels 
   if (PAssertNULL(socket) == NULL)
     return false;
 
-  bool writeSuccess = dest != NULL ? socket->WriteTo(data, length, *dest) : socket->Write(data, length);
-  // This insanity prevents a totally unbelievable CPU issue when under heavy load.
-  if (writeSuccess)
-    return true;
+  PIPSocketAddressAndPort sendAddr;
+  if (dest != NULL)
+    sendAddr = *dest;
+  else
+    socket->GetSendAddress(sendAddr);
+
+  if (sendAddr.IsValid()) {
+    if (socket->WriteTo(data, length, sendAddr))
+      return true;
+  }
+  else {
+    PTRACE(4, "UDP write has no destination address.");
+    /* The following makes not having destination address yet be processed the
+       same as if the remote is not yet listening on the port (ICMP errors) so it
+       will keep trying for a while, then give up and close the media transport. */
+    socket->SetErrorValues(PChannel::Unavailable, EINVAL, PChannel::LastWriteError);
+  }
 
   if (socket->GetErrorCode(PChannel::LastWriteError) == PChannel::Unavailable && m_subchannels[subchannel].HandleUnavailableError())
     return true;
 
-#if PTRACING
-  if (PTrace::CanTrace(1)) {
-    ostream & trace = PTRACE_BEGIN(1);
-    trace << *this << "error writing to ";
-    if (dest != NULL)
-      trace << *dest;
-    else
-      trace << socket->GetSendAddress();
-    trace  << " (" << length << " bytes)"
-              " on " << subchannel << " subchannel"
-              " (" << socket->GetErrorNumber(PChannel::LastWriteError) << "):"
-              " " << socket->GetErrorText(PChannel::LastWriteError)
-           << PTrace::End;
-  }
-#endif
+  PTRACE(1, *this << "error writing to " << sendAddr
+                  << " (" << length << " bytes)"
+                     " on " << subchannel << " subchannel"
+                     " (" << socket->GetErrorNumber(PChannel::LastWriteError) << "):"
+                     " " << socket->GetErrorText(PChannel::LastWriteError));
   return false;
 }
 
