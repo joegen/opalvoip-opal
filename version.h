@@ -36,8 +36,8 @@
 
 #define MAJOR_VERSION 3
 #define MINOR_VERSION 17
-#define BUILD_TYPE AlphaCode
-#define BUILD_NUMBER 1
+#define BUILD_TYPE ReleaseCode
+#define BUILD_NUMBER UINT_MAX
 
 
 #endif  // _OPAL_VERSION_H
