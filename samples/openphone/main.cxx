@@ -2026,7 +2026,7 @@ void MyManager::OnMenuAbout(wxCommandEvent & WXUNUSED(event))
            " disguised or hidden in any way.\n"
            "\n"
            "Part of the Open Phone Abstraction Library, http://www.opalvoip.org\n"
-           "  OPAL Version:  " << OpalGetVersion() << "\n"
+           "  OPAL Version: " << OpalGetVersion() << "\n"
            "  PTLib Version: " << PProcess::GetLibVersion() << '\n';
   wxMessageDialog dialog(this, text, wxT("About ..."), wxOK);
   dialog.ShowModal();
@@ -7987,7 +7987,10 @@ void StatisticsField::Update(const OpalConnection & connection, const OpalMediaS
 
 #define STATISTICS_FIELD_SPRINTF(type, name, field) \
   STATISTICS_FIELD_BEG(type, name) \
-    value.sprintf(m_printFormat, statistics.field); \
+    if (statistics.field >= 0) \
+      value.sprintf(m_printFormat, statistics.field); \
+    else \
+      value.clear(); \
   STATISTICS_FIELD_END(type, name)
 
 #define STATISTICS_FIELD_SPRINTF_NZ(type, name, field) \
