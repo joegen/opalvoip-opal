@@ -1079,6 +1079,8 @@ void OpalRTPSession::SyncSource::OnRxReceiverReport(const RTP_ReceiverReport & r
   PTRACE(m_throttleRxRR, &m_session, m_session << "OnReceiverReport: " << report << m_throttleRxRR);
 
   m_packetsLost = report.totalLost;
+  PTRACE(m_throttleInvalidLost, &m_session, m_session << "remote indicated packet loss (" << m_packetsLost << ")"
+         " larger than number of packets we sent (" << m_packets << ')' << m_throttleInvalidLost);
   m_currentjitter = (report.jitter + m_session.m_timeUnits -1)/m_session.m_timeUnits;
   if (m_maximumJitter < m_currentjitter)
     m_maximumJitter = m_currentjitter;
