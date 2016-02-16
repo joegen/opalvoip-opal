@@ -745,6 +745,7 @@ class OpalRTPSession : public OpalMediaSession
       PTRACE_THROTTLE(m_throttleTxRED,3,60000);
       PTRACE_THROTTLE(m_throttleRxRED,3,60000);
       PTRACE_THROTTLE(m_throttleRxUnknownFEC,3,10000);
+      PTRACE_THROTTLE(m_throttleInvalidLost,2,60000);
 
       P_REMOVE_VIRTUAL(SendReceiveStatus, OnSendData(RTP_DataFrame &, bool), e_AbortTransport);
     };
