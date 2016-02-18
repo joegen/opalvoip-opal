@@ -416,6 +416,7 @@ AC_PROG_RANLIB()
 dnl AC_PROG_MKDIR_P()  -- Doesn't work!
 AC_SUBST(MKDIR_P, "mkdir -p")
 AC_PATH_PROG(SVN, svn)
+AC_PATH_PROG(GIT, git)
 
 AC_PROG_INSTALL()
 AC_MSG_CHECKING([install support for -C])
@@ -468,7 +469,7 @@ AC_ARG_ENABLE(cpp11, AS_HELP_STRING([--enable-cpp11],[Enable C++11 build]),AC_SU
 
 case "$target_os" in
    darwin* | iPhone* )
-      SHARED_LDFLAGS="-dynamiclib"
+      SHARED_LDFLAGS='-dynamiclib -Wl,-install_name,@executable_path/$(LIB_SONAME)'
       SHAREDLIBEXT="dylib"
       DEBUGINFOEXT="dSYM"
       AR="libtool"
@@ -503,8 +504,7 @@ case "$target_os" in
       target_os=Darwin
       target_release=`sw_vers -productVersion`
 
-      CPPFLAGS="-I/opt/local/include -mmacosx-version-min=10.8 $CPPFLAGS"
-      LDFLAGS="-L/opt/local/lib $LDFLAGS"
+      CPPFLAGS="-mmacosx-version-min=10.8 $CPPFLAGS"
       LIBS="-framework QTKit -framework CoreVideo -framework AudioUnit $LIBS"
    ;;
 
@@ -715,6 +715,14 @@ MY_COMPILE_IFELSE(
    [],
    [],
    [CXXFLAGS="$CXXFLAGS -Wno-deprecated-declarations"]
+)
+
+MY_COMPILE_IFELSE(
+   [Disable potentially evaluated expression warning (-Wno-potentially-evaluated-expression)],
+   [-Werror -Wno-potentially-evaluated-expression],
+   [],
+   [],
+   [CXXFLAGS="$CXXFLAGS -Wno-potentially-evaluated-expression"]
 )
 
 AC_LANG_POP(C++)
