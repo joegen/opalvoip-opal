@@ -28,43 +28,8 @@
 
 PROG		:= openphone
 SOURCES		:= main.cxx openphone.cxx
-
 VERSION_FILE    := version.h
-
-WX_CONFIG := $(firstword $(wildcard $(addsuffix /wx-config,$(subst :, ,$(PATH):/opt/local/Library/Frameworks/wxWidgets.framework/Versions/wxWidgets/3.0/bin))))
-ifneq (,$(WX_CONFIG))
-  WXRC := $(dir $(WX_CONFIG))/wxrc
-else
-  WX_CONFIG := $(firstword $(wildcard $(addsuffix /wxgtk2u-2.8-config,$(subst :, ,$(PATH)))))
-  ifneq (,$(WX_CONFIG))
-    WXRC := $(dir $(WX_CONFIG))/wxrc-gtk2u-2.8
-  else
-    WX_CONFIG := wx-config-3.0
-    ifneq (,$(shell which $(WX_CONFIG) 2>&1))
-      WXRC := wxrc-3.0
-    else
-      WX_CONFIG := wx-config
-      ifneq (,$(shell which $(WX_CONFIG) 2>&1))
-        WXRC := wxrc
-      else
-        $(error Could not find wx-config)
-      endif
-    endif
-  endif
-endif
-
-ifneq (,$(DEBUG_BUILD))
-  ifneq (,$(shell $(WX_CONFIG) --list | grep debug))
-    WX_CONFIG += --debug=$(DEBUG_BUILD)
-  else
-    CPPFLAGS += -DOPAL_WX_DEBUG_HACK
-  endif
-endif
-
-CPPFLAGS += $(shell $(WX_CONFIG) --cppflags)
-CXXFLAGS += $(shell $(WX_CONFIG) --cxxflags)
-CFLAGS   += $(shell $(WX_CONFIG) --cflags)
-LDFLAGS  += $(shell $(WX_CONFIG) --libs)
+USING_WX_WIDGETS:=yes
 
 
 # Need this before the include of opal.mak
