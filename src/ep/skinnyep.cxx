@@ -1273,23 +1273,17 @@ void OpalSkinnyConnection::OpenSimulatedMediaChannel(unsigned sessionId, const O
     return;
   }
 
-  if (dynamic_cast<OpalRTPSession *>(mediaSession) == NULL) {
-    OpalTransportAddress mediaAddress = mediaSession->GetRemoteAddress();
-    mediaSession = new OpalRTPSession(OpalMediaSession::Init(*this, sessionId, mediaFormat.GetMediaType(), false));
-    if (!mediaSession->Open(m_phoneDevice.m_transport.GetInterface(), mediaAddress)) {
-      PTRACE(2, "Could not open RTP session " << sessionId << " for " << mediaFormat << " using " << mediaAddress);
-      delete mediaSession;
-      return;
-    }
-    m_sessions.SetAt(sessionId, mediaSession);
-  }
+  // If dummy session, replace with real RTP session
+  if (dynamic_cast<OpalRTPSession *>(mediaSession) == NULL)
+    ReplaceMediaSession(sessionId, new OpalRTPSession(OpalMediaSession::Init(*this, sessionId, mediaFormat.GetMediaType(), false)));
 
+  // Open the RTP stream
   OpalMediaStreamPtr sinkStream = OpenMediaStream(mediaFormat, sessionId, false);
   if (sinkStream == NULL)
     return;
 
-#if OPAL_PTLIB_WAVFILE
   std::auto_ptr<OpalMediaStream> sourceStream;
+#if OPAL_PTLIB_WAVFILE
   {
     std::auto_ptr<OpalWAVFile> wavFile(new OpalWAVFile(m_endpoint.GetSimulatedAudioFile(),
                                                        PFile::ReadOnly,
@@ -1313,6 +1307,9 @@ void OpalSkinnyConnection::OpenSimulatedMediaChannel(unsigned sessionId, const O
       sourceStream.reset(new OpalFileMediaStream(*this, OpalPCM16, sessionId, true, wavFile.release()));
     }
   }
+#else
+  sourceStream.reset(new OpalNullMediaStream(*this, OpalPCM16, sessionId, true, true, true));
+#endif
 
   if (!sourceStream->Open()) {
     PTRACE(2, "Could not open stream for simulated transmit " << mediaFormat << " stream, session=" << sessionId);
@@ -1329,9 +1326,6 @@ void OpalSkinnyConnection::OpenSimulatedMediaChannel(unsigned sessionId, const O
 
   PTRACE(3, "Simulating transmit " << mediaFormat << " stream, session=" << sessionId << ", file=" << m_endpoint.GetSimulatedAudioFile());
   StartMediaStreams();
-#else
-  PTRACE(3, "Cannot simulate transmit " << mediaFormat << " stream, session=" << sessionId << ", file=" << m_endpoint.GetSimulatedAudioFile());
-#endif
 }
 
 
