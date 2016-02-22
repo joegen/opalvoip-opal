@@ -1204,13 +1204,13 @@ OpalMediaSession::OpalMediaSession(const Init & init)
   , m_remoteBehindNAT(init.m_remoteBehindNAT)
 {
   PTRACE_CONTEXT_ID_FROM(init.m_connection);
-  PTRACE(5, *this << "created for " << m_mediaType);
+  PTRACE(5, *this << "created " << this << " for " << m_mediaType);
 }
 
 
 OpalMediaSession::~OpalMediaSession()
 {
-  PTRACE(5, *this << "destroyed.");
+  PTRACE(5, *this << "destroyed " << this);
 }
 
 
