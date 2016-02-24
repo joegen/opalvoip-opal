@@ -351,6 +351,13 @@ class H323EndPoint : public OpalRTPEndPoint
       const PString & username = PString::Empty()
     );
 
+    /** Set the password for specific alias.
+    */
+    void SetAliasPasswords(
+      const PStringToString & aliasPasswords,
+      const PString & defaultAddress
+    );
+    
     /**Get the H.235 username for the gatekeeper.
       */
     virtual const PString & GetGatekeeperUsername() const { return m_gatekeeperUsername; }
@@ -1354,6 +1361,7 @@ class H323EndPoint : public OpalRTPEndPoint
     bool InternalStartGatekeeper(const H323TransportAddress & remoteAddress, const PString & localAddress);
     bool InternalRestartGatekeeper(bool adjustingRegistrations = true);
     bool InternalCreateGatekeeper(const H323TransportAddress & remoteAddress, const PStringList & aliases);
+    void InternalSetGatekeeperPassword(H323Gatekeeper& gatekeeper, const OpalTransportAddress& gatekeeperAddress) const;
 
     H323Connection * InternalMakeCall(
       OpalCall & call,
@@ -1451,6 +1459,8 @@ class H323EndPoint : public OpalRTPEndPoint
     bool                      m_gatekeeperSimulatePattern;
     bool                      m_gatekeeperRasRedirect;
     PTimedMutex               m_gatekeeperMutex;
+    PStringToString           m_aliasPasswords;
+    PString                   m_aliasPwdDefaultAddress;
 
 #if OPAL_H450
     H323CallIdentityDict   m_secondaryConnectionsActive;
