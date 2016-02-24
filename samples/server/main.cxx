@@ -690,11 +690,8 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
 #endif
 
 #if OPAL_SCRIPT
-  PFactory<PScriptLanguage>::KeyList_T keys = PFactory<PScriptLanguage>::GetKeyList();
-  if (!keys.empty()) {
-    PStringArray languages;
-    for (PFactory<PScriptLanguage>::KeyList_T::iterator it = keys.begin(); it != keys.end(); ++it)
-      languages.AppendString(*it);
+  PStringArray languages = PScriptLanguage::GetLanguages();
+  if (!languages.empty()) {
     PCaselessString language = cfg.GetString(ScriptLanguageKey, languages[0]);
     rsrc->Add(new PHTTPRadioField(ScriptLanguageKey, languages,
               languages.GetValuesIndex(language),"Interpreter script language."));
