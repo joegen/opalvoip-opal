@@ -786,7 +786,7 @@ class OpalSkinnyConnection : public OpalRTPConnection
       mutable unsigned     m_sessionId;
     };
     void OpenMediaChannel(const MediaInfo & info);
-    void OpenSimulatedMediaChannel(unsigned sessionId, const OpalMediaFormat & mediaFormat);
+    void OpenSimulatedMediaChannel(const MediaInfo & info, const OpalMediaFormat & mediaFormat);
     void DelayCloseMediaStream(OpalMediaStreamPtr mediaStream);
 
     OpalSkinnyEndPoint & m_endpoint;
