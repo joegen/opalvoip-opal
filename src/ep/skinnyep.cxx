@@ -1229,6 +1229,9 @@ void OpalSkinnyConnection::OpenMediaChannel(const MediaInfo & info)
     return;
   }
 
+  if (!info.m_receiver)
+    mediaSession->SetRemoteAddress(info.m_mediaAddress);
+
   bool canSimulate = !info.m_receiver && !m_endpoint.GetSimulatedAudioFile().IsEmpty() && mediaType == OpalMediaType::Audio();
 
   if (canSimulate && info.m_sessionId > 1 && m_endpoint.IsSecondaryAudioAlwaysSimulated()) {
@@ -1255,8 +1258,6 @@ void OpalSkinnyConnection::OpenMediaChannel(const MediaInfo & info)
     ack.m_port = ap.GetPort();
     m_phoneDevice.SendSkinnyMsg(ack);
   }
-  else
-    mediaSession->SetRemoteAddress(info.m_mediaAddress);
 
   StartMediaStreams();
 }
