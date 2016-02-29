@@ -1235,14 +1235,14 @@ void OpalSkinnyConnection::OpenMediaChannel(const MediaInfo & info)
   bool canSimulate = !info.m_receiver && !m_endpoint.GetSimulatedAudioFile().IsEmpty() && mediaType == OpalMediaType::Audio();
 
   if (canSimulate && info.m_sessionId > 1 && m_endpoint.IsSecondaryAudioAlwaysSimulated()) {
-    OpenSimulatedMediaChannel(info.m_sessionId, mediaFormat);
+    OpenSimulatedMediaChannel(info, mediaFormat);
     return;
   }
 
   if (!ownerCall.OpenSourceMediaStreams(*con, mediaType, info.m_sessionId, mediaFormat)) {
     PTRACE(2, "Could not open " << (info.m_receiver ? 'r' : 't') << "x " << mediaType << " stream, session=" << info.m_sessionId);
     if (canSimulate)
-      OpenSimulatedMediaChannel(info.m_sessionId, mediaFormat);
+      OpenSimulatedMediaChannel(info, mediaFormat);
     return;
   }
 
@@ -1263,28 +1263,28 @@ void OpalSkinnyConnection::OpenMediaChannel(const MediaInfo & info)
 }
 
 
-void OpalSkinnyConnection::OpenSimulatedMediaChannel(unsigned sessionId, const OpalMediaFormat & mediaFormat)
+void OpalSkinnyConnection::OpenSimulatedMediaChannel(const MediaInfo & info, const OpalMediaFormat & mediaFormat)
 {
-  m_simulatedTransmitters.insert(sessionId);
+  m_simulatedTransmitters.insert(info.m_sessionId);
 
-  OpalMediaSession * mediaSession = GetMediaSession(sessionId);
+  OpalMediaSession * mediaSession = GetMediaSession(info.m_sessionId);
   if (mediaSession == NULL) {
-    PTRACE(2, "No session " << sessionId << " for " << mediaFormat << " to simulate");
+    PTRACE(2, "No session " << info.m_sessionId << " for " << mediaFormat << " to simulate");
     return;
   }
 
   if (dynamic_cast<OpalRTPSession *>(mediaSession) == NULL) {
-    OpalTransportAddress mediaAddress = mediaSession->GetRemoteAddress();
-    mediaSession = new OpalRTPSession(OpalMediaSession::Init(*this, sessionId, mediaFormat.GetMediaType(), false));
-    if (!mediaSession->Open(m_phoneDevice.m_transport.GetInterface(), mediaAddress)) {
-      PTRACE(2, "Could not open RTP session " << sessionId << " for " << mediaFormat << " using " << mediaAddress);
+    mediaSession = new OpalRTPSession(OpalMediaSession::Init(*this, info.m_sessionId, mediaFormat.GetMediaType(), false));
+    if (!mediaSession->Open(m_phoneDevice.m_transport.GetInterface(), info.m_mediaAddress)) {
+      PTRACE(2, "Could not open RTP session " << info.m_sessionId << " for " << mediaFormat << " using " << info.m_mediaAddress);
       delete mediaSession;
       return;
     }
-    m_sessions.SetAt(sessionId, mediaSession);
+    mediaSession->SetRemoteAddress(info.m_mediaAddress);
+    m_sessions.SetAt(info.m_sessionId, mediaSession);
   }
 
-  OpalMediaStreamPtr sinkStream = OpenMediaStream(mediaFormat, sessionId, false);
+  OpalMediaStreamPtr sinkStream = OpenMediaStream(mediaFormat, info.m_sessionId, false);
   if (sinkStream == NULL)
     return;
 
@@ -1297,41 +1297,41 @@ void OpalSkinnyConnection::OpenSimulatedMediaChannel(unsigned sessionId, const O
                                                        PWAVFile::fmt_PCM,
                                                        false));
     if (!wavFile->IsOpen()) {
-      PTRACE(3, "Could not simulate transmit " << mediaFormat << " stream, session=" << sessionId
+      PTRACE(3, "Could not simulate transmit " << mediaFormat << " stream, session=" << info.m_sessionId
              << ", file=" << m_endpoint.GetSimulatedAudioFile() << ": " << wavFile->GetErrorText());
       return;
     }
 
     if (wavFile->GetFormatString() == mediaFormat)
-      sourceStream.reset(new OpalFileMediaStream(*this, mediaFormat, sessionId, true, wavFile.release()));
+      sourceStream.reset(new OpalFileMediaStream(*this, mediaFormat, info.m_sessionId, true, wavFile.release()));
     else {
       if (!wavFile->SetAutoconvert()) {
-        PTRACE(3, "Could not simulate transmit " << mediaFormat << " stream, session=" << sessionId
+        PTRACE(3, "Could not simulate transmit " << mediaFormat << " stream, session=" << info.m_sessionId
                << ", file=" << m_endpoint.GetSimulatedAudioFile() << ": unsupported codec");
         return;
       }
-      sourceStream.reset(new OpalFileMediaStream(*this, OpalPCM16, sessionId, true, wavFile.release()));
+      sourceStream.reset(new OpalFileMediaStream(*this, OpalPCM16, info.m_sessionId, true, wavFile.release()));
     }
   }
+#else
+  sourceStream.reset(new OpalNullMediaStream(*this, OpalPCM16, info.m_sessionId, true, true));
+#endif
 
   if (!sourceStream->Open()) {
-    PTRACE(2, "Could not open stream for simulated transmit " << mediaFormat << " stream, session=" << sessionId);
+    PTRACE(2, "Could not open stream for simulated transmit " << mediaFormat << " stream, session=" << info.m_sessionId);
     return;
   }
 
   OpalMediaPatchPtr patch = m_endpoint.GetManager().CreateMediaPatch(*sourceStream, true);
   if (patch == NULL || !patch->AddSink(sinkStream)) {
-    PTRACE(2, "Could not create patch for simulated transmit " << mediaFormat << " stream, session=" << sessionId);
+    PTRACE(2, "Could not create patch for simulated transmit " << mediaFormat << " stream, session=" << info.m_sessionId);
     return;
   }
 
   mediaStreams.Append(sourceStream.release());
 
-  PTRACE(3, "Simulating transmit " << mediaFormat << " stream, session=" << sessionId << ", file=" << m_endpoint.GetSimulatedAudioFile());
+  PTRACE(3, "Simulating transmit " << mediaFormat << " stream, session=" << info.m_sessionId << ", file=" << m_endpoint.GetSimulatedAudioFile());
   StartMediaStreams();
-#else
-  PTRACE(3, "Cannot simulate transmit " << mediaFormat << " stream, session=" << sessionId << ", file=" << m_endpoint.GetSimulatedAudioFile());
-#endif
 }
 
 
@@ -1393,8 +1393,12 @@ void OpalSkinnyConnection::OnClosedMediaStream(const OpalMediaStream & stream)
     return;
 
   unsigned sessionId = stream.GetSessionID();
-  if (m_simulatedTransmitters.find(sessionId) == m_simulatedTransmitters.end())
-    OpenSimulatedMediaChannel(sessionId, stream.GetMediaFormat());
+  if (m_simulatedTransmitters.find(sessionId) == m_simulatedTransmitters.end()) {
+    for (std::set<MediaInfo>::iterator it = m_passThruMedia.begin(); it != m_passThruMedia.end(); ++it) {
+      if (!it->m_receiver && it->m_sessionId == sessionId)
+        OpenSimulatedMediaChannel(*it, stream.GetMediaFormat());
+    }
+  }
   else {
     PTRACE(4, "Session " << sessionId << " had already tried simulation, not trying again.");
   }

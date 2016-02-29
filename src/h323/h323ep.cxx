@@ -641,7 +641,8 @@ bool H323EndPoint::InternalCreateGatekeeper(const H323TransportAddress & remoteA
     gatekeeper->m_aliases += alias->GetPointer(); // Don't make reference
   gatekeeper->m_aliasMutex.Signal();
 
-  gatekeeper->SetPassword(GetGatekeeperPassword(), GetGatekeeperUsername());
+  InternalSetGatekeeperPassword(*gatekeeper, remoteAddress);
+
   m_gatekeepers.Append(gatekeeper);
 
   if (remoteAddress.IsEmpty())
@@ -720,7 +721,36 @@ void H323EndPoint::SetGatekeeperPassword(const PString & password, const PString
   m_gatekeeperPassword = password;
 
   for (GatekeeperList::iterator it = m_gatekeepers.begin(); it != m_gatekeepers.end(); ++it)
-    it->SetPassword(GetGatekeeperPassword(), GetGatekeeperUsername());
+    InternalSetGatekeeperPassword(*it, it->transport->GetRemoteAddress());
+}
+
+
+void H323EndPoint::SetAliasPasswords(const PStringToString & aliasPasswords, const PString & defaultAddress)
+{
+  m_aliasPasswords = aliasPasswords;
+  m_aliasPwdDefaultAddress = defaultAddress;
+}
+
+
+void H323EndPoint::InternalSetGatekeeperPassword(H323Gatekeeper& gatekeeper, const OpalTransportAddress& gatekeeperAddress) const
+{
+  PString alias;
+  gatekeeper.m_aliasMutex.Wait();
+  if (gatekeeper.m_aliases.size() == 1)
+    alias = gatekeeper.m_aliases[0];
+  gatekeeper.m_aliasMutex.Signal();
+
+  if (!alias.IsEmpty()) {
+    PIPSocket::Address ip;
+    PString gkAddress = (gatekeeperAddress.GetIpAddress(ip) && !ip.IsAny()) ? ip.AsString() : m_aliasPwdDefaultAddress;
+    PStringToString::const_iterator pwdIter = m_aliasPasswords.find(alias + '@' + gkAddress);
+    if (pwdIter != m_aliasPasswords.end()) {
+      gatekeeper.SetPassword(pwdIter->second, GetGatekeeperUsername());
+      return;
+    }
+  }
+
+  gatekeeper.SetPassword(GetGatekeeperPassword(), GetGatekeeperUsername());
 }
 
 

@@ -436,6 +436,7 @@ void OpalRTPConnection::ReleaseMediaSession(unsigned sessionID)
     return;
   }
 
+  PTRACE(3, "Released session " << sessionID);
   it->second->Close();
 
   OpalRTPSession * rtpSession = dynamic_cast<OpalRTPSession *>(&*it->second);

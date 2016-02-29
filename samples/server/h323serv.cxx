@@ -82,8 +82,39 @@ static const char AuthenticationCredentialsKey[] = "Authentication\\Credentials 
 static const char AliasRouteMapsName[] = "Gatekeeper Alias Route Maps";
 static const char AliasRouteMapsKey[] = "Route Maps\\Mapping %u\\";
 
+#define H323RegistrationSection "H.323 Registration\\"
+#define H323RegistrationNewSection H323RegistrationSection"New"
+#define H323RegistrationEncryptedSection H323RegistrationSection"Encrypted"
+
+static const PINDEX H323GatekeeperPasswordSize = 30;
+
 #define PTraceModule() "OpalServer"
 #define new PNEW
+
+
+///////////////////////////////////////////////////////////////
+
+static PStringToString GetMyAliasPasswords(PConfig & cfg)
+{
+  PStringToString clearPwd;
+
+  PStringToString encryptedPwd = cfg.GetAllKeyValues(H323RegistrationEncryptedSection);
+  for (PStringToString::iterator encryptedPwdIter = encryptedPwd.begin(); encryptedPwdIter != encryptedPwd.end(); ++encryptedPwdIter)
+  {
+    clearPwd.SetAt(encryptedPwdIter->first, PHTTPPasswordField::Decrypt(encryptedPwdIter->second));
+  }
+
+  PStringToString newPwd = cfg.GetAllKeyValues(H323RegistrationNewSection);
+  for (PStringToString::iterator newPwdIter = newPwd.begin(); newPwdIter != newPwd.end(); ++newPwdIter)
+  {
+    PHTTPPasswordField encryptedValue("", H323GatekeeperPasswordSize, newPwdIter->second);
+    cfg.SetString(H323RegistrationEncryptedSection, newPwdIter->first, encryptedValue.GetValue());
+    cfg.DeleteKey(H323RegistrationNewSection, newPwdIter->first);
+  }
+
+  clearPwd.Merge(newPwd, PStringToString::MergeAction::e_MergeOverwrite);
+  return clearPwd;
+}
 
 
 ///////////////////////////////////////////////////////////////
@@ -158,6 +189,8 @@ bool MyH323EndPoint::Configure(PConfig & cfg, PConfigPage * rsrc)
   PString gkAddress = rsrc->AddStringField(GatekeeperAddressKey, 0, PString::Empty(),
       "IP/hostname of gatekeeper to register with, if blank a broadcast is used", 1, 30);
 
+  SetAliasPasswords(GetMyAliasPasswords(cfg), gkAddress);
+
   PString gkIdentifier = rsrc->AddStringField(RemoteGatekeeperIdentifierKey, 0, PString::Empty(),
                 "Gatekeeper identifier to register with, if blank any gatekeeper is used", 1, 30);
 
@@ -167,7 +200,7 @@ bool MyH323EndPoint::Configure(PConfig & cfg, PConfigPage * rsrc)
   PString gkPassword = PHTTPPasswordField::Decrypt(cfg.GetString(GatekeeperPasswordKey));
   if (!gkPassword)
     SetGatekeeperPassword(gkPassword);
-  rsrc->Add(new PHTTPPasswordField(GatekeeperPasswordKey, 30, gkPassword,
+  rsrc->Add(new PHTTPPasswordField(GatekeeperPasswordKey, H323GatekeeperPasswordSize, gkPassword,
             "Password for gatekeeper authentication, user is the first alias"));
 
   SetGkAccessTokenOID(rsrc->AddStringField(GatekeeperTokenOIDKey, 0, GetGkAccessTokenOID(),
