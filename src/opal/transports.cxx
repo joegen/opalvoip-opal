@@ -1205,7 +1205,12 @@ void OpalTransport::SetKeepAlive(const PTimeInterval & timeout, const PBYTEArray
   m_keepAliveData = data;
   UnlockReadWrite();
 
-  if (data.IsEmpty()) {
+  PSocket * socket = dynamic_cast<PSocket *>(m_channel);
+  if (socket != NULL && !socket->SetOption(SO_KEEPALIVE, timeout > 0)) {
+    PTRACE(1, "SetOption(SO_KEEPALIVE) failed: " << socket->GetErrorText());
+  }
+
+  if (timeout <= 0 || data.IsEmpty()) {
     m_keepAliveTimer.Stop(false);
     PTRACE(4, "Transport keep alive disabled on " << *this);
   }
