@@ -422,6 +422,9 @@ void H323Connection::AttachSignalChannel(const PString & token,
   if (m_features != NULL && m_features->HasFeature(H460_FeatureStd18::ID()))
     channel->SetKeepAlive(endpoint.GetManager().GetNatKeepAliveTime(), PBYTEArray(EmptyTPKT, sizeof(EmptyTPKT), false));
 #endif
+
+  if (endpoint.GetProductInfo() == H323EndPoint::AvayaPhone())
+    channel->SetKeepAlive(1000, PBYTEArray()); // Set SO_KEEPALIVE on socket
 }
 
 
