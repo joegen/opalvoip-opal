@@ -6535,10 +6535,26 @@ fi
 
 
 
-   major=`cat $VERSION_DIR/version.h | grep MAJOR_VERSION | cut -f3 -d' '`
-   minor=`cat $VERSION_DIR/version.h | grep MINOR_VERSION | cut -f3 -d' '`
-   build=`cat $VERSION_DIR/version.h | grep BUILD_NUMBER | cut -f3 -d' '`
-   stage=`cat $VERSION_DIR/version.h | grep BUILD_TYPE | cut -f 3 -d ' ' | sed 's/BetaCode/-beta/' | sed 's/AlphaCode/-alpha/' | sed 's/ReleaseCode/\./'`
+   if ${OPAL_MAJOR+:} false; then :
+  major=$OPAL[_MAJOR]
+else
+  major=`cat $VERSION_DIR/version.h | grep MAJOR_VERSION | cut -f3 -d' '`
+fi
+   if ${OPAL_MINOR+:} false; then :
+  minor=$OPAL[_MINOR]
+else
+  minor=`cat $VERSION_DIR/version.h | grep MINOR_VERSION | cut -f3 -d' '`
+fi
+   if ${OPAL_BUILD+:} false; then :
+  build=$OPAL[_BUILD]
+else
+  build=`cat $VERSION_DIR/version.h | grep BUILD_NUMBER  | cut -f3 -d' '`
+fi
+   if ${OPAL_STAGE+:} false; then :
+  stage=$OPAL[_STAGE]
+else
+  stage=`cat $VERSION_DIR/version.h | grep BUILD_TYPE    | cut -f 3 -d ' ' | sed 's/BetaCode/-beta/' | sed 's/AlphaCode/-alpha/' | sed 's/ReleaseCode/\./'`
+fi
    version="${major}.${minor}.${build}"
 
    if test -z "$major" -o -z "$minor" -o -z "$build"; then :
@@ -6553,7 +6569,7 @@ fi
 
    OPAL_STAGE=$stage
 
-   OPAL_VERSION="${major}.${minor}.${build}"
+   OPAL_VERSION="${version}"
 
 
 
