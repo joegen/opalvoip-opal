@@ -302,10 +302,10 @@ dnl Parse version file and set variables
 dnl $1 file location
 dnl $2 variable prefix
 AC_DEFUN([MY_VERSION_FILE],[
-   AS_VAR_SET_IF([$2[_MAJOR]],[major=$[$2[_MAJOR]]],[major=`cat $1 | grep MAJOR_VERSION | cut -f3 -d' '`])
-   AS_VAR_SET_IF([$2[_MINOR]],[minor=$[$2[_MINOR]]],[minor=`cat $1 | grep MINOR_VERSION | cut -f3 -d' '`])
-   AS_VAR_SET_IF([$2[_BUILD]],[build=$[$2[_BUILD]]],[build=`cat $1 | grep BUILD_NUMBER  | cut -f3 -d' '`])
-   AS_VAR_SET_IF([$2[_STAGE]],[stage=$[$2[_STAGE]]],[stage=`cat $1 | grep BUILD_TYPE    | cut -f 3 -d ' ' | sed 's/BetaCode/-beta/' | sed 's/AlphaCode/-alpha/' | sed 's/ReleaseCode/\./'`])
+   AS_VAR_SET_IF([$2[_MAJOR]],[major=${$2[_MAJOR]}],[major=`cat $1 | grep MAJOR_VERSION | cut -f3 -d' '`])
+   AS_VAR_SET_IF([$2[_MINOR]],[minor=${$2[_MINOR]}],[minor=`cat $1 | grep MINOR_VERSION | cut -f3 -d' '`])
+   AS_VAR_SET_IF([$2[_BUILD]],[build=${$2[_BUILD]}],[build=`cat $1 | grep BUILD_NUMBER  | cut -f3 -d' '`])
+   AS_VAR_SET_IF([$2[_STAGE]],[stage=${$2[_STAGE]}],[stage=`cat $1 | grep BUILD_TYPE    | cut -f 3 -d ' ' | sed 's/BetaCode/-beta/' | sed 's/AlphaCode/-alpha/' | sed 's/ReleaseCode/\./'`])
    version="${major}.${minor}.${build}"
 
    AS_IF([test -z "$major" -o -z "$minor" -o -z "$build"], AC_MSG_ERROR(Could not determine version number from $1))
