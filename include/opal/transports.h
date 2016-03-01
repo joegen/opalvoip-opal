@@ -973,12 +973,17 @@ class OpalTransport : public PSafeObject
     );
 
     /**Set keep alive time and data.
-       The data is sent on the transport if no traffic has occurred for the
+       The \p data is sent on the transport if no traffic has occurred for the
        specified time.
+
+       Setting a timeout of zero disables the keep alive.
+
+       Setting a non-zero timeout, but an empty data array will enable the
+       socket level (SO_KEEPALIVE) version.
       */
     void SetKeepAlive(
-      const PTimeInterval & timeout,
-      const PBYTEArray & data
+      const PTimeInterval & timeout,    ///< Time of inactivity before sending data
+      const PBYTEArray & data           ///< Data to send on inactivity
     );
 
     /// Indicate keep alive is active
