@@ -408,6 +408,8 @@ class VP8Encoder : public PluginVideoEncoder<VP8_CODEC>
   protected:
     vpx_codec_enc_cfg_t        m_config;
     unsigned                   m_initFlags;
+    unsigned                   m_maxQ;
+    unsigned                   m_rateControlPeriod;
     vpx_codec_ctx_t            m_codec;
     vpx_codec_iter_t           m_iterator;
     const vpx_codec_cx_pkt_t * m_packet;
@@ -419,6 +421,8 @@ class VP8Encoder : public PluginVideoEncoder<VP8_CODEC>
     VP8Encoder(const PluginCodec_Definition * defn)
       : BaseClass(defn)
       , m_initFlags(0)
+      , m_maxQ(31)
+      , m_rateControlPeriod(1000)
       , m_iterator(NULL)
       , m_packet(NULL)
       , m_offset(0)
@@ -439,6 +443,7 @@ class VP8Encoder : public PluginVideoEncoder<VP8_CODEC>
         return false;
 
       m_maxBitRate = m_config.rc_target_bitrate*1000;
+      m_maxQ = m_config.rc_max_quantizer;
 
       m_config.g_w = 0; // Forces OnChangedOptions to initialise encoder
       m_config.g_h = 0;
@@ -459,6 +464,9 @@ class VP8Encoder : public PluginVideoEncoder<VP8_CODEC>
 
     virtual bool SetOption(const char * optionName, const char * optionValue)
     {
+      if (strcasecmp(optionName, PLUGINCODEC_OPTION_RATE_CONTROL_PERIOD) == 0)
+        return SetOptionUnsigned(m_rateControlPeriod, optionValue, 100, 60000);
+
       if (strcasecmp(optionName, SpatialResampling.m_name) == 0)
         return SetOptionBoolean(m_config.rc_resize_allowed, optionValue);
 
@@ -485,11 +493,29 @@ class VP8Encoder : public PluginVideoEncoder<VP8_CODEC>
       }
 
       m_config.rc_target_bitrate = m_maxBitRate/1000;
+      m_config.rc_buf_sz = m_rateControlPeriod;
+      m_config.rc_buf_optimal_sz = m_rateControlPeriod*4/5;
 
       // Take simple temporal/spatial trade off and set multiple variables
-      m_config.rc_dropframe_thresh = (31-m_tsto)*2; // m_tsto==31 is maintain frame rate, so threshold is zero
-      m_config.rc_resize_allowed = m_tsto < 16;
-      m_config.rc_max_quantizer = 32 + m_tsto;
+      m_config.rc_resize_allowed = m_tsto > 29;
+      if (m_tsto < 31) {
+        m_config.rc_dropframe_thresh = 60 + m_tsto;     // Range from 60% to 90%
+        m_config.rc_max_quantizer = m_maxQ*m_tsto/31;
+      }
+      else {
+        m_config.rc_dropframe_thresh = 0;   // m_tsto==31 is maintain frame rate, so threshold is zero
+        m_config.rc_max_quantizer = m_maxQ; // Allow Q to get as bad as it can get
+      }
+
+      PTRACE(4, MY_CODEC_LOG, "Config: " << m_width << 'x' << m_height << ","
+                              " rc_target_bitrate=" << m_config.rc_target_bitrate << ","
+                              " kf_dist=" << m_config.kf_min_dist << '-' << m_config.kf_max_dist << ","
+                              " rc_dropframe_thresh=" << m_config.rc_dropframe_thresh << ","
+                              " rc_resize_allowed=" << m_config.rc_resize_allowed << ","
+                              " rc_max_quantizer=" << m_config.rc_max_quantizer << ","
+                              " rc_buf_sz=" << m_config.rc_buf_sz << ","
+                              " rc_buf_optimal_sz=" << m_config.rc_buf_optimal_sz << ","
+                              " rc_undershoot_pct=" << m_config.rc_undershoot_pct);
 
       if (m_config.g_w == m_width && m_config.g_h == m_height)
         return !IS_ERROR(vpx_codec_enc_config_set, (&m_codec, &m_config));
