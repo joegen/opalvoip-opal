@@ -590,14 +590,6 @@ PBoolean OpalFramedTranscoder::Convert(const RTP_DataFrame & input, RTP_DataFram
     return true;
   }
 
-  const BYTE * inputPtr = input.GetPayloadPtr();
-  PINDEX inputLength = input.GetPayloadSize();
-
-  if (inputLength == 0) {
-    output.SetPayloadSize(outputBytesPerFrame);
-    return ConvertSilentFrame (output.GetPayloadPtr());
-  }
-
   // set maximum output payload size
   if (!output.SetPayloadSize(maxOutputDataSize))
     return false;
@@ -605,22 +597,39 @@ PBoolean OpalFramedTranscoder::Convert(const RTP_DataFrame & input, RTP_DataFram
   BYTE * outputPtr = output.GetPayloadPtr();
   PINDEX outLen = 0;
 
-  while (inputLength > 0 && outLen < maxOutputDataSize) {
+  const BYTE * inputPtr = input.GetPayloadPtr();
+  PINDEX inputLength = input.GetPayloadSize();
 
-    PINDEX consumed = inputLength;
-    PINDEX created  = maxOutputDataSize - outLen;
+  if (inputLength == 0) {
+    if (AcceptEmptyPayload()) {
+      outLen = maxOutputDataSize;
+      if (!ConvertFrame(inputPtr, inputLength, outputPtr, outLen))
+        return false;
+    }
+    else {
+      if (!ConvertSilentFrame(outputPtr))
+        return false;
+      outLen = outputBytesPerFrame;
+    }
+  }
+  else {
+    while (inputLength > 0 && outLen < maxOutputDataSize) {
 
-    if (!ConvertFrame(inputPtr, consumed, outputPtr, created))
-      return false;
+      PINDEX consumed = inputLength;
+      PINDEX created = maxOutputDataSize - outLen;
 
-    // If did not consume or produce any data, codec has gone wrong, abort!
-    if (consumed == 0 && created == 0)
-      break;
+      if (!ConvertFrame(inputPtr, consumed, outputPtr, created))
+        return false;
 
-    outputPtr   += created;
-    outLen      += created;
-    inputPtr    += consumed;
-    inputLength -= consumed;
+      // If did not consume or produce any data, codec has gone wrong, abort!
+      if (consumed == 0 && created == 0)
+        break;
+
+      outputPtr += created;
+      outLen += created;
+      inputPtr += consumed;
+      inputLength -= consumed;
+    }
   }
 
   // set actual output payload size
