@@ -112,7 +112,7 @@ static PStringToString GetMyAliasPasswords(PConfig & cfg)
     cfg.DeleteKey(H323RegistrationNewSection, newPwdIter->first);
   }
 
-  clearPwd.Merge(newPwd, PStringToString::MergeAction::e_MergeOverwrite);
+  clearPwd.Merge(newPwd, PStringToString::e_MergeOverwrite);
   return clearPwd;
 }
 
