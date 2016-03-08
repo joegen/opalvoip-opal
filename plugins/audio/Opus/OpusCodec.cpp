@@ -104,7 +104,7 @@ static struct PluginCodec_Option const MaxPlaybackRate =
   "Max Playback Rate",
   true,
   PluginCodec_NoMerge,
-  "48000",
+  "64000",
   "maxplaybackrate",
   "",
   0,
@@ -118,7 +118,7 @@ static struct PluginCodec_Option const MaxCaptureRate =
   "Max Capture Rate",
   true,
   PluginCodec_NoMerge,
-  "48000",
+  "64000",
   "sprop-maxcapturerate",
   "",
   0,
@@ -190,19 +190,19 @@ class OpusPluginMediaFormat : public PluginCodec_AudioFormat<MY_CODEC>
     }
 
     virtual bool IsValidForProtocol(const char * protocol) const
-		{
-			return strcasecmp(protocol, PLUGINCODEC_OPTION_PROTOCOL_SIP) == 0;
-		}
+	{
+		return strcasecmp(protocol, PLUGINCODEC_OPTION_PROTOCOL_SIP) == 0;
+	}
 
-		virtual bool ToNormalised(OptionMap & /*original*/, OptionMap & /*changed*/) const
-		{
-			return true;
-		}
+	virtual bool ToNormalised(OptionMap & /*original*/, OptionMap & /*changed*/) const
+	{
+		return true;
+	}
 
-    virtual bool ToCustomised(OptionMap &, OptionMap & changed) const
+    virtual bool ToCustomised(OptionMap & original, OptionMap & changed) const
     {
-      Unsigned2String(m_actualSampleRate, changed[MaxPlaybackRate.m_name]);
-      changed[MaxCaptureRate.m_name] = changed[MaxPlaybackRate.m_name];
+      changed[MaxPlaybackRate.m_name] = original[PLUGINCODEC_OPTION_MAX_BIT_RATE];
+      changed[MaxCaptureRate.m_name] = original[PLUGINCODEC_OPTION_TARGET_BIT_RATE];
       changed[PlaybackStereo.m_name] = changed[CaptureStereo.m_name] = m_actualChannels == 1 ? "0" : "1";
       return true;
     }
