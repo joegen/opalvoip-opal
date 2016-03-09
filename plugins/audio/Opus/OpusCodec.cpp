@@ -40,6 +40,11 @@
 
 #include <vector>
 
+#ifdef _MSC_VER
+#pragma warning(disable:4505)
+#define snprintf _snprintf
+#endif
+
 
 #define MY_CODEC Opus                        // Name of codec (use C variable characters)
 
@@ -239,12 +244,14 @@ class OpusPluginCodec : public PluginCodec<MY_CODEC>
   protected:
     unsigned m_sampleRate;
     bool     m_useInBandFEC;
+    int      m_countFEC;
     unsigned m_channels;
 
   public:
     OpusPluginCodec(const PluginCodec_Definition * defn)
       : PluginCodec<MY_CODEC>(defn)
       , m_useInBandFEC(true)
+      , m_countFEC(0)
     {
       const OpusPluginMediaFormat *mediaFormat = reinterpret_cast<const OpusPluginMediaFormat *>(m_definition->userData);
       m_sampleRate = mediaFormat->m_actualSampleRate;
@@ -257,12 +264,20 @@ class OpusPluginCodec : public PluginCodec<MY_CODEC>
       if (strcasecmp(optionName, UseInBandFEC.m_name) == 0) {
         if (!SetOptionBoolean(m_useInBandFEC, optionValue))
           return false;
+        if (!m_useInBandFEC)
+          m_countFEC = -1;
         PTRACE(4, MY_CODEC_LOG, "In band FEC set to " << std::boolalpha << m_useInBandFEC);
         return true;
       }
 
       // Base class sets bit rate and frame time
       return PluginCodec<MY_CODEC>::SetOption(optionName, optionValue);
+    }
+
+
+    virtual int GetStatistics(char * bufferPtr, unsigned bufferSize)
+    {
+      return snprintf(bufferPtr, bufferSize, "FEC=%u\n", m_countFEC);
     }
 
 
@@ -303,7 +318,8 @@ class OpusPluginCodec : public PluginCodec<MY_CODEC>
       int channels = opus_packet_get_nb_channels(payload);
       for (int n = 0; n < channels; n++) {
         if (frame_data[0][0] & (0x80 >> ((n + 1) * (frames + 1) - 1))) {
-          PTRACE(5, MY_CODEC_LOG, "FEC packet detected");
+          PTRACE(6, MY_CODEC_LOG, "FEC packet detected");
+          ++m_countFEC;
           return true;
         }
       }
@@ -409,6 +425,7 @@ class OpusPluginEncoder : public OpusPluginCodec
       toLen = result;
       fromLen = opus_packet_get_samples_per_frame((const opus_uint8 *)toPtr, m_sampleRate) *
                 opus_packet_get_nb_frames((const opus_uint8 *)toPtr, toLen) * m_channels * 2;
+      PacketHasFec((opus_uint8 *)toPtr, toLen);
       return true;
     }
 };
