@@ -744,11 +744,9 @@ void OpalPluginFramedAudioTranscoder::GetStatistics(OpalMediaStatistics & statis
   if (getCodecStatistics.Call(buf, sizeof(buf), context) > 0) {
     PConstString str(buf);
     PStringOptions stats(str);
-#if OPAL_VIDEO
-    statistics.m_videoQuality    =        stats.GetInteger("Quality",   statistics.m_videoQuality);
-#endif
     statistics.m_targetBitRate   =        stats.GetInteger("BitRate",   statistics.m_targetBitRate);
     statistics.m_targetFrameRate = (float)stats.GetReal   ("FrameRate", statistics.m_targetFrameRate);
+    statistics.m_FEC             =        stats.GetInteger("FEC",       statistics.m_FEC);
   }
 }
 #endif // OPAL_STATISTICS
