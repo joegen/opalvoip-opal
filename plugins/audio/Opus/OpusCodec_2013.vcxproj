@@ -217,6 +217,9 @@ xcopy /y/f "$(TargetDir)$(TargetName).*d*" "C:\Program Files (x86)\PTLib Plug In
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\samples\codectest\codectest_2013.vcxproj">
+      <Project>{7bcc8831-22e0-4d87-8e8b-f6da0aefbed0}</Project>
+    </ProjectReference>
     <ProjectReference Include="opus\win32\VS2013\celt.vcxproj">
       <Project>{245603e3-f580-41a5-9632-b25fe3372cbf}</Project>
     </ProjectReference>

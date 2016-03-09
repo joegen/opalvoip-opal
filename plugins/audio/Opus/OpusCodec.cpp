@@ -38,6 +38,8 @@
 
 #include "opus.h"
 
+#include <vector>
+
 
 #define MY_CODEC Opus                        // Name of codec (use C variable characters)
 
@@ -152,7 +154,12 @@ static struct PluginCodec_Option const DynamicPacketLoss =
   PLUGINCODEC_OPTION_DYNAMIC_PACKET_LOSS,
   false,
   PluginCodec_NoMerge,
-  "0"
+  "0",
+  NULL,
+  NULL,
+  0,
+  "0",
+  "100"
 };
 
 static struct PluginCodec_Option const * const MyOptions[] = {
@@ -257,6 +264,52 @@ class OpusPluginCodec : public PluginCodec<MY_CODEC>
       // Base class sets bit rate and frame time
       return PluginCodec<MY_CODEC>::SetOption(optionName, optionValue);
     }
+
+
+    bool PacketHasFec(const opus_uint8 * payload, unsigned length)
+    {
+      if (payload == NULL || length == 0)
+        return false;
+
+      /* In CELT_ONLY mode, packets should not have FEC. */
+      if (payload[0] & 0x80)
+        return false;
+
+      int frames;
+      switch (opus_packet_get_samples_per_frame(payload, m_sampleRate)) {
+        case 480:
+        case 960:
+          frames = 1;
+          break;
+        case 960*2:
+          frames = 2;
+          break;
+        case 960*3:
+          frames = 3;
+          break;
+        default:
+          return false; // invalid packet.
+      }
+
+      /* The following is to parse the LBRR flags. */
+      opus_int16 frame_sizes[48];
+      const opus_uint8 *frame_data[48];
+      if (opus_packet_parse(payload, length, NULL, frame_data, frame_sizes, NULL) < 0)
+        return false;
+
+      if (frame_sizes[0] <= 1)
+        return false;
+
+      int channels = opus_packet_get_nb_channels(payload);
+      for (int n = 0; n < channels; n++) {
+        if (frame_data[0][0] & (0x80 >> ((n + 1) * (frames + 1) - 1))) {
+          PTRACE(5, MY_CODEC_LOG, "FEC packet detected");
+          return true;
+        }
+      }
+
+      return false;
+    }
 };
 
 
@@ -325,10 +378,16 @@ class OpusPluginEncoder : public OpusPluginCodec
       if (m_encoder == NULL)
         return false;
 
+      //opus_encoder_ctl(m_encoder, OPUS_SET_MAX_BANDWIDTH(m_definition->sampleRate));
       opus_encoder_ctl(m_encoder, OPUS_SET_INBAND_FEC(m_useInBandFEC));
       opus_encoder_ctl(m_encoder, OPUS_SET_PACKET_LOSS_PERC(m_dynamicPacketLoss));
       opus_encoder_ctl(m_encoder, OPUS_SET_DTX(m_useDTX));
       opus_encoder_ctl(m_encoder, OPUS_SET_BITRATE(m_bitRate));
+      PTRACE(4, MY_CODEC_LOG, "Encoder options set:"
+                              " fec=" << std::boolalpha << m_useInBandFEC << ","
+                              " pkt-loss=" << m_dynamicPacketLoss << "%,"
+                              " dtx=" << m_useDTX << ","
+                              " bitrate=" << m_bitRate);
       return true;
     }
 
@@ -341,15 +400,15 @@ class OpusPluginEncoder : public OpusPluginCodec
     {
       opus_int32 result = opus_encode(m_encoder,
                                       (const opus_int16 *)fromPtr, fromLen/m_channels/2,
-                                      (unsigned char *)toPtr, toLen);
+                                      (opus_uint8 *)toPtr, toLen);
       if (result < 0) {
         PTRACE(1, MY_CODEC_LOG, "Encoder error " << result << ' ' << opus_strerror(result));
         return false;
       }
 
       toLen = result;
-      fromLen = opus_packet_get_samples_per_frame((const unsigned char *)toPtr, m_sampleRate) *
-                opus_packet_get_nb_frames((const unsigned char *)toPtr, toLen) * m_channels * 2;
+      fromLen = opus_packet_get_samples_per_frame((const opus_uint8 *)toPtr, m_sampleRate) *
+                opus_packet_get_nb_frames((const opus_uint8 *)toPtr, toLen) * m_channels * 2;
       return true;
     }
 };
@@ -360,12 +419,15 @@ class OpusPluginEncoder : public OpusPluginCodec
 class OpusPluginDecoder : public OpusPluginCodec
 {
   protected:
-    OpusDecoder * m_decoder;
+    OpusDecoder           * m_decoder;
+    unsigned                m_lostPackets;
+    std::vector<opus_int16> m_previousFrame;
 
   public:
     OpusPluginDecoder(const PluginCodec_Definition * defn)
       : OpusPluginCodec(defn)
       , m_decoder(NULL)
+      , m_lostPackets(0)
     {
       PTRACE(4, MY_CODEC_LOG, "Decoder created: $Revision$, version \"" << opus_get_version_string() << '"');
     }
@@ -395,17 +457,18 @@ class OpusPluginDecoder : public OpusPluginCodec
                              unsigned & toLen,
                              unsigned & flags)
     {
-      bool fec;
       int samples;
-      const unsigned char * packet;
+      const opus_uint8 * packet;
       if (fromLen == 0) {
-        fec = m_useInBandFEC;
+        if (m_useInBandFEC && m_lostPackets++ == 0) {
+          toLen = 0;
+          return true;
+        }
         packet = NULL; // As per opus_decode() API
         opus_decoder_ctl(m_decoder, OPUS_GET_LAST_PACKET_DURATION(&samples));
       }
       else {
-        fec = false;
-        packet = (const unsigned char *)fromPtr;
+        packet = (const opus_uint8 *)fromPtr;
         samples = opus_decoder_get_nb_samples(m_decoder, packet, fromLen);
         if (samples < 0) {
           PTRACE(1, MY_CODEC_LOG, "Decoding error " << samples << ' ' << opus_strerror(samples));
@@ -413,19 +476,43 @@ class OpusPluginDecoder : public OpusPluginCodec
         }
       }
 
-      if ((unsigned)samples*m_channels*2U > toLen) {
-        PTRACE(1, MY_CODEC_LOG, "Provided sample buffer too small, " << toLen << " bytes");
+      unsigned outputBytes = samples*m_channels*2U;
+      if (outputBytes*2 > toLen) {
+        PTRACE(1, MY_CODEC_LOG, "Provided sample buffer too small, " << toLen << " bytes, need " << outputBytes);
         return false;
       }
 
-      int result = opus_decode(m_decoder, packet, fromLen, (opus_int16 *)toPtr, samples, fec);
-      if (result < 0) {
-        PTRACE(1, MY_CODEC_LOG, "Decoder error " << result << ' ' << opus_strerror(result));
-        return false;
+      if (!m_useInBandFEC) {
+        toLen = outputBytes;
+        return DecodeFrame(packet, fromLen, toPtr, samples, false);
       }
 
-      toLen = result*m_channels*2;
-      return true;
+      if (m_previousFrame.empty()) {
+        m_previousFrame.resize(samples*m_channels);
+        toLen = 0;
+      }
+      else {
+        toLen = outputBytes;
+        memcpy(toPtr, m_previousFrame.data(), outputBytes);
+
+        if (m_lostPackets > 0 && --m_lostPackets == 0) {
+          if (!DecodeFrame(packet, fromLen, ((char *)toPtr)+outputBytes, samples, PacketHasFec(packet, fromLen)))
+            return false;
+          toLen += outputBytes;
+        }
+      }
+
+      return DecodeFrame(packet, fromLen, m_previousFrame.data(), samples, false);
+    }
+
+    bool DecodeFrame(const void * packet, unsigned bytes, void * pcm, unsigned samples, bool fec)
+    {
+      int result = opus_decode(m_decoder, (const opus_uint8 *)packet, bytes, (opus_int16 *)pcm, samples, fec);
+      if (result > 0)
+        return true;
+
+      PTRACE(1, MY_CODEC_LOG, "Decoder error " << result << ' ' << opus_strerror(result));
+      return false;
     }
 };
 
