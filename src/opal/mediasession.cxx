@@ -64,6 +64,7 @@ OpalNetworkStatistics::OpalNetworkStatistics()
   , m_controlPacketsIn(0)
   , m_controlPacketsOut(0)
   , m_NACKs(-1)
+  , m_FEC(-1)
   , m_packetsLost(-1)
   , m_packetsOutOfOrder(-1)
   , m_lateOutOfOrder(-1)
@@ -366,7 +367,9 @@ void OpalMediaStatistics::PrintOn(ostream & strm) const
        << setw(indent) <<     "Maximum packet time" << " = " << m_maximumPacketTime << "ms\n"
        << setw(indent) <<            "Packets lost" << " = " << m_packetsLost << '\n'
        << setw(indent) <<   "Restored out of order" << " = " << m_packetsOutOfOrder << '\n'
-       << setw(indent) <<       "Late out of order" << " = " << m_lateOutOfOrder << '\n';
+       << setw(indent) <<       "Late out of order" << " = " << m_lateOutOfOrder << '\n'
+       << setw(indent) <<                    "NACK" << " = " << m_NACKs << '\n'
+       << setw(indent) <<                     "FEC" << " = " << m_FEC << '\n';
 
   if (m_roundTripTime >= 0)
     strm << setw(indent) <<       "Round Trip Time" << " = " << m_roundTripTime << '\n';
