@@ -99,7 +99,7 @@ class TranscoderThread : public PThread
     int  m_frameTime;
     bool m_calcSNR;
     BYTE m_extensionHeader;
-    int  m_dropPercent;
+    uint32_t m_dropPercent;
 
     OpalPCAPFile m_pcapFile;
 };

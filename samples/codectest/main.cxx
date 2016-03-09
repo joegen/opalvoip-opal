@@ -287,6 +287,10 @@ int TranscoderThread::InitialiseCodec(PArgList & args,
                                       OpalMediaFormat & mediaFormat,
                                       OpalMediaFormat & rawFormat)
 {
+  m_dropPercent = args.GetOptionString('d').AsInteger();
+  if (m_dropPercent > 0)
+    cout << "Dropping " << m_dropPercent << "% of encoded frames" << endl;
+
   if (args.HasOption('m'))
     m_markerHandling = SuppressMarkers;
   else if (args.HasOption('M'))
@@ -751,9 +755,6 @@ bool VideoThread::Initialise(PArgList & args)
   m_snrCount = 0;
   m_running = true;
 
-  m_dropPercent = args.GetOptionString('d').AsInteger();
-  cout << "Dropping " << m_dropPercent << "% of encoded frames" << endl;
-
   return true;
 }
 
@@ -1077,12 +1078,17 @@ void TranscoderThread::Main()
       if (m_dropPercent > 0) {
         RTP_DataFrameList::iterator it = encFrames.begin();
         while (it != encFrames.end()) {
-          int n = PRandom::Number() % 100; 
-          if (n >= m_dropPercent) 
+          if (PRandom::Number(100) >= m_dropPercent) 
             ++it;
           else {
             ++totalDroppedPacketCount;
-            encFrames.erase(it++);
+            if (isVideo)
+              encFrames.erase(it++);
+            else {
+              it->SetPayloadSize(0);
+              it->SetDiscontinuity(1);
+              ++it;
+            }
           }
         }
       }
