@@ -79,6 +79,7 @@ struct OpalNetworkStatistics
   unsigned m_controlPacketsIn;  // RTCP received for this channel
   unsigned m_controlPacketsOut; // RTCP sent for this channel
   int      m_NACKs;             // (-1 is N/A)
+  int      m_FEC;               // (-1 is N/A, for tx is number of FEC frame sent, for rx is number of frames recovered via FEC)
   int      m_packetsLost;       // (-1 is N/A)
   int      m_packetsOutOfOrder; // (-1 is N/A)
   int      m_lateOutOfOrder;    // (-1 is N/A)
