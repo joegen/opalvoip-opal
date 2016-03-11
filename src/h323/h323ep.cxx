@@ -744,6 +744,10 @@ void H323EndPoint::InternalSetGatekeeperPassword(H323Gatekeeper& gatekeeper, con
     PIPSocket::Address ip;
     PString gkAddress = (gatekeeperAddress.GetIpAddress(ip) && !ip.IsAny()) ? ip.AsString() : m_aliasPwdDefaultAddress;
     PStringToString::const_iterator pwdIter = m_aliasPasswords.find(alias + '@' + gkAddress);
+
+    if (pwdIter == m_aliasPasswords.end())
+      pwdIter = m_aliasPasswords.find(alias);
+
     if (pwdIter != m_aliasPasswords.end()) {
       gatekeeper.SetPassword(pwdIter->second, GetGatekeeperUsername());
       return;
