@@ -2566,6 +2566,16 @@ PSafePtr<SIPHandler> SIPHandlersList::FindBy(IndexMap & by, const PString & key,
 }
 
 
+PSafePtr<SIPHandler> SIPHandlersList::FindFirstHandler(SIP_PDU::Methods meth, PSafetyMode mode) const
+{
+  PSafePtr<SIPHandler> handler(m_handlersList, PSafeReference);
+  while (handler != NULL && handler->GetMethod() != meth)
+    ++handler;
+  handler.SetSafetyMode(mode);
+  return handler;
+}
+
+
 PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByCallID(const PString & callID, PSafetyMode mode)
 {
   return PSafePtrCast<SIPHandlerBase, SIPHandler>(m_handlersList.FindWithLock(callID, mode));
