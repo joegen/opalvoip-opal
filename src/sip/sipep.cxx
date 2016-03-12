@@ -2087,8 +2087,11 @@ bool SIPEndPoint::GetAuthentication(const PString & realm, PString & authId, PSt
     if (m_registeredUserMode)
       return false;
 
-    if ((handler = activeSIPHandlers.FindSIPHandlerByAuthRealm(realm, PSafeReadOnly)) == NULL)
-      return false;
+    if ((handler = activeSIPHandlers.FindSIPHandlerByAuthRealm(realm, PSafeReadOnly)) == NULL) {
+      if ((handler = activeSIPHandlers.FindFirstHandler(SIP_PDU::Method_REGISTER, PSafeReadOnly)) == NULL)
+        return false;
+      PTRACE(4, "Using first registrar " << handler->GetAddressOfRecord() << " for authentication");
+    }
   }
 
   // really just after password, but username MAY change too.
@@ -2177,9 +2180,7 @@ void SIPEndPoint::AdjustToRegistration(SIP_PDU & pdu, SIPConnection * connection
   }
   else if (domain.IsEmpty() || OpalIsE164(domain)) {
     // No context, just get first registration
-    handler = activeSIPHandlers.GetFirstHandler();
-    while (handler != NULL && handler->GetMethod() != SIP_PDU::Method_REGISTER)
-      ++handler;
+    handler = activeSIPHandlers.FindFirstHandler(SIP_PDU::Method_REGISTER);
     if (handler != NULL) {
       PTRACE(4, "Using first registrar " << handler->GetAddressOfRecord() << " for tel URI");
       if (connection != NULL)
