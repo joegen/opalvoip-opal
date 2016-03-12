@@ -360,12 +360,6 @@ class SIPHandlersList
     bool DeleteObjectsToBeRemoved()
       { return m_handlersList.DeleteObjectsToBeRemoved(); }
 
-    /** Get the first handler in the list. Further enumeration may be done by
-        the ++operator on the safe pointer.
-     */
-    PSafePtr<SIPHandler> GetFirstHandler(PSafetyMode mode = PSafeReference) const
-      { return PSafePtr<SIPHandler>(m_handlersList, mode); }
-
     /**
      * Return the number of registered accounts
      */
@@ -375,6 +369,17 @@ class SIPHandlersList
      * Return a list of the active address of records for each handler.
      */
     PStringList GetAddresses(bool includeOffline, SIP_PDU::Methods meth, const PString & eventPackage = PString::Empty()) const;
+
+    /** Get the first handler in the list. Further enumeration may be done by
+        the ++operator on the safe pointer.
+     */
+    PSafePtr<SIPHandler> GetFirstHandler(PSafetyMode mode = PSafeReference) const
+      { return PSafePtr<SIPHandler>(m_handlersList, mode); }
+
+    /** Get the first handler in the list for the specified method. Further enumeration may be done by
+        the ++operator on the safe pointer.
+     */
+    PSafePtr<SIPHandler> FindFirstHandler(SIP_PDU::Methods meth, PSafetyMode mode = PSafeReference) const;
 
     /**
      * Find the SIPHandler object with the specified callID
