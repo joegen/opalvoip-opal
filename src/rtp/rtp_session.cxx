@@ -105,6 +105,7 @@ OpalRTPSession::OpalRTPSession(const Init & init)
   , m_timeUnits(m_isAudio ? 8 : 90)
   , m_toolName(PProcess::Current().GetName())
   , m_allowAnySyncSource(true)
+  , m_staleReceiverTimeout(m_manager.GetStaleReceiverTimeout())
   , m_maxOutOfOrderPackets(20)
   , m_waitOutOfOrderTime(GetDefaultOutOfOrderWaitTime(m_isAudio))
   , m_txStatisticsInterval(100)
@@ -1320,8 +1321,31 @@ bool OpalRTPSession::InternalSendReport(RTP_ControlFrame & report, SyncSource & 
 }
 
 
+bool OpalRTPSession::SyncSource::IsStaleReceiver() const
+{
+  if (m_direction != e_Receiver)
+    return false;
+
+  // Had n SR sent to us, so still active
+  if (m_lastSenderReportTime.IsValid() && m_lastSenderReportTime.GetElapsed() < m_session.m_staleReceiverTimeout)
+      return false;
+
+  // Not started yet, no RR should be sent so safe to leave for now
+  if (m_packets == 0)
+    return false;
+
+  // Are still getting packets
+  if ((PTimer::Tick() - m_lastPacketTick) < m_session.m_staleReceiverTimeout)
+    return false;
+
+  PTRACE(3, &m_session, *this << "removing stale receiver");
+  return true;
+}
+
+
 void OpalRTPSession::TimedSendReport(PTimer&, P_INT_PTR)
 {
+  PTRACE_CONTEXT_ID_PUSH_THREAD(*this);
   PTRACE(5, *this << "sending periodic report");
   SendReport(0, false);
 }
@@ -1333,6 +1357,14 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SendReport(RTP_SyncSourceId ss
 
   if (!LockReadOnly())
     return e_AbortTransport;
+
+  // Clean out old stale SSRC's
+  for (SyncSourceMap::iterator it = m_SSRC.begin(); it != m_SSRC.end();) {
+    if (it->second->IsStaleReceiver())
+      m_SSRC.erase(it++);
+    else
+      ++it;
+  }
 
   if (ssrc != 0) {
     SyncSource * sender;
@@ -2459,8 +2491,7 @@ void OpalRTPSession::OnRxDataPacket(OpalMediaTransport &, PBYTEArray data)
 
   if (m_sendEstablished && IsEstablished()) {
     m_sendEstablished = false;
-    m_connection.GetEndPoint().GetManager().QueueDecoupledEvent(
-              new PSafeWorkNoArg<OpalConnection, bool>(&m_connection, &OpalConnection::InternalOnEstablished));
+    m_manager.QueueDecoupledEvent(new PSafeWorkNoArg<OpalConnection, bool>(&m_connection, &OpalConnection::InternalOnEstablished));
   }
 
   // Check for single port operation, incoming RTCP on RTP
@@ -2587,8 +2618,7 @@ void OpalRTPSession::CheckMediaFailed(SubChannels subchannel)
      get one failed without the other, we don't bother. */
   if (subchannel == e_Data && m_connection.OnMediaFailed(m_sessionId)) {
     PTRACE(3, *this << "aborting transport, queuing close of media session.");
-    m_connection.GetEndPoint().GetManager().QueueDecoupledEvent(
-                new PSafeWorkNoArg<OpalRTPSession, bool>(this, &OpalRTPSession::Close));
+    m_manager.QueueDecoupledEvent(new PSafeWorkNoArg<OpalRTPSession, bool>(this, &OpalRTPSession::Close));
   }
 }
 
