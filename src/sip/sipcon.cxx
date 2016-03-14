@@ -338,6 +338,18 @@ void SIPConnection::OnReleased()
 
   UnlockReadWrite();
 
+  // If forwardParty is a connection token, then must be INVITE with replaces scenario
+  if (!m_forwardParty.IsEmpty()) {
+    PSafePtr<SIPConnection> replacerConnection = GetEndPoint().GetSIPConnectionWithLock(m_forwardParty);
+    if (replacerConnection != NULL) {
+      PTRACE(3, "INVITE with replace on " << *replacerConnection);
+
+      /* According to RFC 3891 we now send a 200 OK in both the early and confirmed
+         dialog cases. */
+      replacerConnection->InternalSetConnected(true);
+    }
+  }
+
   SIPDialogNotification::Events notifyDialogEvent = SIPDialogNotification::NoEvent;
   SIP_PDU::StatusCodes sipCode = SIP_PDU::IllegalStatusCode;
 
@@ -449,19 +461,6 @@ void SIPConnection::OnReleased()
   // Close media and indicate call ended, even though we have a little bit more
   // to go in clean up, don't let other bits wait for it.
   OpalRTPConnection::OnReleased();
-
-  // If forwardParty is a connection token, then must be INVITE with replaces scenario
-  if (!m_forwardParty.IsEmpty()) {
-    PSafePtr<SIPConnection> replacerConnection = GetEndPoint().GetSIPConnectionWithLock(m_forwardParty);
-    if (replacerConnection != NULL) {
-      PTRACE(3, "INVITE with replace on " << *replacerConnection);
-
-      /* According to RFC 3891 we now send a 200 OK in both the early and confirmed
-         dialog cases. OnReleased() is responsible for if the replaced connection is
-         sent a BYE or a CANCEL. */
-      replacerConnection->InternalSetConnected(true);
-    }
-  }
 }
 
 
