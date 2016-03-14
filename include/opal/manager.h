@@ -1976,6 +1976,16 @@ class OpalManager : public PObject
     ) { m_iceTimeout = newInterval; }
 #endif // OPAL_ICE
 
+   /**Get the amount of time before an RTP receive SSRC is stale and removed.
+    */
+    const PTimeInterval & GetStaleReceiverTimeout() const { return m_staleReceiverTimeout; }
+
+    /**Set the amount of time before an RTP receive SSRC is stale and removed.
+    */
+    void SetStaleReceiverTimeout(
+      const PTimeInterval & newInterval  ///<  New timeout
+    ) { m_staleReceiverTimeout = newInterval; }
+
 #if OPAL_SRTP
     /**Get the amount of time to wait for DTLS handshake.
     */
@@ -2087,6 +2097,7 @@ class OpalManager : public PObject
 #if OPAL_ICE
     PTimeInterval m_iceTimeout;
 #endif
+    PTimeInterval m_staleReceiverTimeout;
 #if OPAL_SRTP
     PTimeInterval m_dtlsTimeout;
 #endif

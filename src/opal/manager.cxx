@@ -321,6 +321,7 @@ OpalManager::OpalManager()
 #if OPAL_ICE
   , m_iceTimeout(0, 5)            // Seconds
 #endif
+  , m_staleReceiverTimeout(0,0,1) // Minutes
 #if OPAL_SRTP
   , m_dtlsTimeout(0, 3)           // Seconds
 #endif
