@@ -600,6 +600,7 @@ class OpalRTPSession : public OpalMediaSession
     PString             m_toolName;
     RTPExtensionHeaders m_extensionHeaders;
     bool                m_allowAnySyncSource;
+    PTimeInterval       m_staleReceiverTimeout;
     PINDEX              m_maxOutOfOrderPackets; // Number of packets before we give up waiting for an out of order packet
     PTimeInterval       m_waitOutOfOrderTime;   // Milliseconds before we give up on an out of order packet
     unsigned            m_txStatisticsInterval;
@@ -660,6 +661,8 @@ class OpalRTPSession : public OpalMediaSession
       virtual void OnRxReceiverReport(const RTP_ReceiverReport & report);
       virtual void OnRxDelayLastReceiverReport(const RTP_DelayLastReceiverReport & dlrr);
       virtual SendReceiveStatus SendBYE();
+
+      bool IsStaleReceiver() const;
 
       OpalRTPSession  & m_session;
       Direction         m_direction;

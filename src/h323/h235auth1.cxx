@@ -526,10 +526,16 @@ bool H235AuthPwd_DES_ECB::EncryptToken(PBYTEArray & encryptedToken)
 
   PBYTEArray key(cipher.GetKeyLength());
 
-  // Build key from password according to H.235.0/8.2.1
-  memcpy(key.GetPointer(), password.GetPointer(), std::min(key.GetSize(), password.GetLength()));
-  for (PINDEX i = key.GetSize(); i < password.GetLength(); ++i)
-    key[i%key.GetSize()] ^= password[i];
+  /* Build key from password according to H.235.0/8.2.1
+     At least we would, except, Avaya do not follow those rules quite correctly.
+     They seem to think the OpenSSL implementation has the 56 bit key in the
+     first 7 bytes, when it is actually the low 7 bits of all 8 bytes. Due to
+     this bug, they only really have 48 bit encryption.
+   */
+  PINDEX keySize = key.GetSize()-1;
+  memcpy(key.GetPointer(), password.GetPointer(), std::min(keySize, password.GetLength()));
+  for (PINDEX i = keySize; i < password.GetLength(); ++i)
+    key[i%keySize] ^= password[i];
 
 #if 0
   // But some things imply LSB of OpenSSL DES key is parity bit ...

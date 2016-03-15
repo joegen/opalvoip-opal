@@ -286,41 +286,35 @@ class OpusPluginCodec : public PluginCodec<MY_CODEC>
       if (payload == NULL || length == 0)
         return false;
 
-      /* In CELT_ONLY mode, packets should not have FEC. */
+      // In CELT_ONLY mode, packets does not have FEC.
       if (payload[0] & 0x80)
         return false;
 
-      int frames;
-      switch (opus_packet_get_samples_per_frame(payload, m_sampleRate)) {
-        case 480:
-        case 960:
-          frames = 1;
-          break;
-        case 960*2:
-          frames = 2;
-          break;
-        case 960*3:
-          frames = 3;
-          break;
-        default:
-          return false; // invalid packet.
-      }
-
-      /* The following is to parse the LBRR flags. */
+      // Get the individual SILK frames in the packet.
       opus_int16 frame_sizes[48];
       const opus_uint8 *frame_data[48];
-      if (opus_packet_parse(payload, length, NULL, frame_data, frame_sizes, NULL) < 0)
+      int frames = opus_packet_parse(payload, length, NULL, frame_data, frame_sizes, NULL);
+      if (frames < 0) {
+        PTRACE(1, MY_CODEC_LOG, "Packet parse error " << frames << ' ' << opus_strerror(frames));
         return false;
+      }
 
-      if (frame_sizes[0] <= 1)
-        return false;
-
+      // "frames" is over used. We have the frames in the packet from above, then we
+      // have the SILK encoded 20ms of audio frame, I'm calling them a sub-Frames.
+      int subFrames = (opus_packet_get_samples_per_frame(payload, m_sampleRate)*1000/m_sampleRate+19)/20;
       int channels = opus_packet_get_nb_channels(payload);
-      for (int n = 0; n < channels; n++) {
-        if (frame_data[0][0] & (0x80 >> ((n + 1) * (frames + 1) - 1))) {
-          PTRACE(6, MY_CODEC_LOG, "FEC packet detected");
-          ++m_countFEC;
-          return true;
+
+      // The following is to parse the LBRR flags.
+      for (int frame = 0; frame < frames; ++frame) {
+        if (frame_sizes[frame] > 0) {
+          for (int chan = 0; chan < channels; chan++) {
+            // Highest "subFrames" bits are VAD, next bit is LBRR flag, repeated for each channel
+            if (frame_data[frame][0] & (0x80 >> ((subFrames+1)*chan + subFrames))) {
+              PTRACE(6, MY_CODEC_LOG, "FEC packet detected");
+              ++m_countFEC;
+              return true;
+            }
+          }
         }
       }
 
@@ -505,6 +499,11 @@ class OpusPluginDecoder : public OpusPluginCodec
       }
 
       if (m_previousFrame.empty()) {
+        // Do not start decoding until we get the first
+        if (packet == NULL) {
+          toLen = 0;
+          return true;
+        }
         m_previousFrame.resize(samples*m_channels);
         toLen = 0;
       }
