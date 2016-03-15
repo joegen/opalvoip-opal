@@ -217,12 +217,6 @@ class OpalVideoTranscoder : public OpalTranscoder
       RTP_DataFrame & output        ///<  Output data
     );
 
-    static OpalVideoFormat::VideoFrameType GetVideoFrameType(
-      const PCaselessString & rtpEncodingName,
-      const BYTE * payloadPtr,
-      PINDEX payloadSize,
-      PBYTEArray & context
-    );
 
     virtual bool HasErrorConcealment() const  { return m_errorConcealment; }
     bool WasLastFrameIFrame() const { return m_lastFrameWasIFrame; }

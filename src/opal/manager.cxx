@@ -64,6 +64,7 @@
 
 
 static const char * const DefaultMediaFormatOrder[] = {
+  OPAL_OPUS48,
   OPAL_G7222,
   OPAL_G7221_32K,
   OPAL_G7221_24K,

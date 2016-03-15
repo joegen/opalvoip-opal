@@ -209,6 +209,47 @@ const OpalVideoFormat & GetOpalH264_MODE1()
 }
 
 
+struct OpalKeyFrameDetectorH264 : OpalVideoFormat::FrameDetector
+{
+  bool m_gotSPS;
+  bool m_gotPPS;
+
+  virtual OpalVideoFormat::FrameType GetFrameType(const BYTE * rtp, PINDEX size)
+  {
+    if (size > 2) {
+      switch ((*rtp++) & 0x1f) {
+        case 1: // Coded slice of a non-IDR picture
+        case 2: // Coded slice data partition A
+          if ((*rtp & 0x80) != 0) // High bit 1 indicates MB zero
+            return OpalVideoFormat::e_InterFrame;
+          break;
+
+        case 5: // Coded slice of an IDR picture
+          if (m_gotSPS && m_gotPPS && (*rtp & 0x80) != 0) // High bit 1 indicates MB zero
+            return OpalVideoFormat::e_IntraFrame;
+          break;
+
+        case 7: // Sequence parameter set
+          m_gotSPS = *rtp == 66 || *rtp == 77 || *rtp == 88 || *rtp == 100;
+          return OpalVideoFormat::e_NonFrameBoundary;
+
+        case 8: // Picture parameter set
+          m_gotPPS = true;
+          return OpalVideoFormat::e_NonFrameBoundary;
+
+        case 28: // Fragment
+          if ((*rtp & 0x80) != 0)
+            return GetFrameType(rtp, size - 1);
+      }
+    }
+
+    return OpalVideoFormat::e_NonFrameBoundary;
+  }
+};
+
+PFACTORY_CREATE(OpalVideoFormat::FrameDetectFactory, OpalKeyFrameDetectorH264, "H264");
+
+
 #endif // OPAL_VIDEO
 
 
