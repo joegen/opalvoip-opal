@@ -6548,7 +6548,7 @@ fi
    if ${OPAL_BUILD+:} false; then :
   build=${OPAL_BUILD}
 else
-  build=`cat $VERSION_DIR/version.h | grep BUILD_NUMBER  | cut -f3 -d' '`
+  build=`cat $VERSION_DIR/version.h | grep BUILD_NUMBER  | cut -f3 -d' ' | sed 's/0x[1-9]*0*//'`
 fi
    if ${OPAL_STAGE+:} false; then :
   stage=${OPAL_STAGE}
