@@ -308,7 +308,7 @@ class OpusPluginCodec : public PluginCodec<MY_CODEC>
       for (int frame = 0; frame < frames; ++frame) {
         if (frame_sizes[frame] > 0) {
           for (int chan = 0; chan < channels; chan++) {
-            // Highest "subFrames" bits are VAD, next bit is LDDR flag, repeated for each channel
+            // Highest "subFrames" bits are VAD, next bit is LBRR flag, repeated for each channel
             if (frame_data[frame][0] & (0x80 >> ((subFrames+1)*chan + subFrames))) {
               PTRACE(6, MY_CODEC_LOG, "FEC packet detected");
               ++m_countFEC;
@@ -499,6 +499,11 @@ class OpusPluginDecoder : public OpusPluginCodec
       }
 
       if (m_previousFrame.empty()) {
+        // Do not start decoding until we get the first
+        if (packet == NULL) {
+          toLen = 0;
+          return true;
+        }
         m_previousFrame.resize(samples*m_channels);
         toLen = 0;
       }
