@@ -459,7 +459,7 @@ struct OpalPCAPFile::DiscoveryInfo
       struct
       {
         OpalVideoFormat m_format;
-        PBYTEArray      m_context;
+        OpalVideoFormat::FrameDetectorPtr m_detector;
       } VideoCodecs[] = {
         { OPAL_H263 },
         { OPAL_H263plus },
@@ -472,9 +472,9 @@ struct OpalPCAPFile::DiscoveryInfo
       for (PINDEX i = 0; i < PARRAYSIZE(VideoCodecs); ++i) {
         RTP_DataFrameList::iterator rtp;
         for (rtp = m_firstFrames.begin(); rtp != m_firstFrames.end(); ++rtp) {
-          if (VideoCodecs[i].m_format.GetVideoFrameType(rtp->GetPayloadPtr(),
-                                                        rtp->GetPayloadSize(),
-                                                        VideoCodecs[i].m_context) == OpalVideoFormat::e_IntraFrame)
+          if (VideoCodecs[i].m_format.GetFrameType(rtp->GetPayloadPtr(),
+                                                   rtp->GetPayloadSize(),
+                                                   VideoCodecs[i].m_detector) == OpalVideoFormat::e_IntraFrame)
             break;
         }
         if (rtp != m_firstFrames.end()) {

@@ -750,6 +750,12 @@
     <ClCompile Include="..\codec\mpeg4mf_inc.cxx">
       <Filter>Source Files\Codec</Filter>
     </ClCompile>
+    <ClCompile Include="..\codec\opusmf.cxx">
+      <Filter>Source Files\Codec</Filter>
+    </ClCompile>
+    <ClCompile Include="..\codec\opusmf_inc.cxx">
+      <Filter>Source Files\Codec</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\codec\echocancel.h">
