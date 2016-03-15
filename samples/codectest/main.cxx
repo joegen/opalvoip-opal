@@ -945,8 +945,10 @@ void TranscoderThread::Main()
 
   RTP_DataFrame srcFrame;
 
+  OpalAudioFormat audioFormat(m_encoder->GetOutputFormat());
+  OpalAudioFormat::FrameDetectorPtr audioDetector;
   OpalVideoFormat videoFormat(m_encoder->GetOutputFormat());
-  PBYTEArray videoDetectorContext;
+  OpalVideoFormat::FrameDetectorPtr videoDetector;
   bool videoDetectorFailed = false;
 
   while ((m_running && m_framesToTranscode < 0) || (m_framesToTranscode-- > 0)) {
@@ -1152,7 +1154,7 @@ void TranscoderThread::Main()
         if (isVideo) {
           bool detectedInter = false;
           for (PINDEX i = 0; i < encFrames.GetSize(); i++) {
-            switch (videoFormat.GetVideoFrameType(encFrames[i].GetPayloadPtr(), encFrames[i].GetPayloadSize(), videoDetectorContext)) {
+            switch (videoFormat.GetFrameType(encFrames[i].GetPayloadPtr(), encFrames[i].GetPayloadSize(), videoDetector)) {
               case OpalVideoFormat::e_IntraFrame :
                 detectorSaysIntra = true;
                 break;
@@ -1168,6 +1170,16 @@ void TranscoderThread::Main()
             coutMutex.Wait();
             cout << "Video detector could not determine if I-Frame or P-Frame" << endl;
             coutMutex.Signal();
+          }
+        }
+        else {
+          for (PINDEX i = 0; i < encFrames.GetSize(); i++) {
+            OpalAudioFormat::FrameType type = audioFormat.GetFrameType(encFrames[i].GetPayloadPtr(), encFrames[i].GetPayloadSize(), audioDetector);
+            if (type & OpalAudioFormat::e_SilenceFrame) {
+              coutMutex.Wait();
+              cout << "Audio frame silent." << endl;
+              coutMutex.Signal();
+            }
           }
         }
       }

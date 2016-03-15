@@ -90,6 +90,44 @@ const OpalVideoFormat & GetOpalVP8()
 }
 
 
+struct OpalKeyFrameDetectorVP8 : OpalVideoFormat::FrameDetector
+{
+  virtual OpalVideoFormat::FrameType GetFrameType(const BYTE * rtp, PINDEX size)
+  {
+    if (size < 3)
+      return OpalVideoFormat::e_NonFrameBoundary;
+
+    PINDEX headerSize = 1;
+    if ((rtp[0] & 0x80) != 0) { // Check X bit
+      ++headerSize;           // Allow for X byte
+
+      if ((rtp[1] & 0x80) != 0) { // Check I bit
+        ++headerSize;           // Allow for I field
+        if ((rtp[2] & 0x80) != 0) // > 7 bit picture ID
+          ++headerSize;         // Allow for extra bits of I field
+      }
+
+      if ((rtp[1] & 0x40) != 0) // Check L bit
+        ++headerSize;         // Allow for L byte
+
+      if ((rtp[1] & 0x30) != 0) // Check T or K bit
+        ++headerSize;         // Allow for T/K byte
+    }
+
+    if (size <= headerSize)
+      return OpalVideoFormat::e_NonFrameBoundary;
+
+    // Key frame is S bit == 1 && partition == 0 && P bit == 0
+    if ((rtp[0]&0x1f) != 0x10)
+      return OpalVideoFormat::e_NonFrameBoundary;
+
+    return (rtp[headerSize] & 0x01) == 0 ? OpalVideoFormat::e_IntraFrame : OpalVideoFormat::e_InterFrame;
+  }
+};
+
+PFACTORY_CREATE(OpalVideoFormat::FrameDetectFactory, OpalKeyFrameDetectorVP8, "VP8");
+
+
 #endif // OPAL_VIDEO
 
 

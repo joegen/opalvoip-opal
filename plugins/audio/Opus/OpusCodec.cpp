@@ -36,6 +36,8 @@
 #include "plugin_config.h"
 #endif
 
+#include "../../../src/codec/opusmf_inc.cxx"
+
 #include "opus.h"
 
 #include <vector>
@@ -80,77 +82,74 @@ PLUGINCODEC_LICENSE(
 );
 
 
-#define MAX_BIT_RATE 510000
-
-
 ///////////////////////////////////////////////////////////////////////////////
 
 static struct PluginCodec_Option const UseInBandFEC =
 {
   PluginCodec_BoolOption,
-  "Use In-Band FEC",
+  UseInBandFEC_OptionName,
   false,
   PluginCodec_AndMerge,
-  "1",
-  "useinbandfec"
+  STRINGIZE(DEFAULT_USE_FEC),
+  UseInBandFEC_FMTPName
 };
 
 static struct PluginCodec_Option const UseDTX =
 {
   PluginCodec_BoolOption,
-  "Use DTX",
+  UseDTX_OptionName,
   false,
   PluginCodec_AndMerge,
-  "0",
-  "usedtx"
+  STRINGIZE(DEFAULT_USE_DTX),
+  UseDTX_FMTPName
 };
 
 static struct PluginCodec_Option const MaxPlaybackRate =
 {
   PluginCodec_IntegerOption,
-  "Max Playback Rate",
+  MaxPlaybackRate_OptionName,
   true,
   PluginCodec_NoMerge,
-  "64000",
-  "maxplaybackrate",
+  STRINGIZE(DEFAULT_BIT_RATE),
+  MaxPlaybackRate_FMTPName,
   "",
   0,
-  "6000",
+  STRINGIZE(MIN_BIT_RATE),
   STRINGIZE(MAX_BIT_RATE)
 };
 
 static struct PluginCodec_Option const MaxCaptureRate =
 {
   PluginCodec_IntegerOption,
-  "Max Capture Rate",
+  MaxCaptureRate_OptionName,
   true,
   PluginCodec_NoMerge,
-  "64000",
-  "sprop-maxcapturerate",
+  STRINGIZE(DEFAULT_BIT_RATE),
+  MaxCaptureRate_FMTPName,
   "",
   0,
-  "6000",
+  STRINGIZE(MIN_BIT_RATE),
   STRINGIZE(MAX_BIT_RATE)
 };
 
 static struct PluginCodec_Option const PlaybackStereo =
 {
   PluginCodec_BoolOption,
-  "Playback Stereo",
+  PlaybackStereo_OptionName,
   true,
   PluginCodec_NoMerge,
-  "0",
-  "stereo"
+  STRINGIZE(DEFAULT_STEREO),
+  PlaybackStereo_FMTPName
 };
 
 static struct PluginCodec_Option const CaptureStereo =
 {
   PluginCodec_BoolOption,
-  "Capture Stereo",
+  CaptureStereo_OptionName,
   true,
   PluginCodec_NoMerge,
-  "0",
-  "sprop-stereo"
+  STRINGIZE(DEFAULT_STEREO),
+  CaptureStereo_FMTPName
 };
 
 static struct PluginCodec_Option const DynamicPacketLoss =
@@ -163,8 +162,7 @@ static struct PluginCodec_Option const DynamicPacketLoss =
   NULL,
   NULL,
   0,
-  "0",
-  "100"
+  "0","100" // percentage
 };
 
 static struct PluginCodec_Option const * const MyOptions[] = {
@@ -186,16 +184,16 @@ class OpusPluginMediaFormat : public PluginCodec_AudioFormat<MY_CODEC>
     unsigned m_actualChannels;
 
     OpusPluginMediaFormat(const char * formatName, const char * rawFormat, unsigned actualSampleRate, unsigned actualChannels)
-      : PluginCodec_AudioFormat<MY_CODEC>(formatName, "OPUS", MyDescription,
-                                           960*actualChannels*actualSampleRate/48000,
-                                           MAX_BIT_RATE*20/1000/8, // 20ms and bits to bytes
-                                           48000, MyOptions)
+      : PluginCodec_AudioFormat<MY_CODEC>(formatName, OpusEncodingName, MyDescription,
+                                           960*actualChannels*actualSampleRate/OPUS_SAMPLE_RATE,
+                                           MAX_BIT_RATE*OPUS_FRAME_MS/1000/8, // 20ms and bits to bytes
+                                           OPUS_SAMPLE_RATE, MyOptions)
       , m_actualSampleRate(actualSampleRate)
       , m_actualChannels(actualChannels)
     {
       m_rawFormat = rawFormat;
       m_recommendedFramesPerPacket = 1; // 20ms
-      m_maxFramesPerPacket = 6; // 120ms
+      m_maxFramesPerPacket = 120/OPUS_FRAME_MS; // 120ms
       m_maxBandwidth = MAX_BIT_RATE;
       m_frameTime = 20000; // Rare occasion where frame time not derived from samplesPerFrame and sampleRate
       m_flags |= PluginCodec_SetChannels(2) | PluginCodec_RTPTypeShared | PluginCodec_EmptyPayload;
@@ -223,7 +221,7 @@ class OpusPluginMediaFormat : public PluginCodec_AudioFormat<MY_CODEC>
 #define CHANNEL  1
 #define CHANNELS 2
 #define DEF_MEDIA_FORMAT(rate, stereo) \
-  static OpusPluginMediaFormat const MyMediaFormat##rate##stereo("Opus-" #rate #stereo, \
+  static OpusPluginMediaFormat const MyMediaFormat##rate##stereo(OPAL_OPUS##rate##stereo, \
                           OPAL_PCM16##stereo##_##rate##KHZ, rate*1000, CHANNEL##stereo)
 DEF_MEDIA_FORMAT( 8, );
 DEF_MEDIA_FORMAT( 8,S);

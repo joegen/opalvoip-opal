@@ -125,6 +125,35 @@ const OpalVideoFormat & GetOpalMPEG4()
 }
 
 
+struct OpalKeyFrameDetectorMPEG4 : OpalVideoFormat::FrameDetector
+{
+  virtual OpalVideoFormat::FrameType GetFrameType(const BYTE * rtp, PINDEX size)
+  {
+    if (size < 4 || rtp[0] != 0 || rtp[1] != 0 || rtp[2] != 1)
+      return OpalVideoFormat::e_UnknownFrameType;
+
+    while (size > 4) {
+      if (rtp[0] == 0 && rtp[1] == 0 && rtp[2] == 1) {
+        if (rtp[3] == 0xb6) {
+          switch ((rtp[4] & 0xC0) >> 6) {
+            case 0:
+              return OpalVideoFormat::e_IntraFrame;
+            case 1:
+              return OpalVideoFormat::e_InterFrame;
+          }
+        }
+      }
+      ++rtp;
+      --size;
+    }
+
+    return OpalVideoFormat::e_NonFrameBoundary;
+  }
+};
+
+PFACTORY_CREATE(OpalVideoFormat::FrameDetectFactory, OpalKeyFrameDetectorMPEG4, "MP4V-ES");
+
+
 #endif // OPAL_VIDEO
 
 

@@ -224,6 +224,68 @@ const OpalVideoFormat & GetOpalH263plus()
   return format;
 }
 
+
+struct OpalKeyFrameDetectorH263 : OpalVideoFormat::FrameDetector
+{
+  virtual OpalVideoFormat::FrameType GetFrameType(const BYTE * rtp, PINDEX size)
+  {
+    if (size < 8)
+      return OpalVideoFormat::e_UnknownFrameType;
+
+    if ((rtp[4] & 0x1c) != 0x1c)
+      return (rtp[4] & 2) != 0 ? OpalVideoFormat::e_InterFrame : OpalVideoFormat::e_IntraFrame;
+
+    switch (((rtp[5] & 0x80) != 0 ? (rtp[7] >> 2) : (rtp[5] >> 5)) & 3) {
+      case 0:
+      case 4:
+        return OpalVideoFormat::e_IntraFrame;
+      case 1:
+      case 5:
+        return OpalVideoFormat::e_InterFrame;
+    }
+    return OpalVideoFormat::e_NonFrameBoundary;
+  }
+};
+
+
+struct OpalKeyFrameDetectorRFC2190 : OpalKeyFrameDetectorH263
+{
+  virtual OpalVideoFormat::FrameType GetFrameType(const BYTE * rtp, PINDEX size)
+  {
+    // RFC 2190 header length
+    static const PINDEX ModeLen[4] = { 4, 4, 8, 12 };
+    PINDEX len = ModeLen[(rtp[0] & 0xC0) >> 6];
+    if (size < len + 6)
+      return OpalVideoFormat::e_UnknownFrameType;
+
+    rtp += len;
+    if (rtp[0] != 0 || rtp[1] != 0 || (rtp[2] & 0xfc) != 0x80)
+      return OpalVideoFormat::e_NonFrameBoundary;
+
+    return OpalKeyFrameDetectorH263::GetFrameType(rtp, size);
+  }
+};
+
+PFACTORY_CREATE(OpalVideoFormat::FrameDetectFactory, OpalKeyFrameDetectorRFC2190, "H263");
+
+
+struct OpalKeyFrameDetectorRFC4629 : OpalKeyFrameDetectorH263
+{
+  virtual OpalVideoFormat::FrameType GetFrameType(const BYTE * rtp, PINDEX size)
+  {
+    if (size < 6)
+      return OpalVideoFormat::e_UnknownFrameType;
+
+    if ((rtp[0] & 0xfd) != 4 || rtp[1] != 0 || (rtp[2] & 0xfc) != 0x80)
+      return OpalVideoFormat::e_NonFrameBoundary;
+
+    return OpalKeyFrameDetectorH263::GetFrameType(rtp, size);
+  }
+};
+
+PFACTORY_CREATE(OpalVideoFormat::FrameDetectFactory, OpalKeyFrameDetectorRFC4629, "H263-1998");
+
+
 #endif // OPAL_VIDEO
 
 // End of File ///////////////////////////////////////////////////////////////
