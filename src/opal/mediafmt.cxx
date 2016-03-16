@@ -1851,7 +1851,10 @@ bool OpalAudioFormatInternal::Merge(const OpalMediaFormatInternal & mediaFormat)
 OpalAudioFormat::FrameType OpalAudioFormat::GetFrameType(const BYTE * payloadPtr, PINDEX payloadSize, FrameDetectorPtr & detector) const
 {
   PWaitAndSignal m(m_mutex);
-  return m_info == NULL ? e_UnknownFrameType : dynamic_cast<OpalAudioFormatInternal *>(m_info)->GetFrameType(payloadPtr, payloadSize, detector);
+  if (m_info == NULL)
+    return e_UnknownFrameType;
+
+  return dynamic_cast<OpalAudioFormatInternal *>(m_info)->GetFrameType(payloadPtr, payloadSize, detector);
 }
 
 
@@ -2024,7 +2027,10 @@ void OpalMediaFormat::AdjustVideoArgs(PVideoDevice::OpenArgs & args) const
 OpalVideoFormat::FrameType OpalVideoFormat::GetFrameType(const BYTE * payloadPtr, PINDEX payloadSize, FrameDetectorPtr & detector) const
 {
   PWaitAndSignal m(m_mutex);
-  return m_info == NULL ? e_UnknownFrameType : dynamic_cast<OpalVideoFormatInternal *>(m_info)->GetFrameType(payloadPtr, payloadSize, detector);
+  if (m_info == NULL)
+    return e_UnknownFrameType;
+
+  return dynamic_cast<OpalVideoFormatInternal *>(m_info)->GetFrameType(payloadPtr, payloadSize, detector);
 }
 
 
