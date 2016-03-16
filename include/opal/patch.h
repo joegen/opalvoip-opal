@@ -280,7 +280,7 @@ class OpalMediaPatch : public PSafeObject
 
 #if OPAL_STATISTICS
         OpalVideoFormat     m_videoFormat;
-        PBYTEArray          m_keyFrameDetectContext;
+        OpalVideoFormat::FrameDetectorPtr m_keyFrameDetector;
         typedef map<RTP_SyncSourceId, OpalVideoStatistics> VideoStatsMap;
         VideoStatsMap m_videoStatistics;
         PDECLARE_MUTEX(m_videoStatsMutex);

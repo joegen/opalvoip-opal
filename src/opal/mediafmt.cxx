@@ -1145,6 +1145,16 @@ bool OpalMediaFormat::RegisterKnownMediaFormats(const PString & name)
     KNOWN(iLBC),
     KNOWN2(SPEEX_NB, SpeexNB),
     KNOWN2(SPEEX_WB, SpeexWB),
+    KNOWN2(OPUS8,   Opus8),
+    KNOWN2(OPUS8S,  Opus8S),
+    KNOWN2(OPUS12,  Opus12),
+    KNOWN2(OPUS12S, Opus12S),
+    KNOWN2(OPUS16,  Opus16),
+    KNOWN2(OPUS16S, Opus16S),
+    KNOWN2(OPUS24,  Opus24),
+    KNOWN2(OPUS24S, Opus24S),
+    KNOWN2(OPUS48,  Opus48),
+    KNOWN2(OPUS48S, Opus48S),
 #if OPAL_VIDEO
     KNOWN(H261),
     KNOWN(H263),
@@ -1838,6 +1848,30 @@ bool OpalAudioFormatInternal::Merge(const OpalMediaFormatInternal & mediaFormat)
 }
 
 
+OpalAudioFormat::FrameType OpalAudioFormat::GetFrameType(const BYTE * payloadPtr, PINDEX payloadSize, FrameDetectorPtr & detector) const
+{
+  PWaitAndSignal m(m_mutex);
+  if (m_info == NULL)
+    return e_UnknownFrameType;
+
+  return dynamic_cast<OpalAudioFormatInternal *>(m_info)->GetFrameType(payloadPtr, payloadSize, detector);
+}
+
+
+OpalAudioFormat::FrameType OpalAudioFormatInternal::GetFrameType(const BYTE * payloadPtr,
+                                                                 PINDEX payloadSize,
+                                                                 OpalAudioFormat::FrameDetectorPtr & detector) const
+{
+  if (detector.get() == NULL) {
+    detector.reset(OpalAudioFormat::FrameDetectFactory::CreateInstance(rtpEncodingName));
+    if (detector.get() == NULL)
+      return OpalAudioFormat::e_UnknownFrameType;
+  }
+
+  return detector->GetFrameType(payloadPtr, payloadSize, GetOptionInteger(OpalMediaFormat::ClockRateOption(), OpalMediaFormat::AudioClockRate));
+}
+
+
 ///////////////////////////////////////////////////////////////////////////////
 
 #if OPAL_VIDEO
@@ -1990,16 +2024,27 @@ void OpalMediaFormat::AdjustVideoArgs(PVideoDevice::OpenArgs & args) const
 }
 
 
-OpalVideoFormat::VideoFrameType OpalVideoFormat::GetVideoFrameType(const BYTE * payloadPtr, PINDEX payloadSize, PBYTEArray & context) const
+OpalVideoFormat::FrameType OpalVideoFormat::GetFrameType(const BYTE * payloadPtr, PINDEX payloadSize, FrameDetectorPtr & detector) const
 {
   PWaitAndSignal m(m_mutex);
-  return m_info == NULL ? e_UnknownFrameType : dynamic_cast<OpalVideoFormatInternal *>(m_info)->GetVideoFrameType(payloadPtr, payloadSize, context);
+  if (m_info == NULL)
+    return e_UnknownFrameType;
+
+  return dynamic_cast<OpalVideoFormatInternal *>(m_info)->GetFrameType(payloadPtr, payloadSize, detector);
 }
 
 
-OpalVideoFormat::VideoFrameType OpalVideoFormatInternal::GetVideoFrameType(const BYTE * payloadPtr, PINDEX payloadSize, PBYTEArray & context) const
+OpalVideoFormat::FrameType OpalVideoFormatInternal::GetFrameType(const BYTE * payloadPtr,
+                                                                 PINDEX payloadSize,
+                                                                 OpalVideoFormat::FrameDetectorPtr & detector) const
 {
-  return OpalVideoTranscoder::GetVideoFrameType(rtpEncodingName, payloadPtr, payloadSize, context);
+  if (detector.get() == NULL) {
+    detector.reset(OpalVideoFormat::FrameDetectFactory::CreateInstance(rtpEncodingName));
+    if (detector.get() == NULL)
+      return OpalVideoFormat::e_UnknownFrameType;
+  }
+
+  return detector->GetFrameType(payloadPtr, payloadSize);
 }
 
 #endif // OPAL_VIDEO

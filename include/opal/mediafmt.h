@@ -1367,26 +1367,6 @@ class OpalMediaFormat : public PContainer
 };
 
 
-class OpalAudioFormatInternal : public OpalMediaFormatInternal
-{
-  public:
-    OpalAudioFormatInternal(
-      const char * fullName,
-      RTP_DataFrame::PayloadTypes rtpPayloadType,
-      const char * encodingName,
-      PINDEX   frameSize,
-      unsigned frameTime,
-      unsigned rxFrames,
-      unsigned txFrames,
-      unsigned maxFrames,
-      unsigned clockRate,
-      time_t timeStamp = 0,
-      unsigned channels = 1
-    );
-    virtual PObject * Clone() const;
-    virtual bool Merge(const OpalMediaFormatInternal & mediaFormat);
-};
-
 class OpalAudioFormat : public OpalMediaFormat
 {
     PCLASSINFO(OpalAudioFormat, OpalMediaFormat);
@@ -1419,7 +1399,50 @@ class OpalAudioFormat : public OpalMediaFormat
     static const PString & MinPacketTimeOption();
     static const PString & MaxPacketTimeOption();
 #endif
+
+    P_DECLARE_BITWISE_ENUM(FrameType, 3, (
+      e_UnknownFrameType,
+      e_NormalFrame,
+      e_SilenceFrame,
+      e_FECFrame
+    ));
+
+    class FrameDetector
+    {
+    protected:
+      FrameDetector() { }
+    public:
+      virtual ~FrameDetector() { }
+      virtual FrameType GetFrameType(const BYTE * rtp, PINDEX size, unsigned sampleRate) = 0;
+    };
+    typedef std::auto_ptr<FrameDetector> FrameDetectorPtr;
+    typedef PFactory<FrameDetector, PCaselessString> FrameDetectFactory;
+
+    FrameType GetFrameType(const BYTE * payloadPtr, PINDEX payloadSize, FrameDetectorPtr & detector) const;
 };
+
+class OpalAudioFormatInternal : public OpalMediaFormatInternal
+{
+  public:
+    OpalAudioFormatInternal(
+      const char * fullName,
+      RTP_DataFrame::PayloadTypes rtpPayloadType,
+      const char * encodingName,
+      PINDEX   frameSize,
+      unsigned frameTime,
+      unsigned rxFrames,
+      unsigned txFrames,
+      unsigned maxFrames,
+      unsigned clockRate,
+      time_t timeStamp = 0,
+      unsigned channels = 1
+    );
+    virtual PObject * Clone() const;
+    virtual bool Merge(const OpalMediaFormatInternal & mediaFormat);
+
+    virtual OpalAudioFormat::FrameType GetFrameType(const BYTE * payloadPtr, PINDEX payloadSize, OpalAudioFormat::FrameDetectorPtr & detector) const;
+};
+
 
 #if OPAL_VIDEO
 
@@ -1494,13 +1517,25 @@ class OpalVideoFormat : public OpalMediaFormat
     static const PString & UseImageAttributeInSDP();
 #endif // OPAL_SDP
 
-    enum VideoFrameType {
+    enum FrameType {
       e_UnknownFrameType,
       e_NonFrameBoundary,
       e_IntraFrame,
       e_InterFrame
     };
-    VideoFrameType GetVideoFrameType(const BYTE * payloadPtr, PINDEX payloadSize, PBYTEArray & context) const;
+
+    class FrameDetector
+    {
+    protected:
+      FrameDetector() { }
+    public:
+      virtual ~FrameDetector() { }
+      virtual FrameType GetFrameType(const BYTE * rtp, PINDEX size) = 0;
+    };
+    typedef std::auto_ptr<FrameDetector> FrameDetectorPtr;
+    typedef PFactory<FrameDetector, PCaselessString> FrameDetectFactory;
+
+    FrameType GetFrameType(const BYTE * payloadPtr, PINDEX payloadSize, FrameDetectorPtr & detector) const;
 };
 
 class OpalVideoFormatInternal : public OpalMediaFormatInternal
@@ -1518,7 +1553,8 @@ class OpalVideoFormatInternal : public OpalMediaFormatInternal
     );
     virtual PObject * Clone() const;
     virtual bool Merge(const OpalMediaFormatInternal & mediaFormat);
-    virtual OpalVideoFormat::VideoFrameType GetVideoFrameType(const BYTE * payloadPtr, PINDEX payloadSize, PBYTEArray & context) const;
+
+    virtual OpalVideoFormat::FrameType GetFrameType(const BYTE * payloadPtr, PINDEX payloadSize, OpalVideoFormat::FrameDetectorPtr & detector) const;
 };
 
 #endif // OPAL_VIDEO
@@ -1578,6 +1614,16 @@ extern const OpalAudioFormat & GetOpalGSMAMR();
 extern const OpalAudioFormat & GetOpaliLBC();
 extern const OpalAudioFormat & GetOpalSpeexNB();
 extern const OpalAudioFormat & GetOpalSpeexWB();
+extern const OpalAudioFormat & GetOpalOpus8();
+extern const OpalAudioFormat & GetOpalOpus8S();
+extern const OpalAudioFormat & GetOpalOpus12();
+extern const OpalAudioFormat & GetOpalOpus12S();
+extern const OpalAudioFormat & GetOpalOpus16();
+extern const OpalAudioFormat & GetOpalOpus16S();
+extern const OpalAudioFormat & GetOpalOpus24();
+extern const OpalAudioFormat & GetOpalOpus24S();
+extern const OpalAudioFormat & GetOpalOpus48();
+extern const OpalAudioFormat & GetOpalOpus48S();
 
 #if OPAL_VIDEO
 extern const OpalVideoFormat & GetOpalH261();
@@ -1647,6 +1693,17 @@ extern const OpalMediaFormat & GetOpalT38();
 #define OpaliLBC           GetOpaliLBC()
 #define OpalSpeexNB        GetOpalSpeexNB()
 #define OpalSpeexWB        GetOpalSpeexWB()
+#define OpalOpus8          GetOpalOpus8()
+#define OpalOpus8S         GetOpalOpus8S()
+#define OpalOpus12         GetOpalOpus12()
+#define OpalOpus12S        GetOpalOpus12S()
+#define OpalOpus16         GetOpalOpus16()
+#define OpalOpus16S        GetOpalOpus16S()
+#define OpalOpus24         GetOpalOpus24()
+#define OpalOpus24S        GetOpalOpus24S()
+#define OpalOpus48         GetOpalOpus48()
+#define OpalOpus48S        GetOpalOpus48S()
+
 #define OpalRFC2833        GetOpalRFC2833()
 #define OpalCiscoNSE       GetOpalCiscoNSE()
 #define OpalT38            GetOpalT38()
