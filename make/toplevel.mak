@@ -427,8 +427,7 @@ SOURCES += $(OPAL_SRCDIR)/codec/g711codec.cxx \
            $(OPAL_SRCDIR)/codec/rfc2833.cxx \
            $(OPAL_SRCDIR)/codec/opalwavfile.cxx \
            $(OPAL_SRCDIR)/codec/silencedetect.cxx \
-           $(OPAL_SRCDIR)/codec/opalpluginmgr.cxx \
-           $(OPAL_SRCDIR)/codec/ratectl.cxx 
+           $(OPAL_SRCDIR)/codec/opalpluginmgr.cxx
 
 ifeq ($(OPAL_VIDEO), yes)
   SOURCES += $(OPAL_SRCDIR)/codec/vidcodec.cxx \
