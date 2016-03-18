@@ -161,6 +161,10 @@ class OpalVideoTranscoder : public OpalTranscoder
 
   /**@name Operations */
   //@{
+#if OPAL_STATISTICS
+    virtual void GetStatistics(OpalMediaStatistics & statistics) const;
+#endif
+
     /**Update the input and output media formats. This can be used to adjust
        the parameters of a codec at run time. Note you cannot change the basic
        media format, eg change GSM0610 to G.711, only options for that
@@ -219,6 +223,10 @@ class OpalVideoTranscoder : public OpalTranscoder
 
 
     virtual bool HasErrorConcealment() const  { return m_errorConcealment; }
+
+    virtual bool ShouldDropFrame(RTP_Timestamp ts);
+    virtual void UpdateFrameDrop(const RTP_DataFrameList & encoded);
+
     bool WasLastFrameIFrame() const { return m_lastFrameWasIFrame; }
     virtual void SendIFrameRequest(unsigned sequenceNumber, unsigned timestamp);
     virtual bool HandleIFrameRequest();
@@ -245,6 +253,12 @@ class OpalVideoTranscoder : public OpalTranscoder
     bool   m_freezeTillIFrame;
     bool   m_frozenTillIFrame;
     bool   m_lastFrameWasIFrame;
+
+    RTP_Timestamp m_frameDropPeriod;
+    unsigned      m_frameDropRate;
+    unsigned      m_frameDropBits;
+    RTP_Timestamp m_lastTimestamp;
+    unsigned      m_framesDropped;
 
     OpalIntraFrameControl m_encodingIntraFrameControl;
     OpalIntraFrameControl m_decodingIntraFrameControl;

@@ -31,8 +31,7 @@
 #include "precompile.h"
 #include "main.h"
 
-#include <codec/ratectl.h>
-#include <opal/patch.h>
+//#include <opal/patch.h>
 
 #include <ptclib/random.h>
 
@@ -90,7 +89,6 @@ void CodecTest::Main()
              "p-payload-size: Set size of maximum RTP payload for encoded data\n"
              "S-simultaneous: Number of simultaneous encode/decode threads\n"
              "T-statistics. output statistics files\n"
-             "C-rate-control. enable rate control\n"
              "d-drop: randomly drop N% of encoded packets\n"
              "-count: set number of frames to transcode\n"
              "-noprompt. do not prompt for commands, i.e. exit when input closes\n"
@@ -622,15 +620,14 @@ bool VideoThread::Initialise(PArgList & args)
 
 
   if (args.HasOption("frame-rate")) {
-    m_frameRate = args.GetOptionString("frame-rate").AsUnsigned();
-    if (!m_grabber->SetFrameRate(m_frameRate)) {
-      cerr << "Video grabber device could not be set to frame rate " << m_frameRate << endl;
+    unsigned frameRate = args.GetOptionString("frame-rate").AsUnsigned();
+    if (!m_grabber->SetFrameRate(frameRate)) {
+      cerr << "Video grabber device could not be set to frame rate " << frameRate << endl;
       return false;
     }
   }
 
-  m_frameRate = m_grabber->GetFrameRate();
-  m_frameTime = mediaFormat.GetClockRate()/m_frameRate;
+  m_frameTime = mediaFormat.GetClockRate()/m_grabber->GetFrameRate();
   mediaFormat.SetOptionInteger(OpalVideoFormat::FrameTimeOption(), m_frameTime);
   cout << "Grabber frame rate set to " << m_grabber->GetFrameRate() << endl;
 
@@ -717,18 +714,6 @@ bool VideoThread::Initialise(PArgList & args)
       mediaFormat.SetOptionInteger(OpalVideoFormat::MaxBitRateOption(), (unsigned)bitrate);
   }
   cout << "Target bit rate set to " << mediaFormat.GetOptionInteger(OpalVideoFormat::TargetBitRateOption()) << " bps" << endl;
-
-  unsigned bitRate = mediaFormat.GetOptionInteger(OpalVideoFormat::TargetBitRateOption());
-  PString rc = args.GetOptionString('C');
-  if (rc.IsEmpty()) 
-    m_rateController = NULL;
-  else {
-    m_rateController = PFactory<OpalVideoRateController>::CreateInstance(rc);
-    if (m_rateController != NULL) {
-      m_rateController->Open(mediaFormat);
-      cout << "Video rate controller enabled for bit rate " << bitRate << " bps and frame rate " << m_frameRate << endl;
-    }
-  }
 
   if (args.HasOption('T'))
     m_frameFilename = "frame_stats.csv";
@@ -919,7 +904,6 @@ void TranscoderThread::Main()
   PUInt64 totalEncodedPacketCount = 0;
   PUInt64 totalOutputFrameCount = 0;
   PUInt64 totalEncodedByteCount = 0;
-  PUInt64 skippedFrames = 0;
   PUInt64 totalDroppedPacketCount = 0;
   PINDEX  largestPacket = 0;
 
@@ -933,10 +917,6 @@ void TranscoderThread::Main()
   bool isVideo = PIsDescendant(m_encoder, OpalVideoTranscoder);
 
   PTimeInterval startTick = PTimer::Tick();
-
-  if (isVideo) {
-    ((VideoThread *)this)->m_bitRateCalc.SetQuanta(m_frameTime/90);
-  }
 
   //////////////////////////////////////////////
   //
@@ -967,7 +947,6 @@ void TranscoderThread::Main()
     }
 
     srcFrame.SetTimestamp(m_timestamp);
-    m_timestamp += m_frameTime;
     ++totalInputFrameCount;
 
     bool detectorSaysIntra = false;
@@ -976,254 +955,188 @@ void TranscoderThread::Main()
 
     //////////////////////////////////////////////
     //
-    //  allow the rate controller to skip frames
+    //  push frames through encoder
     //
-    bool rateControlForceIFrame = false;
-    if (m_rateController != NULL && m_rateController->SkipFrame(rateControlForceIFrame)) {
-      coutMutex.Wait();
-      cout << "Packet pacer forced skip of input frame " << totalInputFrameCount-1 << endl;
-      coutMutex.Signal();
-      ++skippedFrames;
-    }
-
+    RTP_DataFrameList encFrames;
+    if (m_encoder == NULL) 
+      encFrames.Append(new RTP_DataFrame(srcFrame)); 
     else {
-
-      //////////////////////////////////////////////
-      //
-      //  push frames through encoder
-      //
-      RTP_DataFrameList encFrames;
-      if (m_encoder == NULL) 
-        encFrames.Append(new RTP_DataFrame(srcFrame)); 
-      else {
-        if (isVideo) {
-          if (m_forceIFrame) {
-            coutMutex.Wait();
-            cout << "Decoder forced I-Frame at input frame " << totalInputFrameCount-1 << endl;
-            coutMutex.Signal();
-          }
-          if (rateControlForceIFrame) {
-            coutMutex.Wait();
-            cout << "Rate controller forced I-Frame at input frame " << totalInputFrameCount-1 << endl;
-            coutMutex.Signal();
-          }
-          if (m_forceIFrame || rateControlForceIFrame)
-            m_encoder->ExecuteCommand(OpalVideoUpdatePicture());
-        }
-
-        if (m_extensionHeader != 255)
-          srcFrame.SetHeaderExtension(1, 1, &m_extensionHeader, RTP_DataFrame::RFC5285_OneByte);
-
-
-        bool state = m_encoder->ConvertFrames(srcFrame, encFrames);
-        if (oldEncState != state) {
-          oldEncState = state;
-          cerr << "Encoder " << (state ? "restor" : "fail") << "ed at input frame " << totalInputFrameCount-1 << endl;
-          continue;
-        }
-        if (isVideo)
-          encoderSaysIntra = ((OpalVideoTranscoder *)m_encoder)->WasLastFrameIFrame();
-      }
-
-      //////////////////////////////////////////////
-      //
-      //  re-format encoded frames
-      //
-      unsigned long encodedPayloadSize = 0;
-      unsigned long encodedPacketCount = 0;
-      unsigned long encodedDataSize    = 0;
-      for (PINDEX i = 0; i < encFrames.GetSize(); i++) {
-        encFrames[i].SetSequenceNumber(++sequenceNumber);
-        ++encodedPacketCount;
-        encodedPayloadSize += encFrames[i].GetPayloadSize();
-        encodedDataSize    += encFrames[i].GetPayloadSize() + encFrames[i].GetHeaderSize();
-        switch (m_markerHandling) {
-          case SuppressMarkers :
-            encFrames[i].SetMarker(false);
-            break;
-          case ForceMarkers :
-            encFrames[i].SetMarker(true);
-            break;
-          default :
-            break;
-        }
-
-        m_pcapFile.WriteRTP(encFrames[i]);
-
-        if (g_infoCount > 0) {
-          RTP_DataFrame & rtp = encFrames[i];
+      if (isVideo) {
+        if (m_forceIFrame) {
           coutMutex.Wait();
-          if (g_infoCount > 1) 
-            cout << "Inframe=" << totalInputFrameCount << ",outframe=#" << i << ":pt=" << rtp.GetPayloadType() << ",psz=" << rtp.GetPayloadSize() << ",m=" << (rtp.GetMarker() ? "1" : "0") << ",";
-          cout << "ssrc=" << hex << rtp.GetSyncSource() << dec << ",ts=" << rtp.GetTimestamp() << ",seq = " << rtp.GetSequenceNumber();
-          if (g_infoCount > 2) {
-            cout << "\n   data=";
-            cout << hex << setfill('0') << ::setw(2);
-            for (PINDEX i = 0; i < std::min((PINDEX)10, rtp.GetPayloadSize()); ++i)
-              cout << (int)rtp.GetPayloadPtr()[i] << ' ';
-            cout << dec << setfill(' ') << ::setw(0);
-          }
-          cout << endl;
+          cout << "Decoder forced I-Frame at input frame " << totalInputFrameCount-1 << endl;
           coutMutex.Signal();
         }
+        if (m_forceIFrame)
+          m_encoder->ExecuteCommand(OpalVideoUpdatePicture());
       }
 
-      totalEncodedPacketCount += encFrames.GetSize();
+      if (m_extensionHeader != 255)
+        srcFrame.SetHeaderExtension(1, 1, &m_extensionHeader, RTP_DataFrame::RFC5285_OneByte);
 
-      if (isVideo && m_calcSNR)
-        ((VideoThread *)this)->SaveSNRFrame(srcFrame);
 
-      //////////////////////////////////////////////
-      //
-      //  drop encoded frames if required
-      //
-      if (m_dropPercent > 0) {
-        RTP_DataFrameList::iterator it = encFrames.begin();
-        while (it != encFrames.end()) {
-          if (PRandom::Number(100) >= m_dropPercent) 
-            ++it;
-          else {
-            ++totalDroppedPacketCount;
-            if (isVideo)
-              encFrames.erase(it++);
-            else {
-              it->SetPayloadSize(0);
-              it->SetDiscontinuity(1);
-              ++it;
-            }
-          }
-        }
+      bool state = m_encoder->ConvertFrames(srcFrame, encFrames);
+      if (oldEncState != state) {
+        oldEncState = state;
+        cerr << "Encoder " << (state ? "restor" : "fail") << "ed at input frame " << totalInputFrameCount-1 << endl;
+        continue;
       }
-
-      //////////////////////////////////////////////
-      //
-      //  push audio/video frames through NULL decoder
-      //
-      if (m_decoder == NULL) {
-        totalEncodedByteCount += encodedPayloadSize;
-        for (PINDEX i = 0; i < encFrames.GetSize(); i++) {
-          bool state = Write(encFrames[i]);
-          if (oldOutState != state) {
-            oldOutState = state;
-            cerr << "Output write " << (state ? "restor" : "fail") << "ed at input frame " << totalInputFrameCount << endl;
-          }
-          totalOutputFrameCount++;
-        }
-      }
-
-      //////////////////////////////////////////////
-      //
-      //  push audio/video frames through explicit decoder
-      //
-      else if (m_rateController == NULL) {
-        totalEncodedByteCount += encodedPayloadSize;
-        if (isVideo)
-          ((VideoThread *)this)->CalcVideoPacketStats(encFrames, ((OpalVideoTranscoder *)m_decoder)->WasLastFrameIFrame());
-        RTP_DataFrameList outFrames;
-        for (PINDEX i = 0; i < encFrames.GetSize(); i++) {
-          if (encFrames[i].GetPayloadSize() > largestPacket)
-            largestPacket = encFrames[i].GetPayloadSize();
-          bool state = m_decoder->ConvertFrames(encFrames[i], outFrames);
-          if (oldDecState != state) {
-            oldDecState = state;
-            cerr << "Decoder " << (state ? "restor" : "fail") << "ed at input frame " << totalInputFrameCount-1 << endl;
-            continue;
-          }
-          if (outFrames.GetSize() > 1) 
-            cerr << "Non rate controlled video decoder returned != 1 output frame for input frame " << totalInputFrameCount-1 << endl;
-          else if (outFrames.GetSize() == 1) {
-            if (isVideo) {
-              decoderSaysIntra = ((OpalVideoTranscoder *)m_decoder)->WasLastFrameIFrame();
-              if (g_infoCount > 1) {
-                coutMutex.Wait();
-                cout << "Decoder generated payload of size " << outFrames[0].GetPayloadSize() << endl;
-                coutMutex.Signal();
-              }
-            }
-            bool state = Write(outFrames[0]);
-            if (oldOutState != state) {
-              oldOutState = state;
-              cerr << "Output write " << (state ? "restor" : "fail") << "ed at input frame " << totalInputFrameCount << endl;
-            }
-            if (isVideo && m_calcSNR) 
-              ((VideoThread *)this)->CalcSNR(outFrames[0]);
-            totalOutputFrameCount++;
-          }
-        }
-
-        if (isVideo) {
-          bool detectedInter = false;
-          for (PINDEX i = 0; i < encFrames.GetSize(); i++) {
-            switch (videoFormat.GetFrameType(encFrames[i].GetPayloadPtr(), encFrames[i].GetPayloadSize(), videoDetector)) {
-              case OpalVideoFormat::e_IntraFrame :
-                detectorSaysIntra = true;
-                break;
-              case OpalVideoFormat::e_InterFrame :
-                detectedInter = true;
-                break;
-              default :
-                break;
-            }
-          }
-          if (!videoDetectorFailed && !detectorSaysIntra && !detectedInter) {
-            videoDetectorFailed = true;
-            coutMutex.Wait();
-            cout << "Video detector could not determine if I-Frame or P-Frame" << endl;
-            coutMutex.Signal();
-          }
-        }
-        else {
-          for (PINDEX i = 0; i < encFrames.GetSize(); i++) {
-            OpalAudioFormat::FrameType type = audioFormat.GetFrameType(encFrames[i].GetPayloadPtr(), encFrames[i].GetPayloadSize(), audioDetector);
-            if (type & OpalAudioFormat::e_SilenceFrame) {
-              coutMutex.Wait();
-              cout << "Audio frame silent." << endl;
-              coutMutex.Signal();
-            }
-          }
-        }
-      }
-
-      //////////////////////////////////////////////
-      //
-      //  push video frames into rate controller 
-      //
-      else 
-        m_rateController->Push(encFrames, ((OpalVideoTranscoder *)m_encoder)->WasLastFrameIFrame());
+      if (isVideo)
+        encoderSaysIntra = ((OpalVideoTranscoder *)m_encoder)->WasLastFrameIFrame();
     }
 
     //////////////////////////////////////////////
     //
-    //  pop video frames from rate controller and explicit decoder
+    //  re-format encoded frames
     //
-    if (m_rateController != NULL) {
-      for (;;) {
-        bool outIFrame;
-        RTP_DataFrameList pacedFrames;
-        if (!m_rateController->Pop(pacedFrames, outIFrame, false))
+    unsigned long encodedPayloadSize = 0;
+    unsigned long encodedPacketCount = 0;
+    unsigned long encodedDataSize    = 0;
+    for (PINDEX i = 0; i < encFrames.GetSize(); i++) {
+      encFrames[i].SetSequenceNumber(++sequenceNumber);
+      ++encodedPacketCount;
+      encodedPayloadSize += encFrames[i].GetPayloadSize();
+      encodedDataSize    += encFrames[i].GetPayloadSize() + encFrames[i].GetHeaderSize();
+      switch (m_markerHandling) {
+        case SuppressMarkers :
+          encFrames[i].SetMarker(false);
           break;
-        ((VideoThread *)this)->CalcVideoPacketStats(pacedFrames, outIFrame);
-        RTP_DataFrameList outFrames;
-        for (PINDEX i = 0; i < pacedFrames.GetSize(); i++) {
-          totalEncodedByteCount += pacedFrames[i].GetPayloadSize();
-          bool state = m_decoder->ConvertFrames(pacedFrames[i], outFrames);
-          if (oldDecState != state) {
-            oldDecState = state;
-            cerr << "Decoder " << (state ? "restor" : "fail") << "ed at input frame " << totalInputFrameCount-1 << endl;
-            continue;
+        case ForceMarkers :
+          encFrames[i].SetMarker(true);
+          break;
+        default :
+          break;
+      }
+
+      m_pcapFile.WriteRTP(encFrames[i]);
+
+      if (g_infoCount > 0) {
+        RTP_DataFrame & rtp = encFrames[i];
+        coutMutex.Wait();
+        if (g_infoCount > 1) 
+          cout << "Inframe=" << totalInputFrameCount << ",outframe=#" << i << ":pt=" << rtp.GetPayloadType() << ",psz=" << rtp.GetPayloadSize() << ",m=" << (rtp.GetMarker() ? "1" : "0") << ",";
+        cout << "ssrc=" << hex << rtp.GetSyncSource() << dec << ",ts=" << rtp.GetTimestamp() << ",seq = " << rtp.GetSequenceNumber();
+        if (g_infoCount > 2) {
+          cout << "\n   data=";
+          cout << hex << setfill('0') << ::setw(2);
+          for (PINDEX i = 0; i < std::min((PINDEX)10, rtp.GetPayloadSize()); ++i)
+            cout << (int)rtp.GetPayloadPtr()[i] << ' ';
+          cout << dec << setfill(' ') << ::setw(0);
+        }
+        cout << endl;
+        coutMutex.Signal();
+      }
+    }
+
+    totalEncodedPacketCount += encFrames.GetSize();
+
+    if (isVideo && m_calcSNR)
+      ((VideoThread *)this)->SaveSNRFrame(srcFrame);
+
+    //////////////////////////////////////////////
+    //
+    //  drop encoded frames if required
+    //
+    if (m_dropPercent > 0) {
+      RTP_DataFrameList::iterator it = encFrames.begin();
+      while (it != encFrames.end()) {
+        if (PRandom::Number(100) >= m_dropPercent) 
+          ++it;
+        else {
+          ++totalDroppedPacketCount;
+          if (isVideo)
+            encFrames.erase(it++);
+          else {
+            it->SetPayloadSize(0);
+            it->SetDiscontinuity(1);
+            ++it;
           }
-          if (outFrames.GetSize() > 1) 
-            cerr << "Rate controlled video decoder returned > 1 output frame for input frame " << totalInputFrameCount-1 << endl;
-          else if (outFrames.GetSize() == 1) {
+        }
+      }
+    }
+
+    //////////////////////////////////////////////
+    //
+    //  push audio/video frames through NULL decoder
+    //
+    if (m_decoder == NULL) {
+      totalEncodedByteCount += encodedPayloadSize;
+      for (PINDEX i = 0; i < encFrames.GetSize(); i++) {
+        bool state = Write(encFrames[i]);
+        if (oldOutState != state) {
+          oldOutState = state;
+          cerr << "Output write " << (state ? "restor" : "fail") << "ed at input frame " << totalInputFrameCount << endl;
+        }
+        totalOutputFrameCount++;
+      }
+    }
+
+    //////////////////////////////////////////////
+    //
+    //  push audio/video frames through explicit decoder
+    //
+    else {
+      totalEncodedByteCount += encodedPayloadSize;
+      RTP_DataFrameList outFrames;
+      for (PINDEX i = 0; i < encFrames.GetSize(); i++) {
+        if (encFrames[i].GetPayloadSize() > largestPacket)
+          largestPacket = encFrames[i].GetPayloadSize();
+        bool state = m_decoder->ConvertFrames(encFrames[i], outFrames);
+        if (oldDecState != state) {
+          oldDecState = state;
+          cerr << "Decoder " << (state ? "restor" : "fail") << "ed at input frame " << totalInputFrameCount-1 << endl;
+          continue;
+        }
+        if (outFrames.GetSize() > 1) 
+          cerr << "Non rate controlled video decoder returned != 1 output frame for input frame " << totalInputFrameCount-1 << endl;
+        else if (outFrames.GetSize() == 1) {
+          if (isVideo) {
             decoderSaysIntra = ((OpalVideoTranscoder *)m_decoder)->WasLastFrameIFrame();
-            bool state = Write(outFrames[0]);
-            if (oldOutState != state) {
-              oldOutState = state;
-              cerr << "Output write " << (state ? "restor" : "fail") << "ed at input frame " << totalInputFrameCount-1 << endl;
+            if (g_infoCount > 1) {
+              coutMutex.Wait();
+              cout << "Decoder generated payload of size " << outFrames[0].GetPayloadSize() << endl;
+              coutMutex.Signal();
             }
-            if (isVideo && m_calcSNR) 
-              ((VideoThread *)this)->CalcSNR(outFrames[0]);
-            totalOutputFrameCount++;
+          }
+          bool state = Write(outFrames[0]);
+          if (oldOutState != state) {
+            oldOutState = state;
+            cerr << "Output write " << (state ? "restor" : "fail") << "ed at input frame " << totalInputFrameCount << endl;
+          }
+          if (isVideo && m_calcSNR) 
+            ((VideoThread *)this)->CalcSNR(outFrames[0]);
+          totalOutputFrameCount++;
+        }
+      }
+
+      if (isVideo) {
+        bool detectedInter = false;
+        for (PINDEX i = 0; i < encFrames.GetSize(); i++) {
+          switch (videoFormat.GetFrameType(encFrames[i].GetPayloadPtr(), encFrames[i].GetPayloadSize(), videoDetector)) {
+            case OpalVideoFormat::e_IntraFrame :
+              detectorSaysIntra = true;
+              break;
+            case OpalVideoFormat::e_InterFrame :
+              detectedInter = true;
+              break;
+            default :
+              break;
+          }
+        }
+        if (!videoDetectorFailed && !detectorSaysIntra && !detectedInter) {
+          videoDetectorFailed = true;
+          coutMutex.Wait();
+          cout << "Video detector could not determine if I-Frame or P-Frame" << endl;
+          coutMutex.Signal();
+        }
+      }
+      else {
+        for (PINDEX i = 0; i < encFrames.GetSize(); i++) {
+          OpalAudioFormat::FrameType type = audioFormat.GetFrameType(encFrames[i].GetPayloadPtr(), encFrames[i].GetPayloadSize(), audioDetector);
+          if (type & OpalAudioFormat::e_SilenceFrame) {
+            coutMutex.Wait();
+            cout << "Audio frame silent." << endl;
+            coutMutex.Signal();
           }
         }
       }
@@ -1312,10 +1225,6 @@ void TranscoderThread::Main()
     OUTPUT_BPS(cout, maximumBitRate);
   cout << '\n';
 
-  if (m_rateController != NULL)
-    cout << "Rate controller skipped " << skippedFrames
-         << " frames (" << (skippedFrames * 100.0)/totalInputFrameCount << "%)\n";
-
   cout << "CPU used: " << cpuTimes << endl;
 
   coutMutex.Signal();
@@ -1327,6 +1236,7 @@ void TranscoderThread::Main()
 
 bool AudioThread::Read(RTP_DataFrame & frame)
 {
+  m_timestamp += m_frameTime;
   frame.SetPayloadSize(m_readSize);
   return m_recorder->Read(frame.GetPayloadPtr(), m_readSize);
 }
@@ -1349,8 +1259,15 @@ void AudioThread::Stop()
 
 bool VideoThread::Read(RTP_DataFrame & data)
 {
-  if (m_singleStep)
+  if (m_singleStep) {
     m_frameWait.Wait();
+    m_timestamp += m_frameTime;
+  }
+  else {
+    PTimeInterval currentGrabTime = PTimer::Tick();
+    m_timestamp += (int)((currentGrabTime - m_lastGrabTime).GetMilliSeconds()*OpalMediaFormat::VideoClockRate/1000);
+    m_lastGrabTime = currentGrabTime;
+  }
 
   data.SetPayloadSize(m_grabber->GetMaxFrameBytes()+sizeof(OpalVideoTranscoder::FrameHeader));
   data.SetMarker(TRUE);
@@ -1386,40 +1303,6 @@ void VideoThread::Stop()
     m_running = false;
     m_frameWait.Signal();
     WaitForTermination();
-  }
-}
-
-
-void VideoThread::CalcVideoPacketStats(const RTP_DataFrameList & packets, bool isIFrame)
-{
-  static unsigned maximumBitRate = 0;
-  static unsigned maximumAvgBitRate = 0;
-
-  for (PINDEX i = 0; i < packets.GetSize(); ++i) {
-    
-    //m_bitRateCalc.AddPacket(packets[i].GetPayloadSize());
-
-    if (m_rateController != NULL) {
-      OpalBitRateCalculator & m_bitRateCalc = m_rateController->m_bitRateCalc;
-
-      unsigned r = m_bitRateCalc.GetBitRate();
-      if (r > maximumBitRate)
-        maximumBitRate = r;
-
-      unsigned a = m_bitRateCalc.GetAverageBitRate();
-      if (a > maximumAvgBitRate)
-        maximumAvgBitRate = a;
-
-      PStringStream str;
-      str << "index=" << (packets[i].GetTimestamp() / 3600)
-          << ",ps=" << packets[i].GetPayloadSize()
-          << ",rate=" << r
-          << ",avg=" << a 
-          << ",maxrate=" << maximumBitRate
-          << ",maxavg=" << maximumAvgBitRate 
-          << ",f=" << (isIFrame?"I":"") << (packets[i].GetMarker()?"M":"");
-      ((VideoThread *)this)->WriteFrameStats(str);
-    }
   }
 }
 
