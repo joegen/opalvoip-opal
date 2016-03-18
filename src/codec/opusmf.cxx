@@ -165,7 +165,7 @@ struct OpalAudioFrameDetectorOpus : OpalAudioFormat::FrameDetector
 
 
     PINDEX frameCount;
-    static unsigned const MaxFrames = 6;
+    static PINDEX const MaxFrames = 6;
     const BYTE * framePtr[MaxFrames];
     switch (toc & 0x3) {
       case 0:
