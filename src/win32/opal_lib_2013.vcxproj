@@ -1265,7 +1265,6 @@
     <ClCompile Include="..\codec\iLBCmf.cxx" />
     <ClCompile Include="..\codec\opalpluginmgr.cxx" />
     <ClCompile Include="..\codec\opalwavfile.cxx" />
-    <ClCompile Include="..\codec\ratectl.cxx" />
     <ClCompile Include="..\codec\rfc2435.cxx" />
     <ClCompile Include="..\codec\rfc2833.cxx" />
     <ClCompile Include="..\codec\rfc4175.cxx" />

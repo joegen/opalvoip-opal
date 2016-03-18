@@ -41,7 +41,6 @@
 #include <opal/mediastrm.h>
 #include <opal/mediasession.h>
 #include <opal/mediacmd.h>
-#include <codec/ratectl.h>
 
 #include <list>
 
@@ -273,18 +272,12 @@ class OpalMediaPatch : public PSafeObject
         RTP_DataFrameList  m_intermediateFrames;
         RTP_DataFrameList  m_finalFrames;
 
-#if OPAL_VIDEO
-        void SetRateControlParameters(const OpalMediaFormat & mediaFormat);
-        bool RateControlExceeded(bool & forceIFrame);
-        OpalVideoRateController * m_rateController;
-
-#if OPAL_STATISTICS
+#if OPAL_VIDEO && OPAL_STATISTICS
         OpalVideoFormat     m_videoFormat;
         OpalVideoFormat::FrameDetectorPtr m_keyFrameDetector;
         typedef map<RTP_SyncSourceId, OpalVideoStatistics> VideoStatsMap;
         VideoStatsMap m_videoStatistics;
         PDECLARE_MUTEX(m_videoStatsMutex);
-#endif
 #endif
     };
     PList<Sink> m_sinks;
