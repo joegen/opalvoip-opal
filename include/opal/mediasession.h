@@ -109,6 +109,7 @@ struct OpalVideoStatistics
 
   unsigned      m_totalFrames;
   unsigned      m_keyFrames;
+  unsigned      m_droppedFrames;
   PTime         m_lastKeyFrameTime;
   unsigned      m_fullUpdateRequests;
   unsigned      m_pictureLossRequests;

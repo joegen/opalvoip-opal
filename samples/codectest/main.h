@@ -44,7 +44,6 @@ class TranscoderThread : public PThread
       , m_num(num)
       , m_timestamp(0)
       , m_markerHandling(NormalMarkers)
-      , m_rateController(NULL)
       , m_dropPercent(0)
     {
     }
@@ -94,7 +93,6 @@ class TranscoderThread : public PThread
     PDECLARE_NOTIFIER(OpalMediaCommand, TranscoderThread, OnTranscoderCommand);
     bool m_forceIFrame;
 
-    OpalVideoRateController * m_rateController;
     int  m_framesToTranscode;
     int  m_frameTime;
     bool m_calcSNR;
@@ -160,7 +158,6 @@ class VideoThread : public TranscoderThread
     virtual bool Write(const RTP_DataFrame & frame);
     virtual void Stop();
 
-    void CalcVideoPacketStats(const RTP_DataFrameList & frames, bool isIFrame);
     void WriteFrameStats(const PString & str);
 
     PVideoInputDevice  * m_grabber;
@@ -168,7 +165,7 @@ class VideoThread : public TranscoderThread
 
     bool                 m_singleStep;
     PSemaphore           m_frameWait;
-    unsigned             m_frameRate;
+    PTimeInterval        m_lastGrabTime;
 
     void SaveSNRFrame(const RTP_DataFrame & src);
     void CalcSNR(const RTP_DataFrame & src);
@@ -186,8 +183,6 @@ class VideoThread : public TranscoderThread
     double   m_sumCbSNR;
     double   m_sumCrSNR;
     PInt64   m_snrCount;
-
-    OpalBitRateCalculator m_bitRateCalc;
 };
 
 

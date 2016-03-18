@@ -128,6 +128,10 @@ OpalVideoTranscoder::OpalVideoTranscoder(const OpalMediaFormat & inputMediaForma
   , m_freezeTillIFrame(false)
   , m_frozenTillIFrame(false)
   , m_lastFrameWasIFrame(false)
+  , m_frameDropPeriod(0)
+  , m_frameDropRate(0)
+  , m_frameDropBits(0)
+  , m_lastTimestamp(UINT_MAX)
 {
   acceptEmptyPayload = true;
 }
@@ -152,6 +156,11 @@ bool OpalVideoTranscoder::UpdateMediaFormats(const OpalMediaFormat & input, cons
 
   SetFrameBytes(inputMediaFormat,  OpalVideoFormat::MaxRxFrameWidthOption(), OpalVideoFormat::MaxRxFrameHeightOption(), m_inDataSize);
   SetFrameBytes(outputMediaFormat, OpalVideoFormat::FrameWidthOption(),      OpalVideoFormat::FrameHeightOption(),      m_outDataSize);
+
+  int periodMilliseconds = outputMediaFormat.GetOptionInteger(OpalVideoFormat::RateControlPeriodOption());
+  m_frameDropPeriod = periodMilliseconds*outputMediaFormat.GetTimeUnits();
+  m_frameDropRate = periodMilliseconds > 0 && outputMediaFormat.GetOptionBoolean(OpalVideoFormat::FrameDropOption(), true)
+                  ? (unsigned)(outputMediaFormat.GetOptionInteger(OpalMediaFormat::TargetBitRateOption())*1000LL/periodMilliseconds) : 0;
 
   m_freezeTillIFrame = inputMediaFormat.GetOptionBoolean(OpalVideoFormat::FreezeUntilIntraFrameOption()) ||
                       outputMediaFormat.GetOptionBoolean(OpalVideoFormat::FreezeUntilIntraFrameOption());
@@ -196,6 +205,58 @@ PBoolean OpalVideoTranscoder::Convert(const RTP_DataFrame & /*input*/,
                                   RTP_DataFrame & /*output*/)
 {
   return false;
+}
+
+
+#if OPAL_STATISTICS
+void OpalVideoTranscoder::GetStatistics(OpalMediaStatistics & statistics) const
+{
+  OpalTranscoder::GetStatistics(statistics);
+  statistics.m_droppedFrames = m_framesDropped;
+}
+#endif
+
+    
+bool OpalVideoTranscoder::ShouldDropFrame(RTP_Timestamp ts)
+{
+  if (m_frameDropRate == 0 || m_frameDropPeriod == 0)
+    return false;
+
+  if (m_lastTimestamp == UINT_MAX) {
+    m_lastTimestamp = ts;
+    return false;
+  }
+
+  RTP_Timestamp delta = ts - m_lastTimestamp;
+  m_lastTimestamp = ts;
+
+PTRACE(4, "ts=" << ts << ' ' << delta);
+  if (delta == 0)
+    delta = outputMediaFormat.GetFrameTime();
+
+  /* Add in extra bits we can send for this frame, but don't keep adding
+      beyond a headroom level or prolonged under utilisation of bits builds
+      up a huge amount we can then over utilise. */
+  unsigned bitsForOneFrame = (unsigned)((uint64_t)m_frameDropRate*delta/m_frameDropPeriod);
+  if (m_frameDropBits > bitsForOneFrame)
+    m_frameDropBits -= bitsForOneFrame;
+  else
+    m_frameDropBits = 0;
+
+  if (m_frameDropBits < m_frameDropRate)
+    return false;
+
+  // Sent too many bits, drop frame
+  PTRACE(4, "Frame dropped, overrun=" << PString(PString::ScaleSI, m_frameDropBits, 3) << "bits.");
+  ++m_framesDropped;
+  return true;
+}
+
+
+void OpalVideoTranscoder::UpdateFrameDrop(const RTP_DataFrameList & encoded)
+{
+  for (RTP_DataFrameList::const_iterator it = encoded.begin(); it != encoded.end(); ++it)
+    m_frameDropBits += it->GetPayloadSize()*8;
 }
 
 

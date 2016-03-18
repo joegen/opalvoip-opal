@@ -1480,7 +1480,7 @@ class OpalVideoFormat : public OpalMediaFormat
     static const PString & TemporalSpatialTradeOffOption();
     static const PString & TxKeyFramePeriodOption();
     static const PString & RateControlPeriodOption(); // Period over which the rate controller maintains the target bit rate.
-    static const PString & RateControllerOption(); // String for controller algorithm. Empty is none.
+    static const PString & FrameDropOption(); // Boolean to allow frame dropping to maintain target bit rate, default true
     static const PString & FreezeUntilIntraFrameOption();
 
     /**The "role" of the content in the video stream based on this media

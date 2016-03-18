@@ -521,15 +521,8 @@ OpalMediaPatch::Sink::Sink(OpalMediaPatch & p, const OpalMediaStreamPtr & s)
   , m_stream(s)
   , m_primaryCodec(NULL)
   , m_secondaryCodec(NULL)
-#if OPAL_VIDEO
-  , m_rateController(NULL)
-#endif
 {
   PTRACE_CONTEXT_ID_FROM(p);
-
-#if OPAL_VIDEO
-  SetRateControlParameters(m_stream->GetMediaFormat());
-#endif
 
   PTRACE(3, "Created Sink for " << p);
 }
@@ -539,9 +532,6 @@ OpalMediaPatch::Sink::~Sink()
 {
   delete m_primaryCodec;
   delete m_secondaryCodec;
-#if OPAL_VIDEO
-  delete m_rateController;
-#endif
 }
 
 
@@ -946,10 +936,6 @@ bool OpalMediaPatch::Sink::UpdateMediaFormat(const OpalMediaFormat & mediaFormat
          m_secondaryCodec->UpdateMediaFormats(m_primaryCodec->GetOutputFormat(), m_primaryCodec->GetOutputFormat()) &&
          m_stream->InternalUpdateMediaFormat(m_secondaryCodec->GetOutputFormat());
 
-#if OPAL_VIDEO
-    SetRateControlParameters(m_stream->GetMediaFormat());
-#endif
-
   PTRACE(3, "Updated Sink: format=" << mediaFormat << " ok=" << ok);
   return ok;
 }
@@ -982,70 +968,12 @@ bool OpalMediaPatch::Sink::ExecuteCommand(const OpalMediaCommand & command, bool
 }
 
 
-#if OPAL_VIDEO
-void OpalMediaPatch::Sink::SetRateControlParameters(const OpalMediaFormat & mediaFormat)
-{
-  if ((mediaFormat.GetMediaType() == OpalMediaType::Video()) && mediaFormat != OpalYUV420P) {
-    m_rateController = NULL;
-    PString rc = mediaFormat.GetOptionString(OpalVideoFormat::RateControllerOption());
-    if (!rc.IsEmpty()) {
-      m_rateController = PFactory<OpalVideoRateController>::CreateInstance(rc);
-      if (m_rateController != NULL) {   
-        PTRACE(3, "Created " << rc << " rate controller");
-      }
-      else {
-        PTRACE(3, "Could not create " << rc << " rate controller");
-      }
-    }
-  }
-
-  if (m_rateController != NULL) 
-    m_rateController->Open(mediaFormat);
-}
-
-
-bool OpalMediaPatch::Sink::RateControlExceeded(bool & forceIFrame)
-{
-  if ((m_rateController == NULL) || !m_rateController->SkipFrame(forceIFrame)) 
-    return false;
-
-  PTRACE(4, "Rate controller skipping frame.");
-  return true;
-}
-
-#endif
-
-
 bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame, bool bypassing)
 {
   if (m_stream->IsPaused())
     return true;
 
 #if OPAL_VIDEO
-  if (m_rateController != NULL) {
-    bool forceIFrame = false;
-    bool s = RateControlExceeded(forceIFrame);
-    if (forceIFrame)
-      m_stream->ExecuteCommand(OpalVideoUpdatePicture());
-    if (s) {
-      if (m_secondaryCodec == NULL) {
-        bool wasIFrame = false;
-        if (m_rateController->Pop(m_intermediateFrames, wasIFrame, false)) {
-        PTRACE(3, "RC returned " << m_intermediateFrames.GetSize() << " packets");
-          for (RTP_DataFrameList::iterator interFrame = m_intermediateFrames.begin(); interFrame != m_intermediateFrames.end(); ++interFrame) {
-            m_patch.FilterFrame(*interFrame, m_primaryCodec->GetOutputFormat());
-            if (!m_stream->WritePacket(*interFrame))
-              return false;
-            sourceFrame.SetTimestamp(interFrame->GetTimestamp());
-            continue;
-          }
-          m_intermediateFrames.RemoveAll();
-        }
-      }
-      return true;
-    }
-  }
-
   OpalVideoFormat::FrameType frameType;
   if (m_videoFormat.IsValid())
     frameType = m_videoFormat.GetFrameType(sourceFrame.GetPayloadPtr(), sourceFrame.GetPayloadSize(), m_keyFrameDetector);
@@ -1097,27 +1025,6 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame, bool bypassin
     return false;
   }
 
-#if OPAL_VIDEO
-  if (m_secondaryCodec == NULL && m_rateController != NULL) {
-    PTRACE(4, "Pushing " << m_intermediateFrames.GetSize() << " packet into RC");
-    m_rateController->Push(m_intermediateFrames, ((OpalVideoTranscoder *)m_primaryCodec)->WasLastFrameIFrame());
-    bool wasIFrame = false;
-    if (m_rateController->Pop(m_intermediateFrames, wasIFrame, false)) {
-      PTRACE(4, "Pulled " << m_intermediateFrames.GetSize() << " frames from RC");
-      for (RTP_DataFrameList::iterator interFrame = m_intermediateFrames.begin(); interFrame != m_intermediateFrames.end(); ++interFrame) {
-        m_patch.FilterFrame(*interFrame, m_primaryCodec->GetOutputFormat());
-        if (!m_stream->WritePacket(*interFrame))
-          return false;
-        if (m_primaryCodec == NULL)
-          return true;
-        m_primaryCodec->CopyTimestamp(sourceFrame, *interFrame, false);
-        continue;
-      }
-      m_intermediateFrames.RemoveAll();
-    }
-  }
-  else 
-#endif // OPAL_VIDEO
   for (RTP_DataFrameList::iterator interFrame = m_intermediateFrames.begin(); interFrame != m_intermediateFrames.end(); ++interFrame) {
     m_patch.FilterFrame(*interFrame, m_primaryCodec->GetOutputFormat());
 
