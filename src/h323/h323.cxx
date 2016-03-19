@@ -2695,7 +2695,8 @@ PBoolean H323Connection::CreateIncomingControlChannel(PASN_Sequence & enclosingP
   }
 
   if (controlListener == NULL) {
-    controlListener = m_signallingChannel->GetLocalAddress().CreateListener(endpoint, OpalTransportAddress::HostOnly);
+    OpalTransportAddress addr(m_signallingChannel->GetInterface(), 0, m_signallingChannel->GetLocalAddress().GetProto());
+    controlListener = addr.CreateListener(endpoint, OpalTransportAddress::HostOnly);
     if (controlListener == NULL)
       return false;
 
