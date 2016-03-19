@@ -804,6 +804,8 @@ void H323Gatekeeper::Monitor()
       waitTime = irrTimer.GetRemaining();
 
     m_monitorTickle.Wait(waitTime);
+    if (!m_monitorRunning)
+      break;
 
     if (m_forceRegister || (m_currentTimeToLive > 0 && ttlTimer.HasExpired()))
       ttlTimer = InternalRegister();
