@@ -1286,7 +1286,7 @@ bool VideoThread::Read(RTP_DataFrame & data)
 
 bool VideoThread::Write(const RTP_DataFrame & data)
 {
-  if (m_display->GetColourFormat() != "YUV420P")
+  if (m_display->GetColourFormat() != PVideoFrameInfo::YUV420P())
     return m_display->SetFrameData(0, 0, 0, 0, data.GetPayloadPtr(), data.GetMarker());
 
   const OpalVideoTranscoder::FrameHeader * frame = (const OpalVideoTranscoder::FrameHeader *)data.GetPayloadPtr();
