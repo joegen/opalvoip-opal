@@ -1278,9 +1278,9 @@ bool VideoThread::Read(RTP_DataFrame & data)
   frame->x = frame->y = 0;
   frame->width = width;
   frame->height = height;
-  data.SetPayloadSize(OPAL_VIDEO_FRAME_DATA_SIZE(frame));
+  data.SetPayloadSize(OpalVideoFrameDataLen(frame));
 
-  return m_grabber->GetFrameData(OPAL_VIDEO_FRAME_DATA_PTR(frame));
+  return m_grabber->GetFrameData(OpalVideoFrameDataPtr(frame));
 }
 
 
@@ -1292,8 +1292,8 @@ bool VideoThread::Write(const RTP_DataFrame & data)
   const OpalVideoTranscoder::FrameHeader * frame = (const OpalVideoTranscoder::FrameHeader *)data.GetPayloadPtr();
   m_display->SetFrameSize(frame->width, frame->height);
   return m_display->SetFrameData(frame->x, frame->y,
-                               frame->width, frame->height,
-                               OPAL_VIDEO_FRAME_DATA_PTR(frame), data.GetMarker());
+                                 frame->width, frame->height,
+                                 OpalVideoFrameDataPtr(frame), data.GetMarker());
 }
 
 

@@ -690,7 +690,7 @@ bool OpalAVIRecordManager::OnMixedVideo(const RTP_DataFrame & frame)
   }
 
   PINDEX bytesReturned = PVideoFrameInfo::CalculateFrameBytes(m_options.m_videoWidth, m_options.m_videoHeight);
-  if (m_videoConverter != NULL && !m_videoConverter->Convert(OPAL_VIDEO_FRAME_DATA_PTR(header), m_videoBuffer.GetPointer(), &bytesReturned)) {
+  if (m_videoConverter != NULL && !m_videoConverter->Convert(OpalVideoFrameDataPtr(header), m_videoBuffer.GetPointer(), &bytesReturned)) {
     PTRACE(2, "Conversion of YUV420P to RGB24 failed!");
     return false;
   }
