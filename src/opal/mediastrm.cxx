@@ -1339,7 +1339,7 @@ PBoolean OpalVideoMediaStream::ReadData(BYTE * data, PINDEX size, PINDEX & lengt
 
   bool keyFrame = m_needKeyFrame;
   PINDEX bytesReturned = size - sizeof(OpalVideoTranscoder::FrameHeader);
-  BYTE * frameData = OPAL_VIDEO_FRAME_DATA_PTR(frame);
+  BYTE * frameData = OpalVideoFrameDataPtr(frame);
   if (!m_inputDevice->GetFrameData(frameData, &bytesReturned, keyFrame)) {
     PTRACE(2, "Failed to grab frame from " << m_inputDevice->GetDeviceName());
     return false;
@@ -1406,7 +1406,7 @@ PBoolean OpalVideoMediaStream::WriteData(const BYTE * data, PINDEX length, PINDE
     return false;
   }
 
-  ApplyWatermark(frame->width, frame->height, OPAL_VIDEO_FRAME_DATA_PTR(frame));
+  ApplyWatermark(frame->width, frame->height, OpalVideoFrameDataPtr(frame));
 
   if (!m_outputDevice->Start()) {
     PTRACE(1, "Could not start video display device");
@@ -1416,7 +1416,7 @@ PBoolean OpalVideoMediaStream::WriteData(const BYTE * data, PINDEX length, PINDE
   bool keyFrameNeeded = false;
   if (!m_outputDevice->SetFrameData(frame->x, frame->y,
                                     frame->width, frame->height,
-                                    OPAL_VIDEO_FRAME_DATA_PTR(frame),
+                                    OpalVideoFrameDataPtr(frame),
                                     marker, keyFrameNeeded))
     return false;
 

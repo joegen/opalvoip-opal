@@ -428,6 +428,17 @@ typedef unsigned (* PluginCodec_GetAPIVersionFunction)();
 #define PLUGINCODEC_SQCIF_WIDTH   128
 #define PLUGINCODEC_SQCIF_HEIGHT   96
 
+#ifdef __cplusplus
+};
+
+inline size_t OpalDataSizeYUV420P(unsigned width, unsigned height)
+{
+  return ((width+1)&~1) * ((height+1)&~1) * 3 / 2;
+}
+
+extern "C" {
+#endif
+
 
 #ifndef __TIMESTAMP__
 #define __TIMESTAMP__ "0"
@@ -914,11 +925,24 @@ struct PluginCodec_Video_FrameHeader {
 #ifdef __cplusplus
 };
 
-inline size_t OPAL_VIDEO_FRAME_DATA_SIZE(const PluginCodec_Video_FrameHeader * base)
-{ return ((base->width-base->x+1)&~1) * ((base->height-base->y+1)&~1) + sizeof(PluginCodec_Video_FrameHeader); }
+inline size_t OpalVideoFrameSizeForResolution(unsigned width, unsigned height)
+{
+  return sizeof(PluginCodec_Video_FrameHeader) + OpalDataSizeYUV420P(width, height);
+}
 
-inline unsigned char * OPAL_VIDEO_FRAME_DATA_PTR(const PluginCodec_Video_FrameHeader * base)
-{ return (((unsigned char *)base) + sizeof(PluginCodec_Video_FrameHeader)); }
+inline size_t OpalVideoFrameDataLen(const PluginCodec_Video_FrameHeader * base)
+{
+  return OpalVideoFrameSizeForResolution(base->width - base->x, base->height - base->y);
+}
+
+inline unsigned char * OpalVideoFrameDataPtr(const PluginCodec_Video_FrameHeader * base)
+{
+  return (((unsigned char *)base) + sizeof(PluginCodec_Video_FrameHeader));
+}
+
+// For backward compatibility
+inline unsigned char * OPAL_VIDEO_FRAME_DATA_PTR1(const PluginCodec_Video_FrameHeader * base)
+{ return OpalVideoFrameDataPtr(base); }
 
 extern "C" {
 #endif
