@@ -1278,7 +1278,7 @@ bool VideoThread::Read(RTP_DataFrame & data)
   frame->x = frame->y = 0;
   frame->width = width;
   frame->height = height;
-  data.SetPayloadSize(sizeof(OpalVideoTranscoder::FrameHeader) + width*height*3/2);
+  data.SetPayloadSize(OPAL_VIDEO_FRAME_DATA_SIZE(frame));
 
   return m_grabber->GetFrameData(OPAL_VIDEO_FRAME_DATA_PTR(frame));
 }

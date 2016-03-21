@@ -577,7 +577,7 @@ bool OpalVideoMixer::SetFrameSize(unsigned width, unsigned height)
   m_width = width;
   m_height = height;
   PColourConverter::FillYUV420P(0, 0, m_width, m_height, m_width, m_height,
-                                m_frameStore.GetPointer(m_width*m_height*3/2),
+                                m_frameStore.GetPointer(PVideoFrameInfo::CalculateFrameBytes(m_width, m_height)),
                                 m_bgFillRed, m_bgFillGreen, m_bgFillBlue);
 
   m_mutex.Signal();
@@ -1982,7 +1982,7 @@ bool OpalVideoStreamMixer::OnMixed(RTP_DataFrame * & output)
             PTRACE(5, "Scaling video frame: " << header->width << 'x' << header->height << " to " << width << 'x' << height);
             rawRTP = &cachedFrameStore[frameStoreKey];
             rawRTP->CopyHeader(*output);
-            rawRTP->SetPayloadSize(width*height*3/2+sizeof(OpalVideoTranscoder::FrameHeader));
+            rawRTP->SetPayloadSize(PVideoFrameInfo::CalculateFrameBytes(width, height)+sizeof(OpalVideoTranscoder::FrameHeader));
             OpalVideoTranscoder::FrameHeader * resized = (OpalVideoTranscoder::FrameHeader *)rawRTP->GetPayloadPtr();
             resized->width = width;
             resized->height = height;

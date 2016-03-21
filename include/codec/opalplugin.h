@@ -914,8 +914,8 @@ struct PluginCodec_Video_FrameHeader {
 #ifdef __cplusplus
 };
 
-inline unsigned char * OPAL_VIDEO_FRAME_DATA_PTR(struct PluginCodec_Video_FrameHeader * base)
-{ return (((unsigned char *)base) + sizeof(PluginCodec_Video_FrameHeader)); }
+inline size_t OPAL_VIDEO_FRAME_DATA_SIZE(const PluginCodec_Video_FrameHeader * base)
+{ return ((base->width-base->x+1)&~1) * ((base->height-base->y+1)&~1) + sizeof(PluginCodec_Video_FrameHeader); }
 
 inline unsigned char * OPAL_VIDEO_FRAME_DATA_PTR(const PluginCodec_Video_FrameHeader * base)
 { return (((unsigned char *)base) + sizeof(PluginCodec_Video_FrameHeader)); }
