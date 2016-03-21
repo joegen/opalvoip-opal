@@ -1192,7 +1192,7 @@ bool OpalPluginVideoTranscoder::DecodeFrame(const RTP_DataFrame & src, RTP_DataF
     return false;
   }
 
-  if (payloadSize < sizeof(OpalVideoTranscoder::FrameHeader)+videoHeader->width*videoHeader->height*3/2) {
+  if (payloadSize < OPAL_VIDEO_FRAME_DATA_SIZE(videoHeader)) {
     PTRACE(1, "OpalPlugin\tInvalid video frame size, error in plug in\n" << *m_bufferRTP);
     return false;
   }
