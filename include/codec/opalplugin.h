@@ -941,7 +941,7 @@ inline unsigned char * OpalVideoFrameDataPtr(const PluginCodec_Video_FrameHeader
 }
 
 // For backward compatibility
-inline unsigned char * OPAL_VIDEO_FRAME_DATA_PTR1(const PluginCodec_Video_FrameHeader * base)
+inline unsigned char * OPAL_VIDEO_FRAME_DATA_PTR(const PluginCodec_Video_FrameHeader * base)
 { return OpalVideoFrameDataPtr(base); }
 
 extern "C" {
