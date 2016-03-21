@@ -600,7 +600,7 @@ bool OpalVideoMixer::MixStreams(RTP_DataFrame & frame)
   PluginCodec_Video_FrameHeader * video = (PluginCodec_Video_FrameHeader *)frame.GetPayloadPtr();
   video->width = m_width;
   video->height = m_height;
-  memcpy(OPAL_VIDEO_FRAME_DATA_PTR(video), m_frameStore, m_frameStore.GetSize());
+  memcpy(OpalVideoFrameDataPtr(video), m_frameStore, m_frameStore.GetSize());
 
   return true;
 }
@@ -758,7 +758,7 @@ void OpalVideoMixer::VideoStream::InsertVideoFrame(unsigned x, unsigned y, unsig
          << " -> " << x << ',' << y << '/' << w << 'x' << h);
 
   PColourConverter::CopyYUV420P(0, 0, header->width, header->height,
-                                header->width, header->height, OPAL_VIDEO_FRAME_DATA_PTR(header),
+                                header->width, header->height, OpalVideoFrameDataPtr(header),
                                 x, y, w, h,
                                 m_mixer.m_width, m_mixer.m_height, m_mixer.m_frameStore.GetPointer(),
                                 PVideoFrameInfo::eScale);
@@ -1987,9 +1987,9 @@ bool OpalVideoStreamMixer::OnMixed(RTP_DataFrame * & output)
             resized->width = width;
             resized->height = height;
             PColourConverter::CopyYUV420P(0, 0, header->width, header->height,
-                                          header->width, header->height, OPAL_VIDEO_FRAME_DATA_PTR(header),
+                                          header->width, header->height, OpalVideoFrameDataPtr(header),
                                           0, 0, width, height,
-                                          width, height, OPAL_VIDEO_FRAME_DATA_PTR(resized),
+                                          width, height, OpalVideoFrameDataPtr(resized),
                                           PVideoFrameInfo::eScale);
           }
         }
