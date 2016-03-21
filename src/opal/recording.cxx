@@ -611,7 +611,7 @@ bool OpalAVIRecordManager::OpenVideo(const PString & strmId, const OpalMediaForm
 
   PTRACE(4, "Creating AVI stream for video format '" << m_options.m_videoFormat << '\'');
 
-  PVideoFrameInfo yuv(m_options.m_videoWidth, m_options.m_videoHeight, "YUV420P");
+  PVideoFrameInfo yuv(m_options.m_videoWidth, m_options.m_videoHeight, PVideoFrameInfo::YUV420P());
   PVideoFrameInfo rgb(m_options.m_videoWidth, m_options.m_videoHeight, "BGR24");
 
   AVISTREAMINFO info;
