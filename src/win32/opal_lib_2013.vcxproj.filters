@@ -261,9 +261,6 @@
     <ClCompile Include="..\codec\opalwavfile.cxx">
       <Filter>Source Files\Codec</Filter>
     </ClCompile>
-    <ClCompile Include="..\codec\ratectl.cxx">
-      <Filter>Source Files\Codec</Filter>
-    </ClCompile>
     <ClCompile Include="..\codec\rfc2435.cxx">
       <Filter>Source Files\Codec</Filter>
     </ClCompile>

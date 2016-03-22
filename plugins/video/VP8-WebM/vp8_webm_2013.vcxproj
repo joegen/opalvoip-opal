@@ -244,6 +244,11 @@ xcopy /y/f "$(TargetDir)$(TargetName).*d*" "C:\Program Files (x86)\PTLib Plug In
   <ItemGroup>
     <ClCompile Include="vp8_webm.cxx" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\samples\codectest\codectest_2013.vcxproj">
+      <Project>{7bcc8831-22e0-4d87-8e8b-f6da0aefbed0}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

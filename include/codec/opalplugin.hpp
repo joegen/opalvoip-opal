@@ -1049,7 +1049,7 @@ class PluginVideoCodec : public PluginCodec<NAME>
 
     virtual size_t GetRawFrameSize(unsigned width, unsigned height)
     {
-      return width*height*3/2; // YUV420P
+      return OpalDataSizeYUV420P(width, height); // YUV420P
     }
 
 
@@ -1216,6 +1216,8 @@ class PluginVideoDecoder : public PluginVideoCodec<NAME>
       if (!CanOutputImage(width, height, rtp, flags))
         return 0;
 
+      width = (width+1)&~1;
+      height = (height+1)&~1;
       size_t ySize = width*height;
       size_t uvSize = ySize/4;
       if (planes[1] == planes[0]+ySize && planes[2] == planes[1]+uvSize)

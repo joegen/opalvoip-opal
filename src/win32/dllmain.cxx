@@ -34,7 +34,6 @@
 #include <h323/h235auth.h>
 #include <opal/mediasession.h>
 #include <codec/opalwavfile.h>
-#include <codec/ratectl.h>
 #include <codec/opalpluginmgr.h>
 #include <lids/lidpluginmgr.h>
 #include <opal/recording.h>

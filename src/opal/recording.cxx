@@ -611,7 +611,7 @@ bool OpalAVIRecordManager::OpenVideo(const PString & strmId, const OpalMediaForm
 
   PTRACE(4, "Creating AVI stream for video format '" << m_options.m_videoFormat << '\'');
 
-  PVideoFrameInfo yuv(m_options.m_videoWidth, m_options.m_videoHeight, "YUV420P");
+  PVideoFrameInfo yuv(m_options.m_videoWidth, m_options.m_videoHeight, PVideoFrameInfo::YUV420P());
   PVideoFrameInfo rgb(m_options.m_videoWidth, m_options.m_videoHeight, "BGR24");
 
   AVISTREAMINFO info;
@@ -689,8 +689,8 @@ bool OpalAVIRecordManager::OnMixedVideo(const RTP_DataFrame & frame)
     return false;
   }
 
-  PINDEX bytesReturned = m_options.m_videoWidth*m_options.m_videoHeight*3/2;
-  if (m_videoConverter != NULL && !m_videoConverter->Convert(OPAL_VIDEO_FRAME_DATA_PTR(header), m_videoBuffer.GetPointer(), &bytesReturned)) {
+  PINDEX bytesReturned = PVideoFrameInfo::CalculateFrameBytes(m_options.m_videoWidth, m_options.m_videoHeight);
+  if (m_videoConverter != NULL && !m_videoConverter->Convert(OpalVideoFrameDataPtr(header), m_videoBuffer.GetPointer(), &bytesReturned)) {
     PTRACE(2, "Conversion of YUV420P to RGB24 failed!");
     return false;
   }

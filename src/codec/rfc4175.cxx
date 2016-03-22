@@ -533,7 +533,7 @@ bool Opal_RFC4175YCbCr420_to_YUV420P::DecodeFrames(RTP_DataFrameList & output)
   hdr->width  = m_frameWidth;
   hdr->height = m_frameHeight;
 
-  BYTE * payload    = OPAL_VIDEO_FRAME_DATA_PTR(hdr);
+  BYTE * payload    = OpalVideoFrameDataPtr(hdr);
   BYTE * dstYPlane  = payload;
   BYTE * dstCbPlane = dstYPlane  + (m_frameWidth * m_frameHeight);
   BYTE * dstCrPlane = dstCbPlane + (m_frameWidth * m_frameHeight / 4);
@@ -646,7 +646,7 @@ bool Opal_RFC4175RGB_to_RGB24::DecodeFrames(RTP_DataFrameList & output)
   hdr->width  = m_frameWidth;
   hdr->height = m_frameHeight;
 
-  BYTE * rgbDest = OPAL_VIDEO_FRAME_DATA_PTR(hdr);
+  BYTE * rgbDest = OpalVideoFrameDataPtr(hdr);
 
   // pass through all of the input frames, and extract information
   PINDEX f = 0;

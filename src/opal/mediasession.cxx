@@ -101,6 +101,7 @@ OpalMediaStatistics::UpdateInfo::UpdateInfo()
 OpalVideoStatistics::OpalVideoStatistics()
   : m_totalFrames(0)
   , m_keyFrames(0)
+  , m_droppedFrames(0)
   , m_lastKeyFrameTime(0)
   , m_fullUpdateRequests(0)
   , m_pictureLossRequests(0)
@@ -388,7 +389,8 @@ void OpalMediaStatistics::PrintOn(ostream & strm) const
     strm << setw(indent) <<    "Total video frames" << " = " << m_totalFrames << '\n'
          << setw(indent) <<    "Average Frame rate" << " = " << GetAverageFrameRate("fps", 1) << '\n'
          << setw(indent) <<    "Current Frame rate" << " = " << GetCurrentFrameRate("fps", 1) << '\n'
-         << setw(indent) <<      "Total key frames" << " = " << m_keyFrames << '\n';
+         << setw(indent) <<      "Total key frames" << " = " << m_keyFrames << '\n'
+         << setw(indent) <<        "Dropped frames" << " = " << m_droppedFrames << '\n';
     if (m_videoQuality >= 0)
       strm << setw(indent) <<  "Video quality (QP)" << " = " << m_videoQuality << '\n';
   }

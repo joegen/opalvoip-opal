@@ -932,6 +932,9 @@ bool OpalPluginVideoTranscoder::EncodeFrames(const RTP_DataFrame & src, RTP_Data
   if (src.GetPayloadSize() == 0)
     return true;
 
+  if (ShouldDropFrame(src.GetTimestamp()))
+    return true;
+
   // get the size of the output buffer
   int outputDataSize = std::max(GetOptimalDataFrameSize(false),
                                 (PINDEX)getOutputDataSizeControl.Call((void *)NULL, (unsigned *)NULL, context));
@@ -1021,6 +1024,7 @@ bool OpalPluginVideoTranscoder::EncodeFrames(const RTP_DataFrame & src, RTP_Data
   if (m_lastFrameWasIFrame)
     m_encodingIntraFrameControl.IntraFrameDetected();
 
+  UpdateFrameDrop(dstList);
   return true;
 }
 
@@ -1188,7 +1192,7 @@ bool OpalPluginVideoTranscoder::DecodeFrame(const RTP_DataFrame & src, RTP_DataF
     return false;
   }
 
-  if (payloadSize < sizeof(OpalVideoTranscoder::FrameHeader)+videoHeader->width*videoHeader->height*3/2) {
+  if (payloadSize < OpalVideoFrameDataLen(videoHeader)) {
     PTRACE(1, "OpalPlugin\tInvalid video frame size, error in plug in\n" << *m_bufferRTP);
     return false;
   }
