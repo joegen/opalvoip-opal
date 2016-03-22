@@ -611,17 +611,17 @@ void PlayRTP::Play(OpalPCAPFile & pcap)
           if (extensionData != NULL && extensionId == m_rotateExtensionId) {
             switch (*extensionData >> 4) {
               case 0 : // Portrait left
-                PColourConverter::RotateYUV420P(90, frame->width, frame->height, OPAL_VIDEO_FRAME_DATA_PTR(frame));
+                PColourConverter::RotateYUV420P(90, frame->width, frame->height, OpalVideoFrameDataPtr(frame));
                 std::swap(frame->width, frame->height);
                 break;
               case 1 : // Landscape up
                 break;
               case 2 : // Portrait right
-                PColourConverter::RotateYUV420P(-90, frame->width, frame->height, OPAL_VIDEO_FRAME_DATA_PTR(frame));
+                PColourConverter::RotateYUV420P(-90, frame->width, frame->height, OpalVideoFrameDataPtr(frame));
                 std::swap(frame->width, frame->height);
                 break;
               case 3 : // Lnadscape down
-                PColourConverter::RotateYUV420P(180, frame->width, frame->height, OPAL_VIDEO_FRAME_DATA_PTR(frame));
+                PColourConverter::RotateYUV420P(180, frame->width, frame->height, OpalVideoFrameDataPtr(frame));
                 break;
             }
           }
@@ -631,8 +631,8 @@ void PlayRTP::Play(OpalPCAPFile & pcap)
             m_display->SetFrameSize(frame->width, frame->height);
             m_display->SetFrameData(frame->x, frame->y,
                                     frame->width, frame->height,
-                                    OPAL_VIDEO_FRAME_DATA_PTR(frame), data.GetMarker());
-            m_yuvFile.WriteFrame(OPAL_VIDEO_FRAME_DATA_PTR(frame));
+                                    OpalVideoFrameDataPtr(frame), data.GetMarker());
+            m_yuvFile.WriteFrame(OpalVideoFrameDataPtr(frame));
           }
           else {
             int extendedHeight = frame->height + m_extraHeight;
@@ -643,35 +643,35 @@ void PlayRTP::Play(OpalPCAPFile & pcap)
             extendedFrame->height = extendedHeight;
 
             PColourConverter::FillYUV420P(0,  0,                extendedFrame->width, extendedFrame->height, 
-                                          extendedFrame->width, extendedFrame->height,  OPAL_VIDEO_FRAME_DATA_PTR(extendedFrame), 
+                                          extendedFrame->width, extendedFrame->height,  OpalVideoFrameDataPtr(extendedFrame), 
                                           0, 0, 0);
 
             char text[60];
             sprintf(text, "Seq:%08u  Ts:%08u",
                            rtp.GetSequenceNumber(),
                            rtp.GetTimestamp());
-            DrawText(4, 4, extendedFrame->width, extendedFrame->height, OPAL_VIDEO_FRAME_DATA_PTR(extendedFrame), text);
+            DrawText(4, 4, extendedFrame->width, extendedFrame->height, OpalVideoFrameDataPtr(extendedFrame), text);
 
             sprintf(text, "TC:%06u  %c %c %c", 
                            m_videoFrames, 
                            m_vfu ? 'V' : ' ', 
                            video->WasLastFrameIFrame() ? 'I' : ' ', 
                            m_videoError ? 'E' : ' ');
-            DrawText(4, 20, extendedFrame->width, extendedFrame->height, OPAL_VIDEO_FRAME_DATA_PTR(extendedFrame), text);
+            DrawText(4, 20, extendedFrame->width, extendedFrame->height, OpalVideoFrameDataPtr(extendedFrame), text);
 
             if (m_extraText.GetLength() > 0) 
-              DrawText(4, 37, extendedFrame->width, extendedFrame->height, OPAL_VIDEO_FRAME_DATA_PTR(extendedFrame), m_extraText);
+              DrawText(4, 37, extendedFrame->width, extendedFrame->height, OpalVideoFrameDataPtr(extendedFrame), m_extraText);
 
-            PColourConverter::CopyYUV420P(0, 0,           frame->width,  frame->height, frame->width,         frame->height,         OPAL_VIDEO_FRAME_DATA_PTR(frame),
-                                          0, m_extraHeight, frame->width,  frame->height, extendedFrame->width, extendedFrame->height, OPAL_VIDEO_FRAME_DATA_PTR(extendedFrame), 
+            PColourConverter::CopyYUV420P(0, 0,           frame->width,  frame->height, frame->width,         frame->height,         OpalVideoFrameDataPtr(frame),
+                                          0, m_extraHeight, frame->width,  frame->height, extendedFrame->width, extendedFrame->height, OpalVideoFrameDataPtr(extendedFrame), 
                                           PVideoFrameInfo::eCropTopLeft);
 
             m_display->SetFrameSize(extendedFrame->width, extendedFrame->height);
             m_display->SetFrameData(extendedFrame->x,     extendedFrame->y,
                                     extendedFrame->width, extendedFrame->height,
-                                    OPAL_VIDEO_FRAME_DATA_PTR(extendedFrame), data.GetMarker());
+                                    OpalVideoFrameDataPtr(extendedFrame), data.GetMarker());
 
-            m_yuvFile.WriteFrame(OPAL_VIDEO_FRAME_DATA_PTR(extendedFrame));
+            m_yuvFile.WriteFrame(OpalVideoFrameDataPtr(extendedFrame));
           }
 
           if (m_info > 1)
