@@ -739,7 +739,7 @@ bool MyLocalConnection::OnReadMediaFrame(const OpalMediaStream & mediaStream, RT
       OpalVideoTranscoder::FrameHeader * hdr = (OpalVideoTranscoder::FrameHeader *)frame.GetPayloadPtr();
       hdr->x = hdr->y = 0;
       videoFile->GetFrameSize(hdr->width, hdr->height);
-      videoFile->ReadFrame(OPAL_VIDEO_FRAME_DATA_PTR(hdr));
+      videoFile->ReadFrame(OpalVideoFrameDataPtr(hdr));
       return true;
     }
 
