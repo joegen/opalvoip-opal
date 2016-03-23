@@ -785,15 +785,18 @@ class H264_Encoder : public PluginVideoEncoder<MY_CODEC>
         PluginCodec_RTP from(fromPtr, fromLen);
         PluginCodec_Video_FrameHeader * header = from.GetVideoHeader();
 
+        unsigned planeWidth = (header->width+1)&~1;
+        unsigned planeHeight = (header->height+1)&~1;
+
         SSourcePicture picture;
         picture.iColorFormat = videoFormatI420;	// color space type
         picture.iPicWidth = m_width = header->width;
         picture.iPicHeight = m_height = header->height;
-        picture.iStride[0] = picture.iPicWidth;
-        picture.iStride[1] = picture.iStride[2] = picture.iPicWidth / 2;
+        picture.iStride[0] = planeWidth;
+        picture.iStride[1] = picture.iStride[2] = planeWidth/2;
         picture.pData[0] = from.GetVideoFrameData();
-        picture.pData[1] = picture.pData[0] + picture.iPicWidth*picture.iPicHeight;
-        picture.pData[2] = picture.pData[1] + picture.iPicWidth*picture.iPicHeight / 4;
+        picture.pData[1] = picture.pData[0] + planeWidth*planeHeight;
+        picture.pData[2] = picture.pData[1] + planeWidth*planeHeight/4;
         picture.uiTimeStamp = 0;
 
         if (forceIntraFrame)
