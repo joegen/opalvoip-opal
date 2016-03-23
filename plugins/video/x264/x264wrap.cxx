@@ -180,14 +180,14 @@ bool H264Encoder::SetProfileLevel(unsigned profile, unsigned level, unsigned /*c
 
 bool H264Encoder::SetFrameWidth(unsigned width)
 {
-  m_context.i_width = width;
+  m_context.i_width = width&~1;
   return true;
 }
 
 
 bool H264Encoder::SetFrameHeight(unsigned height)
 {
-  m_context.i_height = height;
+  m_context.i_height = height&~1;
   return true;
 }
 
@@ -314,18 +314,24 @@ bool H264Encoder::EncodeFrames(const unsigned char * src, unsigned & srcLen,
       return 0;
     }
 
-    if (payloadSize < sizeof(PluginCodec_Video_FrameHeader)+header->width*header->height*3/2) {
+    unsigned planeWidth = (header->width+1)&~1;
+    unsigned planeHeight = (header->height+1)&~1;
+
+    if (payloadSize < sizeof(PluginCodec_Video_FrameHeader)+planeWidth*planeHeight*3/2) {
       PTRACE(1, HelperTraceName, "Video grab far too small, Close down video transmission thread");
       return 0;
     }
 
+    unsigned encodeWidth = header->width&~1;
+    unsigned encodeHeight = header->height&~1;
+
     // if the incoming data has changed size, tell the encoder
-    if ((unsigned)m_context.i_width != header->width || (unsigned)m_context.i_height != header->height) {
+    if ((unsigned)m_context.i_width != encodeWidth || (unsigned)m_context.i_height != encodeHeight) {
       PTRACE(4, HelperTraceName, "Detected resolution change " << m_context.i_width << 'x' << m_context.i_height
-                                                    << " to " << header->width << 'x' << header->height);
+             << " to " << encodeWidth << 'x' << encodeHeight << " (" << header->width << 'x' << header->width << ')');
       x264_encoder_close(m_codec);
-      m_context.i_width = header->width;
-      m_context.i_height = header->height;
+      m_context.i_width = encodeWidth;
+      m_context.i_height = encodeHeight;
       m_codec = x264_encoder_open(&m_context);
       if (m_codec == NULL) {
         PTRACE(1, HelperTraceName, "Couldn't re-open encoder");
@@ -339,11 +345,11 @@ bool H264Encoder::EncodeFrames(const unsigned char * src, unsigned & srcLen,
     x264_picture_init(&inputPicture);
     inputPicture.i_qpplus1 = 0;
     inputPicture.img.i_csp = X264_CSP_I420;
-    inputPicture.img.i_stride[0] = header->width;
-    inputPicture.img.i_stride[1] = inputPicture.img.i_stride[2] = header->width/2;
+    inputPicture.img.i_stride[0] = planeWidth;
+    inputPicture.img.i_stride[1] = inputPicture.img.i_stride[2] = planeWidth/2;
     inputPicture.img.plane[0] = (uint8_t *)(((unsigned char *)header) + sizeof(PluginCodec_Video_FrameHeader));
-    inputPicture.img.plane[1] = inputPicture.img.plane[0] + header->width*header->height;
-    inputPicture.img.plane[2] = inputPicture.img.plane[1] + header->width*header->height/4;
+    inputPicture.img.plane[1] = inputPicture.img.plane[0] + planeWidth*planeHeight;
+    inputPicture.img.plane[2] = inputPicture.img.plane[1] + planeWidth*planeHeight/4;
     inputPicture.i_type = flags != 0 ? X264_TYPE_IDR : X264_TYPE_AUTO;
 
     x264_nal_t *NALUs = NULL;
