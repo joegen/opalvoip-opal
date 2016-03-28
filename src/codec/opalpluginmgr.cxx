@@ -1741,6 +1741,9 @@ void OpalPluginCodecManager::RegisterCodecPlugins(unsigned int count, const Plug
   GetOpalYUV420P();
 #endif
 
+  // Make sure "telephone-event" payload type allocated
+  GetOpalRFC2833();
+
   for (unsigned  i = 0; i < count; i++,codecDefn++) {
 #if PTRACING
     OpalPluginControl setLogFn(codecDefn, PLUGINCODEC_CONTROL_SET_LOG_FUNCTION);
