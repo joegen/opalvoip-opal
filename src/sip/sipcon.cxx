@@ -333,6 +333,7 @@ void SIPConnection::OnReleased()
     PStringToString info;
     info.SetAt("result", "blind");
     info.SetAt("party", "B");
+    info.SetAt("Refer-To", m_sentReferTo);
     OnTransferNotify(info, this);
   }
 
@@ -496,10 +497,10 @@ bool SIPConnection::TransferConnection(const PString & remoteParty)
 
   // Check for valid RFC2396 scheme
   if (!PURL::ExtractScheme(remoteParty).IsEmpty()) {
-    SIPURL referTo(remoteParty);
-    referTo.Sanitise(SIPURL::RedirectURI);
-    PTRACE(3, "Blind transfer of " << *this << " to " << referTo << ", referSubMode=" << referSubMode);
-    SIPRefer * referTransaction = new SIPRefer(*this, referTo, m_dialog.GetLocalURI(), referSubMode);
+    m_sentReferTo = remoteParty;
+    m_sentReferTo.Sanitise(SIPURL::RedirectURI);
+    PTRACE(3, "Blind transfer of " << *this << " to " << m_sentReferTo << ", referSubMode=" << referSubMode);
+    SIPRefer * referTransaction = new SIPRefer(*this, m_sentReferTo, m_dialog.GetLocalURI(), referSubMode);
     m_referOfRemoteInProgress = referTransaction->Start();
     return m_referOfRemoteInProgress;
   }
@@ -530,18 +531,18 @@ bool SIPConnection::TransferConnection(const PString & remoteParty)
          what they told us to use. They can't do the REFER without a username
          part, but they never gave us a username to give them. Give me a break!
        */
-      SIPURL referTo = sip->GetRemotePartyURL();
-      referTo.Sanitise(SIPURL::RedirectURI);
-      if (remoteProductInfo.name == "Avaya" && referTo.GetUserName().IsEmpty())
-        referTo.SetUserName("anonymous");
+      m_sentReferTo = sip->GetRemotePartyURL();
+      m_sentReferTo.Sanitise(SIPURL::RedirectURI);
+      if (remoteProductInfo.name == "Avaya" && m_sentReferTo.GetUserName().IsEmpty())
+        m_sentReferTo.SetUserName("anonymous");
 
       PStringStream id;
       id <<                 sip->GetDialog().GetCallID()
          << ";to-tag="   << sip->GetDialog().GetRemoteTag()
          << ";from-tag=" << sip->GetDialog().GetLocalTag();
-      referTo.SetQueryVar("Replaces", id);
+      m_sentReferTo.SetQueryVar("Replaces", id);
 
-      SIPRefer * referTransaction = new SIPRefer(*this, referTo, m_dialog.GetLocalURI(), referSubMode);
+      SIPRefer * referTransaction = new SIPRefer(*this, m_sentReferTo, m_dialog.GetLocalURI(), referSubMode);
       referTransaction->GetMIME().AddSupported("replaces");
       m_referOfRemoteInProgress = referTransaction->Start();
       return m_referOfRemoteInProgress;
@@ -1882,6 +1883,7 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
                   PStringToString info;
                   info.SetAt("result", "error");
                   info.SetAt("party", "B");
+                  info.SetAt("Refer-To", m_sentReferTo);
                   info.SetAt("code", psprintf("%u", response.GetStatusCode()));
                   OnTransferNotify(info, this);
                 }
@@ -2384,14 +2386,14 @@ void SIPConnection::OnReceivedReINVITE(SIP_PDU & request)
     if (m_ciscoRemotePartyID == newRemotePartyID) {
       // We did a REFER but remote address did not change party-ID
       info.SetAt("result", "failed");
-      info.SetAt("party", "B");
     }
     else {
       // We did a REFER and remote address did change party-ID
       info.SetAt("result", "success");
-      info.SetAt("party", "B");
       info.SetAt("Remote-Party", newRemotePartyID.AsString());
     }
+    info.SetAt("party", "B");
+    info.SetAt("Refer-To", m_sentReferTo);
     OnTransferNotify(info, this);
   }
   else if (m_ciscoRemotePartyID == newRemotePartyID)
@@ -2530,6 +2532,7 @@ void SIPConnection::OnReceivedNOTIFY(SIP_PDU & request)
   PCaselessString state = mime.GetSubscriptionState(info);
   m_referOfRemoteInProgress = state != "terminated";
   info.SetAt("party", "B"); // We are B party in consultation transfer
+  info.SetAt("Refer-To", m_sentReferTo);
   info.SetAt("state", state);
   info.SetAt("code", psprintf("%u", code));
   info.SetAt("result", m_referOfRemoteInProgress ? "progress" : (code < 300 ? "success" : "failed"));
@@ -2899,6 +2902,7 @@ void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & respons
         PStringToString info;
         info.SetAt("result", "blind");
         info.SetAt("party", "B");
+        info.SetAt("Refer-To", m_sentReferTo);
         OnTransferNotify(info, this);
 
         Release(OpalConnection::EndedByCallForwarded);
