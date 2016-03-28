@@ -40,6 +40,7 @@ static const char RemoteGatekeeperIdentifierKey[] = "Remote Gatekeeper Identifie
 static const char GatekeeperInterfaceKey[] = "Remote Gatekeeper Interface";
 static const char GatekeeperPasswordKey[] = "Remote Gatekeeper Password";
 static const char GatekeeperTokenOIDKey[] = "Remote Gatekeeper Token OID";
+static const char GatekeeperTimeToLiveKey[] = "Remote Gatekeeper Time To Live";
 static const char GatekeeperAliasLimitKey[] = "Remote Gatekeeper Alias Limit";
 static const char GatekeeperSimulatePatternKey[] = "Remote Gatekeeper Simulate Pattern";
 static const char GatekeeperRasRedirectKey[] = "Remote Gatekeeper RAS Redirect";
@@ -205,6 +206,10 @@ bool MyH323EndPoint::Configure(PConfig & cfg, PConfigPage * rsrc)
 
   SetGkAccessTokenOID(rsrc->AddStringField(GatekeeperTokenOIDKey, 0, GetGkAccessTokenOID(),
                                    "Gatekeeper access token OID for H.235 support", 1, 30));
+
+  SetGatekeeperTimeToLive(PTimeInterval(0,rsrc->AddIntegerField(GatekeeperTimeToLiveKey,
+                          10, 24*60*60, GetGatekeeperTimeToLive().GetSeconds(), "seconds",
+                          "Time to Live for gatekeeper re-registration.")));
 
   SetGatekeeperAliasLimit(rsrc->AddIntegerField(GatekeeperAliasLimitKey,
             1, H323EndPoint::MaxGatekeeperAliasLimit, GetGatekeeperAliasLimit(), NULL,
