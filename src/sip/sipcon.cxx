@@ -2674,12 +2674,13 @@ void SIPConnection::OnReceivedBYE(SIP_PDU & request)
 
   SIPTransaction * response = new SIPResponse(GetEndPoint(), request, SIP_PDU::Successful_OK);
   response->Send();
+
+  releaseMethod = ReleaseWithNothing;
   
   if (IsReleased()) {
     PTRACE(2, "Already released " << *this);
     return;
   }
-  releaseMethod = ReleaseWithNothing;
 
   m_dialog.Update(request);
   UpdateRemoteAddresses();
