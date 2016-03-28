@@ -760,6 +760,7 @@ class SIPConnection : public OpalSDPConnection, public SIPTransactionOwner
     bool                  m_referOfRemoteInProgress;
     PoolTimer             m_delayedReferTimer;
     SIPURL                m_delayedReferTo;
+    SIPURL                m_sentReferTo;
 
     PSafeList<SIPTransaction> m_forkedInvitations; // Not for re-INVITE
     PSafeList<SIPTransaction> m_pendingInvitations; // For re-INVITE

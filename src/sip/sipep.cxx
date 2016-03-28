@@ -2208,6 +2208,26 @@ void SIPEndPoint::AdjustToRegistration(SIP_PDU & pdu, SIPConnection * connection
     PTRACE(4, "No registrar for aor sip:" << user << '@' << domain);
   }
 
+  if (isMethod && registrar != NULL) {
+    if (!mime.Has("Route")) {
+      if (!pdu.SetRoute(registrar->GetServiceRoute()))
+        pdu.SetRoute(registrar->GetProxy());
+    }
+
+    // For many servers the From address must be address-of-record, but don't touch if dialog already done
+    if (connection == NULL || !connection->GetDialog().IsEstablished()) {
+      PStringToString fieldParams = from.GetFieldParameters();
+      from = registrar->GetAddressOfRecord();
+      from.GetFieldParameters() = fieldParams;
+      if (connection != NULL)
+        from.SetDisplayName(connection->GetDisplayName());
+      from.Sanitise(SIPURL::FromURI);
+      mime.SetFrom(from);
+      PTRACE(4, "Adjusted 'From' to " << from << " from registered user.");
+      user = from.GetUserName();
+    }
+  }
+
   if (!mime.Has("Contact") && pdu.GetStatusCode() != SIP_PDU::Information_Trying) {
     OpalTransportAddress remoteAddress = pdu.GetURI().GetTransportAddress();
     SIPURL contact;
@@ -2247,25 +2267,6 @@ void SIPEndPoint::AdjustToRegistration(SIP_PDU & pdu, SIPConnection * connection
 
     contact.Sanitise(SIPURL::ContactURI);
     mime.SetContact(contact.AsQuotedString());
-  }
-
-  if (isMethod && registrar != NULL) {
-    if (!mime.Has("Route")) {
-      if (!pdu.SetRoute(registrar->GetServiceRoute()))
-        pdu.SetRoute(registrar->GetProxy());
-    }
-
-    // For many servers the From address must be address-of-record, but don't touch if dialog already done
-    if (connection == NULL || !connection->GetDialog().IsEstablished()) {
-      PStringToString fieldParams = from.GetFieldParameters();
-      from = registrar->GetAddressOfRecord();
-      from.GetFieldParameters() = fieldParams;
-      if (connection != NULL)
-        from.SetDisplayName(connection->GetDisplayName());
-      from.Sanitise(SIPURL::FromURI);
-      mime.SetFrom(from);
-      PTRACE(4, "Adjusted 'From' to " << from << " from registered user.");
-    }
   }
 }
 
