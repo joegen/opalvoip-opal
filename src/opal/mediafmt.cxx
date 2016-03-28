@@ -1313,10 +1313,14 @@ OpalMediaFormatInternal::OpalMediaFormatInternal(const char * fullName,
 
   // If we had a conflict we change the older one, as it is assumed that the
   // application really wanted that value and internal OPAL ones can move
-  if (conflictingFormat != NULL)
-    conflictingFormat->SetPayloadType((RTP_DataFrame::PayloadTypes)nextUnused);
-  else
+  if (conflictingFormat == NULL)
     rtpPayloadType = (RTP_DataFrame::PayloadTypes)nextUnused;
+  else {
+    PTRACE(3, "Conflicting payload type: "
+           << *conflictingFormat << " moved to " << nextUnused
+           << " as " << fullName << " requires " << rtpPayloadType);
+    conflictingFormat->SetPayloadType((RTP_DataFrame::PayloadTypes)nextUnused);
+  }
 }
 
 
