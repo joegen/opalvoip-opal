@@ -1363,6 +1363,7 @@ class OpalMediaFormat : public PContainer
 
   friend class OpalMediaFormatInternal;
   friend class OpalMediaFormatList;
+  friend class OpalAudioFormat;
   friend class OpalVideoFormat;
 };
 
@@ -1390,6 +1391,8 @@ class OpalAudioFormat : public OpalMediaFormat
       time_t timeStamp = 0,     ///<  timestamp (for versioning)
       unsigned channels = 1     ///<  Stereo/mono
     );
+
+    OpalAudioFormat & operator=(const OpalMediaFormat & other);
 
     static const PString & RxFramesPerPacketOption();
     static const PString & TxFramesPerPacketOption();
