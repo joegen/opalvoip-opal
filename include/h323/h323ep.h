@@ -1369,7 +1369,7 @@ class H323EndPoint : public OpalRTPEndPoint
     void SetLocalUserName(const PString & name) { return SetDefaultLocalPartyName(name); }
     const PString & GetLocalUserName() const { return GetDefaultLocalPartyName(); }
 
-    void InternalDelayGatekeeperDiscovery();
+    PTimeInterval InternalGetGatekeeperStartDelay();
 
   protected:
     bool InternalStartGatekeeper(const H323TransportAddress & remoteAddress, const PString & localAddress);
