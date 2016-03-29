@@ -833,10 +833,12 @@ struct Analyser
   unsigned     m_lastSequenceNumber;
   unsigned     m_lastTimestamp;
   unsigned     m_packetNumber;
+  OpalAudioFormat m_audioFormat;
+  OpalAudioFormat::FrameDetectorPtr m_audioFrameDetector;
 
-  Analyser(wxListCtrl * analysisList, bool video, bool decoded = false)
+  Analyser(wxListCtrl * analysisList, const OpalMediaFormat & mediaFormat, bool decoded = false)
     : m_analysisListCtrl(analysisList)
-    , m_isVideo(video)
+    , m_isVideo(mediaFormat.GetMediaType() == OpalMediaType::Video())
     , m_isDecoded(decoded)
     , m_firstPacket(true)
     , m_firstTime(0)
@@ -846,6 +848,7 @@ struct Analyser
     , m_packetNumber(0)
   {
     m_analysisListCtrl->DeleteAllItems();
+    m_audioFormat = mediaFormat;
   }
 
 
@@ -872,12 +875,17 @@ struct Analyser
       }
       if (m_isDecoded) {
         if (intra)
-          notes << "Key frame";
+          notes << "Key frame ";
       }
       else {
         if (m_lastSequenceNumber != UINT_MAX && thisSequenceNumber != (m_lastSequenceNumber + 1))
-          notes << "Out of sequence";
+          notes << "Out of sequence ";
       }
+
+      if (m_audioFormat.IsValid() && (m_audioFormat.GetFrameType(data.GetPayloadPtr(),
+                                                                 data.GetPayloadSize(),
+                                                                 m_audioFrameDetector) & OpalAudioFormat::e_SilenceFrame))
+        notes << "Silent ";
     }
 
     long pos = m_analysisListCtrl->InsertItem(INT_MAX, wxString() << m_packetNumber);
@@ -911,7 +919,7 @@ void MyPlayer::OnAnalyse(wxCommandEvent &)
                             this,
                             wxPD_CAN_ABORT|wxPD_AUTO_HIDE);
 
-  Analyser analysis(m_analysisList, m_discoveredRTP[m_selectedRTP].m_mediaFormat.GetMediaType() == OpalMediaType::Video());
+  Analyser analysis(m_analysisList, m_discoveredRTP[m_selectedRTP].m_mediaFormat);
   while (!m_pcapFile.IsEndOfFile()) {
     ++analysis.m_packetNumber;
 
@@ -991,7 +999,7 @@ void MyPlayer::PlayVideo()
   PTime fileStartTime(0);
   RTP_Timestamp startTimestamp = 0;
 
-  Analyser analysis(m_analysisList, true, true);
+  Analyser analysis(m_analysisList, m_discoveredRTP[m_selectedRTP].m_mediaFormat, true);
 
   OpalPCAPFile::DecodeContext decodeContext;
   while (m_playThreadCtrl != CtlStop && !m_pcapFile.IsEndOfFile()) {
