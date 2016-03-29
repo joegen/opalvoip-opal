@@ -1262,7 +1262,7 @@ class H323EndPoint : public OpalRTPEndPoint
        This is used to slow down registrations when many aliases are used, and the
        gatekeeper does not support multiple aliases in on GRQ/RRQ.
      */
-    void SetGatekeeperStartDelay(const PTimeInterval & ttl) { registrationTimeToLive = ttl; }
+    void SetGatekeeperStartDelay(const PTimeInterval & gatekeeperStartDelay) { m_gatekeeperStartDelay = gatekeeperStartDelay; }
 
     /**Get the iNow Gatekeeper Access Token OID.
      */
