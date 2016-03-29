@@ -216,7 +216,7 @@ bool MyH323EndPoint::Configure(PConfig & cfg, PConfigPage * rsrc)
             1, H323EndPoint::MaxGatekeeperAliasLimit, GetGatekeeperAliasLimit(), NULL,
             "Compatibility issue with some gatekeepers not being able to register large numbers of aliases in single RRQ."));
 
-  SetGatekeeperTimeToLive(rsrc->AddIntegerField(GatekeeperRegistrationDelayKey,
+  SetGatekeeperStartDelay(rsrc->AddIntegerField(GatekeeperRegistrationDelayKey,
             0, 10000, GetGatekeeperStartDelay().GetSeconds(), "milliseconds",
             "Delay the GRQ messages to reduce the load on the remote gatekeeper."));
 
