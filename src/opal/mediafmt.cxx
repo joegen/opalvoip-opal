@@ -1792,6 +1792,16 @@ OpalAudioFormat::OpalAudioFormat(const char * fullName,
 }
 
 
+OpalAudioFormat & OpalAudioFormat::operator=(const OpalMediaFormat & other)
+{
+  if (dynamic_cast<OpalAudioFormatInternal *>(other.m_info) != NULL)
+    OpalMediaFormat::operator=(other);
+  else
+    OpalMediaFormat::operator=(OpalMediaFormat());
+  return *this;
+}
+
+
 OpalAudioFormatInternal::OpalAudioFormatInternal(const char * fullName,
                                                  RTP_DataFrame::PayloadTypes rtpPayloadType,
                                                  const char * encodingName,
