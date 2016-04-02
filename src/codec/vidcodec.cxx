@@ -320,6 +320,10 @@ void OpalIntraFrameControl::IntraFrameRequest()
 
     switch (m_state) {
       case e_Idle :
+        if (m_maxThrottleTime == 0 || m_retryTime == 0) {
+          m_requestTimer.Stop();
+          return;
+        }
         break;
 
       case e_Throttled :
@@ -402,15 +406,19 @@ void OpalIntraFrameControl::OnTimedRequest(PTimer &, P_INT_PTR)
   // If idle, then this is a periodic request, restart the timer for another
   switch (m_state) {
     case e_Idle :
-      m_state = e_Periodic;
-      m_requestTimer = m_periodicTime;
-      PTRACE(4, "Periodic I-Frame request: next=" << m_periodicTime << " this=" << this);
+      if (m_periodicTime > 0) {
+        m_state = e_Periodic;
+        m_requestTimer = m_periodicTime;
+        PTRACE(4, "Periodic I-Frame request: next=" << m_periodicTime << " this=" << this);
+      }
       break;
 
     case e_Throttled :
       m_state = e_Idle;
-      m_requestTimer = m_periodicTime;
-      PTRACE(4, "End throttled I-Frames: next=" << m_periodicTime << " this=" << this);
+      if (m_periodicTime > 0) {
+        m_requestTimer = m_periodicTime;
+        PTRACE(4, "End throttled I-Frames: next=" << m_periodicTime << " this=" << this);
+      }
       break;
 
     case e_Requested :
