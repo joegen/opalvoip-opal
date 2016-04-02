@@ -693,9 +693,12 @@ void OpalMediaTransport::Transport::ThreadMain()
           // Do timeout case
 
         case PChannel::Timeout:
-          PTRACE(1, m_owner, *m_owner << m_subchannel << " timed out (" << m_channel->GetReadTimeout() << "s)");
-          if (!m_owner->m_mediaTimer.IsRunning())
+          if (m_owner->m_mediaTimer.IsRunning())
+            PTRACE(2, m_owner, *m_owner << m_subchannel << " timed out (" << m_channel->GetReadTimeout() << "s), other subchannels running");
+          else {
+            PTRACE(1, m_owner, *m_owner << m_subchannel << " timed out (" << m_owner->m_mediaTimeout << "s), closing");
             Close();
+          }
           break;
 
         default:
@@ -795,7 +798,7 @@ void OpalMediaTransport::Start()
 
 void OpalMediaTransport::InternalStop()
 {
-  PTRACE(4, *this << "stopping");
+  PTRACE(4, *this << "stopping " << m_subchannels.size() << "subchannels.");
   LockReadOnly();
   for (vector<Transport>::iterator it = m_subchannels.begin(); it != m_subchannels.end(); ++it)
     it->Close();
@@ -1134,7 +1137,9 @@ bool OpalUDPMediaTransport::Open(OpalMediaSession & session,
     PUDPSocket & socket = *GetSubChannelAsSocket((SubChannels)subchannel);
     PTRACE_CONTEXT_ID_TO(socket);
 
-    socket.SetReadTimeout(m_mediaTimeout);
+    /* Make socket timeout slightly longer (200ms) than media timeout to avoid
+       a race condition with m_mediaTimer expiring. */
+    socket.SetReadTimeout(m_mediaTimeout+200);
 
     // Increase internal buffer size on media UDP sockets
     SetMinBufferSize(socket, SO_RCVBUF, session.GetMediaType() == OpalMediaType::Audio() ? 0x4000 : 0x100000);
