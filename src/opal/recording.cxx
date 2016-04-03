@@ -689,8 +689,12 @@ bool OpalAVIRecordManager::OnMixedVideo(const RTP_DataFrame & frame)
     return false;
   }
 
-  PINDEX bytesReturned = PVideoFrameInfo::CalculateFrameBytes(m_options.m_videoWidth, m_options.m_videoHeight);
-  if (m_videoConverter != NULL && !m_videoConverter->Convert(OpalVideoFrameDataPtr(header), m_videoBuffer.GetPointer(), &bytesReturned)) {
+  PINDEX bytesReturned;
+  if (m_videoConverter == NULL)
+    bytesReturned = m_videoBuffer.GetSize();
+  else if (!m_videoConverter->Convert(OPAL_VIDEO_FRAME_DATA_PTR(header),
+                                      m_videoBuffer.GetPointer(m_videoConverter->GetMaxDstFrameBytes()),
+                                      &bytesReturned)) {
     PTRACE(2, "Conversion of YUV420P to RGB24 failed!");
     return false;
   }
