@@ -61,11 +61,6 @@ ifneq (,$(DEBUG_BUILD))
   endif
 endif
 
-CPPFLAGS += $(shell $(WX_CONFIG) --cppflags)
-CXXFLAGS += $(shell $(WX_CONFIG) --cxxflags)
-CFLAGS   += $(shell $(WX_CONFIG) --cflags)
-LDFLAGS  += $(shell $(WX_CONFIG) --libs)
-
 
 # Need this before the include of opal.mak
 .DEFAULT_GOAL := bundle
@@ -76,6 +71,12 @@ ifdef OPALDIR
 else
   include $(shell pkg-config opal --variable=makedir)/opal.mak
 endif
+
+
+CPPFLAGS += $(shell $(WX_CONFIG) --cppflags)
+CXXFLAGS += $(shell $(WX_CONFIG) --cxxflags)
+CFLAGS   += $(shell $(WX_CONFIG) --cflags)
+LIBS     += $(shell $(WX_CONFIG) --libs)
 
 
 openphone.cxx : openphone.xrc
