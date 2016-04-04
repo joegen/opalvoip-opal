@@ -952,9 +952,36 @@ void OpalRTPSession::SetMediaStreamId(const PString & id, RTP_SyncSourceId ssrc,
   PSafeLockReadWrite lock(*this);
   SyncSource * info;
   if (GetSyncSource(ssrc, dir, info)) {
+    if (info->m_mediaTrackId.IsEmpty() || info->m_mediaTrackId.NumCompare(info->m_mediaStreamId + '+') == EqualTo)
+      info->m_mediaTrackId = PSTRSTRM(id << '+' << m_mediaType);
     info->m_mediaStreamId = id;
     info->m_mediaStreamId.MakeUnique();
-    PTRACE(4, *this << "set session id for SSRC=" << RTP_TRACE_SRC(ssrc) << " to \"" << id << '"');
+    PTRACE(4, *this << "set MediaStream id for SSRC=" << RTP_TRACE_SRC(ssrc) << " to \"" << id << '"');
+  }
+}
+
+
+PString OpalRTPSession::GetMediaTrackId(RTP_SyncSourceId ssrc, Direction dir) const
+{
+  PString s;
+  PSafeLockReadOnly lock(*this);
+  SyncSource * info;
+  if (GetSyncSource(ssrc, dir, info)) {
+    s = info->m_mediaTrackId;
+    s.MakeUnique();
+  }
+  return s;
+}
+
+
+void OpalRTPSession::SetMediaTrackId(const PString & id, RTP_SyncSourceId ssrc, Direction dir)
+{
+  PSafeLockReadWrite lock(*this);
+  SyncSource * info;
+  if (GetSyncSource(ssrc, dir, info)) {
+    info->m_mediaTrackId = id;
+    info->m_mediaTrackId.MakeUnique();
+    PTRACE(4, *this << "set MediaStreamTrack id for SSRC=" << RTP_TRACE_SRC(ssrc) << " to \"" << id << '"');
   }
 }
 
