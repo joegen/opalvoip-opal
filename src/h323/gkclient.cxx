@@ -273,13 +273,15 @@ PTimeInterval H323EndPoint::InternalGetGatekeeperStartDelay()
 
   m_delayGatekeeperMutex.Wait();
 
-  if (m_lastGatekeeperDiscovery.IsValid()) {
-    PTimeInterval elapsed = m_lastGatekeeperDiscovery.GetElapsed();
-    if (elapsed < m_gatekeeperStartDelay)
-      delay = m_gatekeeperStartDelay - elapsed;
+  PTime now;
+
+  if (m_nextGatekeeperDiscovery.IsValid()) {
+    delay = now - m_nextGatekeeperDiscovery;
+    if (delay < 0)
+      delay = 0;
   }
 
-  m_lastGatekeeperDiscovery.SetCurrentTime();
+  m_nextGatekeeperDiscovery = now + m_gatekeeperStartDelay;
 
   m_delayGatekeeperMutex.Signal();
 
