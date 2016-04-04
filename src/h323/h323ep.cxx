@@ -99,7 +99,7 @@ H323EndPoint::H323EndPoint(OpalManager & manager)
   , registrationTimeToLive(0, 0, 10)       // Minutes
   , m_sendGRQ(true)
   , m_oneSignalAddressInRRQ(true)
-  , m_lastGatekeeperDiscovery(0)
+  , m_nextGatekeeperDiscovery(0)
   , callTransferT1(0,10)                   // Seconds
   , callTransferT2(0,10)                   // Seconds
   , callTransferT3(0,10)                   // Seconds

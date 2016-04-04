@@ -1434,7 +1434,7 @@ class H323EndPoint : public OpalRTPEndPoint
     PString       gkAccessTokenOID;
     bool          m_sendGRQ;
     bool          m_oneSignalAddressInRRQ;
-    PTime         m_lastGatekeeperDiscovery;
+    PTime         m_nextGatekeeperDiscovery;
     PMutex        m_delayGatekeeperMutex;
 
     /* Protect against absence of a response to the ctIdentify reqest
