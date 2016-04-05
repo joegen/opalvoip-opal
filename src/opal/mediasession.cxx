@@ -1145,6 +1145,7 @@ bool OpalUDPMediaTransport::Open(OpalMediaSession & session,
     SetMinBufferSize(socket, SO_RCVBUF, session.GetMediaType() == OpalMediaType::Audio() ? 0x4000 : 0x100000);
     SetMinBufferSize(socket, SO_SNDBUF, 0x2000);
   }
+  m_mediaTimer = m_mediaTimeout;
 
   return true;
 }
