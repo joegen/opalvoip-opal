@@ -32,6 +32,15 @@ VERSION_FILE    := version.h
 USING_WX_WIDGETS:=yes
 
 
+ifneq (,$(DEBUG_BUILD))
+  ifneq (,$(shell $(WX_CONFIG) --list | grep debug))
+    WX_CONFIG += --debug=$(DEBUG_BUILD)
+  else
+    CPPFLAGS += -DOPAL_WX_DEBUG_HACK
+  endif
+endif
+
+
 # Need this before the include of opal.mak
 .DEFAULT_GOAL := bundle
 
@@ -41,6 +50,12 @@ ifdef OPALDIR
 else
   include $(shell pkg-config opal --variable=makedir)/opal.mak
 endif
+
+
+CPPFLAGS += $(shell $(WX_CONFIG) --cppflags)
+CXXFLAGS += $(shell $(WX_CONFIG) --cxxflags)
+CFLAGS   += $(shell $(WX_CONFIG) --cflags)
+LIBS     += $(shell $(WX_CONFIG) --libs)
 
 
 openphone.cxx : openphone.xrc

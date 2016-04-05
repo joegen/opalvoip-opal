@@ -1291,7 +1291,7 @@ OpalMediaFormatInternal::OpalMediaFormatInternal(const char * fullName,
     inUse[format->GetPayloadType()] = true;
 
     // A conflict is when we are after an explicit payload type, we have found one already using it
-    if (rtpPayloadType  >  RTP_DataFrame::DynamicBase && rtpPayloadType  == format->GetPayloadType()) {
+    if (rtpPayloadType > RTP_DataFrame::DynamicBase && rtpPayloadType  == format->GetPayloadType()) {
       // If it is a shared payload types, which happens when encoding name is the same, then allow it
       if (rtpEncodingName == format->GetEncodingName())
         return;
@@ -1299,6 +1299,11 @@ OpalMediaFormatInternal::OpalMediaFormatInternal(const char * fullName,
       // Have a conflicting media format, move it later when we know where to
       conflictingFormat = &*format;
     }
+  }
+
+  if (rtpPayloadType > RTP_DataFrame::DynamicBase && conflictingFormat == NULL) {
+    PTRACE(4, "Using assigned payload type " << rtpPayloadType << " for " << fullName);
+    return;
   }
 
   // Determine next unused payload type, if all the dynamic ones are allocated then
@@ -1313,10 +1318,14 @@ OpalMediaFormatInternal::OpalMediaFormatInternal(const char * fullName,
 
   // If we had a conflict we change the older one, as it is assumed that the
   // application really wanted that value and internal OPAL ones can move
-  if (conflictingFormat != NULL)
-    conflictingFormat->SetPayloadType((RTP_DataFrame::PayloadTypes)nextUnused);
-  else
+  if (conflictingFormat == NULL)
     rtpPayloadType = (RTP_DataFrame::PayloadTypes)nextUnused;
+  else {
+    PTRACE(3, "Conflicting payload type: "
+           << *conflictingFormat << " moved to " << nextUnused
+           << " as " << fullName << " requires " << rtpPayloadType);
+    conflictingFormat->SetPayloadType((RTP_DataFrame::PayloadTypes)nextUnused);
+  }
 }
 
 

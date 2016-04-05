@@ -1252,6 +1252,18 @@ class H323EndPoint : public OpalRTPEndPoint
      */
     void SetGatekeeperTimeToLive(const PTimeInterval & ttl) { registrationTimeToLive = ttl; }
 
+    /**Get the default time for gatekeeper registration delay.
+       This is used to slow down registrations when many aliases are used, and the
+       gatekeeper does not support multiple aliases in on GRQ/RRQ.
+     */
+    const PTimeInterval & GetGatekeeperStartDelay() const { return m_gatekeeperStartDelay; }
+
+    /**Set the default time for gatekeeper registration delay.
+       This is used to slow down registrations when many aliases are used, and the
+       gatekeeper does not support multiple aliases in on GRQ/RRQ.
+     */
+    void SetGatekeeperStartDelay(const PTimeInterval & gatekeeperStartDelay) { m_gatekeeperStartDelay = gatekeeperStartDelay; }
+
     /**Get the iNow Gatekeeper Access Token OID.
      */
     const PString & GetGkAccessTokenOID() const { return gkAccessTokenOID; }
@@ -1357,6 +1369,8 @@ class H323EndPoint : public OpalRTPEndPoint
     void SetLocalUserName(const PString & name) { return SetDefaultLocalPartyName(name); }
     const PString & GetLocalUserName() const { return GetDefaultLocalPartyName(); }
 
+    PTimeInterval InternalGetGatekeeperStartDelay();
+
   protected:
     bool InternalStartGatekeeper(const H323TransportAddress & remoteAddress, const PString & localAddress);
     bool InternalRestartGatekeeper(bool adjustingRegistrations = true);
@@ -1415,10 +1429,13 @@ class H323EndPoint : public OpalRTPEndPoint
     PTimeInterval rasRequestTimeout;
     unsigned      rasRequestRetries;
     PTimeInterval registrationTimeToLive;
+    PTimeInterval m_gatekeeperStartDelay;
 
     PString       gkAccessTokenOID;
     bool          m_sendGRQ;
     bool          m_oneSignalAddressInRRQ;
+    PTime         m_nextGatekeeperDiscovery;
+    PMutex        m_delayGatekeeperMutex;
 
     /* Protect against absence of a response to the ctIdentify reqest
        (Transferring Endpoint - Call Transfer with a secondary Call) */

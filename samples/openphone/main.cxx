@@ -857,6 +857,9 @@ MyManager::MyManager()
 
 MyManager::~MyManager()
 {
+  while (AsyncNotifierExecute())
+    ;
+
   TextCtrlChannel::SetFrame(NULL);
 
   ShutDownEndpoints();

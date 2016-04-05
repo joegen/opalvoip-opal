@@ -264,9 +264,40 @@ bool H323Gatekeeper::StartGatekeeper(const H323TransportAddress & initialAddress
 }
 
 
+PTimeInterval H323EndPoint::InternalGetGatekeeperStartDelay()
+{
+  if (m_gatekeeperStartDelay == 0)
+    return m_gatekeeperStartDelay;
+
+  PTimeInterval delay;
+
+  m_delayGatekeeperMutex.Wait();
+
+  PTime now;
+
+  if (m_nextGatekeeperDiscovery.IsValid()) {
+    delay = now - m_nextGatekeeperDiscovery;
+    if (delay < 0)
+      delay = 0;
+  }
+
+  m_nextGatekeeperDiscovery = now + m_gatekeeperStartDelay;
+
+  m_delayGatekeeperMutex.Signal();
+
+  return delay;
+}
+
 bool H323Gatekeeper::DiscoverGatekeeper()
 {
   discoveryComplete = false;
+
+  PSimpleTimer delay(endpoint.InternalGetGatekeeperStartDelay());
+  while (delay.IsRunning()) {
+    if (!m_monitorRunning)
+      return false;
+    m_monitorTickle.Wait(delay.GetRemaining());
+  }
 
   for (;;) {
     H323RasPDU pdu;

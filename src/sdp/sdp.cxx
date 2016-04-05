@@ -1780,20 +1780,9 @@ void SDPRTPAVPMediaDescription::OutputAttributes(ostream & strm) const
       strm << "a=rtcp:" << port << ' ' << GetConnectAddressString(m_mediaAddress) << CRLF;
   }
 
-  if (m_ssrcInfo.size() == 1) {
-    SsrcInfo::const_iterator it1 = m_ssrcInfo.begin();
-    for (PStringOptions::const_iterator it2 = it1->second.begin(); it2 != it1->second.end(); ++it2) {
-      strm << "a=";
-      if (it2->first == "cname")
-        strm << "ssrc:" << it1->first << ' ';
-      strm << it2->first << ':' << it2->second << CRLF;
-    }
-  }
-  else {
-    for (SsrcInfo::const_iterator it1 = m_ssrcInfo.begin(); it1 != m_ssrcInfo.end(); ++it1) {
-      for (PStringOptions::const_iterator it2 = it1->second.begin(); it2 != it1->second.end(); ++it2)
-        strm << "a=ssrc:" << it1->first << ' ' << it2->first << ':' << it2->second << CRLF;
-    }
+  for (SsrcInfo::const_iterator it1 = m_ssrcInfo.begin(); it1 != m_ssrcInfo.end(); ++it1) {
+    for (PStringOptions::const_iterator it2 = it1->second.begin(); it2 != it1->second.end(); ++it2)
+      strm << "a=ssrc:" << it1->first << ' ' << it2->first << ':' << it2->second << CRLF;
   }
 
   // m_rtcp_fb is set via SDPRTPAVPMediaDescription::PreEncode according to various options
@@ -1845,6 +1834,17 @@ bool SDPRTPAVPMediaDescription::IsSecure() const
 
 
 #endif // OPAL_SRTP
+
+
+static void SetMediaStreamAndTrackIds(const PString & msid, PStringOptions & info)
+{
+  info.SetAt("msid", msid);
+
+  PString stream, track;
+  msid.Split(' ', stream, track);
+  info.SetAt("mslabel", stream);
+  info.SetAt("label", track);
+}
 
 
 void SDPRTPAVPMediaDescription::SetAttribute(const PString & attr, const PString & value)
@@ -1919,8 +1919,7 @@ void SDPRTPAVPMediaDescription::SetAttribute(const PString & attr, const PString
   if (attr *= "msid") {
     m_msid = value;
     for (SsrcInfo::iterator it = m_ssrcInfo.begin(); it != m_ssrcInfo.end(); ++it) {
-      it->second.SetAt("msid", value);
-      it->second.SetAt("mslabel", m_msid.Left(m_msid.Find(' ')));
+      SetMediaStreamAndTrackIds(value, it->second);
       PTRACE(2, "SSRC: " << RTP_TRACE_SRC(it->first) << " m level msid: \"" << m_msid << '"');
     }
     return;
@@ -1935,8 +1934,7 @@ void SDPRTPAVPMediaDescription::SetAttribute(const PString & attr, const PString
     }
     else {
       if (!m_msid.IsEmpty()) {
-        m_ssrcInfo[ssrc].SetAt("msid", m_msid);
-        m_ssrcInfo[ssrc].SetAt("mslabel", m_msid.Left(m_msid.Find(' ')));
+        SetMediaStreamAndTrackIds(m_msid, m_ssrcInfo[ssrc]);
         PTRACE(2, "SSRC: " << RTP_TRACE_SRC(ssrc) << " m level msid: \"" << m_msid << '"');
       }
 
@@ -1947,7 +1945,7 @@ void SDPRTPAVPMediaDescription::SetAttribute(const PString & attr, const PString
       if (key == "mslabel" && !m_temporaryFlowSSRC.empty())
         m_mediaStreams[val][0] = m_temporaryFlowSSRC;
       else if (key == "msid" && m_ssrcInfo[ssrc].GetString("mslabel").IsEmpty())
-        m_ssrcInfo[ssrc].SetAt("mslabel", val.Left(val.Find(' ')));
+        SetMediaStreamAndTrackIds(val, m_ssrcInfo[ssrc]);
     }
     return;
   }
@@ -1992,7 +1990,7 @@ bool SDPRTPAVPMediaDescription::FromSession(OpalMediaSession * session,
         info.SetAt("cname", cname);
       PString mslabel = rtpSession->GetMediaStreamId(*it, OpalRTPSession::e_Sender);
       if (!mslabel.IsEmpty()) {
-        PString label = mslabel + '+' + session->GetMediaType();
+        PString label = rtpSession->GetMediaTrackId(*it, OpalRTPSession::e_Sender);
         info.SetAt("mslabel", mslabel);
         info.SetAt("label", label);
         info.SetAt("msid", mslabel & label);
@@ -2052,6 +2050,7 @@ bool SDPRTPAVPMediaDescription::ToSession(OpalMediaSession * session, RTP_SyncSo
           rtpSession->SetAnySyncSource(false);
           PTRACE(4, "Session " << session->GetSessionID() << ", added receiver SSRC " << RTP_TRACE_SRC(ssrc));
         }
+        rtpSession->SetMediaTrackId(it->second.GetString("label"), ssrc, OpalRTPSession::e_Receiver);
         rtpSession->SetMediaStreamId(it->second.GetString("mslabel"), ssrc, OpalRTPSession::e_Receiver);
       }
     }

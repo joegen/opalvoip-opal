@@ -40,7 +40,9 @@ static const char RemoteGatekeeperIdentifierKey[] = "Remote Gatekeeper Identifie
 static const char GatekeeperInterfaceKey[] = "Remote Gatekeeper Interface";
 static const char GatekeeperPasswordKey[] = "Remote Gatekeeper Password";
 static const char GatekeeperTokenOIDKey[] = "Remote Gatekeeper Token OID";
+static const char GatekeeperTimeToLiveKey[] = "Remote Gatekeeper Time To Live";
 static const char GatekeeperAliasLimitKey[] = "Remote Gatekeeper Alias Limit";
+static const char GatekeeperRegistrationDelayKey[] = "Remote Gatekeeper Registration Delay";
 static const char GatekeeperSimulatePatternKey[] = "Remote Gatekeeper Simulate Pattern";
 static const char GatekeeperRasRedirectKey[] = "Remote Gatekeeper RAS Redirect";
 
@@ -206,9 +208,17 @@ bool MyH323EndPoint::Configure(PConfig & cfg, PConfigPage * rsrc)
   SetGkAccessTokenOID(rsrc->AddStringField(GatekeeperTokenOIDKey, 0, GetGkAccessTokenOID(),
                                    "Gatekeeper access token OID for H.235 support", 1, 30));
 
+  SetGatekeeperTimeToLive(PTimeInterval(0,rsrc->AddIntegerField(GatekeeperTimeToLiveKey,
+                          10, 24*60*60, GetGatekeeperTimeToLive().GetSeconds(), "seconds",
+                          "Time to Live for gatekeeper re-registration.")));
+
   SetGatekeeperAliasLimit(rsrc->AddIntegerField(GatekeeperAliasLimitKey,
             1, H323EndPoint::MaxGatekeeperAliasLimit, GetGatekeeperAliasLimit(), NULL,
             "Compatibility issue with some gatekeepers not being able to register large numbers of aliases in single RRQ."));
+
+  SetGatekeeperStartDelay(rsrc->AddIntegerField(GatekeeperRegistrationDelayKey,
+            0, 10000, GetGatekeeperStartDelay().GetSeconds(), "milliseconds",
+            "Delay the GRQ messages to reduce the load on the remote gatekeeper."));
 
   SetGatekeeperSimulatePattern(rsrc->AddBooleanField(GatekeeperSimulatePatternKey, GetGatekeeperSimulatePattern(),
             "Compatibility issue with some gatekeepers not supporting alias patterns, generate separate aliases for ranges."));

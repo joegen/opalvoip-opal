@@ -327,15 +327,25 @@ class OpalRTPSession : public OpalMediaSession
       */
     void SetCanonicalName(const PString & name, RTP_SyncSourceId ssrc = 0, Direction dir = e_Sender);
 
-    /**Get the "Media Stream" id for the RTP session SSRC.
-       See draft-alvestrand-mmusic-msid.
+    /**Get the "MediaStream" id for the RTP session SSRC.
+       See http://tools.ietf.org/html/draft-ietf-mmusic-msid-12
     */
     PString GetMediaStreamId(RTP_SyncSourceId ssrc, Direction dir) const;
 
-    /**Set the "Media Stream" id for the RTP session SSRC.
-       See draft-alvestrand-mmusic-msid.
+    /**Set the "MediaStream" id for the RTP session SSRC.
+       See http://tools.ietf.org/html/draft-ietf-mmusic-msid-12
     */
     void SetMediaStreamId(const PString & id, RTP_SyncSourceId ssrc, Direction dir);
+
+    /**Get the "MediaStreamTrack" id for the RTP session SSRC.
+       See http://tools.ietf.org/html/draft-ietf-mmusic-msid-12
+    */
+    PString GetMediaTrackId(RTP_SyncSourceId ssrc, Direction dir) const;
+
+    /**Set the "MediaStreamTrack" id for the RTP session SSRC.
+       See http://tools.ietf.org/html/draft-ietf-mmusic-msid-12
+    */
+    void SetMediaTrackId(const PString & id, RTP_SyncSourceId ssrc, Direction dir);
 
     /**Get the tool name for the RTP session.
       */
@@ -670,6 +680,7 @@ class OpalRTPSession : public OpalMediaSession
       RTP_SyncSourceId  m_loopbackIdentifier;
       PString           m_canonicalName;
       PString           m_mediaStreamId;
+      PString           m_mediaTrackId;
 
       NotifierMap m_notifiers;
 
