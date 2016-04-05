@@ -3775,6 +3775,8 @@ SIPTransaction * SIPResponse::CreateDuplicate() const
 
 bool SIPResponse::Send()
 {
+  PSafeLockReadWrite lock(*this);
+
   if (m_state == NotStarted) {
     GetEndPoint().AddTransaction(this);
     m_state = Completed;
