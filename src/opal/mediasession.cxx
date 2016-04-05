@@ -711,6 +711,7 @@ void OpalMediaTransport::Transport::ThreadMain()
     }
   }
 
+  m_owner->InternalRxData(m_subchannel, PBYTEArray());
   PTRACE(4, m_owner, *m_owner << m_subchannel << " media transport read thread ended");
 }
 
@@ -1044,6 +1045,9 @@ bool OpalUDPMediaTransport::Open(OpalMediaSession & session,
 {
   PTRACE_CONTEXT_ID_FROM(session);
 
+  if (!PAssert(subchannelCount > 0, PInvalidParameter))
+    return false;
+
   OpalManager & manager = session.GetConnection().GetEndPoint().GetManager();
 
   m_packetSize = manager.GetMaxRtpPacketSize();
@@ -1209,13 +1213,13 @@ OpalMediaSession::OpalMediaSession(const Init & init)
   , m_remoteBehindNAT(init.m_remoteBehindNAT)
 {
   PTRACE_CONTEXT_ID_FROM(init.m_connection);
-  PTRACE(5, *this << "created for " << m_mediaType);
+  PTRACE(5, *this << "created " << this << " for " << m_mediaType);
 }
 
 
 OpalMediaSession::~OpalMediaSession()
 {
-  PTRACE(5, *this << "destroyed.");
+  PTRACE(5, *this << "destroyed " << this);
 }
 
 
