@@ -1207,15 +1207,12 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendControl(RTP_ControlFrame
 }
 
 
-OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveData(RTP_DataFrame & frame, PINDEX pduSize)
+OpalRTPSession::SendReceiveStatus OpalRTPSession::OnPreReceiveData(RTP_DataFrame & frame)
 {
   for (SyncSourceMap::iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
     if (!it->second->HandlePendingFrames())
       return e_AbortTransport;
   }
-
-  if (pduSize < RTP_DataFrame::MinHeaderSize)
-    return e_IgnorePacket; // Non fatal error, just ignore
 
   // Check that the PDU is the right version
   if (frame.GetVersion() != RTP_DataFrame::ProtocolVersion)
@@ -1231,9 +1228,6 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveData(RTP_DataFrame & 
     PTRACE(4, *this << "ignoring left over audio packet from switch to T.38");
     return e_IgnorePacket; // Non fatal error, just ignore
   }
-
-  if (!frame.SetPacketSize(pduSize))
-    return e_IgnorePacket; // Non fatal error, just ignore
 
   SyncSource * receiver = UseSyncSource(frame.GetSyncSource(), e_Receiver, false);
   if (receiver == NULL)
@@ -2554,9 +2548,8 @@ void OpalRTPSession::OnRxDataPacket(OpalMediaTransport &, PBYTEArray data)
       CheckMediaFailed(e_Control);
   }
   else {
-    RTP_DataFrame frame;
-    frame.PBYTEArray::operator=(data);
-    if (OnReceiveData(frame, data.GetSize()) == e_AbortTransport)
+    RTP_DataFrame frame(data);
+    if (OnPreReceiveData(frame) == e_AbortTransport)
       CheckMediaFailed(e_Data);
   }
 }

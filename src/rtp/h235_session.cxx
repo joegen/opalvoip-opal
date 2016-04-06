@@ -290,13 +290,13 @@ OpalRTPSession::SendReceiveStatus H2356_Session::OnSendData(RTP_DataFrame & fram
 
 
 #if !H235_6_CODED_TO_CORRECT_SPECIFICATION
-OpalRTPSession::SendReceiveStatus H2356_Session::OnReceiveData(RTP_DataFrame & frame, PINDEX pduSize)
+OpalRTPSession::SendReceiveStatus H2356_Session::OnPreReceiveData(RTP_DataFrame & frame)
 {
   // Allow for broken implementations that set padding bit but do not set the padding length!
   bool padding = frame.GetPadding();
   frame.SetPadding(false);
 
-  SendReceiveStatus status = OpalRTPSession::OnReceiveData(frame, pduSize);
+  SendReceiveStatus status = OpalRTPSession::OnPreReceiveData(frame);
 
   frame.SetPadding(padding);
 
