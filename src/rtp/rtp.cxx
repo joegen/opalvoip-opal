@@ -55,13 +55,19 @@
 
 /////////////////////////////////////////////////////////////////////////////
 
+RTP_DataFrame::MetaData::MetaData()
+  : m_absoluteTime(0)
+  , m_networkTime(0)
+  , m_discontinuity(0)
+{
+}
+
+
 RTP_DataFrame::RTP_DataFrame(PINDEX payloadSz, PINDEX bufferSz)
   : PBYTEArray(max(bufferSz, MinHeaderSize+payloadSz))
   , m_headerSize(MinHeaderSize)
   , m_payloadSize(payloadSz)
   , m_paddingSize(0)
-  , m_absoluteTime(0)
-  , m_discontinuity(0)
 {
   theArray[0] = '\x80'; // Default to version 2
   theArray[1] = '\x7f'; // Default to MaxPayloadType
@@ -73,16 +79,29 @@ RTP_DataFrame::RTP_DataFrame(const BYTE * data, PINDEX len, bool dynamic)
   , m_headerSize(MinHeaderSize)
   , m_payloadSize(0)
   , m_paddingSize(0)
-  , m_absoluteTime(0)
-  , m_discontinuity(0)
 {
   SetPacketSize(len);
 }
 
 
+RTP_DataFrame::RTP_DataFrame(const PBYTEArray data)
+  : PBYTEArray(data)
+  , m_headerSize(MinHeaderSize)
+  , m_payloadSize(0)
+  , m_paddingSize(0)
+{
+  if (SetPacketSize(data.GetSize()))
+    m_metaData.m_networkTime.SetCurrentTime();
+  else {
+    SetSize(MinHeaderSize);
+    theArray[0] = 0; // Make illegal RTP frame
+  }
+}
+
+
 bool RTP_DataFrame::SetPacketSize(PINDEX sz)
 {
-  m_discontinuity = 0;
+  m_metaData.m_discontinuity = 0;
 
   if (sz < RTP_DataFrame::MinHeaderSize) {
     PTRACE(2, "RTP\tInvalid RTP packet, "
@@ -193,9 +212,7 @@ void RTP_DataFrame::CopyHeader(const RTP_DataFrame & other)
 {
   if (AdjustHeaderSize(other.m_headerSize))
     memcpy(theArray, other.theArray, m_headerSize);
-  SetDiscontinuity(other.GetDiscontinuity());
-  SetAbsoluteTime(other.GetAbsoluteTime());
-  SetLipSyncId(other.GetLipSyncId());
+  m_metaData = other.m_metaData;
 }
 
 
@@ -207,9 +224,7 @@ void RTP_DataFrame::Copy(const RTP_DataFrame & other)
     m_headerSize = other.m_headerSize;
     m_payloadSize = other.m_payloadSize;
     m_paddingSize = other.m_paddingSize;
-    SetDiscontinuity(other.GetDiscontinuity());
-    SetAbsoluteTime(other.GetAbsoluteTime());
-    SetLipSyncId(other.GetLipSyncId());
+    m_metaData    = other.m_metaData;
   }
 }
 

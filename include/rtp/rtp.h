@@ -504,6 +504,7 @@ class RTP_DataFrame : public PBYTEArray
   public:
     RTP_DataFrame(PINDEX payloadSize = 0, PINDEX bufferSize = 0);
     RTP_DataFrame(const BYTE * data, PINDEX len, bool dynamic = true);
+    RTP_DataFrame(const PBYTEArray data);
 
     enum {
       ProtocolVersion = 2,
@@ -651,36 +652,50 @@ class RTP_DataFrame : public PBYTEArray
     // Get the packet size including headers, padding etc.
     PINDEX GetPacketSize() const;
 
+    struct MetaData
+    {
+        MetaData();
+
+        PTime    m_absoluteTime; // Wall clock time packet was sent, as calculated via RTCP and timestamp
+        PTime    m_networkTime;  // Wall clock time packet physically read from socket
+        unsigned m_discontinuity;
+        PString  m_lipSyncId;
+    };
+
+    /**Get meta data for RTP packet.
+      */
+    const MetaData & GetMetaData() const { return m_metaData; }
+
     /**Get absolute (wall clock) time of packet, if known.
       */
-    PTime GetAbsoluteTime() const { return m_absoluteTime; }
+    PTime GetAbsoluteTime() const { return m_metaData.m_absoluteTime; }
 
     /**Set absolute (wall clock) time of packet.
       */
-    void SetAbsoluteTime() { m_absoluteTime.SetCurrentTime(); }
-    void SetAbsoluteTime(const PTime & t) { m_absoluteTime = t; }
+    void SetAbsoluteTime() { m_metaData.m_absoluteTime.SetCurrentTime(); }
+    void SetAbsoluteTime(const PTime & t) { m_metaData.m_absoluteTime = t; }
 
     /** Get sequence number discontinuity.
         If non-zero this indicates the number of packets detected as missing
         before this packet.
       */
-    unsigned GetDiscontinuity() const { return m_discontinuity; }
+    unsigned GetDiscontinuity() const { return m_metaData.m_discontinuity; }
 
-    void SetDiscontinuity(unsigned lost) { m_discontinuity = lost; }
+    void SetDiscontinuity(unsigned lost) { m_metaData.m_discontinuity = lost; }
 
     /** Get the identifier that links audio and video streams for
         "lip synch" purposes.
     */
-    const PString & GetLipSyncId() const { return m_lipSyncId; }
+    const PString & GetLipSyncId() const { return m_metaData.m_lipSyncId; }
 
     /** Set the identifier that links audio and video streams for
         "lip synch" purposes.
     */
-    void SetLipSyncId(const PString & id) { m_lipSyncId = id; }
+    void SetLipSyncId(const PString & id) { m_metaData.m_lipSyncId = id; }
 
     // backward compatibility
-    P_DEPRECATED const PString & GetBundleId() const { return m_lipSyncId; }
-    P_DEPRECATED void SetBundleId(const PString & id) { m_lipSyncId = id; }
+    P_DEPRECATED const PString & GetBundleId() const { return m_metaData.m_lipSyncId; }
+    P_DEPRECATED void SetBundleId(const PString & id) { m_metaData.m_lipSyncId = id; }
 
   protected:
     bool AdjustHeaderSize(PINDEX newSize);
@@ -688,9 +703,7 @@ class RTP_DataFrame : public PBYTEArray
     PINDEX   m_headerSize;
     PINDEX   m_payloadSize;
     PINDEX   m_paddingSize;
-    PTime    m_absoluteTime;
-    unsigned m_discontinuity;
-    PString  m_lipSyncId;
+    MetaData m_metaData;
 
 #if PTRACING
     friend ostream & operator<<(ostream & o, PayloadTypes t);
