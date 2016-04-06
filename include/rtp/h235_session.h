@@ -124,7 +124,7 @@ class H2356_Session : public OpalRTPSession
 
     virtual SendReceiveStatus OnSendData(RTP_DataFrame & frame, RewriteMode rewrite);
 #if !H235_6_CODED_TO_CORRECT_SPECIFICATION
-    virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame, PINDEX pduSize);
+    virtual SendReceiveStatus OnPreReceiveData(RTP_DataFrame & frame);
 #endif
     virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame);
 

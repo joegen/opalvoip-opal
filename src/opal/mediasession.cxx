@@ -723,7 +723,7 @@ bool OpalMediaTransport::Transport::HandleUnavailableError()
 
   if (++m_consecutiveUnavailableErrors == 1) {
     PTRACE(2, m_owner, *m_owner << m_subchannel << " port on remote not ready: " << m_owner->GetRemoteAddress(m_subchannel));
-    m_timeForUnavailableErrors = m_channel->GetReadTimeout();
+    m_timeForUnavailableErrors = m_owner->m_maxNoTransmitTime;
     return true;
   }
 
@@ -1150,6 +1150,7 @@ bool OpalUDPMediaTransport::Open(OpalMediaSession & session,
     SetMinBufferSize(socket, SO_RCVBUF, session.GetMediaType() == OpalMediaType::Audio() ? 0x4000 : 0x100000);
     SetMinBufferSize(socket, SO_SNDBUF, 0x2000);
   }
+  m_mediaTimer = m_mediaTimeout;
 
   m_opened = true;
   return true;
