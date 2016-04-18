@@ -534,6 +534,8 @@ OPAL_SIMPLE_OPTION([samples],[OPAL_SAMPLES], [enable samples build])
 OPAL_SIMPLE_OPTION([plugins],[OPAL_PLUGINS], [plugin support])
 if test "x$OPAL_PLUGINS" = "xyes" ; then
   AC_CONFIG_SUBDIRS(plugins)
+else
+  touch plugins/plugin_config.mak plugins/plugin_config.h
 fi
 
 dnl Construct the plugins install path
