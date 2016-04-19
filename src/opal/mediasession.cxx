@@ -697,7 +697,7 @@ void OpalMediaTransport::Transport::ThreadMain()
             PTRACE(2, m_owner, *m_owner << m_subchannel << " timed out (" << m_channel->GetReadTimeout() << "s), other subchannels running");
           else {
             PTRACE(1, m_owner, *m_owner << m_subchannel << " timed out (" << m_owner->m_mediaTimeout << "s), closing");
-            Close();
+            m_owner->InternalClose();
           }
           break;
 
@@ -705,7 +705,7 @@ void OpalMediaTransport::Transport::ThreadMain()
           PTRACE(1, m_owner, *m_owner << m_subchannel
                  << " read error (" << m_channel->GetErrorNumber(PChannel::LastReadError) << "): "
                  << m_channel->GetErrorText(PChannel::LastReadError));
-          Close();
+          m_owner->InternalClose();
           break;
       }
     }
@@ -732,23 +732,25 @@ bool OpalMediaTransport::Transport::HandleUnavailableError()
 
   PTRACE(2, m_owner, *m_owner << m_subchannel << ' ' << m_owner->m_maxNoTransmitTime
          << " seconds of transmit fails to " << m_owner->GetRemoteAddress(m_subchannel));
-  Close();
+  m_owner->InternalClose();
   return false;
 }
 
 
-void OpalMediaTransport::Transport::Close()
+void OpalMediaTransport::InternalClose()
 {
-  if (m_channel == NULL)
+  if (!LockReadOnly())
     return;
 
-  PChannel * base = m_channel->GetBaseReadChannel();
-  if (base == NULL)
-    return;
+  for (vector<Transport>::iterator it = m_subchannels.begin(); it != m_subchannels.end(); ++it) {
+    if (it->m_channel != NULL) {
+      PChannel * base = it->m_channel->GetBaseReadChannel();
+      if (base != NULL)
+        base->Close();
+    }
+  }
 
-  base->Close();
-  m_owner->m_opened = false;
-  m_owner->InternalRxData(m_subchannel, PBYTEArray());
+  UnlockReadOnly();
 }
 
 
@@ -801,10 +803,7 @@ void OpalMediaTransport::Start()
 void OpalMediaTransport::InternalStop()
 {
   PTRACE(4, *this << "stopping " << m_subchannels.size() << "subchannels.");
-  LockReadOnly();
-  for (vector<Transport>::iterator it = m_subchannels.begin(); it != m_subchannels.end(); ++it)
-    it->Close();
-  UnlockReadOnly();
+  InternalClose();
 
   for (vector<Transport>::iterator it = m_subchannels.begin(); it != m_subchannels.end(); ++it) {
     if (it->m_thread != NULL) {
