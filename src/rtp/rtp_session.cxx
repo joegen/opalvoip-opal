@@ -2390,16 +2390,18 @@ bool OpalRTPSession::Close()
 {
   PTRACE(3, *this << "closing RTP.");
 
+  m_reportTimer.Stop(true);
+  m_endpoint.RegisterLocalRTP(this, true);
+
   if (IsOpen() && LockReadOnly()) {
     for (SyncSourceMap::iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
-      if (it->second->m_direction == e_Sender && it->second->m_packets > 0)
-        it->second->SendBYE();
+      if ( it->second->m_direction == e_Sender &&
+           it->second->m_packets > 0 &&
+           it->second->SendBYE() == e_AbortTransport)
+        break;
     }
     UnlockReadOnly();
   }
-
-  m_reportTimer.Stop(true);
-  m_endpoint.RegisterLocalRTP(this, true);
 
   return OpalMediaSession::Close();
 }
