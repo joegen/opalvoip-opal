@@ -455,6 +455,7 @@ public:
     void SetRemoteBehindNAT();
 
   protected:
+    virtual void InternalClose();
     virtual void InternalStop();
 
     PString       m_name;
@@ -476,7 +477,6 @@ public:
       );
       void ThreadMain();
       bool HandleUnavailableError();
-      void Close();
 
       typedef PNotifierListTemplate<PBYTEArray> NotifierList;
       NotifierList m_notifiers;
