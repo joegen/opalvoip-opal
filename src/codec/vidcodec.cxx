@@ -230,7 +230,6 @@ bool OpalVideoTranscoder::ShouldDropFrame(RTP_Timestamp ts)
   RTP_Timestamp delta = ts - m_lastTimestamp;
   m_lastTimestamp = ts;
 
-PTRACE(4, "ts=" << ts << ' ' << delta);
   if (delta == 0)
     delta = outputMediaFormat.GetFrameTime();
 
