@@ -943,7 +943,7 @@ bool OpalPluginVideoTranscoder::EncodeFrames(const RTP_DataFrame & src, RTP_Data
   m_lastFrameWasIFrame = false;
 
   bool foreIFrame = m_encodingIntraFrameControl.RequireIntraFrame();
-  PTRACE_IF(4, foreIFrame, "OpalPlugin\tI-Frame forced from video codec at frame " << m_totalFrames);
+  PTRACE_IF(4, foreIFrame, "OpalPlugin\tI-Frame forced from video codec at frame " << m_totalFrames+1);
   do {
     // Some plug ins a very rude and use more memory than we say they can, so add an extra 1k
     RTP_DataFrame * dst = new RTP_DataFrame((PINDEX)0, outputDataSize+1024);
