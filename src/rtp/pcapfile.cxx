@@ -318,7 +318,7 @@ int OpalPCAPFile::GetDecodedRTP(RTP_DataFrame & decodedRTP, DecodeContext & cont
     return 0;
 
   decodedRTP = output.front();
-  return 1;
+  return decodedRTP.GetPayloadSize() > 0 ? 1 : 0;
 }
 
 
