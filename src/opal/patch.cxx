@@ -973,15 +973,16 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame, bool bypassin
   if (m_stream->IsPaused())
     return true;
 
+  if (bypassing || m_primaryCodec == NULL) {
 #if OPAL_VIDEO
-  OpalVideoFormat::FrameType frameType;
-  if (m_videoFormat.IsValid())
-    frameType = m_videoFormat.GetFrameType(sourceFrame.GetPayloadPtr(), sourceFrame.GetPayloadSize(), m_keyFrameDetector);
-  else
-    frameType = OpalVideoFormat::e_UnknownFrameType;
+    // Must be done before the WritePacket() which could encrypt the packet
+    OpalVideoFormat::FrameType frameType;
+    if (m_videoFormat.IsValid())
+      frameType = m_videoFormat.GetFrameType(sourceFrame.GetPayloadPtr(), sourceFrame.GetPayloadSize(), m_keyFrameDetector);
+    else
+      frameType = OpalVideoFormat::e_UnknownFrameType;
 #endif // OPAL_VIDEO
 
-  if (bypassing || m_primaryCodec == NULL) {
     if (!m_stream->WritePacket(sourceFrame))
       return false;
 
