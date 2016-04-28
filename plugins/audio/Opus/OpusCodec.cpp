@@ -165,6 +165,19 @@ static struct PluginCodec_Option const DynamicPacketLoss =
   "0","100" // percentage
 };
 
+static struct PluginCodec_Option const Complexity =
+{
+  PluginCodec_IntegerOption,
+  "Complexity",
+  false,
+  PluginCodec_NoMerge,
+  "0",
+  NULL,
+  NULL,
+  0,
+  "0","100" // percentage
+};
+
 static struct PluginCodec_Option const * const MyOptions[] = {
   &UseInBandFEC,
   &UseDTX,
@@ -173,6 +186,7 @@ static struct PluginCodec_Option const * const MyOptions[] = {
   &PlaybackStereo,
   &CaptureStereo,
   &DynamicPacketLoss,
+  &Complexity,
   NULL
 };
 
@@ -330,6 +344,7 @@ class OpusPluginEncoder : public OpusPluginCodec
     unsigned      m_dynamicPacketLoss;
     bool          m_useDTX;
     unsigned      m_bitRate;
+    opus_int32    m_complexity;
 
   public:
     OpusPluginEncoder(const PluginCodec_Definition * defn)
@@ -338,6 +353,7 @@ class OpusPluginEncoder : public OpusPluginCodec
       , m_dynamicPacketLoss(0)
       , m_useDTX(false)
       , m_bitRate(12000)
+      , m_complexity(0)
     {
       PTRACE(4, MY_CODEC_LOG, "Encoder created: $Revision$, version \"" << opus_get_version_string() << '"');
     }
@@ -353,8 +369,10 @@ class OpusPluginEncoder : public OpusPluginCodec
     virtual bool Construct()
     {
       int error;
-      if ((m_encoder = opus_encoder_create(m_sampleRate, m_channels, OPUS_APPLICATION_VOIP, &error)) != NULL)
+      if ((m_encoder = opus_encoder_create(m_sampleRate, m_channels, OPUS_APPLICATION_VOIP, &error)) != NULL) {
+        opus_encoder_ctl(m_encoder, OPUS_GET_COMPLEXITY(&m_complexity));
         return true;
+      }
 
       PTRACE(1, MY_CODEC_LOG, "Encoder create error " << error << ' ' << opus_strerror(error));
       return false;
@@ -376,6 +394,9 @@ class OpusPluginEncoder : public OpusPluginCodec
       if (strcasecmp(optionName, PLUGINCODEC_OPTION_TARGET_BIT_RATE) == 0)
         return SetOptionUnsigned(m_bitRate, optionValue, 6000, 510000);
 
+      if (strcasecmp(optionName, Complexity.m_name) == 0)
+          return SetOptionUnsigned(m_complexity, optionValue, 0, 10);
+
       // Base class sets bit rate and frame time
       return OpusPluginCodec::SetOption(optionName, optionValue);
     }
@@ -391,11 +412,13 @@ class OpusPluginEncoder : public OpusPluginCodec
       opus_encoder_ctl(m_encoder, OPUS_SET_PACKET_LOSS_PERC(m_dynamicPacketLoss));
       opus_encoder_ctl(m_encoder, OPUS_SET_DTX(m_useDTX));
       opus_encoder_ctl(m_encoder, OPUS_SET_BITRATE(m_bitRate));
+      opus_encoder_ctl(m_encoder, OPUS_SET_COMPLEXITY(m_complexity));
       PTRACE(4, MY_CODEC_LOG, "Encoder options set:"
                               " fec=" << std::boolalpha << m_useInBandFEC << ","
                               " pkt-loss=" << m_dynamicPacketLoss << "%,"
                               " dtx=" << m_useDTX << ","
-                              " bitrate=" << m_bitRate);
+                              " bitrate=" << m_bitRate << ","
+                              " complexity=" << m_complexity);
       return true;
     }
 
