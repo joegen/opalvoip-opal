@@ -175,7 +175,7 @@ static struct PluginCodec_Option const Complexity =
   NULL,
   NULL,
   0,
-  "0","100" // percentage
+  "0","10"
 };
 
 static struct PluginCodec_Option const * const MyOptions[] = {
