@@ -171,11 +171,11 @@ static struct PluginCodec_Option const Complexity =
   "Complexity",
   false,
   PluginCodec_NoMerge,
-  "0",
+  "9",
   NULL,
   NULL,
   0,
-  "0","100" // percentage
+  "0","10"
 };
 
 static struct PluginCodec_Option const * const MyOptions[] = {
@@ -369,10 +369,8 @@ class OpusPluginEncoder : public OpusPluginCodec
     virtual bool Construct()
     {
       int error;
-      if ((m_encoder = opus_encoder_create(m_sampleRate, m_channels, OPUS_APPLICATION_VOIP, &error)) != NULL) {
-        opus_encoder_ctl(m_encoder, OPUS_GET_COMPLEXITY(&m_complexity));
+      if ((m_encoder = opus_encoder_create(m_sampleRate, m_channels, OPUS_APPLICATION_VOIP, &error)) != NULL)
         return true;
-      }
 
       PTRACE(1, MY_CODEC_LOG, "Encoder create error " << error << ' ' << opus_strerror(error));
       return false;
