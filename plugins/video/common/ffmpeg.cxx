@@ -91,7 +91,7 @@ static void logCallbackFFMPEG(void * avcl, int severity, const char* fmt , va_li
       (len == 2 && isxdigit(buffer[1])))
     level = 6;
 
-  if (avcl != NULL && strcmp((*(AVClass**)avcl)->class_name, "AVCodecContext") == 0)
+  if (avcl != NULL && strcmp((*(AVClass**)avcl)->class_name, "AVCodecContext") == 0 && static_cast<AVCodecContext *>(avcl)->opaque != NULL)
     static_cast<FFMPEGCodec *>(static_cast<AVCodecContext *>(avcl)->opaque)->ErrorCallback(level, buffer);
   else
     PTRACE(level, "FFMPEG", buffer);
