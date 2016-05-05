@@ -41,6 +41,7 @@
 #include <rtp/dtls_srtp_session.h>
 #include <h323/h323caps.h>
 #include <ptclib/cypher.h>
+#include <ptclib/random.h>
 
 
 #define PTraceModule() "SRTP"
@@ -179,12 +180,12 @@ static bool CheckError(err_status_t err,
 extern "C" {
   err_reporting_level_t err_level = err_level_none;
 
-  err_status_t err_reporting_init(char *)
+  err_status_t err_reporting_init(OPAL_SRTP_ERROR_CONST char *)
   {
     return err_status_ok;
   }
 
-  void err_report(int PTRACE_PARAM(priority), char * PTRACE_PARAM(format), ...)
+  void err_report(int PTRACE_PARAM(priority), OPAL_SRTP_ERROR_CONST char * PTRACE_PARAM(format), ...)
   {
 #if PTRACING
     va_list args;
@@ -396,11 +397,8 @@ PString OpalSRTPKeyInfo::ToString() const
 
 void OpalSRTPKeyInfo::Randomise()
 {
-  m_key.SetSize(m_cryptoSuite.GetCipherKeyBytes());
-  rand_source_get_octet_string(m_key.GetPointer(), m_key.GetSize());
-
-  m_salt.SetSize(m_cryptoSuite.GetAuthSaltBytes());
-  rand_source_get_octet_string(m_salt.GetPointer(), m_salt.GetSize());
+  m_key = PRandom::Octets(m_key.GetSize());
+  m_salt = PRandom::Octets(m_cryptoSuite.GetAuthSaltBytes());
 }
 
 

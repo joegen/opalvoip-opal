@@ -666,6 +666,10 @@ class RTP_DataFrame : public PBYTEArray
       */
     const MetaData & GetMetaData() const { return m_metaData; }
 
+    /**Set meta data for RTP packet.
+      */
+    void SetMetaData(const MetaData & metaData) { m_metaData = metaData; }
+
     /**Get absolute (wall clock) time of packet, if known.
       */
     PTime GetAbsoluteTime() const { return m_metaData.m_absoluteTime; }
@@ -681,6 +685,8 @@ class RTP_DataFrame : public PBYTEArray
       */
     unsigned GetDiscontinuity() const { return m_metaData.m_discontinuity; }
 
+    /** Set sequence number discontinuity.
+      */
     void SetDiscontinuity(unsigned lost) { m_metaData.m_discontinuity = lost; }
 
     /** Get the identifier that links audio and video streams for
