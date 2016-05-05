@@ -188,7 +188,7 @@ OPAL_MODULE_OPTION(
       MY_COMPILE_IFELSE(
          [for SRTP const in error functions],
          [],
-         [#inclide <srtp/srtp.h>],
+         [#include <srtp/srtp.h>],
          [err_status_t err_reporting_init(const char *ident)],
          [AC_DEFINE(OPAL_SRTP_ERROR_CONST, const)]
       )
@@ -196,7 +196,6 @@ OPAL_MODULE_OPTION(
       AC_CONFIG_SUBDIRS(src/rtp/libsrtp)
       AC_DEFINE(HAS_SRTP_SRTP_H,0)
       SRTP_MSG="yes (internal)"
-      AC_DEFINE(OPAL_SRTP_ERROR_CONST, [/*const*/])
    ])
 )
 

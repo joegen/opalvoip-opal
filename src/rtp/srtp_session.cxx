@@ -177,6 +177,10 @@ static bool CheckError(err_status_t err,
 #define CHECK_ERROR(fn, param, ...) ((fn param) == err_status_ok)
 #endif //PTRACING
 
+#ifndef OPAL_SRTP_ERROR_CONST
+  #define OPAL_SRTP_ERROR_CONST
+#endif
+
 extern "C" {
   err_reporting_level_t err_level = err_level_none;
 
