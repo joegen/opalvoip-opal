@@ -70,6 +70,10 @@ OpalRTPMediaStream::OpalRTPMediaStream(OpalRTPConnection & conn,
   , m_pictureLossThrottleTime(-1)
 #endif
   , m_receiveNotifier(PCREATE_RTPDataNotifier(OnReceivedPacket))
+#if OPAL_JITTER_BUFFER_LATENCY_CHECK
+  , m_jbLatencySampleCount(0)
+#endif
+
 {
   /* If we are a source then we should set our buffer size to the max
      practical UDP packet size. This means we have a buffer that can accept
@@ -328,14 +332,34 @@ PBoolean OpalRTPMediaStream::ReadPacket(RTP_DataFrame & packet)
   if (!m_jitterBuffer->ReadData(packet, m_readTimeout))
     return false;
 
+  timestamp = packet.GetTimestamp();
+
 #if OPAL_VIDEO
   if (packet.GetDiscontinuity() > 0 && mediaFormat.GetMediaType() == OpalMediaType::Video()) {
     PTRACE(3, "Automatically requesting video update due to " << packet.GetDiscontinuity() << " missing packets.");
-    ExecuteCommand(OpalVideoPictureLoss(packet.GetSequenceNumber(), packet.GetTimestamp(), 0, packet.GetSyncSource()));
+    ExecuteCommand(OpalVideoPictureLoss(packet.GetSequenceNumber(), timestamp, 0, packet.GetSyncSource()));
   }
 #endif
 
-  timestamp = packet.GetTimestamp();
+#if OPAL_JITTER_BUFFER_LATENCY_CHECK
+  if (PTrace::CanTrace(3) && packet.GetPayloadSize() > 0) {
+    unsigned jbDelay = m_jitterBuffer->GetCurrentJitterDelay();
+    unsigned jbPktTime = m_jitterBuffer->GetPacketTime();
+    if (jbDelay > 0 && jbPktTime > 0) {
+      m_jbLatencyAccumulator += packet.GetMetaData().m_networkTime.GetElapsed();
+      if (++m_jbLatencySampleCount > 100) {
+        PTimeInterval averageTime = m_jbLatencyAccumulator / m_jbLatencySampleCount;
+        m_jbLatencyAccumulator = 0;
+        m_jbLatencySampleCount = 0;
+
+        bool good = averageTime < (jbDelay + 2 * jbPktTime) / m_jitterBuffer->GetTimeUnits();
+        PTRACE(good ? 5 : 3, "Packet latency " << (good ? "good" : "BAD")
+               << " (avg=" << averageTime << ") in jitter buffer " << *m_jitterBuffer);
+      }
+    }
+  }
+#endif // OPAL_JITTER_BUFFER_LATENCY_CHECK    
+
   return true;
 }
 
