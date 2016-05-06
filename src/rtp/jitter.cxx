@@ -390,7 +390,6 @@ void OpalAudioJitterBuffer::InternalReset()
   m_synchronisationState = e_SynchronisationStart;
 
   m_frames.clear();
-  m_frameCount.Reset();
 }
 
 
@@ -572,7 +571,12 @@ PBoolean OpalAudioJitterBuffer::ReadData(RTP_DataFrame & frame, const PTimeInter
     m_currentJitterDelay = 0;
     m_frameCount.Wait(); // Go synchronous
     PWaitAndSignal mutex(m_bufferMutex);
-    if (!m_frames.empty()) {
+    if (m_frames.empty()) {
+        // Must have been reset, clear the semaphore.
+        while (m_frameCount.Wait(0))
+            ;
+    }
+    else {
       FrameMap::iterator oldestFrame = m_frames.begin();
       frame = oldestFrame->second;
       m_frames.erase(oldestFrame);
