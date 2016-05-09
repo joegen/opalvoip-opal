@@ -220,6 +220,11 @@ protected:
     PDECLARE_RTPDataNotifier(OpalRTPMediaStream, OnReceivedPacket);
     OpalRTPSession::DataNotifier m_receiveNotifier;
 
+#if OPAL_JITTER_BUFFER_LATENCY_CHECK
+    PTimeInterval m_jbLatencyAccumulator;
+    unsigned      m_jbLatencySampleCount;
+#endif
+
     PTRACE_THROTTLE(m_throttleWriteData,3,500);
     PTRACE_THROTTLE(m_throttleSendReport,3,500);
 };

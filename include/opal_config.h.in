@@ -204,6 +204,10 @@
 // G.711 Packet Loss Concealment
 #undef  OPAL_G711PLC
 
+#if PTRACING
+  #undef OPAL_JITTER_BUFFER_LATENCY_CHECK
+#endif
+
 #if OPAL_VIDEO
   // Uncompressed video over RTP
   #undef  OPAL_RFC4175 

@@ -38,6 +38,7 @@
 #include <opal/patch.h>
 
 #define new PNEW
+#define PTraceModule() "Silence"
 
 
 extern "C" {
@@ -55,7 +56,7 @@ OpalSilenceDetector::OpalSilenceDetector(const Params & theParam)
   // Initialise the adaptive threshold variables.
   SetParameters(theParam);
 
-  PTRACE(4, "Silence\tHandler created");
+  PTRACE(4, "Handler created");
 }
 
 
@@ -91,7 +92,7 @@ void OpalSilenceDetector::SetParameters(const Params & newParam, const int rate 
   else
     AdaptiveReset();
 
-  PTRACE(3, "Silence\tParameters set: "
+  PTRACE(3, "Parameters set: "
             "mode=" << m_mode << ", "
             "threshold=" << m_levelThreshold << ", "
             "silencedb=" << m_silenceDeadband << " samples, "
@@ -227,7 +228,7 @@ OpalSilenceDetector::Result OpalSilenceDetector::Detect(const BYTE * audioPtr, P
     // If have had enough consecutive frames talking/silent, swap modes.
     if (m_receivedTime >= (m_lastResult != IsSilent ? m_silenceDeadband : m_signalDeadband)) {
       m_lastResult = m_lastResult != IsSilent ? IsSilent : VoiceActivated;
-      PTRACE(4, "Silence\tDetector transition: "
+      PTRACE(4, "Detector transition: "
              << (m_lastResult != IsSilent ? "Talk" : "Silent")
              << " level=" << m_lastSignalLevel << " threshold=" << m_levelThreshold);
 
@@ -251,7 +252,7 @@ OpalSilenceDetector::Result OpalSilenceDetector::Detect(const BYTE * audioPtr, P
     if (m_lastSignalLevel > 1) {
       // Bootstrap condition, use first frame level as silence level
       m_levelThreshold = m_lastSignalLevel/2;
-      PTRACE(4, "Silence\tThreshold initialised to: " << m_levelThreshold);
+      PTRACE(4, "Threshold initialised to: " << m_levelThreshold);
     }
     return m_lastResult;
   }
@@ -283,7 +284,7 @@ OpalSilenceDetector::Result OpalSilenceDetector::Detect(const BYTE * audioPtr, P
       int delta = (m_signalMinimum - m_levelThreshold)/4;
       if (delta != 0) {
         m_levelThreshold += delta;
-        PTRACE(4, "Silence\tThreshold increased to: " << m_levelThreshold);
+        PTRACE(4, "Threshold increased to: " << m_levelThreshold);
       }
     }
     else if (m_silenceReceivedTime >= m_adaptivePeriod) {
@@ -296,7 +297,7 @@ OpalSilenceDetector::Result OpalSilenceDetector::Detect(const BYTE * audioPtr, P
       unsigned newThreshold = (m_levelThreshold + m_silenceMaximum)/2 + 1;
       if (m_levelThreshold != newThreshold) {
         m_levelThreshold = newThreshold;
-        PTRACE(4, "Silence\tThreshold decreased to: " << m_levelThreshold);
+        PTRACE(4, "Threshold decreased to: " << m_levelThreshold);
       }
     }
     else if (m_signalReceivedTime > m_silenceReceivedTime) {
@@ -305,7 +306,7 @@ OpalSilenceDetector::Result OpalSilenceDetector::Detect(const BYTE * audioPtr, P
          silence we should creep up a bit.
        */
       m_levelThreshold++;
-      PTRACE(4, "Silence\tThreshold incremented to: " << m_levelThreshold
+      PTRACE(4, "Threshold incremented to: " << m_levelThreshold
              << " signal=" << m_signalReceivedTime << ' ' << m_signalMinimum
              << " silence=" << m_silenceReceivedTime << ' ' << m_silenceMaximum);
     }
