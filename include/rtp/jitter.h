@@ -332,8 +332,8 @@ class OpalAudioJitterBuffer : public OpalJitterBuffer
     PDECLARE_MUTEX(m_bufferMutex);
     PSemaphore m_frameCount;
 
-#if PTRACING
     PTimeInterval m_lastInsertTick;
+#if PTRACING
     PTimeInterval m_lastRemoveTick;
   public:
     static unsigned sm_EveryPacketLogLevel;
