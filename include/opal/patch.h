@@ -272,13 +272,24 @@ class OpalMediaPatch : public PSafeObject
         RTP_DataFrameList  m_intermediateFrames;
         RTP_DataFrameList  m_finalFrames;
 
-#if OPAL_VIDEO && OPAL_STATISTICS
-        OpalVideoFormat     m_videoFormat;
-        OpalVideoFormat::FrameDetectorPtr m_keyFrameDetector;
+#if OPAL_STATISTICS
+        OpalAudioFormat m_audioFormat;
+        OpalAudioFormat::FrameDetectorPtr m_audioFrameDetector;
+        struct AudioStats {
+          unsigned m_silent;
+          unsigned m_FEC;
+          AudioStats() : m_silent(0), m_FEC(0) { }
+        };
+        typedef map<RTP_SyncSourceId, AudioStats> AudioStatsMap;
+        AudioStatsMap m_audioStatistics;
+#if OPAL_VIDEO
+        OpalVideoFormat m_videoFormat;
+        OpalVideoFormat::FrameDetectorPtr m_videoFrameDetector;
         typedef map<RTP_SyncSourceId, OpalVideoStatistics> VideoStatsMap;
         VideoStatsMap m_videoStatistics;
-        PDECLARE_MUTEX(m_videoStatsMutex);
-#endif
+#endif // OPAL_VIDEO
+        PDECLARE_MUTEX(m_statsMutex);
+#endif // OPAL_STATISTICS
     };
     PList<Sink> m_sinks;
 
