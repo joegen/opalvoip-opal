@@ -291,8 +291,7 @@ OpalAudioJitterBuffer::OpalAudioJitterBuffer(const Init & init)
   , m_consecutiveEmpty(0)
   , m_lastSyncSource(0)
 #if PTRACING
-  , m_lastInsertTick(PTimer::Tick())
-  , m_lastRemoveTick(m_lastInsertTick)
+  , m_lastRemoveTick(PTimer::Tick())
 #endif
 {
   InternalReset();
@@ -393,7 +392,7 @@ void OpalAudioJitterBuffer::InternalReset()
 }
 
 
-PBoolean OpalAudioJitterBuffer::WriteData(const RTP_DataFrame & frame, PTimeInterval PTRACE_PARAM(tick))
+PBoolean OpalAudioJitterBuffer::WriteData(const RTP_DataFrame & frame, PTimeInterval tick)
 {
   if (m_closed)
     return false;
@@ -408,6 +407,16 @@ PBoolean OpalAudioJitterBuffer::WriteData(const RTP_DataFrame & frame, PTimeInte
   RTP_Timestamp timestamp = frame.GetTimestamp();
   RTP_SequenceNumber currentSequenceNum = frame.GetSequenceNumber();
   RTP_SyncSourceId newSyncSource = frame.GetSyncSource();
+
+  // Avoid issues with constant delay offset caused by initial in rush of packets
+  if (m_lastSyncSource == 0 && (m_lastInsertTick == 0 || (tick - m_lastInsertTick) < 10)) {
+    PTRACE(std::min(sm_EveryPacketLogLevel,4U), "Flushing initial audio packet:"
+                                                " SSRC=" << RTP_TRACE_SRC(newSyncSource) <<
+                                                " sn=" << currentSequenceNum <<
+                                                " ts=" << timestamp);
+    m_lastInsertTick = tick;
+    return true;
+  }
 
   // Check for remote switching media senders, they shouldn't do this but do anyway
   if (newSyncSource != m_lastSyncSource) {
@@ -521,9 +530,7 @@ PBoolean OpalAudioJitterBuffer::WriteData(const RTP_DataFrame & frame, PTimeInte
            " dT=" << (tick - m_lastInsertTick) << ","
            " payload=" << frame.GetPayloadSize() << ","
            " size=" << m_frames.size());
-#if PTRACING
     m_lastInsertTick = tick;
-#endif
     m_frameCount.Signal();
   }
   else {
