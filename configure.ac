@@ -103,15 +103,27 @@ AC_ARG_WITH(
    ptlib,
    AS_HELP_STRING([--with-ptlib=<dir>],[location of PTLib]),
    [
-      OPAL_PTLIB_DIR="$withval (--with-ptlib)"
-      export PKG_CONFIG_PATH=$withval/lib_$target:$withval:$PKG_CONFIG_PATH
-      AC_MSG_NOTICE(with PTLib at $withval)
+      if test "x$PKG_CONFIG" == "x" ; then
+        AC_MSG_ERROR([
+          Cannot continue without pkg-config
+        ])
+      else
+        OPAL_PTLIB_DIR="$withval (--with-ptlib)"
+        export PKG_CONFIG_PATH=$withval/lib_$target:$withval:$PKG_CONFIG_PATH
+        AC_MSG_NOTICE(with PTLib at $withval)
+      fi
    ],
    [
       if test "x$PTLIBDIR" != "x" ; then
-         OPAL_PTLIB_DIR="$PTLIBDIR (PTLIBDIR)"
-         export PKG_CONFIG_PATH=$PTLIBDIR/lib_$target:$PTLIBDIR:$PKG_CONFIG_PATH
-         AC_MSG_NOTICE(PTLIBDIR environment variable detected as $PTLIBDIR)
+         if test "x$PKG_CONFIG" == "x" ; then
+           AC_MSG_ERROR([
+             Cannot continue without pkg-config
+           ])
+         else
+           OPAL_PTLIB_DIR="$PTLIBDIR (PTLIBDIR)"
+           export PKG_CONFIG_PATH=$PTLIBDIR/lib_$target:$PTLIBDIR:$PKG_CONFIG_PATH
+           AC_MSG_NOTICE(PTLIBDIR environment variable detected as $PTLIBDIR)
+        fi
       fi
    ]
 )
