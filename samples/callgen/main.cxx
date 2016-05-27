@@ -705,8 +705,9 @@ bool MyLocalConnection::OnReadMediaData(const OpalMediaStream & mediaStream, voi
   }
 
   if (m_tone.IsEmpty()) {
-    m_tone.SetSampleRate(mediaStream.GetMediaFormat().GetClockRate());
-    m_tone.Generate('-', 440, 0, 20); // 20ms of middle A
+    OpalMediaFormat mediaFormat = mediaStream.GetMediaFormat();
+    m_tone.SetSampleRate(mediaFormat.GetClockRate());
+    m_tone.Generate('-', 440, 0, std::max(mediaFormat.GetFrameTime()/mediaFormat.GetTimeUnits(), 20U)); // at least 20ms of middle A
   }
 
   PINDEX bytesLeft = (m_tone.GetSize() - m_toneOffset) / 2;
