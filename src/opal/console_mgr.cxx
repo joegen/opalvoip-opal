@@ -1655,13 +1655,9 @@ void OpalConsolePCSSEndPoint::OnReleased(OpalConnection & connection)
 
 void OpalConsolePCSSEndPoint::ShutDown()
 {
-  if (m_ringThread != NULL) {
-    m_ringState = e_RingShutDown;
-    m_ringSignal.Signal();
-    m_ringThread->WaitForTermination();
-    delete m_ringThread;
-    m_ringThread = NULL;
-  }
+  m_ringState = e_RingShutDown;
+  m_ringSignal.Signal();
+  PThread::WaitAndDelete(m_ringThread);
 
   OpalPCSSEndPoint::ShutDown();
 }
