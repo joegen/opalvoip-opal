@@ -745,8 +745,16 @@ void OpalMediaTransport::InternalClose()
   for (vector<Transport>::iterator it = m_subchannels.begin(); it != m_subchannels.end(); ++it) {
     if (it->m_channel != NULL) {
       PChannel * base = it->m_channel->GetBaseReadChannel();
-      if (base != NULL)
+      if (base != NULL) {
+        PTRACE(4, *this << it->m_subchannel << " closing.");
         base->Close();
+      }
+      else {   
+        PTRACE(3, *this << it->m_subchannel << " already closed.");
+      }
+    }
+    else {
+      PTRACE(3, *this << it->m_subchannel << " not created.");
     }
   }
 
@@ -802,15 +810,14 @@ void OpalMediaTransport::Start()
 
 void OpalMediaTransport::InternalStop()
 {
-  PTRACE(4, *this << "stopping " << m_subchannels.size() << "subchannels.");
+  if (m_subchannels.empty())
+    return;
+
+  PTRACE(4, *this << "stopping " << m_subchannels.size() << " subchannels.");
   InternalClose();
 
-  for (vector<Transport>::iterator it = m_subchannels.begin(); it != m_subchannels.end(); ++it) {
-    if (it->m_thread != NULL) {
-      PAssert(it->m_thread->WaitForTermination(10000), "RTP thread failed to terminate");
-      delete it->m_thread;
-    }
-  }
+  for (vector<Transport>::iterator it = m_subchannels.begin(); it != m_subchannels.end(); ++it)
+    PThread::WaitAndDelete(it->m_thread);
 
   LockReadWrite();
   for (vector<Transport>::iterator it = m_subchannels.begin(); it != m_subchannels.end(); ++it)

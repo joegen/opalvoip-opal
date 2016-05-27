@@ -5875,11 +5875,7 @@ void OptionsDialog::StopTestVideo()
   if (m_TestVideoDisplay != NULL)
     m_TestVideoDisplay->Close();
 
-  if (m_TestVideoThread != NULL)
-    m_TestVideoThread->WaitForTermination();
-
-  delete m_TestVideoThread;
-  m_TestVideoThread = NULL;
+  PThread::WaitAndDelete(m_TestVideoThread);
 
   delete m_TestVideoDisplay;
   m_TestVideoDisplay = NULL;

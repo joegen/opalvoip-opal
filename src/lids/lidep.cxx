@@ -63,21 +63,16 @@ OpalLineEndPoint::OpalLineEndPoint(OpalManager & mgr)
 
 OpalLineEndPoint::~OpalLineEndPoint()
 {
-  if(NULL != monitorThread)
-  {
-     PTRACE(4, "LID EP\tAwaiting monitor thread termination " << GetPrefixName());
-     exitFlag.Signal();
-     monitorThread->WaitForTermination();
-     delete monitorThread;
-     monitorThread = NULL;
+  exitFlag.Signal();
+  PThread::WaitAndDelete(monitorThread);
 
-     /* remove all lines which has been added with AddLine or AddLinesFromDevice
-        RemoveAllLines can be invoked only after the monitorThread has been destroyed,
-        indeed, the monitor thread may called some function such as vpb_get_event_ch_async which may
-        throw an exception if the line handle is no longer valid
-     */
-     RemoveAllLines();
-  }
+  /* remove all lines which has been added with AddLine or AddLinesFromDevice
+    RemoveAllLines can be invoked only after the monitorThread has been destroyed,
+    indeed, the monitor thread may called some function such as vpb_get_event_ch_async which may
+    throw an exception if the line handle is no longer valid
+  */
+  RemoveAllLines();
+
   PTRACE(4, "LID EP\tOpalLineEndPoint " << GetPrefixName() << " destroyed");
 }
 
@@ -501,14 +496,9 @@ void OpalLineConnection::OnReleased()
 {
   PTRACE(3, "LID Con\tOnReleased " << *this);
 
-  if (handlerThread != NULL && PThread::Current() != handlerThread) {
-    PTRACE(4, "LID Con\tAwaiting handler thread termination " << *this);
-    // Stop the signalling handler thread
-    SetUserInput(PString()); // Break out of ReadUserInput
-    handlerThread->WaitForTermination();
-    delete handlerThread;
-    handlerThread = NULL;
-  }
+  // Stop the signalling handler thread
+  SetUserInput(PString()); // Break out of ReadUserInput
+  PThread::WaitAndDelete(handlerThread);
 
   if (line.IsTerminal()) {
     if (line.IsOffHook()) {
