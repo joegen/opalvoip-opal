@@ -179,20 +179,7 @@ void OpalMediaPatch::Start()
 
 void OpalMediaPatch::StopThread()
 {
-  m_patchThreadMutex.Wait();
-  PThread * thread = m_patchThread;
-  m_patchThread = NULL;
-  m_patchThreadMutex.Signal();
-
-  if (thread == NULL)
-    return;
-
-  if (!thread->IsSuspended()) {
-    PTRACE(4, "Waiting for media patch thread to stop " << *this);
-    PAssert(thread->WaitForTermination(10000), "Media patch thread not terminated.");
-  }
-
-  delete thread;
+  PThread::WaitAndDelete(m_patchThread, 10000, &m_patchThreadMutex);
 }
 
 

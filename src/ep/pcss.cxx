@@ -510,13 +510,8 @@ OpalPCSSConnection::~OpalPCSSConnection()
 
 void OpalPCSSConnection::OnReleased()
 {
-  if (m_ringbackThread != NULL) {
-    PTRACE(4, "OnRelease stopping ringback thread");
-    m_ringbackStop.Signal();
-    m_ringbackThread->WaitForTermination();
-    delete m_ringbackThread;
-    m_ringbackThread = NULL;
-  }
+  m_ringbackStop.Signal();
+  PThread::WaitAndDelete(m_ringbackThread);
 
   StopReadUserInput();
 
@@ -763,9 +758,7 @@ void OpalPCSSConnection::StopReadUserInput()
 
   PTRACE(3, "Stopping user input thread.");
   m_userInputChannel->Close();
-  m_userInputThread->WaitForTermination();
-  delete m_userInputThread;
-  m_userInputThread = NULL;
+  PThread::WaitAndDelete(m_userInputThread);
   if (m_userInputAutoDelete)
     delete m_userInputChannel;
   m_userInputChannel = NULL;

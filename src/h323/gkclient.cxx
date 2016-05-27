@@ -333,13 +333,9 @@ bool H323Gatekeeper::DiscoverGatekeeper()
 
 void H323Gatekeeper::StopChannel()
 {
-  if (m_monitorThread != NULL) {
-    m_monitorRunning = false;
-    m_monitorTickle.Signal();
-    PAssert(m_monitorThread->WaitForTermination(10000), "Gatekeeper monitor thread did not stop");
-    delete m_monitorThread;
-    m_monitorThread = 0;
-  }
+  m_monitorRunning = false;
+  m_monitorTickle.Signal();
+  PThread::WaitAndDelete(m_monitorThread);
 
   H323Transactor::StopChannel();
 }
