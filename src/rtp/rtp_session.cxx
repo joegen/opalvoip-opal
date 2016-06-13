@@ -565,7 +565,6 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveData(RTP_
     m_consecutiveOutOfOrderPackets = 0;
   }
   else if (sequenceDelta > SequenceReorderThreshold) {
-    PTRACE(3, &m_session, *this << "late out of order packet, got " << sequenceNumber << " expected " << expectedSequenceNumber);
     ++m_lateOutOfOrder;
     if (m_packetsLost > 0)
       --m_packetsLost; // Previously marked as lost
@@ -575,8 +574,13 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveData(RTP_
     if (running && ++m_lateOutOfOrderAdaptCount >= m_lateOutOfOrderAdaptMax) {
       PTimeInterval timeout = m_session.GetOutOfOrderWaitTime() + m_lateOutOfOrderAdaptBoost;
       m_session.SetOutOfOrderWaitTime(timeout);
-      PTRACE(2, &m_session, *this << " increased out of order packet timeout to " << timeout);
+      PTRACE(2, &m_session, *this << "late out of order packet:"
+                                     " got " << sequenceNumber << ", expected " << expectedSequenceNumber << ","
+                                     " increased timeout to " << setprecision(2) << timeout);
       running = false;
+    }
+    else {
+      PTRACE(3, &m_session, *this << "late out of order packet: got " << sequenceNumber << ", expected " << expectedSequenceNumber);
     }
     if (!running) {
       m_lateOutOfOrderAdaptTimer = m_lateOutOfOrderAdaptPeriod;
