@@ -409,11 +409,8 @@ OpalManager::~OpalManager()
 #endif
 
   // Shut down the cleaner thread
-  if (m_garbageCollector != NULL) {
-    m_garbageCollectExit.Signal();
-    m_garbageCollector->WaitForTermination();
-    delete m_garbageCollector;
-  }
+  m_garbageCollectExit.Signal();
+  PThread::WaitAndDelete(m_garbageCollector);
 
   // Clean up any calls that the cleaner thread missed on the way out
   GarbageCollection();

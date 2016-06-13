@@ -518,11 +518,8 @@ OpalMSRPManager::~OpalMSRPManager()
 {
   PWaitAndSignal m(mutex);
 
-  if (m_listenerThread != NULL) {
-    m_listenerSocket.Close();
-    m_listenerThread->WaitForTermination();
-    delete m_listenerThread;
-  }
+  m_listenerSocket.Close();
+  PThread::WaitAndDelete(m_listenerThread);
 }
 
 
@@ -714,12 +711,9 @@ void OpalMSRPManager::Connection::StartHandler()
 
 OpalMSRPManager::Connection::~Connection()
 {
-  if (m_handlerThread != NULL) {
-    m_running = false;
-    m_handlerThread->WaitForTermination();
-    delete m_handlerThread;
-    m_handlerThread = NULL;
-  }
+  m_running = false;
+  PThread::WaitAndDelete(m_handlerThread);
+
   delete m_protocol;
   m_protocol = NULL;
   PTRACE(3, "MSRP\tDestroying connection");

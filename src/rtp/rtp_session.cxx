@@ -565,7 +565,6 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveData(RTP_
     m_consecutiveOutOfOrderPackets = 0;
   }
   else if (sequenceDelta > SequenceReorderThreshold) {
-    PTRACE(3, &m_session, *this << "late out of order packet, got " << sequenceNumber << " expected " << expectedSequenceNumber);
     ++m_lateOutOfOrder;
     if (m_packetsLost > 0)
       --m_packetsLost; // Previously marked as lost
@@ -575,8 +574,13 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveData(RTP_
     if (running && ++m_lateOutOfOrderAdaptCount >= m_lateOutOfOrderAdaptMax) {
       PTimeInterval timeout = m_session.GetOutOfOrderWaitTime() + m_lateOutOfOrderAdaptBoost;
       m_session.SetOutOfOrderWaitTime(timeout);
-      PTRACE(2, &m_session, *this << " increased out of order packet timeout to " << timeout);
+      PTRACE(2, &m_session, *this << "late out of order packet:"
+                                     " got " << sequenceNumber << ", expected " << expectedSequenceNumber << ","
+                                     " increased timeout to " << setprecision(2) << timeout);
       running = false;
+    }
+    else {
+      PTRACE(3, &m_session, *this << "late out of order packet: got " << sequenceNumber << ", expected " << expectedSequenceNumber);
     }
     if (!running) {
       m_lateOutOfOrderAdaptTimer = m_lateOutOfOrderAdaptPeriod;
@@ -787,6 +791,8 @@ void OpalRTPSession::AttachTransport(const OpalMediaTransportPtr & newTransport)
 void OpalRTPSession::InternalAttachTransport(const OpalMediaTransportPtr & newTransport PTRACE_PARAM(, const char * from))
 {
   OpalMediaSession::AttachTransport(newTransport);
+  if (!IsOpen())
+    return;
 
   newTransport->AddReadNotifier(m_dataNotifier, e_Data);
   if (!m_singlePortRx)
@@ -2664,7 +2670,7 @@ void OpalRTPSession::CheckMediaFailed(SubChannels subchannel)
   /* Really should test if both data and control fail, but as it is unlikely we would
      get one failed without the other, we don't bother. */
   if (subchannel == e_Data && m_connection.OnMediaFailed(m_sessionId)) {
-    PTRACE(3, *this << "aborting transport, queuing close of media session.");
+    PTRACE(2, *this << "aborting transport, queuing close of media session.");
     m_manager.QueueDecoupledEvent(new PSafeWorkNoArg<OpalRTPSession, bool>(this, &OpalRTPSession::Close));
   }
 }

@@ -554,15 +554,12 @@ OpalCapiEndPoint::OpalCapiEndPoint(OpalManager & manager)
 
 OpalCapiEndPoint::~OpalCapiEndPoint()
 {
-  if (m_thread != NULL) {
-    PTRACE(4, "LID EP\tAwaiting monitor thread termination " << GetPrefixName());
-    OpalCapiFunctions::ApplID oldId = m_applicationId;
-    m_applicationId = 0;
+  OpalCapiFunctions::ApplID oldId = m_applicationId;
+  m_applicationId = 0;
+  if (oldId != 0)
     m_capi->RELEASE(oldId);
-    m_thread->WaitForTermination();
-    delete m_thread;
-    m_thread = NULL;
-  }
+
+  PThread::WaitAndDelete(m_thread);
 
   delete m_capi;
 

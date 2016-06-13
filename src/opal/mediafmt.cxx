@@ -170,32 +170,38 @@ std::ostream & operator<<(std::ostream & strm, OpalBandwidth::Direction dir)
 }
 
 
-std::ostream & operator<<(std::ostream & strm, const OpalBandwidth & bw)
+PObject::Comparison OpalBandwidth::Compare(const PObject & other) const
 {
-  return strm << PString(PString::ScaleSI, bw.m_bps) << "b/s";
+  return Compare2(m_bps, dynamic_cast<const OpalBandwidth &>(other).m_bps);
 }
 
 
-std::istream & operator>>(std::istream & strm, OpalBandwidth & bw)
+void OpalBandwidth::PrintOn(std::ostream & strm) const
 {
-  strm >> bw.m_bps;
-  if (strm.good()) {
-    switch (tolower(strm.peek())) {
-      case 'k' :
-        bw.m_bps *= 1000;
-        strm.ignore(1);
-        break;
-      case 'm' :
-        bw.m_bps *= 1000000;
-        strm.ignore(1);
-        break;
-      case 'g' :
-        bw.m_bps *= 1000000000;
-        strm.ignore(1);
-        break;
-    }
+  strm << PString(PString::ScaleSI, m_bps) << "b/s";
+}
+
+
+void OpalBandwidth::ReadFrom(std::istream & strm)
+{
+  strm >> m_bps;
+  if (!strm.good())
+      return;
+
+  switch (tolower(strm.peek())) {
+    case 'k' :
+      m_bps *= 1000;
+      strm.ignore(1);
+      break;
+    case 'm' :
+      m_bps *= 1000000;
+      strm.ignore(1);
+      break;
+    case 'g' :
+      m_bps *= 1000000000;
+      strm.ignore(1);
+      break;
   }
-  return strm;
 }
 
 /////////////////////////////////////////////////////////////////////////////

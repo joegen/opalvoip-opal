@@ -1016,12 +1016,8 @@ bool OpalPluginLID::StartTonePlayerThread(int tone)
 void OpalPluginLID::StopTonePlayerThread()
 {
   // Stop previous tone, if running
-  if (m_tonePlayer != NULL) {
-    m_stopTone.Signal();
-    m_tonePlayer->WaitForTermination(1000);
-    delete m_tonePlayer;
-    m_tonePlayer = NULL;
-  }
+  m_stopTone.Signal();
+  PThread::WaitAndDelete(m_tonePlayer);
 }
 
 

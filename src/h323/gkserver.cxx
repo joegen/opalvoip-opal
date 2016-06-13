@@ -2655,8 +2655,7 @@ H323GatekeeperServer::H323GatekeeperServer(H323EndPoint & ep)
 H323GatekeeperServer::~H323GatekeeperServer()
 {
   monitorExit.Signal();
-  PAssert(monitorThread->WaitForTermination(10000), "Gatekeeper monitor thread did not terminate!");
-  delete monitorThread;
+  PThread::WaitAndDelete(m_monitorThread);
 #if OPAL_H501
   delete m_peerElement;
 #endif

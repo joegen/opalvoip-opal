@@ -87,8 +87,9 @@ class OpalBandwidth : public PObject
     __inline OpalBandwidth & operator-=(const OpalBandwidth & bw)       { m_bps += bw.m_bps; return *this; }
     __inline OpalBandwidth & operator&=(const OpalBandwidth & bw)       { if (m_bps > bw.m_bps) m_bps = bw.m_bps; return *this; }
 
-    friend std::ostream & operator<<(std::ostream & strm, const OpalBandwidth & bw);
-    friend std::istream & operator>>(std::istream & strm, OpalBandwidth & bw);
+    virtual Comparison Compare(const PObject & other) const;
+    virtual void PrintOn(std::ostream & strm) const;
+    virtual void ReadFrom(std::istream & strm);
 
 #if OPAL_H323
     OpalBandwidth(const H225_BandWidth & bw);

@@ -589,14 +589,9 @@ void OpalPresentityWithCommandThread::StartQueue(bool startQueue)
 
 void OpalPresentityWithCommandThread::StopThread()
 {
-  if (m_threadRunning && m_thread != NULL) {
-    PTRACE(4, "Stopping command thread " << *m_thread);
-    m_threadRunning = false;
-    m_commandQueueSync.Signal();
-    PAssert(m_thread->WaitForTermination(5000), "Could not terminate presentity command thread");
-    delete m_thread;
-    m_thread = NULL;
-  }
+  m_threadRunning = false;
+  m_commandQueueSync.Signal();
+  PThread::WaitAndDelete(m_thread);
 }
 
 

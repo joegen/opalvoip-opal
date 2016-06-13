@@ -209,8 +209,7 @@ H323PeerElement::~H323PeerElement()
   if (monitor != NULL) {
     monitorStop = true;
     monitorTickle.Signal();
-    monitor->WaitForTermination();
-    delete monitor;
+    PThread::WaitAndDelete(monitor);
   }
 
   StopChannel();
