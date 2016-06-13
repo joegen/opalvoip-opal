@@ -787,6 +787,8 @@ void OpalRTPSession::AttachTransport(const OpalMediaTransportPtr & newTransport)
 void OpalRTPSession::InternalAttachTransport(const OpalMediaTransportPtr & newTransport PTRACE_PARAM(, const char * from))
 {
   OpalMediaSession::AttachTransport(newTransport);
+  if (!IsOpen())
+    return;
 
   newTransport->AddReadNotifier(m_dataNotifier, e_Data);
   if (!m_singlePortRx)
