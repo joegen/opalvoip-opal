@@ -141,8 +141,8 @@ namespace OpalSharp
                     gen.mediaOptions = "video:Frame Width=640\nvideo:Frame Height=480\nvideo:Target Bit Rate=256000";
                     gen.audioPlayerDevice = "Default communications";
                     gen.audioRecordDevice = "Default communications";
-                    gen.videoOutputDevice = "MSWIN STYLE=0x50000000 PARENT=" + VideoDisplay.Handle + " X=0 Y=0 WIDTH=" + VideoDisplay.Width + " HEIGHT=" + VideoDisplay.Height;
-                    gen.videoPreviewDevice = "MSWIN STYLE=0x50000000 PARENT=" + VideoPreview.Handle + " X=0 Y=0 WIDTH=" + VideoPreview.Width + " HEIGHT=" + VideoPreview.Height;
+                    gen.videoOutputDevice = "MSWIN STYLE=0x50000000 PARENT=" + VideoDisplay.Handle + " X=0 Y=0 WIDTH=" + VideoDisplay.Width + " HEIGHT=" + VideoDisplay.Height + " NO-MOUSE";
+                    gen.videoPreviewDevice = "MSWIN STYLE=0x50000000 PARENT=" + VideoPreview.Handle + " X=0 Y=0 WIDTH=" + VideoPreview.Width + " HEIGHT=" + VideoPreview.Height + " NO-MOUSE";
                     gen.noMediaTimeout = 15000;
                     OpalMessagePtr result = new OpalMessagePtr();
                     if (!m_opalContext.SendMessage(msg, result))
