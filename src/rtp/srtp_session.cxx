@@ -787,10 +787,12 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveControl(RTP_ControlF
      random number for audio, neither of which they indicate in the SDP when
      in recvonly mode. So, we try and compensate. */
   if (m_anyRTCP_SSRC) {
+#if OPAL_VIDEO
     if ((ssrc == 1) != (GetMediaType() == OpalMediaType::Video())) {
       PTRACE(4, *this << "not automatically adding SSRC=" << RTP_TRACE_SRC(ssrc) << " for " << GetMediaType());
       return e_IgnorePacket;
     }
+#endif
 
     m_anyRTCP_SSRC = false;
     force = true;
