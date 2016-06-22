@@ -251,8 +251,11 @@ bool OpalLocalEndPoint::CreateVideoOutputDevice(const OpalConnection & connectio
 
 
 OpalLocalEndPoint::Synchronicity
-        OpalLocalEndPoint::GetSynchronicity(const OpalMediaFormat & mediaFormat,
-                                            bool isSource) const
+        OpalLocalEndPoint::GetSynchronicity(const OpalMediaFormat & mediaFormat, bool
+#if OPAL_VIDEO
+                                            isSource
+#endif
+                                            ) const
 {
   if (mediaFormat.GetMediaType() == OpalMediaType::Audio())
     return m_defaultAudioSynchronicity;
