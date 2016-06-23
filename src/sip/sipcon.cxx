@@ -2175,9 +2175,8 @@ SIPConnection::TypeOfINVITE SIPConnection::CheckINVITE(const SIP_PDU & request) 
 
 void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
 {
-  bool isReinvite = IsOriginating() ||
-        (m_lastReceivedINVITE != NULL && m_lastReceivedINVITE->GetTransactionID() != request.GetTransactionID());
-  PTRACE_IF(4, !isReinvite, "Initial INVITE to " << request.GetURI());
+  bool isReinvite = IsOriginating() || GetPhase() >= ConnectedPhase;
+  PTRACE(3, (isReinvite ? "Re-" : "Initial ") << "INVITE to " << request.GetURI() << ", id=" << request.GetTransactionID());
 
   // m_lastReceivedINVITE should contain the last received INVITE for this connection
   delete m_lastReceivedINVITE;
