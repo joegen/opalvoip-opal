@@ -365,7 +365,7 @@ OpalRTPSession::SyncSource::~SyncSource()
           << m_direction << " statistics:\n"
                "    Sync Source ID       = " << RTP_TRACE_SRC(m_sourceIdentifier) << "\n"
                "    first packet         = " << m_firstPacketTime << "\n"
-               "    last packet          = " << m_lastPacketTimestamp << "\n"
+               "    last packet          = " << m_lastPacketAbsTime << "\n"
                "    total packets        = " << m_packets << "\n"
                "    total octets         = " << m_octets << "\n"
                "    bitRateSent          = " << (8 * m_octets / duration) << "\n"
