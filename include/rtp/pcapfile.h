@@ -115,6 +115,7 @@ class OpalPCAPFile : public PFile
 
       DiscoveredRTPKey();
       Comparison Compare(const PObject & obj) const;
+      void PrintOn(ostream & strm) const;
     };
 
     struct DiscoveredRTPInfo : DiscoveredRTPKey {

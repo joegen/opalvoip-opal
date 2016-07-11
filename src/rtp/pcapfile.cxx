@@ -281,7 +281,7 @@ int OpalPCAPFile::GetDecodedRTP(RTP_DataFrame & decodedRTP, DecodeContext & cont
   RTP_SequenceNumber sequenceDelta = thisSequenceNumber - expectedSequenceNumber;
 
   if (context.m_lastSequenceNumber != 0) {
-    if (sequenceDelta > (1<<16)-100) {
+    if (sequenceDelta > (1<<16)-500) {
       PTRACE(3, "Skipping duplicate or out of order RTP packet " << thisSequenceNumber);
       return 0;
     }
@@ -342,6 +342,12 @@ PObject::Comparison OpalPCAPFile::DiscoveredRTPKey::Compare(const PObject & obj)
   if (c == EqualTo)
     c = Compare2(m_ssrc, other.m_ssrc);
   return c;
+}
+
+
+void OpalPCAPFile::DiscoveredRTPKey::PrintOn(ostream & strm) const
+{
+  strm << m_src << " -> " << m_dst << " src=" << RTP_TRACE_SRC(m_ssrc);
 }
 
 
@@ -421,16 +427,22 @@ struct OpalPCAPFile::DiscoveryInfo
 
   bool Finalise(DiscoveredRTPInfo & info, const PayloadMap & payloadType2mediaFormat)
   {
-    if (m_totalPackets < 100) // Not worth worrying about
+    if (m_totalPackets < 100) { // Not worth worrying about
+      PTRACE(4, &info, "Not enough packets (" << m_totalPackets << ") for " << info);
       return false;
+    }
 
-    unsigned matchThreshold = m_totalPackets*4/5; // 80%
+    unsigned matchThreshold = m_totalPackets/2; // 50%
 
-    if (m_matchedSequenceNumber < matchThreshold) // Most of them consecutive
+    if (m_matchedSequenceNumber < matchThreshold) { // Most of them consecutive
+      PTRACE(4, &info, "Not enough consecutive sequence numbers (" << m_matchedSequenceNumber << ") for " << info);
       return false;
+    }
 
-    if (m_matchedTimestamps < matchThreshold) // Most of them consecutive
+    if (m_matchedTimestamps < matchThreshold) { // Most of them monotonic increasing
+      PTRACE(4, &info, "Not enough monotonic timestamps (" << m_matchedTimestamps << ") for " << info);
       return false;
+    }
 
     unsigned maxPayloadTypeCount = 0;
     for (map<RTP_DataFrame::PayloadTypes, unsigned>::iterator it = m_payloadTypes.begin(); it != m_payloadTypes.end(); ++it) {
@@ -439,8 +451,10 @@ struct OpalPCAPFile::DiscoveryInfo
         info.m_payloadType = it->first;
       }
     }
-    if (maxPayloadTypeCount < m_totalPackets/2)
+    if (maxPayloadTypeCount < matchThreshold) {
+      PTRACE(4, &info, "Not enough with same payload type (" << maxPayloadTypeCount << ") for " << info);
       return false;
+    }
 
     // look for known types
     PayloadMap::const_iterator pt2mf = payloadType2mediaFormat.find(info.m_payloadType);
@@ -495,7 +509,7 @@ bool OpalPCAPFile::DiscoverRTP(DiscoveredRTP & discoveredRTP, const ProgressNoti
   if (!Restart())
     return false;
 
-  PTRACE(4, "Starting RTP discovery");
+  PTRACE(3, "Starting RTP discovery");
 
   map<DiscoveredRTPKey, DiscoveryInfo> discoveryMap;
 
@@ -519,10 +533,12 @@ bool OpalPCAPFile::DiscoverRTP(DiscoveredRTP & discoveredRTP, const ProgressNoti
     key.m_ssrc = rtp.GetSyncSource();
 
     map<DiscoveredRTPKey, DiscoveryInfo>::iterator it;
-    if ((it = discoveryMap.find(key)) == discoveryMap.end())
-      discoveryMap.insert(make_pair(key, rtp));
-    else
+    if ((it = discoveryMap.find(key)) != discoveryMap.end())
       it->second.ProcessPacket(rtp);
+    else {
+      discoveryMap.insert(make_pair(key, rtp));
+      PTRACE(4, "Adding RTP discovery possibility: " << key);
+    }
   }
 
   PTRACE(4, "Finalising RTP discovery: " << discoveryMap.size() << " possibilities");
@@ -535,7 +551,7 @@ bool OpalPCAPFile::DiscoverRTP(DiscoveredRTP & discoveredRTP, const ProgressNoti
       delete info;
   }
 
-  PTRACE(4, "Completed RTP discovery: " << discoveredRTP << " streams");
+  PTRACE(3, "Completed RTP discovery: " << discoveredRTP << " streams");
 
   return Restart();
 }
