@@ -223,6 +223,7 @@ void OpalBaseMixer::StartPushThread()
 
 void OpalBaseMixer::StopPushThread(bool lock)
 {
+  m_threadRunning = false;
   PThread::WaitAndDelete(m_workerThread, 5000, &m_mutex, lock);
 }
 
