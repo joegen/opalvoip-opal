@@ -70,9 +70,11 @@ class OpalPCAPFile : public PFile
     {
       OpalTranscoder   * m_transcoder;
       RTP_SequenceNumber m_lastSequenceNumber;
+      RTP_SyncSourceId   m_lastSSRC;
       DecodeContext()
         : m_transcoder(NULL)
         , m_lastSequenceNumber(0)
+        , m_lastSSRC(0)
       { }
       ~DecodeContext();
     };

@@ -64,9 +64,13 @@ OpalPCAPFile::OpalPCAPFile()
   : m_filterSSRC(0)
 {
   OpalMediaFormatList list = OpalMediaFormat::GetAllRegisteredMediaFormats();
-  for (PINDEX i = 0; i < list.GetSize(); i++) {
-    if (list[i].GetPayloadType() < RTP_DataFrame::DynamicBase)
-      m_payloadType2mediaFormat[list[i].GetPayloadType()] = list[i];
+  for (OpalMediaFormatList::iterator it = list.begin(); it != list.end(); ++it) {
+    OpalMediaFormat fmt = *it;
+    if (fmt.GetPayloadType() < RTP_DataFrame::LastKnownPayloadType) {
+      RTP_DataFrame::PayloadTypes pt = fmt.GetPayloadType();
+      m_payloadType2mediaFormat[pt] = fmt;
+      PTRACE(4, "Pre-defined payload type " << pt << " set to " << fmt);
+    }
   }
 }
 
@@ -276,31 +280,39 @@ int OpalPCAPFile::GetDecodedRTP(RTP_DataFrame & decodedRTP, DecodeContext & cont
         return -2;
   }
 
+  RTP_SyncSourceId   thisSSRC = encodedRTP.GetSyncSource();
   RTP_SequenceNumber thisSequenceNumber = encodedRTP.GetSequenceNumber();
   RTP_SequenceNumber expectedSequenceNumber = context.m_lastSequenceNumber + 1;
   RTP_SequenceNumber sequenceDelta = thisSequenceNumber - expectedSequenceNumber;
 
   if (context.m_lastSequenceNumber != 0) {
-    if (sequenceDelta > (1<<16)-500) {
-      PTRACE(3, "Skipping duplicate or out of order RTP packet " << thisSequenceNumber);
+    if (context.m_lastSSRC != thisSSRC) {
+      PTRACE(3, "Changed SSRC, restarting RTP sequence numbers from " << thisSequenceNumber);
+    }
+    else if (sequenceDelta > (1<<16)-500) {
+      PTRACE(3, "Skipping duplicate or out of order RTP packet " << thisSequenceNumber << ", expected " << expectedSequenceNumber);
       return 0;
     }
-
-    if (sequenceDelta > 3000)
+    else if (sequenceDelta > 3000)
       PTRACE(3, "Restarting RTP sequence numbers from " << thisSequenceNumber);
     else if (sequenceDelta > 0) {
       bool missing = true;
-      off_t nextPacketsFilePosition  = GetPosition();
       // Scan ahead 100 packets looking for out of order one
       for (PINDEX i = 0; i < 100; ++i) {
-        if (GetRTP(encodedRTP) >= 0 && encodedRTP.GetSequenceNumber() == thisSequenceNumber) {
-          // Found it, move file back to the packet we just read, to read again next time
-          SetPosition(thisPacketsFilePosition);
+        if (GetRTP(encodedRTP) >= 0 && encodedRTP.GetSequenceNumber() == expectedSequenceNumber) {
+          PTRACE(3, "Restoring out of order packet at " << expectedSequenceNumber);
           missing = false;
+          break;
         }
       }
+
+      /* If found move back to position so is read next time, then the one we
+         are using now is skipped as out of order. If not found we read it
+         again immediately. */
+      SetPosition(thisPacketsFilePosition);
+
       if (missing) {
-        SetPosition(nextPacketsFilePosition);
+        GetRTP(encodedRTP);
         encodedRTP.SetDiscontinuity(sequenceDelta);
         PTRACE(3, "Detected " << sequenceDelta << " missing RTP packets:"
                " expected=" << expectedSequenceNumber << ", got=" << thisSequenceNumber);
@@ -309,6 +321,7 @@ int OpalPCAPFile::GetDecodedRTP(RTP_DataFrame & decodedRTP, DecodeContext & cont
   }
 
   context.m_lastSequenceNumber = thisSequenceNumber;
+  context.m_lastSSRC = thisSSRC;
 
   RTP_DataFrameList output;
   if (!context.m_transcoder->ConvertFrames(encodedRTP, output))
@@ -347,7 +360,7 @@ PObject::Comparison OpalPCAPFile::DiscoveredRTPKey::Compare(const PObject & obj)
 
 void OpalPCAPFile::DiscoveredRTPKey::PrintOn(ostream & strm) const
 {
-  strm << m_src << " -> " << m_dst << " src=" << RTP_TRACE_SRC(m_ssrc);
+  strm << m_src << " -> " << m_dst << " SSRC=" << m_ssrc;
 }
 
 
