@@ -427,7 +427,7 @@ static struct PluginCodec_Definition imaADPCMCodecDefn[] =
     PluginCodec_MediaTypeAudio |          // audio codec
     PluginCodec_InputTypeRaw |            // raw input data
     PluginCodec_OutputTypeRaw |           // raw output data
-    PluginCodec_RTPTypeExplicit,          // specified RTP type
+    PluginCodec_RTPTypeDynamic,           // specified RTP type
 
     desc,                                 // text decription
     L16Desc,                              // source format
