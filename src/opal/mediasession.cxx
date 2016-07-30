@@ -512,6 +512,7 @@ OpalMediaTransport::OpalMediaTransport(const PString & name)
   , m_packetSize(2048)
   , m_mediaTimeout(0, 0, 5)       // Nothing received for 5 minutes
   , m_maxNoTransmitTime(0, 10)    // Sending data for 10 seconds, ICMP says still not there
+  , m_opened(false)
   , m_started(false)
 {
 }
@@ -525,15 +526,7 @@ void OpalMediaTransport::PrintOn(ostream & strm) const
 
 bool OpalMediaTransport::IsOpen() const
 {
-  PSafeLockReadOnly lock(*this);
-  if (!lock.IsLocked() || m_subchannels.empty())
-    return false;
-
-  for (vector<Transport>::const_iterator it = m_subchannels.begin(); it != m_subchannels.end(); ++it) {
-    if (it->m_channel == NULL || !it->m_channel->IsOpen())
-      return false;
-  }
-  return true;
+  return m_opened;
 }
 
 
@@ -841,7 +834,7 @@ OpalTCPMediaTransport::OpalTCPMediaTransport(const PString & name)
 
 bool OpalTCPMediaTransport::Open(OpalMediaSession &, PINDEX, const PString & localInterface, const OpalTransportAddress &)
 {
-  return dynamic_cast<PTCPSocket &>(*m_subchannels[0].m_channel).Listen(PIPAddress(localInterface));
+  return m_opened = dynamic_cast<PTCPSocket &>(*m_subchannels[0].m_channel).Listen(PIPAddress(localInterface));
 }
 
 
@@ -1158,6 +1151,7 @@ bool OpalUDPMediaTransport::Open(OpalMediaSession & session,
   }
   m_mediaTimer = m_mediaTimeout;
 
+  m_opened = true;
   return true;
 }
 

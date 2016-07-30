@@ -461,6 +461,7 @@ public:
     PTimeInterval m_mediaTimeout;
     PSimpleTimer  m_mediaTimer;
     PTimeInterval m_maxNoTransmitTime;
+    atomic<bool>  m_opened;
     bool          m_started;
 
     struct Transport

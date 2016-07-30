@@ -194,6 +194,7 @@ bool OpalRTPSession::RemoveSyncSource(RTP_SyncSourceId ssrc)
   if (it->second->m_direction == e_Sender)
     it->second->SendBYE();
 
+  PTRACE(3, *this << "removed " << it->second->m_direction << " SSRC=" << RTP_TRACE_SRC(ssrc));
   delete it->second;
   m_SSRC.erase(it);
   return true;
@@ -207,7 +208,7 @@ OpalRTPSession::SyncSource * OpalRTPSession::UseSyncSource(RTP_SyncSourceId ssrc
     return it->second;
 
   if ((force || m_allowAnySyncSource) && AddSyncSource(ssrc, dir) == ssrc) {
-    PTRACE(4, *this << "automatically added " << dir << " SSRC=" << RTP_TRACE_SRC(ssrc));
+    PTRACE(4, *this << "automatically added " << GetMediaType() << ' ' << dir << " SSRC=" << RTP_TRACE_SRC(ssrc));
     return m_SSRC.find(ssrc)->second;
   }
 
@@ -781,6 +782,8 @@ void OpalRTPSession::AttachTransport(const OpalMediaTransportPtr & newTransport)
 void OpalRTPSession::InternalAttachTransport(const OpalMediaTransportPtr & newTransport PTRACE_PARAM(, const char * from))
 {
   OpalMediaSession::AttachTransport(newTransport);
+  if (!IsOpen())
+    return;
 
   newTransport->AddReadNotifier(m_dataNotifier, e_Data);
   if (!m_singlePortRx)
@@ -2345,16 +2348,18 @@ bool OpalRTPSession::Close()
 {
   PTRACE(3, *this << "closing RTP.");
 
+  m_reportTimer.Stop(true);
+  m_endpoint.RegisterLocalRTP(this, true);
+
   if (IsOpen() && LockReadOnly()) {
     for (SyncSourceMap::iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
-      if (it->second->m_direction == e_Sender && it->second->m_packets > 0)
-        it->second->SendBYE();
+      if ( it->second->m_direction == e_Sender &&
+           it->second->m_packets > 0 &&
+           it->second->SendBYE() == e_AbortTransport)
+        break;
     }
     UnlockReadOnly();
   }
-
-  m_reportTimer.Stop(true);
-  m_endpoint.RegisterLocalRTP(this, true);
 
   return OpalMediaSession::Close();
 }
@@ -2503,9 +2508,8 @@ void OpalRTPSession::OnRxDataPacket(OpalMediaTransport &, PBYTEArray data)
       CheckMediaFailed(e_Control);
   }
   else {
-    RTP_DataFrame frame;
-    frame.PBYTEArray::operator=(data);
-    if (OnReceiveData(frame, data.GetSize()) == e_AbortTransport)
+    RTP_DataFrame frame(data);
+    if (OnPreReceiveData(frame) == e_AbortTransport)
       CheckMediaFailed(e_Data);
   }
 }
@@ -2618,7 +2622,7 @@ void OpalRTPSession::CheckMediaFailed(SubChannels subchannel)
   /* Really should test if both data and control fail, but as it is unlikely we would
      get one failed without the other, we don't bother. */
   if (subchannel == e_Data && m_connection.OnMediaFailed(m_sessionId)) {
-    PTRACE(3, *this << "aborting transport, queuing close of media session.");
+    PTRACE(2, *this << "aborting transport, queuing close of media session.");
     m_manager.QueueDecoupledEvent(new PSafeWorkNoArg<OpalRTPSession, bool>(this, &OpalRTPSession::Close));
   }
 }
