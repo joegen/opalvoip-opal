@@ -142,7 +142,15 @@ class OpalBaseMixer : public PSmartObject
     /**Start the push thread.
        Normally called internally.
       */
-    void StartPushThread();
+    virtual void StartPushThread();
+
+    /**Push collected input through the mixer to output.
+       This would normally be called from a thread, on a metronomic basis,
+       from a thread started via StartPushThread(), however if m_pushThread
+       is false, that thread is suppressed and it is expected the
+       application would call this function as required.
+      */
+    virtual bool OnPush();
 
     /**Stop the push thread.
        This will wait for th epush thread to terminate, so care must be taken
@@ -166,7 +174,6 @@ class OpalBaseMixer : public PSmartObject
     virtual bool MixStreams(RTP_DataFrame & frame) = 0;
     virtual size_t GetOutputSize() const = 0;
 
-    virtual bool OnPush();
     void PushThreadMain();
 
     bool      m_pushThread;      // true if to use a thread to push data out

@@ -287,15 +287,15 @@ class RTCP_XR_Metrics : public PObject
       */
     TimePeriod CreateTimePeriod(
       PeriodType type,        ///< The type of period (burst or gap).
-      PTime beginTimestamp,   ///< Beginning of period timestamp.
-      PTime endTimestamp      ///< End of period timestamp.
+      const PTime & beginTimestamp,   ///< Beginning of period timestamp.
+      const PTime & endTimestamp      ///< End of period timestamp.
     );
 
     /**Create a period of time with an Id value associated.
       */
     IdPeriod CreateIdPeriod(
-      PTime beginTimestamp,   ///< Beginning of period timestamp.
-      PTime endTimestamp      ///< End of period timestamp.
+      const PTime & beginTimestamp,   ///< Beginning of period timestamp.
+      const PTime & endTimestamp      ///< End of period timestamp.
     );
 
     /**Create a period of time with an Ie value associated.
