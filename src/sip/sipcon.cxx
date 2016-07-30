@@ -2115,6 +2115,14 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
 
 SIPConnection::TypeOfINVITE SIPConnection::CheckINVITE(const SIP_PDU & request) const
 {
+  /* If we have same transaction ID, it means it is a retransmission
+     of the original INVITE, probably should re-transmit last sent response
+     but we just ignore it. Still should work. */
+  if (m_lastReceivedINVITE != NULL && m_lastReceivedINVITE->GetTransactionID() == request.GetTransactionID()) {
+    PTRACE(3, "Ignoring duplicate INVITE from " << request.GetURI() << " after " << m_phaseTime[UninitialisedPhase].GetElapsed());
+    return IsDuplicateINVITE;
+  }
+
   const SIPMIMEInfo & requestMIME = request.GetMIME();
   PString requestFromTag = requestMIME.GetFieldParameter("From", "tag");
   PString requestToTag   = requestMIME.GetFieldParameter("To",   "tag");
@@ -2129,7 +2137,7 @@ SIPConnection::TypeOfINVITE SIPConnection::CheckINVITE(const SIP_PDU & request) 
   if (IsOriginating()) {
     /* Weird, got incoming INVITE for a call we originated, however it is not in
        the same dialog. Send back a refusal as this just isn't handled. */
-    PTRACE(2, "Ignoring INVITE from " << request.GetURI() << " when originated call.");
+    PTRACE(2, "Ignoring INVITE from " << request.GetURI() << " when we originated call.");
     return IsLoopedINVITE;
   }
 
@@ -2138,21 +2146,13 @@ SIPConnection::TypeOfINVITE SIPConnection::CheckINVITE(const SIP_PDU & request) 
   // to be new INVITE, then it should be retried and next time the race
   // will be passed.
   if (m_lastReceivedINVITE == NULL) {
-    PTRACE(3, "Ignoring INVITE from " << request.GetURI() << " as we are originator.");
-    return IsDuplicateINVITE;
-  }
-
-  /* If we have same transaction ID, it means it is a retransmission
-     of the original INVITE, probably should re-transmit last sent response
-     but we just ignore it. Still should work. */
-  if (m_lastReceivedINVITE->GetTransactionID() == request.GetTransactionID()) {
-    PTRACE(3, "Ignoring duplicate INVITE from " << request.GetURI() << " after " << (PTime() - m_phaseTime[SetUpPhase]));
+    PTRACE(3, "Ignoring INVITE from " << request.GetURI() << " as have not yet processed pevious one.");
     return IsDuplicateINVITE;
   }
 
   // Check if is RFC3261/8.2.2.2 case relating to merged requests.
   if (!requestToTag.IsEmpty()) {
-    PTRACE(3, "Ignoring INVITE from " << request.GetURI() << " as has invalid to-tag.");
+    PTRACE(2, "Ignoring INVITE from " << request.GetURI() << " as has invalid to-tag \"" << requestToTag << '"');
     return IsDuplicateINVITE;
   }
 
@@ -2175,9 +2175,8 @@ SIPConnection::TypeOfINVITE SIPConnection::CheckINVITE(const SIP_PDU & request) 
 
 void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
 {
-  bool isReinvite = IsOriginating() ||
-        (m_lastReceivedINVITE != NULL && m_lastReceivedINVITE->GetTransactionID() != request.GetTransactionID());
-  PTRACE_IF(4, !isReinvite, "Initial INVITE to " << request.GetURI());
+  bool isReinvite = IsOriginating() || GetPhase() >= ConnectedPhase;
+  PTRACE(3, (isReinvite ? "Re-" : "Initial ") << "INVITE to " << request.GetURI() << ", id=" << request.GetTransactionID());
 
   // m_lastReceivedINVITE should contain the last received INVITE for this connection
   delete m_lastReceivedINVITE;

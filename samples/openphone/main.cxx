@@ -2935,7 +2935,7 @@ void MyManager::OnStartMediaPatch(OpalConnection & connection, OpalMediaPatch & 
                                                 OpalMediaStream::DetailAudio |
                                                 OpalMediaStream::DetailEOL);
   }
-  else {
+  else if (!m_VideoWatermarkDevice.IsEmpty()) {
     OpalVideoMediaStream * videoStream = dynamic_cast<OpalVideoMediaStream *>(&patch.GetSource());
     if (videoStream != NULL) {
       PVideoInputDevice * device = PVideoInputDevice::CreateOpenedDevice(m_VideoWatermarkDevice, false);

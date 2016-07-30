@@ -175,9 +175,12 @@ unsigned flags;
 H264Encoder x264;
 
 
-void ResizeBuffer()
+void ResizeBuffer(size_t len)
 {
-  size_t newBufSize = x264.GetWidth()*x264.GetHeight()*3/2 + rtpSize + 1024;
+  size_t newBufSize =x264.GetWidth()*x264.GetHeight()*3/2;
+  if (newBufSize < len)
+    newBufSize = len;
+  newBufSize += rtpSize + 1024;
   if (newBufSize > bufSize) {
     buffer = (unsigned char *)realloc(buffer, newBufSize);
     if (buffer == NULL) {
@@ -266,15 +269,15 @@ int main(int argc, char *argv[])
           WritePipe(&msg, sizeof(msg)); 
         break;
       case ENCODE_FRAMES:
-          ResizeBuffer();
           ReadPipe(&srcLen, sizeof(srcLen));
+          ResizeBuffer(srcLen);
           ReadPipe(buffer+rtpSize, srcLen);
           ReadPipe(&headerLen, sizeof(headerLen));
           ReadPipe(buffer, headerLen);
           ReadPipe(&flags, sizeof(flags));
       case ENCODE_FRAMES_BUFFERED:
         {
-          ResizeBuffer();
+          ResizeBuffer(0);
           unsigned dstLen = rtpSize;
           unsigned ret = x264.EncodeFrames(buffer+rtpSize, srcLen, buffer, dstLen, headerLen, flags);
           WritePipe(&msg, sizeof(msg));
