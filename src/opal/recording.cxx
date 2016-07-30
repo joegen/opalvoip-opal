@@ -57,6 +57,8 @@ class OpalWAVRecordManager : public OpalRecordManager
     virtual bool Close();
     virtual bool OpenStream(const PString & strmId, const OpalMediaFormat & format);
     virtual bool CloseStream(const PString & strmId);
+    virtual bool OnPushAudio();
+    virtual bool OnPushVideo();
     virtual bool WriteAudio(const PString & strmId, const RTP_DataFrame & rtp);
     virtual bool WriteVideo(const PString & strmId, const RTP_DataFrame & rtp);
 
@@ -156,6 +158,19 @@ bool OpalWAVRecordManager::CloseStream(const PString & streamId)
 }
 
 
+bool OpalWAVRecordManager::OnPushAudio()
+{
+  PWaitAndSignal mutex(m_mutex);
+  return m_mixer != NULL && m_mixer->OnPush();
+}
+
+
+bool OpalWAVRecordManager::OnPushVideo()
+{
+  return false;
+}
+
+
 bool OpalWAVRecordManager::WriteAudio(const PString & strm, const RTP_DataFrame & rtp)
 {
   PWaitAndSignal mutex(m_mutex);
@@ -222,8 +237,14 @@ class OpalAVIRecordManager : public OpalRecordManager
   protected:
     struct AudioMixer : public OpalAudioMixer
     {
-      AudioMixer(OpalAVIRecordManager & manager, bool stereo)
-        : OpalAudioMixer(stereo), m_manager(manager) { }
+      AudioMixer(
+        OpalAVIRecordManager & manager,
+        bool stereo,
+        unsigned sampleRate,
+        bool pushThread
+      ) : OpalAudioMixer(stereo, sampleRate, pushThread)
+        , m_manager(manager)
+      { }
       ~AudioMixer() { StopPushThread(); }
       virtual bool OnMixed(RTP_DataFrame * & output) { return m_manager.OnMixedAudio(*output); }
       OpalAVIRecordManager & m_manager;
@@ -231,8 +252,16 @@ class OpalAVIRecordManager : public OpalRecordManager
 
     struct VideoMixer : public OpalVideoMixer
     {
-      VideoMixer(OpalAVIRecordManager & manager, OpalVideoMixer::Styles style, unsigned width, unsigned height)
-        : OpalVideoMixer(style, width, height), m_manager(manager) { }
+      VideoMixer(
+        OpalAVIRecordManager & manager,
+        OpalVideoMixer::Styles style,
+        unsigned width,
+        unsigned height,
+        unsigned rate,
+        bool pushThread
+      ) : OpalVideoMixer(style, width, height, rate, pushThread)
+        , m_manager(manager)
+      { }
       ~VideoMixer() { StopPushThread(); }
       virtual bool OnMixed(RTP_DataFrame * & output) { return m_manager.OnMixedVideo(*output); }
       OpalAVIRecordManager & m_manager;
@@ -247,6 +276,8 @@ class OpalAVIRecordManager : public OpalRecordManager
     virtual bool Close();
     virtual bool OpenStream(const PString & strmId, const OpalMediaFormat & format);
     virtual bool CloseStream(const PString & strmId);
+    virtual bool OnPushAudio();
+    virtual bool OnPushVideo();
     virtual bool WriteAudio(const PString & strmId, const RTP_DataFrame & rtp);
     virtual bool WriteVideo(const PString & strmId, const RTP_DataFrame & rtp);
 
@@ -408,7 +439,10 @@ bool OpalAVIRecordManager::OpenFile(const PFilePath & fn)
   if (IS_RESULT_ERROR(AVIFileOpen(&m_file, fn, OF_WRITE|OF_CREATE, NULL), "creating AVI file"))
     return false;
 
-  m_audioMixer = new AudioMixer(*this, m_options.m_stereo);
+  m_audioMixer = new AudioMixer(*this,
+                                m_options.m_stereo,
+                                8000, // Really need to make this more flexible ....
+                                m_options.m_pushThreads);
 
   OpalVideoMixer::Styles style;
   switch (m_options.m_videoMixing) {
@@ -435,7 +469,12 @@ bool OpalAVIRecordManager::OpenFile(const PFilePath & fn)
       return false;
   }
 
-  m_videoMixer = new VideoMixer(*this, style, m_options.m_videoWidth, m_options.m_videoHeight);
+  m_videoMixer = new VideoMixer(*this,
+                                style,
+                                m_options.m_videoWidth,
+                                m_options.m_videoHeight,
+                                m_options.m_videoRate,
+                                m_options.m_pushThreads);
 
   PTRACE(4, (m_options.m_stereo ? "Stereo" : "Mono") << "-PCM/"
          << m_options.m_videoFormat << "-Video mixers opened for file \"" << fn << '"');
@@ -519,6 +558,20 @@ bool OpalAVIRecordManager::CloseStream(const PString & streamId)
 
   PTRACE(4, "Closed stream " << streamId);
   return true;
+}
+
+
+bool OpalAVIRecordManager::OnPushAudio()
+{
+  PWaitAndSignal mutex(m_mutex);
+  return m_audioMixer != NULL && m_audioMixer->OnPush();
+}
+
+
+bool OpalAVIRecordManager::OnPushVideo()
+{
+  PWaitAndSignal mutex(m_mutex);
+  return m_videoMixer != NULL && m_videoMixer->OnPush();
 }
 
 

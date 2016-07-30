@@ -101,20 +101,21 @@ class OpalRecordManager
       unsigned  m_videoRate;    /**< Video mixer output frame rate. This is independent of
                                      the input frame rates. */
 #endif
+      bool      m_pushThreads;  ///< Indicate push threads are to be started an operate in background
 
       Options(
         bool         stereo = true,
 #if OPAL_VIDEO
         VideoMode    videoMixing = eSideBySideLetterbox,
 #endif
-        const char * audioFormat = NULL
+        const char * audioFormat = NULL,
 #if OPAL_VIDEO
-        ,
         const char * videoFormat = NULL,
         unsigned width = PVideoFrameInfo::CIFWidth,
         unsigned height = PVideoFrameInfo::CIFHeight,
-        unsigned rate = 15
+        unsigned rate = 15,
 #endif
+        bool pushThreads = true
       ) : m_stereo(stereo)
         , m_audioFormat(audioFormat)
 #if OPAL_VIDEO
@@ -124,6 +125,7 @@ class OpalRecordManager
         , m_videoHeight(height)
         , m_videoRate(rate)
 #endif
+        , m_pushThreads(pushThreads)
       {
       }
     };
@@ -176,6 +178,10 @@ class OpalRecordManager
       const PString & strmId  ///< Identifier for media stream.
     ) = 0;
 
+    /** Push audio through the mixer.
+      */
+    virtual bool OnPushAudio() = 0;
+
     /**Write audio to the recording file.
       */
     virtual bool WriteAudio(
@@ -184,6 +190,10 @@ class OpalRecordManager
     ) = 0;
 
 #if OPAL_VIDEO
+    /** Push video through the mixer.
+      */
+    virtual bool OnPushVideo() = 0;
+
     /**Write video to the recording file.
       */
     virtual bool WriteVideo(

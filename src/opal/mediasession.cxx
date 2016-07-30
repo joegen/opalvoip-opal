@@ -335,7 +335,7 @@ PString OpalMediaStatistics::GetCPU() const
 }
 
 
-static PString InternalTimeDiff(PTime lastUpdate, const PTime & previousUpdate)
+static PString InternalTimeDiff(const PTime & lastUpdate, const PTime & previousUpdate)
 {
   if (previousUpdate.IsValid())
     return ((lastUpdate.IsValid() ? lastUpdate : PTime()) - previousUpdate).AsString();

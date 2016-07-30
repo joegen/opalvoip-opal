@@ -773,7 +773,6 @@ void MyPlayer::OnPlay(wxCommandEvent &)
   m_stop->Enable();
   m_pause->Enable();
   m_resume->Disable();
-  m_step->Enable();
   m_analyse->Disable();
 
   StartPlaying(CtlRunning);
@@ -795,7 +794,6 @@ void MyPlayer::OnStop(wxCommandEvent &)
   m_stop->Disable();
   m_pause->Disable();
   m_resume->Disable();
-  m_step->Disable();
   m_analyse->Enable();
 }
 

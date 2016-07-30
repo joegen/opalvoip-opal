@@ -465,7 +465,7 @@ float RTCP_XR_Metrics::GetPonderateIe() const
 }
 
 
-RTCP_XR_Metrics::TimePeriod RTCP_XR_Metrics::CreateTimePeriod(PeriodType type, PTime beginTimestamp, PTime endTimestamp)
+RTCP_XR_Metrics::TimePeriod RTCP_XR_Metrics::CreateTimePeriod(PeriodType type, const PTime & beginTimestamp, const PTime & endTimestamp)
 {
   TimePeriod newPeriod;
 
@@ -478,7 +478,7 @@ RTCP_XR_Metrics::TimePeriod RTCP_XR_Metrics::CreateTimePeriod(PeriodType type, P
 }
 
 
-RTCP_XR_Metrics::IdPeriod RTCP_XR_Metrics::CreateIdPeriod(PTime beginTimestamp, PTime endTimestamp)
+RTCP_XR_Metrics::IdPeriod RTCP_XR_Metrics::CreateIdPeriod(const PTime & beginTimestamp, const PTime & endTimestamp)
 {
   IdPeriod newPeriod;
 
