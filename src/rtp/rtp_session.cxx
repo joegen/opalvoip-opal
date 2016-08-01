@@ -2508,8 +2508,9 @@ void OpalRTPSession::OnRxDataPacket(OpalMediaTransport &, PBYTEArray data)
       CheckMediaFailed(e_Control);
   }
   else {
-    RTP_DataFrame frame(data);
-    if (OnPreReceiveData(frame) == e_AbortTransport)
+    RTP_DataFrame frame;
+    frame.PBYTEArray::operator=(data);
+    if (OnReceiveData(frame, data.GetSize()) == e_AbortTransport)
       CheckMediaFailed(e_Data);
   }
 }
