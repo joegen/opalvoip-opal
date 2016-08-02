@@ -295,10 +295,10 @@ bool OpalMediaPatch::Sink::CreateTranscoders()
     m_stream->SetDataSize(packetSize, packetTime);
     m_stream->InternalUpdateMediaFormat(m_stream->GetMediaFormat());
     m_patch.m_source.InternalUpdateMediaFormat(m_patch.m_source.GetMediaFormat());
-#if OPAL_VIDEO
+#if OPAL_VIDEO && OPAL_STATISTICS
     if (sourceFormat.GetMediaType() == OpalMediaType::Video())
       m_videoFormat = sourceFormat;
-#endif // OPAL_VIDEO
+#endif // OPAL_VIDEO && OPAL_STATISTICS
     PTRACE(3, "Changed to direct media on " << m_patch);
     return true;
   }

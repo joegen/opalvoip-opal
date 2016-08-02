@@ -105,7 +105,9 @@ H323EndPoint::H323EndPoint(OpalManager & manager)
   , m_gatekeeperAliasLimit(MaxGatekeeperAliasLimit)
   , m_gatekeeperSimulatePattern(false)
   , m_gatekeeperRasRedirect(true)
+#if OPAL_H450
   , m_nextH450CallIdentity(0)
+#endif
 #if OPAL_H460
   , m_features(NULL)
 #endif

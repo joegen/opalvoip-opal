@@ -111,12 +111,14 @@ void MyManager::Usage(ostream & strm, const PArgList & args)
 void MyManager::OnEstablishedCall(OpalCall & call)
 {
   OpalManagerConsole::OnEstablishedCall(call);
+#if OPAL_HAS_PCSS
   OpalPCSSConnection * pcss = call.GetConnectionAs<OpalPCSSConnection>();
   if (pcss != NULL) {
     PConsoleChannel * chan = new PConsoleChannel(PConsoleChannel::StandardInput);
     chan->SetLineBuffered(false);
     pcss->StartReadUserInput(chan);
   }
+#endif // OPAL_HAS_PCSS
 }
 
 
