@@ -611,6 +611,7 @@ PFile * MyLocalEndPoint::OpenAudioFile() const
 }
 
 
+#if OPAL_VIDEO
 PFile * MyLocalEndPoint::OpenVideoFile() const
 {
   if (m_videoFilePath.IsEmpty())
@@ -627,6 +628,7 @@ PFile * MyLocalEndPoint::OpenVideoFile() const
   delete file;
   return NULL;
 }
+#endif // OPAL_VIDEO
 
 
 OpalLocalConnection * MyLocalEndPoint::CreateConnection(OpalCall & call, void * userData, unsigned options, OpalConnection::StringOptions * stringOptions)

@@ -295,10 +295,12 @@ bool OpalMediaPatch::Sink::CreateTranscoders()
     m_stream->SetDataSize(packetSize, packetTime);
     m_stream->InternalUpdateMediaFormat(m_stream->GetMediaFormat());
     m_patch.m_source.InternalUpdateMediaFormat(m_patch.m_source.GetMediaFormat());
+#if OPAL_STATISTICS
     m_audioFormat = sourceFormat;
 #if OPAL_VIDEO
     m_videoFormat = sourceFormat;
 #endif // OPAL_VIDEO
+#endif // OPAL_STATISTICS
     PTRACE(3, "Changed to direct media on " << m_patch);
     return true;
   }
@@ -944,7 +946,7 @@ bool OpalMediaPatch::Sink::ExecuteCommand(const OpalMediaCommand & command, bool
   if (m_primaryCodec != NULL)
     atLeastOne = m_primaryCodec->ExecuteCommand(command) || atLeastOne;
 
-#if OPAL_VIDEO
+#if OPAL_VIDEO && OPAL_STATISTICS
   if (atLeastOne) {
     const OpalVideoUpdatePicture * update = dynamic_cast<const OpalVideoUpdatePicture *>(&command);
     if (update != NULL) {
@@ -967,6 +969,7 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame, bool bypassin
     return true;
 
   if (bypassing || m_primaryCodec == NULL) {
+#if OPAL_STATISTICS
     OpalAudioFormat::FrameType audioFrameType;
     if (m_audioFormat.IsValid())
       audioFrameType = m_audioFormat.GetFrameType(sourceFrame.GetPayloadPtr(), sourceFrame.GetPayloadSize(), m_audioFrameDetector);
@@ -979,10 +982,12 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame, bool bypassin
     else
       videoFrameType = OpalVideoFormat::e_UnknownFrameType;
 #endif // OPAL_VIDEO
+#endif // OPAL_STATISTICS
 
     if (!m_stream->WritePacket(sourceFrame))
       return false;
 
+#if OPAL_STATISTICS
     RTP_SyncSourceId ssrc;
     if (audioFrameType != OpalAudioFormat::e_UnknownFrameType) {
       PWaitAndSignal mutex(m_statsMutex);
@@ -1032,6 +1037,7 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame, bool bypassin
         break;
     }
 #endif // OPAL_VIDEO
+#endif // OPAL_STATISTICS
 
     PTRACE_IF(6, bypassing, "Bypassed packet " << setw(1) << sourceFrame);
     return true;
@@ -1075,7 +1081,7 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame, bool bypassin
     PWaitAndSignal mutex(m_statsMutex);
     m_videoStatistics[0].IncrementFrames(videoCodec->WasLastFrameIFrame());
   }
-#endif
+#endif // OPAL_VIDEO && OPAL_STATISTICS
 
   return true;
 }

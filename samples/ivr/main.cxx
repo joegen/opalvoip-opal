@@ -50,7 +50,9 @@ bool MyManager::Initialise(PArgList & args, bool verbose, const PString &)
   MyIVREndPoint * ivr  = new MyIVREndPoint(*this);
   ivr->SetDefaultVXML(args[0]);
 
+#if OPAL_HAS_PCSS
   FindEndPointAs<OpalLocalEndPoint>(OPAL_PCSS_PREFIX)->SetDeferredAnswer(false);
+#endif
 
   switch (args.GetCount()) {
   default :
@@ -111,12 +113,14 @@ void MyManager::Usage(ostream & strm, const PArgList & args)
 void MyManager::OnEstablishedCall(OpalCall & call)
 {
   OpalManagerConsole::OnEstablishedCall(call);
+#if OPAL_HAS_PCSS
   OpalPCSSConnection * pcss = call.GetConnectionAs<OpalPCSSConnection>();
   if (pcss != NULL) {
     PConsoleChannel * chan = new PConsoleChannel(PConsoleChannel::StandardInput);
     chan->SetLineBuffered(false);
     pcss->StartReadUserInput(chan);
   }
+#endif // OPAL_HAS_PCSS
 }
 
 
