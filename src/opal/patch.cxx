@@ -948,7 +948,7 @@ bool OpalMediaPatch::Sink::ExecuteCommand(const OpalMediaCommand & command, bool
   if (m_primaryCodec != NULL)
     atLeastOne = m_primaryCodec->ExecuteCommand(command) || atLeastOne;
 
-#if OPAL_VIDEO
+#if OPAL_VIDEO && OPAL_STATISTICS
   if (atLeastOne) {
     const OpalVideoUpdatePicture * update = dynamic_cast<const OpalVideoUpdatePicture *>(&command);
     if (update != NULL) {
@@ -1029,18 +1029,20 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame, bool bypassin
     }
   }
 
+#if OPAL_STATISTICS
   OpalVideoFormat::VideoFrameType frameType;
   if (m_videoFormat.IsValid())
     frameType = m_videoFormat.GetVideoFrameType(sourceFrame.GetPayloadPtr(), sourceFrame.GetPayloadSize(), m_keyFrameDetectContext);
   else
     frameType = OpalVideoFormat::e_UnknownFrameType;
+#endif // OPAL_STATISTICS
 #endif // OPAL_VIDEO
 
   if (bypassing || m_primaryCodec == NULL) {
     if (!m_stream->WritePacket(sourceFrame))
       return false;
 
-#if OPAL_VIDEO
+#if OPAL_VIDEO && OPAL_STATISTICS
     RTP_SyncSourceId ssrc;
     switch (frameType) {
     case OpalVideoFormat::e_IntraFrame :
@@ -1069,7 +1071,7 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame, bool bypassin
       default :
         break;
     }
-#endif // OPAL_VIDEO
+#endif // OPAL_VIDEO && OPAL_STATISTICS
 
     PTRACE_IF(6, bypassing, "Bypassed packet " << setw(1) << sourceFrame);
     return true;

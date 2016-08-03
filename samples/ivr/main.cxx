@@ -50,7 +50,9 @@ bool MyManager::Initialise(PArgList & args, bool verbose, const PString &)
   MyIVREndPoint * ivr  = new MyIVREndPoint(*this);
   ivr->SetDefaultVXML(args[0]);
 
+#if OPAL_HAS_PCSS
   FindEndPointAs<OpalLocalEndPoint>(OPAL_PCSS_PREFIX)->SetDeferredAnswer(false);
+#endif
 
   switch (args.GetCount()) {
   default :
