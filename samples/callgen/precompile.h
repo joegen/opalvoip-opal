@@ -37,6 +37,8 @@
 #include <h323/h323ep.h>
 #include <h323/gkclient.h>
 #include <sip/sipep.h>
+#include <codec/vidcodec.h>
+#include <rtp/pcapfile.h>
 
 
 // End of File ///////////////////////////////////////////////////////////////

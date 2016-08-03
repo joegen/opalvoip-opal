@@ -683,5 +683,11 @@ class OpalPCSSConnection : public OpalLocalConnection
     bool       m_userInputAutoDelete;
     void UserInputMain();
 };
+
+#else
+
+#define OPAL_PCSS_PREFIX
+
 #endif // OPAL_HAS_PCSS
+
 #endif // OPAL_OPAL_PCSS_H
