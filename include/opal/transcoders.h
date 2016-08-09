@@ -450,6 +450,7 @@ class OpalFramedTranscoder : public OpalTranscoder
     PINDEX inputBytesPerFrame;
     PINDEX outputBytesPerFrame;
     PINDEX maxOutputDataSize;
+    RTP_Timestamp m_lastSilentTimestamp;
 };
 
 
