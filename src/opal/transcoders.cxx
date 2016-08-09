@@ -498,6 +498,7 @@ OpalMediaFormatList OpalTranscoder::GetPossibleFormats(const OpalMediaFormatList
 OpalFramedTranscoder::OpalFramedTranscoder(const OpalMediaFormat & inputMediaFormat,
                                            const OpalMediaFormat & outputMediaFormat)
   : OpalTranscoder(inputMediaFormat, outputMediaFormat)
+  , m_lastSilentTimestamp(0)
 {
   CalculateSizes();
 }
@@ -605,6 +606,11 @@ PBoolean OpalFramedTranscoder::Convert(const RTP_DataFrame & input, RTP_DataFram
       outLen = maxOutputDataSize;
       if (!ConvertFrame(inputPtr, inputLength, outputPtr, outLen))
         return false;
+
+      /* If the codec is delaying the frame data (e.g. due to FEC of Opus) then
+         remember the timestamp of the reconstructed frame. */
+      if (outLen == 0)
+          m_lastSilentTimestamp = input.GetTimestamp();
     }
     else {
       if (!ConvertSilentFrame(outputPtr))
@@ -629,6 +635,12 @@ PBoolean OpalFramedTranscoder::Convert(const RTP_DataFrame & input, RTP_DataFram
       outLen += created;
       inputPtr += consumed;
       inputLength -= consumed;
+    }
+
+    // We have delayed output from codec, so use timestamp from original sample
+    if (outLen > 0 && m_lastSilentTimestamp != 0) {
+        output.SetTimestamp(m_lastSilentTimestamp);
+        m_lastSilentTimestamp = 0;
     }
   }
 
