@@ -67,3 +67,9 @@ plugins/audio/Opus/opus/*/*/*.lo
 plugins/audio/G.722.1/libg722_1/tests/regression_tests.sh
 plugins/audio/SILK/SILK_SDK/obj_linux_x86_64
 
+*.o
+.DS_Store
+plugins/audio/Opus/opus/.libs
+plugins/audio/Opus/opus/tests/.libs
+autom4te.cache
+aclocal.m4
