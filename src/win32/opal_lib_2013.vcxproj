@@ -1938,32 +1938,41 @@ exit 0
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Updating SVN revision include file.</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Updating SVN revision include file.</Message>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">cd %(RootDir)%(Directory)
+PATH=%PATH%;"C:\Program Files\Git\bin"
 sh -c '../ptlib/tools/get_revision.sh %(Filename)'
-if errorlevel 1 copy %(FullPath) %(RootDir)%(Directory)%(Filename)</Command>
+if errorlevel 1 copy %(FullPath)+nul %(RootDir)%(Directory)%(FileName)</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">cd %(RootDir)%(Directory)
+PATH=%PATH%;"C:\Program Files\Git\bin"
 sh -c '../ptlib/tools/get_revision.sh %(Filename)'
-if errorlevel 1 copy %(FullPath) %(RootDir)%(Directory)%(Filename)</Command>
+if errorlevel 1 copy %(FullPath)+nul %(RootDir)%(Directory)%(FileName)</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">cd %(RootDir)%(Directory)
+PATH=%PATH%;"C:\Program Files\Git\bin"
 sh -c '../ptlib/tools/get_revision.sh %(Filename)'
-if errorlevel 1 copy %(FullPath) %(RootDir)%(Directory)%(Filename)</Command>
+if errorlevel 1 copy %(FullPath)+nul %(RootDir)%(Directory)%(FileName)</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">cd %(RootDir)%(Directory)
+PATH=%PATH%;"C:\Program Files\Git\bin"
 sh -c '../ptlib/tools/get_revision.sh %(Filename)'
-if errorlevel 1 copy %(FullPath) %(RootDir)%(Directory)%(Filename)</Command>
+if errorlevel 1 copy %(FullPath)+nul %(RootDir)%(Directory)%(FileName)</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">cd %(RootDir)%(Directory)
+PATH=%PATH%;"C:\Program Files\Git\bin"
 sh -c '../ptlib/tools/get_revision.sh %(Filename)'
-if errorlevel 1 copy %(FullPath) %(RootDir)%(Directory)%(Filename)</Command>
+if errorlevel 1 copy %(FullPath)+nul %(RootDir)%(Directory)%(FileName)</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">cd %(RootDir)%(Directory)
+PATH=%PATH%;"C:\Program Files\Git\bin"
 sh -c '../ptlib/tools/get_revision.sh %(Filename)'
-if errorlevel 1 copy %(FullPath) %(RootDir)%(Directory)%(Filename)</Command>
+if errorlevel 1 copy %(FullPath)+nul %(RootDir)%(Directory)%(FileName)</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">cd %(RootDir)%(Directory)
+PATH=%PATH%;"C:\Program Files\Git\bin"
 sh -c '../ptlib/tools/get_revision.sh %(Filename)'
-if errorlevel 1 copy %(FullPath) %(RootDir)%(Directory)%(Filename)</Command>
+if errorlevel 1 copy %(FullPath)+nul %(RootDir)%(Directory)%(FileName)</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">cd %(RootDir)%(Directory)
+PATH=%PATH%;"C:\Program Files\Git\bin"
 sh -c '../ptlib/tools/get_revision.sh %(Filename)'
-if errorlevel 1 copy %(FullPath) %(RootDir)%(Directory)%(Filename)</Command>
+if errorlevel 1 copy %(FullPath)+nul %(RootDir)%(Directory)%(FileName)</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|Android'">cd %(RootDir)%(Directory)
+PATH=%PATH%;"C:\Program Files\Git\bin"
 sh -c '../ptlib/tools/get_revision.sh %(Filename)'
-if errorlevel 1 copy %(FullPath) %(RootDir)%(Directory)%(Filename)</Command>
+if errorlevel 1 copy %(FullPath)+nul %(RootDir)%(Directory)%(FileName)</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">Updating SVN revision include file.</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">Updating SVN revision include file.</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Android'">Updating SVN revision include file.</Message>
