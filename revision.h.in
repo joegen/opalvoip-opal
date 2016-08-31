@@ -1,9 +1,9 @@
 /*
- * revision.h
+ * revision.h 
  *
- * SVN revision number header file for OPAL
+ * GIT commit string header file for OPAL
  *
- * Copyright (c) 2010 Equivalence Pty. Ltd.
+ * Copyright (c) 2010-2016 Equivalence Pty. Ltd.
  *
  * The contents of this file are subject to the Mozilla Public License
  * Version 1.0 (the "License"); you may not use this file except in
@@ -21,8 +21,6 @@
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
  * Contributor(s): ______________________________________.
- *
- * Revision: 33847 
  */
 
 #ifndef _OPAL_REVISION_H
