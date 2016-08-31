@@ -403,6 +403,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="..\codec\opusmf.cxx" />
     <ClCompile Include="..\codec\speexmf.cxx" />
     <ClCompile Include="..\codec\vp8mf.cxx" />
     <ClCompile Include="..\codec\vp8mf_inc.cxx">
