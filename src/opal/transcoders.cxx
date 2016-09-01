@@ -199,8 +199,11 @@ PBoolean OpalTranscoder::ConvertFrames(const RTP_DataFrame & input, RTP_DataFram
   outframe.SetPayloadType(GetPayloadType(false));
 
   // Check for if we handle empty payload packets, if not just return empty payload packet
-  if (!AcceptEmptyPayload() && input.GetPayloadSize() == 0)
+  if (input.GetPayloadSize() == 0) {
+    if (AcceptEmptyPayload())
+      return Convert(input, outframe);
     return true;
+  }
 
   RTP_DataFrame::PayloadTypes pt = input.GetPayloadType();
 
