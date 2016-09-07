@@ -501,7 +501,8 @@ OpalMediaFormatList OpalTranscoder::GetPossibleFormats(const OpalMediaFormatList
 OpalFramedTranscoder::OpalFramedTranscoder(const OpalMediaFormat & inputMediaFormat,
                                            const OpalMediaFormat & outputMediaFormat)
   : OpalTranscoder(inputMediaFormat, outputMediaFormat)
-  , m_lastSilentTimestamp(0)
+  , m_emptyPayloadState(AwaitingFirstNonEmptyPayload)
+  , m_lastEmptyPayloadTimestamp(0)
 {
   CalculateSizes();
 }
@@ -612,8 +613,11 @@ PBoolean OpalFramedTranscoder::Convert(const RTP_DataFrame & input, RTP_DataFram
 
       /* If the codec is delaying the frame data (e.g. due to FEC of Opus) then
          remember the timestamp of the reconstructed frame. */
-      if (outLen == 0)
-          m_lastSilentTimestamp = input.GetTimestamp();
+      if (outLen == 0 && m_emptyPayloadState == AwaitingEmptyPayload) {
+        m_emptyPayloadState = DelayedDecodeEmptyPayload;
+        m_lastEmptyPayloadTimestamp = input.GetTimestamp();
+        PTRACE(4, "Start of delayed frame output on empty payload: ts=" << m_lastEmptyPayloadTimestamp);
+      }
     }
     else {
       if (!ConvertSilentFrame(outputPtr))
@@ -639,12 +643,15 @@ PBoolean OpalFramedTranscoder::Convert(const RTP_DataFrame & input, RTP_DataFram
       inputPtr += consumed;
       inputLength -= consumed;
     }
+  }
 
-    // We have delayed output from codec, so use timestamp from original sample
-    if (outLen > 0 && m_lastSilentTimestamp != 0) {
-        output.SetTimestamp(m_lastSilentTimestamp);
-        m_lastSilentTimestamp = 0;
+  // We have delayed output from codec, so use timestamp from original sample
+  if (outLen > 0) {
+    if (m_emptyPayloadState == DelayedDecodeEmptyPayload) {
+      PTRACE(4, "Using delayed frame output on silence: ts=" << m_lastEmptyPayloadTimestamp);
+      output.SetTimestamp(m_lastEmptyPayloadTimestamp);
     }
+    m_emptyPayloadState = AwaitingEmptyPayload;
   }
 
   // set actual output payload size

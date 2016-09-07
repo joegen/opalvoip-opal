@@ -355,7 +355,7 @@ class OpusPluginEncoder : public OpusPluginCodec
       , m_bitRate(12000)
       , m_complexity(0)
     {
-      PTRACE(4, MY_CODEC_LOG, "Encoder created: $Revision$, version \"" << opus_get_version_string() << '"');
+      PTRACE(4, MY_CODEC_LOG, "Encoder created: version \"" << opus_get_version_string() << '"');
     }
 
 
@@ -449,17 +449,21 @@ class OpusPluginEncoder : public OpusPluginCodec
 class OpusPluginDecoder : public OpusPluginCodec
 {
   protected:
-    OpusDecoder           * m_decoder;
-    unsigned                m_lostPackets;
-    std::vector<opus_int16> m_previousFrame;
+    OpusDecoder * m_decoder;
+
+    enum {
+      AwaitingInitialPacket,
+      NoLostPackets,
+      UseFEC
+    } m_lostPacketState;
 
   public:
     OpusPluginDecoder(const PluginCodec_Definition * defn)
       : OpusPluginCodec(defn)
       , m_decoder(NULL)
-      , m_lostPackets(0)
+      , m_lostPacketState(AwaitingInitialPacket)
     {
-      PTRACE(4, MY_CODEC_LOG, "Decoder created: $Revision$, version \"" << opus_get_version_string() << '"');
+      PTRACE(4, MY_CODEC_LOG, "Decoder created: version \"" << opus_get_version_string() << '"');
     }
 
 
@@ -490,14 +494,31 @@ class OpusPluginDecoder : public OpusPluginCodec
       int samples;
       const opus_uint8 * packet;
       if (fromLen == 0) {
-        if (m_useInBandFEC && m_lostPackets++ == 0) {
-          toLen = 0;
-          return true;
+        switch (m_lostPacketState) {
+          default :
+            break;
+
+          case NoLostPackets :
+            if (!m_useInBandFEC)
+              break;
+
+            m_lostPacketState = UseFEC;
+            // Do next case
+
+          case AwaitingInitialPacket :
+            toLen = 0;
+            return true;
         }
+
         packet = NULL; // As per opus_decode() API
         opus_decoder_ctl(m_decoder, OPUS_GET_LAST_PACKET_DURATION(&samples));
       }
       else {
+        if (m_lostPacketState == AwaitingInitialPacket) {
+          PTRACE(4, MY_CODEC_LOG, "First non-empty packet received for decoding.");
+          m_lostPacketState = NoLostPackets;
+        }
+
         packet = (const opus_uint8 *)fromPtr;
         samples = opus_decoder_get_nb_samples(m_decoder, packet, fromLen);
         if (samples < 0) {
@@ -511,33 +532,24 @@ class OpusPluginDecoder : public OpusPluginCodec
         PTRACE(1, MY_CODEC_LOG, "Provided sample buffer too small, " << toLen << " bytes, need " << outputBytes);
         return false;
       }
+      toLen = outputBytes;
 
-      if (!m_useInBandFEC) {
-        toLen = outputBytes;
+      if (m_lostPacketState == NoLostPackets)
         return DecodeFrame(packet, fromLen, toPtr, samples, false);
-      }
 
-      if (m_previousFrame.empty()) {
-        // Do not start decoding until we get the first
-        if (packet == NULL) {
-          toLen = 0;
-          return true;
-        }
-        m_previousFrame.resize(samples*m_channels);
-        toLen = 0;
+      m_lostPacketState = NoLostPackets;
+      toLen = outputBytes*2;
+
+      if (PacketHasFec(packet, fromLen)) {
+        if (!DecodeFrame(packet, fromLen, toPtr, samples, true))
+          return false;
       }
       else {
-        toLen = outputBytes;
-        memcpy(toPtr, m_previousFrame.data(), outputBytes);
-
-        if (m_lostPackets > 0 && --m_lostPackets == 0) {
-          if (!DecodeFrame(packet, fromLen, ((char *)toPtr)+outputBytes, samples, PacketHasFec(packet, fromLen)))
-            return false;
-          toLen += outputBytes;
-        }
+        if (!DecodeFrame(NULL, fromLen, toPtr, samples, false))
+          return false;
       }
 
-      return DecodeFrame(packet, fromLen, m_previousFrame.data(), samples, false);
+      return DecodeFrame(packet, fromLen, ((char *)toPtr)+outputBytes, samples, false);
     }
 
     bool DecodeFrame(const void * packet, unsigned bytes, void * pcm, unsigned samples, bool fec)
