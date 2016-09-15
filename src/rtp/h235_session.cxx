@@ -164,8 +164,8 @@ bool H2356_KeyInfo::FromString(const PString & str)
   }
 
   if (key.GetSize() < m_cryptoSuite.GetCipherKeyBytes()) {
-    PTRACE2(2, &m_cryptoSuite, "Crypto\tIncorrect combined key/salt size (" << key.GetSize()
-            << " bytes) for " << m_cryptoSuite.GetDescription());
+    PTRACE2(2, &m_cryptoSuite, "Crypto\tIncorrect combined key/salt size"
+            " (" << key.GetSize() << " bytes) for " << m_cryptoSuite);
     return false;
   }
 
@@ -189,7 +189,7 @@ void H2356_KeyInfo::Randomise()
 bool H2356_KeyInfo::SetCipherKey(const PBYTEArray & key)
 {
   if (key.GetSize() < m_cryptoSuite.GetCipherKeyBytes()) {
-    PTRACE2(2, &m_cryptoSuite, "Crypto\tIncorrect key size (" << key.GetSize() << " bytes) for " << m_cryptoSuite.GetDescription());
+    PTRACE2(2, &m_cryptoSuite, "Crypto\tIncorrect key size (" << key.GetSize() << " bytes) for " << m_cryptoSuite);
     return false;
   }
 
@@ -258,7 +258,7 @@ bool H2356_Session::ApplyCryptoKey(OpalMediaCryptoKeyList & keys, bool rx)
   for (OpalMediaCryptoKeyList::iterator it = keys.begin(); it != keys.end(); ++it) {
     H2356_KeyInfo * keyInfo = dynamic_cast<H2356_KeyInfo *>(&*it);
     if (keyInfo == NULL) {
-      PTRACE(2, "Unsuitable crypto suite " << it->GetCryptoSuite().GetDescription());
+      PTRACE(2, "Unsuitable crypto suite " << *it);
       continue;
     }
 

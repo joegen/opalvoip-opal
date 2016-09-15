@@ -197,11 +197,11 @@ PBYTEArray H235DiffieHellman::FindMasterKey(const OpalMediaCryptoSuite & cryptoS
   if (group != NULL) {
     PSSLDiffieHellman * dh = GetAt(group->m_dhOID);
     if (dh != NULL) {
-      PTRACE(4, "Using  Diffie-Hellman group " << group->m_dhOID << " for " << cryptoSuite.GetDescription());
+      PTRACE(4, "Using  Diffie-Hellman group " << group->m_dhOID << " for " << cryptoSuite);
       return dh->GetSessionKey();
     }
 
-    PTRACE(2, "No Diffie-Hellman group exchanged for " << cryptoSuite.GetDescription());
+    PTRACE(2, "No Diffie-Hellman group exchanged for " << cryptoSuite);
   }
   return key;
 }

@@ -286,6 +286,8 @@ class OpalMediaCryptoSuite : public PObject
   public:
     static const PCaselessString & ClearText();
 
+    virtual void PrintOn(ostream & strm) const;
+
     virtual const PCaselessString & GetFactoryName() const = 0;
     virtual bool Supports(const PCaselessString & proto) const = 0;
     P_DECLARE_BITWISE_ENUM(KeyExchangeModes, 3, (e_NoMode, e_AllowClear, e_SecureSignalling, e_InBandKeyEchange));

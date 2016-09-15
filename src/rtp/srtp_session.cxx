@@ -378,8 +378,8 @@ bool OpalSRTPKeyInfo::FromString(const PString & str)
   PINDEX saltBytes = m_cryptoSuite.GetAuthSaltBytes();
 
   if (key_salt.GetSize() < keyBytes+saltBytes) {
-    PTRACE2(2, &m_cryptoSuite, "Incorrect combined key/salt size (" << key_salt.GetSize()
-            << " bytes) for " << m_cryptoSuite.GetDescription());
+    PTRACE2(2, &m_cryptoSuite, "Incorrect combined key/salt size"
+            " (" << key_salt.GetSize() << " bytes) for " << m_cryptoSuite);
     return false;
   }
 
@@ -409,7 +409,7 @@ void OpalSRTPKeyInfo::Randomise()
 bool OpalSRTPKeyInfo::SetCipherKey(const PBYTEArray & key)
 {
   if (key.GetSize() < m_cryptoSuite.GetCipherKeyBytes()) {
-    PTRACE2(2, &m_cryptoSuite, "Incorrect key size (" << key.GetSize() << " bytes) for " << m_cryptoSuite.GetDescription());
+    PTRACE2(2, &m_cryptoSuite, "Incorrect key size (" << key.GetSize() << " bytes) for " << m_cryptoSuite);
     return false;
   }
 
@@ -421,7 +421,7 @@ bool OpalSRTPKeyInfo::SetCipherKey(const PBYTEArray & key)
 bool OpalSRTPKeyInfo::SetAuthSalt(const PBYTEArray & salt)
 {
   if (salt.GetSize() < m_cryptoSuite.GetAuthSaltBytes()) {
-    PTRACE2(2, &m_cryptoSuite, "Incorrect salt size (" << salt.GetSize() << " bytes) for " << m_cryptoSuite.GetDescription());
+    PTRACE2(2, &m_cryptoSuite, "Incorrect salt size (" << salt.GetSize() << " bytes) for " << m_cryptoSuite);
     return false;
   }
 
@@ -507,7 +507,7 @@ bool OpalSRTPSession::ApplyKeyToSRTP(const OpalMediaCryptoKeyInfo & keyInfo, Dir
 
   const OpalSRTPKeyInfo * srtpKeyInfo = dynamic_cast<const OpalSRTPKeyInfo*>(&keyInfo);
   if (srtpKeyInfo == NULL) {
-    PTRACE(2, *this << "unsuitable crypto suite " << keyInfo.GetCryptoSuite().GetDescription());
+    PTRACE(2, *this << "unsuitable crypto suite " << keyInfo.GetCryptoSuite());
     return false;
   }
 
@@ -520,11 +520,12 @@ bool OpalSRTPSession::ApplyKeyToSRTP(const OpalMediaCryptoKeyInfo & keyInfo, Dir
       PTRACE(3, *this << "crypto key for " << dir << " already set.");
       return true;
     }
-    PTRACE(3, *this << "changing crypto keys for " << dir);
+    PTRACE(3, *this << "changing crypto keys from \"" << m_keyInfo[dir]->GetCryptoSuite() << "\""
+                       " to \"" << keyInfo.GetCryptoSuite() << "\" for " << dir);
     delete m_keyInfo[dir];
   }
   else {
-    PTRACE(3, *this << "setting crypto keys for " << dir);
+    PTRACE(3, *this << "setting crypto keys (" << keyInfo.GetCryptoSuite() << ") for " << dir);
   }
 
   m_keyInfo[dir] = new OpalSRTPKeyInfo(*srtpKeyInfo);

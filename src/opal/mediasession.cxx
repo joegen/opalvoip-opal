@@ -417,6 +417,12 @@ void OpalMediaStatistics::PrintOn(ostream & strm) const
 
 const PCaselessString & OpalMediaCryptoSuite::ClearText() { static const PConstCaselessString s("Clear"); return s; }
 
+void OpalMediaCryptoSuite::PrintOn(ostream & strm) const
+{
+    strm << GetDescription();
+}
+
+
 #if OPAL_H235_6 || OPAL_H235_8
 H235SecurityCapability * OpalMediaCryptoSuite::CreateCapability(const H323Capability &) const
 {

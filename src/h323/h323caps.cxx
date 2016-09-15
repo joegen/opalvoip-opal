@@ -2133,7 +2133,7 @@ bool H235SecurityAlgorithmCapability::OnReceivedPDU(const H245_EncryptionSync & 
           return false;
         }
         cryptoSuite = &m_cryptoSuites.front();
-        PTRACE(3, "H323\tH.235 encryption key has no algorithm, using offer: " << cryptoSuite->GetDescription());
+        PTRACE(3, "H323\tH.235 encryption key has no algorithm, using offer: " << *cryptoSuite);
       }
 
       if (!v3data.HasOptionalField(H235_V3KeySyncMaterial::e_encryptedSessionKey)) {
@@ -2195,7 +2195,7 @@ bool H235SecurityAlgorithmCapability::OnReceivedPDU(const H245_EncryptionAuthent
   for (PINDEX i = 0; i < cap.m_encryptionCapability.GetSize(); ++i) {
     OpalMediaCryptoSuite * cryptoSuite = OpalMediaCryptoSuite::FindByOID(((const PASN_ObjectId &)cap.m_encryptionCapability[i]).AsString());
     if (cryptoSuite != NULL) {
-      PTRACE(4, "H323\tFound Crypto-Suite for " << cryptoSuite->GetDescription());
+      PTRACE(4, "H323\tFound Crypto-Suite for " << *cryptoSuite);
       m_cryptoSuites.Append(cryptoSuite);
     }
   }
@@ -2333,7 +2333,7 @@ bool H235SecurityGenericCapability::OnReceivedPDU(const H245_EncryptionAuthentic
     const H235_SRTP_SrtpCryptoInfo & info = srtpCap[i];
     OpalMediaCryptoSuite * cryptoSuite = OpalMediaCryptoSuite::FindByOID(info.m_cryptoSuite.AsString());
     if (cryptoSuite != NULL) {
-      PTRACE(4, "H323\tFound Crypto-Suite for " << cryptoSuite->GetDescription());
+      PTRACE(4, "H323\tFound Crypto-Suite for " << *cryptoSuite);
       m_cryptoSuites.Append(cryptoSuite);
     }
   }
