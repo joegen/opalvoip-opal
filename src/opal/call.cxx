@@ -53,15 +53,15 @@
 /////////////////////////////////////////////////////////////////////////////
 
 OpalCall::OpalCall(OpalManager & mgr)
-  : manager(mgr)
-  , myToken(mgr.GetNextToken('C'))
+  : m_manager(mgr)
+  , m_token(mgr.GetNextToken('C'))
   , m_networkOriginated(false)
   , m_establishedTime(0)
   , m_isEstablished(false)
   , m_isClearing(false)
   , m_handlingHold(false)
   , m_isCleared(false)
-  , callEndReason(OpalConnection::NumCallEndReasons)
+  , m_callEndReason(OpalConnection::NumCallEndReasons)
 #if OPAL_HAS_MIXER
   , m_recordManager(NULL)
 #endif
@@ -71,12 +71,12 @@ OpalCall::OpalCall(OpalManager & mgr)
 {
   PTRACE_CONTEXT_ID_NEW();
 
-  manager.activeCalls.SetAt(myToken, this);
+  m_manager.m_activeCalls.SetAt(m_token, this);
 
-  connectionsActive.DisallowDeleteObjects();
+  m_connectionsActive.DisallowDeleteObjects();
 
 #if OPAL_SCRIPT
-  PScriptLanguage * script = manager.GetScript();
+  PScriptLanguage * script = m_manager.GetScript();
   if (script != NULL) {
     PString tableName = OPAL_SCRIPT_CALL_TABLE_NAME "." + GetToken();
     script->CreateComposite(tableName);
@@ -96,7 +96,7 @@ OpalCall::~OpalCall()
 #endif
 
 #if OPAL_SCRIPT
-  PScriptLanguage * script = manager.GetScript();
+  PScriptLanguage * script = m_manager.GetScript();
   if (script != NULL) {
     script->Call("OnDestroyCall", "s", (const char *)GetToken());
     script->ReleaseVariable(OPAL_SCRIPT_CALL_TABLE_NAME "." + GetToken());
@@ -109,23 +109,23 @@ OpalCall::~OpalCall()
 
 void OpalCall::PrintOn(ostream & strm) const
 {
-  strm << "Call[" << myToken << ']';
+  strm << "Call[" << m_token << ']';
 }
 
 
 void OpalCall::OnEstablishedCall()
 {
   PTRACE(3, "Established " << *this);
-  manager.OnEstablishedCall(*this);
+  m_manager.OnEstablishedCall(*this);
 }
 
 
 void OpalCall::SetCallEndReason(OpalConnection::CallEndReason reason)
 {
   // Only set reason if not already set to something
-  if (callEndReason == OpalConnection::NumCallEndReasons &&
-     (reason != OpalConnection::EndedByCallForwarded || connectionsActive.GetSize() <= 1))
-    callEndReason = reason;
+  if (m_callEndReason == OpalConnection::NumCallEndReasons &&
+     (reason != OpalConnection::EndedByCallForwarded || m_connectionsActive.GetSize() <= 1))
+    m_callEndReason = reason;
 }
 
 
@@ -150,9 +150,9 @@ void OpalCall::Clear(OpalConnection::CallEndReason reason, PSyncPoint * sync)
     if (sync != NULL)
       m_endCallSyncPoint.push_back(sync);
 
-    PINDEX i = connectionsActive.GetSize();
+    PINDEX i = m_connectionsActive.GetSize();
     while (i > 0) {
-      PSafePtr<OpalConnection> connection = connectionsActive.GetAt(--i, PSafeReference);
+      PSafePtr<OpalConnection> connection = m_connectionsActive.GetAt(--i, PSafeReference);
       if (connection != NULL)
         connection->Release(reason);
     }
@@ -166,9 +166,9 @@ void OpalCall::Clear(OpalConnection::CallEndReason reason, PSyncPoint * sync)
 void OpalCall::OnReleased(OpalConnection & connection)
 {
   PTRACE(3, "OnReleased " << connection);
-  connectionsActive.Remove(&connection);
+  m_connectionsActive.Remove(&connection);
 
-  PSafePtr<OpalConnection> other = connectionsActive.GetAt(0, PSafeReference);
+  PSafePtr<OpalConnection> other = m_connectionsActive.GetAt(0, PSafeReference);
   if (other != NULL && other->GetPhase() == OpalConnection::ReleasingPhase) {
     PTRACE(4, "Follow on OnReleased to " << *other);
     other->OnReleased();
@@ -180,7 +180,7 @@ void OpalCall::OnReleased(OpalConnection & connection)
 
 void OpalCall::InternalOnClear()
 {
-  if (!connectionsActive.IsEmpty())
+  if (!m_connectionsActive.IsEmpty())
     return;
 
   if (m_isCleared.exchange(true))
@@ -201,22 +201,22 @@ void OpalCall::InternalOnClear()
     UnlockReadWrite();
   }
 
-  manager.activeCalls.RemoveAt(GetToken());
+  m_manager.m_activeCalls.RemoveAt(GetToken());
 }
 
 
 void OpalCall::OnCleared()
 {
-  manager.OnClearedCall(*this);
+  m_manager.OnClearedCall(*this);
 }
 
 
 void OpalCall::OnNewConnection(OpalConnection & connection)
 {
-  if (connectionsActive.GetSize() == 1)
+  if (m_connectionsActive.GetSize() == 1)
     m_networkOriginated = connection.IsNetworkConnection();
 
-  manager.OnNewConnection(connection);
+  m_manager.OnNewConnection(connection);
   SetPartyNames();
 }
 
@@ -287,12 +287,12 @@ PBoolean OpalCall::OnConnected(OpalConnection & connection)
   if (m_isClearing || !LockReadOnly())
     return false;
 
-  bool havePartyB = connectionsActive.GetSize() == 1 && !m_partyB.IsEmpty();
+  bool havePartyB = m_connectionsActive.GetSize() == 1 && !m_partyB.IsEmpty();
 
   UnlockReadOnly();
 
   if (havePartyB) {
-    if (manager.MakeConnection(*this, m_partyB, NULL, 0,
+    if (m_manager.MakeConnection(*this, m_partyB, NULL, 0,
                                 const_cast<OpalConnection::StringOptions *>(&connection.GetStringOptions())) != NULL)
       return OnSetUp(connection);
 
@@ -325,12 +325,12 @@ PBoolean OpalCall::OnEstablished(OpalConnection & connection)
   if (m_isEstablished)
     return true;
 
-  if (connectionsActive.GetSize() < 2)
+  if (m_connectionsActive.GetSize() < 2)
     return false;
 
   connection.StartMediaStreams();
 
-  for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReference); conn != NULL; ++conn) {
+  for (PSafePtr<OpalConnection> conn(m_connectionsActive, PSafeReference); conn != NULL; ++conn) {
     if (conn->GetPhase() != OpalConnection::EstablishedPhase)
       return false;
   }
@@ -414,7 +414,7 @@ bool OpalCall::Transfer(const PString & newAddress, OpalConnection * connection)
   if (prefix == "*")
     return connection->TransferConnection(connection->GetPrefixName() + newAddress.Mid(1));
 
-  if (prefix.IsEmpty() || prefix == connection->GetPrefixName() || manager.HasCall(newAddress))
+  if (prefix.IsEmpty() || prefix == connection->GetPrefixName() || m_manager.HasCall(newAddress))
     return connection->TransferConnection(newAddress);
 
   PTRACE(3, "Transferring " << *connection << " to \"" << newAddress << '"');
@@ -423,7 +423,7 @@ bool OpalCall::Transfer(const PString & newAddress, OpalConnection * connection)
   if (connectionToKeep == NULL)
     return false;
 
-  PSafePtr<OpalConnection> newConnection = manager.MakeConnection(*this, newAddress);
+  PSafePtr<OpalConnection> newConnection = m_manager.MakeConnection(*this, newAddress);
   if (newConnection == NULL)
     return false;
 
@@ -464,7 +464,7 @@ OpalMediaFormatList OpalCall::GetMediaFormats(const OpalConnection & connection)
       }
       if (!formatsOfMediaType.IsEmpty()) {
         if (connection.IsNetworkConnection() && otherConnection->IsNetworkConnection() &&
-              manager.GetMediaTransferMode(connection, *otherConnection, *iterMediaType) != OpalManager::MediaTransferTranscode)
+              m_manager.GetMediaTransferMode(connection, *otherConnection, *iterMediaType) != OpalManager::MediaTransferTranscode)
           possibleFormats += formatsOfMediaType;
         else
           possibleFormats += OpalTranscoder::GetPossibleFormats(formatsOfMediaType);
@@ -697,7 +697,7 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
 
       OpalMediaPatchPtr patch = sourceStream->GetPatch();
       if (patch == NULL) {
-        patch = manager.CreateMediaPatch(*sourceStream, sinkStream->RequiresPatchThread(sourceStream) &&
+        patch = m_manager.CreateMediaPatch(*sourceStream, sinkStream->RequiresPatchThread(sourceStream) &&
                                                         sourceStream->RequiresPatchThread(sinkStream));
         if (patch == NULL) {
           PTRACE(3, "OpenSourceMediaStreams could not patch session " << sessionID << " on " << connection);
@@ -809,7 +809,7 @@ void OpalCall::OnUserInputTone(OpalConnection & connection,
 void OpalCall::OnHold(OpalConnection & connection, bool fromRemote, bool onHold)
 {
   if (m_handlingHold)
-    manager.OnHold(connection, fromRemote, onHold);
+    m_manager.OnHold(connection, fromRemote, onHold);
   else {
     m_handlingHold = true;
     PSafePtr<OpalConnection> otherConnection;
@@ -922,7 +922,7 @@ void OpalCall::SetPartyNames()
   if (!lock.IsLocked())
     return;
 
-  PSafePtr<OpalConnection> connectionA = connectionsActive.GetAt(0, PSafeReadOnly);
+  PSafePtr<OpalConnection> connectionA = m_connectionsActive.GetAt(0, PSafeReadOnly);
   if (connectionA == NULL)
     return;
 
@@ -936,7 +936,7 @@ void OpalCall::SetPartyNames()
     m_nameA = connectionA->GetLocalPartyName();
   }
 
-  PSafePtr<OpalConnection> connectionB = connectionsActive.GetAt(1, PSafeReadOnly);
+  PSafePtr<OpalConnection> connectionB = m_connectionsActive.GetAt(1, PSafeReadOnly);
   if (connectionB == NULL)
     return;
 
@@ -965,7 +965,7 @@ bool OpalCall::EnumerateConnections(PSafePtr<OpalConnection> & connection,
                                     const OpalConnection * skipConnection) const
 {
   if (connection == NULL)
-    connection = PSafePtr<OpalConnection>(connectionsActive, PSafeReference);
+    connection = PSafePtr<OpalConnection>(m_connectionsActive, PSafeReference);
   else {
     connection.SetSafetyMode(PSafeReference);
     ++connection;

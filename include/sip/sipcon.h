@@ -605,7 +605,7 @@ class SIPConnection : public OpalSDPConnection, public SIPTransactionOwner
 
     OpalTransportAddress GetDefaultSDPConnectAddress(WORD port = 0) const;
 
-    SIPEndPoint & GetEndPoint() const { return SIPTransactionOwner::m_endpoint; }
+    SIPEndPoint & GetEndPoint() const { return m_sipEndpoint; }
     SIPAuthentication * GetAuthenticator() const { return m_authentication; }
 
     /// Mode for reliable provisional responses.
@@ -770,7 +770,7 @@ class SIPConnection : public OpalSDPConnection, public SIPTransactionOwner
       ReleaseWithCANCEL,
       ReleaseWithResponse,
       ReleaseWithNothing,
-    } releaseMethod;
+    } m_releaseMethod;
 
     int SetRemoteMediaFormats(SIP_PDU & pdu);
 

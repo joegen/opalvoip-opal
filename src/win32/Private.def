@@ -890,3 +890,11 @@ EXPORTS
     x917_prng_deinit @59348 NONAME
     x917_prng_get_octet_string @59349 NONAME
     x917_prng_init @59350 NONAME
+	___isa_available_default
+	___local_stdio_printf_options
+	_fprintf
+	_printf
+	_sprintf
+	__vfprintf_l
+	__vsnprintf_l
+	__vsprintf_l

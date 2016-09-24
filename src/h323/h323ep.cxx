@@ -115,7 +115,7 @@ H323EndPoint::H323EndPoint(OpalManager & manager)
   , m_H46019Server(NULL)
 #endif
 {
-  m_localAliasNames[defaultLocalPartyName]; // Create entry
+  m_localAliasNames[m_defaultLocalPartyName]; // Create entry
 
   m_connectionsByCallId.DisallowDeleteObjects();
 #if OPAL_H450
@@ -265,20 +265,20 @@ void H323EndPoint::SetVendorIdentifierInfo(H225_VendorIdentifier & info) const
   SetH221NonStandardInfo(info.m_vendor);
 
   info.IncludeOptionalField(H225_VendorIdentifier::e_productId);
-  info.m_productId = productInfo.vendor & productInfo.name;
+  info.m_productId = m_productInfo.vendor & m_productInfo.name;
   info.m_productId.SetSize(info.m_productId.GetSize()+2);
 
   info.IncludeOptionalField(H225_VendorIdentifier::e_versionId);
-  info.m_versionId = productInfo.version + " (OPAL v" + OpalGetVersion() + ')';
+  info.m_versionId = m_productInfo.version + " (OPAL v" + OpalGetVersion() + ')';
   info.m_versionId.SetSize(info.m_versionId.GetSize()+2);
 }
 
 
 void H323EndPoint::SetH221NonStandardInfo(H225_H221NonStandard & info) const
 {
-  info.m_t35CountryCode = productInfo.t35CountryCode;
-  info.m_t35Extension = productInfo.t35Extension;
-  info.m_manufacturerCode = productInfo.manufacturerCode;
+  info.m_t35CountryCode = m_productInfo.t35CountryCode;
+  info.m_t35Extension = m_productInfo.t35Extension;
+  info.m_manufacturerCode = m_productInfo.manufacturerCode;
 }
 
 
@@ -758,7 +758,7 @@ PSafePtr<OpalConnection> H323EndPoint::MakeConnection(OpalCall & call,
                                                     unsigned int options,
                                  OpalConnection::StringOptions * stringOptions)
 {
-  if (listeners.IsEmpty())
+  if (m_listeners.IsEmpty())
     return NULL;
 
   PTRACE(3, "H323\tMaking call to: " << remoteParty);
@@ -843,7 +843,7 @@ void H323EndPoint::InternalNewIncomingConnection(OpalTransportPtr transport, boo
   PSafePtr<H323Connection> connection = PSafePtrCast<OpalConnection, H323Connection>(GetConnectionWithLock(token, PSafeReadWrite));
   if (connection == NULL) {
     // Get new instance of a call, abort if none created
-    OpalCall * call = manager.InternalCreateCall();
+    OpalCall * call = m_manager.InternalCreateCall();
     if (call != NULL) {
       PTRACE_CONTEXT_ID_SET(*PThread::Current(), call);
       connection = CreateConnection(*call, token, NULL, *transport, PString::Empty(), PString::Empty(), &pdu);
@@ -1032,7 +1032,7 @@ PBoolean H323EndPoint::IntrudeCall(const PString & remoteParty,
                                void * userData)
 {
   // Get new instance of a call, abort if none created
-  OpalCall * call = manager.InternalCreateCall();
+  OpalCall * call = m_manager.InternalCreateCall();
   if (call == NULL)
     return false;
 
@@ -1823,7 +1823,7 @@ PBoolean H323EndPoint::IsMCU() const
 void H323EndPoint::TranslateTCPAddress(PIPSocket::Address & localAddr,
                                        const PIPSocket::Address & remoteAddr)
 {
-  manager.TranslateIPAddress(localAddr, remoteAddr);
+  m_manager.TranslateIPAddress(localAddr, remoteAddr);
 }
 
 

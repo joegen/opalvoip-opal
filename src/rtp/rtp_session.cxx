@@ -1405,7 +1405,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SendReport(RTP_SyncSourceId ss
   // Actual transmission has to be outside mutex
   SendReceiveStatus status = e_ProcessPacket;
   for (std::list<RTP_ControlFrame>::iterator it = frames.begin(); it != frames.end(); ++it) {
-    SendReceiveStatus status = WriteControl(*it);
+    status = WriteControl(*it);
     if (status != e_ProcessPacket)
       break;
   }

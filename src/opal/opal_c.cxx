@@ -1403,13 +1403,13 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
 #if PTRACING
     static unsigned const Level = 3;
     if (PTrace::CanTrace(Level)) {
-      ostream & strm = PTRACE_BEGIN(Level);
-      strm << "Auto start " << (autoStart == OpalMediaType::Receive ? "receive" : "transmit") << ':';
+      ostream & trace = PTRACE_BEGIN(Level);
+      trace << "Auto start " << (autoStart == OpalMediaType::Receive ? "receive" : "transmit") << ':';
       for (iterMediaType = allMediaTypes.begin(); iterMediaType != allMediaTypes.end(); ++iterMediaType) {
         if (((*iterMediaType)->GetAutoStart()&autoStart) != 0)
-          strm << ' ' << *iterMediaType;
+          trace << ' ' << *iterMediaType;
       }
-      strm << PTrace::End;
+      trace << PTrace::End;
     }
 #endif
   }

@@ -221,23 +221,23 @@ class H323PeerElementServiceRelationship : public PSafeObject
     PCLASSINFO(H323PeerElementServiceRelationship, PSafeObject);
   public:
     H323PeerElementServiceRelationship()
-      : ordinal(0)
+      : m_ordinal(0)
       { }
 
     H323PeerElementServiceRelationship(const OpalGloballyUniqueID & _serviceID)
-      : serviceID(_serviceID), ordinal(0)
+      : m_serviceID(_serviceID), m_ordinal(0)
       { }
 
     Comparison Compare(const PObject & obj) const
-      { return serviceID.Compare(((H323PeerElementServiceRelationship&)obj).serviceID); }
+      { return m_serviceID.Compare(((H323PeerElementServiceRelationship&)obj).m_serviceID); }
 
-    OpalGloballyUniqueID serviceID;
-    POrdinalKey ordinal;
-    H323TransportAddress peer;
-    PString name;
-    PTime createdTime;
-    PTime lastUpdateTime;
-    PTime expireTime;
+    OpalGloballyUniqueID m_serviceID;
+    POrdinalKey m_ordinal;
+    H323TransportAddress m_peer;
+    PString m_name;
+    PTime m_createdTime;
+    PTime m_lastUpdateTime;
+    PTime m_expireTime;
 };
 
 

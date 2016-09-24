@@ -152,7 +152,7 @@ H45011_CIStatusInformation::H45011_CIStatusInformation(unsigned tag, PASN_Object
 
 PBoolean H45011_CIStatusInformation::CreateObject()
 {
-  choice = (tag <= e_callIntrusionEnd) ? new PASN_Null() : NULL;
+  choice = (m_tag <= e_callIntrusionEnd) ? new PASN_Null() : NULL;
   return choice != NULL;
 }
 

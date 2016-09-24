@@ -1057,7 +1057,7 @@ PBoolean OpalH224MediaStream::WritePacket(RTP_DataFrame & packet)
   PTRACE(4, "Received frame: " << packet);
 
   H224_Frame receiveFrame;
-  if (mediaFormat.GetOptionBoolean(OpalH224MediaFormat::HDLCTunnelingOption())
+  if (m_mediaFormat.GetOptionBoolean(OpalH224MediaFormat::HDLCTunnelingOption())
             ? receiveFrame.DecodeHDLC(packet.GetPayloadPtr(), packet.GetPayloadSize())
             : receiveFrame.DecodeAnnexQ(packet.GetPayloadPtr(), packet.GetPayloadSize())) {
     m_consecutiveErrors = 0;

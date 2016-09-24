@@ -2719,9 +2719,8 @@ bool SDPSessionDescription::Decode(const PStringArray & lines, const OpalMediaFo
 
   // parse keyvalue pairs
   SDPMediaDescription * currentMedia = NULL;
-  PINDEX i;
-  for (i = 0; i < lines.GetSize(); i++) {
-    const PString & line = lines[i];
+  for (PINDEX lineIndex = 0; lineIndex < lines.GetSize(); lineIndex++) {
+    const PString & line = lines[lineIndex];
     if (line.GetLength() < 3 || line[1] != '=')
       continue; // Ignore illegal lines
 
@@ -2789,14 +2788,14 @@ bool SDPSessionDescription::Decode(const PStringArray & lines, const OpalMediaFo
             if (tokens.GetSize() < 4) {
               PTRACE(1, "Media session has only " << tokens.GetSize() << " elements");
             }
-            else if ((mediaType = GetMediaTypeFromSDP(tokens[0], tokens[2], lines, i)).empty()) {
-              PTRACE(1, "Unknown SDP media type parsing \"" << lines[i] << '"');
+            else if ((mediaType = GetMediaTypeFromSDP(tokens[0], tokens[2], lines, lineIndex)).empty()) {
+              PTRACE(1, "Unknown SDP media type parsing \"" << line << '"');
             }
             else if ((defn = mediaType.GetDefinition()) == NULL) {
-              PTRACE(1, "No definition for media type " << mediaType << " parsing \"" << lines[i] << '"');
+              PTRACE(1, "No definition for media type " << mediaType << " parsing \"" << line << '"');
             }
             else if ((currentMedia = defn->CreateSDPMediaDescription(defaultConnectAddress)) == NULL) {
-              PTRACE(1, "Could not create SDP media description for media type " << mediaType << " parsing \"" << lines[i] << '"');
+              PTRACE(1, "Could not create SDP media description for media type " << mediaType << " parsing \"" << line << '"');
             }
             else {
               PTRACE_CONTEXT_ID_TO(currentMedia);

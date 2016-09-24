@@ -394,8 +394,8 @@ PBoolean SIPURL::ReallyInternalParse(bool fromHeader, const char * cstr, const c
 
     if (fromHeader) {
       // RFC says that if no <> then ; parameters belong to field, not URI.
-      m_fieldParameters = paramVars;
-      paramVars = PStringToString(); // Do not use RemoveAll()
+      m_fieldParameters = m_paramVars;
+      m_paramVars = PStringToString(); // Do not use RemoveAll()
     }
   }
   else {
@@ -412,12 +412,12 @@ PBoolean SIPURL::ReallyInternalParse(bool fromHeader, const char * cstr, const c
     }
   }
 
-  if (scheme.NumCompare("sip") == EqualTo) {
-    if (!portSupplied)
-      port = GetDefaultPort();
+  if (m_scheme.NumCompare("sip") == EqualTo) {
+    if (!m_portSupplied)
+      m_port = GetDefaultPort();
 
     // Do sanity check of some parameters that cannot be doubled up
-    for (PStringToString::iterator it = paramVars.begin(); it != paramVars.end(); ++it) {
+    for (PStringToString::iterator it = m_paramVars.begin(); it != m_paramVars.end(); ++it) {
       PINDEX pos = it->second.FindLast('\n');
       if (pos != P_MAX_INDEX &&
             (it->first == "user" || it->first == "ttl" || it->first == "method" || it->first == "transport")) {
@@ -450,20 +450,20 @@ PObject::Comparison SIPURL::Compare(const PObject & obj) const
   COMPARE_COMPONENT(GetPortSupplied());
 
   // If URI parameter exists in both then must be equal
-  for (PStringToString::const_iterator it = paramVars.begin(); it != paramVars.end(); ++it) {
+  for (PStringToString::const_iterator it = m_paramVars.begin(); it != m_paramVars.end(); ++it) {
     PString param = it->first;
-    if (other.paramVars.Contains(param))
-      COMPARE_COMPONENT(paramVars[param]);
+    if (other.m_paramVars.Contains(param))
+      COMPARE_COMPONENT(m_paramVars[param]);
   }
-  COMPARE_COMPONENT(paramVars("user"));
-  COMPARE_COMPONENT(paramVars("ttl"));
-  COMPARE_COMPONENT(paramVars("method"));
+  COMPARE_COMPONENT(m_paramVars("user"));
+  COMPARE_COMPONENT(m_paramVars("ttl"));
+  COMPARE_COMPONENT(m_paramVars("method"));
 
   /* While RFC3261/19.1.4 does not mention transport explicitly in the same
      sectionas the above, the "not equivalent" examples do state that the
      absence of a transport is not the same as using the default. While this
      is not normative, the logic is impeccable so we add it in. */
-  COMPARE_COMPONENT(paramVars("transport"));
+  COMPARE_COMPONENT(m_paramVars("transport"));
 
   return EqualTo;
 }
@@ -496,7 +496,7 @@ OpalTransportAddress SIPURL::GetTransportAddress(PINDEX entry) const
   if (IsEmpty())
     return OpalTransportAddress();
 
-  PString maddr = paramVars("maddr");
+  PString maddr = m_paramVars("maddr");
   if (!maddr.IsEmpty())
     return OpalTransportAddress(maddr, GetPort(), OpalTransportAddress::UdpPrefix());
 
@@ -505,10 +505,10 @@ OpalTransportAddress SIPURL::GetTransportAddress(PINDEX entry) const
   // Or it is a valid IP address, not a domain name
   PIPSocket::Address ip(GetHostName());
   if (ip.IsValid())
-    return OpalTransportAddress(ip, port, proto);
+    return OpalTransportAddress(ip, m_port, proto);
 
   if (entry == P_MAX_INDEX)
-    return OpalTransportAddress(GetHostName(), port, proto);
+    return OpalTransportAddress(GetHostName(), m_port, proto);
 
 #if OPAL_PTLIB_DNS_RESOLVER
   // RFC3263 states we do not do lookup if explicit port mentioned
@@ -534,9 +534,9 @@ OpalTransportAddress SIPURL::GetTransportAddress(PINDEX entry) const
 #endif // OPAL_PTLIB_DNS_RESOLVER
 
   if (PIPSocket::GetHostAddress(GetHostName(), ip))
-    return OpalTransportAddress(ip, port, proto);
+    return OpalTransportAddress(ip, m_port, proto);
 
-  return OpalTransportAddress(GetHostName(), port, proto);
+  return OpalTransportAddress(GetHostName(), m_port, proto);
 }
 
 
@@ -553,7 +553,7 @@ void SIPURL::SetHostAddress(const OpalTransportAddress & addr)
 
 PCaselessString SIPURL::GetTransportProto() const
 {
-  return paramVars("transport", scheme == "sips" ? "tls" : "udp").ToLower();
+  return m_paramVars("transport", m_scheme == "sips" ? "tls" : "udp").ToLower();
 }
 
 
@@ -585,26 +585,26 @@ void SIPURL::Sanitise(UsageContext context)
   for (i = 0; i < PARRAYSIZE(SanitaryFields); i++) {
     if (SanitaryFields[i].contexts&(1<<context)) {
       PCaselessString name = SanitaryFields[i].name;
-      paramVars.RemoveAt(name);
+      m_paramVars.RemoveAt(name);
       m_fieldParameters.RemoveAt(name);
     }
   }
 
-  for (PStringToString::iterator it = paramVars.begin(); it != paramVars.end(); ) {
+  for (PStringToString::iterator it = m_paramVars.begin(); it != m_paramVars.end(); ) {
     PCaselessString key = it->first;
     if (key.NumCompare("OPAL-") != EqualTo)
       ++it;
-    else if (paramVars.MakeUnique())
-      paramVars.erase(it++);
+    else if (m_paramVars.MakeUnique())
+      m_paramVars.erase(it++);
     else {
-      paramVars.RemoveAt(key);
-      it = paramVars.begin();
+      m_paramVars.RemoveAt(key);
+      it = m_paramVars.begin();
     }
   }
 
   if (context != RedirectURI && context != ExternalURI) {
-    queryVars.MakeUnique();
-    queryVars.RemoveAll();
+    m_queryVars.MakeUnique();
+    m_queryVars.RemoveAll();
   }
 
   WORD defPort = GetDefaultPort();
@@ -617,7 +617,7 @@ void SIPURL::Sanitise(UsageContext context)
     case ToURI :
     case FromURI :
       // Port not allowed for To or From, RFC3261, 19.1.1
-      portSupplied = false;
+      m_portSupplied = false;
       break;
 
     case RegContactURI :
@@ -634,22 +634,22 @@ void SIPURL::Sanitise(UsageContext context)
          as the contact, but as the thing doing the registering is nearly
          always the thing listening on a port, it is the 99.9% solution.
        */
-      if (!portSupplied) {
-        portSupplied = true;
-        port = defPort;
+      if (!m_portSupplied) {
+        m_portSupplied = true;
+        m_port = defPort;
       }
       break;
 
     case RegisterURI :
-      username.MakeEmpty();
-      password.MakeEmpty();
+      m_username.MakeEmpty();
+      m_password.MakeEmpty();
 
     default:
       break;
   }
 
-  if (!portSupplied && scheme.NumCompare("sip") == EqualTo)
-    port = defPort;
+  if (!m_portSupplied && m_scheme.NumCompare("sip") == EqualTo)
+    m_port = defPort;
 
   Recalculate();
 }
@@ -2877,7 +2877,7 @@ OpalTransportAddress SIPDialogContext::GetRemoteTransportAddress(PINDEX dnsEntry
 
 SIPTransactionOwner::SIPTransactionOwner(PSafeObject & object, SIPEndPoint & endpoint)
   : m_object(object)
-  , m_endpoint(endpoint)
+  , m_sipEndpoint(endpoint)
   , m_dnsEntry(0)
   , m_authentication(NULL)
   , m_authenticateErrors(0)
@@ -2916,7 +2916,7 @@ SIP_PDU::StatusCodes SIPTransactionOwner::SwitchTransportProto(const char * prot
 
 unsigned SIPTransactionOwner::GetAllowedMethods() const
 {
-  return m_endpoint.GetAllowedMethods();
+  return m_sipEndpoint.GetAllowedMethods();
 }
 
 
@@ -2966,7 +2966,7 @@ void SIPTransactionOwner::OnReceivedResponse(SIPTransaction & transaction, SIP_P
     AbortPendingTransactions();
 
   // Then tell endpoint - backward compatibility API
-  m_endpoint.OnReceivedResponse(transaction, response);
+  m_sipEndpoint.OnReceivedResponse(transaction, response);
 
   // Ignore the pending responses
   if (responseClass == 1)
@@ -2988,7 +2988,7 @@ void SIPTransactionOwner::OnTransactionFailed(SIPTransaction & transaction)
 {
   PTRACE(4, "OnTransactionFailed for transaction id=" << transaction.GetTransactionID());
 
-  m_endpoint.OnTransactionFailed(transaction);
+  m_sipEndpoint.OnTransactionFailed(transaction);
 }
 
 
@@ -3095,7 +3095,7 @@ SIP_PDU::StatusCodes SIPTransactionOwner::HandleAuthentication(const SIP_PDU & r
   PString password = GetPassword();
 
   if (authId.IsEmpty() || password.IsEmpty())
-    m_endpoint.GetAuthentication(realm, authId, password);
+    m_sipEndpoint.GetAuthentication(realm, authId, password);
 
   // Still need stuff, check proxy
   if (authId.IsEmpty() || password.IsEmpty()) {

@@ -986,7 +986,7 @@ class SIPTransactionOwner
 
     SIP_PDU::StatusCodes HandleAuthentication(const SIP_PDU & response);
 
-    SIPEndPoint & GetEndPoint() const { return m_endpoint; }
+    SIPEndPoint & GetEndPoint() const { return m_sipEndpoint; }
     OpalTransportAddress GetRemoteTransportAddress() const { return m_dialog.GetRemoteTransportAddress(m_dnsEntry); }
     const SIPURL & GetRequestURI() const { return m_dialog.GetRequestURI(); }
     const SIPURL & GetRemoteURI() const { return m_dialog.GetRemoteURI(); }
@@ -999,7 +999,7 @@ class SIPTransactionOwner
 
   protected:
     PSafeObject       & m_object;
-    SIPEndPoint       & m_endpoint;
+    SIPEndPoint       & m_sipEndpoint;
     SIPDialogContext    m_dialog; // Not all derived classes use this as a dialog, but many fields useful
     PINDEX              m_dnsEntry;
     SIPAuthentication * m_authentication;

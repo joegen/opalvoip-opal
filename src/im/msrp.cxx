@@ -479,14 +479,14 @@ void OpalMSRPMediaStream::OnReceiveMSRP(OpalMSRPManager &, OpalMSRPManager::Inco
 {
   m_msrpSession.SetConnection(incomingMSRP.m_connection);
 
-  if (connection.GetPhase() != OpalConnection::EstablishedPhase) {
+  if (m_connection.GetPhase() != OpalConnection::EstablishedPhase) {
     PTRACE(3, "MSRP\tMediaStream " << *this << " receiving MSRP message in non-Established phase");
   } 
   else if (incomingMSRP.m_command == MSRPProtocol::SEND) {
     PTRACE(3, "MSRP\tMediaStream " << *this << " received SEND");
     OpalIM im;
-    im.m_from = connection.GetRemotePartyURL();
-    im.m_to = connection.GetLocalPartyURL();
+    im.m_from = m_connection.GetRemotePartyURL();
+    im.m_to = m_connection.GetLocalPartyURL();
 
     T140String t140(incomingMSRP.m_body);
     t140.AsString(im.m_bodies[PMIMEInfo::TextPlain()]);
@@ -742,12 +742,12 @@ void OpalMSRPManager::Connection::HandlerThread()
       if (!m_protocol->ReadMessage(incomingMsg.m_command, incomingMsg.m_chunkId, incomingMsg.m_mime, incomingMsg.m_body))
         break;
 
-      PString fromUrl(incomingMsg.m_mime("From-Path"));
-      PString toUrl  (incomingMsg.m_mime("To-Path"));
+      PString fromPath(incomingMsg.m_mime("From-Path"));
+      PString toPath (incomingMsg.m_mime("To-Path"));
 
       if (incomingMsg.m_command == MSRPProtocol::SEND) {
-        m_protocol->SendResponse(incomingMsg.m_chunkId, 200, "OK", toUrl, fromUrl);
-        PTRACE(3, "MSRP\tMSRP SEND received from=" << fromUrl << ",to=" << toUrl);
+        m_protocol->SendResponse(incomingMsg.m_chunkId, 200, "OK", toPath, fromPath);
+        PTRACE(3, "MSRP\tMSRP SEND received from=" << fromPath << ",to=" << toPath);
         if (incomingMsg.m_mime.Contains(PHTTP::ContentTypeTag)) {
           incomingMsg.m_connection = PSafePtr<Connection>(this);
           m_manager.DispatchMessage(incomingMsg);
@@ -925,18 +925,18 @@ bool MSRPProtocol::ReadMessage(int & command,
                            PString & body)
 {
   // get the MSRP start line
-  PString line;
+  PString startLine;
   do {
-    if (!ReadLine(line, false)) {
+    if (!ReadLine(startLine, false)) {
       PTRACE(2, "MSRP\tError while reading MSRP command");
       return false;
     }
-  } while (line.IsEmpty());
+  } while (startLine.IsEmpty());
 
   // get tokens
-  PStringArray tokens = line.Tokenise(' ', false);
+  PStringArray tokens = startLine.Tokenise(' ', false);
   if (tokens.GetSize() < 3) {
-    PTRACE(2, "MSRP\tReceived malformed MSRP command line with " << tokens.GetSize() << " tokens");
+    PTRACE(2, "MSRP\tReceived malformed MSRP command line \"" << startLine << "\" with " << tokens.GetSize() << " tokens");
     return false;
   }
 
@@ -998,7 +998,7 @@ bool MSRPProtocol::ReadMessage(int & command,
   {
     PStringStream str; str << ::setfill('\r');
     mime.PrintContents(str);
-    PTRACE(4, "Received MSRP message\n" << line << "\n" << str << body << terminator);
+    PTRACE(4, "Received MSRP message\n" << startLine << "\n" << str << body << terminator);
   }
 
   return true;

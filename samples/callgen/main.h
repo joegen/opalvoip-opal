@@ -167,7 +167,7 @@ class MyManager : public OpalManagerConsole
 
     virtual PBoolean OnOpenMediaStream(OpalConnection & connection, OpalMediaStream & stream);
 
-    PINDEX GetActiveCalls() const { return activeCalls.GetSize(); }
+    PINDEX GetActiveCalls() const { return m_activeCalls.GetSize(); }
 
     PTextFile      m_cdrFile;
     unsigned       m_totalCalls;

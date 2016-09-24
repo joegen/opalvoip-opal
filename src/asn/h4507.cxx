@@ -165,7 +165,7 @@ H4507_MsgCentreId::operator const H4501_EndpointAddress &() const
 
 PBoolean H4507_MsgCentreId::CreateObject()
 {
-  switch (tag) {
+  switch (m_tag) {
     case e_integer :
       choice = new PASN_Integer();
       choice->SetConstraints(PASN_Object::FixedConstraint, 0, 65535);

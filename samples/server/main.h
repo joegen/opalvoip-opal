@@ -217,9 +217,6 @@ class MyGatekeeperServer : public H323GatekeeperServer
           const PString & alias,
           const PString & host
         );
-        RouteMap(
-          const RouteMap & map
-        ) : PObject(map), alias(map.alias), regex(map.alias), host(map.host) { }
 
         void PrintOn(
           ostream & strm
@@ -231,12 +228,12 @@ class MyGatekeeperServer : public H323GatekeeperServer
           const PString & alias
         ) const;
 
-        const H323TransportAddress & GetHost() const { return host; }
+        const H323TransportAddress & GetHost() const { return m_host; }
 
       private:
-        PString              alias;
-        PRegularExpression   regex;
-        H323TransportAddress host;
+        PString              m_alias;
+        PRegularExpression   m_regex;
+        H323TransportAddress m_host;
     };
     PList<RouteMap> routes;
 

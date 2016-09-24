@@ -3522,11 +3522,9 @@ H323Capability * H323Capabilities::FindCapability(const H245_DataType & dataType
      capability is there at all.
    */
   if (dataType.GetTag() == H245_DataType::e_videoData &&
-      ((const H245_VideoCapability &)dataType).GetTag() == H245_VideoCapability::e_h263VideoCapability) {
-    H323Capability * capability = FindCapability("*H.263*");
-    if (capability != NULL)
-      return capability;
-  }
+      ((const H245_VideoCapability &)dataType).GetTag() == H245_VideoCapability::e_h263VideoCapability &&
+       (capability = FindCapability("*H.263*")) != NULL)
+    return capability;
 
   switch (dataType.GetTag()) {
     case H245_DataType::e_audioData :
@@ -3975,7 +3973,7 @@ void H245_AudioCapability::PrintOn(ostream & strm) const
   strm << GetTagName();
 
   // tag 0 is nonstandard
-  if (tag == 0) {
+  if (GetTag() == 0) {
 
     H245_NonStandardParameter & param = (H245_NonStandardParameter &)GetObject();
     const PBYTEArray & data = param.m_data;

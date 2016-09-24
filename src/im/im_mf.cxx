@@ -418,7 +418,7 @@ PSafePtr<OpalIMContext> OpalIMEndPoint::InternalCreateContext(const PURL & local
   // populate the context
   context->m_endpoint    = this;
   context->m_localURL    = localURL;
-  context->m_localName   = manager.GetDefaultDisplayName();
+  context->m_localName   = m_manager.GetDefaultDisplayName();
   context->m_remoteURL   = remoteURL;
   context->m_remoteName  = remoteURL.GetUserName();
   context->m_call        = call;
@@ -498,7 +498,7 @@ void OpalIMEndPoint::OnConversation(const OpalIMContext::ConversationInfo & info
   m_notifierMutex.Signal();
 
   if (managerFallback)
-    manager.OnConversation(info);
+    m_manager.OnConversation(info);
 }
 
 
@@ -680,7 +680,7 @@ void OpalIMConnection::OnEstablished()
   else {
     PString error;
     OpalIM message;
-    if (((OpalIMEndPoint&)endpoint).OnRawMessageReceived(message, this, error) > OpalIMContext::DispositionErrors) {
+    if (((OpalIMEndPoint&)m_endpoint).OnRawMessageReceived(message, this, error) > OpalIMContext::DispositionErrors) {
       Release();
     }
   }

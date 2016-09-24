@@ -327,15 +327,15 @@ class OpalManager : public PObject
       */
     virtual PBoolean HasCall(
       const PString & token  ///<  Token for identifying call
-    ) { return activeCalls.FindWithLock(token, PSafeReference) != NULL; }
+    ) { return m_activeCalls.FindWithLock(token, PSafeReference) != NULL; }
 
     /**Return the number of active calls.
       */
-    PINDEX GetCallCount() const { return activeCalls.GetSize(); }
+    PINDEX GetCallCount() const { return m_activeCalls.GetSize(); }
 
     /**Get all tokens for active calls.
       */
-     PArray<PString> GetAllCalls() const { return activeCalls.GetKeys(); }
+     PArray<PString> GetAllCalls() const { return m_activeCalls.GetKeys(); }
 
     /**Find a call with the specified token.
        This searches the manager database for the call that contains the token
@@ -348,7 +348,7 @@ class OpalManager : public PObject
     PSafePtr<OpalCall> FindCallWithLock(
       const PString & token,  ///<  Token to identify connection
       PSafetyMode mode = PSafeReadWrite ///< Lock mode
-    ) const { return activeCalls.FindWithLock(token, mode); }
+    ) const { return m_activeCalls.FindWithLock(token, mode); }
 
     /**A call back function whenever a call is being terminated locally.
        An application may use this function to auto-answer an incoming call
@@ -1674,7 +1674,7 @@ class OpalManager : public PObject
        Defaults to maximum safe MTU size (576 bytes as per RFC879) minus the
        typical size of the IP, UDP an RTP headers.
       */
-    PINDEX GetMaxRtpPayloadSize() const { return rtpPayloadSizeMax; }
+    PINDEX GetMaxRtpPayloadSize() const { return m_rtpPayloadSizeMax; }
 
     /**Get the maximum transmitted RTP payload size.
        Defaults to maximum safe MTU size (576 bytes as per RFC879) minus the
@@ -1683,19 +1683,19 @@ class OpalManager : public PObject
     void SetMaxRtpPayloadSize(
       PINDEX size,
       bool mtu = false
-    ) { rtpPayloadSizeMax = size - (mtu ? (20+16+12) : 0); }
+    ) { m_rtpPayloadSizeMax = size - (mtu ? (20+16+12) : 0); }
 
     /**Get the maximum received RTP packet size.
        Defaults to 10k.
       */
-    PINDEX GetMaxRtpPacketSize() const { return rtpPacketSizeMax; }
+    PINDEX GetMaxRtpPacketSize() const { return m_rtpPacketSizeMax; }
 
     /**Get the maximum received RTP packet size.
        Defaults to 10k.
       */
     void SetMaxRtpPacketSize(
       PINDEX size
-    ) { rtpPacketSizeMax = size; }
+    ) { m_rtpPacketSizeMax = size; }
   //@}
 
 
@@ -1703,7 +1703,7 @@ class OpalManager : public PObject
   //@{
     /**Get the product info for all endpoints.
       */
-    const OpalProductInfo & GetProductInfo() const { return productInfo; }
+    const OpalProductInfo & GetProductInfo() const { return m_productInfo; }
 
     /**Set the product info for all endpoints.
       */
@@ -1714,7 +1714,7 @@ class OpalManager : public PObject
 
     /**Get the default username for all endpoints.
       */
-    const PString & GetDefaultUserName() const { return defaultUserName; }
+    const PString & GetDefaultUserName() const { return m_defaultUserName; }
 
     /**Set the default username for all endpoints.
       */
@@ -1725,7 +1725,7 @@ class OpalManager : public PObject
 
     /**Get the default display name for all endpoints.
       */
-    const PString & GetDefaultDisplayName() const { return defaultDisplayName; }
+    const PString & GetDefaultDisplayName() const { return m_defaultDisplayName; }
 
     /**Set the default display name for all endpoints.
       */
@@ -1802,7 +1802,7 @@ class OpalManager : public PObject
 
     /**Get the default media format order.
      */
-    const PStringArray & GetMediaFormatOrder() const { return mediaFormatOrder; }
+    const PStringArray & GetMediaFormatOrder() const { return m_mediaFormatOrder; }
 
     /**Set the default media format order.
      */
@@ -1815,7 +1815,7 @@ class OpalManager : public PObject
        format lists bfeore use by a connection.
        See OpalMediaFormatList::Remove() for more information.
      */
-    const PStringArray & GetMediaFormatMask() const { return mediaFormatMask; }
+    const PStringArray & GetMediaFormatMask() const { return m_mediaFormatMask; }
 
     /**Set the default media format mask.
        The is the default list of media format names to be removed from media
@@ -1830,22 +1830,22 @@ class OpalManager : public PObject
      */
     virtual void SetSilenceDetectParams(
       const OpalSilenceDetector::Params & params
-    ) { silenceDetectParams = params; }
+    ) { m_silenceDetectParams = params; }
 
     /**Get the default parameters for the silence detector.
      */
-    const OpalSilenceDetector::Params & GetSilenceDetectParams() const { return silenceDetectParams; }
+    const OpalSilenceDetector::Params & GetSilenceDetectParams() const { return m_silenceDetectParams; }
     
 #if OPAL_AEC
     /**Set the default parameters for the echo cancelation.
      */
     virtual void SetEchoCancelParams(
       const OpalEchoCanceler::Params & params
-    ) { echoCancelParams = params; }
+    ) { m_echoCancelParams = params; }
 
     /**Get the default parameters for the silence detector.
      */
-    const OpalEchoCanceler::Params & GetEchoCancelParams() const { return echoCancelParams; }
+    const OpalEchoCanceler::Params & GetEchoCancelParams() const { return m_echoCancelParams; }
 #endif
 
 #if OPAL_VIDEO
@@ -1906,13 +1906,13 @@ class OpalManager : public PObject
 #endif
 
     PBoolean DetectInBandDTMFDisabled() const
-      { return disableDetectInBandDTMF; }
+      { return m_disableDetectInBandDTMF; }
 
     /**Set the default H.245 tunneling mode.
       */
     void DisableDetectInBandDTMF(
       PBoolean mode ///<  New default mode
-    ) { disableDetectInBandDTMF = mode; } 
+    ) { m_disableDetectInBandDTMF = mode; } 
 
     /**Get the amount of time with no media that will cause a call to clear
      */
@@ -2000,13 +2000,13 @@ class OpalManager : public PObject
 
     /**Get the default ILS server to use for user lookup.
       */
-    const PString & GetDefaultILSServer() const { return ilsServer; }
+    const PString & GetDefaultILSServer() const { return m_ilsServer; }
 
     /**Set the default ILS server to use for user lookup.
       */
     void SetDefaultILSServer(
       const PString & server
-    ) { ilsServer = server; }
+    ) { m_ilsServer = server; }
 
 #if OPAL_SCRIPT
     /**Get the script interpreter interface for application.
@@ -2073,22 +2073,22 @@ class OpalManager : public PObject
 
   protected:
     // Configuration variables
-    OpalProductInfo productInfo;
+    OpalProductInfo m_productInfo;
 
-    PString       defaultUserName;
-    PString       defaultDisplayName;
+    PString       m_defaultUserName;
+    PString       m_defaultDisplayName;
 
     typedef std::map<OpalMediaType, PIPSocket::QoS> MediaQoSMap;
     mutable MediaQoSMap m_mediaQoS;
 
     OpalConnection::StringOptions m_defaultConnectionOptions;
 
-    PINDEX        rtpPayloadSizeMax;
-    PINDEX        rtpPacketSizeMax;
+    PINDEX        m_rtpPayloadSizeMax;
+    PINDEX        m_rtpPacketSizeMax;
     OpalJitterBuffer::Params m_jitterParams;
-    PStringArray  mediaFormatOrder;
-    PStringArray  mediaFormatMask;
-    bool          disableDetectInBandDTMF;
+    PStringArray  m_mediaFormatOrder;
+    PStringArray  m_mediaFormatMask;
+    bool          m_disableDetectInBandDTMF;
     PTimeInterval m_noMediaTimeout;
     PTimeInterval m_txMediaTimeout;
     PTimeInterval m_signalingTimeout;
@@ -2101,11 +2101,11 @@ class OpalManager : public PObject
 #if OPAL_SRTP
     PTimeInterval m_dtlsTimeout;
 #endif
-    PString       ilsServer;
+    PString       m_ilsServer;
 
-    OpalSilenceDetector::Params silenceDetectParams;
+    OpalSilenceDetector::Params m_silenceDetectParams;
 #if OPAL_AEC
-    OpalEchoCanceler::Params echoCancelParams;
+    OpalEchoCanceler::Params m_echoCancelParams;
 #endif
 
 #if OPAL_VIDEO
@@ -2133,9 +2133,9 @@ class OpalManager : public PObject
     PMutex     m_routeMutex;
 
     // Dynamic variables
-    PDECLARE_READ_WRITE_MUTEX(endpointsMutex);
-    PList<OpalEndPoint> endpointList;
-    std::map<PString, OpalEndPoint *> endpointMap;
+    PDECLARE_READ_WRITE_MUTEX(m_endpointsMutex);
+    PList<OpalEndPoint> m_endpointList;
+    std::map<PString, OpalEndPoint *> m_endpointMap;
 
     atomic<unsigned> lastCallTokenID;
 
@@ -2145,7 +2145,7 @@ class OpalManager : public PObject
         CallDict(OpalManager & mgr) : manager(mgr) { }
         virtual void DeleteObject(PObject * object) const;
         OpalManager & manager;
-    } activeCalls;
+    } m_activeCalls;
 
 #if OPAL_HAS_PRESENCE
     PSafeDictionary<PString, OpalPresentity> m_presentities;

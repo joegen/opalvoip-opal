@@ -246,7 +246,7 @@ H460P_PresenceMessage::operator const H460P_PresenceAlert &() const
 
 PBoolean H460P_PresenceMessage::CreateObject()
 {
-  switch (tag) {
+  switch (m_tag) {
     case e_presenceStatus :
       choice = new H460P_PresenceStatus();
       return TRUE;
@@ -337,7 +337,7 @@ H460P_PresenceInstruction::operator const H225_AliasAddress &() const
 
 PBoolean H460P_PresenceInstruction::CreateObject()
 {
-  switch (tag) {
+  switch (m_tag) {
     case e_subscribe :
     case e_unsubscribe :
     case e_block :
@@ -466,7 +466,7 @@ H460P_PresenceState::H460P_PresenceState(unsigned tag, PASN_Object::TagClass tag
 
 PBoolean H460P_PresenceState::CreateObject()
 {
-  switch (tag) {
+  switch (m_tag) {
     case e_hidden :
     case e_available :
     case e_online :

@@ -116,7 +116,7 @@ void H323Gatekeeper::SetRegistrationFailReason(RegistrationFailReasons reason)
 {
   if (m_registrationFailReason != reason) {
     m_registrationFailReason = reason;
-    endpoint.OnGatekeeperStatus(reason);
+    m_endpoint.OnGatekeeperStatus(reason);
   }
 }
 
@@ -215,16 +215,16 @@ void H323RasPDU::WriteGRQ(H323Transport & transport, bool & succeeded)
 
 bool H323Gatekeeper::StartGatekeeper(const H323TransportAddress & initialAddress)
 {
-  if (PAssertNULL(transport) == NULL)
+  if (PAssertNULL(m_transport) == NULL)
     return false;
 
-  PAssert(!transport->IsRunning(), "Cannot do initial discovery on running RAS channel");
+  PAssert(!m_transport->IsRunning(), "Cannot do initial discovery on running RAS channel");
 
   H323TransportAddress address = initialAddress;
   if (address.IsEmpty())
     address = "udp$*:1719";
 
-  if (!transport->ConnectTo(address)) {
+  if (!m_transport->ConnectTo(address)) {
     SetRegistrationFailReason(TransportError);
     return false;
   }
@@ -253,27 +253,27 @@ bool H323Gatekeeper::DiscoverGatekeeper()
     H323RasPDU pdu;
     Request request(SetupGatekeeperRequest(pdu), pdu);
   
-    H323TransportAddress address = transport->GetRemoteAddress();
-    request.responseInfo = &address;
+    H323TransportAddress address = m_transport->GetRemoteAddress();
+    request.m_responseInfo = &address;
   
-    requestsMutex.Wait();
-    requests.SetAt(request.sequenceNumber, &request);
-    requestsMutex.Signal();
+    m_requestsMutex.Wait();
+    m_requests.SetAt(request.m_sequenceNumber, &request);
+    m_requestsMutex.Signal();
   
-    request.Poll(*this, endpoint.GetGatekeeperRequestRetries(), endpoint.GetGatekeeperRequestTimeout());
+    request.Poll(*this, m_endpoint.GetGatekeeperRequestRetries(), m_endpoint.GetGatekeeperRequestTimeout());
   
-    requestsMutex.Wait();
-    requests.SetAt(request.sequenceNumber, NULL);
-    requestsMutex.Signal();
+    m_requestsMutex.Wait();
+    m_requests.SetAt(request.m_sequenceNumber, NULL);
+    m_requestsMutex.Signal();
 
-    if (request.responseResult != Request::TryAlternate)
+    if (request.m_responseResult != Request::TryAlternate)
       return discoveryComplete;
 
     for (AlternateList::iterator it = m_alternates.begin(); ; ++it) {
       if (it == m_alternates.end())
         return discoveryComplete;
       if (it->registrationState != AlternateInfo::RegistrationFailed) {
-        transport->ConnectTo(it->rasAddress);
+        m_transport->ConnectTo(it->rasAddress);
         break;
       }
     }
@@ -295,16 +295,16 @@ PBoolean H323Gatekeeper::WriteTo(H323TransactionPDU & pdu,
                                  const H323TransportAddressArray & addresses, 
                                  PBoolean callback)
 {
-  PSafeLockReadWrite mutex(*transport);
+  PSafeLockReadWrite mutex(*m_transport);
 
   if (discoveryComplete || pdu.GetPDU().GetTag() != H225_RasMessage::e_gatekeeperRequest)
     return H323Transactor::WriteTo(pdu, addresses, callback);
 
-  PString oldInterface = transport->GetInterface();
-  bool ok = transport->WriteConnect(PCREATE_NOTIFIER_EXT(dynamic_cast<H323RasPDU&>(pdu.GetPDU()),H323RasPDU,WriteGRQ));
-  transport->SetInterface(oldInterface);
+  PString oldInterface = m_transport->GetInterface();
+  bool ok = m_transport->WriteConnect(PCREATE_NOTIFIER_EXT(dynamic_cast<H323RasPDU&>(pdu.GetPDU()),H323RasPDU,WriteGRQ));
+  m_transport->SetInterface(oldInterface);
 
-  PTRACE_IF(1, !ok, "Error writing discovery PDU: " << transport->GetErrorText());
+  PTRACE_IF(1, !ok, "Error writing discovery PDU: " << m_transport->GetErrorText());
 
   return ok;
 }
@@ -312,15 +312,15 @@ PBoolean H323Gatekeeper::WriteTo(H323TransactionPDU & pdu,
 
 unsigned H323Gatekeeper::SetupGatekeeperRequest(H323RasPDU & request)
 {
-  if (PAssertNULL(transport) == NULL)
+  if (PAssertNULL(m_transport) == NULL)
     return 0;
 
   H225_GatekeeperRequest & grq = request.BuildGatekeeperRequest(GetNextSequenceNumber());
 
-  H323TransportAddress rasAddress = transport->GetLocalAddress();
+  H323TransportAddress rasAddress = m_transport->GetLocalAddress();
   rasAddress.SetPDU(grq.m_rasAddress);
 
-  endpoint.SetEndpointTypeInfo(grq.m_endpointType);
+  m_endpoint.SetEndpointTypeInfo(grq.m_endpointType);
 
   grq.IncludeOptionalField(H225_GatekeeperRequest::e_endpointAlias);
   m_aliasMutex.Wait();
@@ -371,8 +371,8 @@ PBoolean H323Gatekeeper::OnReceiveGatekeeperConfirm(const H225_GatekeeperConfirm
         iterAuth->Enable(false);
       else {
         PBYTEArray rawPDU;
-        if (lastRequest != NULL)
-          rawPDU = lastRequest->requestPDU.GetRawPDU();
+        if (m_lastRequest != NULL)
+          rawPDU = m_lastRequest->m_requestPDU.GetRawPDU();
         H235Authenticator::ValidationResult result = iterAuth->ValidateTokens(gcf.m_tokens, gcf.m_cryptoTokens, rawPDU);
         iterAuth->Enable(result == H235Authenticator::e_OK || result == H235Authenticator::e_Absent);
       }
@@ -382,31 +382,31 @@ PBoolean H323Gatekeeper::OnReceiveGatekeeperConfirm(const H225_GatekeeperConfirm
   if (gcf.HasOptionalField(H225_GatekeeperConfirm::e_alternateGatekeeper))
     SetAlternates(gcf.m_alternateGatekeeper, false);
 
-  PSafeLockReadWrite mutex(*transport);
+  PSafeLockReadWrite mutex(*m_transport);
 
-  OpalTransportAddress previousAddress(transport->GetRemoteAddress());
+  OpalTransportAddress previousAddress(m_transport->GetRemoteAddress());
   H323TransportAddress locatedAddress(gcf.m_rasAddress, OpalTransportAddress::UdpPrefix());
   if (previousAddress == locatedAddress) {
-    PTRACE(3, "Gatekeeper address verified: " << *transport);
+    PTRACE(3, "Gatekeeper address verified: " << *m_transport);
     discoveryComplete = true;
     return true;
   }
 
   if (previousAddress.Find('*') != P_MAX_INDEX) {
-    PTRACE(3, "Gatekeeper discovered at: " << *transport);
+    PTRACE(3, "Gatekeeper discovered at: " << *m_transport);
     discoveryComplete = true;
   }
-  else if (endpoint.GetGatekeeperRasRedirect()) {
-    PTRACE(3, "Remote gatekeeper redirected to " << locatedAddress << " from " << *transport);
+  else if (m_endpoint.GetGatekeeperRasRedirect()) {
+    PTRACE(3, "Remote gatekeeper redirected to " << locatedAddress << " from " << *m_transport);
     discoveryComplete = false; // Need to do GRQ again
     ReRegisterNow();
   }
   else {
-    PTRACE(3, "Remote gatekeeper RAS address (" << locatedAddress << ") different: " << *transport);
+    PTRACE(3, "Remote gatekeeper RAS address (" << locatedAddress << ") different: " << *m_transport);
     return true;
   }
 
-  if (transport->SetRemoteAddress(locatedAddress))
+  if (m_transport->SetRemoteAddress(locatedAddress))
     return true;
 
   PTRACE(2, "Invalid gatekeeper discovery address: \"" << locatedAddress << '"');
@@ -422,19 +422,19 @@ PBoolean H323Gatekeeper::OnReceiveGatekeeperReject(const H225_GatekeeperReject &
   if (grj.HasOptionalField(H225_GatekeeperReject::e_altGKInfo))
     SetAlternates(grj.m_altGKInfo.m_alternateGatekeeper, grj.m_altGKInfo.m_altGKisPermanent);
 
-  switch (lastRequest->rejectReason) {
+  switch (m_lastRequest->m_rejectReason) {
     case H225_GatekeeperRejectReason::e_securityDenial :
     case H225_GatekeeperRejectReason::e_securityError :
       SetRegistrationFailReason(SecurityDenied);
       break;
 
     case H225_GatekeeperRejectReason::e_resourceUnavailable :
-      lastRequest->responseResult = Request::TryAlternate;
+      m_lastRequest->m_responseResult = Request::TryAlternate;
       SetRegistrationFailReason(TryingAlternate);
       break;
 
     default :
-      SetRegistrationFailReason(lastRequest->rejectReason, GatekeeperRejectReasonMask);
+      SetRegistrationFailReason(m_lastRequest->m_rejectReason, GatekeeperRejectReasonMask);
   }
 
   return true;
@@ -443,7 +443,7 @@ PBoolean H323Gatekeeper::OnReceiveGatekeeperReject(const H225_GatekeeperReject &
 
 bool H323Gatekeeper::SetListenerAddresses(H225_ArrayOf_TransportAddress & pdu)
 {
-  H323TransportAddressArray listeners = endpoint.GetInterfaceAddresses(transport);
+  H323TransportAddressArray listeners = m_endpoint.GetInterfaceAddresses(m_transport);
   if (listeners.IsEmpty())
     return false;
 
@@ -466,7 +466,7 @@ bool H323Gatekeeper::SetListenerAddresses(H225_ArrayOf_TransportAddress & pdu)
       // Put new listener into array
       pdu.SetSize(lastPos+1);
       pdu[lastPos] = pduAddr;
-      if (endpoint.GetOneSignalAddressInRRQ())
+      if (m_endpoint.GetOneSignalAddressInRRQ())
         return true;
     }
   }
@@ -486,7 +486,7 @@ static H225_AddressPattern & AddTerminalAliasPattern(H225_RegistrationRequest & 
 
 bool H323Gatekeeper::RegistrationRequest(bool autoReg, bool didGkDiscovery, bool lightweight)
 {
-  if (PAssertNULL(transport) == NULL)
+  if (PAssertNULL(m_transport) == NULL)
     return false;
 
   m_autoReregister = autoReg;
@@ -499,15 +499,15 @@ bool H323Gatekeeper::RegistrationRequest(bool autoReg, bool didGkDiscovery, bool
   rrq.m_discoveryComplete = didGkDiscovery;
 
   rrq.m_rasAddress.SetSize(1);
-  H323TransportAddress rasAddress = transport->GetLocalAddress();
+  H323TransportAddress rasAddress = m_transport->GetLocalAddress();
   
   // We do have to use the translated address if specified
   PIPSocket::Address localAddress, remoteAddress;
   WORD localPort;
   
   if (rasAddress.GetIpAndPort(localAddress, localPort) &&
-      transport->GetRemoteAddress().GetIpAddress(remoteAddress) &&
-      transport->GetEndPoint().GetManager().TranslateIPAddress(localAddress, remoteAddress))
+      m_transport->GetRemoteAddress().GetIpAddress(remoteAddress) &&
+      m_transport->GetEndPoint().GetManager().TranslateIPAddress(localAddress, remoteAddress))
     rasAddress = H323TransportAddress(localAddress, localPort);
   
   rasAddress.SetPDU(rrq.m_rasAddress[0]);
@@ -522,7 +522,7 @@ bool H323Gatekeeper::RegistrationRequest(bool autoReg, bool didGkDiscovery, bool
     rrq.m_endpointIdentifier = m_endpointIdentifier;
   }
 
-  PTimeInterval ttl = endpoint.GetGatekeeperTimeToLive();
+  PTimeInterval ttl = m_endpoint.GetGatekeeperTimeToLive();
   if (ttl > 0) {
     rrq.IncludeOptionalField(H225_RegistrationRequest::e_timeToLive);
     rrq.m_timeToLive = (int)ttl.GetSeconds();
@@ -541,17 +541,17 @@ bool H323Gatekeeper::RegistrationRequest(bool autoReg, bool didGkDiscovery, bool
       return false;
     }
 
-    endpoint.SetEndpointTypeInfo(rrq.m_terminalType);
+    m_endpoint.SetEndpointTypeInfo(rrq.m_terminalType);
     rrq.m_terminalType.RemoveOptionalField(H225_EndpointType::e_vendor); // Don't want it twice
-    endpoint.SetVendorIdentifierInfo(rrq.m_endpointVendor);
+    m_endpoint.SetVendorIdentifierInfo(rrq.m_endpointVendor);
 
     rrq.IncludeOptionalField(H225_RegistrationRequest::e_terminalAlias);
     m_aliasMutex.Wait();
     H323SetAliasAddresses(m_aliases, rrq.m_terminalAlias);
     m_aliasMutex.Signal();
 
-    if (!endpoint.GetGatekeeperSimulatePattern()) {
-      const PStringList patterns = endpoint.GetAliasNamePatterns();
+    if (!m_endpoint.GetGatekeeperSimulatePattern()) {
+      const PStringList patterns = m_endpoint.GetAliasNamePatterns();
       for (PStringList::const_iterator it = patterns.begin(); it != patterns.end(); ++it) {
         if (OpalIsE164(*it)) {
           H225_AddressPattern & addressPattern = AddTerminalAliasPattern(rrq);
@@ -586,13 +586,13 @@ bool H323Gatekeeper::RegistrationRequest(bool autoReg, bool didGkDiscovery, bool
     rrq.m_usageReportingCapability.IncludeOptionalField(H225_RasUsageInfoTypes::e_terminationCause);
     rrq.IncludeOptionalField(H225_RegistrationRequest::e_supportsAltGK);
 
-    if (endpoint.CanDisplayAmountString()) {
+    if (m_endpoint.CanDisplayAmountString()) {
       rrq.IncludeOptionalField(H225_RegistrationRequest::e_callCreditCapability);
       rrq.m_callCreditCapability.IncludeOptionalField(H225_CallCreditCapability::e_canDisplayAmountString);
       rrq.m_callCreditCapability.m_canDisplayAmountString = true;
     }
 
-    if (endpoint.CanEnforceDurationLimit()) {
+    if (m_endpoint.CanEnforceDurationLimit()) {
       rrq.IncludeOptionalField(H225_RegistrationRequest::e_callCreditCapability);
       rrq.m_callCreditCapability.IncludeOptionalField(H225_CallCreditCapability::e_canEnforceDurationLimit);
       rrq.m_callCreditCapability.m_canEnforceDurationLimit = true;
@@ -604,9 +604,9 @@ bool H323Gatekeeper::RegistrationRequest(bool autoReg, bool didGkDiscovery, bool
     return true;
 
   PTRACE(3, "Failed registration of " << GetEndpointIdentifier() << " with " << *this);
-  switch (request.responseResult) {
+  switch (request.m_responseResult) {
     case Request::RejectReceived :
-      switch (request.rejectReason) {
+      switch (request.m_rejectReason) {
         case H225_RegistrationRejectReason::e_discoveryRequired :
           // If have been told by GK that we need to discover it again, set flag
           // for next register done by timeToLive handler to do discovery
@@ -633,7 +633,7 @@ bool H323Gatekeeper::RegistrationRequest(bool autoReg, bool didGkDiscovery, bool
           break;
 
         default :
-          SetRegistrationFailReason(request.rejectReason, RegistrationRejectReasonMask);
+          SetRegistrationFailReason(request.m_rejectReason, RegistrationRejectReasonMask);
           break;
       }
       break;
@@ -668,12 +668,12 @@ PBoolean H323Gatekeeper::OnReceiveRegistrationConfirm(const H225_RegistrationCon
   if (rcf.HasOptionalField(H225_RegistrationConfirm::e_timeToLive))
     m_currentTimeToLive = AdjustTimeout(rcf.m_timeToLive);
   else
-    m_currentTimeToLive = endpoint.GetGatekeeperTimeToLive();
+    m_currentTimeToLive = m_endpoint.GetGatekeeperTimeToLive();
 
 #if OPAL_H460_NAT
-  if (m_features != NULL && m_features->HasFeature(H460_FeatureStd18::ID()) && m_currentTimeToLive > endpoint.GetManager().GetNatKeepAliveTime()) {
-    PTRACE(4, "H.440.18 detected, reducing TTL from " << m_currentTimeToLive << " to " << endpoint.GetManager().GetNatKeepAliveTime());
-    m_currentTimeToLive = endpoint.GetManager().GetNatKeepAliveTime();
+  if (m_features != NULL && m_features->HasFeature(H460_FeatureStd18::ID()) && m_currentTimeToLive > m_endpoint.GetManager().GetNatKeepAliveTime()) {
+    PTRACE(4, "H.440.18 detected, reducing TTL from " << m_currentTimeToLive << " to " << m_endpoint.GetManager().GetNatKeepAliveTime());
+    m_currentTimeToLive = m_endpoint.GetManager().GetNatKeepAliveTime();
   }
 #endif
 
@@ -729,11 +729,11 @@ PBoolean H323Gatekeeper::OnReceiveRegistrationConfirm(const H225_RegistrationCon
 
     for (PStringList::iterator alias = aliasesToAdd.begin(); alias != aliasesToAdd.end(); ++alias) {
       PTRACE(3, "Gatekeeper add of alias \"" << *alias << '"');
-      endpoint.AddAliasName(*alias, PString::Empty(), false);
+      m_endpoint.AddAliasName(*alias, PString::Empty(), false);
     }
     for (PStringList::iterator alias = aliasesToRemove.begin(); alias != aliasesToRemove.end(); ++alias) {
       PTRACE(3, "Gatekeeper removal of alias \"" << *alias << '"');
-      endpoint.RemoveAliasName(*alias, false);
+      m_endpoint.RemoveAliasName(*alias, false);
     }
   }
 
@@ -746,7 +746,7 @@ PBoolean H323Gatekeeper::OnReceiveRegistrationConfirm(const H225_RegistrationCon
     if (NATaddr.NumCompare("NAT=") == EqualTo) {
       PIPSocket::Address ip(NATaddr.Mid(4));
       if (ip.IsValid())
-        endpoint.OnGatekeeperNATDetect(ip, gkRouteAddress);
+        m_endpoint.OnGatekeeperNATDetect(ip, gkRouteAddress);
     }
   }
   
@@ -765,7 +765,7 @@ PBoolean H323Gatekeeper::OnReceiveRegistrationReject(const H225_RegistrationReje
     SetAlternates(rrj.m_altGKInfo.m_alternateGatekeeper, rrj.m_altGKInfo.m_altGKisPermanent);
 
   // Update registration fail reason from last request fail reason
-  switch(lastRequest->rejectReason) {
+  switch(m_lastRequest->m_rejectReason) {
     case H225_RegistrationRejectReason::e_duplicateAlias :
       SetRegistrationFailReason(DuplicateAlias);
       break;
@@ -775,12 +775,12 @@ PBoolean H323Gatekeeper::OnReceiveRegistrationReject(const H225_RegistrationReje
       break;
 
     case H225_RegistrationRejectReason::e_resourceUnavailable :
-      lastRequest->responseResult = Request::TryAlternate;
+      m_lastRequest->m_responseResult = Request::TryAlternate;
       SetRegistrationFailReason(TryingAlternate);
       break;
 
     default:
-      SetRegistrationFailReason(lastRequest->rejectReason, RegistrationRejectReasonMask);
+      SetRegistrationFailReason(m_lastRequest->m_rejectReason, RegistrationRejectReasonMask);
       break;
   }
   
@@ -823,7 +823,7 @@ PTimeInterval H323Gatekeeper::InternalRegister()
   bool didGkDiscovery = discoveryComplete;
 
   if (!discoveryComplete) {
-    if (endpoint.GetSendGRQ()) {
+    if (m_endpoint.GetSendGRQ()) {
       if (!DiscoverGatekeeper()) {
         PTRACE_IF(2, !m_forceRegister, "Discovery failed, retrying in " << OffLineRetryTime);
         return OffLineRetryTime;
@@ -832,7 +832,7 @@ PTimeInterval H323Gatekeeper::InternalRegister()
       didGkDiscovery = true;
     }
     else {
-      PTRACE_IF(3, !m_requiresDiscovery, "Skipping gatekeeper discovery for " << transport->GetRemoteAddress());
+      PTRACE_IF(3, !m_requiresDiscovery, "Skipping gatekeeper discovery for " << m_transport->GetRemoteAddress());
       discoveryComplete = true;
     }
   }
@@ -873,7 +873,7 @@ void H323Gatekeeper::ClearAllCalls()
 
 PBoolean H323Gatekeeper::UnregistrationRequest(int reason)
 {
-  if (PAssertNULL(transport) == NULL)
+  if (PAssertNULL(m_transport) == NULL)
     return false;
 
   ClearAllCalls();
@@ -881,7 +881,7 @@ PBoolean H323Gatekeeper::UnregistrationRequest(int reason)
   H323RasPDU pdu;
   H225_UnregistrationRequest & urq = pdu.BuildUnregistrationRequest(GetNextSequenceNumber());
 
-  H323TransportAddress rasAddress = transport->GetLocalAddress();
+  H323TransportAddress rasAddress = m_transport->GetLocalAddress();
 
   SetListenerAddresses(urq.m_callSignalAddress);
 
@@ -921,7 +921,7 @@ PBoolean H323Gatekeeper::UnregistrationRequest(int reason)
   if (requestResult)
     return true;
 
-  switch (request.responseResult) {
+  switch (request.m_responseResult) {
     case Request::NoResponseReceived :
       SetRegistrationFailReason(TransportError);
       m_currentTimeToLive = 0; // disables lightweight RRQ
@@ -933,7 +933,7 @@ PBoolean H323Gatekeeper::UnregistrationRequest(int reason)
       break;
 
     default :
-      SetRegistrationFailReason(request.rejectReason, UnregistrationRejectReasonMask);
+      SetRegistrationFailReason(request.m_rejectReason, UnregistrationRejectReasonMask);
       break;
   }
 
@@ -1000,7 +1000,7 @@ PBoolean H323Gatekeeper::OnReceiveUnregistrationReject(const H225_Unregistration
   if (!H225_RAS::OnReceiveUnregistrationReject(urj))
     return false;
 
-  if (lastRequest->rejectReason != H225_UnregRejectReason::e_callInProgress) {
+  if (m_lastRequest->m_rejectReason != H225_UnregRejectReason::e_callInProgress) {
     SetRegistrationFailReason(UnregisteredLocally);
     m_currentTimeToLive = 0; // disables lightweight RRQ
   }
@@ -1021,7 +1021,7 @@ PBoolean H323Gatekeeper::LocationRequest(const PString & alias,
 PBoolean H323Gatekeeper::LocationRequest(const PStringList & aliases,
                                      H323TransportAddress & address)
 {
-  if (PAssertNULL(transport) == NULL)
+  if (PAssertNULL(m_transport) == NULL)
     return false;
 
   H323RasPDU pdu;
@@ -1034,7 +1034,7 @@ PBoolean H323Gatekeeper::LocationRequest(const PStringList & aliases,
     lrq.m_endpointIdentifier = m_endpointIdentifier;
   }
 
-  H323TransportAddress replyAddress = transport->GetLocalAddress();
+  H323TransportAddress replyAddress = m_transport->GetLocalAddress();
   replyAddress.SetPDU(lrq.m_replyAddress);
 
   lrq.IncludeOptionalField(H225_LocationRequest::e_sourceInfo);
@@ -1048,7 +1048,7 @@ PBoolean H323Gatekeeper::LocationRequest(const PStringList & aliases,
   }
 
   Request request(lrq.m_requestSeqNum, pdu);
-  request.responseInfo = &address;
+  request.m_responseInfo = &address;
   if (!MakeRequest(request))
     return false;
 
@@ -1132,7 +1132,7 @@ PBoolean H323Gatekeeper::AdmissionRequest(H323Connection & connection,
 
   PString destInfo = connection.GetRemotePartyName();
   bool e164 = OpalIsE164(destInfo);
-  PIPAddressAndPort destAddr(destInfo, endpoint.GetDefaultSignalPort());
+  PIPAddressAndPort destAddr(destInfo, m_endpoint.GetDefaultSignalPort());
 
   arq.m_srcInfo.SetSize(1);
   if (answeringCall) {
@@ -1194,7 +1194,7 @@ PBoolean H323Gatekeeper::AdmissionRequest(H323Connection & connection,
   connection.OnSendARQ(arq);
 
   Request request(arq.m_requestSeqNum, pdu);
-  request.responseInfo = &info;
+  request.m_responseInfo = &info;
 
   if (!m_authenticators.IsEmpty()) {
     H235Authenticators adjustedAuthenticators;
@@ -1214,10 +1214,10 @@ PBoolean H323Gatekeeper::AdmissionRequest(H323Connection & connection,
   }
 
   if (!MakeRequest(request)) {
-    response.rejectReason = request.rejectReason;
+    response.rejectReason = request.m_rejectReason;
 
     // See if we are registered.
-    if (request.responseResult == Request::RejectReceived &&
+    if (request.m_responseResult == Request::RejectReceived &&
         response.rejectReason != H225_AdmissionRejectReason::e_callerNotRegistered &&
         response.rejectReason != H225_AdmissionRejectReason::e_invalidEndpointIdentifier)
       return false;
@@ -1225,7 +1225,7 @@ PBoolean H323Gatekeeper::AdmissionRequest(H323Connection & connection,
     PTRACE(2, "Endpoint has become unregistered during ARQ from gatekeeper " << gatekeeperIdentifier);
 
     // Have been told we are not registered (or gk offline)
-    switch (request.responseResult) {
+    switch (request.m_responseResult) {
       case Request::NoResponseReceived :
         SetRegistrationFailReason(TransportError);
         response.rejectReason = UINT_MAX;
@@ -1259,11 +1259,11 @@ PBoolean H323Gatekeeper::AdmissionRequest(H323Connection & connection,
 
     // Is new request so need new sequence number as well.
     arq.m_requestSeqNum = GetNextSequenceNumber();
-    request.sequenceNumber = arq.m_requestSeqNum;
+    request.m_sequenceNumber = arq.m_requestSeqNum;
 
     if (!MakeRequest(request)) {
-      response.rejectReason = request.responseResult == Request::RejectReceived
-                                                ? request.rejectReason : UINT_MAX;
+      response.rejectReason = request.m_responseResult == Request::RejectReceived
+                                                ? request.m_rejectReason : UINT_MAX;
      
       return false;
     }
@@ -1346,7 +1346,7 @@ PBoolean H323Gatekeeper::OnReceiveAdmissionConfirm(const H225_AdmissionConfirm &
   if (!H225_RAS::OnReceiveAdmissionConfirm(acf))
     return false;
 
-  AdmissionRequestResponseInfo & info = *(AdmissionRequestResponseInfo *)lastRequest->responseInfo;
+  AdmissionRequestResponseInfo & info = *(AdmissionRequestResponseInfo *)m_lastRequest->m_responseInfo;
   info.allocatedBandwidth = acf.m_bandWidth;
   if (info.param.transportAddress != NULL)
     *info.param.transportAddress = acf.m_destCallSignalAddress;
@@ -1403,10 +1403,10 @@ PBoolean H323Gatekeeper::OnReceiveAdmissionReject(const H225_AdmissionReject & a
 
   if (arj.HasOptionalField(H225_AdmissionConfirm::e_serviceControl))
     OnServiceControlSessions(arj.m_serviceControl,
-              &((AdmissionRequestResponseInfo *)lastRequest->responseInfo)->connection);
+              &((AdmissionRequestResponseInfo *)m_lastRequest->m_responseInfo)->connection);
 
-  if (lastRequest->rejectReason == H225_AdmissionRejectReason::e_callerNotRegistered)
-    lastRequest->responseResult = Request::TryAlternate;
+  if (m_lastRequest->m_rejectReason == H225_AdmissionRejectReason::e_callerNotRegistered)
+    m_lastRequest->m_responseResult = Request::TryAlternate;
 
   return true;
 }
@@ -1480,8 +1480,8 @@ PBoolean H323Gatekeeper::OnReceiveDisengageReject(const H323RasPDU &pdu, const H
   if (!H225_RAS::OnReceiveDisengageReject(pdu, drj))
     return false;
 
-  if (lastRequest->rejectReason == H225_DisengageRejectReason::e_notRegistered)
-    lastRequest->responseResult = Request::TryAlternate;
+  if (m_lastRequest->m_rejectReason == H225_DisengageRejectReason::e_notRegistered)
+    m_lastRequest->m_responseResult = Request::TryAlternate;
 
   return true;
 }
@@ -1499,7 +1499,7 @@ PBoolean H323Gatekeeper::OnReceiveDisengageRequest(const H225_DisengageRequest &
     id = drq.m_conferenceID;
 
   H323RasPDU response(m_authenticators);
-  PSafePtr<H323Connection> connection = endpoint.FindConnectionWithLock(id.AsString());
+  PSafePtr<H323Connection> connection = m_endpoint.FindConnectionWithLock(id.AsString());
   if (connection == NULL)
     response.BuildDisengageReject(drq.m_requestSeqNum,
                                   H225_DisengageRejectReason::e_requestToDropOther);
@@ -1535,7 +1535,7 @@ PBoolean H323Gatekeeper::BandwidthRequest(H323Connection & connection, OpalBandw
   Request request(brq.m_requestSeqNum, pdu);
   
   OpalBandwidth allocatedBandwidth;
-  request.responseInfo = &allocatedBandwidth;
+  request.m_responseInfo = &allocatedBandwidth;
 
   if (!MakeRequestWithReregister(request, H225_BandRejectReason::e_notBound))
     return false;
@@ -1550,8 +1550,8 @@ PBoolean H323Gatekeeper::OnReceiveBandwidthConfirm(const H225_BandwidthConfirm &
   if (!H225_RAS::OnReceiveBandwidthConfirm(bcf))
     return false;
 
-  if (lastRequest->responseInfo != NULL)
-    *(OpalBandwidth *)lastRequest->responseInfo = bcf.m_bandWidth;
+  if (m_lastRequest->m_responseInfo != NULL)
+    *(OpalBandwidth *)m_lastRequest->m_responseInfo = bcf.m_bandWidth;
 
   return true;
 }
@@ -1563,7 +1563,7 @@ PBoolean H323Gatekeeper::OnReceiveBandwidthRequest(const H225_BandwidthRequest &
     return false;
 
   OpalGloballyUniqueID id = brq.m_callIdentifier.m_guid;
-  PSafePtr<H323Connection> connection = endpoint.FindConnectionWithLock(id.AsString());
+  PSafePtr<H323Connection> connection = m_endpoint.FindConnectionWithLock(id.AsString());
 
   H323RasPDU response(m_authenticators);
   if (connection == NULL)
@@ -1586,7 +1586,7 @@ void H323Gatekeeper::SetInfoRequestRate(const PTimeInterval & rate)
 void H323Gatekeeper::ClearInfoRequestRate()
 {
   // Only reset rate to zero (disabled) if no calls present
-  if (endpoint.GetConnectionCount())
+  if (m_endpoint.GetConnectionCount())
     m_infoRequestTime = 0;
 }
 
@@ -1596,19 +1596,19 @@ H225_InfoRequestResponse & H323Gatekeeper::BuildInfoRequestResponse(H323RasPDU &
 {
   H225_InfoRequestResponse & irr = response.BuildInfoRequestResponse(seqNum);
 
-  endpoint.SetEndpointTypeInfo(irr.m_endpointType);
+  m_endpoint.SetEndpointTypeInfo(irr.m_endpointType);
   irr.m_endpointIdentifier = m_endpointIdentifier;
 
-  H323TransportAddress address = transport->GetLocalAddress();
+  H323TransportAddress address = m_transport->GetLocalAddress();
   
   // We do have to use the translated address if specified
   PIPSocket::Address localAddress, remoteAddress;
   WORD localPort;
   
   if (address.GetIpAndPort(localAddress, localPort) &&
-      transport->GetRemoteAddress().GetIpAddress(remoteAddress)) {
+      m_transport->GetRemoteAddress().GetIpAddress(remoteAddress)) {
 
-    OpalManager & manager = transport->GetEndPoint().GetManager();
+    OpalManager & manager = m_transport->GetEndPoint().GetManager();
     if (manager.TranslateIPAddress(localAddress, remoteAddress))
       address = H323TransportAddress(localAddress, localPort);
   }
@@ -1715,14 +1715,14 @@ static PBoolean AddAllInfoRequestResponseCall(H225_InfoRequestResponse & irr,
 
 void H323Gatekeeper::InfoRequestResponse()
 {
-  PStringList tokens = endpoint.GetAllConnections();
+  PStringList tokens = m_endpoint.GetAllConnections();
   if (tokens.IsEmpty())
     return;
 
   H323RasPDU response;
   H225_InfoRequestResponse & irr = BuildInfoRequestResponse(response, GetNextSequenceNumber());
 
-  if (AddAllInfoRequestResponseCall(irr, endpoint, tokens))
+  if (AddAllInfoRequestResponseCall(irr, m_endpoint, tokens))
     SendUnsolicitedIRR(irr, response);
 }
 
@@ -1776,14 +1776,14 @@ PBoolean H323Gatekeeper::OnReceiveInfoRequest(const H225_InfoRequest & irq)
   H225_InfoRequestResponse & irr = BuildInfoRequestResponse(response, irq.m_requestSeqNum);
 
   if (irq.m_callReferenceValue == 0) {
-    if (!AddAllInfoRequestResponseCall(irr, endpoint, endpoint.GetAllConnections())) {
+    if (!AddAllInfoRequestResponseCall(irr, m_endpoint, m_endpoint.GetAllConnections())) {
       irr.IncludeOptionalField(H225_InfoRequestResponse::e_irrStatus);
       irr.m_irrStatus.SetTag(H225_InfoRequestResponseStatus::e_invalidCall);
     }
   }
   else {
     OpalGloballyUniqueID id = irq.m_callIdentifier.m_guid;
-    PSafePtr<H323Connection> connection = endpoint.FindConnectionWithLock(id.AsString());
+    PSafePtr<H323Connection> connection = m_endpoint.FindConnectionWithLock(id.AsString());
     if (connection == NULL) {
       irr.IncludeOptionalField(H225_InfoRequestResponse::e_irrStatus);
       irr.m_irrStatus.SetTag(H225_InfoRequestResponseStatus::e_invalidCall);
@@ -1803,17 +1803,17 @@ PBoolean H323Gatekeeper::OnReceiveInfoRequest(const H225_InfoRequest & irq)
   if (replyAddress.IsEmpty())
     return false;
 
-  H323TransportAddress oldAddress = transport->GetRemoteAddress();
+  H323TransportAddress oldAddress = m_transport->GetRemoteAddress();
   if (oldAddress.IsEquivalent(replyAddress))
     return WritePDU(response);
 
-  if (!transport->LockReadWrite())
+  if (!m_transport->LockReadWrite())
     return false;
 
-  bool ok = transport->ConnectTo(replyAddress) && WritePDU(response);
-  transport->ConnectTo(oldAddress);
+  bool ok = m_transport->ConnectTo(replyAddress) && WritePDU(response);
+  m_transport->ConnectTo(oldAddress);
 
-  transport->UnlockReadWrite();
+  m_transport->UnlockReadWrite();
 
   return ok;
 }
@@ -1824,8 +1824,8 @@ PBoolean H323Gatekeeper::OnReceiveInfoRequestResponse(const H225_InfoRequestResp
   if (!H225_RAS::OnReceiveInfoRequestResponse(irr))
     return false;
 
-  if (lastRequest->rejectReason == H225_InfoRequestNakReason::e_notRegistered)
-    lastRequest->responseResult = Request::TryAlternate;
+  if (m_lastRequest->m_rejectReason == H225_InfoRequestNakReason::e_notRegistered)
+    m_lastRequest->m_responseResult = Request::TryAlternate;
 
   return true;
 }
@@ -1842,7 +1842,7 @@ PBoolean H323Gatekeeper::OnReceiveServiceControlIndication(const H225_ServiceCon
     OpalGloballyUniqueID id = sci.m_callSpecific.m_callIdentifier.m_guid;
     if (id.IsNULL())
       id = sci.m_callSpecific.m_conferenceID;
-    connection = endpoint.FindConnectionWithLock(id.AsString());
+    connection = m_endpoint.FindConnectionWithLock(id.AsString());
   }
 
   OnServiceControlSessions(sci.m_serviceControl, connection);
@@ -1873,12 +1873,12 @@ void H323Gatekeeper::OnServiceControlSessions(const H225_ArrayOf_ServiceControlS
     }
 
     if (session == NULL && pdu.HasOptionalField(H225_ServiceControlSession::e_contents)) {
-      session = endpoint.CreateServiceControlSession(pdu.m_contents);
+      session = m_endpoint.CreateServiceControlSession(pdu.m_contents);
       serviceControlSessions.SetAt(sessionId, session);
     }
 
     if (session != NULL)
-      endpoint.OnServiceControlSession(sessionId, pdu.m_reason.GetTag(), *session, connection);
+      m_endpoint.OnServiceControlSession(sessionId, pdu.m_reason.GetTag(), *session, connection);
   }
 }
 
@@ -1896,7 +1896,7 @@ void H323Gatekeeper::SetPassword(const PString & password,
 {
   PString localId = username;
   if (localId.IsEmpty())
-    localId = endpoint.GetGatekeeperUsername();
+    localId = m_endpoint.GetGatekeeperUsername();
 
   for (H235Authenticators::iterator iterAuth = m_authenticators.begin(); iterAuth != m_authenticators.end(); ++iterAuth) {
     iterAuth->SetLocalId(localId);
@@ -1933,7 +1933,7 @@ void H323Gatekeeper::SetAlternates(const H225_ArrayOf_AlternateGK & alts, bool p
   if (m_alternateTemporary)  {
     // don't want to replace alternates gatekeepers if this is an alternate and it's not permanent
     for (AlternateList::iterator it = m_alternates.begin(); it != m_alternates.end(); ++it) {
-      if (transport->GetRemoteAddress().IsEquivalent(it->rasAddress) && gatekeeperIdentifier == it->gatekeeperIdentifier)
+      if (m_transport->GetRemoteAddress().IsEquivalent(it->rasAddress) && gatekeeperIdentifier == it->gatekeeperIdentifier)
         return;
     }
   }
@@ -1942,8 +1942,7 @@ void H323Gatekeeper::SetAlternates(const H225_ArrayOf_AlternateGK & alts, bool p
   for (PINDEX i = 0; i < alts.GetSize(); i++)
     alternates.Append(new AlternateInfo(alts[i]));
 
-  AlternateList::iterator it = m_alternates.begin();
-  while (it != m_alternates.end()) {
+  for (AlternateList::iterator it = m_alternates.begin(); it != m_alternates.end(); ) {
     AlternateList::iterator that = alternates.find(*it);
     if (that == alternates.end()) {
       PTRACE(3, "Removing alternate gatekeeper: " << *it);
@@ -1970,14 +1969,14 @@ PBoolean H323Gatekeeper::MakeRequestWithReregister(Request & request, unsigned u
   if (MakeRequest(request))
     return true;
 
-  if (request.responseResult == Request::RejectReceived &&
-      request.rejectReason != unregisteredTag)
+  if (request.m_responseResult == Request::RejectReceived &&
+      request.m_rejectReason != unregisteredTag)
     return false;
 
   PTRACE(2, "Endpoint has become unregistered from gatekeeper " << gatekeeperIdentifier);
 
   // Have been told we are not registered (or gk offline)
-  switch (request.responseResult) {
+  switch (request.m_responseResult) {
     case Request::NoResponseReceived :
       SetRegistrationFailReason(TransportError);
       break;
@@ -2002,13 +2001,13 @@ PBoolean H323Gatekeeper::MakeRequestWithReregister(Request & request, unsigned u
 void H323Gatekeeper::Connect(const H323TransportAddress & address,
                              const PString & gkid)
 {
-  if (transport == NULL) {
-    transport = CreateTransport(PIPSocket::GetDefaultIpAny());
-    PTRACE_CONTEXT_ID_TO(transport);
+  if (m_transport == NULL) {
+    m_transport = CreateTransport(PIPSocket::GetDefaultIpAny());
+    PTRACE_CONTEXT_ID_TO(m_transport);
   }
 
-  transport->SetRemoteAddress(address);
-  transport->Connect();
+  m_transport->SetRemoteAddress(address);
+  m_transport->Connect();
 
   gatekeeperIdentifier = gkid;
 }
@@ -2016,33 +2015,33 @@ void H323Gatekeeper::Connect(const H323TransportAddress & address,
 
 PBoolean H323Gatekeeper::MakeRequest(Request & request)
 {
-  if (PAssertNULL(transport) == NULL)
+  if (PAssertNULL(m_transport) == NULL)
     return false;
 
   // Set authenticators if not already set by caller
   m_requestMutex.Wait();
 
-  if (request.requestPDU.GetAuthenticators().IsEmpty())
-    request.requestPDU.SetAuthenticators(m_authenticators);
+  if (request.m_requestPDU.GetAuthenticators().IsEmpty())
+    request.m_requestPDU.SetAuthenticators(m_authenticators);
 
   /* To be sure that the H323 Cleaner, H225 Caller or Monitor don't set the
      transport address of the alternate while the other is in timeout. We
      have to block the function */
 
-  H323TransportAddress tempAddr = transport->GetRemoteAddress();
+  H323TransportAddress tempAddr = m_transport->GetRemoteAddress();
   PString tempIdentifier = gatekeeperIdentifier;
   
   AlternateList::iterator alt = m_alternates.begin();
   for (;;) {
     if (H225_RAS::MakeRequest(request)) {
-      if (m_alternateTemporary && (transport->GetRemoteAddress() != tempAddr || gatekeeperIdentifier != tempIdentifier))
+      if (m_alternateTemporary && (m_transport->GetRemoteAddress() != tempAddr || gatekeeperIdentifier != tempIdentifier))
         Connect(tempAddr, tempIdentifier);
       m_requestMutex.Signal();
       return true;
     }
     
-    if (request.responseResult != Request::NoResponseReceived &&
-        request.responseResult != Request::TryAlternate) {
+    if (request.m_responseResult != Request::NoResponseReceived &&
+        request.m_responseResult != Request::TryAlternate) {
       // try alternate in those cases and see if it's successful
       m_requestMutex.Signal();
       return false;
@@ -2058,7 +2057,7 @@ PBoolean H323Gatekeeper::MakeRequest(Request & request)
       }
       
       altInfo = &*alt++;
-      transport->ConnectTo(altInfo->rasAddress);
+      m_transport->ConnectTo(altInfo->rasAddress);
       gatekeeperIdentifier = altInfo->gatekeeperIdentifier;
     } while (altInfo->registrationState == AlternateInfo::RegistrationFailed);
     
@@ -2074,7 +2073,7 @@ PBoolean H323Gatekeeper::MakeRequest(Request & request)
         if (RegistrationRequest(m_autoReregister)) {
           altInfo->registrationState = AlternateInfo::IsRegistered;
           // The wanted registration is done, we can return
-          if (request.requestPDU.GetChoice().GetTag() == H225_RasMessage::e_registrationRequest) {
+          if (request.m_requestPDU.GetChoice().GetTag() == H225_RasMessage::e_registrationRequest) {
             if (m_alternateTemporary)
               Connect(tempAddr,tempIdentifier);
             return true;
@@ -2089,7 +2088,7 @@ PBoolean H323Gatekeeper::MakeRequest(Request & request)
 
 H323Transport * H323Gatekeeper::CreateTransport(PIPSocket::Address binding, WORD port, PBoolean reuseAddr)
 {
-  return new H323TransportUDP(endpoint, binding, port, reuseAddr);
+  return new H323TransportUDP(m_endpoint, binding, port, reuseAddr);
 }
 
 
@@ -2104,33 +2103,33 @@ void H323Gatekeeper::OnHighPriorityInterfaceChange(PInterfaceMonitor & monitor, 
     // the transport will still listen on the old interface only. Therefore, clear the
     // socket binding BEFORE the monitored sockets update their interfaces.
     if (PInterfaceMonitor::GetInstance().HasInterfaceFilter()) {
-      PString iface = transport->GetInterface();
+      PString iface = m_transport->GetInterface();
       if (iface.IsEmpty()) // not connected.
         return;
       
       PIPSocket::Address addr;
-      if (!transport->GetRemoteAddress().GetIpAddress(addr))
+      if (!m_transport->GetRemoteAddress().GetIpAddress(addr))
         return;
       
       PStringArray ifaces = monitor.GetInterfaces(false, addr);
       
       if (ifaces.GetStringsIndex(iface) == P_MAX_INDEX) { // original interface no longer available
-        transport->SetInterface(PString::Empty());
+        m_transport->SetInterface(PString::Empty());
       }
     }
   }
   else {
-    if (transport == NULL)
+    if (m_transport == NULL)
       return;
   
-    PString iface = transport->GetInterface();
+    PString iface = m_transport->GetInterface();
     if (iface.IsEmpty()) // not connected.
       return;
   
     if (PInterfaceMonitor::IsMatchingInterface(iface, entry)) {
       // currently used interface went down. make transport listen
       // on all available interfaces.
-      transport->SetInterface(PString::Empty());
+      m_transport->SetInterface(PString::Empty());
       PTRACE(3, "Interface gatekeeper is bound to has gone down, restarting discovery");
     }
   }
@@ -2140,17 +2139,17 @@ void H323Gatekeeper::OnHighPriorityInterfaceChange(PInterfaceMonitor & monitor, 
 void H323Gatekeeper::OnLowPriorityInterfaceChange(PInterfaceMonitor & monitor, PInterfaceMonitor::InterfaceChange)
 {
   // sanity check
-  if (transport == NULL)
+  if (m_transport == NULL)
     return;
   
-  PString iface = transport->GetInterface();
+  PString iface = m_transport->GetInterface();
   if (!iface.IsEmpty()) // still connected
     return;
   
   // not connected anymore. so see if there is an interface available
   // for connecting to the remote address.
   PIPSocket::Address addr;
-  if (!transport->GetRemoteAddress().GetIpAddress(addr))
+  if (!m_transport->GetRemoteAddress().GetIpAddress(addr))
     return;
   
   if (monitor.GetInterfaces(false, addr).GetSize() > 0) {

@@ -361,7 +361,7 @@ class IAX2Connection : public OpalConnection
      because some servers do not required authentication, also
      if it is not set then the default iax2Ep username 
      will be used instead.*/
-  void SetUserName(PString & inUserName) { userName = inUserName; };
+  void SetUserName(const PString & inUserName) { userName = inUserName; };
   
   /**Get the username*/
   PString GetUserName() const { return userName; };
@@ -372,7 +372,7 @@ class IAX2Connection : public OpalConnection
      because some servers do not required authentication, also
      if it is not set then the default iax2Ep password 
      will be used instead.*/
-  void SetPassword(PString & inPassword) { password = inPassword; };
+  void SetPassword(const PString & inPassword) { password = inPassword; };
   
   /**Get the password*/
   PString GetPassword() const { return password; };

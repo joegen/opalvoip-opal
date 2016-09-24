@@ -166,7 +166,7 @@ class OpalLineEndPoint : public OpalEndPoint
      * get all lines of the endpopint 
      * @return the constant list of all lines belonged to the endpoint 
      */
-    const PList<OpalLine> & GetLines() const { return lines;};
+    const PList<OpalLine> & GetLines() const { return m_lines; }
     
     /**Remove a line from the endpoint.
        The line is removed from the endpoints processing and deleted.
@@ -296,12 +296,12 @@ class OpalLineEndPoint : public OpalEndPoint
     PDECLARE_NOTIFIER(PThread, OpalLineEndPoint, MonitorLines);
     virtual void MonitorLine(OpalLine & line);
 
-    OpalLIDList  devices;
-    OpalLineList lines;
-    PString      defaultLine;
-    PMutex       linesMutex;
-    PThread    * monitorThread;
-    PSyncPoint   exitFlag;
+    OpalLIDList  m_devices;
+    OpalLineList m_lines;
+    PString      m_defaultLine;
+    PMutex       m_linesMutex;
+    PThread    * m_monitorThread;
+    PSyncPoint   m_exitFlag;
 };
 
 
@@ -338,7 +338,7 @@ class OpalLineConnection : public OpalConnection
        "remote". While pc, pots and ivr are not as the entity being connected
        to is intrinsically local.
       */
-    virtual bool IsNetworkConnection() const { return !line.IsTerminal(); }
+    virtual bool IsNetworkConnection() const { return !m_line.IsTerminal(); }
 
     /**Start an outgoing connection.
        This function will initiate the connection to the remote entity, for
@@ -515,7 +515,7 @@ class OpalLineConnection : public OpalConnection
   //@{
     /**Get the line being used by this media stream.
       */
-    OpalLine & GetLine() { return line; }
+    OpalLine & GetLine() { return m_line; }
 
     /** Get the prompt tone used on POTS lines.
         Defaults to OpalLineInterfaceDevice::DialTone.
@@ -539,16 +539,16 @@ class OpalLineConnection : public OpalConnection
   //@}
         
   protected:
-    OpalLineEndPoint & endpoint;
-    OpalLine        & line;
-    bool              wasOffHook;
-    unsigned          minimumRingCount;
-    PString           m_dialedNumber;
+    OpalLineEndPoint & m_endpoint;
+    OpalLine         & m_line;
+    bool               m_wasOffHook;
+    unsigned           m_minimumRingCount;
+    PString            m_dialedNumber;
     OpalLineInterfaceDevice::DialParams m_dialParams;
     OpalLineInterfaceDevice::CallProgressTones m_promptTone;
 
     PDECLARE_NOTIFIER(PThread, OpalLineConnection, HandleIncoming);
-    PThread         * handlerThread;
+    PThread * m_handlerThread;
 };
 
 
@@ -654,19 +654,19 @@ class OpalLineMediaStream : public OpalMediaStream
   //@{
     /**Get the line being used by this media stream.
       */
-    OpalLine & GetLine() { return line; }
+    OpalLine & GetLine() { return m_line; }
   //@}
 
   protected:
     virtual void InternalClose();
 
-    OpalLine & line;
-    bool       notUsingRTP;
-    bool       useDeblocking;
-    unsigned   missedCount;
-    BYTE       lastSID[4];
-    bool       lastFrameWasSignal;
-    unsigned   directLineNumber;
+    OpalLine & m_line;
+    bool       m_notUsingRTP;
+    bool       m_useDeblocking;
+    unsigned   m_missedCount;
+    BYTE       m_lastSID[4];
+    bool       m_lastFrameWasSignal;
+    unsigned   m_directLineNumber;
 };
 
 
@@ -701,7 +701,7 @@ class OpalLineSilenceDetector : public OpalSilenceDetector
   //@}
 
   protected:
-    OpalLine & line;
+    OpalLine & m_line;
 };
 
 

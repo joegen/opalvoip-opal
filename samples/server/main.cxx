@@ -242,8 +242,8 @@ PBoolean MyProcess::Initialise(const char * initMsg)
     return false;
 
   // Finished the resource to add, generate HTML for it and add to name space
-  PServiceHTML html("System Parameters");
-  params.m_configPage->BuildHTML(html);
+  PServiceHTML cfgHTML("System Parameters");
+  params.m_configPage->BuildHTML(cfgHTML);
 
   m_httpNameSpace.AddResource(new OpalHTTPConnector(*m_manager, "/websocket", params.m_authority), PHTTPSpace::Overwrite);
 #if OPAL_SDP

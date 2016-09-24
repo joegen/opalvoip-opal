@@ -634,12 +634,12 @@ class OpalConnection : public PSafeObject
 
        If the call is still active then this will return NumCallEndReasons.
       */
-    CallEndReason GetCallEndReason() const { return callEndReason; }
+    CallEndReason GetCallEndReason() const { return m_callEndReason; }
 
     /**Get the reason for this connection shutting down as text.
       */
     static PString GetCallEndReasonText(CallEndReason reason);
-    PString GetCallEndReasonText() const { return GetCallEndReasonText(callEndReason); }
+    PString GetCallEndReasonText() const { return GetCallEndReasonText(m_callEndReason); }
 
     /**Get the reason for this connection shutting down as text.
       */
@@ -679,12 +679,12 @@ class OpalConnection : public PSafeObject
     /**Get the Q.931 cause code (Q.850) that terminated this call.
        See Q931::CauseValues for common values.
      */
-    unsigned GetQ931Cause() const { return callEndReason.q931; }
+    unsigned GetQ931Cause() const { return m_callEndReason.q931; }
 
     /**Set the outgoing Q.931 cause code (Q.850) that is sent for this call
        See Q931::CauseValues for common values.
      */
-    void SetQ931Cause(unsigned v) { callEndReason.q931 = v; }
+    void SetQ931Cause(unsigned v) { m_callEndReason.q931 = v; }
 
     /**Initiate the transfer of an existing call (connection) to a new remote 
        party.
@@ -1446,7 +1446,7 @@ class OpalConnection : public PSafeObject
 
     /**Get the user input indication transmission mode.
       */
-    virtual SendUserInputModes GetSendUserInputMode() const { return sendUserInputMode; }
+    virtual SendUserInputModes GetSendUserInputMode() const { return m_sendUserInputMode; }
 
     /**Get the real user input indication transmission mode.
        This will return the user input mode that will actually be used for
@@ -1615,15 +1615,15 @@ class OpalConnection : public PSafeObject
   //@{
     /**Get the owner endpoint for this connection.
      */
-    OpalEndPoint & GetEndPoint() const { return endpoint; }
+    OpalEndPoint & GetEndPoint() const { return m_endpoint; }
     
     /**Get the owner call for this connection.
      */
-    OpalCall & GetCall() const { return ownerCall; }
+    OpalCall & GetCall() const { return m_ownerCall; }
 
     /**Get the token for this connection.
      */
-    const PString & GetToken() const { return callToken; }
+    const PString & GetToken() const { return m_callToken; }
 
     /**Set the token for this connection.
        Extreme care must be used in this function, the token must be unique for
@@ -1661,13 +1661,13 @@ class OpalConnection : public PSafeObject
 
     /**Get the product info for all endpoints.
       */
-    const OpalProductInfo & GetProductInfo() const { return productInfo; }
+    const OpalProductInfo & GetProductInfo() const { return m_productInfo; }
 
     /**Set the product info for all endpoints.
       */
     void SetProductInfo(
       const OpalProductInfo & info
-    ) { productInfo = info; }
+    ) { m_productInfo = info; }
 
     /**Get this connections protocol prefix for URLs.
       */
@@ -1675,7 +1675,7 @@ class OpalConnection : public PSafeObject
 
     /**Get the local name/alias.
       */
-    const PString & GetLocalPartyName() const { return localPartyName; }
+    const PString & GetLocalPartyName() const { return m_localPartyName; }
 
     /**Set the local name/alias.
       */
@@ -1687,11 +1687,11 @@ class OpalConnection : public PSafeObject
 
     /**Get the local display name.
       */
-    const PString & GetDisplayName() const { return displayName; }
+    const PString & GetDisplayName() const { return m_displayName; }
 
     /**Set the local display name.
       */
-    void SetDisplayName(const PString & name) { displayName = name; }
+    void SetDisplayName(const PString & name) { m_displayName = name; }
 
     /**Determine if remote presentation of Caller-ID is to be blocked.
        Applies to an outgoing call to a "network" based endpoint type.
@@ -1702,11 +1702,11 @@ class OpalConnection : public PSafeObject
 
     /**Get the remote party display name.
       */
-    const PString & GetRemotePartyName() const { return remotePartyName; }
+    const PString & GetRemotePartyName() const { return m_remotePartyName; }
 
     /**Set the remote party display name.
       */
-    void SetRemotePartyName(const PString & name) { remotePartyName = name; }
+    void SetRemotePartyName(const PString & name) { m_remotePartyName = name; }
 
     /**Get the remote party number, if there was one one.
        If the remote party has indicated an E.1164 number as one of its aliases
@@ -1716,7 +1716,7 @@ class OpalConnection : public PSafeObject
        Note if none of the remote names are a legal E.164 number then an empty
        string is returned.
       */
-    const PString & GetRemotePartyNumber() const { return remotePartyNumber; }
+    const PString & GetRemotePartyNumber() const { return m_remotePartyNumber; }
 
     /** Get the remote transport address
       */
@@ -1746,15 +1746,15 @@ class OpalConnection : public PSafeObject
     /**Get the remote application description. This is for backward
        compatibility and has been supercedded by GeREmoteProductInfo();
       */
-    PCaselessString GetRemoteApplication() const { return remoteProductInfo.AsString(); }
+    PCaselessString GetRemoteApplication() const { return m_remoteProductInfo.AsString(); }
 
     /** Get the remote product info.
       */
-    const OpalProductInfo & GetRemoteProductInfo() const { return remoteProductInfo; }
+    const OpalProductInfo & GetRemoteProductInfo() const { return m_remoteProductInfo; }
 
     /** Set the remote product info.
       */
-    void SetRemoteProductInfo(const OpalProductInfo & info) { remoteProductInfo = info; }
+    void SetRemoteProductInfo(const OpalProductInfo & info) { m_remoteProductInfo = info; }
 
     /**Get the redirecting party.
        This is the party that caused an incoming call to arrive at this endpoint.
@@ -1869,12 +1869,12 @@ class OpalConnection : public PSafeObject
 
     /**Get the silence detector active on connection.
      */
-    OpalSilenceDetector * GetSilenceDetector() const { return silenceDetector; }
+    OpalSilenceDetector * GetSilenceDetector() const { return m_silenceDetector; }
     
 #if OPAL_AEC
     /**Get the echo canceler active on connection.
     */
-    OpalEchoCanceler * GetEchoCanceler() const { return echoCanceler; }
+    OpalEchoCanceler * GetEchoCanceler() const { return m_echoCanceler; }
 #endif
 
     /**Get the protocol-specific unique identifier for this connection.
@@ -1929,40 +1929,40 @@ class OpalConnection : public PSafeObject
 
   protected:
   // Member variables
-    OpalCall             & ownerCall;
-    OpalEndPoint         & endpoint;
+    OpalCall           & m_ownerCall;
+    OpalEndPoint       & m_endpoint;
 
   private:
     PMutex               m_phaseMutex;
     Phases               m_phase;
 
   protected:
-    PString              callToken;
+    PString              m_callToken;
     PBoolean             m_originating;
-    OpalProductInfo      productInfo;
-    PString              localPartyName;
-    PString              displayName;
-    PString              remotePartyName;
+    OpalProductInfo      m_productInfo;
+    PString              m_localPartyName;
+    PString              m_displayName;
+    PString              m_remotePartyName;
     PString              m_remotePartyURL;
-    OpalProductInfo      remoteProductInfo;
-    PString              remotePartyNumber;
+    OpalProductInfo      m_remoteProductInfo;
+    PString              m_remotePartyNumber;
     PString              m_redirectingParty;
-    CallEndReason        callEndReason;
+    CallEndReason        m_callEndReason;
     PString              m_calledPartyNumber;
     PString              m_calledPartyName;
 
-    SendUserInputModes    sendUserInputMode;
-    PString               userInputString;
-    PSyncPoint            userInputAvailable;
+    SendUserInputModes   m_sendUserInputMode;
+    PString              m_userInputString;
+    PSyncPoint           m_userInputAvailable;
 
-    OpalSilenceDetector * silenceDetector;
+    OpalSilenceDetector * m_silenceDetector;
 #if OPAL_AEC
-    OpalEchoCanceler    * echoCanceler;
+    OpalEchoCanceler    * m_echoCanceler;
 #endif
     OpalMediaFormat       m_filterMediaFormat;
 
     OpalMediaFormatList        m_localMediaFormats;
-    PSafeList<OpalMediaStream> mediaStreams;
+    PSafeList<OpalMediaStream> m_mediaStreams;
 
     OpalJitterBuffer::Params m_jitterParams;
 

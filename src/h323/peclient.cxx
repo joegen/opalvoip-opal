@@ -57,8 +57,8 @@ const unsigned ServiceRelationshipTimeToLive = 60;
 
 H501Transaction::H501Transaction(H323PeerElement & pe, const H501PDU & pdu, PBoolean hasReject)
 : H323Transaction(pe, pdu, new H501PDU, hasReject ? new H501PDU : NULL),
-    requestCommon(((H501PDU &)request->GetPDU()).m_common),
-    confirmCommon(((H501PDU &)confirm->GetPDU()).m_common),
+    requestCommon(((H501PDU &)m_request->GetPDU()).m_common),
+    confirmCommon(((H501PDU &)m_confirm->GetPDU()).m_common),
     peerElement(pe)
 {
 }
@@ -75,7 +75,7 @@ H323TransactionPDU * H501Transaction::CreateRIP(unsigned sequenceNumber,
 
 H235Authenticator::ValidationResult H501Transaction::ValidatePDU() const
 {
-  return request->Validate(requestCommon);
+  return m_request->Validate(requestCommon);
 }
 
 
@@ -84,9 +84,9 @@ H235Authenticator::ValidationResult H501Transaction::ValidatePDU() const
 H501ServiceRequest::H501ServiceRequest(H323PeerElement & pe,
                                        const H501PDU & pdu)
   : H501Transaction(pe, pdu, true),
-    srq((H501_ServiceRequest &)request->GetChoice().GetObject()),
-    scf(((H501PDU &)confirm->GetPDU()).BuildServiceConfirmation(pdu.m_common.m_sequenceNumber)),
-    srj(((H501PDU &)reject->GetPDU()).BuildServiceRejection(pdu.m_common.m_sequenceNumber,
+    srq((H501_ServiceRequest &)m_request->GetChoice().GetObject()),
+    scf(((H501PDU &)m_confirm->GetPDU()).BuildServiceConfirmation(pdu.m_common.m_sequenceNumber)),
+    srj(((H501PDU &)m_reject->GetPDU()).BuildServiceRejection(pdu.m_common.m_sequenceNumber,
                                                             H501_ServiceRejectionReason::e_undefined))
 {
 }
@@ -117,8 +117,8 @@ H323Transaction::Response H501ServiceRequest::OnHandlePDU()
 H501DescriptorUpdate::H501DescriptorUpdate(H323PeerElement & pe,
                                            const H501PDU & pdu)
   : H501Transaction(pe, pdu, false),
-    du((H501_DescriptorUpdate &)request->GetChoice().GetObject()),
-    ack(((H501PDU &)confirm->GetPDU()).BuildDescriptorUpdateAck(pdu.m_common.m_sequenceNumber))
+    du((H501_DescriptorUpdate &)m_request->GetChoice().GetObject()),
+    ack(((H501PDU &)m_confirm->GetPDU()).BuildDescriptorUpdateAck(pdu.m_common.m_sequenceNumber))
 {
 }
 
@@ -148,9 +148,9 @@ H323Transaction::Response H501DescriptorUpdate::OnHandlePDU()
 H501AccessRequest::H501AccessRequest(H323PeerElement & pe,
                                      const H501PDU & pdu)
   : H501Transaction(pe, pdu, true),
-    arq((H501_AccessRequest &)request->GetChoice().GetObject()),
-    acf(((H501PDU &)confirm->GetPDU()).BuildAccessConfirmation(pdu.m_common.m_sequenceNumber)),
-    arj(((H501PDU &)reject->GetPDU()).BuildAccessRejection(pdu.m_common.m_sequenceNumber,
+    arq((H501_AccessRequest &)m_request->GetChoice().GetObject()),
+    acf(((H501PDU &)m_confirm->GetPDU()).BuildAccessConfirmation(pdu.m_common.m_sequenceNumber)),
+    arj(((H501PDU &)m_reject->GetPDU()).BuildAccessRejection(pdu.m_common.m_sequenceNumber,
                                                            H501_AccessRejectionReason::e_undefined))
 {
 }
@@ -192,11 +192,11 @@ H323PeerElement::H323PeerElement(H323EndPoint & ep, const H323TransportAddress &
 
 void H323PeerElement::Construct()
 {
-  if (transport != NULL)
-    transport->SetPromiscuous(H323Transport::AcceptFromAny);
+  if (m_transport != NULL)
+    m_transport->SetPromiscuous(H323Transport::AcceptFromAny);
 
   monitorStop       = false;
-  localIdentifier   = endpoint.GetLocalUserName();
+  localIdentifier   = m_endpoint.GetLocalUserName();
   basePeerOrdinal   = RemoteServiceRelationshipOrdinal;
 
   StartChannel();
@@ -260,14 +260,14 @@ void H323PeerElement::MonitorMain(PThread &, P_INT_PTR)
     {
       for (PSafePtr<H323PeerElementServiceRelationship> sr = GetFirstRemoteServiceRelationship(PSafeReadOnly); sr != NULL; sr++) {
 
-        if (now >= sr->expireTime) {
-          PTRACE(3, "PeerElement\tRenewing service relationship " << sr->serviceID << "before expiry");
-          ServiceRequestByID(sr->serviceID);
+        if (now >= sr->m_expireTime) {
+          PTRACE(3, "PeerElement\tRenewing service relationship " << sr->m_serviceID << "before expiry");
+          ServiceRequestByID(sr->m_serviceID);
         }
 
         // get minimum sleep time for next refresh or retry
-        if (sr->expireTime < nextExpireTime)
-          nextExpireTime = sr->expireTime;
+        if (sr->m_expireTime < nextExpireTime)
+          nextExpireTime = sr->m_expireTime;
       }
     }
 
@@ -276,17 +276,17 @@ void H323PeerElement::MonitorMain(PThread &, P_INT_PTR)
       for (PSafePtr<H323PeerElementServiceRelationship> sr = GetFirstLocalServiceRelationship(PSafeReadOnly); sr != NULL; sr++) {
 
         // check to see if expired or needs refresh scheduled
-        PTime expireTime = sr->expireTime + 1000 * ServiceRequestGracePeriod;
+        PTime expireTime = sr->m_expireTime + 1000 * ServiceRequestGracePeriod;
         if (now >= expireTime) {
-          PTRACE(2, "PeerElement\tService relationship " << sr->serviceID << "expired");
+          PTRACE(2, "PeerElement\tService relationship " << sr->m_serviceID << "expired");
           localServiceRelationships.Remove(sr);
           {
             PWaitAndSignal m(localPeerListMutex);
-            localServiceOrdinals -= sr->ordinal;
+            localServiceOrdinals -= sr->m_ordinal;
           }
         }
         else if (expireTime < nextExpireTime)
-          nextExpireTime = sr->expireTime;
+          nextExpireTime = sr->m_expireTime;
       }
     }
 
@@ -366,8 +366,8 @@ PBoolean H323PeerElement::SetOnlyServiceRelationship(const PString & peer, PBool
   }
 
   for (PSafePtr<H323PeerElementServiceRelationship> sr = GetFirstRemoteServiceRelationship(PSafeReadOnly); sr != NULL; sr++)
-    if (sr->peer != peer)
-      RemoveServiceRelationship(sr->peer);
+    if (sr->m_peer != peer)
+      RemoveServiceRelationship(sr->m_peer);
 
   return AddServiceRelationship(peer, keepTrying);
 }
@@ -401,16 +401,16 @@ PBoolean H323PeerElement::AddServiceRelationship(const H323TransportAddress & ad
 
   // this will cause the polling routines to keep trying to establish a new service relationship
   H323PeerElementServiceRelationship * sr = CreateServiceRelationship();
-  sr->peer = addr;
-  sr->expireTime = PTime() + (ServiceRequestRetryTime * 1000);
+  sr->m_peer = addr;
+  sr->m_expireTime = PTime() + (ServiceRequestRetryTime * 1000);
   {
     PWaitAndSignal m(basePeerOrdinalMutex);
-    sr->ordinal = basePeerOrdinal++;
+    sr->m_ordinal = basePeerOrdinal++;
   }
   {
     PWaitAndSignal m(remotePeerListMutex);
-    remotePeerAddrToServiceID.SetAt(addr, sr->serviceID.AsString());
-    remotePeerAddrToOrdinalKey.SetAt(addr, new POrdinalKey(sr->ordinal));
+    remotePeerAddrToServiceID.SetAt(addr, sr->m_serviceID.AsString());
+    remotePeerAddrToOrdinalKey.SetAt(addr, new POrdinalKey(sr->m_ordinal));
   }
   remoteServiceRelationships.Append(sr);
 
@@ -454,14 +454,14 @@ PBoolean H323PeerElement::RemoveAllServiceRelationships()
 {
   // if a service relationship exists for this peer, then reconfirm it
   for (PSafePtr<H323PeerElementServiceRelationship> sr = GetFirstRemoteServiceRelationship(PSafeReadOnly); sr != NULL; sr++)
-    RemoveServiceRelationship(sr->peer);
+    RemoveServiceRelationship(sr->m_peer);
 
   return true;
 }
 
 H323PeerElement::Error H323PeerElement::ServiceRequestByAddr(const H323TransportAddress & peer, OpalGloballyUniqueID & serviceID)
 {
-  if (PAssertNULL(transport) == NULL)
+  if (PAssertNULL(m_transport) == NULL)
     return NoResponse;
 
   // if a service relationship exists for this peer, then reconfirm it
@@ -478,7 +478,7 @@ H323PeerElement::Error H323PeerElement::ServiceRequestByAddr(const H323Transport
 
   // build the service request
   H501PDU pdu;
-  H323TransportAddressArray interfaces = endpoint.GetInterfaceAddresses(transport);
+  H323TransportAddressArray interfaces = m_endpoint.GetInterfaceAddresses(m_transport);
   H501_ServiceRequest & body = pdu.BuildServiceRequest(GetNextSequenceNumber(), interfaces);
 
   // include the element indentifier
@@ -488,20 +488,20 @@ H323PeerElement::Error H323PeerElement::ServiceRequestByAddr(const H323Transport
   // send the request
   Request request(pdu.GetSequenceNumber(), pdu, peer);
   H501PDU reply;
-  request.responseInfo = &reply;
+  request.m_responseInfo = &reply;
   if (!MakeRequest(request))  {
     delete sr;
-    switch (request.responseResult) {
+    switch (request.m_responseResult) {
       case Request::NoResponseReceived :
         PTRACE(2, "PeerElement\tServiceRequest to " << peer << " failed due to no response");
         return NoResponse;
 
       case Request::RejectReceived:
-        PTRACE(2, "PeerElement\tServiceRequest to " << peer << " rejected for reason " << request.rejectReason);
+        PTRACE(2, "PeerElement\tServiceRequest to " << peer << " rejected for reason " << request.m_rejectReason);
         break;
 
       default:
-        PTRACE(2, "PeerElement\tServiceRequest to " << peer << " refused with unknown response " << (int)request.responseResult);
+        PTRACE(2, "PeerElement\tServiceRequest to " << peer << " refused with unknown response " << (int)request.m_responseResult);
         break;
     }
     return Rejected;
@@ -516,22 +516,22 @@ H323PeerElement::Error H323PeerElement::ServiceRequestByAddr(const H323Transport
 
   // create the service relationship
   H501_ServiceConfirmation & replyBody = reply.m_body;
-  sr->peer = peer;
-  sr->serviceID = reply.m_common.m_serviceID;
-  sr->expireTime = PTime() + 1000 * ((replyBody.m_timeToLive < ServiceRequestRetryTime) ? (int)replyBody.m_timeToLive : ServiceRequestRetryTime);
-  sr->lastUpdateTime = PTime();
-  serviceID = sr->serviceID;
+  sr->m_peer = peer;
+  sr->m_serviceID = reply.m_common.m_serviceID;
+  sr->m_expireTime = PTime() + 1000 * ((replyBody.m_timeToLive < ServiceRequestRetryTime) ? (int)replyBody.m_timeToLive : ServiceRequestRetryTime);
+  sr->m_lastUpdateTime = PTime();
+  serviceID = sr->m_serviceID;
 
   {
-    if (sr->ordinal == LocalServiceRelationshipOrdinal) {
+    if (sr->m_ordinal == LocalServiceRelationshipOrdinal) {
       {
         PWaitAndSignal m(basePeerOrdinalMutex);
-        sr->ordinal = basePeerOrdinal++;
+        sr->m_ordinal = basePeerOrdinal++;
       }
       {
         PWaitAndSignal m(remotePeerListMutex);
-        remotePeerAddrToServiceID.SetAt(peer, sr->serviceID.AsString());
-        remotePeerAddrToOrdinalKey.SetAt(peer, new POrdinalKey(sr->ordinal));
+        remotePeerAddrToServiceID.SetAt(peer, sr->m_serviceID.AsString());
+        remotePeerAddrToOrdinalKey.SetAt(peer, new POrdinalKey(sr->m_ordinal));
       }
     }
   }
@@ -554,12 +554,12 @@ H323PeerElement::Error H323PeerElement::ServiceRequestByAddr(const H323Transport
 
 H323PeerElement::Error H323PeerElement::ServiceRequestByID(OpalGloballyUniqueID & serviceID)
 {
-  if (PAssertNULL(transport) == NULL)
+  if (PAssertNULL(m_transport) == NULL)
     return NoResponse;
 
   // build the service request
   H501PDU pdu;
-  H501_ServiceRequest & body = pdu.BuildServiceRequest(GetNextSequenceNumber(), transport->GetLastReceivedAddress());
+  H501_ServiceRequest & body = pdu.BuildServiceRequest(GetNextSequenceNumber(), m_transport->GetLastReceivedAddress());
 
   // include the element indentifier
   body.IncludeOptionalField(H501_ServiceRequest::e_elementIdentifier);
@@ -572,42 +572,42 @@ H323PeerElement::Error H323PeerElement::ServiceRequestByID(OpalGloballyUniqueID 
 
   // setup to update the old service relationship
   pdu.m_common.IncludeOptionalField(H501_MessageCommonInfo::e_serviceID);
-  pdu.m_common.m_serviceID = sr->serviceID;
-  Request request(pdu.GetSequenceNumber(), pdu, sr->peer);
+  pdu.m_common.m_serviceID = sr->m_serviceID;
+  Request request(pdu.GetSequenceNumber(), pdu, sr->m_peer);
   H501PDU reply;
-  request.responseInfo = &reply;
+  request.m_responseInfo = &reply;
 
   if (MakeRequest(request)) {
     H501_ServiceConfirmation & replyBody = reply.m_body;
-    sr->expireTime = PTime() + 1000 * ((replyBody.m_timeToLive < ServiceRequestRetryTime) ? (int)replyBody.m_timeToLive : ServiceRequestRetryTime);
-    sr->lastUpdateTime = PTime();
-    PTRACE(3, "PeerElement\tConfirmed service relationship with " << sr->peer << " - next update in " << replyBody.m_timeToLive);
+    sr->m_expireTime = PTime() + 1000 * ((replyBody.m_timeToLive < ServiceRequestRetryTime) ? (int)replyBody.m_timeToLive : ServiceRequestRetryTime);
+    sr->m_lastUpdateTime = PTime();
+    PTRACE(3, "PeerElement\tConfirmed service relationship with " << sr->m_peer << " - next update in " << replyBody.m_timeToLive);
     return Confirmed;
   }
 
   // if cannot update, then try again after 60 seconds
-  switch (request.responseResult) {
+  switch (request.m_responseResult) {
     case Request::NoResponseReceived :
       PTRACE(2, "PeerElement\tNo response to ServiceRequest - trying again in " << ServiceRequestRetryTime);
-      sr->expireTime = PTime() + (ServiceRequestRetryTime * 1000);
+      sr->m_expireTime = PTime() + (ServiceRequestRetryTime * 1000);
       monitorTickle.Signal();
       return NoResponse;
 
     case Request::RejectReceived:
-      switch (request.rejectReason) {
+      switch (request.m_rejectReason) {
         case H501_ServiceRejectionReason::e_unknownServiceID:
-          if (OnRemoteServiceRelationshipDisappeared(serviceID, sr->peer))
+          if (OnRemoteServiceRelationshipDisappeared(serviceID, sr->m_peer))
             return Confirmed;
           break;
 
         default:
-          PTRACE(2, "PeerElement\tServiceRequest to " << sr->peer << " rejected with unknown reason " << request.rejectReason);
+          PTRACE(2, "PeerElement\tServiceRequest to " << sr->m_peer << " rejected with unknown reason " << request.m_rejectReason);
           break;
       }
       break;
 
     default:
-      PTRACE(2, "PeerElement\tServiceRequest to " << sr->peer << " failed with unknown response " << (int)request.responseResult);
+      PTRACE(2, "PeerElement\tServiceRequest to " << sr->m_peer << " failed with unknown response " << (int)request.m_responseResult);
       break;
   }
 
@@ -636,17 +636,17 @@ H323Transaction::Response H323PeerElement::HandleServiceRequest(H501ServiceReque
 
     // include service ID, local and domain identifiers
     info.confirmCommon.IncludeOptionalField(H501_MessageCommonInfo::e_serviceID);
-    info.confirmCommon.m_serviceID = sr->serviceID;
+    info.confirmCommon.m_serviceID = sr->m_serviceID;
     info.scf.m_elementIdentifier = GetLocalName();
     H323SetAliasAddress(GetDomainName(), info.scf.m_domainIdentifier);
 
     // include time to live
     info.scf.IncludeOptionalField(H501_ServiceConfirmation::e_timeToLive);
     info.scf.m_timeToLive = ServiceRelationshipTimeToLive;
-    sr->lastUpdateTime = PTime();
-    sr->expireTime = PTime() + (info.scf.m_timeToLive * 1000);
+    sr->m_lastUpdateTime = PTime();
+    sr->m_expireTime = PTime() + (info.scf.m_timeToLive * 1000);
 
-    PTRACE(2, "PeerElement\tService relationship with " << sr->name << " at " << info.GetReplyAddress() << " updated - next update in " << info.scf.m_timeToLive);
+    PTRACE(2, "PeerElement\tService relationship with " << sr->m_name << " at " << info.GetReplyAddress() << " updated - next update in " << info.scf.m_timeToLive);
     return H323Transaction::Confirm;
   }
 
@@ -654,11 +654,11 @@ H323Transaction::Response H323PeerElement::HandleServiceRequest(H501ServiceReque
 
   // get the name of the remote element
   if (info.srq.HasOptionalField(H501_ServiceRequest::e_elementIdentifier))
-    sr->name = info.srq.m_elementIdentifier;
+    sr->m_name = info.srq.m_elementIdentifier;
 
   // include service ID, local and domain identifiers
   info.confirmCommon.IncludeOptionalField(H501_MessageCommonInfo::e_serviceID);
-  info.confirmCommon.m_serviceID = sr->serviceID;
+  info.confirmCommon.m_serviceID = sr->m_serviceID;
   info.scf.m_elementIdentifier = GetLocalName();
   H323SetAliasAddress(GetDomainName(), info.scf.m_domainIdentifier);
 
@@ -666,20 +666,20 @@ H323Transaction::Response H323PeerElement::HandleServiceRequest(H501ServiceReque
   info.scf.IncludeOptionalField(H501_ServiceConfirmation::e_timeToLive);
   info.scf.m_timeToLive = ServiceRelationshipTimeToLive;
   if (info.requestCommon.HasOptionalField(H501_MessageCommonInfo::e_replyAddress) && info.requestCommon.m_replyAddress.GetSize() > 0)
-    sr->peer = info.requestCommon.m_replyAddress[0];
+    sr->m_peer = info.requestCommon.m_replyAddress[0];
   else
-    sr->peer = transport->GetLastReceivedAddress();
-  sr->lastUpdateTime = PTime();
-  sr->expireTime = PTime() + (info.scf.m_timeToLive * 1000);
+    sr->m_peer = m_transport->GetLastReceivedAddress();
+  sr->m_lastUpdateTime = PTime();
+  sr->m_expireTime = PTime() + (info.scf.m_timeToLive * 1000);
   {
-    H323TransportAddress addr = transport->GetLastReceivedAddress();
+    H323TransportAddress addr = m_transport->GetLastReceivedAddress();
     {
       PWaitAndSignal m(basePeerOrdinalMutex);
-      sr->ordinal = basePeerOrdinal++;
+      sr->m_ordinal = basePeerOrdinal++;
     }
     {
       PWaitAndSignal m(localPeerListMutex);
-      localServiceOrdinals += sr->ordinal;
+      localServiceOrdinals += sr->m_ordinal;
     }
   }
 
@@ -688,7 +688,7 @@ H323Transaction::Response H323PeerElement::HandleServiceRequest(H501ServiceReque
   monitorTickle.Signal();
 
   // send the response
-  PTRACE(3, "PeerElement\tNew service relationship with " << sr->name << " at " << info.GetReplyAddress() << " created - next update in " << info.scf.m_timeToLive);
+  PTRACE(3, "PeerElement\tNew service relationship with " << sr->m_name << " at " << info.GetReplyAddress() << " created - next update in " << info.scf.m_timeToLive);
   return H323Transaction::Confirm;
 }
 
@@ -706,8 +706,8 @@ PBoolean H323PeerElement::OnReceiveServiceConfirmation(const H501PDU & pdu, cons
   if (!H323_AnnexG::OnReceiveServiceConfirmation(pdu, pduBody))
     return false;
 
-  if (lastRequest->responseInfo != NULL)
-    *(H501PDU *)lastRequest->responseInfo = pdu;
+  if (m_lastRequest->m_responseInfo != NULL)
+    *(H501PDU *)m_lastRequest->m_responseInfo = pdu;
 
   return true;
 }
@@ -722,12 +722,12 @@ PBoolean H323PeerElement::ServiceRelease(const OpalGloballyUniqueID & serviceID,
   // send the request - no response
   H501PDU pdu;
   H501_ServiceRelease & body = pdu.BuildServiceRelease(GetNextSequenceNumber());
-  pdu.m_common.m_serviceID = sr->serviceID;
+  pdu.m_common.m_serviceID = sr->m_serviceID;
   body.m_reason = reason;
-  WriteTo(pdu, sr->peer);
+  WriteTo(pdu, sr->m_peer);
 
-  OnRemoveServiceRelationship(sr->peer);
-  InternalRemoveServiceRelationship(sr->peer);
+  OnRemoveServiceRelationship(sr->m_peer);
+  InternalRemoveServiceRelationship(sr->m_peer);
   remoteServiceRelationships.Remove(sr);
 
   return true;
@@ -832,7 +832,7 @@ PBoolean H323PeerElement::AddDescriptor(const OpalGloballyUniqueID & descriptorI
   // copy data into the descriptor
   addressTemplates.SetSize(1);
   H225_EndpointType epType;
-  endpoint.SetEndpointTypeInfo(epType);
+  m_endpoint.SetEndpointTypeInfo(epType);
   H323PeerElementDescriptor::CopyToAddressTemplate(addressTemplates[0], epType, aliases, transportAddresses, options);
 
   return AddDescriptor(descriptorID, creator, addressTemplates, now);
@@ -1044,7 +1044,7 @@ PBoolean H323PeerElement::UpdateDescriptor(H323PeerElementDescriptor * descripto
     descriptor->state = H323PeerElementDescriptor::Clean;
 
   for (PSafePtr<H323PeerElementServiceRelationship> sr = GetFirstRemoteServiceRelationship(PSafeReadOnly); sr != NULL; sr++) {
-    SendUpdateDescriptorByID(sr->serviceID, descriptor, updateType);
+    SendUpdateDescriptorByID(sr->m_serviceID, descriptor, updateType);
   }
 
   if (descriptor->state == H323PeerElementDescriptor::Deleted)
@@ -1062,11 +1062,11 @@ H323PeerElement::Error H323PeerElement::SendUpdateDescriptorByID(const OpalGloba
                                                               H323PeerElementDescriptor * descriptor, 
                                                H501_UpdateInformation_updateType::Choices updateType)
 {
-  if (PAssertNULL(transport) == NULL)
+  if (PAssertNULL(m_transport) == NULL)
     return NoResponse;
 
   H501PDU pdu;
-  pdu.BuildDescriptorUpdate(GetNextSequenceNumber(), transport->GetLastReceivedAddress());
+  pdu.BuildDescriptorUpdate(GetNextSequenceNumber(), m_transport->GetLastReceivedAddress());
   H323TransportAddress peer;
 
   // put correct service descriptor into the common data
@@ -1079,8 +1079,8 @@ H323PeerElement::Error H323PeerElement::SendUpdateDescriptorByID(const OpalGloba
       return NoServiceRelationship;
 
     pdu.m_common.IncludeOptionalField(H501_MessageCommonInfo::e_serviceID);
-    pdu.m_common.m_serviceID = sr->serviceID;
-    peer = sr->peer;
+    pdu.m_common.m_serviceID = sr->m_serviceID;
+    peer = sr->m_peer;
   }
 
   return SendUpdateDescriptor(pdu, peer, descriptor, updateType);
@@ -1090,11 +1090,11 @@ H323PeerElement::Error H323PeerElement::SendUpdateDescriptorByAddr(const H323Tra
                                                               H323PeerElementDescriptor * descriptor, 
                                                H501_UpdateInformation_updateType::Choices updateType)
 {
-  if (PAssertNULL(transport) == NULL)
+  if (PAssertNULL(m_transport) == NULL)
     return NoResponse;
 
   H501PDU pdu;
-  pdu.BuildDescriptorUpdate(GetNextSequenceNumber(), transport->GetLastReceivedAddress());
+  pdu.BuildDescriptorUpdate(GetNextSequenceNumber(), m_transport->GetLastReceivedAddress());
   return SendUpdateDescriptor(pdu, peer, descriptor, updateType);
 }
 
@@ -1103,13 +1103,13 @@ H323PeerElement::Error H323PeerElement::SendUpdateDescriptor(H501PDU & pdu,
                                            H323PeerElementDescriptor * descriptor,
                             H501_UpdateInformation_updateType::Choices updateType)
 {
-  if (PAssertNULL(transport) == NULL)
+  if (PAssertNULL(m_transport) == NULL)
     return NoResponse;
 
   H501_DescriptorUpdate & body = pdu.m_body;
 
   // put in sender address
-  H323TransportAddressArray addrs = endpoint.GetInterfaceAddresses(transport);
+  H323TransportAddressArray addrs = m_endpoint.GetInterfaceAddresses(m_transport);
   PAssert(addrs.GetSize() > 0, "No interface addresses");
   H323SetAliasAddress(addrs[0], body.m_sender, H225_AliasAddress::e_transportID);
 
@@ -1126,13 +1126,13 @@ H323PeerElement::Error H323PeerElement::SendUpdateDescriptor(H501PDU & pdu,
     return Confirmed;
 
   // if error was no service relationship, then establish relationship and try again
-  switch (request.responseResult) {
+  switch (request.m_responseResult) {
     case Request::NoResponseReceived :
       PTRACE(2, "PeerElement\tUpdateDescriptor to " << peer << " failed due to no response");
       break;
 
     default:
-      PTRACE(2, "PeerElement\tUpdateDescriptor to " << peer << " refused with unknown response " << (int)request.responseResult);
+      PTRACE(2, "PeerElement\tUpdateDescriptor to " << peer << " refused with unknown response " << (int)request.m_responseResult);
       return Rejected;
   }
 
@@ -1158,8 +1158,8 @@ PBoolean H323PeerElement::OnReceiveDescriptorUpdateACK(const H501PDU & pdu, cons
   if (!H323_AnnexG::OnReceiveDescriptorUpdateACK(pdu, pduBody))
     return false;
 
-  if (lastRequest->responseInfo != NULL)
-    *(H501_MessageCommonInfo *)lastRequest->responseInfo = pdu.m_common;
+  if (m_lastRequest->m_responseInfo != NULL)
+    *(H501_MessageCommonInfo *)m_lastRequest->m_responseInfo = pdu.m_common;
 
   return true;
 }
@@ -1221,21 +1221,23 @@ PBoolean H323PeerElement::AccessRequest(const H225_AliasAddress & searchAlias,
 
     // create the request
     H501PDU request;
-    H501_AccessRequest & requestBody = request.BuildAccessRequest(GetNextSequenceNumber(), transport->GetLastReceivedAddress());
+    {
+      H501_AccessRequest & requestBody = request.BuildAccessRequest(GetNextSequenceNumber(), m_transport->GetLastReceivedAddress());
 
-    // set dest information
-    H501_PartyInformation & destInfo = requestBody.m_destinationInfo;
-    destInfo.m_logicalAddresses.SetSize(1);
-    destInfo.m_logicalAddresses[0] = searchAlias;
+      // set dest information
+      H501_PartyInformation & destInfo = requestBody.m_destinationInfo;
+      destInfo.m_logicalAddresses.SetSize(1);
+      destInfo.m_logicalAddresses[0] = searchAlias;
 
-    // set protocols
-    requestBody.IncludeOptionalField(H501_AccessRequest::e_desiredProtocols);
-    H323PeerElementDescriptor::SetProtocolList(requestBody.m_desiredProtocols, options);
+      // set protocols
+      requestBody.IncludeOptionalField(H501_AccessRequest::e_desiredProtocols);
+      H323PeerElementDescriptor::SetProtocolList(requestBody.m_desiredProtocols, options);
+    }
 
     // make the request
     H501PDU reply;
-    H323PeerElement::Error error = SendAccessRequestByID(sr->serviceID, request, reply);
-    H323TransportAddress peerAddr = sr->peer;
+    H323PeerElement::Error error = SendAccessRequestByID(sr->m_serviceID, request, reply);
+    H323TransportAddress peerAddr = sr->m_peer;
 
     while (error == Confirmed) {
 
@@ -1305,7 +1307,7 @@ PBoolean H323PeerElement::AccessRequest(const H225_AliasAddress & searchAlias,
       H323TransportAddress addr = peerAddr;
 
       // create the request
-      H501_AccessRequest & requestBody = request.BuildAccessRequest(GetNextSequenceNumber(), transport->GetLastReceivedAddress());
+      H501_AccessRequest & requestBody = request.BuildAccessRequest(GetNextSequenceNumber(), m_transport->GetLastReceivedAddress());
 
       // set dest information
       H501_PartyInformation & destInfo = requestBody.m_destinationInfo;
@@ -1333,7 +1335,7 @@ H323PeerElement::Error H323PeerElement::SendAccessRequestByID(const OpalGlobally
                                                                                  H501PDU & pdu, 
                                                                                  H501PDU & confirmPDU)
 {
-  if (PAssertNULL(transport) == NULL)
+  if (PAssertNULL(m_transport) == NULL)
     return NoResponse;
 
   OpalGloballyUniqueID serviceID = origServiceID;
@@ -1346,7 +1348,7 @@ H323PeerElement::Error H323PeerElement::SendAccessRequestByID(const OpalGlobally
       PSafePtr<H323PeerElementServiceRelationship> sr = remoteServiceRelationships.FindWithLock(H323PeerElementServiceRelationship(serviceID), PSafeReadOnly);
       if (sr == NULL)
         return NoServiceRelationship;
-      peer = sr->peer;
+      peer = sr->m_peer;
     }
 
     // set the service ID
@@ -1355,18 +1357,18 @@ H323PeerElement::Error H323PeerElement::SendAccessRequestByID(const OpalGlobally
 
     // make the request
     Request request(pdu.GetSequenceNumber(), pdu, peer);
-    request.responseInfo = &confirmPDU;
+    request.m_responseInfo = &confirmPDU;
     if (MakeRequest(request))
       break;
 
     // if error was no service relationship, then establish relationship and try again
-    switch (request.responseResult) {
+    switch (request.m_responseResult) {
       case Request::NoResponseReceived :
         PTRACE(2, "PeerElement\tAccessRequest to " << peer << " failed due to no response");
         return Rejected;
 
       case Request::RejectReceived:
-        switch (request.rejectReason) {
+        switch (request.m_rejectReason) {
           case H501_ServiceRejectionReason::e_unknownServiceID:
             if (!OnRemoteServiceRelationshipDisappeared(serviceID, peer))
               return Rejected;
@@ -1377,7 +1379,7 @@ H323PeerElement::Error H323PeerElement::SendAccessRequestByID(const OpalGlobally
         break;
 
       default:
-        PTRACE(2, "PeerElement\tAccessRequest to " << peer << " refused with unknown response " << (int)request.responseResult);
+        PTRACE(2, "PeerElement\tAccessRequest to " << peer << " refused with unknown response " << (int)request.m_responseResult);
         return Rejected;
     }
   }
@@ -1389,29 +1391,29 @@ H323PeerElement::Error H323PeerElement::SendAccessRequestByAddr(const H323Transp
                                                                                    H501PDU & pdu, 
                                                                                    H501PDU & confirmPDU)
 {
-  if (PAssertNULL(transport) == NULL)
+  if (PAssertNULL(m_transport) == NULL)
     return NoResponse;
 
   pdu.m_common.RemoveOptionalField(H501_MessageCommonInfo::e_serviceID);
 
   // make the request
   Request request(pdu.GetSequenceNumber(), pdu, peerAddr);
-  request.responseInfo = &confirmPDU;
+  request.m_responseInfo = &confirmPDU;
   if (MakeRequest(request))
     return Confirmed;
 
   // if error was no service relationship, then establish relationship and try again
-  switch (request.responseResult) {
+  switch (request.m_responseResult) {
     case Request::NoResponseReceived :
       PTRACE(2, "PeerElement\tAccessRequest to " << peerAddr << " failed due to no response");
       break;
 
     case Request::RejectReceived:
-      PTRACE(2, "PeerElement\tAccessRequest failed due to " << request.rejectReason);
+      PTRACE(2, "PeerElement\tAccessRequest failed due to " << request.m_rejectReason);
       break;
 
     default:
-      PTRACE(2, "PeerElement\tAccessRequest to " << peerAddr << " refused with unknown response " << (int)request.responseResult);
+      PTRACE(2, "PeerElement\tAccessRequest to " << peerAddr << " refused with unknown response " << (int)request.m_responseResult);
       break;
   }
 
@@ -1438,8 +1440,8 @@ PBoolean H323PeerElement::OnReceiveAccessConfirmation(const H501PDU & pdu, const
   if (!H323_AnnexG::OnReceiveAccessConfirmation(pdu, pduBody))
     return false;
 
-  if (lastRequest->responseInfo != NULL)
-    *(H501PDU *)lastRequest->responseInfo = pdu;
+  if (m_lastRequest->m_responseInfo != NULL)
+    *(H501PDU *)m_lastRequest->m_responseInfo = pdu;
 
   return true;
 }

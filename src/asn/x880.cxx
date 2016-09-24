@@ -129,7 +129,7 @@ X880_ROS::operator const X880_Reject &() const
 
 PBoolean X880_ROS::CreateObject()
 {
-  switch (tag) {
+  switch (m_tag) {
     case e_invoke :
       choice = new X880_Invoke(1, ContextSpecificTagClass);
       return true;
@@ -379,7 +379,7 @@ X880_Code::X880_Code(unsigned tag, PASN_Object::TagClass tagClass)
 
 PBoolean X880_Code::CreateObject()
 {
-  switch (tag) {
+  switch (m_tag) {
     case e_local :
       choice = new PASN_Integer();
       return true;
@@ -598,7 +598,7 @@ X880_Reject_problem::operator const X880_ReturnErrorProblem &() const
 
 PBoolean X880_Reject_problem::CreateObject()
 {
-  switch (tag) {
+  switch (m_tag) {
     case e_general :
       choice = new X880_GeneralProblem();
       return true;

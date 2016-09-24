@@ -263,7 +263,7 @@ H4609_QosMonitoringReportData::operator const H4609_InterGKQosMonReport &() cons
 
 PBoolean H4609_QosMonitoringReportData::CreateObject()
 {
-  switch (tag) {
+  switch (m_tag) {
     case e_periodic :
       choice = new H4609_PeriodicQoSMonReport();
       return TRUE;

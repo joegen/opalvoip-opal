@@ -74,7 +74,7 @@ OpalLocalEndPoint::~OpalLocalEndPoint()
 
 OpalMediaFormatList OpalLocalEndPoint::GetMediaFormats() const
 {
-  return manager.GetCommonMediaFormats(false, true);
+  return m_manager.GetCommonMediaFormats(false, true);
 }
 
 
@@ -105,7 +105,7 @@ bool OpalLocalEndPoint::OnOutgoingSetUp(const OpalLocalConnection & /*connection
 
 bool OpalLocalEndPoint::OnOutgoingCall(const OpalLocalConnection & connection)
 {
-  return manager.OnLocalOutgoingCall(connection);
+  return m_manager.OnLocalOutgoingCall(connection);
 }
 
 
@@ -113,7 +113,7 @@ bool OpalLocalEndPoint::OnIncomingCall(OpalLocalConnection & connection)
 {
   if (!m_deferredAnswer)
     connection.AcceptIncoming();
-  return manager.OnLocalIncomingCall(connection);
+  return m_manager.OnLocalIncomingCall(connection);
 }
 
 
@@ -234,7 +234,7 @@ bool OpalLocalEndPoint::CreateVideoInputDevice(const OpalConnection & connection
                                                PVideoInputDevice * & device,
                                                bool & autoDelete)
 {
-  return manager.CreateVideoInputDevice(connection, mediaFormat, device, autoDelete);
+  return m_manager.CreateVideoInputDevice(connection, mediaFormat, device, autoDelete);
 }
 
 
@@ -244,7 +244,7 @@ bool OpalLocalEndPoint::CreateVideoOutputDevice(const OpalConnection & connectio
                                                 PVideoOutputDevice * & device,
                                                 bool & autoDelete)
 {
-  return manager.CreateVideoOutputDevice(connection, mediaFormat, preview, device, autoDelete);
+  return m_manager.CreateVideoOutputDevice(connection, mediaFormat, preview, device, autoDelete);
 }
 
 #endif // OPAL_VIDEO
@@ -295,7 +295,7 @@ OpalLocalConnection::OpalLocalConnection(OpalCall & call,
   m_h224Handler->AddClient(*m_farEndCameraControl);
 #endif
 
-  PTRACE(4, "LocalCon\tCreated connection with token \"" << callToken << '"');
+  PTRACE(4, "LocalCon\tCreated connection with token \"" << m_callToken << '"');
 }
 
 
@@ -339,7 +339,7 @@ PBoolean OpalLocalConnection::OnIncomingConnection(unsigned int options, OpalCon
 
 PBoolean OpalLocalConnection::SetUpConnection()
 {
-  if (ownerCall.IsEstablished())
+  if (m_ownerCall.IsEstablished())
     return OpalConnection::SetUpConnection();
 
   InternalSetAsOriginating();
@@ -347,7 +347,7 @@ PBoolean OpalLocalConnection::SetUpConnection()
   if (!OpalConnection::SetUpConnection())
     return false;
 
-  if (ownerCall.GetConnection(0) == this)
+  if (m_ownerCall.GetConnection(0) == this)
     return true;
 
   if (!OnIncoming()) {
@@ -367,7 +367,7 @@ PBoolean OpalLocalConnection::SetAlerting(const PString & calleeName, PBoolean)
 {
   PTRACE(3, "LocalCon\tSetAlerting(" << calleeName << ')');
   SetPhase(AlertingPhase);
-  remotePartyName = calleeName;
+  m_remotePartyName = calleeName;
   return m_endpoint.OnOutgoingCall(*this);
 }
 
@@ -675,11 +675,11 @@ PBoolean OpalLocalMediaStream::ReadPacket(RTP_DataFrame & frame)
   if (!m_connection.OnReadMediaFrame(*this, frame))
     return OpalMediaStream::ReadPacket(frame);
 
-  marker = frame.GetMarker();
-  timestamp = frame.GetTimestamp();
+  m_marker = frame.GetMarker();
+  m_timestamp = frame.GetTimestamp();
 
   if (m_synchronicity == OpalLocalEndPoint::e_SimulateSynchronous)
-    Pace(false, frame.GetPayloadSize(), marker);
+    Pace(false, frame.GetPayloadSize(), m_marker);
   return true;
 }
 
@@ -693,7 +693,7 @@ PBoolean OpalLocalMediaStream::WritePacket(RTP_DataFrame & frame)
     return OpalMediaStream::WritePacket(frame);
 
   if (m_synchronicity == OpalLocalEndPoint::e_SimulateSynchronous)
-    Pace(false, frame.GetPayloadSize(), marker);
+    Pace(false, frame.GetPayloadSize(), m_marker);
   return true;
 }
 
@@ -703,10 +703,10 @@ PBoolean OpalLocalMediaStream::ReadData(BYTE * data, PINDEX size, PINDEX & lengt
   if (!m_connection.OnReadMediaData(*this, data, size, length))
     return false;
 
-  timestamp += OpalMediaStream::m_frameTime;
+  m_timestamp += OpalMediaStream::m_frameTime;
 
   if (m_synchronicity == OpalLocalEndPoint::e_SimulateSynchronous)
-    Pace(false, size, marker);
+    Pace(false, size, m_marker);
   return true;
 }
 
@@ -727,7 +727,7 @@ PBoolean OpalLocalMediaStream::WriteData(const BYTE * data, PINDEX length, PINDE
     return false;
 
   if (m_synchronicity == OpalLocalEndPoint::e_SimulateSynchronous)
-    Pace(false, written, marker);
+    Pace(false, written, m_marker);
   return true;
 }
 

@@ -236,32 +236,32 @@ struct OpalCapiMessage
   void Add(unsigned prefix, const char * value)
   {
     size_t length = strlen(value);
-    BYTE * param = ((BYTE *)this) + header.m_Length;
-    *param++ = (BYTE)(length+1);
-    *param++ = (BYTE)prefix;
+    BYTE * ptr = ((BYTE *)this) + header.m_Length;
+    *ptr++ = (BYTE)(length+1);
+    *ptr++ = (BYTE)prefix;
     if (length > 0)
-      memcpy(param, value, length);
+      memcpy(ptr, value, length);
     header.m_Length = (WORD)(header.m_Length + length + 2);
   }
 
   void Add(unsigned prefix1, unsigned prefix2, const char * value)
   {
     size_t length = strlen(value);
-    BYTE * param = ((BYTE *)this) + header.m_Length;
-    *param++ = (BYTE)(length+2);
-    *param++ = (BYTE)prefix1;
-    *param++ = (BYTE)prefix2;
+    BYTE * ptr = ((BYTE *)this) + header.m_Length;
+    *ptr++ = (BYTE)(length+2);
+    *ptr++ = (BYTE)prefix1;
+    *ptr++ = (BYTE)prefix2;
     if (length > 0)
-      memcpy(param, value, length);
+      memcpy(ptr, value, length);
     header.m_Length = (WORD)(header.m_Length + length + 3);
   }
 
   void Add(const void * value, size_t length)
   {
-    BYTE * param = ((BYTE *)this) + header.m_Length;
-    *param++ = (char)length;
+    BYTE * ptr = ((BYTE *)this) + header.m_Length;
+    *ptr++ = (char)length;
     if (length > 0)
-      memcpy(param, value, length);
+      memcpy(ptr, value, length);
     header.m_Length = (WORD)(header.m_Length + length + 1);
   }
 
@@ -275,17 +275,17 @@ struct OpalCapiMessage
     if (pos+size >= header.m_Length)
       return false;
 
-    const BYTE * param = ((const BYTE *)this) + pos;
-    size_t length = *param++;
+    const BYTE * ptr = ((const BYTE *)this) + pos;
+    size_t length = *ptr++;
     if (length < size) {
       pos += length + 1;
       return false;
     }
 
     if (value != NULL)
-      memcpy(value, param, size);
+      memcpy(value, ptr, size);
 
-    str = PString((const char *)param + size, length - size);
+    str = PString((const char *)ptr + size, length - size);
     pos += length + 1;
     return true;
   }
@@ -856,7 +856,7 @@ void OpalCapiEndPoint::ProcessConnectInd(const OpalCapiMessage & message)
   unsigned bearer = 0;
   if (GetFreeLine(controller, bearer)) {
     // Get new instance of a call, abort if none created
-    OpalCall * call = manager.InternalCreateCall();
+    OpalCall * call = m_manager.InternalCreateCall();
     if (call != NULL) {
       OpalCapiConnection * connection = CreateConnection(*call, NULL, 0, NULL, controller, bearer);
       if (AddConnection(connection) != NULL) {
@@ -937,7 +937,7 @@ PBoolean OpalCapiConnection::SetUpConnection()
   message.param.connect_req.m_Controller = m_controller;
   message.param.connect_req.m_CIPValue = 16; // Telephony
   message.Add(0x80, m_calledPartyNumber); // Called party number
-  PString number(m_stringOptions(OPAL_OPT_CALLING_PARTY_NUMBER, m_stringOptions(OPAL_OPT_CALLING_PARTY_NAME, localPartyName)));
+  PString number(m_stringOptions(OPAL_OPT_CALLING_PARTY_NUMBER, m_stringOptions(OPAL_OPT_CALLING_PARTY_NAME, m_localPartyName)));
   message.Add(0x00, 0x80, number.Left(number.FindSpan("0123456789#*"))); // Calling party number
   message.AddEmpty(); // Called party subaddress
   message.AddEmpty(); // Calling party subaddress
@@ -977,7 +977,7 @@ PBoolean OpalCapiConnection::SetConnected()
   message.param.connect_resp.m_PLCI = m_PLCI;
   message.param.connect_resp.m_Reject = 0;
   message.Add(m_Bprotocol, m_Bprotocol.GetSize());
-  message.Add(localPartyName); // Connected party number
+  message.Add(m_localPartyName); // Connected party number
   message.AddEmpty(); // Connected party subaddress
   message.AddEmpty(); // Low Layer Compatibility
   message.AddEmpty(); // Additional Info
@@ -1063,11 +1063,11 @@ void OpalCapiConnection::ProcessMessage(const OpalCapiMessage & message)
       m_endpoint.m_plciToConnection[m_PLCI] = this;
       PINDEX pos = sizeof(OpalCapiMessage::Header) + sizeof(message.param.connect_ind);
       message.Get(pos, NULL, 1, m_calledPartyNumber); // Called party address
-      message.Get(pos, NULL, 2, remotePartyNumber); // Calling party address
+      message.Get(pos, NULL, 2, m_remotePartyNumber); // Calling party address
 
       OnApplyStringOptions();
       if (OnIncomingConnection(0, NULL))
-        ownerCall.OnSetUp(*this);
+        m_ownerCall.OnSetUp(*this);
       break;
     }
 

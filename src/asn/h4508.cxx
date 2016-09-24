@@ -124,7 +124,7 @@ H4508_Name::operator const H4508_NamePresentationRestricted &() const
 
 PBoolean H4508_Name::CreateObject()
 {
-  switch (tag) {
+  switch (m_tag) {
     case e_namePresentationAllowed :
       choice = new H4508_NamePresentationAllowed();
       return true;
@@ -217,7 +217,7 @@ H4508_NamePresentationAllowed::operator const H4508_ExtendedName &() const
 
 PBoolean H4508_NamePresentationAllowed::CreateObject()
 {
-  switch (tag) {
+  switch (m_tag) {
     case e_simpleName :
       choice = new H4508_SimpleName();
       return true;
@@ -308,7 +308,7 @@ H4508_NamePresentationRestricted::operator const H4508_ExtendedName &() const
 
 PBoolean H4508_NamePresentationRestricted::CreateObject()
 {
-  switch (tag) {
+  switch (m_tag) {
     case e_simpleName :
       choice = new H4508_SimpleName();
       return true;

@@ -110,7 +110,7 @@ bool OpalT140MediaStream::ReadPacket(RTP_DataFrame & /*packet*/)
 
 bool OpalT140MediaStream::WritePacket(RTP_DataFrame & frame)
 {
-  OpalIMEndPoint * imEP = connection.GetEndPoint().GetManager().FindEndPointAs<OpalIMEndPoint>(OpalIMEndPoint::Prefix());
+  OpalIMEndPoint * imEP = m_connection.GetEndPoint().GetManager().FindEndPointAs<OpalIMEndPoint>(OpalIMEndPoint::Prefix());
   if (imEP == NULL) {
     PTRACE(2, "OpalIM\tCannot find IM endpoint");
     return false;
@@ -120,12 +120,12 @@ bool OpalT140MediaStream::WritePacket(RTP_DataFrame & frame)
   PString str;
   if (imFrame.GetContent(str)) {
     OpalIM message;
-    message.m_from = connection.GetRemotePartyURL();
-    message.m_to = connection.GetLocalPartyURL();
+    message.m_from = m_connection.GetRemotePartyURL();
+    message.m_to = m_connection.GetLocalPartyURL();
     message.m_bodies[imFrame.GetContentType()] = str;
 
     PString error;
-    imEP->OnRawMessageReceived(message, &connection, error);
+    imEP->OnRawMessageReceived(message, &m_connection, error);
   }
 
   return true;

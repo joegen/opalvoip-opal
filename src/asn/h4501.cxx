@@ -41,7 +41,7 @@ H4501_EntityType::H4501_EntityType(unsigned tag, PASN_Object::TagClass tagClass)
 
 PBoolean H4501_EntityType::CreateObject()
 {
-  choice = (tag <= e_anyEntity) ? new PASN_Null() : NULL;
+  choice = (m_tag <= e_anyEntity) ? new PASN_Null() : NULL;
   return choice != NULL;
 }
 
@@ -98,7 +98,7 @@ H4501_InterpretationApdu::H4501_InterpretationApdu(unsigned tag, PASN_Object::Ta
 
 PBoolean H4501_InterpretationApdu::CreateObject()
 {
-  choice = (tag <= e_rejectAnyUnrecognizedInvokePdu) ? new PASN_Null() : NULL;
+  choice = (m_tag <= e_rejectAnyUnrecognizedInvokePdu) ? new PASN_Null() : NULL;
   return choice != NULL;
 }
 
@@ -156,7 +156,7 @@ H4501_ServiceApdus::operator const H4501_ArrayOf_ROS &() const
 
 PBoolean H4501_ServiceApdus::CreateObject()
 {
-  switch (tag) {
+  switch (m_tag) {
     case e_rosApdus :
       choice = new H4501_ArrayOf_ROS();
       choice->SetConstraints(PASN_Object::FixedConstraint, 1, MaximumValue);
@@ -291,7 +291,7 @@ H4501_PresentedAddressScreened::operator const H4501_AddressScreened &() const
 
 PBoolean H4501_PresentedAddressScreened::CreateObject()
 {
-  switch (tag) {
+  switch (m_tag) {
     case e_presentationAllowedAddress :
     case e_presentationRestrictedAddress :
       choice = new H4501_AddressScreened();
@@ -363,7 +363,7 @@ H4501_PresentedAddressUnscreened::operator const H4501_Address &() const
 
 PBoolean H4501_PresentedAddressUnscreened::CreateObject()
 {
-  switch (tag) {
+  switch (m_tag) {
     case e_presentationAllowedAddress :
     case e_presentationRestrictedAddress :
       choice = new H4501_Address();
@@ -435,7 +435,7 @@ H4501_PresentedNumberScreened::operator const H4501_NumberScreened &() const
 
 PBoolean H4501_PresentedNumberScreened::CreateObject()
 {
-  switch (tag) {
+  switch (m_tag) {
     case e_presentationAllowedAddress :
     case e_presentationRestrictedAddress :
       choice = new H4501_NumberScreened();
@@ -507,7 +507,7 @@ H4501_PresentedNumberUnscreened::operator const H225_PartyNumber &() const
 
 PBoolean H4501_PresentedNumberUnscreened::CreateObject()
 {
-  switch (tag) {
+  switch (m_tag) {
     case e_presentationAllowedAddress :
     case e_presentationRestrictedAddress :
       choice = new H225_PartyNumber();
@@ -599,7 +599,7 @@ H4501_PartySubaddress::operator const H4501_NSAPSubaddress &() const
 
 PBoolean H4501_PartySubaddress::CreateObject()
 {
-  switch (tag) {
+  switch (m_tag) {
     case e_userSpecifiedSubaddress :
       choice = new H4501_UserSpecifiedSubaddress();
       return true;

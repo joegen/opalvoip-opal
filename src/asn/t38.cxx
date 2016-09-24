@@ -83,7 +83,7 @@ T38_Type_of_msg::operator const T38_Type_of_msg_data &() const
 
 PBoolean T38_Type_of_msg::CreateObject()
 {
-  switch (tag) {
+  switch (m_tag) {
     case e_t30_indicator :
       choice = new T38_Type_of_msg_t30_indicator();
       return true;
@@ -328,7 +328,7 @@ T38_UDPTLPacket_error_recovery::operator const T38_UDPTLPacket_error_recovery_fe
 
 PBoolean T38_UDPTLPacket_error_recovery::CreateObject()
 {
-  switch (tag) {
+  switch (m_tag) {
     case e_secondary_ifp_packets :
       choice = new T38_UDPTLPacket_error_recovery_secondary_ifp_packets();
       return true;

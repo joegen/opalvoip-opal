@@ -187,7 +187,7 @@ class VideoThread : public TranscoderThread
     double   m_sumCrSNR;
     PInt64   m_snrCount;
 
-    OpalBitRateCalculator m_bitRateCalc;
+    OpalBitRateCalculator m_bitRateCalculator;
 };
 
 

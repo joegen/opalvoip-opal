@@ -241,7 +241,7 @@ SIPConnection::SIPConnection(const Init & init)
   , m_inviteCollisionTimer(init.m_endpoint.GetThreadPool(), init.m_endpoint, init.m_token, &SIPConnection::OnInviteCollision)
   , m_referOfRemoteInProgress(false)
   , m_delayedReferTimer(init.m_endpoint.GetThreadPool(), init.m_endpoint, init.m_token, &SIPConnection::OnDelayedRefer)
-  , releaseMethod(ReleaseWithNothing)
+  , m_releaseMethod(ReleaseWithNothing)
   , m_receivedUserInputMethod(UserInputMethodUnknown)
 {
   SIPURL adjustedDestination = init.m_address;
@@ -356,7 +356,7 @@ void SIPConnection::OnReleased()
 
   PSafePtr<SIPBye> bye;
 
-  switch (releaseMethod) {
+  switch (m_releaseMethod) {
     case ReleaseWithNothing :
       if (!m_forkedInvitations.IsEmpty())
         notifyDialogEvent = SIPDialogNotification::Timeout;
@@ -364,13 +364,13 @@ void SIPConnection::OnReleased()
 
     case ReleaseWithResponse :
       // Try find best match for return code
-      sipCode = GetStatusCodeFromReason(callEndReason);
+      sipCode = GetStatusCodeFromReason(m_callEndReason);
 
       if (!PAssert(LockReadWrite(),PLogicError))
         return;
 
       // EndedByCallForwarded is a special case because it needs extra paramater
-      if (callEndReason != EndedByCallForwarded)
+      if (m_callEndReason != EndedByCallForwarded)
         SendInviteResponse(sipCode);
       else {
         SIP_PDU response(*m_lastReceivedINVITE, sipCode);
@@ -505,13 +505,13 @@ bool SIPConnection::TransferConnection(const PString & remoteParty)
     return m_referOfRemoteInProgress;
   }
 
-  PSafePtr<OpalCall> call = endpoint.GetManager().FindCallWithLock(url.GetHostName(), PSafeReadOnly);
+  PSafePtr<OpalCall> call = m_endpoint.GetManager().FindCallWithLock(url.GetHostName(), PSafeReadOnly);
   if (call == NULL) {
     PTRACE(2, "Remote party \"" << remoteParty << "\" must be valid call token or URI.");
     return false;
   }
 
-  if (call == &ownerCall) {
+  if (call == &m_ownerCall) {
     PTRACE(2, "Cannot transfer connection to itself: " << *this);
     return false;
   }
@@ -533,7 +533,7 @@ bool SIPConnection::TransferConnection(const PString & remoteParty)
        */
       m_sentReferTo = sip->GetRemotePartyURL();
       m_sentReferTo.Sanitise(SIPURL::RedirectURI);
-      if (remoteProductInfo.name == "Avaya" && m_sentReferTo.GetUserName().IsEmpty())
+      if (m_remoteProductInfo.name == "Avaya" && m_sentReferTo.GetUserName().IsEmpty())
         m_sentReferTo.SetUserName("anonymous");
 
       PStringStream id;
@@ -632,7 +632,7 @@ bool SIPConnection::InternalSetConnected(bool transfer)
     }
   }
 
-  releaseMethod = ReleaseWithBYE;
+  m_releaseMethod = ReleaseWithBYE;
   m_sessionTimer = 10000;
 
   NotifyDialogState(SIPDialogNotification::Confirmed);
@@ -764,19 +764,19 @@ bool SIPConnection::RequireSymmetricMediaStreams() const
 #if OPAL_T38_CAPABILITY
 bool SIPConnection::SwitchFaxMediaStreams(bool toT38)
 {
-  if (ownerCall.IsSwitchingT38()) {
+  if (m_ownerCall.IsSwitchingT38()) {
     PTRACE(2, "Nested call to SwitchFaxMediaStreams on " << *this);
     return false;
   }
 
-  ownerCall.SetSwitchingT38(toT38);
+  m_ownerCall.SetSwitchingT38(toT38);
 
   PTRACE(3, "Switching to " << (toT38 ? "T.38" : "audio") << " on " << *this);
   OpalMediaFormat format = toT38 ? OpalT38 : OpalG711uLaw;
-  if (ownerCall.OpenSourceMediaStreams(*this, format.GetMediaType(), 1, format))
+  if (m_ownerCall.OpenSourceMediaStreams(*this, format.GetMediaType(), 1, format))
     return true;
 
-  ownerCall.ResetSwitchingT38();
+  m_ownerCall.ResetSwitchingT38();
   return false;
 }
 #endif // OPAL_T38_CAPABILITY
@@ -791,7 +791,7 @@ OpalMediaStream * SIPConnection::CreateMediaStream(const OpalMediaFormat & media
   PString sessionType;
 
 #if  OPAL_T38_CAPABILITY
-  if (!ownerCall.IsSwitchingT38())
+  if (!m_ownerCall.IsSwitchingT38())
 #endif // OPAL_T38_CAPABILITY
   {
     SDPSessionDescription * sdp = NULL;
@@ -905,7 +905,7 @@ void SIPConnection::OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & patch
 void SIPConnection::OnClosedMediaStream(const OpalMediaStream & stream)
 {
 #if OPAL_T38_CAPABILITY
-  if (ownerCall.IsSwitchingT38())
+  if (m_ownerCall.IsSwitchingT38())
     PTRACE(4, "No re-INVITE to close channel while switching to T.38");
   else
 #endif // OPAL_T38_CAPABILITY
@@ -1254,7 +1254,7 @@ PBoolean SIPConnection::SetUpConnection()
   }
 
   m_dialog.SetForking(false);
-  releaseMethod = ReleaseWithCANCEL;
+  m_releaseMethod = ReleaseWithCANCEL;
   m_handlingINVITE = true;
   return true;
 }
@@ -1537,10 +1537,10 @@ bool SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
     collapseForks = true;
     // If response was 2xx we need to release with a BYE from now on.
     // If response was an error, then we need no nothing, it is already dead
-    releaseMethod = statusCode < 300 ? ReleaseWithBYE : ReleaseWithNothing;
+    m_releaseMethod = statusCode < 300 ? ReleaseWithBYE : ReleaseWithNothing;
   }
 
-  responseMIME.GetProductInfo(remoteProductInfo);
+  responseMIME.GetProductInfo(m_remoteProductInfo);
 
   SDPSessionDescription * sdp = response.GetSDP();
   if (sdp != NULL) {
@@ -1549,11 +1549,11 @@ bool SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
     // which will work 99.99% of scenarios.
     collapseForks = true;
 
-    if (remoteProductInfo.vendor.IsEmpty() && remoteProductInfo.name.IsEmpty()) {
+    if (m_remoteProductInfo.vendor.IsEmpty() && m_remoteProductInfo.name.IsEmpty()) {
       if (sdp->GetSessionName() != "-")
-        remoteProductInfo.name = sdp->GetSessionName();
+        m_remoteProductInfo.name = sdp->GetSessionName();
       if (sdp->GetUserName() != "-")
-        remoteProductInfo.vendor = sdp->GetUserName();
+        m_remoteProductInfo.vendor = sdp->GetUserName();
     }
   }
   else if (!response.GetEntityBody().IsEmpty()) {
@@ -1756,19 +1756,19 @@ void SIPConnection::UpdateRemoteAddresses()
 
   m_remotePartyURL = m_dialog.GetRequestURI().AsString(); // This is effectively the remote "Contact" field
 
-  remotePartyNumber = m_remoteIdentity.GetUserName();
-  if (!OpalIsE164(remotePartyNumber))
-    remotePartyNumber.MakeEmpty();
+  m_remotePartyNumber = m_remoteIdentity.GetUserName();
+  if (!OpalIsE164(m_remotePartyNumber))
+    m_remotePartyNumber.MakeEmpty();
 
-  remotePartyName = m_remoteIdentity.GetDisplayName();
-  if (remotePartyName.IsEmpty())
-    remotePartyName = remotePartyNumber.IsEmpty() ? m_remoteIdentity.GetUserName() : m_remoteIdentity.AsString();
+  m_remotePartyName = m_remoteIdentity.GetDisplayName();
+  if (m_remotePartyName.IsEmpty())
+    m_remotePartyName = m_remotePartyNumber.IsEmpty() ? m_remoteIdentity.GetUserName() : m_remoteIdentity.AsString();
 
   // If no local name, then use what the remote thinks we are
-  if (localPartyName.IsEmpty())
-    localPartyName = m_dialog.GetLocalURI().GetUserName();
+  if (m_localPartyName.IsEmpty())
+    m_localPartyName = m_dialog.GetLocalURI().GetUserName();
 
-  ownerCall.SetPartyNames();
+  m_ownerCall.SetPartyNames();
 }
 
 
@@ -1824,7 +1824,7 @@ void SIPConnection::NotifyDialogState(SIPDialogNotification::States state, SIPDi
   if (GetPhase() == EstablishedPhase)
     info.m_local.m_rendering = info.m_remote.m_rendering = SIPDialogNotification::NotRenderingMedia;
 
-  for (OpalMediaStreamPtr mediaStream(mediaStreams, PSafeReference); mediaStream != NULL; ++mediaStream) {
+  for (OpalMediaStreamPtr mediaStream(m_mediaStreams, PSafeReference); mediaStream != NULL; ++mediaStream) {
     if (mediaStream->IsSource())
       info.m_remote.m_rendering = SIPDialogNotification::RenderingMedia;
     else
@@ -2051,10 +2051,10 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
     m_handlingINVITE = false;
 
 #if OPAL_T38_CAPABILITY
-  if (ownerCall.IsSwitchingT38()) {
+  if (m_ownerCall.IsSwitchingT38()) {
     SDPSessionDescription * sdp = response.GetSDP();
     bool isT38 = sdp != NULL && sdp->GetMediaDescriptionByType(OpalMediaType::Fax()) != NULL;
-    bool toT38 = ownerCall.IsSwitchingToT38();
+    bool toT38 = m_ownerCall.IsSwitchingToT38();
     OnSwitchedFaxMediaStreams(toT38, isT38 == toT38);
   }
 #endif // OPAL_T38_CAPABILITY
@@ -2108,7 +2108,7 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
   }
 
   // All other responses are errors, set Q931 code if available
-  releaseMethod = ReleaseWithNothing;
+  m_releaseMethod = ReleaseWithNothing;
   Release(GetCallEndReasonFromResponse(response.GetStatusCode()));
 }
 
@@ -2211,7 +2211,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   mime.GetAlertInfo(m_alertInfo, m_appearanceCode);
 
   // Fill in all the various connection info, note our to/from is their from/to
-  mime.GetProductInfo(remoteProductInfo);
+  mime.GetProductInfo(m_remoteProductInfo);
 
   m_contactAddress = request.GetURI();
 
@@ -2262,7 +2262,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
       }
   }
 
-  releaseMethod = ReleaseWithResponse;
+  m_releaseMethod = ReleaseWithResponse;
   m_handlingINVITE = true;
 
   // See if we have a replaces header, if not is normal call
@@ -2288,7 +2288,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
     if (m_lastReceivedINVITE->GetSDP() != NULL)
       DetermineRTPNAT(*request.GetTransport(), m_lastReceivedINVITE->GetSDP()->GetDefaultConnectAddress());
 
-    if (ownerCall.OnSetUp(*this)) {
+    if (m_ownerCall.OnSetUp(*this)) {
       if (IsReleased())
         return;
 
@@ -2543,7 +2543,7 @@ void SIPConnection::OnReceivedNOTIFY(SIP_PDU & request)
   if (IsReleased())
     return;
 
-  releaseMethod = ReleaseWithBYE;
+  m_releaseMethod = ReleaseWithBYE;
   Release(OpalConnection::EndedByCallForwarded);
 }
 
@@ -2663,7 +2663,7 @@ void SIPConnection::OnDelayedRefer()
 
 bool SIPConnection::InviteConferenceParticipant(const PString & conf, const PString & dest)
 {
-  return endpoint.GetManager().SetUpCall(conf, dest) != NULL;
+  return m_endpoint.GetManager().SetUpCall(conf, dest) != NULL;
 }
 
 
@@ -2674,7 +2674,7 @@ void SIPConnection::OnReceivedBYE(SIP_PDU & request)
   SIPTransaction * response = new SIPResponse(GetEndPoint(), request, SIP_PDU::Successful_OK);
   response->Send();
 
-  releaseMethod = ReleaseWithNothing;
+  m_releaseMethod = ReleaseWithNothing;
   
   if (IsReleased()) {
     PTRACE(2, "Already released " << *this);
@@ -2683,7 +2683,7 @@ void SIPConnection::OnReceivedBYE(SIP_PDU & request)
 
   m_dialog.Update(request);
   UpdateRemoteAddresses();
-  request.GetMIME().GetProductInfo(remoteProductInfo);
+  request.GetMIME().GetProductInfo(m_remoteProductInfo);
 
   PString reason = request.GetMIME().Get("Reason").LeftTrim();
   if (!reason.IsEmpty()) {
@@ -2924,7 +2924,7 @@ void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & respons
     // state locally and other half of call processing SetConnected()
     SetPhase(ConnectedPhase);
 
-    if (!OnReceivedAnswer(response, &transaction) && mediaStreams.IsEmpty()) {
+    if (!OnReceivedAnswer(response, &transaction) && m_mediaStreams.IsEmpty()) {
       Release(EndedByCapabilityExchange);
       return;
     }
@@ -3093,7 +3093,7 @@ void SIPConnection::AdjustInviteResponse(SIP_PDU & response)
   if (promoteToTCP && response.GetTransport()->GetProtoPrefix() == OpalTransportAddress::TcpPrefix()) {
     // see if endpoint contains a TCP listener we can use
     OpalTransportAddress newAddr;
-    if (endpoint.FindListenerForProtocol(OpalTransportAddress::TcpPrefix(), newAddr)) {
+    if (m_endpoint.FindListenerForProtocol(OpalTransportAddress::TcpPrefix(), newAddr)) {
       response.GetMIME().SetContact(SIPURL(PString::Empty(), newAddr, 0).AsQuotedString());
       PTRACE(3, "Promoting connection to TCP");
     }
@@ -3177,7 +3177,7 @@ void SIPConnection::OnInviteResponseTimeout()
     if (m_responsePackets.front().GetStatusCode() < 200)
       SendInviteResponse(SIP_PDU::Failure_ServerTimeout);
     else {
-      releaseMethod = ReleaseWithBYE;
+      m_releaseMethod = ReleaseWithBYE;
       Release(EndedByTemporaryFailure);
     }
   }
@@ -3357,7 +3357,7 @@ void SIPConnection::OnReceivedSUBSCRIBE(SIP_PDU & request)
 
 OpalConnection::SendUserInputModes SIPConnection::GetRealSendUserInputMode() const
 {
-  switch (sendUserInputMode) {
+  switch (m_sendUserInputMode) {
     case SendUserInputAsProtocolDefault :
     case SendUserInputAsRFC2833 :
       if (m_remoteFormatList.HasFormat(OpalRFC2833))
@@ -3375,7 +3375,7 @@ OpalConnection::SendUserInputModes SIPConnection::GetRealSendUserInputMode() con
       break;
   }
 
-  return sendUserInputMode;
+  return m_sendUserInputMode;
 }
 
 

@@ -307,7 +307,7 @@ H248_MId::operator const H248_PathName &() const
 
 PBoolean H248_MId::CreateObject()
 {
-  switch (tag) {
+  switch (m_tag) {
     case e_ip4Address :
       choice = new H248_IP4Address();
       return true;
@@ -750,7 +750,7 @@ H248_Transaction::operator const H248_TransactionResponseAck &() const
 
 PBoolean H248_Transaction::CreateObject()
 {
-  switch (tag) {
+  switch (m_tag) {
     case e_transactionRequest :
       choice = new H248_TransactionRequest();
       return true;
@@ -1345,7 +1345,7 @@ H248_Command::operator const H248_ServiceChangeRequest &() const
 
 PBoolean H248_Command::CreateObject()
 {
-  switch (tag) {
+  switch (m_tag) {
     case e_addReq :
     case e_moveReq :
     case e_modReq :
@@ -1497,7 +1497,7 @@ H248_CommandReply::operator const H248_ServiceChangeReply &() const
 
 PBoolean H248_CommandReply::CreateObject()
 {
-  switch (tag) {
+  switch (m_tag) {
     case e_addReply :
     case e_moveReply :
     case e_modReply :
@@ -1735,7 +1735,7 @@ H248_AmmDescriptor::operator const H248_AuditDescriptor &() const
 
 PBoolean H248_AmmDescriptor::CreateObject()
 {
-  switch (tag) {
+  switch (m_tag) {
     case e_mediaDescriptor :
       choice = new H248_MediaDescriptor();
       return true;
@@ -1866,7 +1866,7 @@ H248_AuditReply::operator const H248_AuditResult &() const
 
 PBoolean H248_AuditReply::CreateObject()
 {
-  switch (tag) {
+  switch (m_tag) {
     case e_contextAuditResult :
       choice = new H248_TerminationIDList();
       return true;
@@ -2220,7 +2220,7 @@ H248_AuditReturnParameter::operator const H248_AuditDescriptor &() const
 
 PBoolean H248_AuditReturnParameter::CreateObject()
 {
-  switch (tag) {
+  switch (m_tag) {
     case e_errorDescriptor :
       choice = new H248_ErrorDescriptor();
       return true;
@@ -2455,7 +2455,7 @@ H248_IndAuditParameter::operator const H248_IndAudPackagesDescriptor &() const
 
 PBoolean H248_IndAuditParameter::CreateObject()
 {
-  switch (tag) {
+  switch (m_tag) {
     case e_indaudmediaDescriptor :
       choice = new H248_IndAudMediaDescriptor();
       return true;
@@ -2591,7 +2591,7 @@ H248_IndAudSignalsDescriptor::operator const H248_IndAudSeqSigList &() const
 
 PBoolean H248_IndAudSignalsDescriptor::CreateObject()
 {
-  switch (tag) {
+  switch (m_tag) {
     case e_signal :
       choice = new H248_IndAudSignal();
       return true;
@@ -2681,7 +2681,7 @@ H248_ServiceChangeResult::operator const H248_ServiceChangeResParm &() const
 
 PBoolean H248_ServiceChangeResult::CreateObject()
 {
-  switch (tag) {
+  switch (m_tag) {
     case e_errorDescriptor :
       choice = new H248_ErrorDescriptor();
       return true;
@@ -3232,7 +3232,7 @@ H248_EventDM::operator const H248_DigitMapValue &() const
 
 PBoolean H248_EventDM::CreateObject()
 {
-  switch (tag) {
+  switch (m_tag) {
     case e_digitMapName :
       choice = new H248_DigitMapName();
       return true;
@@ -3384,7 +3384,7 @@ H248_SignalRequest::operator const H248_SeqSigList &() const
 
 PBoolean H248_SignalRequest::CreateObject()
 {
-  switch (tag) {
+  switch (m_tag) {
     case e_signal :
       choice = new H248_Signal();
       return true;
@@ -3886,7 +3886,7 @@ H248_ServiceChangeAddress::operator const H248_PathName &() const
 
 PBoolean H248_ServiceChangeAddress::CreateObject()
 {
-  switch (tag) {
+  switch (m_tag) {
     case e_portNumber :
       choice = new PASN_Integer();
       choice->SetConstraints(PASN_Object::FixedConstraint, 0, 65535);
@@ -4232,7 +4232,7 @@ H248_NonStandardIdentifier::operator const H248_H221NonStandard &() const
 
 PBoolean H248_NonStandardIdentifier::CreateObject()
 {
-  switch (tag) {
+  switch (m_tag) {
     case e_object :
       choice = new PASN_ObjectId();
       return true;
@@ -4543,7 +4543,7 @@ H248_Message_messageBody::operator const H248_ArrayOf_Transaction &() const
 
 PBoolean H248_Message_messageBody::CreateObject()
 {
-  switch (tag) {
+  switch (m_tag) {
     case e_messageError :
       choice = new H248_ErrorDescriptor();
       return true;
@@ -4664,7 +4664,7 @@ H248_TransactionReply_transactionResult::operator const H248_ArrayOf_ActionReply
 
 PBoolean H248_TransactionReply_transactionResult::CreateObject()
 {
-  switch (tag) {
+  switch (m_tag) {
     case e_transactionError :
       choice = new H248_ErrorDescriptor();
       return true;
@@ -4946,7 +4946,7 @@ H248_IndAudMediaDescriptor_streams::operator const H248_ArrayOf_IndAudStreamDesc
 
 PBoolean H248_IndAudMediaDescriptor_streams::CreateObject()
 {
-  switch (tag) {
+  switch (m_tag) {
     case e_oneStream :
       choice = new H248_IndAudStreamParms();
       return true;
@@ -5108,7 +5108,7 @@ H248_EventParameter_extraInfo::operator const H248_Relation &() const
 
 PBoolean H248_EventParameter_extraInfo::CreateObject()
 {
-  switch (tag) {
+  switch (m_tag) {
     case e_relation :
       choice = new H248_Relation();
       return true;
@@ -5230,7 +5230,7 @@ H248_MediaDescriptor_streams::operator const H248_ArrayOf_StreamDescriptor &() c
 
 PBoolean H248_MediaDescriptor_streams::CreateObject()
 {
-  switch (tag) {
+  switch (m_tag) {
     case e_oneStream :
       choice = new H248_StreamParms();
       return true;
@@ -5361,7 +5361,7 @@ H248_PropertyParm_extraInfo::operator const H248_Relation &() const
 
 PBoolean H248_PropertyParm_extraInfo::CreateObject()
 {
-  switch (tag) {
+  switch (m_tag) {
     case e_relation :
       choice = new H248_Relation();
       return true;
@@ -5617,7 +5617,7 @@ H248_SigParameter_extraInfo::operator const H248_Relation &() const
 
 PBoolean H248_SigParameter_extraInfo::CreateObject()
 {
-  switch (tag) {
+  switch (m_tag) {
     case e_relation :
       choice = new H248_Relation();
       return true;

@@ -78,7 +78,7 @@ PBoolean H323GatekeeperRequest::WritePDU(H323TransactionPDU & pdu)
   PTRACE_BLOCK("H323GatekeeperRequest::WritePDU");
 
   if (m_endpoint != NULL)
-    replyAddresses = m_endpoint->GetRASAddresses();
+    m_replyAddresses = m_endpoint->GetRASAddresses();
 
   return H323Transaction::WritePDU(pdu);
 }
@@ -114,7 +114,7 @@ bool H323GatekeeperRequest::GetRegisteredEndPoint()
   m_endpoint = m_rasChannel.GetGatekeeper().FindEndPointByIdentifier(id);
   if (m_endpoint != NULL) {
     PTRACE(4, "RAS\tLocated endpoint: " << *m_endpoint);
-    canSendRIP = m_endpoint->CanReceiveRIP();
+    m_canSendRIP = m_endpoint->CanReceiveRIP();
     return true;
   }
 
@@ -127,11 +127,11 @@ bool H323GatekeeperRequest::GetRegisteredEndPoint()
 
 bool H323GatekeeperRequest::CheckCryptoTokens()
 {
-  if (authenticatorResult != H235Authenticator::e_Disabled)
-    return authenticatorResult == H235Authenticator::e_OK;
+  if (m_authenticatorResult != H235Authenticator::e_Disabled)
+    return m_authenticatorResult == H235Authenticator::e_OK;
 
   if (m_endpoint != NULL)
-    authenticators = m_endpoint->GetAuthenticators();
+    m_authenticators = m_endpoint->GetAuthenticators();
   return H323Transaction::CheckCryptoTokens();
 }
 
@@ -141,9 +141,9 @@ bool H323GatekeeperRequest::CheckCryptoTokens()
 H323GatekeeperGRQ::H323GatekeeperGRQ(H323GatekeeperListener & rasChannel,
                                      const H323RasPDU & pdu)
   : H323GatekeeperRequest(rasChannel, pdu),
-    grq((H225_GatekeeperRequest &)request->GetChoice().GetObject()),
-    gcf(((H323RasPDU &)confirm->GetPDU()).BuildGatekeeperConfirm(grq.m_requestSeqNum)),
-    grj(((H323RasPDU &)reject->GetPDU()).BuildGatekeeperReject(grq.m_requestSeqNum,
+    grq((H225_GatekeeperRequest &)m_request->GetChoice().GetObject()),
+    gcf(((H323RasPDU &)m_confirm->GetPDU()).BuildGatekeeperConfirm(grq.m_requestSeqNum)),
+    grj(((H323RasPDU &)m_reject->GetPDU()).BuildGatekeeperReject(grq.m_requestSeqNum,
                                           H225_GatekeeperRejectReason::e_terminalExcluded))
 {
   // Check the return address, if not the same side of a NAT firewall, then
@@ -153,15 +153,15 @@ H323GatekeeperGRQ::H323GatekeeperGRQ(H323GatekeeperListener & rasChannel,
   PIPSocket::Address senderIP, rasIP;
 
   if (rasChannel.GetTransport().IsCompatibleTransport(rasAddress) &&
-       (!replyAddresses[0].GetIpAddress(senderIP) ||
+       (!m_replyAddresses[0].GetIpAddress(senderIP) ||
         !rasAddress.GetIpAddress(rasIP) ||
         manager.IsLocalAddress(senderIP) == manager.IsLocalAddress(rasIP))) {
     PTRACE(4, "RAS\tFound suitable RAS address in GRQ: " << rasAddress);
-    replyAddresses[0] = rasAddress;
+    m_replyAddresses[0] = rasAddress;
   }
   else {
-    isBehindNAT = true;
-    PTRACE(2, "RAS\tUnsuitable RAS address in GRQ, using " << replyAddresses[0]);
+    m_isBehindNAT = true;
+    PTRACE(2, "RAS\tUnsuitable RAS address in GRQ, using " << m_replyAddresses[0]);
   }
 }
 
@@ -203,13 +203,13 @@ unsigned H323GatekeeperGRQ::GetRegisteredEndPointRejectTag() const
 
 void H323GatekeeperGRQ::PrepareConfirm()
 {
-  authenticators.PreparePDU(*confirm, gcf);
+  m_authenticators.PreparePDU(*m_confirm, gcf);
 }
 
 
 H235Authenticator::ValidationResult H323GatekeeperGRQ::ValidatePDU() const
 {
-  return request->Validate(grq);
+  return m_request->Validate(grq);
 }
 
 
@@ -234,13 +234,13 @@ H323GatekeeperRequest::Response H323GatekeeperGRQ::OnHandlePDU()
 H323GatekeeperRRQ::H323GatekeeperRRQ(H323GatekeeperListener & rasChannel,
                                      const H323RasPDU & pdu)
   : H323GatekeeperRequest(rasChannel, pdu),
-    rrq((H225_RegistrationRequest &)request->GetChoice().GetObject()),
-    rcf(((H323RasPDU &)confirm->GetPDU()).BuildRegistrationConfirm(rrq.m_requestSeqNum)),
-    rrj(((H323RasPDU &)reject->GetPDU()).BuildRegistrationReject(rrq.m_requestSeqNum))
+    rrq((H225_RegistrationRequest &)m_request->GetChoice().GetObject()),
+    rcf(((H323RasPDU &)m_confirm->GetPDU()).BuildRegistrationConfirm(rrq.m_requestSeqNum)),
+    rrj(((H323RasPDU &)m_reject->GetPDU()).BuildRegistrationReject(rrq.m_requestSeqNum))
 {
   OpalManager & manager = rasChannel.GetEndPoint().GetManager();
   PIPSocket::Address senderIP;
-  bool senderIsIP = replyAddresses[0].GetIpAddress(senderIP);
+  bool senderIsIP = m_replyAddresses[0].GetIpAddress(senderIP);
   bool senderIsLocal = senderIsIP && manager.IsLocalAddress(senderIP);
 
   H323TransportAddressArray unsuitable;
@@ -258,9 +258,9 @@ H323GatekeeperRRQ::H323GatekeeperRRQ(H323GatekeeperListener & rasChannel,
           senderIsLocal == manager.IsLocalAddress(rasIP)) {
         PTRACE(4, "RAS\tFound suitable RAS address in RRQ: " << rasAddress);
         if (first)
-          replyAddresses[0] = rasAddress;
+          m_replyAddresses[0] = rasAddress;
         else
-          replyAddresses.AppendAddress(rasAddress);
+          m_replyAddresses.AppendAddress(rasAddress);
         first = false;
       }
       else
@@ -268,12 +268,11 @@ H323GatekeeperRRQ::H323GatekeeperRRQ(H323GatekeeperListener & rasChannel,
     }
   }
 
-  isBehindNAT = first;
-  PTRACE_IF(3, isBehindNAT,
-            "RAS\tCould not find suitable RAS address in RRQ, using " << replyAddresses[0]);
+  m_isBehindNAT = first;
+  PTRACE_IF(3, m_isBehindNAT, "RAS\tCould not find suitable RAS address in RRQ, using " << m_replyAddresses[0]);
 
   for (i = 0; i < unsuitable.GetSize(); i++)
-    replyAddresses.AppendAddress(unsuitable[i]);
+    m_replyAddresses.AppendAddress(unsuitable[i]);
 }
 
 
@@ -314,7 +313,7 @@ unsigned H323GatekeeperRRQ::GetRegisteredEndPointRejectTag() const
 
 H235Authenticator::ValidationResult H323GatekeeperRRQ::ValidatePDU() const
 {
-  return request->Validate(rrq);
+  return m_request->Validate(rrq);
 }
 
 
@@ -342,9 +341,9 @@ H323GatekeeperRequest::Response H323GatekeeperRRQ::OnHandlePDU()
 H323GatekeeperURQ::H323GatekeeperURQ(H323GatekeeperListener & rasChannel,
                                      const H323RasPDU & pdu)
   : H323GatekeeperRequest(rasChannel, pdu),
-    urq((H225_UnregistrationRequest &)request->GetChoice().GetObject()),
-    ucf(((H323RasPDU &)confirm->GetPDU()).BuildUnregistrationConfirm(urq.m_requestSeqNum)),
-    urj(((H323RasPDU &)reject->GetPDU()).BuildUnregistrationReject(urq.m_requestSeqNum))
+    urq((H225_UnregistrationRequest &)m_request->GetChoice().GetObject()),
+    ucf(((H323RasPDU &)m_confirm->GetPDU()).BuildUnregistrationConfirm(urq.m_requestSeqNum)),
+    urj(((H323RasPDU &)m_reject->GetPDU()).BuildUnregistrationReject(urq.m_requestSeqNum))
 {
 }
 
@@ -386,7 +385,7 @@ unsigned H323GatekeeperURQ::GetRegisteredEndPointRejectTag() const
 
 H235Authenticator::ValidationResult H323GatekeeperURQ::ValidatePDU() const
 {
-  return request->Validate(urq);
+  return m_request->Validate(urq);
 }
 
 
@@ -411,9 +410,9 @@ H323GatekeeperRequest::Response H323GatekeeperURQ::OnHandlePDU()
 H323GatekeeperARQ::H323GatekeeperARQ(H323GatekeeperListener & rasChannel,
                                      const H323RasPDU & pdu)
   : H323GatekeeperRequest(rasChannel, pdu),
-    arq((H225_AdmissionRequest &)request->GetChoice().GetObject()),
-    acf(((H323RasPDU &)confirm->GetPDU()).BuildAdmissionConfirm(arq.m_requestSeqNum)),
-    arj(((H323RasPDU &)reject->GetPDU()).BuildAdmissionReject(arq.m_requestSeqNum))
+    arq((H225_AdmissionRequest &)m_request->GetChoice().GetObject()),
+    acf(((H323RasPDU &)m_confirm->GetPDU()).BuildAdmissionConfirm(arq.m_requestSeqNum)),
+    arj(((H323RasPDU &)m_reject->GetPDU()).BuildAdmissionReject(arq.m_requestSeqNum))
 {
 }
 
@@ -455,7 +454,7 @@ unsigned H323GatekeeperARQ::GetRegisteredEndPointRejectTag() const
 
 H235Authenticator::ValidationResult H323GatekeeperARQ::ValidatePDU() const
 {
-  return request->Validate(arq);
+  return m_request->Validate(arq);
 }
 
 
@@ -490,9 +489,9 @@ H323GatekeeperRequest::Response H323GatekeeperARQ::OnHandlePDU()
 H323GatekeeperDRQ::H323GatekeeperDRQ(H323GatekeeperListener & rasChannel,
                                      const H323RasPDU & pdu)
   : H323GatekeeperRequest(rasChannel, pdu),
-    drq((H225_DisengageRequest &)request->GetChoice().GetObject()),
-    dcf(((H323RasPDU &)confirm->GetPDU()).BuildDisengageConfirm(drq.m_requestSeqNum)),
-    drj(((H323RasPDU &)reject->GetPDU()).BuildDisengageReject(drq.m_requestSeqNum))
+    drq((H225_DisengageRequest &)m_request->GetChoice().GetObject()),
+    dcf(((H323RasPDU &)m_confirm->GetPDU()).BuildDisengageConfirm(drq.m_requestSeqNum)),
+    drj(((H323RasPDU &)m_reject->GetPDU()).BuildDisengageReject(drq.m_requestSeqNum))
 {
 }
 
@@ -534,7 +533,7 @@ unsigned H323GatekeeperDRQ::GetRegisteredEndPointRejectTag() const
 
 H235Authenticator::ValidationResult H323GatekeeperDRQ::ValidatePDU() const
 {
-  return request->Validate(drq);
+  return m_request->Validate(drq);
 }
 
 
@@ -559,9 +558,9 @@ H323GatekeeperRequest::Response H323GatekeeperDRQ::OnHandlePDU()
 H323GatekeeperBRQ::H323GatekeeperBRQ(H323GatekeeperListener & rasChannel,
                                      const H323RasPDU & pdu)
   : H323GatekeeperRequest(rasChannel, pdu),
-    brq((H225_BandwidthRequest &)request->GetChoice().GetObject()),
-    bcf(((H323RasPDU &)confirm->GetPDU()).BuildBandwidthConfirm(brq.m_requestSeqNum)),
-    brj(((H323RasPDU &)reject->GetPDU()).BuildBandwidthReject(brq.m_requestSeqNum))
+    brq((H225_BandwidthRequest &)m_request->GetChoice().GetObject()),
+    bcf(((H323RasPDU &)m_confirm->GetPDU()).BuildBandwidthConfirm(brq.m_requestSeqNum)),
+    brj(((H323RasPDU &)m_reject->GetPDU()).BuildBandwidthReject(brq.m_requestSeqNum))
 {
 }
 
@@ -603,7 +602,7 @@ unsigned H323GatekeeperBRQ::GetRegisteredEndPointRejectTag() const
 
 H235Authenticator::ValidationResult H323GatekeeperBRQ::ValidatePDU() const
 {
-  return request->Validate(brq);
+  return m_request->Validate(brq);
 }
 
 
@@ -628,13 +627,13 @@ H323GatekeeperRequest::Response H323GatekeeperBRQ::OnHandlePDU()
 H323GatekeeperLRQ::H323GatekeeperLRQ(H323GatekeeperListener & rasChannel,
                                      const H323RasPDU & pdu)
   : H323GatekeeperRequest(rasChannel, pdu),
-    lrq((H225_LocationRequest &)request->GetChoice().GetObject()),
-    lcf(((H323RasPDU &)confirm->GetPDU()).BuildLocationConfirm(lrq.m_requestSeqNum)),
-    lrj(((H323RasPDU &)reject->GetPDU()).BuildLocationReject(lrq.m_requestSeqNum))
+    lrq((H225_LocationRequest &)m_request->GetChoice().GetObject()),
+    lcf(((H323RasPDU &)m_confirm->GetPDU()).BuildLocationConfirm(lrq.m_requestSeqNum)),
+    lrj(((H323RasPDU &)m_reject->GetPDU()).BuildLocationReject(lrq.m_requestSeqNum))
 {
   H323TransportAddress addr(lrq.m_replyAddress, OpalTransportAddress::UdpPrefix());
   if (rasChannel.GetTransport().IsCompatibleTransport(addr))
-    replyAddresses[0] = addr;
+    m_replyAddresses[0] = addr;
 }
 
 
@@ -675,7 +674,7 @@ unsigned H323GatekeeperLRQ::GetRegisteredEndPointRejectTag() const
 
 H235Authenticator::ValidationResult H323GatekeeperLRQ::ValidatePDU() const
 {
-  return request->Validate(lrq);
+  return m_request->Validate(lrq);
 }
 
 
@@ -700,9 +699,9 @@ H323GatekeeperRequest::Response H323GatekeeperLRQ::OnHandlePDU()
 H323GatekeeperIRR::H323GatekeeperIRR(H323GatekeeperListener & rasChannel,
                                      const H323RasPDU & pdu)
   : H323GatekeeperRequest(rasChannel, pdu),
-    irr((H225_InfoRequestResponse &)request->GetChoice().GetObject()),
-    iack(((H323RasPDU &)confirm->GetPDU()).BuildInfoRequestAck(irr.m_requestSeqNum)),
-    inak(((H323RasPDU &)reject->GetPDU()).BuildInfoRequestNak(irr.m_requestSeqNum))
+    irr((H225_InfoRequestResponse &)m_request->GetChoice().GetObject()),
+    iack(((H323RasPDU &)m_confirm->GetPDU()).BuildInfoRequestAck(irr.m_requestSeqNum)),
+    inak(((H323RasPDU &)m_reject->GetPDU()).BuildInfoRequestNak(irr.m_requestSeqNum))
 {
 }
 
@@ -741,7 +740,7 @@ unsigned H323GatekeeperIRR::GetRegisteredEndPointRejectTag() const
 
 H235Authenticator::ValidationResult H323GatekeeperIRR::ValidatePDU() const
 {
-  return request->Validate(irr);
+  return m_request->Validate(irr);
 }
 
 
@@ -2078,7 +2077,7 @@ H323GatekeeperListener::H323GatekeeperListener(H323EndPoint & ep,
 {
   gatekeeperIdentifier = id;
 
-  transport->SetPromiscuous(H323Transport::AcceptFromAny);
+  m_transport->SetPromiscuous(H323Transport::AcceptFromAny);
 
   PTRACE(4, "H323gk\tGatekeeper server created.");
 }
@@ -2093,8 +2092,8 @@ H323GatekeeperListener::~H323GatekeeperListener()
 
 void H323GatekeeperListener::PrintOn(ostream & strm) const
 {
-  if (transport != NULL)
-    strm << gatekeeperIdentifier << '@' << transport->GetLocalAddress().GetHostName(true);
+  if (m_transport != NULL)
+    strm << gatekeeperIdentifier << '@' << m_transport->GetLocalAddress().GetHostName(true);
   else
     H225_RAS::PrintOn(strm);
 }
@@ -2115,9 +2114,9 @@ H323GatekeeperRequest::Response H323GatekeeperListener::OnDiscovery(H323Gatekeep
 
   PIPSocket::Address localAddr, remoteAddr;
   WORD localPort;
-  transport->GetLocalAddress().GetIpAndPort(localAddr, localPort);
+  m_transport->GetLocalAddress().GetIpAndPort(localAddr, localPort);
   H323TransportAddress(info.grq.m_rasAddress).GetIpAddress(remoteAddr);
-  endpoint.GetManager().TranslateIPAddress(localAddr, remoteAddr);
+  m_endpoint.GetManager().TranslateIPAddress(localAddr, remoteAddr);
   H323TransportAddress newAddr = H323TransportAddress(localAddr, localPort);
 
   H225_TransportAddress & pdu = info.gcf.m_rasAddress;
@@ -2468,7 +2467,7 @@ H323GatekeeperRequest::Response H323GatekeeperListener::OnLocation(H323Gatekeepe
       return H323GatekeeperRequest::Reject;
   }
 
-  H323TransportAddress rasAddress = transport->GetLocalAddress();
+  H323TransportAddress rasAddress = m_transport->GetLocalAddress();
   rasAddress.SetPDU(info.lcf.m_rasAddress);
 
   return m_gatekeeper.OnLocation(info);
@@ -2648,13 +2647,13 @@ H323GatekeeperServer::H323GatekeeperServer(H323EndPoint & ep)
   m_peerElement = NULL;
 #endif
 
-  monitorThread = PThread::Create(PCREATE_NOTIFIER(MonitorMain), "GkSrv Monitor");
+  m_monitorThread = PThread::Create(PCREATE_NOTIFIER(MonitorMain), "GkSrv Monitor");
 }
 
 
 H323GatekeeperServer::~H323GatekeeperServer()
 {
-  monitorExit.Signal();
+  m_monitorExit.Signal();
   PThread::WaitAndDelete(m_monitorThread);
 #if OPAL_H501
   delete m_peerElement;
@@ -2664,7 +2663,7 @@ H323GatekeeperServer::~H323GatekeeperServer()
 
 H323Transactor * H323GatekeeperServer::CreateListener(H323Transport * transport)
 {
-  return new H323GatekeeperListener(ownerEndPoint, *this, m_gatekeeperIdentifier, transport);
+  return new H323GatekeeperListener(m_ownerEndPoint, *this, m_gatekeeperIdentifier, transport);
 }
 
 
@@ -2686,7 +2685,7 @@ H323GatekeeperRequest::Response H323GatekeeperServer::OnDiscovery(H323Gatekeeper
   }
 
   if (authenticators.IsEmpty())
-    authenticators = ownerEndPoint.CreateAuthenticators();
+    authenticators = m_ownerEndPoint.CreateAuthenticators();
 
   info.SetAuthenticators(authenticators);
 
@@ -2904,7 +2903,7 @@ H323GatekeeperRequest::Response H323GatekeeperServer::OnRegistration(H323Gatekee
 
 PString H323GatekeeperServer::AllocateAlias(H225_RegistrationRequest &)
 {
-  PWaitAndSignal m(mutex);
+  PWaitAndSignal m(m_mutex);
 
   if (m_minAliasToAllocate == 0 || m_minAliasToAllocate > m_maxAliasToAllocate)
     return PString::Empty();
@@ -2986,7 +2985,7 @@ void H323GatekeeperServer::AddEndPoint(H323RegisteredEndPoint * ep)
 
   PINDEX i;
 
-  mutex.Wait();
+  m_mutex.Wait();
 
   if (m_byIdentifier.FindWithLock(ep->GetIdentifier(), PSafeReference) != ep) {
     m_byIdentifier.SetAt(ep->GetIdentifier(), ep);
@@ -3007,7 +3006,7 @@ void H323GatekeeperServer::AddEndPoint(H323RegisteredEndPoint * ep)
   for (i = 0; i < ep->GetPrefixCount(); i++)
     m_byVoicePrefix.Append(new StringMap(ep->GetPrefix(i), ep->GetIdentifier()));
 
-  mutex.Signal();
+  m_mutex.Signal();
 }
 
 
@@ -3023,7 +3022,7 @@ PBoolean H323GatekeeperServer::RemoveEndPoint(H323RegisteredEndPoint * ep)
   while (ep->GetAliasCount() > 0)
     ep->RemoveAlias(ep->GetAlias(0));
 
-  PWaitAndSignal wait(mutex);
+  PWaitAndSignal wait(m_mutex);
 
   PINDEX i;
 
@@ -3065,7 +3064,7 @@ void H323GatekeeperServer::RemoveAlias(H323RegisteredEndPoint & ep,
 {
   PTRACE(3, "RAS\tRemoving registered endpoint alias: " << alias);
 
-  mutex.Wait();
+  m_mutex.Wait();
 
   PINDEX pos = m_byAlias.GetValuesIndex(alias);
   if (pos != P_MAX_INDEX) {
@@ -3085,7 +3084,7 @@ void H323GatekeeperServer::RemoveAlias(H323RegisteredEndPoint & ep,
   if (ep.ContainsAlias(alias))
     ep.RemoveAlias(alias);
 
-  mutex.Signal();
+  m_mutex.Signal();
 }
 
 
@@ -3098,7 +3097,7 @@ H323RegisteredEndPoint * H323GatekeeperServer::CreateRegisteredEndPoint(H323Gate
 PString H323GatekeeperServer::CreateEndPointIdentifier()
 {
   PStringStream id;
-  PWaitAndSignal wait(mutex);
+  PWaitAndSignal wait(m_mutex);
   id << hex << m_identifierBase << ':' << m_nextIdentifier++;
   return id;
 }
@@ -3114,7 +3113,7 @@ PSafePtr<H323RegisteredEndPoint> H323GatekeeperServer::FindEndPointByIdentifier(
 PSafePtr<H323RegisteredEndPoint> H323GatekeeperServer::FindEndPointBySignalAddresses(
                             const H225_ArrayOf_TransportAddress & addresses, PSafetyMode mode)
 {
-  PWaitAndSignal wait(mutex);
+  PWaitAndSignal wait(m_mutex);
 
   for (PINDEX i = 0; i < addresses.GetSize(); i++) {
     PINDEX pos = m_byAddress.GetValuesIndex(H323TransportAddress(addresses[i]));
@@ -3129,7 +3128,7 @@ PSafePtr<H323RegisteredEndPoint> H323GatekeeperServer::FindEndPointBySignalAddre
 PSafePtr<H323RegisteredEndPoint> H323GatekeeperServer::FindEndPointBySignalAddress(
                                      const H323TransportAddress & address, PSafetyMode mode)
 {
-  PWaitAndSignal wait(mutex);
+  PWaitAndSignal wait(m_mutex);
 
   PINDEX pos = m_byAddress.GetValuesIndex(address);
   if (pos != P_MAX_INDEX)
@@ -3150,7 +3149,7 @@ PSafePtr<H323RegisteredEndPoint> H323GatekeeperServer::FindEndPointByAliasString
                                                   const PString & alias, PSafetyMode mode)
 {
   {
-    PWaitAndSignal wait(mutex);
+    PWaitAndSignal wait(m_mutex);
     PINDEX pos = m_byAlias.GetValuesIndex(alias);
 
     if (pos != P_MAX_INDEX)
@@ -3164,7 +3163,7 @@ PSafePtr<H323RegisteredEndPoint> H323GatekeeperServer::FindEndPointByAliasString
 PSafePtr<H323RegisteredEndPoint> H323GatekeeperServer::FindEndPointByPartialAlias(
                                                   const PString & alias, PSafetyMode mode)
 {
-  PWaitAndSignal wait(mutex);
+  PWaitAndSignal wait(m_mutex);
   PINDEX pos = m_byAlias.GetNextStringsIndex(alias);
 
   if (pos != P_MAX_INDEX) {
@@ -3184,7 +3183,7 @@ PSafePtr<H323RegisteredEndPoint> H323GatekeeperServer::FindEndPointByPartialAlia
 PSafePtr<H323RegisteredEndPoint> H323GatekeeperServer::FindEndPointByPrefixString(
                                                   const PString & prefix, PSafetyMode mode)
 {
-  PWaitAndSignal wait(mutex);
+  PWaitAndSignal wait(m_mutex);
 
   if (m_byVoicePrefix.IsEmpty())
     return (H323RegisteredEndPoint *)NULL;
@@ -3255,7 +3254,7 @@ H323GatekeeperRequest::Response H323GatekeeperServer::OnAdmission(H323Gatekeeper
     if (response == H323GatekeeperRequest::Reject)
       delete newCall;
     else {
-      mutex.Wait();
+      m_mutex.Wait();
 
       info.m_endpoint->AddCall(newCall);
       oldCall = m_activeCalls.Append(newCall);
@@ -3265,7 +3264,7 @@ H323GatekeeperRequest::Response H323GatekeeperServer::OnAdmission(H323Gatekeeper
       m_totalCalls++;
 
       PTRACE(3, "RAS\tAdded new call (total=" << m_activeCalls.GetSize() << ") " << *newCall);
-      mutex.Signal();
+      m_mutex.Signal();
 
       AddCall(oldCall);
     }
@@ -3360,7 +3359,7 @@ void H323GatekeeperServer::SetUsersPassword(const PString & alias, const PString
 unsigned H323GatekeeperServer::AllocateBandwidth(unsigned newBandwidth,
                                                  unsigned oldBandwidth)
 {
-  PWaitAndSignal wait(mutex);
+  PWaitAndSignal wait(m_mutex);
 
   // If first request for bandwidth, then only give them a maximum of the
   // configured default bandwidth
@@ -3517,12 +3516,12 @@ PBoolean H323GatekeeperServer::TranslateAliasAddress(const H225_AliasAddress & a
 PBoolean H323GatekeeperServer::TranslateAliasAddressToSignalAddress(const H225_AliasAddress & alias,
                                                                 H323TransportAddress & address)
 {
-  PWaitAndSignal wait(mutex);
+  PWaitAndSignal wait(m_mutex);
 
   PString aliasString = H323GetAliasAddressString(alias);
 
   if (m_isGatekeeperRouted) {
-    const H323ListenerList & listeners = ownerEndPoint.GetListeners();
+    const H323ListenerList & listeners = m_ownerEndPoint.GetListeners();
     address = listeners.front().GetLocalAddress();
     PTRACE(3, "RAS\tTranslating alias " << aliasString << " to " << address << ", gatekeeper routed");
     return true;
@@ -3568,7 +3567,7 @@ PBoolean H323GatekeeperServer::CheckAliasAddressPolicy(const H323RegisteredEndPo
                                                    const H225_AdmissionRequest & arq,
                                                    const H225_AliasAddress & alias)
 {
-  PWaitAndSignal wait(mutex);
+  PWaitAndSignal wait(m_mutex);
 
   if (arq.m_answerCall ? m_canOnlyAnswerRegisteredEP : m_canOnlyCallRegisteredEP) {
     PSafePtr<H323RegisteredEndPoint> ep = FindEndPointByAliasAddress(alias);
@@ -3584,7 +3583,7 @@ PBoolean H323GatekeeperServer::CheckAliasStringPolicy(const H323RegisteredEndPoi
                                                   const H225_AdmissionRequest & arq,
                                                   const PString & alias)
 {
-  PWaitAndSignal wait(mutex);
+  PWaitAndSignal wait(m_mutex);
 
   if (arq.m_answerCall ? m_canOnlyAnswerRegisteredEP : m_canOnlyCallRegisteredEP) {
     PSafePtr<H323RegisteredEndPoint> ep = FindEndPointByAliasString(alias);
@@ -3598,7 +3597,7 @@ PBoolean H323GatekeeperServer::CheckAliasStringPolicy(const H323RegisteredEndPoi
 
 void H323GatekeeperServer::SetGatekeeperIdentifier(const PString & id, bool adjustListeners)
 {
-  mutex.Wait();
+  m_mutex.Wait();
 
   m_gatekeeperIdentifier = id;
 
@@ -3607,7 +3606,7 @@ void H323GatekeeperServer::SetGatekeeperIdentifier(const PString & id, bool adju
       iterListener->SetIdentifier(id);
   }
 
-  mutex.Signal();
+  m_mutex.Signal();
 }
 
 
@@ -3622,7 +3621,7 @@ void H323GatekeeperServer::SetPeerElement(H323PeerElement * newPeerElement)
 void H323GatekeeperServer::CreatePeerElement(const H323TransportAddress & h501Interface)
 {
   if (m_peerElement == NULL)
-    m_peerElement = new H323PeerElement(ownerEndPoint, h501Interface);
+    m_peerElement = new H323PeerElement(m_ownerEndPoint, h501Interface);
   else
     m_peerElement->SetTransport(h501Interface);
 }
@@ -3632,7 +3631,7 @@ bool H323GatekeeperServer::OpenPeerElement(const H323TransportAddress & remotePe
                                            PBoolean append, PBoolean keepTrying)
 {
   if (m_peerElement == NULL)
-    m_peerElement = new H323PeerElement(ownerEndPoint);
+    m_peerElement = new H323PeerElement(m_ownerEndPoint);
 
   if (append)
     return m_peerElement->AddServiceRelationship(remotePeer, keepTrying);
@@ -3644,7 +3643,7 @@ bool H323GatekeeperServer::OpenPeerElement(const H323TransportAddress & remotePe
 
 void H323GatekeeperServer::MonitorMain(PThread &, P_INT_PTR)
 {
-  while (!monitorExit.Wait(1000)) {
+  while (!m_monitorExit.Wait(1000)) {
     PTRACE(6, "RAS\tAging registered endpoints");
 
     PTime now;

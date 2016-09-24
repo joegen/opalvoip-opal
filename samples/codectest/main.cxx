@@ -934,7 +934,7 @@ void TranscoderThread::Main()
   PTimeInterval startTick = PTimer::Tick();
 
   if (isVideo) {
-    ((VideoThread *)this)->m_bitRateCalc.SetQuanta(m_frameTime/90);
+    ((VideoThread *)this)->m_bitRateCalculator.SetQuanta(m_frameTime/90);
   }
 
   //////////////////////////////////////////////
@@ -1029,29 +1029,30 @@ void TranscoderThread::Main()
       unsigned long encodedPayloadSize = 0;
       unsigned long encodedPacketCount = 0;
       unsigned long encodedDataSize    = 0;
-      for (PINDEX i = 0; i < encFrames.GetSize(); i++) {
-        encFrames[i].SetSequenceNumber(++sequenceNumber);
+      unsigned frameCount = 0;
+      for (RTP_DataFrameList::iterator it = encFrames.begin(); it != encFrames.end(); ++it,++frameCount) {
+        it->SetSequenceNumber(++sequenceNumber);
         ++encodedPacketCount;
-        encodedPayloadSize += encFrames[i].GetPayloadSize();
-        encodedDataSize    += encFrames[i].GetPayloadSize() + encFrames[i].GetHeaderSize();
+        encodedPayloadSize += it->GetPayloadSize();
+        encodedDataSize    += it->GetPayloadSize() + it->GetHeaderSize();
         switch (m_markerHandling) {
           case SuppressMarkers :
-            encFrames[i].SetMarker(false);
+            it->SetMarker(false);
             break;
           case ForceMarkers :
-            encFrames[i].SetMarker(true);
+            it->SetMarker(true);
             break;
           default :
             break;
         }
 
-        m_pcapFile.WriteRTP(encFrames[i]);
+        m_pcapFile.WriteRTP(*it);
 
         if (g_infoCount > 0) {
-          RTP_DataFrame & rtp = encFrames[i];
+          RTP_DataFrame & rtp = *it;
           coutMutex.Wait();
           if (g_infoCount > 1) 
-            cout << "Inframe=" << totalInputFrameCount << ",outframe=#" << i << ":pt=" << rtp.GetPayloadType() << ",psz=" << rtp.GetPayloadSize() << ",m=" << (rtp.GetMarker() ? "1" : "0") << ",";
+            cout << "Inframe=" << totalInputFrameCount << ",outframe=#" << frameCount << ":pt=" << rtp.GetPayloadType() << ",psz=" << rtp.GetPayloadSize() << ",m=" << (rtp.GetMarker() ? "1" : "0") << ",";
           cout << "ssrc=" << hex << rtp.GetSyncSource() << dec << ",ts=" << rtp.GetTimestamp() << ",seq = " << rtp.GetSequenceNumber();
           if (g_infoCount > 2) {
             cout << "\n   data=";
@@ -1115,10 +1116,10 @@ void TranscoderThread::Main()
         for (PINDEX i = 0; i < encFrames.GetSize(); i++) {
           if (encFrames[i].GetPayloadSize() > largestPacket)
             largestPacket = encFrames[i].GetPayloadSize();
-          bool state = m_decoder->ConvertFrames(encFrames[i], outFrames);
-          if (oldDecState != state) {
-            oldDecState = state;
-            cerr << "Decoder " << (state ? "restor" : "fail") << "ed at input frame " << totalInputFrameCount-1 << endl;
+          bool newDecState = m_decoder->ConvertFrames(encFrames[i], outFrames);
+          if (oldDecState != newDecState) {
+            oldDecState = newDecState;
+            cerr << "Decoder " << (newDecState ? "restor" : "fail") << "ed at input frame " << totalInputFrameCount-1 << endl;
             continue;
           }
           if (outFrames.GetSize() > 1) 
@@ -1132,10 +1133,10 @@ void TranscoderThread::Main()
                 coutMutex.Signal();
               }
             }
-            bool state = Write(outFrames[0]);
-            if (oldOutState != state) {
-              oldOutState = state;
-              cerr << "Output write " << (state ? "restor" : "fail") << "ed at input frame " << totalInputFrameCount << endl;
+            bool newOutState = Write(outFrames[0]);
+            if (oldOutState != newOutState) {
+              oldOutState = newOutState;
+              cerr << "Output write " << (newOutState ? "restor" : "fail") << "ed at input frame " << totalInputFrameCount << endl;
             }
             if (isVideo && m_calcSNR) 
               ((VideoThread *)this)->CalcSNR(outFrames[0]);
@@ -1188,20 +1189,20 @@ void TranscoderThread::Main()
         RTP_DataFrameList outFrames;
         for (PINDEX i = 0; i < pacedFrames.GetSize(); i++) {
           totalEncodedByteCount += pacedFrames[i].GetPayloadSize();
-          bool state = m_decoder->ConvertFrames(pacedFrames[i], outFrames);
-          if (oldDecState != state) {
-            oldDecState = state;
-            cerr << "Decoder " << (state ? "restor" : "fail") << "ed at input frame " << totalInputFrameCount-1 << endl;
+          bool newDecState = m_decoder->ConvertFrames(pacedFrames[i], outFrames);
+          if (oldDecState != newDecState) {
+            oldDecState = newDecState;
+            cerr << "Decoder " << (newDecState ? "restor" : "fail") << "ed at input frame " << totalInputFrameCount-1 << endl;
             continue;
           }
           if (outFrames.GetSize() > 1) 
             cerr << "Rate controlled video decoder returned > 1 output frame for input frame " << totalInputFrameCount-1 << endl;
           else if (outFrames.GetSize() == 1) {
             decoderSaysIntra = ((OpalVideoTranscoder *)m_decoder)->WasLastFrameIFrame();
-            bool state = Write(outFrames[0]);
-            if (oldOutState != state) {
-              oldOutState = state;
-              cerr << "Output write " << (state ? "restor" : "fail") << "ed at input frame " << totalInputFrameCount-1 << endl;
+            bool newOutState = Write(outFrames[0]);
+            if (oldOutState != newOutState) {
+              oldOutState = newOutState;
+              cerr << "Output write " << (newOutState ? "restor" : "fail") << "ed at input frame " << totalInputFrameCount-1 << endl;
             }
             if (isVideo && m_calcSNR) 
               ((VideoThread *)this)->CalcSNR(outFrames[0]);
@@ -1382,13 +1383,13 @@ void VideoThread::CalcVideoPacketStats(const RTP_DataFrameList & packets, bool i
     //m_bitRateCalc.AddPacket(packets[i].GetPayloadSize());
 
     if (m_rateController != NULL) {
-      OpalBitRateCalculator & m_bitRateCalc = m_rateController->m_bitRateCalc;
+      OpalBitRateCalculator & bitRateCalc = m_rateController->m_bitRateCalc;
 
-      unsigned r = m_bitRateCalc.GetBitRate();
+      unsigned r = bitRateCalc.GetBitRate();
       if (r > maximumBitRate)
         maximumBitRate = r;
 
-      unsigned a = m_bitRateCalc.GetAverageBitRate();
+      unsigned a = bitRateCalc.GetAverageBitRate();
       if (a > maximumAvgBitRate)
         maximumAvgBitRate = a;
 

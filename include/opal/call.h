@@ -115,11 +115,11 @@ class OpalCall : public PSafeObject
 
        If the call is still active then this will return OpalConnection::NumCallEndReasons.
       */
-    OpalConnection::CallEndReason GetCallEndReason() const { return callEndReason; }
+    OpalConnection::CallEndReason GetCallEndReason() const { return m_callEndReason; }
 
     /**Get the reason for this connection shutting down as text.
       */
-    PString GetCallEndReasonText() const { return OpalConnection::GetCallEndReasonText(callEndReason); }
+    PString GetCallEndReasonText() const { return OpalConnection::GetCallEndReasonText(m_callEndReason); }
 
     /**Set the call clearance reason.
        An application should have no cause to use this function. It is present
@@ -294,14 +294,14 @@ class OpalCall : public PSafeObject
 
     /**Get number of connections in call.
       */
-    PINDEX GetConnectionCount() const { return connectionsActive.GetSize(); }
+    PINDEX GetConnectionCount() const { return m_connectionsActive.GetSize(); }
 
     /**Get the specified active connection in call.
       */
     PSafePtr<OpalConnection> GetConnection(
       PINDEX idx,
       PSafetyMode mode = PSafeReference
-    ) { return connectionsActive.GetAt(idx, mode); }
+    ) { return m_connectionsActive.GetAt(idx, mode); }
 
     /**Find a connection of the specified class.
        This searches the call for the Nth connection of the specified class.
@@ -313,7 +313,7 @@ class OpalCall : public PSafeObject
     )
     {
       PSafePtr<ConnClass> connection;
-      for (PSafePtr<OpalConnection> iterConn(connectionsActive, PSafeReference); iterConn != NULL; ++iterConn) {
+      for (PSafePtr<OpalConnection> iterConn(m_connectionsActive, PSafeReference); iterConn != NULL; ++iterConn) {
         if ((connection = PSafePtrCast<OpalConnection, ConnClass>(iterConn)) != NULL && count-- == 0) {
           if (!connection.SetSafetyMode(mode))
             connection.SetNULL();
@@ -487,11 +487,11 @@ class OpalCall : public PSafeObject
   //@{
     /**Get the manager for this endpoint.
      */
-    OpalManager & GetManager() const { return manager; }
+    OpalManager & GetManager() const { return m_manager; }
 
     /**Get the internal identifier token for this connection.
      */
-    const PString & GetToken() const { return myToken; }
+    const PString & GetToken() const { return m_token; }
 
     /**Get the A party URI for the call.
        Note this will be available even after the A party connection has been
@@ -627,9 +627,9 @@ class OpalCall : public PSafeObject
       const OpalConnection * skipConnection = NULL
     ) const;
 
-    OpalManager & manager;
+    OpalManager & m_manager;
 
-    PString myToken;
+    PString m_token;
 
     PString m_partyA;
     PString m_partyB;
@@ -643,10 +643,10 @@ class OpalCall : public PSafeObject
     bool    m_handlingHold;
     atomic<bool> m_isCleared;
 
-    OpalConnection::CallEndReason callEndReason;
+    OpalConnection::CallEndReason m_callEndReason;
     std::list<PSyncPoint *> m_endCallSyncPoint;
 
-    PSafeList<OpalConnection> connectionsActive;
+    PSafeList<OpalConnection> m_connectionsActive;
 
 #if OPAL_HAS_MIXER
     OpalRecordManager * m_recordManager;

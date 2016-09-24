@@ -71,12 +71,12 @@ IAX2Connection::IAX2Connection(OpalCall & call,               /* Owner call for 
   opalPayloadType = RTP_DataFrame::IllegalPayloadType;
 
   if (inRemotePartyName.IsEmpty())
-    remotePartyName = inRemoteParty;
+    m_remotePartyName = inRemoteParty;
   else
-    remotePartyName = inRemotePartyName;
+    m_remotePartyName = inRemotePartyName;
     
   PStringArray res = IAX2EndPoint::DissectRemoteParty(inRemoteParty);
-  remotePartyNumber = res[IAX2EndPoint::extensionIndex];
+  m_remotePartyNumber = res[IAX2EndPoint::extensionIndex];
 
   SetCallToken(token);
 
@@ -145,7 +145,7 @@ void IAX2Connection::TransmitFrameToRemoteEndpoint(IAX2Frame *src)
 void IAX2Connection::OnSetUp()
 {
   PTRACE(3, "IAX2Con\tOnSetUp - we are proceeding with this call.");
-  ownerCall.OnSetUp(*this); 
+  m_ownerCall.OnSetUp(*this); 
 }
 
 void IAX2Connection::AnsweringCall(AnswerCallResponse response)
@@ -169,12 +169,12 @@ PBoolean IAX2Connection::SetConnected()
   if (!IsOriginating())
     iax2Processor.SendAnswerMessageToRemoteNode();
   
-  if (mediaStreams.IsEmpty()) {
+  if (m_mediaStreams.IsEmpty()) {
     
-    ownerCall.OpenSourceMediaStreams(*this, OpalMediaType::Audio(), 1);
+    m_ownerCall.OpenSourceMediaStreams(*this, OpalMediaType::Audio(), 1);
     PSafePtr<OpalConnection> otherParty = GetOtherPartyConnection();
     if (otherParty != NULL)
-      ownerCall.OpenSourceMediaStreams(*otherParty, OpalMediaType::Audio(), 1);
+      m_ownerCall.OpenSourceMediaStreams(*otherParty, OpalMediaType::Audio(), 1);
 
     m_jitterBuffer->SetDelay(OpalJitterBuffer::Init(endpoint.GetManager(), 8));
     PTRACE(5, "Iax2Con\t Start jitter buffer");
@@ -208,11 +208,11 @@ void IAX2Connection::OnConnected()
   PTRACE(3, "IAX2Con\t ON CONNECTED " 
 	 << PString(IsOriginating() ? " Originating" : "Receiving"));
 
-  if (mediaStreams.IsEmpty()) {
-    ownerCall.OpenSourceMediaStreams(*this, OpalMediaType::Audio(), 1);
+  if (m_mediaStreams.IsEmpty()) {
+    m_ownerCall.OpenSourceMediaStreams(*this, OpalMediaType::Audio(), 1);
     PSafePtr<OpalConnection> otherParty = GetOtherPartyConnection();
     if (otherParty != NULL)
-      ownerCall.OpenSourceMediaStreams(*otherParty, OpalMediaType::Audio(), 1);
+      m_ownerCall.OpenSourceMediaStreams(*otherParty, OpalMediaType::Audio(), 1);
 
     m_jitterBuffer->SetDelay(OpalJitterBuffer::Init(endpoint.GetManager(), 8));
     PTRACE(5, "Iax2Con\t Start jitter buffer");
@@ -286,7 +286,7 @@ void IAX2Connection::SetCallToken(PString newToken)
 {
   PTRACE(3, "IAX2Con\tSetCallToken(PString newToken)" << newToken);
 
-  callToken = newToken;
+  m_callToken = newToken;
   iax2Processor.SetCallToken(newToken);
 }
 

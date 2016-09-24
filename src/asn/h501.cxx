@@ -775,7 +775,7 @@ H501_MessageBody::operator const H501_AuthenticationRejection &() const
 
 PBoolean H501_MessageBody::CreateObject()
 {
-  switch (tag) {
+  switch (m_tag) {
     case e_serviceRequest :
       choice = new H501_ServiceRequest();
       return true;
@@ -920,7 +920,7 @@ H501_ServiceRejectionReason::H501_ServiceRejectionReason(unsigned tag, PASN_Obje
 
 PBoolean H501_ServiceRejectionReason::CreateObject()
 {
-  choice = (tag <= e_unknownUsageSendTo) ? new PASN_Null() : NULL;
+  choice = (m_tag <= e_unknownUsageSendTo) ? new PASN_Null() : NULL;
   return choice != NULL;
 }
 
@@ -959,7 +959,7 @@ H501_ServiceReleaseReason::H501_ServiceReleaseReason(unsigned tag, PASN_Object::
 
 PBoolean H501_ServiceReleaseReason::CreateObject()
 {
-  choice = (tag <= e_expired) ? new PASN_Null() : NULL;
+  choice = (m_tag <= e_expired) ? new PASN_Null() : NULL;
   return choice != NULL;
 }
 
@@ -1003,7 +1003,7 @@ H501_DescriptorRejectionReason::H501_DescriptorRejectionReason(unsigned tag, PAS
 
 PBoolean H501_DescriptorRejectionReason::CreateObject()
 {
-  choice = (tag <= e_unknownServiceID) ? new PASN_Null() : NULL;
+  choice = (m_tag <= e_unknownServiceID) ? new PASN_Null() : NULL;
   return choice != NULL;
 }
 
@@ -1101,7 +1101,7 @@ H501_DescriptorIDRejectionReason::H501_DescriptorIDRejectionReason(unsigned tag,
 
 PBoolean H501_DescriptorIDRejectionReason::CreateObject()
 {
-  choice = (tag <= e_unknownServiceID) ? new PASN_Null() : NULL;
+  choice = (m_tag <= e_unknownServiceID) ? new PASN_Null() : NULL;
   return choice != NULL;
 }
 
@@ -1208,7 +1208,7 @@ H501_AccessRejectionReason::H501_AccessRejectionReason(unsigned tag, PASN_Object
 
 PBoolean H501_AccessRejectionReason::CreateObject()
 {
-  choice = (tag <= e_unknownUsageSendTo) ? new PASN_Null() : NULL;
+  choice = (m_tag <= e_unknownUsageSendTo) ? new PASN_Null() : NULL;
   return choice != NULL;
 }
 
@@ -1389,7 +1389,7 @@ H501_UsageRejectReason::H501_UsageRejectReason(unsigned tag, PASN_Object::TagCla
 
 PBoolean H501_UsageRejectReason::CreateObject()
 {
-  choice = (tag <= e_unknownServiceID) ? new PASN_Null() : NULL;
+  choice = (m_tag <= e_unknownServiceID) ? new PASN_Null() : NULL;
   return choice != NULL;
 }
 
@@ -1487,7 +1487,7 @@ H501_UsageIndicationRejectionReason::H501_UsageIndicationRejectionReason(unsigne
 
 PBoolean H501_UsageIndicationRejectionReason::CreateObject()
 {
-  choice = (tag <= e_unknownServiceID) ? new PASN_Null() : NULL;
+  choice = (m_tag <= e_unknownServiceID) ? new PASN_Null() : NULL;
   return choice != NULL;
 }
 
@@ -1532,7 +1532,7 @@ H501_ValidationRejectionReason::H501_ValidationRejectionReason(unsigned tag, PAS
 
 PBoolean H501_ValidationRejectionReason::CreateObject()
 {
-  choice = (tag <= e_unknownServiceID) ? new PASN_Null() : NULL;
+  choice = (m_tag <= e_unknownServiceID) ? new PASN_Null() : NULL;
   return choice != NULL;
 }
 
@@ -1683,7 +1683,7 @@ H501_NonStandardRejectionReason::H501_NonStandardRejectionReason(unsigned tag, P
 
 PBoolean H501_NonStandardRejectionReason::CreateObject()
 {
-  choice = (tag <= e_unknownServiceID) ? new PASN_Null() : NULL;
+  choice = (m_tag <= e_unknownServiceID) ? new PASN_Null() : NULL;
   return choice != NULL;
 }
 
@@ -1720,7 +1720,7 @@ H501_UnknownMessageReason::H501_UnknownMessageReason(unsigned tag, PASN_Object::
 
 PBoolean H501_UnknownMessageReason::CreateObject()
 {
-  choice = (tag <= e_undefined) ? new PASN_Null() : NULL;
+  choice = (m_tag <= e_undefined) ? new PASN_Null() : NULL;
   return choice != NULL;
 }
 
@@ -1881,7 +1881,7 @@ H501_AuthenticationRejectionReason::H501_AuthenticationRejectionReason(unsigned 
 
 PBoolean H501_AuthenticationRejectionReason::CreateObject()
 {
-  choice = (tag <= e_securityWrongOID) ? new PASN_Null() : NULL;
+  choice = (m_tag <= e_securityWrongOID) ? new PASN_Null() : NULL;
   return choice != NULL;
 }
 
@@ -1963,7 +1963,7 @@ H501_Pattern::operator const H501_Pattern_range &() const
 
 PBoolean H501_Pattern::CreateObject()
 {
-  switch (tag) {
+  switch (m_tag) {
     case e_specific :
     case e_wildcard :
       choice = new H225_AliasAddress();
@@ -2077,7 +2077,7 @@ H501_AccessToken::operator const H225_GenericData &() const
 
 PBoolean H501_AccessToken::CreateObject()
 {
-  switch (tag) {
+  switch (m_tag) {
     case e_token :
       choice = new H235_ClearToken();
       return true;
@@ -2216,7 +2216,7 @@ H501_UsageCallStatus::H501_UsageCallStatus(unsigned tag, PASN_Object::TagClass t
 
 PBoolean H501_UsageCallStatus::CreateObject()
 {
-  choice = (tag <= e_registrationLost) ? new PASN_Null() : NULL;
+  choice = (m_tag <= e_registrationLost) ? new PASN_Null() : NULL;
   return choice != NULL;
 }
 
@@ -2276,7 +2276,7 @@ H501_Role::operator const H225_NonStandardParameter &() const
 
 PBoolean H501_Role::CreateObject()
 {
-  switch (tag) {
+  switch (m_tag) {
     case e_originator :
     case e_destination :
       choice = new PASN_Null();
@@ -2940,7 +2940,7 @@ H501_UpdateInformation_descriptorInfo::operator const H501_Descriptor &() const
 
 PBoolean H501_UpdateInformation_descriptorInfo::CreateObject()
 {
-  switch (tag) {
+  switch (m_tag) {
     case e_descriptorID :
       choice = new H225_GloballyUniqueID();
       return true;
@@ -2987,7 +2987,7 @@ H501_UpdateInformation_updateType::H501_UpdateInformation_updateType(unsigned ta
 
 PBoolean H501_UpdateInformation_updateType::CreateObject()
 {
-  choice = (tag <= e_changed) ? new PASN_Null() : NULL;
+  choice = (m_tag <= e_changed) ? new PASN_Null() : NULL;
   return choice != NULL;
 }
 
@@ -3325,7 +3325,7 @@ H501_RouteInformation_messageType::H501_RouteInformation_messageType(unsigned ta
 
 PBoolean H501_RouteInformation_messageType::CreateObject()
 {
-  choice = (tag <= e_nonExistent) ? new PASN_Null() : NULL;
+  choice = (m_tag <= e_nonExistent) ? new PASN_Null() : NULL;
   return choice != NULL;
 }
 
@@ -3490,7 +3490,7 @@ H501_PriceElement_units::H501_PriceElement_units(unsigned tag, PASN_Object::TagC
 
 PBoolean H501_PriceElement_units::CreateObject()
 {
-  choice = (tag <= e_maximum) ? new PASN_Null() : NULL;
+  choice = (m_tag <= e_maximum) ? new PASN_Null() : NULL;
   return choice != NULL;
 }
 

@@ -713,7 +713,7 @@ H235_ECKASDH::operator const H235_ECKASDH_eckasdh2 &() const
 
 PBoolean H235_ECKASDH::CreateObject()
 {
-  switch (tag) {
+  switch (m_tag) {
     case e_eckasdhp :
       choice = new H235_ECKASDH_eckasdhp();
       return true;
@@ -927,7 +927,7 @@ H235_AuthenticationBES::H235_AuthenticationBES(unsigned tag, PASN_Object::TagCla
 
 PBoolean H235_AuthenticationBES::CreateObject()
 {
-  choice = (tag <= e_radius) ? new PASN_Null() : NULL;
+  choice = (m_tag <= e_radius) ? new PASN_Null() : NULL;
   return choice != NULL;
 }
 
@@ -1015,7 +1015,7 @@ H235_AuthenticationMechanism::operator const H235_AuthenticationBES &() const
 
 PBoolean H235_AuthenticationMechanism::CreateObject()
 {
-  switch (tag) {
+  switch (m_tag) {
     case e_dhExch :
     case e_pwdSymEnc :
     case e_pwdHash :
@@ -1075,7 +1075,7 @@ H235_Element::H235_Element(unsigned tag, PASN_Object::TagClass tagClass)
 
 PBoolean H235_Element::CreateObject()
 {
-  switch (tag) {
+  switch (m_tag) {
     case e_octets :
       choice = new PASN_OctetString();
       return true;
@@ -2410,7 +2410,7 @@ H235_H235Key::operator const H235_KeyMaterialExt &() const
 
 PBoolean H235_H235Key::CreateObject()
 {
-  switch (tag) {
+  switch (m_tag) {
     case e_secureChannel :
       choice = new H235_KeyMaterial();
       return true;
@@ -2792,7 +2792,7 @@ H235_CryptoToken::operator const H235_ENCRYPTED<H235_EncodedPwdCertToken> &() co
 
 PBoolean H235_CryptoToken::CreateObject()
 {
-  switch (tag) {
+  switch (m_tag) {
     case e_cryptoEncryptedToken :
       choice = new H235_CryptoToken_cryptoEncryptedToken();
       return true;

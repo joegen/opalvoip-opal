@@ -762,7 +762,7 @@ H225_ServiceControlResponse_result::H225_ServiceControlResponse_result(unsigned 
 
 PBoolean H225_ServiceControlResponse_result::CreateObject()
 {
-  choice = (tag <= e_neededFeatureNotSupported) ? new PASN_Null() : NULL;
+  choice = (m_tag <= e_neededFeatureNotSupported) ? new PASN_Null() : NULL;
   return choice != NULL;
 }
 
@@ -832,7 +832,7 @@ H225_TransportAddress_ipSourceRoute_routing::H225_TransportAddress_ipSourceRoute
 
 PBoolean H225_TransportAddress_ipSourceRoute_routing::CreateObject()
 {
-  choice = (tag <= e_loose) ? new PASN_Null() : NULL;
+  choice = (m_tag <= e_loose) ? new PASN_Null() : NULL;
   return choice != NULL;
 }
 

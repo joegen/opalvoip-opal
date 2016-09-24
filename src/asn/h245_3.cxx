@@ -155,7 +155,7 @@ H245_DepFECMode_rfc2733Mode_mode_separateStream::operator const H245_DepFECMode_
 
 PBoolean H245_DepFECMode_rfc2733Mode_mode_separateStream::CreateObject()
 {
-  switch (tag) {
+  switch (m_tag) {
     case e_differentPort :
       choice = new H245_DepFECMode_rfc2733Mode_mode_separateStream_differentPort();
       return true;
@@ -201,7 +201,7 @@ H245_MultilinkResponse_addConnection_responseCode_rejected::H245_MultilinkRespon
 
 PBoolean H245_MultilinkResponse_addConnection_responseCode_rejected::CreateObject()
 {
-  choice = (tag <= e_userRejected) ? new PASN_Null() : NULL;
+  choice = (m_tag <= e_userRejected) ? new PASN_Null() : NULL;
   return choice != NULL;
 }
 
@@ -240,7 +240,7 @@ H245_MiscellaneousCommand_type_progressiveRefinementStart_repeatCount::H245_Misc
 
 PBoolean H245_MiscellaneousCommand_type_progressiveRefinementStart_repeatCount::CreateObject()
 {
-  choice = (tag <= e_doContinuousIndependentProgressions) ? new PASN_Null() : NULL;
+  choice = (m_tag <= e_doContinuousIndependentProgressions) ? new PASN_Null() : NULL;
   return choice != NULL;
 }
 
@@ -278,7 +278,7 @@ H245_NewATMVCCommand_aal_aal1_clockRecovery::H245_NewATMVCCommand_aal_aal1_clock
 
 PBoolean H245_NewATMVCCommand_aal_aal1_clockRecovery::CreateObject()
 {
-  choice = (tag <= e_adaptiveClockRecovery) ? new PASN_Null() : NULL;
+  choice = (m_tag <= e_adaptiveClockRecovery) ? new PASN_Null() : NULL;
   return choice != NULL;
 }
 
@@ -317,7 +317,7 @@ H245_NewATMVCCommand_aal_aal1_errorCorrection::H245_NewATMVCCommand_aal_aal1_err
 
 PBoolean H245_NewATMVCCommand_aal_aal1_errorCorrection::CreateObject()
 {
-  choice = (tag <= e_errorCorrectionOnly) ? new PASN_Null() : NULL;
+  choice = (m_tag <= e_errorCorrectionOnly) ? new PASN_Null() : NULL;
   return choice != NULL;
 }
 
@@ -355,7 +355,7 @@ H245_NewATMVCIndication_aal_aal1_clockRecovery::H245_NewATMVCIndication_aal_aal1
 
 PBoolean H245_NewATMVCIndication_aal_aal1_clockRecovery::CreateObject()
 {
-  choice = (tag <= e_adaptiveClockRecovery) ? new PASN_Null() : NULL;
+  choice = (m_tag <= e_adaptiveClockRecovery) ? new PASN_Null() : NULL;
   return choice != NULL;
 }
 
@@ -394,7 +394,7 @@ H245_NewATMVCIndication_aal_aal1_errorCorrection::H245_NewATMVCIndication_aal_aa
 
 PBoolean H245_NewATMVCIndication_aal_aal1_errorCorrection::CreateObject()
 {
-  choice = (tag <= e_errorCorrectionOnly) ? new PASN_Null() : NULL;
+  choice = (m_tag <= e_errorCorrectionOnly) ? new PASN_Null() : NULL;
   return choice != NULL;
 }
 

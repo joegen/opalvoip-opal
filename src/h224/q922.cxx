@@ -288,49 +288,53 @@ bool Q922_Frame::FindFlagEnd(const BYTE *buffer,
                              PINDEX & octetIndex,
                              PINDEX & bitIndex)
 {
-  BYTE positionsCorrect = 0;
+  {
+    BYTE positionsCorrect = 0;
 
-  while (octetIndex < bufferSize) {
+    while (octetIndex < bufferSize) {
 
-    BYTE bit = DecodeBit(buffer, octetIndex, bitIndex);
+      BYTE bit = DecodeBit(buffer, octetIndex, bitIndex);
 
-    switch (positionsCorrect) {
-      case 0:
-        if (bit == 0) {
-          positionsCorrect = 1;
-        }
-        break;
-      case 1:
-      case 2:
-      case 3:
-      case 4:
-      case 5:
-      case 6:
-        if (bit == 1) {
-          positionsCorrect++;
-        } else {
-          positionsCorrect = 1;
-        }
-        break;
-      case 7:
-        if (bit == 0) {
-          positionsCorrect = 0xff;
-        } else {
-          // got 0x7f, ABORT sequence
+      switch (positionsCorrect) {
+        case 0:
+          if (bit == 0) {
+            positionsCorrect = 1;
+          }
+          break;
+        case 1:
+        case 2:
+        case 3:
+        case 4:
+        case 5:
+        case 6:
+          if (bit == 1) {
+            positionsCorrect++;
+          }
+          else {
+            positionsCorrect = 1;
+          }
+          break;
+        case 7:
+          if (bit == 0) {
+            positionsCorrect = 0xff;
+          }
+          else {
+            // got 0x7f, ABORT sequence
+            return false;
+          }
+          break;
+        default:
           return false;
-        }
+      }
+
+      if (positionsCorrect == 0xff) {
         break;
-      default:
-        return false;
+      }
     }
 
-    if (positionsCorrect == 0xff) {
-      break;
+    if (positionsCorrect != 0xff) {
+      return false;
     }
-  }
-
-  if (positionsCorrect != 0xff) {
-    return false;
   }
 
   // First FLAG sequence found, bit index determined.

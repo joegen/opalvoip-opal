@@ -184,21 +184,21 @@ class H323Transactor : public PObject
   //@{
     /**Get the gatekeepers associated endpoint.
       */
-    H323EndPoint & GetEndPoint() const { return endpoint; }
+    H323EndPoint & GetEndPoint() const { return m_endpoint; }
 
     /**Get the gatekeepers transport channel.
       */
-    H323Transport & GetTransport() const { return *transport; }
+    H323Transport & GetTransport() const { return *m_transport; }
 
     /**Set flag to check all crypto tokens on responses.
       */
     void SetCheckResponseCryptoTokens(
       PBoolean value    ///<  New value for checking crypto tokens.
-    ) { checkResponseCryptoTokens = value; }
+    ) { m_checkResponseCryptoTokens = value; }
 
     /**Get flag to check all crypto tokens on responses.
       */
-    PBoolean GetCheckResponseCryptoTokens() { return checkResponseCryptoTokens; }
+    PBoolean GetCheckResponseCryptoTokens() { return m_checkResponseCryptoTokens; }
   //@}
 
   protected:
@@ -228,13 +228,13 @@ class H323Transactor : public PObject
         void CheckResponse(unsigned, const PASN_Choice *);
         void OnReceiveRIP(unsigned milliseconds);
 
-        unsigned                  sequenceNumber;
-        H323TransactionPDU      & requestPDU;
-        H323TransportAddressArray requestAddresses;
+        unsigned                  m_sequenceNumber;
+        H323TransactionPDU      & m_requestPDU;
+        H323TransportAddressArray m_requestAddresses;
 
         // Inter-thread transfer variables
-        unsigned rejectReason;
-        void   * responseInfo;
+        unsigned m_rejectReason;
+        void   * m_responseInfo;
 
         enum {
           AwaitingResponse,
@@ -244,11 +244,11 @@ class H323Transactor : public PObject
           BadCryptoTokens,
           RequestInProgress,
           NoResponseReceived
-        } responseResult;
+        } m_responseResult;
 
-        PTimeInterval whenResponseExpected;
-        PSyncPoint    responseHandled;
-        PMutex        responseMutex;
+        PTimeInterval m_whenResponseExpected;
+        PSyncPoint    m_responseHandled;
+        PMutex        m_responseMutex;
     };
 
     virtual PBoolean MakeRequest(
@@ -285,26 +285,26 @@ class H323Transactor : public PObject
         void SetPDU(const H323TransactionPDU & pdu);
         PBoolean SendCachedResponse(H323Transport & transport);
 
-        PTime                lastUsedTime;
-        PTimeInterval        retirementAge;
-        H323TransactionPDU * replyPDU;
+        PTime                m_lastUsedTime;
+        PTimeInterval        m_retirementAge;
+        H323TransactionPDU * m_replyPDU;
     };
 
     // Configuration variables
-    H323EndPoint  & endpoint;
-    WORD            defaultLocalPort;
-    WORD            defaultRemotePort;
-    H323Transport * transport;
-    bool            checkResponseCryptoTokens;
+    H323EndPoint  & m_endpoint;
+    WORD            m_defaultLocalPort;
+    WORD            m_defaultRemotePort;
+    H323Transport * m_transport;
+    bool            m_checkResponseCryptoTokens;
 
     atomic<uint16_t> m_nextSequenceNumber;
 
-    PDictionary<POrdinalKey, Request> requests;
-    PMutex                            requestsMutex;
-    Request                         * lastRequest;
+    PDictionary<POrdinalKey, Request> m_requests;
+    PMutex                            m_requestsMutex;
+    Request                         * m_lastRequest;
 
-    PMutex                pduWriteMutex;
-    PSortedList<Response> responses;
+    PMutex                m_pduWriteMutex;
+    PSortedList<Response> m_responses;
 };
 
 
@@ -358,31 +358,31 @@ class H323Transaction : public PObject
       unsigned reasonCode
     ) = 0;
 
-    PBoolean IsFastResponseRequired() const { return fastResponseRequired && canSendRIP; }
-    PBoolean CanSendRIP() const { return canSendRIP; }
-    H323TransportAddress GetReplyAddress() const { return replyAddresses[0]; }
-    const H323TransportAddressArray & GetReplyAddresses() const { return replyAddresses; }
-    PBoolean IsBehindNAT() const { return isBehindNAT; }
-    H323Transactor & GetTransactor() const { return transactor; }
-    H235Authenticator::ValidationResult GetAuthenticatorResult() const { return authenticatorResult; }
-    void SetAuthenticators(const H235Authenticators & auth) { authenticators = auth; }
+    PBoolean IsFastResponseRequired() const { return m_fastResponseRequired && m_canSendRIP; }
+    PBoolean CanSendRIP() const { return m_canSendRIP; }
+    H323TransportAddress GetReplyAddress() const { return m_replyAddresses[0]; }
+    const H323TransportAddressArray & GetReplyAddresses() const { return m_replyAddresses; }
+    PBoolean IsBehindNAT() const { return m_isBehindNAT; }
+    H323Transactor & GetTransactor() const { return m_transactor; }
+    H235Authenticator::ValidationResult GetAuthenticatorResult() const { return m_authenticatorResult; }
+    void SetAuthenticators(const H235Authenticators & auth) { m_authenticators = auth; }
 
   protected:
     virtual Response OnHandlePDU() = 0;
     PDECLARE_NOTIFIER(PThread, H323Transaction, SlowHandler);
 
-    H323Transactor         & transactor;
-    unsigned                 requestSequenceNumber;
-    H323TransportAddressArray replyAddresses;
-    bool                     fastResponseRequired;
-    H323TransactionPDU     * request;
-    H323TransactionPDU     * confirm;
-    H323TransactionPDU     * reject;
+    H323Transactor          & m_transactor;
+    unsigned                  m_requestSequenceNumber;
+    H323TransportAddressArray m_replyAddresses;
+    bool                      m_fastResponseRequired;
+    H323TransactionPDU      * m_request;
+    H323TransactionPDU      * m_confirm;
+    H323TransactionPDU      * m_reject;
 
-    H235Authenticators                  authenticators;
-    H235Authenticator::ValidationResult authenticatorResult;
-    bool                                isBehindNAT;
-    bool                                canSendRIP;
+    H235Authenticators                  m_authenticators;
+    H235Authenticator::ValidationResult m_authenticatorResult;
+    bool                                m_isBehindNAT;
+    bool                                m_canSendRIP;
 };
 
 
@@ -411,7 +411,7 @@ class H323TransactionServer : public PObject
   //@{
     /**Get the owner endpoint.
      */
-    H323EndPoint & GetOwnerEndPoint() const { return ownerEndPoint; }
+    H323EndPoint & GetOwnerEndPoint() const { return m_ownerEndPoint; }
 
   /**@name Protocol Handler Operations */
   //@{
@@ -480,14 +480,15 @@ class H323TransactionServer : public PObject
   //@}
 
   protected:
-    H323EndPoint & ownerEndPoint;
+    H323EndPoint & m_ownerEndPoint;
 
-    PThread      * monitorThread;
-    PSyncPoint     monitorExit;
+    PThread      * m_monitorThread;
+    PSyncPoint     m_monitorExit;
 
-    PMutex         mutex;
+    PMutex         m_mutex;
+
     PLIST(ListenerList, H323Transactor);
-    ListenerList listeners;
+    ListenerList m_listeners;
 };
 
 

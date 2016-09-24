@@ -561,7 +561,7 @@ class OpalEndPoint : public PObject
     {
       PSafePtr<ConnClass> connection = PSafePtrCast<OpalConnection, ConnClass>(GetConnectionWithLock(token, mode));
       if (connection == NULL) {
-        PSafePtr<OpalCall> call = manager.FindCallWithLock(token, PSafeReadOnly);
+        PSafePtr<OpalCall> call = m_manager.FindCallWithLock(token, PSafeReadOnly);
         if (call != NULL) {
           connection = PSafePtrCast<OpalConnection, ConnClass>(call->GetConnection(0, mode));
           if (connection == NULL)
@@ -577,7 +577,7 @@ class OpalEndPoint : public PObject
     
     /** Get calls count on the endpoint
       */
-    PINDEX GetConnectionCount() const { return connectionsActive.GetSize(); }
+    PINDEX GetConnectionCount() const { return m_connectionsActive.GetSize(); }
 
     /**Determine if a connection is active.
       */
@@ -838,11 +838,11 @@ class OpalEndPoint : public PObject
   //@{
     /**Get the manager for this endpoint.
      */
-    OpalManager & GetManager() const { return manager; }
+    OpalManager & GetManager() const { return m_manager; }
 
     /**Get the protocol prefix name for the endpoint.
       */
-    const PString & GetPrefixName() const { return prefixName; }
+    const PString & GetPrefixName() const { return m_prefixName; }
 
     /**Get an indication of if this endpoint has particular option.
       */
@@ -850,31 +850,31 @@ class OpalEndPoint : public PObject
 
     /**Get the product info for all endpoints.
       */
-    const OpalProductInfo & GetProductInfo() const { return productInfo; }
+    const OpalProductInfo & GetProductInfo() const { return m_productInfo; }
 
     /**Set the product info for all endpoints.
       */
     void SetProductInfo(
       const OpalProductInfo & info
-    ) { productInfo = info; }
+    ) { m_productInfo = info; }
 
     /**Get the default local party name for all connections on this endpoint.
       */
-    const PString & GetDefaultLocalPartyName() const { return defaultLocalPartyName; }
+    const PString & GetDefaultLocalPartyName() const { return m_defaultLocalPartyName; }
 
     /**Set the default local party name for all connections on this endpoint.
       */
     virtual void SetDefaultLocalPartyName(
       const PString & name  /// Name for local party
-    ) { defaultLocalPartyName = name; }
+    ) { m_defaultLocalPartyName = name; }
 
     /**Get the default local display name for all connections on this endpoint.
       */
-    const PString & GetDefaultDisplayName() const { return defaultDisplayName; }
+    const PString & GetDefaultDisplayName() const { return m_defaultDisplayName; }
 
     /**Set the default local display name for all connections on this endpoint.
       */
-    void SetDefaultDisplayName(const PString & name) { defaultDisplayName = name; }
+    void SetDefaultDisplayName(const PString & name) { m_defaultDisplayName = name; }
 
     /**Get the initial bandwidth parameter for a connection.
      */
@@ -891,7 +891,7 @@ class OpalEndPoint : public PObject
 
     /**Get the set of listeners (incoming call transports) for this endpoint.
      */
-    const OpalListenerList & GetListeners() const { return listeners; }
+    const OpalListenerList & GetListeners() const { return m_listeners; }
 
     /**Get the default options for created connections.
       */
@@ -915,34 +915,34 @@ class OpalEndPoint : public PObject
 
     /**Get the default mode for sending User Input Indications.
       */
-    OpalConnection::SendUserInputModes GetSendUserInputMode() const { return defaultSendUserInputMode; }
+    OpalConnection::SendUserInputModes GetSendUserInputMode() const { return m_defaultSendUserInputMode; }
 
     /**Set the default mode for sending User Input Indications.
       */
-    void SetSendUserInputMode(OpalConnection::SendUserInputModes mode) { defaultSendUserInputMode = mode; }
+    void SetSendUserInputMode(OpalConnection::SendUserInputModes mode) { m_defaultSendUserInputMode = mode; }
   //@}
 
   protected:
-    OpalManager   & manager;
-    PCaselessString prefixName;
+    OpalManager   & m_manager;
+    PCaselessString m_prefixName;
     Attributes      m_attributes;
     PINDEX          m_maxSizeUDP;
-    OpalProductInfo productInfo;
-    PString         defaultLocalPartyName;
-    PString         defaultDisplayName;
+    OpalProductInfo m_productInfo;
+    PString         m_defaultLocalPartyName;
+    PString         m_defaultDisplayName;
     PStringArray    m_mediaCryptoSuites;
 
     OpalBandwidth m_initialRxBandwidth;
     OpalBandwidth m_initialTxBandwidth;
     OpalConnection::StringOptions      m_defaultStringOptions;
-    OpalConnection::SendUserInputModes defaultSendUserInputMode;
+    OpalConnection::SendUserInputModes m_defaultSendUserInputMode;
 
-    OpalListenerList   listeners;
+    OpalListenerList   m_listeners;
 
     class ConnectionDict : public PSafeDictionary<PString, OpalConnection>
     {
         virtual void DeleteObject(PObject * object) const;
-    } connectionsActive;
+    } m_connectionsActive;
     OpalConnection * AddConnection(OpalConnection * connection);
 
     friend void OpalManager::GarbageCollection();

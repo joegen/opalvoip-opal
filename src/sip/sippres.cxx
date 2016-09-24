@@ -651,19 +651,19 @@ void SIP_Presentity::Internal_AuthorisationRequest(const OpalAuthorisationReques
     return;
   }
 
-  XCAPClient xcap;
-  xcap.SetRoot(m_defaultRootURL);
-  xcap.SetApplicationUniqueID(m_attributes.Get(XcapAuthAuidKey,
+  XCAPClient xcapClient;
+  xcapClient.SetRoot(m_defaultRootURL);
+  xcapClient.SetApplicationUniqueID(m_attributes.Get(XcapAuthAuidKey,
                 m_subProtocol == e_OMA ? "org.openmobilealliance.pres-rules" : "pres-rules")); // As per RFC5025/9.1
-  xcap.SetContentType("application/auth-policy+xml");   // As per RFC5025/9.4
-  xcap.SetUserIdentifier(m_aor.AsString());             // As per RFC5025/9.7
-  xcap.SetAuthenticationInfo(m_attributes.Get(XcapAuthIdKey, m_attributes.Get(AuthNameKey, xcap.GetUserIdentifier())),
+  xcapClient.SetContentType("application/auth-policy+xml");   // As per RFC5025/9.4
+  xcapClient.SetUserIdentifier(m_aor.AsString());             // As per RFC5025/9.7
+  xcapClient.SetAuthenticationInfo(m_attributes.Get(XcapAuthIdKey, m_attributes.Get(AuthNameKey, xcapClient.GetUserIdentifier())),
                              m_attributes.Get(XcapPasswordKey, m_attributes.Get(AuthPasswordKey)));
-  xcap.SetFilename(m_attributes.Get(XcapAuthFileKey, m_subProtocol == e_OMA ? "pres-rules" : "index"));
+  xcapClient.SetFilename(m_attributes.Get(XcapAuthFileKey, m_subProtocol == e_OMA ? "pres-rules" : "index"));
 
   // See if we can use teh quick method
   if (m_authorisationIdByAor.find(cmd.m_presentity) != m_authorisationIdByAor.end()) {
-    if (ChangeAuthNode(xcap, cmd))
+    if (ChangeAuthNode(xcapClient, cmd))
       return;
   }
 
@@ -671,11 +671,11 @@ void SIP_Presentity::Internal_AuthorisationRequest(const OpalAuthorisationReques
   PXMLElement * element;
 
   // Could not find rule element quickly, get the whole document
-  if (!xcap.GetXml(xml)) {
-    if (xcap.GetLastResponseCode() != PHTTP::NotFound) {
+  if (!xcapClient.GetXml(xml)) {
+    if (xcapClient.GetLastResponseCode() != PHTTP::NotFound) {
       PTRACE(2, "SIPPres\tUnexpected error getting rule file for '"
              << cmd.m_presentity << "' at '" << m_aor << "\'\n"
-             << xcap.GetLastResponseCode() << ' '  << xcap.GetLastResponseInfo());
+             << xcapClient.GetLastResponseCode() << ' '  << xcapClient.GetLastResponseInfo());
       return;
     }
 
@@ -724,9 +724,9 @@ void SIP_Presentity::Internal_AuthorisationRequest(const OpalAuthorisationReques
       element->AddElement("cr:actions")->AddElement("pr:sub-handling", AuthNames[AuthorisationDenied]);
     }
 
-    if (!xcap.PutXml(xml)) {
+    if (!xcapClient.PutXml(xml)) {
       PTRACE(2, "SIPPres\tCould not add new rule file for '" << m_aor << "\'\n"
-             << xcap.GetLastResponseCode() << ' '  << xcap.GetLastResponseInfo());
+             << xcapClient.GetLastResponseCode() << ' '  << xcapClient.GetLastResponseInfo());
       return;
     }
 
@@ -755,7 +755,7 @@ void SIP_Presentity::Internal_AuthorisationRequest(const OpalAuthorisationReques
   }
 
   if (existingRuleForWatcher) {
-    ChangeAuthNode(xcap, cmd);
+    ChangeAuthNode(xcapClient, cmd);
     return;
   }
 
@@ -782,16 +782,16 @@ void SIP_Presentity::Internal_AuthorisationRequest(const OpalAuthorisationReques
   node.SetNamespace("urn:ietf:params:xml:ns:common-policy", "cr");
   node.AddElement("cr:ruleset");
   node.AddElement("cr:rule", "id", newRuleId);
-  xcap.SetNode(node);
+  xcapClient.SetNode(node);
 
-  if (xcap.PutXml(xml)) {
+  if (xcapClient.PutXml(xml)) {
     PTRACE(3, "SIPPres\tNew rule set to" << AuthNames[cmd.m_authorisation] << " for '" << cmd.m_presentity << "' at '" << m_aor << '\'');
     m_authorisationIdByAor[cmd.m_presentity] = newRuleId;
     return;
   }
 
   PTRACE(2, "SIPPres\tCould not add new rule for '" << cmd.m_presentity << "' at '" << m_aor << "\'\n"
-         << xcap.GetLastResponseCode() << ' '  << xcap.GetLastResponseInfo());
+         << xcapClient.GetLastResponseCode() << ' '  << xcapClient.GetLastResponseInfo());
 }
 
 
@@ -891,9 +891,9 @@ static bool RecursiveGetBuddyList(OpalPresentity::BuddyList & buddies, XCAPClien
 
   idx = 0;
   while ((element = xml.GetElement("entry-ref", idx++)) != NULL) {
-    PURL url(xcap.GetRoot());
-    url.SetPathStr(url.GetPathStr() + element->GetAttribute("ref"));
-    RecursiveGetBuddyList(buddies, xcap, url);
+    PURL xurl(xcap.GetRoot());
+    xurl.SetPathStr(xurl.GetPathStr() + element->GetAttribute("ref"));
+    RecursiveGetBuddyList(buddies, xcap, xurl);
   }
 
   return true;

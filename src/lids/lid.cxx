@@ -63,13 +63,13 @@ ostream & operator<<(ostream & o, OpalLineInterfaceDevice::CallProgressTones t)
 
 
 OpalLineInterfaceDevice::OpalLineInterfaceDevice()
-  : os_handle(-1)
-  , osError(0)
+  : m_osHandle(-1)
+  , m_osError(0)
   , m_readDeblockingOffset(P_MAX_INDEX)
   , m_writeDeblockingOffset(0)
 {
   // Unknown country, just use US tones
-  countryCode = UnknownCountry;
+  m_countryCode = UnknownCountry;
   m_callProgressTones[DialTone] = "350+440:0.2";
   m_callProgressTones[RingTone] = "440+480:2.0-4.0";
   m_callProgressTones[BusyTone] = "480+620:0.5-0.5";
@@ -84,16 +84,16 @@ OpalLineInterfaceDevice::OpalLineInterfaceDevice()
 
 PBoolean OpalLineInterfaceDevice::IsOpen() const
 {
-  return os_handle >= 0;
+  return m_osHandle >= 0;
 }
 
 
 PBoolean OpalLineInterfaceDevice::Close()
 {
-  if (os_handle < 0)
+  if (m_osHandle < 0)
     return false;
 
-  os_handle = -1;
+  m_osHandle = -1;
   return true;
 }
 
@@ -926,7 +926,7 @@ PString OpalLineInterfaceDevice::GetCountryCodeName(T35CountryCodes code)
 
 PString OpalLineInterfaceDevice::GetCountryCodeName() const
 { 
-  return GetCountryCodeName(countryCode);
+  return GetCountryCodeName(m_countryCode);
 }
 
 
@@ -939,7 +939,7 @@ PBoolean OpalLineInterfaceDevice::SetCountryCode(T35CountryCodes code)
   }
 
   PTRACE(3, "LID\tCountry set to \"" << info.m_fullName << '"');
-  countryCode = code;
+  m_countryCode = code;
 
   for (unsigned line = 0; line < GetLineCount(); line++) {
     for (int tone = 0; tone < NumTones; tone++) {
@@ -975,7 +975,7 @@ PBoolean OpalLineInterfaceDevice::SetCountryCodeName(const PString & countryName
 
 PString OpalLineInterfaceDevice::GetErrorText() const
 {
-  return PChannel::GetErrorText(PChannel::Miscellaneous, osError);
+  return PChannel::GetErrorText(PChannel::Miscellaneous, m_osError);
 }
 
 
@@ -1055,63 +1055,63 @@ PStringList OpalLineInterfaceDevice::GetAllDevices()
 /////////////////////////////////////////////////////////////////////////////
 
 OpalLine::OpalLine(OpalLineInterfaceDevice & dev, unsigned num, const char * userToken)
-  : device(dev)
-  , lineNumber(num)
-  , token(userToken)
-  , ringStoppedTime(0, 6)      // 6 seconds
-  , ringInterCadenceTime(1500)  // 1.5 seconds
-  , ringCount(0)
-  , lastRingState(false)
+  : m_device(dev)
+  , m_lineNumber(num)
+  , m_token(userToken)
+  , m_ringStoppedTime(0, 6)      // 6 seconds
+  , m_ringInterCadenceTime(1500)  // 1.5 seconds
+  , m_ringCount(0)
+  , m_lastRingState(false)
 {
-  if (token.IsEmpty())
-    token.sprintf("%s:%s:%u", (const char *)device.GetDeviceType(), (const char *)device.GetDeviceName(), lineNumber);
+  if (m_token.IsEmpty())
+    m_token.sprintf("%s:%s:%u", (const char *)m_device.GetDeviceType(), (const char *)m_device.GetDeviceName(), m_lineNumber);
   
-  PTRACE(4, "LID\tOpalLine constructed: device=" << dev.GetDeviceName() << ", num=" << num << ", token=" << token);
+  PTRACE(4, "LID\tOpalLine constructed: device=" << dev.GetDeviceName() << ", num=" << num << ", token=" << m_token);
   
-  ringCount = 0;
+  m_ringCount = 0;
 }
 
 
 void OpalLine::PrintOn(ostream & strm) const
 {
-  strm << token;
+  strm << m_token;
 }
 
 
 PBoolean OpalLine::IsRinging(DWORD * cadence)
 {
   PTimeInterval tick = PTimer::Tick();
-  PTimeInterval delta = tick - ringTick;
-  if (ringCount > 0 && delta > ringStoppedTime) {
-    PTRACE(4, "LID\tRing count reset on line " << lineNumber);
-    lastRingState = false;
-    ringCount = 0;
+  PTimeInterval delta = tick - m_ringTick;
+  if (m_ringCount > 0 && delta > m_ringStoppedTime) {
+    PTRACE(4, "LID\tRing count reset on line " << m_lineNumber);
+    m_lastRingState = false;
+    m_ringCount = 0;
   }
 
-  if (device.IsLineRinging(lineNumber, cadence)) {
-    ringTick = tick;
-    if (lastRingState)
+  if (m_device.IsLineRinging(m_lineNumber, cadence)) {
+    m_ringTick = tick;
+    if (m_lastRingState)
       return true;
 
-    PTRACE_IF(4, ringCount == 0, "LID\tRing start detected on line " << lineNumber);
-    ringCount++;
-    lastRingState = true;
+    PTRACE_IF(4, m_ringCount == 0, "LID\tRing start detected on line " << m_lineNumber);
+    m_ringCount++;
+    m_lastRingState = true;
     return true;
   }
 
-  if (lastRingState && delta > ringInterCadenceTime) {
-    PTRACE(4, "LID\tRing cadence incremented on line " << lineNumber);
-    lastRingState = false;
+  if (m_lastRingState && delta > m_ringInterCadenceTime) {
+    PTRACE(4, "LID\tRing cadence incremented on line " << m_lineNumber);
+    m_lastRingState = false;
   }
 
-  return lastRingState;
+  return m_lastRingState;
 }
 
 
 unsigned OpalLine::GetRingCount(DWORD * cadence)
 {
   IsRinging(cadence);
-  return ringCount;
+  return m_ringCount;
 }
 
 

@@ -75,3 +75,5 @@ samples/openphone/resource.cpp
 src/csharp/csharp_swig_wrapper.inc
 src/java/java_swig_wrapper.inc
 *.opensdf
+*.db
+*.opendb

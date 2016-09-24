@@ -415,7 +415,7 @@ bool OpalPCSSEndPoint::CreateVideoInputDevice(const OpalConnection & connection,
       if (!args.deviceName.IsEmpty()) {
         PTRACE(3, "Using Ring On Video device for " << *this);
         mediaFormat.AdjustVideoArgs(args);
-        return manager.CreateVideoInputDevice(connection, args, device, autoDelete);
+        return m_manager.CreateVideoInputDevice(connection, args, device, autoDelete);
       }
     }
   }
@@ -489,15 +489,15 @@ OpalPCSSConnection::OpalPCSSConnection(OpalCall & call,
   , m_userInputChannel(NULL)
   , m_userInputAutoDelete(false)
 {
-  silenceDetector = new OpalPCM16SilenceDetector(endpoint.GetManager().GetSilenceDetectParams());
-  PTRACE_CONTEXT_ID_TO(silenceDetector);
+  m_silenceDetector = new OpalPCM16SilenceDetector(m_endpoint.GetManager().GetSilenceDetectParams());
+  PTRACE_CONTEXT_ID_TO(m_silenceDetector);
 
 #if OPAL_AEC
-  echoCanceler = new OpalEchoCanceler;
-  PTRACE_CONTEXT_ID_TO(echoCanceler);
+  m_echoCanceler = new OpalEchoCanceler;
+  PTRACE_CONTEXT_ID_TO(m_echoCanceler);
 #endif
 
-  PTRACE(4, "Created PC sound system connection: token=\"" << callToken << "\" "
+  PTRACE(4, "Created PC sound system connection: token=\"" << m_callToken << "\" "
             "player=\"" << playDevice << "\" recorder=\"" << recordDevice << '"');
 }
 

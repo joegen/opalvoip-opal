@@ -66,8 +66,8 @@ H323_AnnexG::H323_AnnexG(H323EndPoint & ep, const H323TransportAddress & addr)
 
 void H323_AnnexG::Construct()
 {
-  lastRequest = NULL;
-  requests.DisallowDeleteObjects();
+  m_lastRequest = NULL;
+  m_requests.DisallowDeleteObjects();
 }
 
 H323_AnnexG::~H323_AnnexG()
@@ -240,7 +240,7 @@ PBoolean H323_AnnexG::OnReceiveUnknown(const H501PDU &)
 {
   H501PDU response;
   response.BuildUnknownMessageResponse(0);
-  return response.Write(*transport);
+  return response.Write(*m_transport);
 }
 
 PBoolean H323_AnnexG::OnReceiveServiceRequest(const H501PDU & pdu, const H501_ServiceRequest & /*pduBody*/)
@@ -248,7 +248,7 @@ PBoolean H323_AnnexG::OnReceiveServiceRequest(const H501PDU & pdu, const H501_Se
   PTRACE(3, "AnnexG\tOnReceiveServiceRequest - seq: " << pdu.m_common.m_sequenceNumber);
   H501PDU response;
   response.BuildServiceRejection(pdu.m_common.m_sequenceNumber, H501_ServiceRejectionReason::e_serviceUnavailable);
-  return response.Write(*transport);
+  return response.Write(*m_transport);
 }
 
 PBoolean H323_AnnexG::OnReceiveServiceConfirmation(const H501PDU & pdu, const H501_ServiceConfirmation & /*pduBody*/)
