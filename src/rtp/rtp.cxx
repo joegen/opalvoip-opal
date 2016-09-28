@@ -44,14 +44,6 @@
 
 #define new PNEW
 
-#define BAD_TRANSMIT_PKT_MAX 5      // Number of consecutive bad tx packet in below number of seconds
-#define BAD_TRANSMIT_TIME_MAX 10    //  maximum of seconds of transmit fails before session is killed
-
-#define RTP_VIDEO_RX_BUFFER_SIZE 0x100000 // 1Mb
-#define RTP_AUDIO_RX_BUFFER_SIZE 0x4000   // 16kb
-#define RTP_DATA_TX_BUFFER_SIZE  0x2000   // 8kb
-#define RTP_CTRL_BUFFER_SIZE     0x1000   // 4kb
-
 
 /////////////////////////////////////////////////////////////////////////////
 
