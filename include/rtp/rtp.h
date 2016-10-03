@@ -314,7 +314,7 @@ class RTP_ControlFrame : public PBYTEArray
         PUInt16b bitmask;
       } fld[1];
     };
-    struct LostPacketMask : std::set<unsigned>
+    struct LostPacketMask : std::set<RTP_SequenceNumber>
     {
       friend ostream & operator<<(ostream & strm, const LostPacketMask & mask);
     };

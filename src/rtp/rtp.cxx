@@ -1084,7 +1084,7 @@ void RTP_ControlFrame::AddIFR(RTP_SyncSourceId syncSourceIn)
 
 ostream & operator<<(ostream & strm, const RTP_ControlFrame::LostPacketMask & mask)
 {
-  for (std::set<unsigned>::const_iterator it = mask.begin(); it != mask.end(); ++it) {
+  for (RTP_ControlFrame::LostPacketMask::const_iterator it = mask.begin(); it != mask.end(); ++it) {
     if (it != mask.begin())
       strm << ',';
     strm << *it;
@@ -1104,7 +1104,7 @@ void RTP_ControlFrame::AddNACK(RTP_SyncSourceId syncSourceOut, RTP_SyncSourceId 
   nack->senderSSRC = syncSourceOut;
   nack->mediaSSRC = syncSourceIn;
 
-  std::set<unsigned>::const_iterator it = lostPackets.begin();
+  LostPacketMask::const_iterator it = lostPackets.begin();
   size_t i = 0;
   nack->fld[i].packetID = (uint16_t)*it++;
   unsigned bitmask = 0;
@@ -1140,11 +1140,11 @@ bool RTP_ControlFrame::ParseNACK(RTP_SyncSourceId & senderSSRC, RTP_SyncSourceId
 
   lostPackets.clear();
   for (size_t i = 0; i < count; ++i) {
-    unsigned pid = nack->fld[i].packetID;
-    lostPackets.insert(pid);
-    for (unsigned bit = 0; bit < 16; ++bit) {
+    RTP_SequenceNumber pktId = nack->fld[i].packetID;
+    lostPackets.insert(pktId);
+    for (RTP_SequenceNumber bit = 0; bit < 16; ++bit) {
       if (nack->fld[i].bitmask & (1 << bit))
-        lostPackets.insert(pid + bit + 1);
+        lostPackets.insert(pktId + bit + 1);
     }
   }
 
