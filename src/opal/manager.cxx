@@ -303,14 +303,14 @@ ostream & operator<<(ostream & strm, const OpalProductInfo & info)
 /////////////////////////////////////////////////////////////////////////////
 
 OpalManager::OpalManager()
-  : productInfo(OpalProductInfo::Default())
-  , defaultUserName(PProcess::Current().GetUserName())
-  , defaultDisplayName(defaultUserName)
-  , rtpPayloadSizeMax(1400) // RFC879 recommends 576 bytes, but that is ancient history, 99.999% of the time 1400+ bytes is used.
-  , rtpPacketSizeMax(10*1024)
-  , mediaFormatOrder(PARRAYSIZE(DefaultMediaFormatOrder), DefaultMediaFormatOrder)
-  , mediaFormatMask(PARRAYSIZE(DefaultMediaFormatMask), DefaultMediaFormatMask)
-  , disableDetectInBandDTMF(false)
+  : m_productInfo(OpalProductInfo::Default())
+  , m_defaultUserName(PProcess::Current().GetUserName())
+  , m_defaultDisplayName(m_defaultUserName)
+  , m_rtpPayloadSizeMax(1400) // RFC879 recommends 576 bytes, but that is ancient history, 99.999% of the time 1400+ bytes is used.
+  , m_rtpPacketSizeMax(10*1024)
+  , m_mediaFormatOrder(PARRAYSIZE(DefaultMediaFormatOrder), DefaultMediaFormatOrder)
+  , m_mediaFormatMask(PARRAYSIZE(DefaultMediaFormatMask), DefaultMediaFormatMask)
+  , m_disableDetectInBandDTMF(false)
   , m_noMediaTimeout(0, 0, 5)     // Minutes
   , m_txMediaTimeout(0, 10)       // Seconds
   , m_signalingTimeout(0, 10)     // Seconds
@@ -335,7 +335,7 @@ OpalManager::OpalManager()
   , m_onInterfaceChange(PCREATE_InterfaceNotifier(OnInterfaceChange))
 #endif
   , lastCallTokenID(0)
-  , P_DISABLE_MSVC_WARNINGS(4355, activeCalls(*this))
+  , P_DISABLE_MSVC_WARNINGS(4355, m_activeCalls(*this))
   , m_clearingAllCallsCount(0)
   , m_garbageCollector(NULL)
   , m_garbageCollectSkip(false)
@@ -429,9 +429,9 @@ PList<OpalEndPoint> OpalManager::GetEndPoints() const
   PList<OpalEndPoint> list;
   list.AllowDeleteObjects(false);
 
-  PReadWaitAndSignal mutex(endpointsMutex);
+  PReadWaitAndSignal mutex(m_endpointsMutex);
 
-  for (PList<OpalEndPoint>::const_iterator it = endpointList.begin(); it != endpointList.end(); ++it)
+  for (PList<OpalEndPoint>::const_iterator it = m_endpointList.begin(); it != m_endpointList.end(); ++it)
     list.Append((OpalEndPoint *)&*it);
 
   return list;
@@ -442,9 +442,9 @@ PStringList OpalManager::GetPrefixNames(const OpalEndPoint * endpoint) const
 {
   PStringList list;
 
-  PReadWaitAndSignal mutex(endpointsMutex);
+  PReadWaitAndSignal mutex(m_endpointsMutex);
 
-  for (std::map<PString, OpalEndPoint *>::const_iterator it = endpointMap.begin(); it != endpointMap.end(); ++it) {
+  for (std::map<PString, OpalEndPoint *>::const_iterator it = m_endpointMap.begin(); it != m_endpointMap.end(); ++it) {
     if (endpoint == NULL || it->second == endpoint)
       list += it->first;
   }
@@ -470,15 +470,15 @@ void OpalManager::ShutDownEndpoints()
 
   PTRACE(4, "Shutting down endpoints.");
   // Deregister the endpoints
-  endpointsMutex.StartRead();
-  for (PList<OpalEndPoint>::iterator ep = endpointList.begin(); ep != endpointList.end(); ++ep)
+  m_endpointsMutex.StartRead();
+  for (PList<OpalEndPoint>::iterator ep = m_endpointList.begin(); ep != m_endpointList.end(); ++ep)
     ep->ShutDown();
-  endpointsMutex.EndRead();
+  m_endpointsMutex.EndRead();
 
-  endpointsMutex.StartWrite();
-  endpointMap.clear();
-  endpointList.RemoveAll();
-  endpointsMutex.EndWrite();
+  m_endpointsMutex.StartWrite();
+  m_endpointMap.clear();
+  m_endpointList.RemoveAll();
+  m_endpointsMutex.EndWrite();
 
   --m_clearingAllCallsCount; // Allow for endpoints to be added again.
 
@@ -496,17 +496,17 @@ void OpalManager::AttachEndPoint(OpalEndPoint * endpoint, const PString & prefix
 
   PString thePrefix = prefix.IsEmpty() ? endpoint->GetPrefixName() : prefix;
 
-  PWriteWaitAndSignal mutex(endpointsMutex);
+  PWriteWaitAndSignal mutex(m_endpointsMutex);
 
-  std::map<PString, OpalEndPoint *>::iterator it = endpointMap.find(thePrefix);
-  if (it != endpointMap.end()) {
+  std::map<PString, OpalEndPoint *>::iterator it = m_endpointMap.find(thePrefix);
+  if (it != m_endpointMap.end()) {
     PTRACE_IF(1, it->second != endpoint, "An endpoint is already attached to prefix " << thePrefix);
     return;
   }
 
-  if (endpointList.GetObjectsIndex(endpoint) == P_MAX_INDEX)
-    endpointList.Append(endpoint);
-  endpointMap[thePrefix] = endpoint;
+  if (m_endpointList.GetObjectsIndex(endpoint) == P_MAX_INDEX)
+    m_endpointList.Append(endpoint);
+  m_endpointMap[thePrefix] = endpoint;
 
   /* Avoid strange race condition caused when garbage collection occurs
      on the endpoint instance which has not completed construction. This
@@ -528,41 +528,41 @@ void OpalManager::DetachEndPoint(OpalEndPoint * endpoint)
 
   endpoint->ShutDown();
 
-  endpointsMutex.StartWrite();
+  m_endpointsMutex.StartWrite();
 
-  if (endpointList.Remove(endpoint)) {
+  if (m_endpointList.Remove(endpoint)) {
     // Was in list, remove from map too
-    std::map<PString, OpalEndPoint *>::iterator it = endpointMap.begin();
-    while (it != endpointMap.end()) {
+    std::map<PString, OpalEndPoint *>::iterator it = m_endpointMap.begin();
+    while (it != m_endpointMap.end()) {
       if (it->second != endpoint)
         ++it;
       else {
-        endpointMap.erase(it);
-        it = endpointMap.begin();
+        m_endpointMap.erase(it);
+        it = m_endpointMap.begin();
       }
     }
   }
 
-  endpointsMutex.EndWrite();
+  m_endpointsMutex.EndWrite();
 }
 
 
 void OpalManager::DetachEndPoint(const PString & prefix)
 {
-  PReadWaitAndSignal mutex(endpointsMutex);
+  PReadWaitAndSignal mutex(m_endpointsMutex);
 
-  std::map<PString, OpalEndPoint *>::iterator it = endpointMap.find(prefix);
-  if (it == endpointMap.end())
+  std::map<PString, OpalEndPoint *>::iterator it = m_endpointMap.find(prefix);
+  if (it == m_endpointMap.end())
     return;
 
   OpalEndPoint * endpoint = it->second;
 
-  endpointsMutex.StartWrite();
-  endpointMap.erase(it);
-  endpointsMutex.EndWrite();
+  m_endpointsMutex.StartWrite();
+  m_endpointMap.erase(it);
+  m_endpointsMutex.EndWrite();
 
   // See if other references
-  for (it = endpointMap.begin(); it != endpointMap.end(); ++it) {
+  for (it = m_endpointMap.begin(); it != m_endpointMap.end(); ++it) {
     if (it->second == endpoint)
       return; // Still a reference to it
   }
@@ -574,9 +574,9 @@ void OpalManager::DetachEndPoint(const PString & prefix)
 
 OpalEndPoint * OpalManager::FindEndPoint(const PString & prefix) const
 {
-  PReadWaitAndSignal mutex(endpointsMutex);
-  std::map<PString, OpalEndPoint *>::const_iterator it = endpointMap.find(prefix);
-  return it != endpointMap.end() ? it->second : NULL;
+  PReadWaitAndSignal mutex(m_endpointsMutex);
+  std::map<PString, OpalEndPoint *>::const_iterator it = m_endpointMap.find(prefix);
+  return it != m_endpointMap.end() ? it->second : NULL;
 }
 
 
@@ -753,7 +753,7 @@ void OpalManager::OnEstablishedCall(OpalCall & /*call*/)
 
 PBoolean OpalManager::IsCallEstablished(const PString & token)
 {
-  PSafePtr<OpalCall> call = activeCalls.FindWithLock(token, PSafeReadOnly);
+  PSafePtr<OpalCall> call = m_activeCalls.FindWithLock(token, PSafeReadOnly);
   if (call == NULL)
     return false;
 
@@ -774,7 +774,7 @@ PBoolean OpalManager::ClearCall(const PString & token,
    */
 
   // Find the call by token, callid or conferenceid
-  PSafePtr<OpalCall> call = activeCalls.FindWithLock(token, PSafeReference);
+  PSafePtr<OpalCall> call = m_activeCalls.FindWithLock(token, PSafeReference);
   if (call == NULL) {
     PTRACE(2, "Could not find/lock call token \"" << token << '"');
     return false;
@@ -814,7 +814,7 @@ void OpalManager::InternalClearAllCalls(OpalConnection::CallEndReason reason, bo
 
   if (firstThread) {
     // Clear all the currentyl active calls
-    for (PSafePtr<OpalCall> call = activeCalls; call != NULL; ++call)
+    for (PSafePtr<OpalCall> call = m_activeCalls; call != NULL; ++call)
       call->Clear(reason);
   }
 
@@ -824,7 +824,7 @@ void OpalManager::InternalClearAllCalls(OpalConnection::CallEndReason reason, bo
        released from the PSyncPoint wait. */
     m_clearingAllCallsMutex.Wait();
     if (firstThread)
-      PAssert(m_allCallsCleared.Wait(PTimeInterval(0,activeCalls.GetSize()*2,1)), "All calls not cleared in a timely manner");
+      PAssert(m_allCallsCleared.Wait(PTimeInterval(0,m_activeCalls.GetSize()*2,1)), "All calls not cleared in a timely manner");
     m_clearingAllCallsMutex.Signal();
   }
 
@@ -874,7 +874,7 @@ PSafePtr<OpalConnection> OpalManager::MakeConnection(OpalCall & call,
 {
   PTRACE(3, "Set up connection to \"" << remoteParty << '"');
 
-  PReadWaitAndSignal mutex(endpointsMutex);
+  PReadWaitAndSignal mutex(m_endpointsMutex);
 
   PCaselessString epname = PURL::ExtractScheme(remoteParty);
   OpalEndPoint * ep = FindEndPoint(epname);
@@ -923,9 +923,9 @@ PBoolean OpalManager::OnIncomingConnection(OpalConnection & connection, unsigned
   if (connection.IsNetworkConnection()) {
     OpalIMEndPoint * imEP = FindEndPointAs<OpalIMEndPoint>(OpalIMEndPoint::Prefix());
     if (imEP != NULL) {
-      OpalMediaFormatList formats = imEP->GetMediaFormats();
-      connection.AdjustMediaFormats(true, NULL, formats);
-      if (!formats.IsEmpty()) {
+      OpalMediaFormatList imFormats = imEP->GetMediaFormats();
+      connection.AdjustMediaFormats(true, NULL, imFormats);
+      if (!imFormats.IsEmpty()) {
         OpalMediaFormatList formats = connection.GetMediaFormats();
         if (!formats.IsEmpty()) {
           PStringStream autoStart;
@@ -988,8 +988,8 @@ bool OpalManager::OnRouteConnection(PStringSet & routesTried,
         return MakeConnection(call, b_party, NULL, options, stringOptions) != NULL;
 
       if (scheme.IsEmpty()) {
-        PReadWaitAndSignal mutex(endpointsMutex);
-        for (PList<OpalEndPoint>::iterator it = endpointList.begin(); it != endpointList.end(); ++it) {
+        PReadWaitAndSignal mutex(m_endpointsMutex);
+        for (PList<OpalEndPoint>::iterator it = m_endpointList.begin(); it != m_endpointList.end(); ++it) {
           if (it->HasAttribute(OpalEndPoint::IsNetworkEndPoint) == (call.GetConnectionCount() > 0))
             return MakeConnection(call, it->GetPrefixName() + ':' + b_party, NULL, options, stringOptions) != NULL;
         }
@@ -1180,7 +1180,7 @@ void OpalManager::AdjustMediaFormats(bool local,
                                      const OpalConnection & connection,
                                      OpalMediaFormatList & mediaFormats) const
 {
-  mediaFormats.Remove(mediaFormatMask);
+  mediaFormats.Remove(m_mediaFormatMask);
 
   // Don't do the reorder done if acting as gateway, use other network endpoints ordering
   if (local) {
@@ -1191,7 +1191,7 @@ void OpalManager::AdjustMediaFormats(bool local,
         reorder = false;
     }
     if (reorder)
-      mediaFormats.Reorder(mediaFormatOrder);
+      mediaFormats.Reorder(m_mediaFormatOrder);
   }
 
   connection.GetCall().AdjustMediaFormats(local, connection, mediaFormats);
@@ -1530,9 +1530,9 @@ void OpalManager::OnMWIReceived(const PString & PTRACE_PARAM(party),
 
 bool OpalManager::GetConferenceStates(OpalConferenceStates & states, const PString & name) const
 {
-  PReadWaitAndSignal mutex(endpointsMutex);
+  PReadWaitAndSignal mutex(m_endpointsMutex);
 
-  for (PList<OpalEndPoint>::const_iterator ep = endpointList.begin(); ep != endpointList.end(); ++ep) {
+  for (PList<OpalEndPoint>::const_iterator ep = m_endpointList.begin(); ep != m_endpointList.end(); ++ep) {
     if (ep->GetConferenceStates(states, name))
       return true;
   }
@@ -1545,9 +1545,9 @@ void OpalManager::OnConferenceStatusChanged(OpalEndPoint & endpoint, const PStri
 {
   PTRACE(4, "OnConferenceStatusChanged(" << endpoint << ",\"" << uri << "\"," << change << ')');
 
-  PReadWaitAndSignal mutex(endpointsMutex);
+  PReadWaitAndSignal mutex(m_endpointsMutex);
 
-  for (PList<OpalEndPoint>::iterator ep = endpointList.begin(); ep != endpointList.end(); ++ep) {
+  for (PList<OpalEndPoint>::iterator ep = m_endpointList.begin(); ep != m_endpointList.end(); ++ep) {
     if (&endpoint != &*ep)
       ep->OnConferenceStatusChanged(endpoint, uri, change);
   }
@@ -1567,9 +1567,9 @@ PStringList OpalManager::GetNetworkURIs(const PString & name) const
 {
   PStringList list;
 
-  PReadWaitAndSignal mutex(endpointsMutex);
+  PReadWaitAndSignal mutex(m_endpointsMutex);
 
-  for (PList<OpalEndPoint>::const_iterator ep = endpointList.begin(); ep != endpointList.end(); ++ep)
+  for (PList<OpalEndPoint>::const_iterator ep = m_endpointList.begin(); ep != m_endpointList.end(); ++ep)
     list += ep->GetNetworkURIs(name);
 
   return list;
@@ -1880,39 +1880,39 @@ PString OpalManager::ApplyRouteTable(const PString & a_party, const PString & b_
 
 void OpalManager::SetProductInfo(const OpalProductInfo & info, bool updateAll)
 {
-  productInfo = info;
+  m_productInfo = info;
 
   if (updateAll) {
-    endpointsMutex.StartWrite();
-    for (PList<OpalEndPoint>::iterator ep = endpointList.begin(); ep != endpointList.end(); ++ep)
+    m_endpointsMutex.StartWrite();
+    for (PList<OpalEndPoint>::iterator ep = m_endpointList.begin(); ep != m_endpointList.end(); ++ep)
       ep->SetProductInfo(info);
-    endpointsMutex.EndWrite();
+    m_endpointsMutex.EndWrite();
   }
 }
 
 
 void OpalManager::SetDefaultUserName(const PString & name, bool updateAll)
 {
-  defaultUserName = name;
+  m_defaultUserName = name;
 
   if (updateAll) {
-    endpointsMutex.StartWrite();
-    for (PList<OpalEndPoint>::iterator ep = endpointList.begin(); ep != endpointList.end(); ++ep)
+    m_endpointsMutex.StartWrite();
+    for (PList<OpalEndPoint>::iterator ep = m_endpointList.begin(); ep != m_endpointList.end(); ++ep)
       ep->SetDefaultLocalPartyName(name);
-    endpointsMutex.EndWrite();
+    m_endpointsMutex.EndWrite();
   }
 }
 
 
 void OpalManager::SetDefaultDisplayName(const PString & name, bool updateAll)
 {
-  defaultDisplayName = name;
+  m_defaultDisplayName = name;
 
   if (updateAll) {
-    endpointsMutex.StartWrite();
-    for (PList<OpalEndPoint>::iterator ep = endpointList.begin(); ep != endpointList.end(); ++ep)
+    m_endpointsMutex.StartWrite();
+    for (PList<OpalEndPoint>::iterator ep = m_endpointList.begin(); ep != m_endpointList.end(); ++ep)
       ep->SetDefaultDisplayName(name);
-    endpointsMutex.EndWrite();
+    m_endpointsMutex.EndWrite();
   }
 }
 
@@ -2169,14 +2169,14 @@ void OpalManager::SetAudioJitterDelay(unsigned minDelay, unsigned maxDelay)
 
 void OpalManager::SetMediaFormatOrder(const PStringArray & order)
 {
-  mediaFormatOrder = order;
+  m_mediaFormatOrder = order;
   PTRACE(3, "SetMediaFormatOrder(" << setfill(',') << order << ')');
 }
 
 
 void OpalManager::SetMediaFormatMask(const PStringArray & mask)
 {
-  mediaFormatMask = mask;
+  m_mediaFormatMask = mask;
   PTRACE(3, "SetMediaFormatMask(" << setfill(',') << mask << ')');
 }
 
@@ -2208,20 +2208,20 @@ void OpalManager::GarbageCollection()
   m_presentities.DeleteObjectsToBeRemoved();
 #endif // OPAL_HAS_PRESENCE
 
-  bool allCleared = activeCalls.DeleteObjectsToBeRemoved();
+  bool allCleared = m_activeCalls.DeleteObjectsToBeRemoved();
 
-  endpointsMutex.StartRead();
+  m_endpointsMutex.StartRead();
 
   if (m_garbageCollectSkip)
     m_garbageCollectSkip = false;
   else {
-    for (PList<OpalEndPoint>::iterator ep = endpointList.begin(); ep != endpointList.end(); ++ep) {
+    for (PList<OpalEndPoint>::iterator ep = m_endpointList.begin(); ep != m_endpointList.end(); ++ep) {
       if (!ep->GarbageCollection())
         allCleared = false;
     }
   }
 
-  endpointsMutex.EndRead();
+  m_endpointsMutex.EndRead();
 
   if (allCleared && m_clearingAllCallsCount != 0)
     m_allCallsCleared.Signal();
@@ -2251,7 +2251,7 @@ bool OpalManager::StartRecording(const PString & callToken,
                                  const PFilePath & fn,
                                  const OpalRecordManager::Options & options)
 {
-  PSafePtr<OpalCall> call = activeCalls.FindWithLock(callToken, PSafeReadWrite);
+  PSafePtr<OpalCall> call = m_activeCalls.FindWithLock(callToken, PSafeReadWrite);
   if (call == NULL)
     return false;
 
@@ -2268,7 +2268,7 @@ bool OpalManager::IsRecording(const PString & callToken)
 
 bool OpalManager::StopRecording(const PString & callToken)
 {
-  PSafePtr<OpalCall> call = activeCalls.FindWithLock(callToken, PSafeReadWrite);
+  PSafePtr<OpalCall> call = m_activeCalls.FindWithLock(callToken, PSafeReadWrite);
   if (call == NULL)
     return false;
 

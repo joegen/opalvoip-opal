@@ -342,16 +342,16 @@ static void DrawText(unsigned x, unsigned y, unsigned frameWidth, unsigned frame
   while (*text != '\0') {
     const PVideoFont::LetterData * letter = PVideoFont::GetLetterData(*text++);
     if (letter != NULL) {
-      for (PINDEX y = 0; y < PVideoFont::MAX_L_HEIGHT; ++y) {
-        BYTE * Y = output + y * frameWidth;
-        const char * line = letter->line[y];
+      for (PINDEX row = 0; row < PVideoFont::MAX_L_HEIGHT; ++row) {
+        BYTE * rowPtr = output + row * frameWidth;
+        const char * line = letter->line[row];
         {
           int UVwidth = (strlen(line)+2)/2;
-          memset(Y + uoffs*2, 0x80, UVwidth);
-          memset(Y + uoffs*2, 0x80, UVwidth);
+          memset(rowPtr + uoffs*2, 0x80, UVwidth);
+          memset(rowPtr + uoffs*2, 0x80, UVwidth);
         }
         while (*line != '\0')
-          *Y++ = (*line++ == ' ') ? 16 : 240;
+          *rowPtr++ = (*line++ == ' ') ? 16 : 240;
       }
       output += 1 + strlen(letter->line[0]);
     }

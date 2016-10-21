@@ -980,7 +980,7 @@ PString OpalMixerEndPoint::CreateInternalURI(const PGloballyUniqueID & guid)
 
 void OpalMixerEndPoint::OnNodeStatusChanged(const OpalMixerNode & node, OpalConferenceState::ChangeType change)
 {
-  manager.OnConferenceStatusChanged(*this, CreateInternalURI(node.GetGUID()), change);
+  GetManager().OnConferenceStatusChanged(*this, CreateInternalURI(node.GetGUID()), change);
 }
 
 
@@ -1004,9 +1004,9 @@ OpalMixerConnection::OpalMixerConnection(PSafePtr<OpalMixerNode> node,
 
   const PStringSet & names = node->GetNames();
   if (names.IsEmpty())
-    localPartyName = node->GetGUID().AsString();
+    m_localPartyName = node->GetGUID().AsString();
   else
-    localPartyName = *names.begin();
+    m_localPartyName = *names.begin();
 
   PTRACE(4, "Constructed");
 }
@@ -1097,7 +1097,7 @@ void OpalMixerConnection::SetListenOnly(bool listenOnly)
 
   m_listenOnly = listenOnly;
 
-  for (PSafePtr<OpalMediaStream> mediaStream(mediaStreams, PSafeReference); mediaStream != NULL; ++mediaStream) {
+  for (PSafePtr<OpalMediaStream> mediaStream(m_mediaStreams, PSafeReference); mediaStream != NULL; ++mediaStream) {
     OpalMixerMediaStream * mixerStream = dynamic_cast<OpalMixerMediaStream *>(&*mediaStream);
     if (mixerStream != NULL && mixerStream->IsSink()) {
       mixerStream->SetPaused(listenOnly);
@@ -1135,11 +1135,11 @@ OpalMixerMediaStream::OpalMixerMediaStream(OpalConnection & conn,
      connections. */
   if (IsSink()) {
 #if OPAL_VIDEO
-    if (mediaFormat.GetMediaType() == OpalMediaType::Video())
-      mediaFormat = OpalYUV420P;
+    if (m_mediaFormat.GetMediaType() == OpalMediaType::Video())
+      m_mediaFormat = OpalYUV420P;
     else
 #endif
-      mediaFormat = OpalPCM16;
+      m_mediaFormat = OpalPCM16;
   }
 }
 
@@ -1155,12 +1155,12 @@ PBoolean OpalMixerMediaStream::Open()
   if (m_isOpen)
     return true;
 
-  if (mediaFormat.GetMediaType() != OpalMediaType::Audio()
+  if (m_mediaFormat.GetMediaType() != OpalMediaType::Audio()
 #if OPAL_VIDEO
-   && mediaFormat.GetMediaType() != OpalMediaType::Video()
+   && m_mediaFormat.GetMediaType() != OpalMediaType::Video()
 #endif
   ) {
-    PTRACE(3, "Cannot open media stream of type " << mediaFormat.GetMediaType());
+    PTRACE(3, "Cannot open media stream of type " << m_mediaFormat.GetMediaType());
     return false;
   }
 

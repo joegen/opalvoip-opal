@@ -432,8 +432,8 @@ PBoolean OpalIVRMediaStream::Open()
     PString vxmlChannelMediaFormat = vxmlChannel->GetMediaFormat();
     m_vxmlSession.UnLockVXMLChannel();
     
-    if (mediaFormat.GetName() != vxmlChannelMediaFormat) {
-      PTRACE(1, "IVR\tCannot use VXML engine: asymmetrical media formats: " << mediaFormat << " <-> " << vxmlChannelMediaFormat);
+    if (m_mediaFormat.GetName() != vxmlChannelMediaFormat) {
+      PTRACE(1, "IVR\tCannot use VXML engine: asymmetrical media formats: " << m_mediaFormat << " <-> " << vxmlChannelMediaFormat);
       return false;
     }
 
@@ -441,7 +441,7 @@ PBoolean OpalIVRMediaStream::Open()
   }
 
   PTRACE(3, "IVR\tOpening");
-  if (m_vxmlSession.Open(mediaFormat))
+  if (m_vxmlSession.Open(m_mediaFormat))
     return OpalMediaStream::Open();
 
   PTRACE(1, "IVR\tCannot open VXML engine: incompatible media format");
@@ -451,7 +451,7 @@ PBoolean OpalIVRMediaStream::Open()
 
 void OpalIVRMediaStream::InternalClose()
 {
-  if (connection.IsReleased())
+  if (m_connection.IsReleased())
     OpalRawMediaStream::InternalClose();
 }
 

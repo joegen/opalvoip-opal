@@ -54,44 +54,44 @@ static const OpalBandwidth DefaultInitialBandwidth = 4000000; // 4Mb/s
 OpalEndPoint::OpalEndPoint(OpalManager & mgr,
                            const PCaselessString & prefix,
                            Attributes attributes)
-  : manager(mgr)
-  , prefixName(prefix)
+  : m_manager(mgr)
+  , m_prefixName(prefix)
   , m_attributes(attributes)
   , m_maxSizeUDP(4096)
-  , productInfo(mgr.GetProductInfo())
-  , defaultLocalPartyName(manager.GetDefaultUserName())
-  , defaultDisplayName(manager.GetDefaultDisplayName())
+  , m_productInfo(mgr.GetProductInfo())
+  , m_defaultLocalPartyName(mgr.GetDefaultUserName())
+  , m_defaultDisplayName(mgr.GetDefaultDisplayName())
   , m_initialRxBandwidth(DefaultInitialBandwidth)
   , m_initialTxBandwidth(DefaultInitialBandwidth)
-  , defaultSendUserInputMode(OpalConnection::SendUserInputAsProtocolDefault)
+  , m_defaultSendUserInputMode(OpalConnection::SendUserInputAsProtocolDefault)
 {
-  manager.AttachEndPoint(this);
+  m_manager.AttachEndPoint(this);
 
-  if (defaultLocalPartyName.IsEmpty())
-    defaultLocalPartyName = PProcess::Current().GetName() & "User";
+  if (m_defaultLocalPartyName.IsEmpty())
+    m_defaultLocalPartyName = PProcess::Current().GetName() & "User";
 
-  PTRACE(4, "Created endpoint: " << prefixName);
+  PTRACE(4, "Created endpoint: " << m_prefixName);
 }
 
 
 OpalEndPoint::~OpalEndPoint()
 {
-  PTRACE(4, prefixName << " endpoint destroyed.");
+  PTRACE(4, m_prefixName << " endpoint destroyed.");
 }
 
 
 void OpalEndPoint::ShutDown()
 {
-  PTRACE(3, prefixName << " endpoint shutting down.");
+  PTRACE(3, m_prefixName << " endpoint shutting down.");
 
   // Shut down the listeners as soon as possible to avoid race conditions
-  listeners.RemoveAll();
+  m_listeners.RemoveAll();
 }
 
 
 void OpalEndPoint::PrintOn(ostream & strm) const
 {
-  strm << "EP<" << prefixName << '>';
+  strm << "EP<" << m_prefixName << '>';
 }
 
 
@@ -138,12 +138,12 @@ bool OpalEndPoint::SetInitialBandwidth(OpalBandwidth::Direction dir, OpalBandwid
 
 PBoolean OpalEndPoint::GarbageCollection()
 {
-  for (PSafePtr<OpalConnection> connection(connectionsActive, PSafeReference); connection != NULL; ++connection) {
+  for (PSafePtr<OpalConnection> connection(m_connectionsActive, PSafeReference); connection != NULL; ++connection) {
     PTRACE_CONTEXT_ID_PUSH_THREAD(connection);
     connection->GarbageCollection();
   }
 
-  return connectionsActive.DeleteObjectsToBeRemoved();
+  return m_connectionsActive.DeleteObjectsToBeRemoved();
 }
 
 
@@ -181,7 +181,7 @@ bool OpalEndPoint::StartListeners(const PStringArray & listenerAddresses, bool a
 
   // Stop listeners not in list
   if (!add) {
-    for (OpalListenerList::iterator it = listeners.begin(); it != listeners.end(); ) {
+    for (OpalListenerList::iterator it = m_listeners.begin(); it != m_listeners.end(); ) {
       bool removeListener = true;
       for (PINDEX i = 0; i < interfaces.GetSize(); i++) {
         if (it->GetLocalAddress().IsEquivalent(interfaces[i])) {
@@ -193,7 +193,7 @@ bool OpalEndPoint::StartListeners(const PStringArray & listenerAddresses, bool a
         }
       }
       if (removeListener)
-        listeners.erase(it++);
+        m_listeners.erase(it++);
     }
   }
 
@@ -222,7 +222,7 @@ PBoolean OpalEndPoint::StartListener(const OpalTransportAddress & listenerAddres
   }
 
   // Check for already listening
-  for (OpalListenerList::iterator it = listeners.begin(); it != listeners.end(); ++it) {
+  for (OpalListenerList::iterator it = m_listeners.begin(); it != m_listeners.end(); ++it) {
     if (it->GetLocalAddress().IsEquivalent(iface)) {
       PTRACE(4, "Already listening on " << iface);
       return true;
@@ -257,7 +257,7 @@ PBoolean OpalEndPoint::StartListener(OpalListener * listener)
     return false;
   }
 
-  listeners.Append(listener);
+  m_listeners.Append(listener);
   return true;
 }
 
@@ -299,7 +299,7 @@ PStringArray OpalEndPoint::GetDefaultListeners() const
 
 OpalListener * OpalEndPoint::FindListener(const OpalTransportAddress & iface)
 {
-  for (OpalListenerList::iterator listener = listeners.begin(); listener != listeners.end(); ++listener) {
+  for (OpalListenerList::iterator listener = m_listeners.begin(); listener != m_listeners.end(); ++listener) {
     if (listener->GetLocalAddress().IsEquivalent(iface, true))
       return &*listener;
   }
@@ -317,9 +317,9 @@ PBoolean OpalEndPoint::StopListener(const OpalTransportAddress & iface)
 PBoolean OpalEndPoint::RemoveListener(OpalListener * listener)
 {
   if (listener != NULL)
-    return listeners.Remove(listener);
+    return m_listeners.Remove(listener);
 
-  listeners.RemoveAll();
+  m_listeners.RemoveAll();
   return true;
 }
 
@@ -353,14 +353,14 @@ OpalTransportAddressArray OpalEndPoint::GetInterfaceAddresses(const OpalTranspor
     PIPSocket::Address associatedInterfaceIP(associatedTransport->GetInterface());
     if (!associatedInterfaceIP.IsValid())
       associatedTransport->GetLocalAddress().GetIpAddress(associatedInterfaceIP);
-    AddTransportAddresses(interfaceAddresses, listeners, remoteAddress,
+    AddTransportAddresses(interfaceAddresses, m_listeners, remoteAddress,
                           OpalTransportAddress(associatedInterfaceIP, 65535, remoteAddress.GetProtoPrefix()));
-    AddTransportAddresses(interfaceAddresses, listeners, remoteAddress,
+    AddTransportAddresses(interfaceAddresses, m_listeners, remoteAddress,
                           OpalTransportAddress(associatedInterfaceIP, 65535, OpalTransportAddress::IpPrefix()));
   }
 
   PIPSocket::InterfaceTable interfaceTable;
-  for (OpalListenerList::const_iterator listener = listeners.begin(); listener != listeners.end(); ++listener) {
+  for (OpalListenerList::const_iterator listener = m_listeners.begin(); listener != m_listeners.end(); ++listener) {
     OpalTransportAddress listenerInterface = listener->GetLocalAddress();
     PIPSocket::Address listenerIP;
     WORD listenerPort = 0;
@@ -402,13 +402,13 @@ void OpalEndPoint::NewIncomingConnection(OpalListener & /*listener*/, const Opal
 PSafePtr<OpalConnection> OpalEndPoint::GetConnectionWithLock(const PString & token, PSafetyMode mode) const
 {
   if (token.IsEmpty() || token == "*")
-    return PSafePtr<OpalConnection>(connectionsActive, mode);
+    return PSafePtr<OpalConnection>(m_connectionsActive, mode);
 
-  PSafePtr<OpalConnection> connection = connectionsActive.FindWithLock(token, mode);
+  PSafePtr<OpalConnection> connection = m_connectionsActive.FindWithLock(token, mode);
   if (connection != NULL)
     return connection;
 
-  PSafePtr<OpalCall> call = manager.FindCallWithLock(token, PSafeReadOnly);
+  PSafePtr<OpalCall> call = m_manager.FindCallWithLock(token, PSafeReadOnly);
   if (call != NULL) {
     for (PINDEX i = 0; (connection = call->GetConnection(i)) != NULL; ++i) {
       if (&connection->GetEndPoint() == this)
@@ -420,7 +420,7 @@ PSafePtr<OpalConnection> OpalEndPoint::GetConnectionWithLock(const PString & tok
     return NULL;
 
   PString name = token.Mid(GetPrefixName().GetLength()+1);
-  for (connection = PSafePtr<OpalConnection>(connectionsActive, PSafeReference); connection != NULL; ++connection) {
+  for (connection = PSafePtr<OpalConnection>(m_connectionsActive, PSafeReference); connection != NULL; ++connection) {
     if (connection->GetLocalPartyName() == name)
       return connection.SetSafetyMode(mode) ? connection : NULL;
   }
@@ -433,7 +433,7 @@ PStringList OpalEndPoint::GetAllConnections()
 {
   PStringList tokens;
 
-  for (PSafePtr<OpalConnection> connection(connectionsActive, PSafeReadOnly); connection != NULL; ++connection)
+  for (PSafePtr<OpalConnection> connection(m_connectionsActive, PSafeReadOnly); connection != NULL; ++connection)
     tokens.AppendString(connection->GetToken());
 
   return tokens;
@@ -442,7 +442,7 @@ PStringList OpalEndPoint::GetAllConnections()
 
 PBoolean OpalEndPoint::HasConnection(const PString & token)
 {
-  return connectionsActive.Contains(token);
+  return m_connectionsActive.Contains(token);
 }
 
 
@@ -452,7 +452,7 @@ OpalConnection * OpalEndPoint::AddConnection(OpalConnection * connection)
     return NULL;
 
   PString token = connection->GetToken();
-  if (connectionsActive.Contains(token)) {
+  if (m_connectionsActive.Contains(token)) {
     PTRACE(2, "Cannot add connection, duplicate token: " << token);
     delete connection;
     return NULL;
@@ -460,7 +460,7 @@ OpalConnection * OpalEndPoint::AddConnection(OpalConnection * connection)
 
   connection->SetStringOptions(m_defaultStringOptions, false);
 
-  connectionsActive.SetAt(token, connection);
+  m_connectionsActive.SetAt(token, connection);
 
   OnNewConnection(connection->GetCall(), *connection);
 
@@ -483,51 +483,51 @@ PBoolean OpalEndPoint::OnSetUpConnection(OpalConnection & PTRACE_PARAM(connectio
 
 PBoolean OpalEndPoint::OnIncomingConnection(OpalConnection & connection, unsigned options, OpalConnection::StringOptions * stringOptions)
 {
-  return manager.OnIncomingConnection(connection, options, stringOptions);
+  return m_manager.OnIncomingConnection(connection, options, stringOptions);
 }
 
 
 void OpalEndPoint::OnProceeding(OpalConnection & connection)
 {
-  manager.OnProceeding(connection);
+  m_manager.OnProceeding(connection);
 }
 
 
 void OpalEndPoint::OnAlerting(OpalConnection & connection, bool withMedia)
 {
-  manager.OnAlerting(connection, withMedia);
+  m_manager.OnAlerting(connection, withMedia);
 }
 
 
 void OpalEndPoint::OnAlerting(OpalConnection & connection)
 {
-  manager.OnAlerting(connection);
+  m_manager.OnAlerting(connection);
 }
 
 OpalConnection::AnswerCallResponse
        OpalEndPoint::OnAnswerCall(OpalConnection & connection,
                                   const PString & caller)
 {
-  return manager.OnAnswerCall(connection, caller);
+  return m_manager.OnAnswerCall(connection, caller);
 }
 
 void OpalEndPoint::OnConnected(OpalConnection & connection)
 {
-  manager.OnConnected(connection);
+  m_manager.OnConnected(connection);
 }
 
 
 void OpalEndPoint::OnEstablished(OpalConnection & connection)
 {
-  manager.OnEstablished(connection);
+  m_manager.OnEstablished(connection);
 }
 
 
 void OpalEndPoint::OnReleased(OpalConnection & connection)
 {
   PTRACE(4, "OnReleased " << connection);
-  connectionsActive.RemoveAt(connection.GetToken());
-  manager.OnReleased(connection);
+  m_connectionsActive.RemoveAt(connection.GetToken());
+  m_manager.OnReleased(connection);
 }
 
 
@@ -539,7 +539,7 @@ void OpalEndPoint::OnHold(OpalConnection & connection, bool fromRemote, bool onH
 
 void OpalEndPoint::OnHold(OpalConnection & connection)
 {
-  manager.OnHold(connection);
+  m_manager.OnHold(connection);
 }
 
 
@@ -547,7 +547,7 @@ PBoolean OpalEndPoint::OnForwarded(OpalConnection & connection,
 			       const PString & forwardParty)
 {
   PTRACE(4, "OnForwarded " << connection);
-  return manager.OnForwarded(connection, forwardParty);
+  return m_manager.OnForwarded(connection, forwardParty);
 }
 
 
@@ -561,7 +561,7 @@ bool OpalEndPoint::OnTransferNotify(OpalConnection & connection, const PStringTo
   if (otherConnection != NULL)
     stayConnected = otherConnection->OnTransferNotify(info, transferringConnection);
 
-  return manager.OnTransferNotify(connection, info) || stayConnected;
+  return m_manager.OnTransferNotify(connection, info) || stayConnected;
 }
 
 
@@ -577,7 +577,7 @@ PBoolean OpalEndPoint::ClearCall(const PString & token,
                              OpalConnection::CallEndReason reason,
                              PSyncPoint * sync)
 {
-  return manager.ClearCall(token, reason, sync);
+  return m_manager.ClearCall(token, reason, sync);
 }
 
 
@@ -600,7 +600,7 @@ PBoolean OpalEndPoint::ClearCallSynchronous(const PString & token,
 
 void OpalEndPoint::ClearAllCalls(OpalConnection::CallEndReason reason, PBoolean wait)
 {
-  manager.ClearAllCalls(reason, wait);
+  m_manager.ClearAllCalls(reason, wait);
 }
 
 
@@ -608,7 +608,7 @@ void OpalEndPoint::AdjustMediaFormats(bool local,
                                       const OpalConnection & connection,
                                       OpalMediaFormatList & mediaFormats) const
 {
-  manager.AdjustMediaFormats(local, connection, mediaFormats);
+  m_manager.AdjustMediaFormats(local, connection, mediaFormats);
 }
 
 
@@ -618,26 +618,26 @@ bool OpalEndPoint::GetMediaTransportAddresses(const OpalConnection & provider,
                                                const OpalMediaType & mediaType,
                                          OpalTransportAddressArray & transports) const
 {
-  return manager.GetMediaTransportAddresses(provider, consumer, sessionId, mediaType, transports);
+  return m_manager.GetMediaTransportAddresses(provider, consumer, sessionId, mediaType, transports);
 }
 
 
 PBoolean OpalEndPoint::OnOpenMediaStream(OpalConnection & connection,
                                      OpalMediaStream & stream)
 {
-  return manager.OnOpenMediaStream(connection, stream);
+  return m_manager.OnOpenMediaStream(connection, stream);
 }
 
 
 void OpalEndPoint::OnClosedMediaStream(const OpalMediaStream & stream)
 {
-  manager.OnClosedMediaStream(stream);
+  m_manager.OnClosedMediaStream(stream);
 }
 
 
 void OpalEndPoint::OnFailedMediaStream(OpalConnection & connection, bool fromRemote, const PString & reason)
 {
-  manager.OnFailedMediaStream(connection, fromRemote, reason);
+  m_manager.OnFailedMediaStream(connection, fromRemote, reason);
 }
 
 
@@ -680,7 +680,7 @@ PStringArray OpalEndPoint::GetAllMediaCryptoSuites() const
 void OpalEndPoint::OnUserInputString(OpalConnection & connection,
                                      const PString & value)
 {
-  manager.OnUserInputString(connection, value);
+  m_manager.OnUserInputString(connection, value);
 }
 
 
@@ -688,7 +688,7 @@ void OpalEndPoint::OnUserInputTone(OpalConnection & connection,
                                    char tone,
                                    int duration)
 {
-  manager.OnUserInputTone(connection, tone, duration);
+  m_manager.OnUserInputTone(connection, tone, duration);
 }
 
 
@@ -697,7 +697,7 @@ PString OpalEndPoint::ReadUserInput(OpalConnection & connection,
                                     unsigned lastDigitTimeout,
                                     unsigned firstDigitTimeout)
 {
-  return manager.ReadUserInput(connection, terminators, lastDigitTimeout, firstDigitTimeout);
+  return m_manager.ReadUserInput(connection, terminators, lastDigitTimeout, firstDigitTimeout);
 }
 
 
@@ -711,7 +711,7 @@ void OpalEndPoint::OnMWIReceived(const PString & party,
                                  OpalManager::MessageWaitingType type,
                                  const PString & extraInfo)
 {
-  manager.OnMWIReceived(party, type, extraInfo);
+  m_manager.OnMWIReceived(party, type, extraInfo);
 }
 
 
@@ -730,7 +730,7 @@ PStringList OpalEndPoint::GetNetworkURIs(const PString & name) const
 {
   PStringList list;
 
-  const PStringList prefixes = manager.GetPrefixNames(this);
+  const PStringList prefixes = m_manager.GetPrefixNames(this);
 
   OpalTransportAddressArray addresses = GetInterfaceAddresses();
   for (PINDEX i = 0; i < addresses.GetSize(); ++i) {
@@ -757,7 +757,7 @@ PStringList OpalEndPoint::GetNetworkURIs(const PString & name) const
 bool OpalEndPoint::FindListenerForProtocol(const char * protoPrefix, OpalTransportAddress & addr)
 {
   OpalTransportAddress compatibleTo("*", 0, protoPrefix);
-  for (OpalListenerList::iterator listener = listeners.begin(); listener != listeners.end(); ++listener) {
+  for (OpalListenerList::iterator listener = m_listeners.begin(); listener != m_listeners.end(); ++listener) {
     addr = listener->GetLocalAddress();
     if (addr.IsCompatible(compatibleTo))
       return true;
@@ -768,7 +768,7 @@ bool OpalEndPoint::FindListenerForProtocol(const char * protoPrefix, OpalTranspo
 #if OPAL_PTLIB_SSL
 bool OpalEndPoint::ApplySSLCredentials(PSSLContext & context, bool create) const
 {
-  return manager.ApplySSLCredentials(*this, context, create);
+  return m_manager.ApplySSLCredentials(*this, context, create);
 }
 #endif
 
@@ -777,7 +777,7 @@ bool OpalEndPoint::ApplySSLCredentials(PSSLContext & context, bool create) const
 
 bool OpalEndPoint::Message(const PString & to, const PString & body)
 {
-  return manager.Message(to, body);
+  return m_manager.Message(to, body);
 }
 
 
@@ -789,19 +789,19 @@ PBoolean OpalEndPoint::Message(
   PString & conversationId
 )
 {
-  return manager.Message(to, type, body, from, conversationId);
+  return m_manager.Message(to, type, body, from, conversationId);
 }
 
 
 PBoolean OpalEndPoint::Message(OpalIM & message)
 {
-  return manager.Message(message);
+  return m_manager.Message(message);
 }
 
 
 void OpalEndPoint::OnMessageReceived(const OpalIM & message)
 {
-  manager.OnMessageReceived(message);
+  m_manager.OnMessageReceived(message);
 }
 
 #endif // OPAL_HAS_IM

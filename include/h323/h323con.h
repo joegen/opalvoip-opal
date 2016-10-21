@@ -760,13 +760,13 @@ class H323Connection : public OpalRTPConnection
        connection is created for Call Intrusion. This flag is used when we
        should decide whether to Answer the call or to Close it.
       */
-    void SetCallIntrusion() { isCallIntrusion = true; }
+    void SetCallIntrusion() { m_isCallIntrusion = true; }
 
-    PBoolean IsCallIntrusion() { return isCallIntrusion; }
+    PBoolean IsCallIntrusion() { return m_isCallIntrusion; }
 
     /**Get Call Intrusion Protection Level of the local endpoint.
       */
-    unsigned GetLocalCallIntrusionProtectionLevel() { return callIntrusionProtectionLevel; }
+    unsigned GetLocalCallIntrusionProtectionLevel() { return m_callIntrusionProtectionLevel; }
 
     /**Get Call Intrusion Protection Level of other endpoints that we are in
        connection with.
@@ -1862,7 +1862,7 @@ class H323Connection : public OpalRTPConnection
   //@{
     /**Get the owner endpoint for this connection.
      */
-    H323EndPoint & GetEndPoint() const { return endpoint; }
+    H323EndPoint & GetEndPoint() const { return m_endpoint; }
 
     /**Get the call direction for this connection.
      */
@@ -1870,13 +1870,13 @@ class H323Connection : public OpalRTPConnection
 
     /**Determined if connection is gatekeeper routed.
      */
-    PBoolean IsGatekeeperRouted() const { return gatekeeperRouted; }
+    PBoolean IsGatekeeperRouted() const { return m_gatekeeperRouted; }
 
     /**Get the distinctive ring code for incoming call.
        This returns an integer from 0 to 7 that may indicate to an application
        that different ring cadences are to be used.
       */
-    unsigned GetDistinctiveRing() const { return distinctiveRing; }
+    unsigned GetDistinctiveRing() const { return m_distinctiveRing; }
 
     /**Set the distinctive ring code for outgoing call.
        This sets the integer from 0 to 7 that will be used in the outgoing
@@ -1884,7 +1884,7 @@ class H323Connection : public OpalRTPConnection
        construction or during the OnSendSignalSetup() callback function so the
        member variable is set befor ethe PDU is sent.
       */
-    void SetDistinctiveRing(unsigned pattern) { distinctiveRing = pattern&7; }
+    void SetDistinctiveRing(unsigned pattern) { m_distinctiveRing = pattern&7; }
 
     /**Get the internal OpenH323 call token for this connection.
        Deprecated, only used for backward compatibility.
@@ -1893,12 +1893,12 @@ class H323Connection : public OpalRTPConnection
 
     /**Get the call reference for this connection.
      */
-    unsigned GetCallReference() const { return callReference; }
+    unsigned GetCallReference() const { return m_callReference; }
 
     /**Get the call identifier for this connection.
      */
     inline const OpalGloballyUniqueID & GetCallIdentifier() const 
-    { return callIdentifier; }
+    { return m_callIdentifier; }
 
     /**Get the protocol-specific unique identifier for this connection.
      */
@@ -1906,7 +1906,7 @@ class H323Connection : public OpalRTPConnection
 
     /**Get the conference identifier for this connection.
      */
-    const OpalGloballyUniqueID & GetConferenceIdentifier() const { return conferenceIdentifier; }
+    const OpalGloballyUniqueID & GetConferenceIdentifier() const { return m_conferenceIdentifier; }
 
     /**Set the local name/alias from information in the PDU.
       */
@@ -1914,7 +1914,7 @@ class H323Connection : public OpalRTPConnection
 
     /**Get the list of all alias names this connection is using.
       */
-    const PStringList & GetLocalAliasNames() const { return localAliasNames; }
+    const PStringList & GetLocalAliasNames() const { return m_localAliasNames; }
 
     /**Set the name/alias of remote end from information in the PDU.
       */
@@ -1946,15 +1946,15 @@ class H323Connection : public OpalRTPConnection
 
     /**Get the remotes capability table for this connection.
      */
-    const H323Capabilities & GetLocalCapabilities() const { return localCapabilities; }
+    const H323Capabilities & GetLocalCapabilities() const { return m_localCapabilities; }
 
     /**Get the remotes capability table for this connection.
      */
-    const H323Capabilities & GetRemoteCapabilities() const { return remoteCapabilities; }
+    const H323Capabilities & GetRemoteCapabilities() const { return m_remoteCapabilities; }
 
     /**Get the maximum audio jitter delay.
      */
-    unsigned GetRemoteMaxAudioDelayJitter() const { return remoteMaxAudioDelayJitter; }
+    unsigned GetRemoteMaxAudioDelayJitter() const { return m_remoteMaxAudioDelayJitter; }
 
     /**Get the signalling channel being used.
       */
@@ -1962,7 +1962,7 @@ class H323Connection : public OpalRTPConnection
 
     /**Get the signalling channel protocol version number.
       */
-    unsigned GetSignallingVersion() const { return h225version; }
+    unsigned GetSignallingVersion() const { return m_h225version; }
 
     /**Get the control channel being used (may return signalling channel).
       */
@@ -1974,44 +1974,44 @@ class H323Connection : public OpalRTPConnection
 
     /**Get the control channel protocol version number.
       */
-    unsigned GetControlVersion() const { return h245version; }
+    unsigned GetControlVersion() const { return m_h245version; }
 
     /**Get the UUIE PDU monitor bit mask.
      */
-    unsigned GetUUIEsRequested() const { return uuiesRequested; }
+    unsigned GetUUIEsRequested() const { return m_uuiesRequested; }
 
     /**Set the UUIE PDU monitor bit mask.
      */
-    void SetUUIEsRequested(unsigned mask) { uuiesRequested = mask; }
+    void SetUUIEsRequested(unsigned mask) { m_uuiesRequested = mask; }
 
     /**Get the iNow Gatekeeper Access Token OID.
      */
-    const PString GetGkAccessTokenOID() const { return gkAccessTokenOID; }
+    const PString GetGkAccessTokenOID() const { return m_gkAccessTokenOID; }
 
     /**Set the iNow Gatekeeper Access Token OID.
      */
-    void SetGkAccessTokenOID(const PString & oid) { gkAccessTokenOID = oid; }
+    void SetGkAccessTokenOID(const PString & oid) { m_gkAccessTokenOID = oid; }
 
     /**Get the iNow Gatekeeper Access Token data.
      */
-    const PBYTEArray & GetGkAccessTokenData() const { return gkAccessTokenData; }
+    const PBYTEArray & GetGkAccessTokenData() const { return m_gkAccessTokenData; }
 
     /**Set the Destionation Extra Call Info memeber.
      */
     void SetDestExtraCallInfo(
       const PString & info
-    ) { destExtraCallInfo = info; }
+    ) { m_destExtraCallInfo = info; }
 
     /** Set the remote call waiting flag
      */
-    void SetRemotCallWaiting(const unsigned value) { remoteCallWaiting = value; }
+    void SetRemotCallWaiting(const unsigned value) { m_remoteCallWaiting = value; }
 
     /**How many caller's are waiting on the remote endpoint?
       -1 - None
        0 - Just this connection
        n - n plus this connection
      */
-    int GetRemoteCallWaiting() const { return remoteCallWaiting; }
+    int GetRemoteCallWaiting() const { return m_remoteCallWaiting; }
 
     /**Set the enforced duration limit for the call.
        This starts a timer that will automatically shut down the call when it
@@ -2054,7 +2054,7 @@ class H323Connection : public OpalRTPConnection
      * get the H4507 handler
      * @return a reference to the  H4507 handler
      */
-    H4507Handler&  getH4507handler(){return *h4507handler;}
+    H4507Handler&  getH4507handler(){return *m_h4507handler;}
 #endif
 
 #if OPAL_H460
@@ -2141,39 +2141,39 @@ class H323Connection : public OpalRTPConnection
     PDECLARE_NOTIFIER(PThread, H323Connection, NewOutgoingControlChannel);
     PDECLARE_AcceptHandlerNotifier(H323Connection, NewIncomingControlChannel);
 
-    H323EndPoint & endpoint;
+    H323EndPoint & m_endpoint;
 
     H323TransportAddress m_remoteConnectAddress;
-    int                  remoteCallWaiting; // Number of call's waiting at the remote endpoint
-    bool                 gatekeeperRouted;
-    unsigned             distinctiveRing;
-    unsigned             callReference;
+    int                  m_remoteCallWaiting; // Number of call's waiting at the remote endpoint
+    bool                 m_gatekeeperRouted;
+    unsigned             m_distinctiveRing;
+    unsigned             m_callReference;
     unsigned             m_progressIndicator;
-    OpalGloballyUniqueID callIdentifier;
-    OpalGloballyUniqueID conferenceIdentifier;
+    OpalGloballyUniqueID m_callIdentifier;
+    OpalGloballyUniqueID m_conferenceIdentifier;
 
-    PString            localDestinationAddress;
-    PStringList        localAliasNames;
-    H323Capabilities   localCapabilities; // Capabilities local system supports
-    PString            destExtraCallInfo;
-    H323Capabilities   remoteCapabilities; // Capabilities remote system supports
-    unsigned           remoteMaxAudioDelayJitter;
-    PTimer             roundTripDelayTimer;
-    unsigned           uuiesRequested;
-    PString            gkAccessTokenOID;
-    PBYTEArray         gkAccessTokenData;
-    bool               addAccessTokenToSetup;
+    PString            m_localDestinationAddress;
+    PStringList        m_localAliasNames;
+    H323Capabilities   m_localCapabilities; // Capabilities local system supports
+    PString            m_destExtraCallInfo;
+    H323Capabilities   m_remoteCapabilities; // Capabilities remote system supports
+    unsigned           m_remoteMaxAudioDelayJitter;
+    PTimer             m_roundTripDelayTimer;
+    unsigned           m_uuiesRequested;
+    PString            m_gkAccessTokenOID;
+    PBYTEArray         m_gkAccessTokenData;
+    bool               m_addAccessTokenToSetup;
 
     OpalTransportPtr m_signallingChannel;
     OpalTransportPtr m_controlChannel;
-    OpalListener  * controlListener;
-    bool            h245Tunneling;
-    H323SignalPDU * h245TunnelRxPDU;
-    H323SignalPDU * h245TunnelTxPDU;
-    H323SignalPDU * setupPDU;
-    H323SignalPDU * alertingPDU;
-    H323SignalPDU * connectPDU;
-    H323SignalPDU * progressPDU;
+    OpalListener  *  m_controlListener;
+    bool             m_h245Tunneling;
+    H323SignalPDU  * m_h245TunnelRxPDU;
+    H323SignalPDU  * m_h245TunnelTxPDU;
+    H323SignalPDU  * m_setupPDU;
+    H323SignalPDU  * m_alertingPDU;
+    H323SignalPDU  * m_connectPDU;
+    H323SignalPDU  * m_progressPDU;
 
     P_DECLARE_TRACED_ENUM(ConnectionStates,
       NoConnectionActive,
@@ -2185,26 +2185,26 @@ class H323Connection : public OpalRTPConnection
       EstablishedConnection,
       ShuttingDownConnection
     );
-    ConnectionStates connectionState;
+    ConnectionStates m_connectionState;
 
-    unsigned   h225version;
-    unsigned   h245version;
-    bool       h245versionSet;
-    bool       doH245inSETUP;
-    bool       lastPDUWasH245inSETUP;
+    unsigned   m_h225version;
+    unsigned   m_h245version;
+    bool       m_h245versionSet;
+    bool       m_doH245inSETUP;
+    bool       m_lastPDUWasH245inSETUP;
     bool       m_forceSymmetricTCS;
 
-    bool       mustSendDRQ;
-    bool       mediaWaitForConnect;
+    bool       m_mustSendDRQ;
+    bool       m_mediaWaitForConnect;
     bool       m_holdToRemote;
     bool       m_earlyStart;
-    PString    t38ModeChangeCapabilities;
-    PSyncPoint digitsWaitFlag;
+    PString    m_t38ModeChangeCapabilities;
+    PSyncPoint m_digitsWaitFlag;
     bool       m_releaseCompleteNeeded;
     bool       m_endSessionNeeded;
-    PSyncPoint endSessionReceived;
-    PTimer     enforcedDurationLimit;
-    bool       isConsultationTransfer;
+    PSyncPoint m_endSessionReceived;
+    PTimer     m_enforcedDurationLimit;
+    bool       m_isConsultationTransfer;
     bool       m_maintainConnection;
 
     template <class PDU> void SetMaintainConnectionFlag(const PDU & pdu)
@@ -2226,8 +2226,8 @@ class H323Connection : public OpalRTPConnection
 
 #if OPAL_H450
     /** Call Intrusion flag and parameters */
-    bool     isCallIntrusion;
-    unsigned callIntrusionProtectionLevel;
+    bool     m_isCallIntrusion;
+    unsigned m_callIntrusionProtectionLevel;
 #endif
 
     P_DECLARE_TRACED_ENUM(FastStartStates,
@@ -2242,11 +2242,11 @@ class H323Connection : public OpalRTPConnection
 
     // The following pointers are to protocol procedures, they are pointers to
     // hide their complexity from the H323Connection classes users.
-    H245NegMasterSlaveDetermination  * masterSlaveDeterminationProcedure;
-    H245NegTerminalCapabilitySet     * capabilityExchangeProcedure;
-    H245NegLogicalChannels           * logicalChannels;
-    H245NegRequestMode               * requestModeProcedure;
-    H245NegRoundTripDelay            * roundTripDelayProcedure;
+    H245NegMasterSlaveDetermination  * m_masterSlaveDeterminationProcedure;
+    H245NegTerminalCapabilitySet     * m_capabilityExchangeProcedure;
+    H245NegLogicalChannels           * m_logicalChannels;
+    H245NegRequestMode               * m_requestModeProcedure;
+    H245NegRoundTripDelay            * m_roundTripDelayProcedure;
 
 #if OPAL_H239
     bool     m_h239Control;
@@ -2257,12 +2257,12 @@ class H323Connection : public OpalRTPConnection
 #endif
 
 #if OPAL_H450
-    H450xDispatcher * h450dispatcher;
-    H4502Handler    * h4502handler;
-    H4504Handler    * h4504handler;
-    H4506Handler    * h4506handler;
-    H4507Handler    * h4507handler;
-    H45011Handler   * h45011handler;
+    H450xDispatcher * m_h450dispatcher;
+    H4502Handler    * m_h4502handler;
+    H4504Handler    * m_h4504handler;
+    H4506Handler    * m_h4506handler;
+    H4507Handler    * m_h4507handler;
+    H45011Handler   * m_h45011handler;
 #endif
 
 #if OPAL_H460

@@ -44,7 +44,7 @@ PString BaseStatusPage::LoadText(PHTTPRequest & request)
 {
   PHTML html;
   CreateHTML(html, request.url.GetQueryVars());
-  string = html;
+  SetString(html);
 
   return PServiceHTTPString::LoadText(request);
 }

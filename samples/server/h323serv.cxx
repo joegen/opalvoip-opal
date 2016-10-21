@@ -521,29 +521,29 @@ PBoolean MyGatekeeperServer::TranslateAliasAddress(const H225_AliasAddress & ali
 
 
 MyGatekeeperServer::RouteMap::RouteMap(const PString & theAlias, const PString & theHost)
-  : alias(theAlias),
-    regex('^' + theAlias + '$'),
-    host(theHost)
+  : m_alias(theAlias),
+    m_regex('^' + theAlias + '$'),
+    m_host(theHost)
 {
 }
 
 
 void MyGatekeeperServer::RouteMap::PrintOn(ostream & strm) const
 {
-  strm << '"' << alias << "\" => " << host;
+  strm << '"' << m_alias << "\" => " << m_host;
 }
 
 
 bool MyGatekeeperServer::RouteMap::IsValid() const
 {
-  return !alias && regex.GetErrorCode() == PRegularExpression::NoError && !host;
+  return !m_alias && m_regex.GetErrorCode() == PRegularExpression::NoError && !m_host;
 }
 
 
 bool MyGatekeeperServer::RouteMap::IsMatch(const PString & alias) const
 {
   PINDEX start;
-  return regex.Execute(alias, start);
+  return m_regex.Execute(alias, start);
 }
 
 

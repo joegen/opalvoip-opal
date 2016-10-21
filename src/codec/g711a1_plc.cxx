@@ -599,8 +599,8 @@ int OpalG711_PLC::findpitch(int c)
     rp += corr_ndec * channels;
     corr = 0.f;
     for (i = 0; i < ms2samples(corr_len_ms); i += corr_ndec) {
-      int index = channels * i + c;
-      corr += rp[index] * l[index];
+      int idx = channels * i + c;
+      corr += rp[idx] * l[idx];
     }
     scale = energy;
     if (scale < corr_minpower)
@@ -634,9 +634,9 @@ int OpalG711_PLC::findpitch(int c)
   bestcorr = corr;
   bestmatch = j;
   for (j++; j <= k; j++) {
-    int index = channels * ms2samples(corr_len_ms) + c;
+    int idx = channels * ms2samples(corr_len_ms) + c;
     energy -= rp[0] * rp[0];
-    energy += rp[index] * rp[index];
+    energy += rp[idx] * rp[idx];
     rp += channels;
     corr = 0.f;
     for (i = 0; i < ms2samples(corr_len_ms); i++) {

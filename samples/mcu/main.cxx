@@ -298,7 +298,7 @@ void MyMixerEndPoint::CmdConfListen(PCLI::Arguments & args, P_INT_PTR)
   }
 
   PString token;
-  if (manager.SetUpCall("mcu:"+node->GetGUID().AsString()+";Listen-Only=1", "pc:*", token))
+  if (GetManager().SetUpCall("mcu:"+node->GetGUID().AsString()+";Listen-Only=1", "pc:*", token))
     args.GetContext() << "Started";
   else
     args.WriteError() << "Could not start";
@@ -336,7 +336,7 @@ void MyMixerEndPoint::CmdConfRecord(PCLI::Arguments & args, P_INT_PTR)
   }
 
   PString token;
-  if (manager.SetUpCall("mcu:"+node->GetGUID().AsString()+";Listen-Only",
+  if (GetManager().SetUpCall("mcu:"+node->GetGUID().AsString()+";Listen-Only",
                         "ivr:<vxml>"
                               "<form>"
                                 "<record name=\"msg\" dtmfterm=\"false\" dest=\"" + PURL(path).AsString() + "\"/>"
@@ -363,7 +363,7 @@ void MyMixerEndPoint::CmdConfPlay(PCLI::Arguments & args, P_INT_PTR)
   }
 
   PString token;
-  if (manager.SetUpCall("mcu:"+node->GetGUID().AsString()+";Listen-Only=0",
+  if (GetManager().SetUpCall("mcu:"+node->GetGUID().AsString()+";Listen-Only=0",
                         "ivr:<vxml>"
                               "<form>"
                                 "<audio src=\"" + PURL(path).AsString() + "\"/>"
@@ -384,7 +384,7 @@ void MyMixerEndPoint::CmdMemberAdd(PCLI::Arguments & args, P_INT_PTR)
     return;
 
   PString token;
-  if (manager.SetUpCall("mcu:"+node->GetGUID().AsString(), args[1], token))
+  if (GetManager().SetUpCall("mcu:"+node->GetGUID().AsString(), args[1], token))
     args.GetContext() << "Adding";
   else
     args.WriteError() << "Could not add";

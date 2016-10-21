@@ -112,7 +112,7 @@ OpalSDPHTTPConnection * OpalSDPHTTPEndPoint::CreateConnection(OpalCall & call,
 
 bool OpalSDPHTTPEndPoint::OnReceivedHTTP(PHTTPServer & server, const PHTTPConnectionInfo & connectInfo)
 {
-  OpalCall * call = manager.InternalCreateCall();
+  OpalCall * call = m_manager.InternalCreateCall();
   if (call == NULL)
     return server.OnError(PHTTP::InternalServerError, "Could not create call", connectInfo);
 
@@ -122,7 +122,7 @@ bool OpalSDPHTTPEndPoint::OnReceivedHTTP(PHTTPServer & server, const PHTTPConnec
   if (AddConnection(connection) != NULL)
     return connection->OnReceivedHTTP(server, connectInfo);
 
-  manager.DestroyCall(call);
+  m_manager.DestroyCall(call);
   return server.OnError(PHTTP::InternalServerError, "Could not create connection", connectInfo);
 }
 
@@ -231,7 +231,7 @@ bool OpalSDPHTTPConnection::OnReceivedHTTP(PHTTPServer & server, const PHTTPConn
     return server.OnError(PHTTP::BadRequest, "HTTP body does not have acceptable SDP", connectInfo);
   }
 
-  if (!ownerCall.OnSetUp(*this))
+  if (!m_ownerCall.OnSetUp(*this))
     return server.OnError(PHTTP::BadGateway, "Could not set up secondary connection", connectInfo);
 
   m_connected.Wait();

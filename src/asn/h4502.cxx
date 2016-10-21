@@ -85,7 +85,7 @@ H4502_DummyArg::operator const H225_NonStandardParameter &() const
 
 PBoolean H4502_DummyArg::CreateObject()
 {
-  switch (tag) {
+  switch (m_tag) {
     case e_extensionSeq :
       choice = new H4502_ExtensionSeq();
       return true;
@@ -175,7 +175,7 @@ H4502_DummyRes::operator const H225_NonStandardParameter &() const
 
 PBoolean H4502_DummyRes::CreateObject()
 {
-  switch (tag) {
+  switch (m_tag) {
     case e_extensionSeq :
       choice = new H4502_ExtensionSeq();
       return true;
@@ -482,7 +482,7 @@ H4502_CTInitiateArg_argumentExtension::operator const H225_NonStandardParameter 
 
 PBoolean H4502_CTInitiateArg_argumentExtension::CreateObject()
 {
-  switch (tag) {
+  switch (m_tag) {
     case e_extensionSeq :
       choice = new H4502_ExtensionSeq();
       return true;
@@ -572,7 +572,7 @@ H4502_CTSetupArg_argumentExtension::operator const H225_NonStandardParameter &()
 
 PBoolean H4502_CTSetupArg_argumentExtension::CreateObject()
 {
-  switch (tag) {
+  switch (m_tag) {
     case e_extensionSeq :
       choice = new H4502_ExtensionSeq();
       return true;
@@ -662,7 +662,7 @@ H4502_CTIdentifyRes_resultExtension::operator const H225_NonStandardParameter &(
 
 PBoolean H4502_CTIdentifyRes_resultExtension::CreateObject()
 {
-  switch (tag) {
+  switch (m_tag) {
     case e_extensionSeq :
       choice = new H4502_ExtensionSeq();
       return true;
@@ -752,7 +752,7 @@ H4502_CTUpdateArg_argumentExtension::operator const H225_NonStandardParameter &(
 
 PBoolean H4502_CTUpdateArg_argumentExtension::CreateObject()
 {
-  switch (tag) {
+  switch (m_tag) {
     case e_extensionSeq :
       choice = new H4502_ExtensionSeq();
       return true;
@@ -842,7 +842,7 @@ H4502_SubaddressTransferArg_argumentExtension::operator const H225_NonStandardPa
 
 PBoolean H4502_SubaddressTransferArg_argumentExtension::CreateObject()
 {
-  switch (tag) {
+  switch (m_tag) {
     case e_extensionSeq :
       choice = new H4502_ExtensionSeq();
       return true;
@@ -932,7 +932,7 @@ H4502_CTCompleteArg_argumentExtension::operator const H225_NonStandardParameter 
 
 PBoolean H4502_CTCompleteArg_argumentExtension::CreateObject()
 {
-  switch (tag) {
+  switch (m_tag) {
     case e_extensionSeq :
       choice = new H4502_ExtensionSeq();
       return true;
@@ -1022,7 +1022,7 @@ H4502_CTActiveArg_argumentExtension::operator const H225_NonStandardParameter &(
 
 PBoolean H4502_CTActiveArg_argumentExtension::CreateObject()
 {
-  switch (tag) {
+  switch (m_tag) {
     case e_extensionSeq :
       choice = new H4502_ExtensionSeq();
       return true;

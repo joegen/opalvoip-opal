@@ -931,13 +931,13 @@ class H323EndPoint : public OpalRTPEndPoint
 
     /**Get the default ILS server to use for user lookup.
       */
-    const PString & GetDefaultILSServer() const { return manager.GetDefaultILSServer(); }
+    const PString & GetDefaultILSServer() const { return m_manager.GetDefaultILSServer(); }
 
     /**Set the default ILS server to use for user lookup.
       */
     void SetDefaultILSServer(
       const PString & server
-    ) { manager.SetDefaultILSServer(server); }
+    ) { m_manager.SetDefaultILSServer(server); }
 
     /**Get the default fast start mode.
       */
@@ -1090,19 +1090,19 @@ class H323EndPoint : public OpalRTPEndPoint
     /**Get the default maximum audio jitter delay parameter.
        Defaults to 50ms
      */
-    unsigned GetMinAudioJitterDelay() const { return manager.GetMinAudioJitterDelay(); }
+    unsigned GetMinAudioJitterDelay() const { return m_manager.GetMinAudioJitterDelay(); }
 
     /**Get the default maximum audio delay jitter parameter.
        Defaults to 250ms.
      */
-    unsigned GetMaxAudioJitterDelay() const { return manager.GetMaxAudioJitterDelay(); }
+    unsigned GetMaxAudioJitterDelay() const { return m_manager.GetMaxAudioJitterDelay(); }
 
     /**Set the maximum audio delay jitter parameter.
      */
     void SetAudioJitterDelay(
       unsigned minDelay,   ///<  New minimum jitter buffer delay in milliseconds
       unsigned maxDelay    ///<  New maximum jitter buffer delay in milliseconds
-    ) { manager.SetAudioJitterDelay(minDelay, maxDelay); }
+    ) { m_manager.SetAudioJitterDelay(minDelay, maxDelay); }
 
 #if OPAL_H239
     /**Get the default H.239 control capability.
@@ -1163,7 +1163,7 @@ class H323EndPoint : public OpalRTPEndPoint
      */
     virtual PBoolean IsLocalAddress(
       const PIPSocket::Address & remoteAddress
-    ) const { return manager.IsLocalAddress(remoteAddress); }
+    ) const { return m_manager.IsLocalAddress(remoteAddress); }
 
     /**Provide TCP address translation hook
      */
@@ -1218,13 +1218,13 @@ class H323EndPoint : public OpalRTPEndPoint
 
     /**Get the amount of time with no media that should cause call to clear
      */
-    const PTimeInterval & GetNoMediaTimeout() const { return manager.GetNoMediaTimeout(); }
+    const PTimeInterval & GetNoMediaTimeout() const { return m_manager.GetNoMediaTimeout(); }
 
     /**Set the amount of time with no media that should cause call to clear
      */
     void SetNoMediaTimeout(
       const PTimeInterval & newInterval  ///<  New timeout for media
-    ) { manager.SetNoMediaTimeout(newInterval); }
+    ) { m_manager.SetNoMediaTimeout(newInterval); }
 
     /**Get the default timeout for GatekeeperRequest and Gatekeeper discovery.
      */

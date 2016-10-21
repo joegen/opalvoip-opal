@@ -185,7 +185,7 @@ PBoolean OpalRTPEndPoint::IsRTPNATEnabled(OpalConnection & conn,
 
 OpalMediaFormatList OpalRTPEndPoint::GetMediaFormats() const
 {
-  OpalMediaFormatList list = manager.GetCommonMediaFormats(true, false);
+  OpalMediaFormatList list = m_manager.GetCommonMediaFormats(true, false);
 #if OPAL_RTP_FEC
   if (!list.IsEmpty()) {
     list += OpalRedundantAudio;
@@ -220,7 +220,7 @@ bool OpalRTPEndPoint::OnLocalRTP(OpalConnection & connection1,
                                  unsigned         sessionID,
                                  bool             opened) const
 {
-  return manager.OnLocalRTP(connection1, connection2, sessionID, opened);
+  return m_manager.OnLocalRTP(connection1, connection2, sessionID, opened);
 }
 
 

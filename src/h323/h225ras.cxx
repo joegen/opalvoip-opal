@@ -639,9 +639,9 @@ PBoolean H225_RAS::OnReceiveRegistrationConfirm(const H323RasPDU & pdu, const H2
   if (!CheckForResponse(H225_RasMessage::e_registrationRequest, rcf.m_requestSeqNum))
     return false;
 
-  if (lastRequest != NULL) {
+  if (m_lastRequest != NULL) {
     PString endpointIdentifier = rcf.m_endpointIdentifier;
-    H235Authenticators & authenticators = lastRequest->requestPDU.GetAuthenticators();
+    H235Authenticators & authenticators = m_lastRequest->m_requestPDU.GetAuthenticators();
     for (H235Authenticators::iterator it = authenticators.begin(); it != authenticators.end(); ++it) {
       if (it->UseGkAndEpIdentifiers())
         it->SetLocalId(endpointIdentifier);
@@ -1145,8 +1145,8 @@ PBoolean H225_RAS::OnReceiveLocationConfirm(const H323RasPDU &, const H225_Locat
   if (!CheckForResponse(H225_RasMessage::e_locationRequest, lcf.m_requestSeqNum))
     return false;
 
-  if (lastRequest->m_responseInfo != NULL) {
-    H323TransportAddress & locatedAddress = dynamic_cast<H323TransportAddress &>(*lastRequest->m_responseInfo);
+  if (m_lastRequest->m_responseInfo != NULL) {
+    H323TransportAddress & locatedAddress = dynamic_cast<H323TransportAddress &>(*m_lastRequest->m_responseInfo);
     locatedAddress = lcf.m_callSignalAddress;
   }
   
@@ -1549,7 +1549,7 @@ PBoolean H225_RAS::OnReceiveUnknown(const H323RasPDU &)
 {
   H323RasPDU response;
   response.BuildUnknownMessageResponse(0);
-  return response.Write(*transport);
+  return response.Write(*m_transport);
 }
 
 

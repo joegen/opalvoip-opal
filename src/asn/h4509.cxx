@@ -126,7 +126,7 @@ H4509_CcArg::operator const H4509_CcLongArg &() const
 
 PBoolean H4509_CcArg::CreateObject()
 {
-  switch (tag) {
+  switch (m_tag) {
     case e_shortArg :
       choice = new H4509_CcShortArg();
       return true;

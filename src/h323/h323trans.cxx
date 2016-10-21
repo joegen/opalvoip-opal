@@ -137,15 +137,15 @@ H323Transactor::H323Transactor(H323EndPoint & ep,
                                H323Transport * trans,
                                WORD local_port,
                                WORD remote_port)
-  : endpoint(ep),
-    defaultLocalPort(local_port),
-    defaultRemotePort(remote_port)
+  : m_endpoint(ep),
+    m_defaultLocalPort(local_port),
+    m_defaultRemotePort(remote_port)
 {
   if (trans != NULL)
-    transport = trans;
+    m_transport = trans;
   else
-    transport = new H323TransportUDP(ep, PIPSocket::GetDefaultIpAny(), local_port);
-  PTRACE_CONTEXT_ID_TO(transport);
+    m_transport = new H323TransportUDP(ep, PIPSocket::GetDefaultIpAny(), local_port);
+  PTRACE_CONTEXT_ID_TO(m_transport);
 
   Construct();
 }
@@ -155,17 +155,17 @@ H323Transactor::H323Transactor(H323EndPoint & ep,
                                const H323TransportAddress & iface,
                                WORD local_port,
                                WORD remote_port)
-  : endpoint(ep),
-    defaultLocalPort(local_port),
-    defaultRemotePort(remote_port)
+  : m_endpoint(ep),
+    m_defaultLocalPort(local_port),
+    m_defaultRemotePort(remote_port)
 {
   if (iface.IsEmpty())
-    transport = NULL;
+    m_transport = NULL;
   else {
     PIPSocket::Address addr;
     PAssert(iface.GetIpAndPort(addr, local_port), "Cannot parse address");
-    transport = new H323TransportUDP(ep, addr, local_port);
-    PTRACE_CONTEXT_ID_TO(transport);
+    m_transport = new H323TransportUDP(ep, addr, local_port);
+    PTRACE_CONTEXT_ID_TO(m_transport);
   }
 
   Construct();
@@ -175,10 +175,10 @@ H323Transactor::H323Transactor(H323EndPoint & ep,
 void H323Transactor::Construct()
 {
   m_nextSequenceNumber = PRandom::Number()%65536;
-  checkResponseCryptoTokens = true;
-  lastRequest = NULL;
+  m_checkResponseCryptoTokens = true;
+  m_lastRequest = NULL;
 
-  requests.DisallowDeleteObjects();
+  m_requests.DisallowDeleteObjects();
 }
 
 
@@ -190,69 +190,69 @@ H323Transactor::~H323Transactor()
 
 void H323Transactor::PrintOn(ostream & strm) const
 {
-  if (transport == NULL)
+  if (m_transport == NULL)
     strm << "<<no-transport>>";
   else
-    strm << transport->GetRemoteAddress().GetHostName(true);
+    strm << m_transport->GetRemoteAddress().GetHostName(true);
 }
 
 
 PBoolean H323Transactor::SetTransport(const H323TransportAddress & iface)
 {
-  PWaitAndSignal mutex(pduWriteMutex);
+  PWaitAndSignal mutex(m_pduWriteMutex);
 
-  if (transport != NULL && transport->GetLocalAddress().IsEquivalent(iface)) {
+  if (m_transport != NULL && m_transport->GetLocalAddress().IsEquivalent(iface)) {
     PTRACE(2, "Trans\tAlready have listener for " << iface);
     return true;
   }
 
   PIPSocket::Address addr;
-  WORD port = defaultLocalPort;
+  WORD port = m_defaultLocalPort;
   if (!iface.GetIpAndPort(addr, port)) {
     PTRACE(1, "Trans\tCannot create listener for " << iface);
     return false;
   }
 
-  if (transport != NULL) {
-    transport->CleanUpOnTermination();
-    delete transport;
+  if (m_transport != NULL) {
+    m_transport->CleanUpOnTermination();
+    delete m_transport;
   }
 
-  transport = new H323TransportUDP(endpoint, addr, port);
-  PTRACE_CONTEXT_ID_TO(transport);
-  transport->SetPromiscuous(H323Transport::AcceptFromAny);
+  m_transport = new H323TransportUDP(m_endpoint, addr, port);
+  PTRACE_CONTEXT_ID_TO(m_transport);
+  m_transport->SetPromiscuous(H323Transport::AcceptFromAny);
   return StartChannel();
 }
 
 
 PBoolean H323Transactor::StartChannel()
 {
-  if (transport == NULL)
+  if (m_transport == NULL)
     return false;
 
-  transport->AttachThread(PThread::Create(PCREATE_NOTIFIER(HandleTransactions), "Transactor"));
+  m_transport->AttachThread(PThread::Create(PCREATE_NOTIFIER(HandleTransactions), "Transactor"));
   return true;
 }
 
 
 void H323Transactor::StopChannel()
 {
-  if (transport != NULL) {
-    transport->CleanUpOnTermination();
-    delete transport;
-    transport = NULL;
+  if (m_transport != NULL) {
+    m_transport->CleanUpOnTermination();
+    delete m_transport;
+    m_transport = NULL;
   }
 }
 
 
 void H323Transactor::HandleTransactions(PThread &, P_INT_PTR)
 {
-  if (PAssertNULL(transport) == NULL)
+  if (PAssertNULL(m_transport) == NULL)
     return;
 
-  PTRACE(3, "Trans\tStarting listener thread on " << *transport);
+  PTRACE(3, "Trans\tStarting listener thread on " << *m_transport);
 
-  transport->SetReadTimeout(PMaxTimeInterval);
+  m_transport->SetReadTimeout(PMaxTimeInterval);
 
   PINDEX consecutiveErrors = 0;
 
@@ -260,20 +260,20 @@ void H323Transactor::HandleTransactions(PThread &, P_INT_PTR)
   while (ok) {
     PTRACE(5, "Trans\tReading PDU");
     H323TransactionPDU * response = CreateTransactionPDU();
-    if (response->Read(*transport)) {
-      if (transport->GetInterface().IsEmpty())
-        transport->SetInterface(transport->GetLastReceivedInterface());
+    if (response->Read(*m_transport)) {
+      if (m_transport->GetInterface().IsEmpty())
+        m_transport->SetInterface(m_transport->GetLastReceivedInterface());
       consecutiveErrors = 0;
-      lastRequest = NULL;
+      m_lastRequest = NULL;
       if (HandleTransaction(response->GetPDU()))
-        lastRequest->responseHandled.Signal();
-      if (lastRequest != NULL)
-        lastRequest->responseMutex.Signal();
+        m_lastRequest->m_responseHandled.Signal();
+      if (m_lastRequest != NULL)
+        m_lastRequest->m_responseMutex.Signal();
     }
     else {
-      switch (transport->GetErrorCode(PChannel::LastReadError)) {
+      switch (m_transport->GetErrorCode(PChannel::LastReadError)) {
         case PChannel::Interrupted :
-          if (transport->IsOpen())
+          if (m_transport->IsOpen())
             break;
           // Do NotOpen case
 
@@ -282,13 +282,13 @@ void H323Transactor::HandleTransactions(PThread &, P_INT_PTR)
           break;
 
         default :
-          switch (transport->GetErrorCode(PChannel::LastReadError)) {
+          switch (m_transport->GetErrorCode(PChannel::LastReadError)) {
             case PChannel::Unavailable :
-              PTRACE(2, "Trans\tCannot access remote " << transport->GetRemoteAddress());
+              PTRACE(2, "Trans\tCannot access remote " << m_transport->GetRemoteAddress());
               break;
 
             default:
-              PTRACE(1, "Trans\tRead error: " << transport->GetErrorText(PChannel::LastReadError));
+              PTRACE(1, "Trans\tRead error: " << m_transport->GetErrorText(PChannel::LastReadError));
               if (++consecutiveErrors > 10)
                 ok = false;
           }
@@ -299,16 +299,16 @@ void H323Transactor::HandleTransactions(PThread &, P_INT_PTR)
     AgeResponses();
   }
 
-  PTRACE(3, "Trans\tEnded listener thread on " << *transport);
+  PTRACE(3, "Trans\tEnded listener thread on " << *m_transport);
 }
 
 
 PBoolean H323Transactor::SetUpCallSignalAddresses(H225_ArrayOf_TransportAddress & addresses)
 {
-  if (PAssertNULL(transport) == NULL)
+  if (PAssertNULL(m_transport) == NULL)
     return false;
 
-  H323SetTransportAddresses(*transport, endpoint.GetInterfaceAddresses(transport), addresses);
+  H323SetTransportAddresses(*m_transport, m_endpoint.GetInterfaceAddresses(m_transport), addresses);
   return addresses.GetSize() > 0;
 }
 
@@ -327,13 +327,13 @@ void H323Transactor::AgeResponses()
 {
   PTime now;
 
-  PWaitAndSignal mutex(pduWriteMutex);
+  PWaitAndSignal mutex(m_pduWriteMutex);
 
-  for (PINDEX i = 0; i < responses.GetSize(); i++) {
-    const Response & response = responses[i];
-    if ((now - response.lastUsedTime) > response.retirementAge) {
+  for (PINDEX i = 0; i < m_responses.GetSize(); i++) {
+    const Response & response = m_responses[i];
+    if ((now - response.m_lastUsedTime) > response.m_retirementAge) {
       PTRACE(4, "Trans\tRemoving cached response: " << response);
-      responses.RemoveAt(i--);
+      m_responses.RemoveAt(i--);
     }
   }
 }
@@ -341,37 +341,37 @@ void H323Transactor::AgeResponses()
 
 PBoolean H323Transactor::SendCachedResponse(const H323TransactionPDU & pdu)
 {
-  if (PAssertNULL(transport) == NULL)
+  if (PAssertNULL(m_transport) == NULL)
     return false;
 
-  Response key(transport->GetLastReceivedAddress(), pdu.GetSequenceNumber());
+  Response key(m_transport->GetLastReceivedAddress(), pdu.GetSequenceNumber());
 
-  PWaitAndSignal mutex(pduWriteMutex);
+  PWaitAndSignal mutex(m_pduWriteMutex);
 
-  PINDEX idx = responses.GetValuesIndex(key);
+  PINDEX idx = m_responses.GetValuesIndex(key);
   if (idx != P_MAX_INDEX)
-    return responses[idx].SendCachedResponse(*transport);
+    return m_responses[idx].SendCachedResponse(*m_transport);
 
-  responses.Append(new Response(key));
+  m_responses.Append(new Response(key));
   return false;
 }
 
 
 PBoolean H323Transactor::WritePDU(H323TransactionPDU & pdu)
 {
-  if (PAssertNULL(transport) == NULL)
+  if (PAssertNULL(m_transport) == NULL)
     return false;
 
   OnSendingPDU(pdu.GetPDU());
 
-  PWaitAndSignal mutex(pduWriteMutex);
+  PWaitAndSignal mutex(m_pduWriteMutex);
 
-  Response key(transport->GetLastReceivedAddress(), pdu.GetSequenceNumber());
-  PINDEX idx = responses.GetValuesIndex(key);
+  Response key(m_transport->GetLastReceivedAddress(), pdu.GetSequenceNumber());
+  PINDEX idx = m_responses.GetValuesIndex(key);
   if (idx != P_MAX_INDEX)
-    responses[idx].SetPDU(pdu);
+    m_responses[idx].SetPDU(pdu);
 
-  return pdu.Write(*transport);
+  return pdu.Write(*m_transport);
 }
 
 
@@ -379,34 +379,34 @@ PBoolean H323Transactor::WriteTo(H323TransactionPDU & pdu,
                              const H323TransportAddressArray & addresses,
                              PBoolean callback)
 {
-  if (PAssertNULL(transport) == NULL)
+  if (PAssertNULL(m_transport) == NULL)
     return false;
 
   if (addresses.IsEmpty()) {
     if (callback)
       return WritePDU(pdu);
 
-    return pdu.Write(*transport);
+    return pdu.Write(*m_transport);
   }
 
-  pduWriteMutex.Wait();
+  m_pduWriteMutex.Wait();
 
-  H323TransportAddress oldAddress = transport->GetRemoteAddress();
+  H323TransportAddress oldAddress = m_transport->GetRemoteAddress();
 
   PBoolean ok = false;
   for (PINDEX i = 0; i < addresses.GetSize(); i++) {
-    if (transport->SetRemoteAddress(addresses[i])) {
+    if (m_transport->SetRemoteAddress(addresses[i])) {
       PTRACE(3, "Trans\tWrite address set to " << addresses[i]);
       if (callback)
         ok = WritePDU(pdu);
       else
-        ok = pdu.Write(*transport);
+        ok = pdu.Write(*m_transport);
     }
   }
 
-  transport->SetRemoteAddress(oldAddress);
+  m_transport->SetRemoteAddress(oldAddress);
 
-  pduWriteMutex.Signal();
+  m_pduWriteMutex.Signal();
 
   return ok;
 }
@@ -414,19 +414,19 @@ PBoolean H323Transactor::WriteTo(H323TransactionPDU & pdu,
 
 PBoolean H323Transactor::MakeRequest(Request & request)
 {
-  PTRACE(3, "Trans\tMaking request: " << request.requestPDU.GetChoice().GetTagName());
+  PTRACE(3, "Trans\tMaking request: " << request.m_requestPDU.GetChoice().GetTagName());
 
-  OnSendingPDU(request.requestPDU.GetPDU());
+  OnSendingPDU(request.m_requestPDU.GetPDU());
 
-  requestsMutex.Wait();
-  requests.SetAt(request.sequenceNumber, &request);
-  requestsMutex.Signal();
+  m_requestsMutex.Wait();
+  m_requests.SetAt(request.m_sequenceNumber, &request);
+  m_requestsMutex.Signal();
 
   PBoolean ok = request.Poll(*this);
 
-  requestsMutex.Wait();
-  requests.SetAt(request.sequenceNumber, NULL);
-  requestsMutex.Signal();
+  m_requestsMutex.Wait();
+  m_requests.SetAt(request.m_sequenceNumber, NULL);
+  m_requestsMutex.Signal();
 
   return ok;
 }
@@ -434,18 +434,18 @@ PBoolean H323Transactor::MakeRequest(Request & request)
 
 PBoolean H323Transactor::CheckForResponse(unsigned reqTag, unsigned seqNum, const PASN_Choice * reason)
 {
-  requestsMutex.Wait();
-  lastRequest = requests.GetAt(seqNum);
-  requestsMutex.Signal();
+  m_requestsMutex.Wait();
+  m_lastRequest = m_requests.GetAt(seqNum);
+  m_requestsMutex.Signal();
 
-  if (lastRequest == NULL) {
+  if (m_lastRequest == NULL) {
     PTRACE_IF(2, reqTag != H225_RasMessage::e_nonStandardMessage, "Trans",
               "Timed out or received sequence number (" << seqNum << ") for PDU we never requested");
     return false;
   }
 
-  lastRequest->responseMutex.Wait();
-  lastRequest->CheckResponse(reqTag, reason);
+  m_lastRequest->m_responseMutex.Wait();
+  m_lastRequest->CheckResponse(reqTag, reason);
   return true;
 }
 
@@ -455,19 +455,19 @@ PBoolean H323Transactor::HandleRequestInProgress(const H323TransactionPDU & pdu,
 {
   unsigned seqNum = pdu.GetSequenceNumber();
 
-  requestsMutex.Wait();
-  lastRequest = requests.GetAt(seqNum);
-  requestsMutex.Signal();
+  m_requestsMutex.Wait();
+  m_lastRequest = m_requests.GetAt(seqNum);
+  m_requestsMutex.Signal();
 
-  if (lastRequest == NULL) {
+  if (m_lastRequest == NULL) {
     PTRACE(2, "Trans\tTimed out or received sequence number (" << seqNum << ") for PDU we never requested");
     return false;
   }
 
-  lastRequest->responseMutex.Wait();
+  m_lastRequest->m_responseMutex.Wait();
 
   PTRACE(3, "Trans\tReceived RIP on sequence number " << seqNum);
-  lastRequest->OnReceiveRIP(delay);
+  m_lastRequest->OnReceiveRIP(delay);
   return true;
 }
 
@@ -478,8 +478,8 @@ bool H323Transactor::CheckCryptoTokens1(const H323TransactionPDU & pdu)
   if (!GetCheckResponseCryptoTokens())
     return true;
 
-  if (lastRequest != NULL && pdu.GetAuthenticators().IsEmpty()) {
-    ((H323TransactionPDU &)pdu).SetAuthenticators(lastRequest->requestPDU.GetAuthenticators());
+  if (m_lastRequest != NULL && pdu.GetAuthenticators().IsEmpty()) {
+    ((H323TransactionPDU &)pdu).SetAuthenticators(m_lastRequest->m_requestPDU.GetAuthenticators());
     PTRACE(4, "Trans\tUsing credentials from request: "
            << setfill(',') << pdu.GetAuthenticators() << setfill(' '));
   }
@@ -491,7 +491,7 @@ bool H323Transactor::CheckCryptoTokens1(const H323TransactionPDU & pdu)
 
 bool H323Transactor::CheckCryptoTokens2()
 {
-  if (lastRequest == NULL)
+  if (m_lastRequest == NULL)
     return false; // or true?
 
   /* Note that a crypto tokens error is flagged to the requestor in the
@@ -499,10 +499,10 @@ bool H323Transactor::CheckCryptoTokens2()
      it can wait for the full timeout for any other packets that might have
      the correct tokens, preventing a possible DOS attack.
    */
-  lastRequest->responseResult = Request::BadCryptoTokens;
-  lastRequest->responseHandled.Signal();
-  lastRequest->responseMutex.Signal();
-  lastRequest = NULL;
+  m_lastRequest->m_responseResult = Request::BadCryptoTokens;
+  m_lastRequest->m_responseHandled.Signal();
+  m_lastRequest->m_responseMutex.Signal();
+  m_lastRequest = NULL;
   return false;
 }
 
@@ -512,12 +512,12 @@ bool H323Transactor::CheckCryptoTokens2()
 H323Transactor::Request::Request(unsigned seqNum,
                                  H323TransactionPDU & pdu,
                                  const H323TransportAddressArray & addresses)
-  : sequenceNumber(seqNum)
-  , requestPDU(pdu)
-  , requestAddresses(addresses)
-  , rejectReason(0)
+  : m_sequenceNumber(seqNum)
+  , m_requestPDU(pdu)
+  , m_requestAddresses(addresses)
+  , m_rejectReason(0)
   , m_responseInfo(NULL)
-  , responseResult(NoResponseReceived)
+  , m_responseResult(NoResponseReceived)
 {
 }
 
@@ -526,7 +526,7 @@ PBoolean H323Transactor::Request::Poll(H323Transactor & rasChannel, unsigned num
 {
   H323EndPoint & endpoint = rasChannel.GetEndPoint();
 
-  responseResult = AwaitingResponse;
+  m_responseResult = AwaitingResponse;
   
   if (numRetries == 0)
     numRetries = endpoint.GetRasRequestRetries();
@@ -536,47 +536,47 @@ PBoolean H323Transactor::Request::Poll(H323Transactor & rasChannel, unsigned num
 
   for (unsigned retry = 1; retry <= numRetries; retry++) {
     // To avoid race condition with RIP must set timeout before sending the packet
-    whenResponseExpected = PTimer::Tick() + timeout;
+    m_whenResponseExpected = PTimer::Tick() + timeout;
 
-    if (!rasChannel.WriteTo(requestPDU, requestAddresses, false))
+    if (!rasChannel.WriteTo(m_requestPDU, m_requestAddresses, false))
       break;
 
-    PTRACE(3, "Trans\tWaiting on response to seqnum=" << requestPDU.GetSequenceNumber()
+    PTRACE(3, "Trans\tWaiting on response to seqnum=" << m_requestPDU.GetSequenceNumber()
            << " for " << setprecision(1) << timeout << " seconds");
 
     do {
       // Wait for a response
-      responseHandled.Wait(whenResponseExpected - PTimer::Tick());
+      m_responseHandled.Wait(m_whenResponseExpected - PTimer::Tick());
 
-      PWaitAndSignal mutex(responseMutex); // Wait till lastRequest goes out of scope
+      PWaitAndSignal mutex(m_responseMutex); // Wait till lastRequest goes out of scope
 
-      switch (responseResult) {
+      switch (m_responseResult) {
         case AwaitingResponse :  // Was a timeout
-          responseResult = NoResponseReceived;
+          m_responseResult = NoResponseReceived;
           break;
 
         case ConfirmReceived :
           return true;
 
         case BadCryptoTokens :
-          PTRACE(1, "Trans\tResponse to seqnum=" << requestPDU.GetSequenceNumber()
+          PTRACE(1, "Trans\tResponse to seqnum=" << m_requestPDU.GetSequenceNumber()
                  << " had invalid crypto tokens.");
           return false;
 
         case RequestInProgress :
-          responseResult = AwaitingResponse; // Keep waiting
+          m_responseResult = AwaitingResponse; // Keep waiting
           break;
 
         default :
           return false;
       }
 
-      PTRACE_IF(3, responseResult == AwaitingResponse,
-                "Trans\tWaiting again on response to seqnum=" << requestPDU.GetSequenceNumber() <<
-                " for " << setprecision(1) << (whenResponseExpected - PTimer::Tick()) << " seconds");
-    } while (responseResult == AwaitingResponse);
+      PTRACE_IF(3, m_responseResult == AwaitingResponse,
+                "Trans\tWaiting again on response to seqnum=" << m_requestPDU.GetSequenceNumber() <<
+                " for " << setprecision(1) << (m_whenResponseExpected - PTimer::Tick()) << " seconds");
+    } while (m_responseResult == AwaitingResponse);
 
-    PTRACE(1, "Trans\tTimeout on request seqnum=" << requestPDU.GetSequenceNumber()
+    PTRACE(1, "Trans\tTimeout on request seqnum=" << m_requestPDU.GetSequenceNumber()
            << ", try #" << retry << " of " << numRetries);
   }
 
@@ -586,29 +586,29 @@ PBoolean H323Transactor::Request::Poll(H323Transactor & rasChannel, unsigned num
 
 void H323Transactor::Request::CheckResponse(unsigned reqTag, const PASN_Choice * reason)
 {
-  if (requestPDU.GetChoice().GetTag() != reqTag) {
+  if (m_requestPDU.GetChoice().GetTag() != reqTag) {
     PTRACE(2, "Trans\tReceived reply for incorrect PDU tag.");
-    responseResult = RejectReceived;
-    rejectReason = UINT_MAX;
+    m_responseResult = RejectReceived;
+    m_rejectReason = UINT_MAX;
     return;
   }
 
   if (reason == NULL) {
-    responseResult = ConfirmReceived;
+    m_responseResult = ConfirmReceived;
     return;
   }
 
-  PTRACE(2, "Trans\t" << requestPDU.GetChoice().GetTagName()
+  PTRACE(2, "Trans\t" << m_requestPDU.GetChoice().GetTagName()
          << " rejected: " << reason->GetTagName());
-  responseResult = RejectReceived;
-  rejectReason = reason->GetTag();
+  m_responseResult = RejectReceived;
+  m_rejectReason = reason->GetTag();
 }
 
 
 void H323Transactor::Request::OnReceiveRIP(unsigned milliseconds)
 {
-  responseResult = RequestInProgress;
-  whenResponseExpected = PTimer::Tick() + PTimeInterval(milliseconds);
+  m_responseResult = RequestInProgress;
+  m_whenResponseExpected = PTimer::Tick() + PTimeInterval(milliseconds);
 }
 
 
@@ -616,17 +616,17 @@ void H323Transactor::Request::OnReceiveRIP(unsigned milliseconds)
 
 H323Transactor::Response::Response(const H323TransportAddress & addr, unsigned seqNum)
   : PString(addr),
-    retirementAge(ResponseRetirementAge)
+    m_retirementAge(ResponseRetirementAge)
 {
   sprintf("#%u", seqNum);
-  replyPDU = NULL;
+  m_replyPDU = NULL;
 }
 
 
 H323Transactor::Response::~Response()
 {
-  if (replyPDU != NULL)
-    replyPDU->DeletePDU();
+  if (m_replyPDU != NULL)
+    m_replyPDU->DeletePDU();
 }
 
 
@@ -634,14 +634,14 @@ void H323Transactor::Response::SetPDU(const H323TransactionPDU & pdu)
 {
   PTRACE(4, "Trans\tAdding cached response: " << *this);
 
-  if (replyPDU != NULL)
-    replyPDU->DeletePDU();
-  replyPDU = pdu.ClonePDU();
-  lastUsedTime = PTime();
+  if (m_replyPDU != NULL)
+    m_replyPDU->DeletePDU();
+  m_replyPDU = pdu.ClonePDU();
+  m_lastUsedTime = PTime();
 
   unsigned delay = pdu.GetRequestInProgressDelay();
   if (delay > 0)
-    retirementAge = ResponseRetirementAge + delay;
+    m_retirementAge = ResponseRetirementAge + delay;
 }
 
 
@@ -649,17 +649,17 @@ PBoolean H323Transactor::Response::SendCachedResponse(H323Transport & transport)
 {
   PTRACE(3, "Trans\tSending cached response: " << *this);
 
-  if (replyPDU != NULL) {
+  if (m_replyPDU != NULL) {
     H323TransportAddress oldAddress = transport.GetRemoteAddress();
     transport.ConnectTo(Left(FindLast('#')));
-    replyPDU->Write(transport);
+    m_replyPDU->Write(transport);
     transport.ConnectTo(oldAddress);
   }
   else {
     PTRACE(2, "Trans\tRetry made by remote before sending response: " << *this);
   }
 
-  lastUsedTime = PTime();
+  m_lastUsedTime = PTime();
   return true;
 }
 
@@ -670,24 +670,24 @@ H323Transaction::H323Transaction(H323Transactor & trans,
                                  const H323TransactionPDU & requestToCopy,
                                  H323TransactionPDU * conf,
                                  H323TransactionPDU * rej)
-  : transactor(trans),
-    replyAddresses(trans.GetTransport().GetLastReceivedAddress()),
-    request(requestToCopy.ClonePDU())
+  : m_transactor(trans),
+    m_replyAddresses(trans.GetTransport().GetLastReceivedAddress()),
+    m_request(requestToCopy.ClonePDU())
 {
-  confirm = conf;
-  reject = rej;
-  authenticatorResult = H235Authenticator::e_Disabled;
-  fastResponseRequired = true;
-  isBehindNAT = false;
-  canSendRIP  = false;
+  m_confirm = conf;
+  m_reject = rej;
+  m_authenticatorResult = H235Authenticator::e_Disabled;
+  m_fastResponseRequired = true;
+  m_isBehindNAT = false;
+  m_canSendRIP  = false;
 }
 
 
 H323Transaction::~H323Transaction()
 {
-  delete request;
-  delete confirm;
-  delete reject;
+  delete m_request;
+  delete m_confirm;
+  delete m_reject;
 }
 
 
@@ -699,27 +699,27 @@ PBoolean H323Transaction::HandlePDU()
       return false;
 
     case Confirm :
-      if (confirm != NULL) {
+      if (m_confirm != NULL) {
         PrepareConfirm();
-        WritePDU(*confirm);
+        WritePDU(*m_confirm);
       }
       return false;
 
     case Reject :
-      if (reject != NULL)
-        WritePDU(*reject);
+      if (m_reject != NULL)
+        WritePDU(*m_reject);
       return false;
   }
 
-  H323TransactionPDU * rip = CreateRIP(request->GetSequenceNumber(), response);
+  H323TransactionPDU * rip = CreateRIP(m_request->GetSequenceNumber(), response);
   PBoolean ok = WritePDU(*rip);
   delete rip;
 
   if (!ok)
     return false;
 
-  if (fastResponseRequired) {
-    fastResponseRequired = false;
+  if (m_fastResponseRequired) {
+    m_fastResponseRequired = false;
     PThread::Create(PCREATE_NOTIFIER(SlowHandler), 0,
                                      PThread::AutoDeleteThread,
                                      PThread::NormalPriority,
@@ -745,23 +745,23 @@ void H323Transaction::SlowHandler(PThread &, P_INT_PTR)
 
 PBoolean H323Transaction::WritePDU(H323TransactionPDU & pdu)
 {
-  pdu.SetAuthenticators(authenticators);
-  return transactor.WriteTo(pdu, replyAddresses, true);
+  pdu.SetAuthenticators(m_authenticators);
+  return m_transactor.WriteTo(pdu, m_replyAddresses, true);
 }
 
 
 bool H323Transaction::CheckCryptoTokens()
 {
-  request->SetAuthenticators(authenticators);
+  m_request->SetAuthenticators(m_authenticators);
 
-  authenticatorResult = ValidatePDU();
-  if (authenticatorResult == H235Authenticator::e_OK)
+  m_authenticatorResult = ValidatePDU();
+  if (m_authenticatorResult == H235Authenticator::e_OK)
     return true;
 
   SetRejectReason(GetSecurityRejectTag());
 
   PINDEX i;
-  for (i = 0; (authenticatorStrings[i].code >= 0) && (authenticatorStrings[i].code != authenticatorResult); ++i) 
+  for (i = 0; (authenticatorStrings[i].code >= 0) && (authenticatorStrings[i].code != m_authenticatorResult); ++i) 
     ;
 
   const char * desc = "Unknown error";
@@ -776,7 +776,7 @@ bool H323Transaction::CheckCryptoTokens()
 /////////////////////////////////////////////////////////////////////////////////
 
 H323TransactionServer::H323TransactionServer(H323EndPoint & ep)
-  : ownerEndPoint(ep)
+  : m_ownerEndPoint(ep)
 {
 }
 
@@ -793,9 +793,9 @@ PBoolean H323TransactionServer::AddListeners(const H323TransportAddressArray & i
 
   PINDEX i;
 
-  mutex.Wait();
-  ListenerList::iterator iterListener = listeners.begin();
-  while (iterListener != listeners.end()) {
+  m_mutex.Wait();
+  ListenerList::iterator iterListener = m_listeners.begin();
+  while (iterListener != m_listeners.end()) {
     PBoolean remove = true;
     for (PINDEX j = 0; j < ifaces.GetSize(); j++) {
       if (iterListener->GetTransport().GetLocalAddress().IsEquivalent(ifaces[j], true)) {
@@ -805,28 +805,28 @@ PBoolean H323TransactionServer::AddListeners(const H323TransportAddressArray & i
     }
     if (remove) {
       PTRACE(3, "Trans\tRemoving existing listener " << *iterListener);
-      listeners.erase(iterListener++);
+      m_listeners.erase(iterListener++);
     }
     else
       ++iterListener;
   }
-  mutex.Signal();
+  m_mutex.Signal();
 
   for (i = 0; i < ifaces.GetSize(); i++) {
     if (!ifaces[i])
       AddListener(ifaces[i]);
   }
 
-  return listeners.GetSize() > 0;
+  return m_listeners.GetSize() > 0;
 }
 
 
 PBoolean H323TransactionServer::AddListener(const H323TransportAddress & interfaceName)
 {
-  PWaitAndSignal wait(mutex);
+  PWaitAndSignal wait(m_mutex);
 
   PINDEX i;
-  for (ListenerList::iterator iterListener = listeners.begin(); iterListener != listeners.end(); ++iterListener) {
+  for (ListenerList::iterator iterListener = m_listeners.begin(); iterListener != m_listeners.end(); ++iterListener) {
     if (iterListener->GetTransport().GetLocalAddress().IsEquivalent(interfaceName, true)) {
       PTRACE(2, "H323\tAlready have listener for " << interfaceName);
       return true;
@@ -836,17 +836,17 @@ PBoolean H323TransactionServer::AddListener(const H323TransportAddress & interfa
   PIPSocket::Address addr;
   WORD port = GetDefaultUdpPort();
   if (!interfaceName.GetIpAndPort(addr, port))
-    return AddListener(interfaceName.CreateTransport(ownerEndPoint));
+    return AddListener(interfaceName.CreateTransport(m_ownerEndPoint));
 
   if (!addr.IsAny())
-    return AddListener(new H323TransportUDP(ownerEndPoint, addr, port, false, true));
+    return AddListener(new H323TransportUDP(m_ownerEndPoint, addr, port, false, true));
 
   PIPSocket::InterfaceTable interfaces;
   if (!PIPSocket::GetInterfaceTable(interfaces)) {
     PTRACE(1, "Trans\tNo interfaces on system!");
     if (!PIPSocket::GetHostAddress(addr))
       return false;
-    return AddListener(new H323TransportUDP(ownerEndPoint, addr, port, false, true));
+    return AddListener(new H323TransportUDP(m_ownerEndPoint, addr, port, false, true));
   }
 
   PTRACE(4, "Trans\tAdding interfaces:\n" << setfill('\n') << interfaces << setfill(' '));
@@ -856,7 +856,7 @@ PBoolean H323TransactionServer::AddListener(const H323TransportAddress & interfa
   for (i = 0; i < interfaces.GetSize(); i++) {
     addr = interfaces[i].GetAddress();
     if (addr.IsValid()) {
-      if (AddListener(new H323TransportUDP(ownerEndPoint, addr, port, false, true)))
+      if (AddListener(new H323TransportUDP(m_ownerEndPoint, addr, port, false, true)))
         atLeastOne = true;
     }
   }
@@ -891,9 +891,9 @@ PBoolean H323TransactionServer::AddListener(H323Transactor * listener)
 
   PTRACE(3, "Trans\tStarted listener \"" << *listener << '"');
 
-  mutex.Wait();
-  listeners.Append(listener);
-  mutex.Signal();
+  m_mutex.Wait();
+  m_listeners.Append(listener);
+  m_mutex.Signal();
 
   listener->StartChannel();
 
@@ -905,16 +905,16 @@ PBoolean H323TransactionServer::RemoveListener(H323Transactor * listener)
 {
   PBoolean ok = true;
 
-  mutex.Wait();
+  m_mutex.Wait();
   if (listener != NULL) {
     PTRACE(3, "Trans\tRemoving listener " << *listener);
-    ok = listeners.Remove(listener);
+    ok = m_listeners.Remove(listener);
   }
   else {
     PTRACE(3, "Trans\tRemoving all listeners");
-    listeners.RemoveAll();
+    m_listeners.RemoveAll();
   }
-  mutex.Signal();
+  m_mutex.Signal();
 
   return ok;
 }

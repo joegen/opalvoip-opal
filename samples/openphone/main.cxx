@@ -964,23 +964,25 @@ bool MyManager::Initialise(bool startMinimised)
   m_splitter->SplitHorizontally(m_tabs, m_logWindow, width);
 
   // Read the speed dials from the configuration
-  config->SetPath(SpeedDialsGroup);
-  SpeedDialInfo info;
-  long groupIndex;
-  if (config->GetFirstGroup(info.m_Name, groupIndex)) {
-    do {
-      config->SetPath(info.m_Name);
-      if (config->Read(SpeedDialAddressKey, &info.m_Address) && !info.m_Address.empty()) {
-        config->Read(SpeedDialNumberKey, &info.m_Number);
-#if OPAL_HAS_PRESENCE
-        if (!config->Read(SpeedDialPresentityKey, &info.m_Presentity))
-          config->Read(SpeedDialStateURLKey, &info.m_Presentity);
-#endif // OPAL_HAS_PRESENCE
-        config->Read(SpeedDialDescriptionKey, &info.m_Description);
-        m_speedDialInfo.insert(info);
-      }
-      config->SetPath(wxT(".."));
-    } while (config->GetNextGroup(info.m_Name, groupIndex));
+  {
+    config->SetPath(SpeedDialsGroup);
+    SpeedDialInfo info;
+    long groupIndex;
+    if (config->GetFirstGroup(info.m_Name, groupIndex)) {
+      do {
+        config->SetPath(info.m_Name);
+        if (config->Read(SpeedDialAddressKey, &info.m_Address) && !info.m_Address.empty()) {
+          config->Read(SpeedDialNumberKey, &info.m_Number);
+          #if OPAL_HAS_PRESENCE
+          if (!config->Read(SpeedDialPresentityKey, &info.m_Presentity))
+            config->Read(SpeedDialStateURLKey, &info.m_Presentity);
+          #endif // OPAL_HAS_PRESENCE
+          config->Read(SpeedDialDescriptionKey, &info.m_Description);
+          m_speedDialInfo.insert(info);
+        }
+        config->SetPath(wxT(".."));
+      } while (config->GetNextGroup(info.m_Name, groupIndex));
+    }
   }
 
   // Speed dial window - icons for each speed dial
@@ -1566,15 +1568,18 @@ bool MyManager::Initialise(bool startMinimised)
       config->Read(RegistrarProxyKey, &registration.m_Proxy))
     m_registrations.push_back(registration);
 
-  config->SetPath(RegistrarGroup);
-  wxString groupName;
-  if (config->GetFirstGroup(groupName, groupIndex)) {
-    do {
-      config->SetPath(groupName);
-      if (registration.Read(*config))
-        m_registrations.push_back(registration);
-      config->SetPath(wxT(".."));
-    } while (config->GetNextGroup(groupName, groupIndex));
+  {
+    config->SetPath(RegistrarGroup);
+    wxString groupName;
+    long groupIndex;
+    if (config->GetFirstGroup(groupName, groupIndex)) {
+      do {
+        config->SetPath(groupName);
+        if (registration.Read(*config))
+          m_registrations.push_back(registration);
+        config->SetPath(wxT(".."));
+      } while (config->GetNextGroup(groupName, groupIndex));
+    }
   }
 
   StartRegistrations();
@@ -2484,12 +2489,12 @@ bool MyManager::HasSpeedDialName(const wxString & name) const
 }
 
 
-bool MyManager::HasSpeedDialNumber(const wxString & number, const wxString & ignore) const
+bool MyManager::HasSpeedDialNumber(const wxString & number, const wxString & ignoredNumber) const
 {
   int count = m_speedDials->GetItemCount();
   for (int index = 0; index < count; index++) {
     SpeedDialInfo * info = (SpeedDialInfo *)m_speedDials->GetItemData(index);
-    if (info != NULL && info->m_Number == number && info->m_Number != ignore)
+    if (info != NULL && info->m_Number == number && info->m_Number != ignoredNumber)
       return true;
   }
 
@@ -3051,9 +3056,9 @@ void MyManager::AddCallOnHold(OpalCall & call)
   OnHoldChanged(call.GetToken(), true);
 
   if (!m_switchHoldToken.IsEmpty()) {
-    PSafePtr<OpalCall> call = FindCallWithLock(m_switchHoldToken, PSafeReference);
-    if (call != NULL)
-      call->Retrieve();
+    PSafePtr<OpalCall> heldCall = FindCallWithLock(m_switchHoldToken, PSafeReference);
+    if (heldCall != NULL)
+      heldCall->Retrieve();
     m_switchHoldToken.clear();
   }
 }

@@ -53,22 +53,22 @@
 
 IAX2EndPoint::IAX2EndPoint(OpalManager & mgr)
   : OpalEndPoint(mgr, "iax2", IsNetworkEndPoint | SupportsE164)
-  , callsEstablished(0)
+  , m_callsEstablished(0)
 {
-  localUserName = mgr.GetDefaultUserName();
-  localNumber   = "1234";
+  m_localUserName = mgr.GetDefaultUserName();
+  m_localNumber   = "1234";
   
-  statusQueryCounter = 1;
+  m_statusQueryCounter = 1;
   specialPacketHandler = new IAX2SpecialProcessor(*this);
 
   transmitter = NULL;
   receiver = NULL;
-  sock = NULL;
-  callsEstablished = 0;
+  m_sock = NULL;
+  m_callsEstablished = 0;
 
   IAX2IeCallToken::InitialiseKey();
   //We handle the deletion of regProcessor objects.
-  regProcessors.AllowDeleteObjects(false);
+  m_regProcessors.AllowDeleteObjects(false);
 
   Initialise();
   PTRACE(5, "Iax2Ep\tCreated endpoint.");
@@ -81,18 +81,18 @@ IAX2EndPoint::~IAX2EndPoint()
   //contents of this array are automatically shifted when removed
   //so we only need to loop through the first element until all
   //elements are removed
-  while (regProcessors.GetSize()) {
-    IAX2RegProcessor *regProcessor = (IAX2RegProcessor*)regProcessors.GetAt(0);
+  while (m_regProcessors.GetSize()) {
+    IAX2RegProcessor *regProcessor = (IAX2RegProcessor*)m_regProcessors.GetAt(0);
     regProcessor->Unregister();
-    regProcessors.RemoveAt(0);
+    m_regProcessors.RemoveAt(0);
     delete regProcessor;
   }
 
   PTRACE(6, "Iax2Ep\tDestructor - cleaned up the different registration processeors");
 
-  incomingFrameHandler.Terminate();
-  incomingFrameHandler.WaitForTermination();
-  packetsReadFromEthernet.AllowDeleteObjects();  
+  m_incomingFrameHandler.Terminate();
+  m_incomingFrameHandler.WaitForTermination();
+  m_packetsReadFromEthernet.AllowDeleteObjects();  
   PTRACE(6, "Iax2Ep\tDestructor - cleaned up the incoming frame handler");
   
   if (receiver != NULL && transmitter != NULL) {
@@ -117,8 +117,8 @@ IAX2EndPoint::~IAX2EndPoint()
   if (receiver != NULL)
     delete receiver;
 
-  if (sock != NULL)
-    delete sock; 
+  if (m_sock != NULL)
+    delete m_sock; 
   
   PTRACE(6, "Iax2Ep\tDESTRUCTOR of IAX2 endpoint has Finished.");  
 }
@@ -146,7 +146,7 @@ void IAX2EndPoint::NewIncomingConnection(IAX2Frame *f)
 {
   PTRACE(3, "IAX2\tWe have received a NEW request from " << f->GetConnectionToken());
   
-  if (connectionsActive.Contains(f->GetConnectionToken())) {
+  if (m_connectionsActive.Contains(f->GetConnectionToken())) {
     /*Have received  a duplicate new packet */
     PTRACE(3, "IAX2\thave received  a duplicate new packet from " 
 	   << f->GetConnectionToken());
@@ -164,11 +164,11 @@ void IAX2EndPoint::NewIncomingConnection(IAX2Frame *f)
   {    
     IAX2RegProcessor *regProcessor = NULL;
     
-    PWaitAndSignal m(regProcessorsMutex);
+    PWaitAndSignal m(m_regProcessorsMutex);
     
-    PINDEX size = regProcessors.GetSize();
+    PINDEX size = m_regProcessors.GetSize();
     for (PINDEX i = 0; i < size; i++) {
-      regProcessor = (IAX2RegProcessor*)regProcessors.GetAt(i);
+      regProcessor = (IAX2RegProcessor*)m_regProcessors.GetAt(i);
       
       if (regProcessor->GetHost() == host) {
         userName = regProcessor->GetUserName();
@@ -184,7 +184,7 @@ void IAX2EndPoint::NewIncomingConnection(IAX2Frame *f)
   PString url = BuildUrl(host, userName, ieData.callingNumber);
 
   // Get new instance of a call, abort if none created
-  OpalCall * call = manager.InternalCreateCall();
+  OpalCall * call = m_manager.InternalCreateCall();
   if (call == NULL)
     return;
 
@@ -215,12 +215,12 @@ void IAX2EndPoint::OnEstablished(OpalConnection & con)
 
 PINDEX IAX2EndPoint::NextSrcCallNumber(IAX2Processor * /*processor*/)
 {
-    PWaitAndSignal m(callNumbLock);
+    PWaitAndSignal m(m_callNumbLock);
     
-    PINDEX callno = callnumbs++;
+    PINDEX callno = m_callnumbs++;
     
-    if (callnumbs > 32766)
-      callnumbs = 1;    
+    if (m_callnumbs > 32766)
+      m_callnumbs = 1;    
 
     return callno;
 }
@@ -232,21 +232,21 @@ PBoolean IAX2EndPoint::ConnectionForFrameIsAlive(IAX2Frame *f)
 
   // ReportStoredConnections();
 
-  PBoolean res = connectionsActive.Contains(frameToken);
+  PBoolean res = m_connectionsActive.Contains(frameToken);
   if (res) {
     return true;
   }
 
-  mutexTokenTable.StartRead();
-  PString tokenTranslated = tokenTable(frameToken);
-  mutexTokenTable.EndRead();
+  m_mutexTokenTable.StartRead();
+  PString tokenTranslated = m_tokenTable(frameToken);
+  m_mutexTokenTable.EndRead();
 
   if (tokenTranslated.IsEmpty()) {
     PTRACE(4, "No matching translation table entry token for \"" << frameToken << "\"");
     return false;
   }
 
-  res = connectionsActive.Contains(tokenTranslated);
+  res = m_connectionsActive.Contains(tokenTranslated);
   if (res) {
     PTRACE(5, "Found \"" << tokenTranslated << "\" in the connectionsActive table");
     return true;
@@ -268,12 +268,12 @@ void IAX2EndPoint::ReportStoredConnections()
       PTRACE(5, "    #" << (i + 1) << "                     \"" << cons[i] << "\"");
     }
 
-    mutexTokenTable.StartRead();
-    PTRACE(5, " There are " << tokenTable.GetSize() 
+    m_mutexTokenTable.StartRead();
+    PTRACE(5, " There are " << m_tokenTable.GetSize() 
 	   << " stored connections in the token translation table.");
-    for (PStringToString::iterator it = tokenTable.begin(); it != tokenTable.end(); ++it)
+    for (PStringToString::iterator it = m_tokenTable.begin(); it != m_tokenTable.end(); ++it)
       PTRACE(5, " token table at " << i << " is " << it->first << " " << it->second);
-    mutexTokenTable.EndRead();
+    m_mutexTokenTable.EndRead();
   }
 #endif
 }
@@ -365,9 +365,9 @@ void IAX2EndPoint::OnReleased(OpalConnection & opalCon)
   IAX2Connection &con((IAX2Connection &)opalCon);
 
   PString token(con.GetRemoteInfo().BuildOurConnectionToken());
-  mutexTokenTable.StartWrite();
-  tokenTable.RemoveAt(token);
-  mutexTokenTable.EndWrite();
+  m_mutexTokenTable.StartWrite();
+  m_tokenTable.RemoveAt(token);
+  m_mutexTokenTable.EndWrite();
   OpalEndPoint::OnReleased(opalCon);
 }
 
@@ -398,7 +398,7 @@ PSafePtr<OpalConnection> IAX2EndPoint::MakeConnection(OpalCall & call,
   }
 
   PStringStream callId;
-  callId << "iax2:" <<  ip.AsString() << "Out" << PString(++callsEstablished);
+  callId << "iax2:" <<  ip.AsString() << "Out" << PString(++m_callsEstablished);
   IAX2Connection * connection = CreateConnection(call, callId, userData, remotePartyName);
   if (AddConnection(connection) == NULL)
     return NULL;
@@ -408,18 +408,15 @@ PSafePtr<OpalConnection> IAX2EndPoint::MakeConnection(OpalCall & call,
   //and password we can use for authentication.  If there isn't then the default
   //userName and password of this endpoint will be used instead.
   {
-    PWaitAndSignal m(regProcessorsMutex);
-    PINDEX size = regProcessors.GetSize();
+    PWaitAndSignal m(m_regProcessorsMutex);
+    PINDEX size = m_regProcessors.GetSize();
     
     for (PINDEX i = 0; i < size; i++) {
-      IAX2RegProcessor *regProcessor = (IAX2RegProcessor*)regProcessors.GetAt(i);
+      IAX2RegProcessor *regProcessor = (IAX2RegProcessor*)m_regProcessors.GetAt(i);
       
       if (regProcessor->GetHost() == remoteInfo[addressIndex]) {
-        PString userName = regProcessor->GetUserName();
-        PString password = regProcessor->GetPassword();
-        
-        connection->SetUserName(userName);
-        connection->SetPassword(password);
+        connection->SetUserName( regProcessor->GetUserName());
+        connection->SetPassword(regProcessor->GetPassword());
         break;
       }
     }
@@ -457,39 +454,39 @@ PBoolean IAX2EndPoint::Initialise()
       localMediaFormats.erase(iterFormat++);
   }
 
-  incomingFrameHandler.Assign(this);
-  packetsReadFromEthernet.Initialise();
+  m_incomingFrameHandler.Assign(this);
+  m_packetsReadFromEthernet.Initialise();
 
   PTRACE(6, "IAX2EndPoint\tInitialise()");
   PRandom rand;
   rand.SetSeed((DWORD)(PTime().GetTimeInSeconds() + 1));
-  callnumbs = PRandom::Number() % 32000;
+  m_callnumbs = PRandom::Number() % 32000;
   
-  sock = new PUDPSocket(GetDefaultSignalPort());
-  PTRACE(4, "IAX2EndPoint\tCreate Socket " << sock->GetPort());
+  m_sock = new PUDPSocket(GetDefaultSignalPort());
+  PTRACE(4, "IAX2EndPoint\tCreate Socket " << m_sock->GetPort());
   
-  if (!sock->Listen(INADDR_ANY, 0, sock->GetPort())) {
+  if (!m_sock->Listen(INADDR_ANY, 0, m_sock->GetPort())) {
     PTRACE(2, "Receiver\tFailed to listen for incoming connections on "
-           << sock->GetPort() << " - error: " << sock->GetErrorText());
+           << m_sock->GetPort() << " - error: " << m_sock->GetErrorText());
     return false;
   }
   
-  PTRACE(5, "Receiver\tYES.. Ready for incoming connections on " << sock->GetPort());
+  PTRACE(5, "Receiver\tYES.. Ready for incoming connections on " << m_sock->GetPort());
   
-  transmitter = new IAX2Transmit(*this, *sock);
-  receiver    = new IAX2Receiver(*this, *sock);
+  transmitter = new IAX2Transmit(*this, *m_sock);
+  receiver    = new IAX2Receiver(*this, *m_sock);
   
   return true;
 }
 
 PINDEX IAX2EndPoint::GetOutSequenceNumberForStatusQuery()
 {
-  PWaitAndSignal m(statusQueryMutex);
+  PWaitAndSignal m(m_statusQueryMutex);
   
-  if (statusQueryCounter > 240)
-    statusQueryCounter = 1;
+  if (m_statusQueryCounter > 240)
+    m_statusQueryCounter = 1;
   
-  return statusQueryCounter++;
+  return m_statusQueryCounter++;
 }
 
 
@@ -511,16 +508,16 @@ PBoolean IAX2EndPoint::ProcessInConnectionTestAll(IAX2Frame *frame)
   {
     PSafePtr<IAX2Connection> connection;
     for (connection = PSafePtrCast<OpalConnection, IAX2Connection>
-	   (connectionsActive.GetAt(0)); 
+	   (m_connectionsActive.GetAt(0)); 
 	 connection != NULL; 
 	 ++connection) {
       if (connection->GetRemoteInfo().SourceCallNumber() == destCallNo) {
 	PString token(frame->GetConnectionToken());
 	callToken = connection->GetCallToken();
 	if (!token.IsEmpty()) /* token available, modify token table */ {
-	  mutexTokenTable.StartWrite();
-	  tokenTable.SetAt(token, callToken);
-	  mutexTokenTable.EndWrite();
+	  m_mutexTokenTable.StartWrite();
+	  m_tokenTable.SetAt(token, callToken);
+	  m_mutexTokenTable.EndWrite();
 	}
       }
     }
@@ -541,9 +538,9 @@ PBoolean IAX2EndPoint::ProcessInMatchingConnection(IAX2Frame *f)
   ReportStoredConnections();
 
   PString tokenTranslated;
-  mutexTokenTable.StartRead();
-  tokenTranslated = tokenTable(f->GetConnectionToken());
-  mutexTokenTable.EndRead();
+  m_mutexTokenTable.StartRead();
+  tokenTranslated = m_tokenTable(f->GetConnectionToken());
+  m_mutexTokenTable.EndRead();
 
   if (tokenTranslated.IsEmpty()) 
     tokenTranslated = f->GetConnectionToken();
@@ -562,7 +559,7 @@ PBoolean IAX2EndPoint::ProcessFrameInConnection(IAX2Frame *f,
 {
   IAX2Connection *connection;
   connection = PSafePtrCast<OpalConnection, IAX2Connection>
-    (connectionsActive.FindWithLock(token));
+    (m_connectionsActive.FindWithLock(token));
   if (connection != NULL) {
     PTRACE(5, "Distribution\tHave a connection for " << f->GetRemoteInfo());
     connection->IncomingEthernetFrame(f);
@@ -582,15 +579,15 @@ void IAX2EndPoint::IncomingEthernetFrame(IAX2Frame *frame)
 {
   PTRACE(5, "IAXEp\tEthernet Frame received from Receiver " << frame->IdString());
 
-  packetsReadFromEthernet.AddNewFrame(frame);
-  incomingFrameHandler.ProcessList();
+  m_packetsReadFromEthernet.AddNewFrame(frame);
+  m_incomingFrameHandler.ProcessList();
 }
 
 void IAX2EndPoint::ProcessReceivedEthernetFrames()
 { 
   IAX2Frame *f;
   do {
-    f = packetsReadFromEthernet.GetLastFrame();
+    f = m_packetsReadFromEthernet.GetLastFrame();
     if (f == NULL) {
       continue;
     }
@@ -721,17 +718,17 @@ void IAX2EndPoint::CopyLocalMediaFormats(OpalMediaFormatList & list)
 
 void IAX2EndPoint::SetPassword(PString newValue)
 {
-  password = newValue; 
+  m_password = newValue; 
 }
 
 void IAX2EndPoint::SetLocalUserName(PString newValue)
 { 
-  localUserName = newValue; 
+  m_localUserName = newValue; 
 }
 
 void IAX2EndPoint::SetLocalNumber(PString newValue)
 { 
-  localNumber = newValue; 
+  m_localNumber = newValue; 
 }
 
 void IAX2EndPoint::Register(
@@ -740,11 +737,11 @@ void IAX2EndPoint::Register(
       const PString & password,
       PINDEX requestedRefreshTime)
 {
-  PWaitAndSignal m(regProcessorsMutex);
+  PWaitAndSignal m(m_regProcessorsMutex);
   
   IAX2RegProcessor *regProcessor = 
           new IAX2RegProcessor(*this, host, username, password, requestedRefreshTime);
-  regProcessors.Append(regProcessor);
+  m_regProcessors.Append(regProcessor);
 }
 
 void IAX2EndPoint::OnRegistered(
@@ -774,15 +771,15 @@ void IAX2EndPoint::Unregister(
   //this section and loop is optimized to remove
   //the time the lock will be held.
   {
-    PWaitAndSignal m(regProcessorsMutex);
-    PINDEX size = regProcessors.GetSize();
+    PWaitAndSignal m(m_regProcessorsMutex);
+    PINDEX size = m_regProcessors.GetSize();
     
     for (PINDEX i = 0; i < size; i++) {
-      IAX2RegProcessor *regProcessor = (IAX2RegProcessor*)regProcessors.GetAt(i);
+      IAX2RegProcessor *regProcessor = (IAX2RegProcessor*)m_regProcessors.GetAt(i);
       
       if (regProcessor->GetHost() == host && 
           regProcessor->GetUserName() == username) {
-        regProcessors.RemoveAt(i);
+        m_regProcessors.RemoveAt(i);
         removeRegProcesser = regProcessor; 
         break;
       }
@@ -797,12 +794,12 @@ void IAX2EndPoint::Unregister(
 
 PBoolean IAX2EndPoint::IsRegistered(const PString & host, const PString & username)
 {
-  PWaitAndSignal m(regProcessorsMutex);
+  PWaitAndSignal m(m_regProcessorsMutex);
   
-  PINDEX size = regProcessors.GetSize();
+  PINDEX size = m_regProcessors.GetSize();
     
   for (PINDEX i = 0; i < size; i++) {
-    IAX2RegProcessor *regProcessor = (IAX2RegProcessor*)regProcessors.GetAt(i);
+    IAX2RegProcessor *regProcessor = (IAX2RegProcessor*)m_regProcessors.GetAt(i);
       
     if (regProcessor->GetHost() == host &&
       regProcessor->GetUserName() == username) {
@@ -814,8 +811,8 @@ PBoolean IAX2EndPoint::IsRegistered(const PString & host, const PString & userna
 }
 
 PINDEX IAX2EndPoint::GetRegistrationsCount() {
-  PWaitAndSignal m(regProcessorsMutex);
-  return regProcessors.GetSize();
+  PWaitAndSignal m(m_regProcessorsMutex);
+  return m_regProcessors.GetSize();
 }
 
 ////////////////////////////////////////////////////////////////////////////////

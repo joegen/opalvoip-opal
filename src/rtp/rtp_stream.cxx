@@ -104,8 +104,8 @@ PBoolean OpalRTPMediaStream::Open()
 
   if (IsSource()) {
     delete m_jitterBuffer;
-    OpalJitterBuffer::Init init(connection.GetEndPoint().GetManager(), mediaFormat.GetTimeUnits());
-    m_jitterBuffer = OpalJitterBuffer::Create(mediaFormat.GetMediaType(), init);
+    OpalJitterBuffer::Init init(m_connection.GetEndPoint().GetManager(), m_mediaFormat.GetTimeUnits());
+    m_jitterBuffer = OpalJitterBuffer::Create(m_mediaFormat.GetMediaType(), init);
     m_rtpSession.SetJitterBuffer(m_jitterBuffer, m_syncSource);
     m_rtpSession.AddDataNotifier(m_notifierPriority, m_receiveNotifier, m_syncSource);
     PTRACE(4, "Opening source stream " << *this << " jb=" << *m_jitterBuffer);
@@ -120,7 +120,7 @@ PBoolean OpalRTPMediaStream::Open()
   }
 
 #if OPAL_VIDEO
-  m_forceIntraFrameFlag = mediaFormat.GetMediaType() == OpalMediaType::Video();
+  m_forceIntraFrameFlag = m_mediaFormat.GetMediaType() == OpalMediaType::Video();
   m_forceIntraFrameTimer = 500;
 #endif
 
@@ -320,24 +320,24 @@ PBoolean OpalRTPMediaStream::ReadPacket(RTP_DataFrame & packet)
   if (PAssertNULL(m_jitterBuffer) == NULL)
     return false;
 
-  if (packet.GetTimestamp() == timestamp) {
+  if (packet.GetTimestamp() == m_timestamp) {
     RTP_Timestamp packetTime = m_jitterBuffer->GetPacketTime();
     if (packetTime > 0)
-      timestamp += packetTime;
+      m_timestamp += packetTime;
     else if (m_frameTime > 0)
-      timestamp += ((20*GetMediaFormat().GetTimeUnits() + m_frameTime - 1)/m_frameTime) * m_frameTime;
-    packet.SetTimestamp(timestamp);
+      m_timestamp += ((20*GetMediaFormat().GetTimeUnits() + m_frameTime - 1)/m_frameTime) * m_frameTime;
+    packet.SetTimestamp(m_timestamp);
   }
 
   if (!m_jitterBuffer->ReadData(packet, m_readTimeout))
     return false;
 
-  timestamp = packet.GetTimestamp();
+  m_timestamp = packet.GetTimestamp();
 
 #if OPAL_VIDEO
-  if (packet.GetDiscontinuity() > 0 && mediaFormat.GetMediaType() == OpalMediaType::Video()) {
+  if (packet.GetDiscontinuity() > 0 && m_mediaFormat.GetMediaType() == OpalMediaType::Video()) {
     PTRACE(3, "Automatically requesting video update due to " << packet.GetDiscontinuity() << " missing packets.");
-    ExecuteCommand(OpalVideoPictureLoss(packet.GetSequenceNumber(), timestamp, 0, packet.GetSyncSource()));
+    ExecuteCommand(OpalVideoPictureLoss(packet.GetSequenceNumber(), m_timestamp, 0, packet.GetSyncSource()));
   }
 #endif
 
@@ -391,7 +391,7 @@ PBoolean OpalRTPMediaStream::WritePacket(RTP_DataFrame & packet)
   }
 #endif
 
-  timestamp = packet.GetTimestamp();
+  m_timestamp = packet.GetTimestamp();
 
   if (m_rewriteHeaders && packet.GetPayloadSize() == 0
 #if OPAL_VIDEO
@@ -447,11 +447,11 @@ PBoolean OpalRTPMediaStream::IsSynchronous() const
     return false;
 
   // Source will bock if no jitter buffer, either not needed ...
-  if (!mediaFormat.NeedsJitterBuffer())
+  if (!m_mediaFormat.NeedsJitterBuffer())
     return true;
 
   // ... or is disabled
-  if (connection.GetMaxAudioJitterDelay() == 0)
+  if (m_connection.GetMaxAudioJitterDelay() == 0)
     return true;
 
   // Finally, are asynchonous if external or in RTP bypass mode. These are the
@@ -462,7 +462,7 @@ PBoolean OpalRTPMediaStream::IsSynchronous() const
 
 PBoolean OpalRTPMediaStream::RequiresPatchThread() const
 {
-  return !dynamic_cast<OpalRTPEndPoint &>(connection.GetEndPoint()).CheckForLocalRTP(*this);
+  return !dynamic_cast<OpalRTPEndPoint &>(m_connection.GetEndPoint()).CheckForLocalRTP(*this);
 }
 
 
@@ -479,7 +479,7 @@ bool OpalRTPMediaStream::InternalSetJitterBuffer(const OpalJitterBuffer::Init & 
 bool OpalRTPMediaStream::InternalUpdateMediaFormat(const OpalMediaFormat & newMediaFormat)
 {
   return OpalMediaStream::InternalUpdateMediaFormat(newMediaFormat) &&
-         m_rtpSession.UpdateMediaFormat(mediaFormat); // use the newly adjusted mediaFormat
+         m_rtpSession.UpdateMediaFormat(m_mediaFormat); // use the newly adjusted mediaFormat
 }
 
 
@@ -501,7 +501,7 @@ PBoolean OpalRTPMediaStream::SetPatch(OpalMediaPatch * patch)
 
 void OpalRTPMediaStream::GetJitterBufferDelay(OpalJitterBuffer::Init & info) const
 {
-  info.m_mediaType = mediaFormat.GetMediaType();
+  info.m_mediaType = m_mediaFormat.GetMediaType();
   info.m_timeUnits = m_jitterBuffer->GetTimeUnits();
   info.m_maxJitterDelay = m_jitterBuffer->GetMaxJitterDelay()/info.m_timeUnits;
   info.m_minJitterDelay = m_jitterBuffer->GetMinJitterDelay()/info.m_timeUnits;

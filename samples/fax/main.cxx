@@ -288,7 +288,7 @@ void MyManager::OnClearedCall(OpalCall & call)
 void MyFaxEndPoint::OnFaxCompleted(OpalFaxConnection & connection, bool failed)
 {
 #if OPAL_STATISTICS
-  OpalConsoleManager::LockedStream lockedOutput(dynamic_cast<MyManager &>(manager));
+  OpalConsoleManager::LockedStream lockedOutput(dynamic_cast<MyManager &>(GetManager()));
   ostream & output = lockedOutput;
 
   OpalMediaStatistics stats;

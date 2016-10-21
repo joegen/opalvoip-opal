@@ -756,7 +756,7 @@ void OpalFarEndCameraControl::Attach(PVideoInputDevice * device, const PString &
     PVideoInputDevice::Capabilities caps;
     if (m_videoInputDevices[sourceId]->GetDeviceCapabilities(&caps)) {
       m_localCapability[sourceId].m_attribute[Capability::MotionVideo] = true;
-      for (std::list<PVideoControlInfo>::iterator it = caps.controls.begin(); it != caps.controls.end(); ++it)
+      for (std::list<PVideoControlInfo>::iterator it = caps.m_controls.begin(); it != caps.m_controls.end(); ++it)
         m_localCapability[sourceId].m_attribute[it->GetType()] = it->IsValid();
     }
   }

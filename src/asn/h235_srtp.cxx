@@ -191,7 +191,7 @@ H235_SRTP_SrtpKeyParameters_lifetime::H235_SRTP_SrtpKeyParameters_lifetime(unsig
 
 PBoolean H235_SRTP_SrtpKeyParameters_lifetime::CreateObject()
 {
-  switch (tag) {
+  switch (m_tag) {
     case e_powerOfTwo :
     case e_specific :
       choice = new PASN_Integer();

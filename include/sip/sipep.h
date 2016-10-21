@@ -855,30 +855,30 @@ class SIPEndPoint : public OpalSDPEndPoint
     void SetMaxPacketSizeUDP(PINDEX sz) { m_maxPacketSizeUDP = sz; }
     PINDEX GetMaxPacketSizeUDP() const { return m_maxPacketSizeUDP; }
 
-    void SetMaxRetries(unsigned r) { maxRetries = r; }
-    unsigned GetMaxRetries() const { return maxRetries; }
+    void SetMaxRetries(unsigned r) { m_maxRetries = r; }
+    unsigned GetMaxRetries() const { return m_maxRetries; }
 
     void SetRetryTimeouts(
       const PTimeInterval & t1,
       const PTimeInterval & t2
-    ) { retryTimeoutMin = t1; retryTimeoutMax = t2; }
-    const PTimeInterval & GetRetryTimeoutMin() const { return retryTimeoutMin; }
-    const PTimeInterval & GetRetryTimeoutMax() const { return retryTimeoutMax; }
+    ) { m_retryTimeoutMin = t1; m_retryTimeoutMax = t2; }
+    const PTimeInterval & GetRetryTimeoutMin() const { return m_retryTimeoutMin; }
+    const PTimeInterval & GetRetryTimeoutMax() const { return m_retryTimeoutMax; }
 
     void SetNonInviteTimeout(
       const PTimeInterval & t
-    ) { nonInviteTimeout = t; }
-    const PTimeInterval & GetNonInviteTimeout() const { return nonInviteTimeout; }
+    ) { m_nonInviteTimeout = t; }
+    const PTimeInterval & GetNonInviteTimeout() const { return m_nonInviteTimeout; }
 
     void SetPduCleanUpTimeout(
       const PTimeInterval & t
-    ) { pduCleanUpTimeout = t; }
-    const PTimeInterval & GetPduCleanUpTimeout() const { return pduCleanUpTimeout; }
+    ) { m_pduCleanUpTimeout = t; }
+    const PTimeInterval & GetPduCleanUpTimeout() const { return m_pduCleanUpTimeout; }
 
     void SetInviteTimeout(
       const PTimeInterval & t
-    ) { inviteTimeout = t; }
-    const PTimeInterval & GetInviteTimeout() const { return inviteTimeout; }
+    ) { m_inviteTimeout = t; }
+    const PTimeInterval & GetInviteTimeout() const { return m_inviteTimeout; }
 
     void SetProgressTimeout(
       const PTimeInterval & t
@@ -887,18 +887,18 @@ class SIPEndPoint : public OpalSDPEndPoint
 
     void SetAckTimeout(
       const PTimeInterval & t
-    ) { ackTimeout = t; }
-    const PTimeInterval & GetAckTimeout() const { return ackTimeout; }
+    ) { m_ackTimeout = t; }
+    const PTimeInterval & GetAckTimeout() const { return m_ackTimeout; }
 
     void SetRegistrarTimeToLive(
       const PTimeInterval & t
-    ) { registrarTimeToLive = t; }
-    const PTimeInterval & GetRegistrarTimeToLive() const { return registrarTimeToLive; }
+    ) { m_registrarTimeToLive = t; }
+    const PTimeInterval & GetRegistrarTimeToLive() const { return m_registrarTimeToLive; }
     
     void SetNotifierTimeToLive(
       const PTimeInterval & t
-    ) { notifierTimeToLive = t; }
-    const PTimeInterval & GetNotifierTimeToLive() const { return notifierTimeToLive; }
+    ) { m_notifierTimeToLive = t; }
+    const PTimeInterval & GetNotifierTimeToLive() const { return m_notifierTimeToLive; }
     
     P_DEPRECATED void SetNATBindingTimeout(
       const PTimeInterval & t
@@ -1042,16 +1042,16 @@ class SIPEndPoint : public OpalSDPEndPoint
     SIPConnection::PRACKMode m_defaultPrackMode;
 
     PINDEX        m_maxPacketSizeUDP;
-    unsigned      maxRetries;
-    PTimeInterval retryTimeoutMin;   // T1
-    PTimeInterval retryTimeoutMax;   // T2
-    PTimeInterval nonInviteTimeout;  // T3
-    PTimeInterval pduCleanUpTimeout; // T4
-    PTimeInterval inviteTimeout;
+    unsigned      m_maxRetries;
+    PTimeInterval m_retryTimeoutMin;   // T1
+    PTimeInterval m_retryTimeoutMax;   // T2
+    PTimeInterval m_nonInviteTimeout;  // T3
+    PTimeInterval m_pduCleanUpTimeout; // T4
+    PTimeInterval m_inviteTimeout;
     PTimeInterval m_progressTimeout;
-    PTimeInterval ackTimeout;
-    PTimeInterval registrarTimeToLive;
-    PTimeInterval notifierTimeToLive;
+    PTimeInterval m_ackTimeout;
+    PTimeInterval m_registrarTimeToLive;
+    PTimeInterval m_notifierTimeToLive;
     PTimeInterval m_keepAliveTimeout;
     KeepAliveType m_keepAliveType;
     bool          m_registeredUserMode;

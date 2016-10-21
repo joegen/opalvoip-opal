@@ -70,16 +70,16 @@ SIPEndPoint::SIPEndPoint(OpalManager & mgr, unsigned maxThreads)
   : OpalSDPEndPoint(mgr, "sip", IsNetworkEndPoint | SupportsE164)
   , m_defaultPrackMode(SIPConnection::e_prackSupported)
   , m_maxPacketSizeUDP(1300)         // As per RFC 3261 section 18.1.1
-  , maxRetries(10)
-  , retryTimeoutMin(500)             // 0.5 seconds
-  , retryTimeoutMax(0, 4)            // 4 seconds
-  , nonInviteTimeout(0, 16)          // 16 seconds
-  , pduCleanUpTimeout(0, 5)          // 5 seconds
-  , inviteTimeout(0, 32)             // 32 seconds
+  , m_maxRetries(10)
+  , m_retryTimeoutMin(500)             // 0.5 seconds
+  , m_retryTimeoutMax(0, 4)            // 4 seconds
+  , m_nonInviteTimeout(0, 16)          // 16 seconds
+  , m_pduCleanUpTimeout(0, 5)          // 5 seconds
+  , m_inviteTimeout(0, 32)             // 32 seconds
   , m_progressTimeout(0, 0, 3)       // 3 minutes
-  , ackTimeout(0, 32)                // 32 seconds
-  , registrarTimeToLive(0, 0, 0, 1)  // 1 hour
-  , notifierTimeToLive(0, 0, 0, 1)   // 1 hour
+  , m_ackTimeout(0, 32)                // 32 seconds
+  , m_registrarTimeToLive(0, 0, 0, 1)  // 1 hour
+  , m_notifierTimeToLive(0, 0, 0, 1)   // 1 hour
   , m_keepAliveTimeout(0, 0, 1)      // 1 minute
   , m_keepAliveType(NoKeepAlive)
   , m_registeredUserMode(false)
@@ -103,7 +103,7 @@ SIPEndPoint::SIPEndPoint(OpalManager & mgr, unsigned maxThreads)
 #endif
 
 #if OPAL_PTLIB_SSL
-  manager.AttachEndPoint(this, "sips");
+  m_manager.AttachEndPoint(this, "sips");
 #endif
 
   PInterfaceMonitor::GetInstance().AddNotifier(m_onHighPriorityInterfaceChange, 80);
@@ -334,7 +334,7 @@ OpalTransportPtr SIPEndPoint::GetTransport(const SIPTransactionOwner & transacto
 
       if (transport == NULL) {
         OpalTransportAddress localAddress(localInterface, 0, remoteAddress.GetProtoPrefix());
-        for (OpalListenerList::iterator listener = listeners.begin(); listener != listeners.end(); ++listener) {
+        for (OpalListenerList::iterator listener = m_listeners.begin(); listener != m_listeners.end(); ++listener) {
           if ((transport = listener->CreateTransport(localAddress, remoteAddress)) != NULL)
             break;
         }
@@ -486,7 +486,7 @@ PSafePtr<OpalConnection> SIPEndPoint::MakeConnection(OpalCall & call,
                                                    unsigned int options,
                                 OpalConnection::StringOptions * stringOptions)
 {
-  if (listeners.IsEmpty())
+  if (m_listeners.IsEmpty())
     return NULL;
 
   SIPConnection::Init init(call, *this);
@@ -519,9 +519,9 @@ void SIPEndPoint::OnConferenceStatusChanged(OpalEndPoint & endpoint, const PStri
   const OpalConferenceState & state = states.front();
   PTRACE(4, "Conference state for " << state.m_internalURI << " has " << change);
 
-  ConferenceMap::iterator it = m_conferenceAOR.find(uri);
-  if (it != m_conferenceAOR.end())
-    Notify(it->second, SIPEventPackage(SIPSubscribe::Conference), state);
+  ConferenceMap::iterator confAOR = m_conferenceAOR.find(uri);
+  if (confAOR != m_conferenceAOR.end())
+    Notify(confAOR->second, SIPEventPackage(SIPSubscribe::Conference), state);
 
   for (OpalConferenceState::URIs::const_iterator it = state.m_accessURI.begin(); it != state.m_accessURI.begin(); ++it) {
     PTRACE(4, "Conference access URI: \"" << it->m_uri << '"');
@@ -556,7 +556,7 @@ void SIPEndPoint::OnConferenceStatusChanged(OpalEndPoint & endpoint, const PStri
 
 PBoolean SIPEndPoint::GarbageCollection()
 {
-  PTRACE(6, "Garbage collection: transactions=" << m_transactions.GetSize() << ", connections=" << connectionsActive.GetSize());
+  PTRACE(6, "Garbage collection: transactions=" << m_transactions.GetSize() << ", connections=" << m_connectionsActive.GetSize());
 
   {
     PSafePtr<SIPTransactionBase> transaction(m_transactions, PSafeReference);
@@ -1157,7 +1157,7 @@ PSafePtr<SIPConnection> SIPEndPoint::GetSIPConnectionWithLock(const PString & to
     return NULL;
   }
 
-  connection = PSafePtrCast<OpalConnection, SIPConnection>(connectionsActive.GetAt(0, PSafeReference));
+  connection = PSafePtrCast<OpalConnection, SIPConnection>(m_connectionsActive.GetAt(0, PSafeReference));
   while (connection != NULL) {
     const SIPDialogContext & context = connection->GetDialog();
     if (context.GetCallID() == callid) {
@@ -1224,7 +1224,7 @@ bool SIPEndPoint::OnReceivedINVITE(SIP_PDU * request)
 
   if (call == NULL) {
     // Get new instance of a call, abort if none created
-    call = manager.InternalCreateCall();
+    call = m_manager.InternalCreateCall();
     if (call == NULL) {
       request->SendResponse(SIP_PDU::Failure_TemporarilyUnavailable);
       return false;
@@ -1809,7 +1809,7 @@ SIPEndPoint::CanNotifyResult SIPEndPoint::CanNotify(const PString & eventPackage
 {
   if (SIPEventPackage(SIPSubscribe::Conference) == eventPackage) {
     OpalConferenceStates states;
-    if (manager.GetConferenceStates(states, aor.GetUserName()) || states.empty()) {
+    if (m_manager.GetConferenceStates(states, aor.GetUserName()) || states.empty()) {
       PString uri = states.front().m_internalURI;
       ConferenceMap::iterator it = m_conferenceAOR.find(uri);
       while (it != m_conferenceAOR.end() && it->first == uri) {
@@ -1827,7 +1827,7 @@ SIPEndPoint::CanNotifyResult SIPEndPoint::CanNotify(const PString & eventPackage
 
 #if OPAL_SIP_PRESENCE
   if (SIPEventPackage(SIPSubscribe::Presence) == eventPackage) {
-    PSafePtr<OpalPresentity> presentity = manager.GetPresentity(aor);
+    PSafePtr<OpalPresentity> presentity = m_manager.GetPresentity(aor);
     if (presentity != NULL && presentity->GetAttributes().GetEnum(
                   SIP_Presentity::SubProtocolKey, SIP_Presentity::e_WithAgent) == SIP_Presentity::e_PeerToPeer)
       return CanNotifyImmediate;
@@ -2245,7 +2245,7 @@ void SIPEndPoint::AdjustToRegistration(SIP_PDU & pdu, SIPConnection * connection
 
       if (contact.IsEmpty()) {
         SIPURLList listenerAddresses;
-        for (OpalListenerList::iterator it = listeners.begin(); it != listeners.end(); ++it)
+        for (OpalListenerList::iterator it = m_listeners.begin(); it != m_listeners.end(); ++it)
           listenerAddresses.push_back(SIPURL(user, it->GetLocalAddress(remoteAddress)));
         contact = listenerAddresses.FindCompatible(localAddress PTRACE_PARAM(, "listening"));
         PTRACE_IF(4, !contact.IsEmpty(), "Adjusted Contact to " << contact << " from listeners.");
@@ -2253,7 +2253,7 @@ void SIPEndPoint::AdjustToRegistration(SIP_PDU & pdu, SIPConnection * connection
     }
 
     if (contact.IsEmpty()) {
-      contact = SIPURL(user, listeners[0].GetLocalAddress(remoteAddress));
+      contact = SIPURL(user, m_listeners[0].GetLocalAddress(remoteAddress));
       PTRACE(4, "Adjusted Contact to " << contact << " from first listener.");
     }
 

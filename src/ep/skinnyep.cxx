@@ -644,8 +644,8 @@ bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice & phone, const CapabilityReque
 
   PINDEX count = 0;
   OpalMediaFormatList formats = GetMediaFormats();
-  formats.Remove(manager.GetMediaFormatMask());
-  formats.Reorder(manager.GetMediaFormatOrder());
+  formats.Remove(m_manager.GetMediaFormatMask());
+  formats.Reorder(m_manager.GetMediaFormatOrder());
   for (OpalMediaFormatList::iterator it = formats.begin(); it != formats.end(); ++it) {
     if (MediaFormatToCodecCode.Contains(it->GetName())) {
       msg.m_capability[count].m_codec = MediaFormatToCodecCode[it->GetName()];
@@ -698,7 +698,7 @@ bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice & phone, const CallStateMsg & 
   }
 
   // Incoming call
-  OpalCall * call = manager.InternalCreateCall();
+  OpalCall * call = m_manager.InternalCreateCall();
   if (call == NULL) {
     PTRACE(3, "Internal failure to create call");
     return true;
@@ -1078,33 +1078,33 @@ bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::CallInfo5Msg &
 bool OpalSkinnyConnection::OnReceiveCallInfo(const OpalSkinnyEndPoint::CallInfoCommon & msg)
 {
   if (msg.GetType() == OpalSkinnyEndPoint::eTypeOutboundCall) {
-    remotePartyName = msg.GetCalledPartyName();
-    remotePartyNumber = msg.GetCalledPartyNumber();
-    displayName = msg.GetCallingPartyName();
-    localPartyName = msg.GetCallingPartyNumber();
+    m_remotePartyName = msg.GetCalledPartyName();
+    m_remotePartyNumber = msg.GetCalledPartyNumber();
+    m_displayName = msg.GetCallingPartyName();
+    m_localPartyName = msg.GetCallingPartyNumber();
   }
   else {
-    remotePartyName = msg.GetCallingPartyName();
-    remotePartyNumber = msg.GetCallingPartyNumber();
-    m_calledPartyName = displayName = msg.GetCalledPartyName();
-    m_calledPartyNumber = localPartyName = msg.GetCalledPartyNumber();
+    m_remotePartyName = msg.GetCallingPartyName();
+    m_remotePartyNumber = msg.GetCallingPartyNumber();
+    m_calledPartyName = m_displayName = msg.GetCalledPartyName();
+    m_calledPartyNumber = m_localPartyName = msg.GetCalledPartyNumber();
     m_redirectingParty = GetPrefixName() + ':' + msg.GetRedirectingPartyNumber();
   }
 
-  if (remotePartyNumber.IsEmpty() && OpalIsE164(remotePartyName))
-    remotePartyNumber = remotePartyName;
+  if (m_remotePartyNumber.IsEmpty() && OpalIsE164(m_remotePartyName))
+    m_remotePartyNumber = m_remotePartyName;
   if (m_calledPartyNumber.IsEmpty() && OpalIsE164(m_calledPartyName))
     m_calledPartyNumber = m_calledPartyName;
 
-  PTRACE(3, "Local party: number=\"" << localPartyName << "\", name=\"" << displayName << "\" - "
-            "Remote party: number=\"" << remotePartyNumber << "\", name=\"" << remotePartyName << "\" "
+  PTRACE(3, "Local party: number=\"" << m_localPartyName << "\", name=\"" << m_displayName << "\" - "
+            "Remote party: number=\"" << m_remotePartyNumber << "\", name=\"" << m_remotePartyName << "\" "
             "for " << *this);
 
   if (GetPhase() == UninitialisedPhase) {
     SetPhase(SetUpPhase);
     OnApplyStringOptions();
     if (OnIncomingConnection(0, NULL))
-      ownerCall.OnSetUp(*this);
+      m_ownerCall.OnSetUp(*this);
   }
   return true;
 }
@@ -1239,7 +1239,7 @@ void OpalSkinnyConnection::OpenMediaChannel(const MediaInfo & info)
     return;
   }
 
-  if (!ownerCall.OpenSourceMediaStreams(*con, mediaType, info.m_sessionId, mediaFormat)) {
+  if (!m_ownerCall.OpenSourceMediaStreams(*con, mediaType, info.m_sessionId, mediaFormat)) {
     PTRACE(2, "Could not open " << (info.m_receiver ? 'r' : 't') << "x " << mediaType << " stream, session=" << info.m_sessionId);
     if (canSimulate)
       OpenSimulatedMediaChannel(info, mediaFormat);
@@ -1328,7 +1328,7 @@ void OpalSkinnyConnection::OpenSimulatedMediaChannel(const MediaInfo & info, con
     return;
   }
 
-  mediaStreams.Append(sourceStream.release());
+  m_mediaStreams.Append(sourceStream.release());
 
   PTRACE(3, "Simulating transmit " << mediaFormat << " stream, session=" << info.m_sessionId << ", file=" << m_endpoint.GetSimulatedAudioFile());
   StartMediaStreams();

@@ -70,7 +70,7 @@ OpalFaxMediaStream::OpalFaxMediaStream(OpalConnection & conn,
 
 PBoolean OpalFaxMediaStream::Open()
 {
-  m_session.ApplyMediaOptions(mediaFormat);
+  m_session.ApplyMediaOptions(m_mediaFormat);
   return OpalMediaStream::Open();
 }
 
@@ -93,7 +93,7 @@ PBoolean OpalFaxMediaStream::ReadPacket(RTP_DataFrame & packet)
   if (!m_session.ReadData(packet))
     return false;
 
-  timestamp = packet.GetTimestamp();
+  m_timestamp = packet.GetTimestamp();
   return true;
 }
 
@@ -103,7 +103,7 @@ PBoolean OpalFaxMediaStream::WritePacket(RTP_DataFrame & packet)
   if (!IsOpen())
     return false;
 
-  timestamp = packet.GetTimestamp();
+  m_timestamp = packet.GetTimestamp();
   return m_session.WriteData(packet);
 }
 
@@ -668,7 +668,7 @@ OpalFaxConnection::OpalFaxConnection(OpalCall        & call,
 
   m_switchTimer.SetNotifier(PCREATE_NOTIFIER(OnSwitchTimeout), "T38Switch");
 
-  PTRACE(3, "FAX\tCreated fax connection with token \"" << callToken << "\","
+  PTRACE(3, "FAX\tCreated fax connection with token \"" << m_callToken << "\","
             " receiving=" << receiving << ","
             " disabledT38=" << disableT38 << ","
             " filename=\"" << filename << '"'
@@ -713,7 +713,7 @@ void OpalFaxConnection::AdjustMediaFormats(bool   local,
   // Remove everything but G.711 or fax stuff
   OpalMediaFormatList::iterator it = mediaFormats.begin();
   while (it != mediaFormats.end()) {
-    if ((!ownerCall.IsSwitchingToT38() && it->GetMediaType() == OpalMediaType::Audio())
+    if ((!m_ownerCall.IsSwitchingToT38() && it->GetMediaType() == OpalMediaType::Audio())
          || *it == OpalG711_ULAW_64K || *it == OpalG711_ALAW_64K || *it == OpalRFC2833 || *it == OpalCiscoNSE)
       ++it;
     else if (it->GetMediaType() != OpalMediaType::Fax() || (m_disableT38 && *it == OpalT38))
@@ -781,8 +781,8 @@ void OpalFaxConnection::OnReleased()
   OpalLocalConnection::OnReleased();
 
   // Probably not be necessary, but just in case of race conditions
-  PTRACE_IF(4, !mediaStreams.IsEmpty(), "FAX", "Waiting for media streams to close.");
-  while (!mediaStreams.IsEmpty())
+  PTRACE_IF(4, !m_mediaStreams.IsEmpty(), "FAX", "Waiting for media streams to close.");
+  while (!m_mediaStreams.IsEmpty())
     PThread::Sleep(20);
 
   InternalOnFaxCompleted();
@@ -813,7 +813,7 @@ void OpalFaxConnection::OnClosedMediaStream(const OpalMediaStream & stream)
   OpalMediaStreamPtr other = GetMediaStream(stream.GetID(), stream.IsSink());
   if (other == NULL || !other->IsOpen()) {
     if (    m_finalStatistics.m_fax.m_result == 0 /* success!*/ ||
-          !(m_finalStatistics.m_fax.m_result < 0  /* in progress */ || IsReleased() || ownerCall.IsSwitchingT38()))
+          !(m_finalStatistics.m_fax.m_result < 0  /* in progress */ || IsReleased() || m_ownerCall.IsSwitchingT38()))
       InternalOnFaxCompleted();
     else {
       PTRACE(4, "FAX\tIgnoring switching "

@@ -2788,7 +2788,7 @@ bool OpalManagerCLI::Initialise(PArgList & args, bool verbose, const PString & d
 
   m_cli->SetCommand("audio vad", PCREATE_NOTIFIER(CmdSilenceDetect),
                     "Voice Activity Detection (aka Silence Detection)", "\"on\" | \"adaptive\" | <level>");
-  m_cli->SetCommand("audio in-band-dtmf-disable", disableDetectInBandDTMF, "In-band (digital filter) DTMF detection");
+  m_cli->SetCommand("audio in-band-dtmf-disable", m_disableDetectInBandDTMF, "In-band (digital filter) DTMF detection");
 
   m_cli->SetCommand("auto-start", PCREATE_NOTIFIER(CmdAutoStart),
                     "Set media type auto-start mode",

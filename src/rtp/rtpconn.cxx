@@ -376,7 +376,7 @@ bool OpalRTPConnection::ChangeSessionID(unsigned fromSessionID, unsigned toSessi
     m_sessions.SetAt(toSessionID, session);
   }
 
-  for (OpalMediaStreamPtr stream(mediaStreams, PSafeReference); stream != NULL; ++stream) {
+  for (OpalMediaStreamPtr stream(m_mediaStreams, PSafeReference); stream != NULL; ++stream) {
     if (stream->GetSessionID() == fromSessionID) {
       stream->SetSessionID(toSessionID);
       OpalMediaPatchPtr patch = stream->GetPatch();
@@ -484,7 +484,7 @@ void OpalRTPConnection::DetermineRTPNAT(const OpalTransport & transport, const O
   transport.GetRemoteAddress().GetIpAddress(peerAddr);
   signalAddr.GetIpAddress(sigAddr);
 
-  if (dynamic_cast<OpalRTPEndPoint &>(endpoint).IsRTPNATEnabled(*this, localAddr, peerAddr, sigAddr, !IsOriginating())) {
+  if (dynamic_cast<OpalRTPEndPoint &>(m_endpoint).IsRTPNATEnabled(*this, localAddr, peerAddr, sigAddr, !IsOriginating())) {
     PTRACE(4, "Determined is behind NAT");
     m_remoteBehindNAT = true;
     for (SessionMap::const_iterator it = m_sessions.begin(); it != m_sessions.end(); ++it)

@@ -975,10 +975,10 @@ void TranscoderThread::Main()
         srcFrame.SetHeaderExtension(1, 1, &m_extensionHeader, RTP_DataFrame::RFC5285_OneByte);
 
 
-      bool state = m_encoder->ConvertFrames(srcFrame, encFrames);
-      if (oldEncState != state) {
-        oldEncState = state;
-        cerr << "Encoder " << (state ? "restor" : "fail") << "ed at input frame " << totalInputFrameCount-1 << endl;
+      bool newInState = m_encoder->ConvertFrames(srcFrame, encFrames);
+      if (oldEncState != newInState) {
+        oldEncState = newInState;
+        cerr << "Encoder " << (newInState ? "restor" : "fail") << "ed at input frame " << totalInputFrameCount-1 << endl;
         continue;
       }
       if (isVideo)
@@ -992,29 +992,30 @@ void TranscoderThread::Main()
     unsigned long encodedPayloadSize = 0;
     unsigned long encodedPacketCount = 0;
     unsigned long encodedDataSize    = 0;
-    for (PINDEX i = 0; i < encFrames.GetSize(); i++) {
-      encFrames[i].SetSequenceNumber(++sequenceNumber);
+    unsigned frameCount = 0;
+    for (RTP_DataFrameList::iterator it = encFrames.begin(); it != encFrames.end(); ++it, ++frameCount) {
+      it->SetSequenceNumber(++sequenceNumber);
       ++encodedPacketCount;
-      encodedPayloadSize += encFrames[i].GetPayloadSize();
-      encodedDataSize    += encFrames[i].GetPayloadSize() + encFrames[i].GetHeaderSize();
+      encodedPayloadSize += it->GetPayloadSize();
+      encodedDataSize += it->GetPayloadSize() + it->GetHeaderSize();
       switch (m_markerHandling) {
-        case SuppressMarkers :
-          encFrames[i].SetMarker(false);
+        case SuppressMarkers:
+          it->SetMarker(false);
           break;
-        case ForceMarkers :
-          encFrames[i].SetMarker(true);
+        case ForceMarkers:
+          it->SetMarker(true);
           break;
-        default :
+        default:
           break;
       }
 
-      m_pcapFile.WriteRTP(encFrames[i]);
+      m_pcapFile.WriteRTP(*it);
 
       if (g_infoCount > 0) {
-        RTP_DataFrame & rtp = encFrames[i];
+        RTP_DataFrame & rtp = *it;
         coutMutex.Wait();
-        if (g_infoCount > 1) 
-          cout << "Inframe=" << totalInputFrameCount << ",outframe=#" << i << ":pt=" << rtp.GetPayloadType() << ",psz=" << rtp.GetPayloadSize() << ",m=" << (rtp.GetMarker() ? "1" : "0") << ",";
+        if (g_infoCount > 1)
+          cout << "Inframe=" << totalInputFrameCount << ",outframe=#" << frameCount << ":pt=" << rtp.GetPayloadType() << ",psz=" << rtp.GetPayloadSize() << ",m=" << (rtp.GetMarker() ? "1" : "0") << ",";
         cout << "ssrc=" << hex << rtp.GetSyncSource() << dec << ",ts=" << rtp.GetTimestamp() << ",seq = " << rtp.GetSequenceNumber();
         if (g_infoCount > 2) {
           cout << "\n   data=";
@@ -1098,9 +1099,9 @@ void TranscoderThread::Main()
               coutMutex.Signal();
             }
           }
-          bool state = Write(outFrames[0]);
-          if (oldOutState != state) {
-            oldOutState = state;
+          bool newOutState = Write(outFrames[0]);
+          if (oldOutState != newOutState) {
+            oldOutState = newOutState;
             cerr << "Output write " << (state ? "restor" : "fail") << "ed at input frame " << totalInputFrameCount << endl;
           }
           if (isVideo && m_calcSNR) 

@@ -120,24 +120,24 @@ OpalConnection::OpalConnection(OpalCall & call,
                                unsigned int options,
                                OpalConnection::StringOptions * stringOptions)
   : PSafeObject(&call)  // Share the lock flag from the call
-  , ownerCall(call)
-  , endpoint(ep)
+  , m_ownerCall(call)
+  , m_endpoint(ep)
   , m_phase(UninitialisedPhase)
-  , callToken(token)
+  , m_callToken(token)
   , m_originating(false)
-  , productInfo(ep.GetProductInfo())
-  , localPartyName(ep.GetDefaultLocalPartyName())
-  , displayName(ep.GetDefaultDisplayName())
-  , remotePartyName(token)
-  , callEndReason(NumCallEndReasons)
-  , silenceDetector(NULL)
+  , m_productInfo(ep.GetProductInfo())
+  , m_localPartyName(ep.GetDefaultLocalPartyName())
+  , m_displayName(ep.GetDefaultDisplayName())
+  , m_remotePartyName(token)
+  , m_callEndReason(NumCallEndReasons)
+  , m_silenceDetector(NULL)
 #if OPAL_AEC
-  , echoCanceler(NULL)
+  , m_echoCanceler(NULL)
 #endif
 #if OPAL_PTLIB_DTMF
-  , m_jitterParams(endpoint.GetManager().GetJitterParameters())
-  , m_rxBandwidthAvailable(endpoint.GetInitialBandwidth(OpalBandwidth::Rx))
-  , m_txBandwidthAvailable(endpoint.GetInitialBandwidth(OpalBandwidth::Tx))
+  , m_jitterParams(m_endpoint.GetManager().GetJitterParameters())
+  , m_rxBandwidthAvailable(m_endpoint.GetInitialBandwidth(OpalBandwidth::Rx))
+  , m_txBandwidthAvailable(m_endpoint.GetInitialBandwidth(OpalBandwidth::Tx))
   , m_dtmfScaleMultiplier(1)
   , m_dtmfScaleDivisor(1)
   , m_dtmfDetectNotifier(PCREATE_NOTIFIER(OnDetectInBandDTMF))
@@ -158,9 +158,9 @@ OpalConnection::OpalConnection(OpalCall & call,
 
   PTRACE(3, "Created connection " << *this << " ptr=" << this);
 
-  PAssert(ownerCall.SafeReference(), PLogicError);
+  PAssert(m_ownerCall.SafeReference(), PLogicError);
 
-  ownerCall.connectionsActive.Append(this);
+  m_ownerCall.m_connectionsActive.Append(this);
 
   if (stringOptions != NULL)
     m_stringOptions = *stringOptions;
@@ -176,24 +176,24 @@ OpalConnection::OpalConnection(OpalCall & call,
       break;
 
     default :
-      m_detectInBandDTMF = !endpoint.GetManager().DetectInBandDTMFDisabled();
+      m_detectInBandDTMF = !m_endpoint.GetManager().DetectInBandDTMFDisabled();
       break;
   }
 #endif
 
   switch (options & SendDTMFMask) {
     case SendDTMFAsString:
-      sendUserInputMode = SendUserInputAsString;
+      m_sendUserInputMode = SendUserInputAsString;
       break;
     case SendDTMFAsTone:
-      sendUserInputMode = SendUserInputAsTone;
+      m_sendUserInputMode = SendUserInputAsTone;
       break;
     case SendDTMFAsRFC2833:
-      sendUserInputMode = SendUserInputAsRFC2833;
+      m_sendUserInputMode = SendUserInputAsRFC2833;
       break;
     case SendDTMFAsDefault:
     default:
-      sendUserInputMode = ep.GetSendUserInputMode();
+      m_sendUserInputMode = ep.GetSendUserInputMode();
       break;
   }
 
@@ -203,9 +203,9 @@ OpalConnection::OpalConnection(OpalCall & call,
 #endif
 
 #if OPAL_SCRIPT
-  PScriptLanguage * script = endpoint.GetManager().GetScript();
+  PScriptLanguage * script = m_endpoint.GetManager().GetScript();
   if (script != NULL) {
-    m_scriptTableName  = OPAL_SCRIPT_CALL_TABLE_NAME "." + ownerCall.GetToken() + '[' + GetToken().ToLiteral() + ']';
+    m_scriptTableName  = OPAL_SCRIPT_CALL_TABLE_NAME "." + m_ownerCall.GetToken() + '[' + GetToken().ToLiteral() + ']';
     script->CreateComposite(m_scriptTableName);
     script->SetFunction(m_scriptTableName + ".Release", PCREATE_NOTIFIER(ScriptRelease));
     script->SetFunction(m_scriptTableName + ".SetOption", PCREATE_NOTIFIER(ScriptSetOption));
@@ -227,26 +227,26 @@ OpalConnection::OpalConnection(OpalCall & call,
 
 OpalConnection::~OpalConnection()
 {
-  mediaStreams.RemoveAll();
+  m_mediaStreams.RemoveAll();
 
 #if OPAL_SCRIPT
-  PScriptLanguage * script = endpoint.GetManager().GetScript();
+  PScriptLanguage * script = m_endpoint.GetManager().GetScript();
   if (script != NULL) {
-    script->Call("OnDestroyConnection", "ss", (const char *)ownerCall.GetToken(), (const char *)GetToken());
+    script->Call("OnDestroyConnection", "ss", (const char *)m_ownerCall.GetToken(), (const char *)GetToken());
     script->ReleaseVariable(m_scriptTableName);
   }
 #endif
 
-  delete silenceDetector;
+  delete m_silenceDetector;
 #if OPAL_AEC
-  delete echoCanceler;
+  delete m_echoCanceler;
 #endif
 #if OPAL_T120DATA
   delete t120handler;
 #endif
 
-  ownerCall.connectionsActive.Remove(this);
-  ownerCall.SafeDereference();
+  m_ownerCall.m_connectionsActive.Remove(this);
+  m_ownerCall.SafeDereference();
 
   PTRACE(3, "Destroyed connection " << *this << " ptr=" << this);
 }
@@ -254,28 +254,28 @@ OpalConnection::~OpalConnection()
 
 void OpalConnection::PrintOn(ostream & strm) const
 {
-  strm << ownerCall << '-'<< endpoint << '[' << callToken << ']';
+  strm << m_ownerCall << '-'<< m_endpoint << '[' << m_callToken << ']';
 }
 
 
 bool OpalConnection::GarbageCollection()
 {
-  return mediaStreams.DeleteObjectsToBeRemoved();
+  return m_mediaStreams.DeleteObjectsToBeRemoved();
 }
 
 
 void OpalConnection::SetToken(const PString & newToken)
 {
-  if (callToken == newToken)
+  if (m_callToken == newToken)
     return;
 
-  PTRACE(3, "Set new token from \"" << callToken << "\" to \"" << newToken << '"');
+  PTRACE(3, "Set new token from \"" << m_callToken << "\" to \"" << newToken << '"');
 
-  endpoint.connectionsActive.DisallowDeleteObjects();
-  endpoint.connectionsActive.RemoveAt(callToken);
-  endpoint.connectionsActive.AllowDeleteObjects();
-  callToken = newToken;
-  endpoint.connectionsActive.SetAt(newToken, this);
+  m_endpoint.m_connectionsActive.DisallowDeleteObjects();
+  m_endpoint.m_connectionsActive.RemoveAt(m_callToken);
+  m_endpoint.m_connectionsActive.AllowDeleteObjects();
+  m_callToken = newToken;
+  m_endpoint.m_connectionsActive.SetAt(newToken, this);
 }
 
 
@@ -284,7 +284,7 @@ void OpalConnection::InternalSetAsOriginating()
   PTRACE(4, "Set originating " << *this);
   m_originating = true;
 #if OPAL_SCRIPT
-  PScriptLanguage * script = endpoint.GetManager().GetScript();
+  PScriptLanguage * script = m_endpoint.GetManager().GetScript();
   if (script != NULL)
     script->SetBoolean(m_scriptTableName  + ".originating", true);
 #endif
@@ -294,28 +294,28 @@ void OpalConnection::InternalSetAsOriginating()
 PBoolean OpalConnection::SetUpConnection()
 {
   // Check if we are A-Party in this call, so need to do things differently
-  if (ownerCall.GetConnection(0) == this) {
+  if (m_ownerCall.GetConnection(0) == this) {
     SetPhase(SetUpPhase);
     if (!OnIncomingConnection(0, NULL)) {
       Release(EndedByNoUser);
       return false;
     }
 
-    PTRACE(3, "Outgoing call routed to " << ownerCall.GetPartyB() << " to " << *this);
-    if (!ownerCall.OnSetUp(*this)) {
+    PTRACE(3, "Outgoing call routed to " << m_ownerCall.GetPartyB() << " to " << *this);
+    if (!m_ownerCall.OnSetUp(*this)) {
       Release(EndedByNoAccept);
       return false;
     }
   }
-  else if (ownerCall.IsEstablished()) {
-    PTRACE(3, "Transfer of connection in call " << ownerCall);
+  else if (m_ownerCall.IsEstablished()) {
+    PTRACE(3, "Transfer of connection in call " << m_ownerCall);
     OnApplyStringOptions();
     AutoStartMediaStreams(true);
     InternalOnConnected();
   }
   else {
     InternalSetAsOriginating();
-    PTRACE(3, "Incoming call from " << remotePartyName << " to " << *this);
+    PTRACE(3, "Incoming call from " << m_remotePartyName << " to " << *this);
 
     OnApplyStringOptions();
   }
@@ -327,7 +327,7 @@ PBoolean OpalConnection::SetUpConnection()
 PBoolean OpalConnection::OnSetUpConnection()
 {
   PTRACE(3, "OnSetUpConnection" << *this);
-  return endpoint.OnSetUpConnection(*this);
+  return m_endpoint.OnSetUpConnection(*this);
 }
 
 
@@ -347,7 +347,7 @@ void OpalConnection::OnHold(bool fromRemote, bool onHold)
 {
   PTRACE(4, "OnHold: " << (onHold ? "on" : "off") << " hold, "
          << (fromRemote ? "from" : "to") << " remote, " << *this);
-  endpoint.OnHold(*this, fromRemote, onHold);
+  m_endpoint.OnHold(*this, fromRemote, onHold);
 }
 
 
@@ -368,16 +368,16 @@ void OpalConnection::SetCallEndReason(CallEndReason reason)
   PWaitAndSignal mutex(m_phaseMutex);
 
   // Only set reason if not already set to something
-  if (callEndReason == NumCallEndReasons) {
-    if (ownerCall.GetCallEndReason() != OpalConnection::NumCallEndReasons) {
-      callEndReason = ownerCall.GetCallEndReason();
-      PTRACE_IF(3, callEndReason != reason, "Call end reason for "
-                << *this << " not set to " << reason << ", using call value " << callEndReason);
+  if (m_callEndReason == NumCallEndReasons) {
+    if (m_ownerCall.GetCallEndReason() != OpalConnection::NumCallEndReasons) {
+      m_callEndReason = m_ownerCall.GetCallEndReason();
+      PTRACE_IF(3, m_callEndReason != reason, "Call end reason for "
+                << *this << " not set to " << reason << ", using call value " << m_callEndReason);
     }
     else {
       PTRACE(3, "Call end reason for " << *this << " set to " << reason);
-      callEndReason = reason;
-      ownerCall.SetCallEndReason(reason);
+      m_callEndReason = reason;
+      m_ownerCall.SetCallEndReason(reason);
     }
   }
 }
@@ -386,7 +386,7 @@ void OpalConnection::SetCallEndReason(CallEndReason reason)
 void OpalConnection::ClearCall(CallEndReason reason, PSyncPoint * sync)
 {
   SetCallEndReason(reason);
-  ownerCall.Clear(reason, sync);
+  m_ownerCall.Clear(reason, sync);
 }
 
 
@@ -419,7 +419,7 @@ void OpalConnection::Release(CallEndReason reason, bool synchronous)
 
   /* If we have exactly 2 connections, then we release the other connection
      as well, which clears the entire call. */
-  if (ownerCall.GetConnectionCount() == 2) {
+  if (m_ownerCall.GetConnectionCount() == 2) {
     PSafePtr<OpalConnection> other = GetOtherPartyConnection();
     if (other != NULL)
       other->InternalRelease(reason); // Do not execute OnReleased() here, see OpalCall::OnReleased()
@@ -483,7 +483,7 @@ void OpalConnection::OnReleased()
 
   CloseMediaStreams();
 
-  endpoint.OnReleased(*this);
+  m_endpoint.OnReleased(*this);
 
   SetPhase(ReleasedPhase);
 
@@ -501,7 +501,7 @@ void OpalConnection::OnReleased()
         trace << "N/A";
       trace << '\n';
     }
-    trace << "     Call end reason: " << callEndReason << '\n'
+    trace << "     Call end reason: " << m_callEndReason << '\n'
           << PTrace::End;
   }
 #endif
@@ -510,13 +510,13 @@ void OpalConnection::OnReleased()
 
 PBoolean OpalConnection::OnIncomingConnection(unsigned options, OpalConnection::StringOptions * stringOptions)
 {
-  return endpoint.OnIncomingConnection(*this, options, stringOptions);
+  return m_endpoint.OnIncomingConnection(*this, options, stringOptions);
 }
 
 
 PString OpalConnection::GetDestinationAddress()
 {
-  PSafePtr<OpalConnection> partyA = ownerCall.GetConnection(0);
+  PSafePtr<OpalConnection> partyA = m_ownerCall.GetConnection(0);
   if (partyA != this)
     return partyA->GetDestinationAddress();
 
@@ -544,19 +544,19 @@ PSafePtr<OpalConnection> OpalConnection::GetOtherPartyConnection() const
 
 void OpalConnection::OnProceeding()
 {
-  endpoint.OnProceeding(*this);
+  m_endpoint.OnProceeding(*this);
 }
 
 
 void OpalConnection::OnAlerting(bool withMedia)
 {
-  endpoint.OnAlerting(*this, withMedia);
+  m_endpoint.OnAlerting(*this, withMedia);
 }
 
 
 void OpalConnection::OnAlerting()
 {
-  endpoint.OnAlerting(*this);
+  m_endpoint.OnAlerting(*this);
 }
 
 
@@ -568,7 +568,7 @@ PBoolean OpalConnection::SetAlerting(const PString &, PBoolean)
 
 OpalConnection::AnswerCallResponse OpalConnection::OnAnswerCall(const PString & callerName)
 {
-  return endpoint.OnAnswerCall(*this, callerName);
+  return m_endpoint.OnAnswerCall(*this, callerName);
 }
 
 
@@ -637,13 +637,13 @@ bool OpalConnection::InternalOnEstablished()
     return false;
   }
 
-  if (mediaStreams.IsEmpty()) {
+  if (m_mediaStreams.IsEmpty()) {
     PTRACE(5, "No media streams, cannot move to EstablishedPhase on " << *this);
     return false;
   }
 
   bool notAllEstablishedYet = false;
-  for (OpalMediaStreamPtr strm(mediaStreams); strm != NULL; ++strm) {
+  for (OpalMediaStreamPtr strm(m_mediaStreams); strm != NULL; ++strm) {
     if (!strm->IsEstablished())
       notAllEstablishedYet = true;
   }
@@ -662,7 +662,7 @@ bool OpalConnection::InternalOnEstablished()
 void OpalConnection::OnConnected()
 {
   PTRACE(3, "OnConnected for " << *this);
-  endpoint.OnConnected(*this);
+  m_endpoint.OnConnected(*this);
 }
 
 
@@ -670,14 +670,14 @@ void OpalConnection::OnEstablished()
 {
   PTRACE(3, "OnEstablished " << *this);
   StartMediaStreams();
-  endpoint.OnEstablished(*this);
+  m_endpoint.OnEstablished(*this);
 }
 
 
 bool OpalConnection::OnTransferNotify(const PStringToString & info,
                                       const OpalConnection * transferringConnection)
 {
-  return endpoint.OnTransferNotify(*this, info, transferringConnection);
+  return m_endpoint.OnTransferNotify(*this, info, transferringConnection);
 }
 
 
@@ -712,13 +712,13 @@ void OpalConnection::AdjustMediaFormats(bool   local,
     }
   }
 
-  endpoint.AdjustMediaFormats(local, *this, mediaFormats);
+  m_endpoint.AdjustMediaFormats(local, *this, mediaFormats);
 }
 
 
 PStringArray OpalConnection::GetMediaCryptoSuites() const
 {
-  return endpoint.GetMediaCryptoSuites();
+  return m_endpoint.GetMediaCryptoSuites();
 }
 
 
@@ -744,7 +744,7 @@ void OpalConnection::AutoStartMediaStreams(bool transfer)
     if ((otherConnection->GetAutoStart(mediaType)&OpalMediaType::Receive) &&
                          (GetAutoStart(mediaType)&OpalMediaType::Transmit) &&
                         (transfer || GetMediaStream(mediaType, true) == NULL))
-      ownerCall.OpenSourceMediaStreams(*this,
+      m_ownerCall.OpenSourceMediaStreams(*this,
                                        mediaType,
                                        mediaType->GetDefaultSessionId(),
                                        OpalMediaFormat(),
@@ -769,10 +769,10 @@ bool OpalConnection::SwitchFaxMediaStreams(bool)
 
 void OpalConnection::OnSwitchedFaxMediaStreams(bool toT38, bool success)
 {
-  if (!PAssert(ownerCall.IsSwitchingT38(), PLogicError))
+  if (!PAssert(m_ownerCall.IsSwitchingT38(), PLogicError))
     return;
 
-  ownerCall.ResetSwitchingT38();
+  m_ownerCall.ResetSwitchingT38();
 
   PTRACE(3, "Switch of media streams to "
          << (toT38 ? "T.38" : "audio") << ' '
@@ -798,11 +798,11 @@ void OpalConnection::OnSwitchedFaxMediaStreams(bool toT38, bool success)
 
 bool OpalConnection::OnSwitchingFaxMediaStreams(bool toT38)
 {
-  if (!ownerCall.IsSwitchingT38()) {
+  if (!m_ownerCall.IsSwitchingT38()) {
     PTRACE(3, "Remote requests switching media streams to "
            << (toT38 ? "T.38" : "audio") << " on " << *this);
 
-    ownerCall.SetSwitchingT38(toT38);
+    m_ownerCall.SetSwitchingT38(toT38);
 
     PSafePtr<OpalConnection> other = GetOtherPartyConnection();
     if (other != NULL)
@@ -838,7 +838,7 @@ OpalMediaStreamPtr OpalConnection::OpenMediaStream(const OpalMediaFormat & media
       PTRACE(1, "CreateMediaStream returned NULL for session " << sessionID << " on " << *this);
       return NULL;
     }
-    mediaStreams.Append(stream);
+    m_mediaStreams.Append(stream);
 
     m_mediaSessionFailed.erase(sessionID*2 + isSource);
   }
@@ -855,7 +855,7 @@ OpalMediaStreamPtr OpalConnection::OpenMediaStream(const OpalMediaFormat & media
     PTRACE(2, "Source media stream open failed for " << *stream << " (" << mediaFormat << ')');
   }
 
-  mediaStreams.Remove(stream);
+  m_mediaStreams.Remove(stream);
 
   return NULL;
 }
@@ -880,13 +880,13 @@ PBoolean OpalConnection::RemoveMediaStream(OpalMediaStream & stream)
 {
   stream.Close();
   PTRACE(3, "Removed media stream " << stream);
-  return mediaStreams.Remove(&stream);
+  return m_mediaStreams.Remove(&stream);
 }
 
 
 void OpalConnection::StartMediaStreams()
 {
-  for (OpalMediaStreamPtr mediaStream = mediaStreams; mediaStream != NULL; ++mediaStream)
+  for (OpalMediaStreamPtr mediaStream = m_mediaStreams; mediaStream != NULL; ++mediaStream)
     mediaStream->Start();
 
   PTRACE(3, "Media stream threads started for " << *this);
@@ -900,7 +900,7 @@ void OpalConnection::CloseMediaStreams()
   bool someOpen = true;
   while (someOpen) {
     someOpen = false;
-    for (OpalMediaStreamPtr mediaStream(mediaStreams, PSafeReference); mediaStream != NULL; ++mediaStream) {
+    for (OpalMediaStreamPtr mediaStream(m_mediaStreams, PSafeReference); mediaStream != NULL; ++mediaStream) {
       if (mediaStream->IsOpen()) {
         someOpen = true;
         mediaStream->Close();
@@ -914,7 +914,7 @@ void OpalConnection::CloseMediaStreams()
 
 void OpalConnection::PauseMediaStreams(bool paused)
 {
-  for (OpalMediaStreamPtr mediaStream = mediaStreams; mediaStream != NULL; ++mediaStream)
+  for (OpalMediaStreamPtr mediaStream = m_mediaStreams; mediaStream != NULL; ++mediaStream)
     mediaStream->SetPaused(paused);
 }
 
@@ -932,7 +932,7 @@ OpalMediaStream * OpalConnection::CreateMediaStream(const OpalMediaFormat &, uns
 
 PBoolean OpalConnection::OnOpenMediaStream(OpalMediaStream & stream)
 {
-  if (!endpoint.OnOpenMediaStream(*this, stream))
+  if (!m_endpoint.OnOpenMediaStream(*this, stream))
     return false;
 
   if (!LockReadWrite())
@@ -954,13 +954,13 @@ void OpalConnection::OnClosedMediaStream(const OpalMediaStream & stream)
     OnStopRecording(patch);
 #endif
 
-    if (silenceDetector != NULL && patch->RemoveFilter(silenceDetector->GetReceiveHandler(), m_filterMediaFormat)) {
+    if (m_silenceDetector != NULL && patch->RemoveFilter(m_silenceDetector->GetReceiveHandler(), m_filterMediaFormat)) {
       PTRACE(4, "Removed silence detect filter on connection " << *this << ", patch " << patch);
     }
 
 #if OPAL_AEC
-    if (echoCanceler != NULL && patch->RemoveFilter(stream.IsSource() ? echoCanceler->GetReceiveHandler()
-                                                  : echoCanceler->GetSendHandler(), m_filterMediaFormat)) {
+    if (m_echoCanceler != NULL && patch->RemoveFilter(stream.IsSource() ? m_echoCanceler->GetReceiveHandler()
+                                                  : m_echoCanceler->GetSendHandler(), m_filterMediaFormat)) {
       PTRACE(4, "Removed echo canceler filter on connection " << *this << ", patch " << patch);
     }
 #endif
@@ -975,13 +975,13 @@ void OpalConnection::OnClosedMediaStream(const OpalMediaStream & stream)
 #endif
   }
 
-  endpoint.OnClosedMediaStream(stream);
+  m_endpoint.OnClosedMediaStream(stream);
 }
 
 
 void OpalConnection::OnFailedMediaStream(bool fromRemote, const PString & reason)
 {
-  endpoint.OnFailedMediaStream(*this, fromRemote, reason);
+  m_endpoint.OnFailedMediaStream(*this, fromRemote, reason);
 }
 
 
@@ -998,7 +998,7 @@ void OpalConnection::OnStartRecording(OpalMediaPatch * patch)
   if (patch == NULL)
     return;
 
-  if (!ownerCall.OnStartRecording(MakeRecordingKey(*patch), patch->GetSource().GetMediaFormat())) {
+  if (!m_ownerCall.OnStartRecording(MakeRecordingKey(*patch), patch->GetSource().GetMediaFormat())) {
     PTRACE(4, "No record filter added on connection " << *this << ", patch " << *patch);
     return;
   }
@@ -1017,7 +1017,7 @@ void OpalConnection::OnStopRecording(OpalMediaPatch * patch)
   if (patch == NULL)
     return;
 
-  ownerCall.OnStopRecording(MakeRecordingKey(*patch));
+  m_ownerCall.OnStopRecording(MakeRecordingKey(*patch));
 
   patch->RemoveFilter(m_recordAudioNotifier, OpalPCM16);
 #if OPAL_VIDEO
@@ -1037,18 +1037,18 @@ void OpalConnection::OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & patc
     if (!mediaFormat.IsTransportable()) {
       m_filterMediaFormat = mediaFormat;
 
-      if (isSource && silenceDetector != NULL) {
-        silenceDetector->SetParameters(endpoint.GetManager().GetSilenceDetectParams(), mediaFormat.GetClockRate());
-        patch.AddFilter(silenceDetector->GetReceiveHandler(), mediaFormat);
+      if (isSource && m_silenceDetector != NULL) {
+        m_silenceDetector->SetParameters(m_endpoint.GetManager().GetSilenceDetectParams(), mediaFormat.GetClockRate());
+        patch.AddFilter(m_silenceDetector->GetReceiveHandler(), mediaFormat);
         PTRACE(4, "Added silence detect filter on connection " << *this << ", patch " << patch);
       }
 
 #if OPAL_AEC
-      if (echoCanceler) {
-        echoCanceler->SetParameters(endpoint.GetManager().GetEchoCancelParams());
-        echoCanceler->SetClockRate(mediaFormat.GetClockRate());
-        patch.AddFilter(isSource ? echoCanceler->GetReceiveHandler()
-                                 : echoCanceler->GetSendHandler(), mediaFormat);
+      if (m_echoCanceler) {
+        m_echoCanceler->SetParameters(m_endpoint.GetManager().GetEchoCancelParams());
+        m_echoCanceler->SetClockRate(mediaFormat.GetClockRate());
+        patch.AddFilter(isSource ? m_echoCanceler->GetReceiveHandler()
+                                 : m_echoCanceler->GetSendHandler(), mediaFormat);
         PTRACE(4, "Added echo canceler filter on connection " << *this << ", patch " << patch);
       }
 #endif
@@ -1073,8 +1073,8 @@ void OpalConnection::OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & patc
 
 #if OPAL_HAS_MIXER
   if (!m_recordingFilename.IsEmpty())
-    ownerCall.StartRecording(m_recordingFilename);
-  else if (ownerCall.IsRecording())
+    m_ownerCall.StartRecording(m_recordingFilename);
+  else if (m_ownerCall.IsRecording())
     OnStartRecording(&patch);
 #endif
 
@@ -1115,7 +1115,7 @@ void OpalConnection::DisableRecording()
 void OpalConnection::OnRecordAudio(RTP_DataFrame & frame, P_INT_PTR param)
 {
   const OpalMediaPatch * patch = (const OpalMediaPatch *)param;
-  ownerCall.OnRecordAudio(MakeRecordingKey(*patch), frame);
+  m_ownerCall.OnRecordAudio(MakeRecordingKey(*patch), frame);
 }
 
 
@@ -1124,7 +1124,7 @@ void OpalConnection::OnRecordAudio(RTP_DataFrame & frame, P_INT_PTR param)
 void OpalConnection::OnRecordVideo(RTP_DataFrame & frame, P_INT_PTR param)
 {
   const OpalMediaPatch * patch = (const OpalMediaPatch *)param;
-  ownerCall.OnRecordVideo(MakeRecordingKey(*patch), frame);
+  m_ownerCall.OnRecordVideo(MakeRecordingKey(*patch), frame);
 }
 
 #endif // OPAL_VIDEO
@@ -1134,7 +1134,7 @@ void OpalConnection::OnRecordVideo(RTP_DataFrame & frame, P_INT_PTR param)
 
 OpalMediaStreamPtr OpalConnection::GetMediaStream(const PString & streamID, bool source) const
 {
-  for (PSafePtr<OpalMediaStream> mediaStream(mediaStreams, PSafeReference); mediaStream != NULL; ++mediaStream) {
+  for (PSafePtr<OpalMediaStream> mediaStream(m_mediaStreams, PSafeReference); mediaStream != NULL; ++mediaStream) {
     if ((streamID.IsEmpty() || mediaStream->GetID() == streamID) && mediaStream->IsSource() == source)
       return mediaStream;
   }
@@ -1145,7 +1145,7 @@ OpalMediaStreamPtr OpalConnection::GetMediaStream(const PString & streamID, bool
 
 OpalMediaStreamPtr OpalConnection::GetMediaStream(unsigned sessionId, bool source) const
 {
-  for (OpalMediaStreamPtr mediaStream(mediaStreams, PSafeReference); mediaStream != NULL; ++mediaStream) {
+  for (OpalMediaStreamPtr mediaStream(m_mediaStreams, PSafeReference); mediaStream != NULL; ++mediaStream) {
     if (mediaStream->GetSessionID() == sessionId && mediaStream->IsSource() == source)
       return mediaStream;
   }
@@ -1159,7 +1159,7 @@ OpalMediaStreamPtr OpalConnection::GetMediaStream(const OpalMediaType & mediaTyp
                                                   OpalMediaStreamPtr mediaStream) const
 {
   if (mediaStream == NULL)
-    mediaStream = OpalMediaStreamPtr(mediaStreams, PSafeReference);
+    mediaStream = OpalMediaStreamPtr(m_mediaStreams, PSafeReference);
   else
     ++mediaStream;
 
@@ -1178,7 +1178,7 @@ bool OpalConnection::GetMediaTransportAddresses(OpalConnection & otherConnection
                                            const OpalMediaType & mediaType,
                                      OpalTransportAddressArray & transports) const
 {
-  return endpoint.GetMediaTransportAddresses(*this, otherConnection, sessionId, mediaType, transports);
+  return m_endpoint.GetMediaTransportAddresses(*this, otherConnection, sessionId, mediaType, transports);
 }
 
 
@@ -1312,7 +1312,7 @@ bool OpalConnection::SetBandwidthUsed(OpalBandwidth::Direction dir,
 void OpalConnection::SetSendUserInputMode(SendUserInputModes mode)
 {
   PTRACE(3, "Setting default User Input send mode to " << mode);
-  sendUserInputMode = mode;
+  m_sendUserInputMode = mode;
 }
 
 
@@ -1378,22 +1378,22 @@ PBoolean OpalConnection::SendUserInputTone(char /*tone*/, unsigned /*duration*/)
 
 void OpalConnection::OnUserInputString(const PString & value)
 {
-  endpoint.OnUserInputString(*this, value);
+  m_endpoint.OnUserInputString(*this, value);
 }
 
 
 void OpalConnection::OnUserInputTone(char tone, unsigned duration)
 {
-  endpoint.OnUserInputTone(*this, tone, duration);
+  m_endpoint.OnUserInputTone(*this, tone, duration);
 }
 
 
 PString OpalConnection::GetUserInput(unsigned timeout)
 {
   PString reply;
-  if (userInputAvailable.Wait(PTimeInterval(0, timeout)) && !IsReleased() && LockReadWrite()) {
-    reply = userInputString;
-    userInputString = PString();
+  if (m_userInputAvailable.Wait(PTimeInterval(0, timeout)) && !IsReleased() && LockReadWrite()) {
+    reply = m_userInputString;
+    m_userInputString = PString();
     UnlockReadWrite();
   }
   return reply;
@@ -1403,8 +1403,8 @@ PString OpalConnection::GetUserInput(unsigned timeout)
 void OpalConnection::SetUserInput(const PString & input)
 {
   if (LockReadWrite()) {
-    userInputString += input;
-    userInputAvailable.Signal();
+    m_userInputString += input;
+    m_userInputAvailable.Signal();
     UnlockReadWrite();
   }
 }
@@ -1414,7 +1414,7 @@ PString OpalConnection::ReadUserInput(const char * terminators,
                                       unsigned lastDigitTimeout,
                                       unsigned firstDigitTimeout)
 {
-  return endpoint.ReadUserInput(*this, terminators, lastDigitTimeout, firstDigitTimeout);
+  return m_endpoint.ReadUserInput(*this, terminators, lastDigitTimeout, firstDigitTimeout);
 }
 
 
@@ -1472,13 +1472,13 @@ void OpalConnection::OnSendInBandDTMF(RTP_DataFrame & frame, P_INT_PTR)
 
 PString OpalConnection::GetPrefixName() const
 {
-  return endpoint.GetPrefixName();
+  return m_endpoint.GetPrefixName();
 }
 
 
 void OpalConnection::SetLocalPartyName(const PString & name)
 {
-  localPartyName = name;
+  m_localPartyName = name;
 }
 
 
@@ -1514,11 +1514,11 @@ PString OpalConnection::GetRemotePartyURL() const
   if (!m_remotePartyURL.IsEmpty())
     return m_remotePartyURL;
 
-  if (!remotePartyNumber.IsEmpty())
-    return MakeURL(GetPrefixName(), remotePartyNumber);
+  if (!m_remotePartyNumber.IsEmpty())
+    return MakeURL(GetPrefixName(), m_remotePartyNumber);
 
-  if (!remotePartyName.IsEmpty())
-    return MakeURL(GetPrefixName(), remotePartyName);
+  if (!m_remotePartyName.IsEmpty())
+    return MakeURL(GetPrefixName(), m_remotePartyName);
 
   return MakeURL(GetPrefixName(), "*");
 }
@@ -1532,12 +1532,12 @@ PString OpalConnection::GetCalledPartyURL()
 
 void OpalConnection::CopyPartyNames(const OpalConnection & other)
 {
-  remotePartyName     = other.remotePartyName;
-  remotePartyNumber   = other.remotePartyNumber;
+  m_remotePartyName     = other.m_remotePartyName;
+  m_remotePartyNumber   = other.m_remotePartyNumber;
   m_remotePartyURL    = other.m_remotePartyURL;
   m_calledPartyName   = other.m_calledPartyName;
   m_calledPartyNumber = other.m_calledPartyNumber;
-  remoteProductInfo   = other.remoteProductInfo;
+  m_remoteProductInfo   = other.m_remoteProductInfo;
 }
 
 
@@ -1573,7 +1573,7 @@ bool OpalConnection::RequestPresentationRole(bool)
 
 bool OpalConnection::OnChangedPresentationRole(const PString & newChairURI, bool request)
 {
-  return endpoint.GetManager().OnChangedPresentationRole(*this, newChairURI, request);
+  return m_endpoint.GetManager().OnChangedPresentationRole(*this, newChairURI, request);
 }
 
 
@@ -1603,7 +1603,7 @@ PString OpalConnection::GetIdentifier() const
 
 PINDEX OpalConnection::GetMaxRtpPayloadSize() const
 {
-  return endpoint.GetManager().GetMaxRtpPayloadSize();
+  return m_endpoint.GetManager().GetMaxRtpPayloadSize();
 }
 
 
@@ -1642,7 +1642,7 @@ void OpalConnection::SetStringOptions(const StringOptions & options, bool overwr
 
 void OpalConnection::OnApplyStringOptions()
 {
-  endpoint.GetManager().OnApplyStringOptions(*this, m_stringOptions);
+  m_endpoint.GetManager().OnApplyStringOptions(*this, m_stringOptions);
 
   PTRACE_IF(4, !m_stringOptions.IsEmpty(), "Applying string options:\n" << m_stringOptions);
 
@@ -1700,11 +1700,11 @@ void OpalConnection::OnApplyStringOptions()
     if (!str.IsEmpty())
       SetAlertingType(str);
 
-    if (silenceDetector != NULL && !(str = m_stringOptions(OPAL_OPT_SILENCE_DETECT_MODE)).IsEmpty()) {
+    if (m_silenceDetector != NULL && !(str = m_stringOptions(OPAL_OPT_SILENCE_DETECT_MODE)).IsEmpty()) {
       OpalSilenceDetector::Params params;
-      silenceDetector->GetParameters(params);
+      m_silenceDetector->GetParameters(params);
       params.FromString(str);
-      silenceDetector->SetParameters(params);
+      m_silenceDetector->SetParameters(params);
     }
 
     UnlockReadWrite();
@@ -1714,14 +1714,14 @@ void OpalConnection::OnApplyStringOptions()
 
 OpalMediaFormatList OpalConnection::GetMediaFormats() const
 {
-  return endpoint.GetMediaFormats();
+  return m_endpoint.GetMediaFormats();
 }
 
 
 OpalMediaFormatList OpalConnection::GetLocalMediaFormats()
 {
   if (m_localMediaFormats.IsEmpty())
-    m_localMediaFormats = ownerCall.GetMediaFormats(*this);
+    m_localMediaFormats = m_ownerCall.GetMediaFormats(*this);
   return m_localMediaFormats;
 }
 
@@ -1750,7 +1750,7 @@ bool OpalConnection::OnMediaFailed(unsigned sessionId)
 
 bool OpalConnection::AllMediaFailed() const
 {
-  for (OpalMediaStreamPtr mediaStream(mediaStreams, PSafeReference); mediaStream != NULL; ++mediaStream) {
+  for (OpalMediaStreamPtr mediaStream(m_mediaStreams, PSafeReference); mediaStream != NULL; ++mediaStream) {
     if (m_mediaSessionFailed.find(mediaStream->GetSessionID()) == m_mediaSessionFailed.end()) {
       PTRACE(3, "Checking for all media failed: no, still have media stream " << *mediaStream << " for " << *this);
       return false;

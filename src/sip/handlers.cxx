@@ -1092,7 +1092,7 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
   requestMIME.GetProductInfo(m_productInfo);
 
   // Remember response for retries by using transaction, note: deleted by SIPEndPoint
-  SIPResponse * response = new SIPResponse(m_endpoint, request, SIP_PDU::Failure_BadRequest);
+  SIPResponse * response = new SIPResponse(m_sipEndpoint, request, SIP_PDU::Failure_BadRequest);
   PTRACE_CONTEXT_ID_TO(response);
 
   PStringToString subscriptionStateInfo;
@@ -2271,7 +2271,7 @@ bool SIPPresenceInfo::ParseXML(const PXML & xml, list<SIPPresenceInfo> & infoLis
 
   // Now process all the <tuple> components.
   PXMLElement * tupleElement;
-  for (PINDEX idx = 0; (tupleElement = rootElement->GetElement("urn:ietf:params:xml:ns:pidf|tuple", idx)) != NULL; ++idx) {
+  for (PINDEX tupleIdx = 0; (tupleElement = rootElement->GetElement("urn:ietf:params:xml:ns:pidf|tuple", tupleIdx)) != NULL; ++tupleIdx) {
     SIPPresenceInfo info(Unavailable);
     info.m_infoType = SIPPresenceEventPackageContentType;
     info.m_infoData = xml.AsString();

@@ -417,7 +417,7 @@ OpalMediaSession * OpalSDPConnection::SetUpMediaSession(const unsigned   session
   if (!mediaDescription.ToSession(session, bundleMergeInfo.m_ssrcs))
     return NULL;
 
-  dynamic_cast<OpalRTPEndPoint &>(endpoint).CheckEndLocalRTP(*this, dynamic_cast<OpalRTPSession *>(session));
+  dynamic_cast<OpalRTPEndPoint &>(m_endpoint).CheckEndLocalRTP(*this, dynamic_cast<OpalRTPSession *>(session));
   localAddress = session->GetLocalAddress();
   return session;
 }
@@ -501,7 +501,7 @@ bool OpalSDPConnection::OnSendOfferSDP(SDPSessionDescription & sdpOut, bool offe
 {
   bool sdpOK = false;
 
-  if (offerOpenMediaStreamsOnly && !mediaStreams.IsEmpty()) {
+  if (offerOpenMediaStreamsOnly && !m_mediaStreams.IsEmpty()) {
     PTRACE(3, "Offering only current media streams");
     for (SessionMap::iterator it = m_sessions.begin(); it != m_sessions.end(); ++it) {
       if (OnSendOfferSDPSession(it->first, sdpOut, true))
@@ -797,7 +797,7 @@ bool OpalSDPConnection::OnSendAnswerSDP(const SDPSessionDescription & sdpOffer, 
   /* Shut down any media that is in a session not mentioned in answer.
       While the SIP/SDP specification says this shouldn't happen, it does
       anyway so we need to deal. */
-  for (OpalMediaStreamPtr stream(mediaStreams, PSafeReference); stream != NULL; ++stream) {
+  for (OpalMediaStreamPtr stream(m_mediaStreams, PSafeReference); stream != NULL; ++stream) {
     unsigned session = stream->GetSessionID();
     if (session > sessionCount || sdpMediaDescriptions[session] == NULL)
       stream->Close();
@@ -974,7 +974,7 @@ SDPMediaDescription * OpalSDPConnection::OnSendAnswerSDPSession(SDPMediaDescript
     if (otherParty != NULL && sendStream == NULL) {
       if ((sendStream = GetMediaStream(sessionId, false)) == NULL) {
         PTRACE(5, "Opening tx " << mediaType << " stream from offer SDP");
-        if (ownerCall.OpenSourceMediaStreams(*otherParty,
+        if (m_ownerCall.OpenSourceMediaStreams(*otherParty,
                                              mediaType,
                                              sessionId,
                                              OpalMediaFormat(),
@@ -1004,7 +1004,7 @@ SDPMediaDescription * OpalSDPConnection::OnSendAnswerSDPSession(SDPMediaDescript
     if (recvStream == NULL) {
       if ((recvStream = GetMediaStream(sessionId, true)) == NULL) {
         PTRACE(5, "Opening rx " << mediaType << " stream from offer SDP");
-        if (ownerCall.OpenSourceMediaStreams(*this,
+        if (m_ownerCall.OpenSourceMediaStreams(*this,
                                              mediaType,
                                              sessionId,
                                              OpalMediaFormat(),
@@ -1081,7 +1081,7 @@ SDPMediaDescription * OpalSDPConnection::OnSendAnswerSDPSession(SDPMediaDescript
   }
 
 #if OPAL_T38_CAPABILITY
-  ownerCall.ResetSwitchingT38();
+  m_ownerCall.ResetSwitchingT38();
 #endif
 
 #if OPAL_RTP_FEC
@@ -1148,7 +1148,7 @@ bool OpalSDPConnection::OnReceivedAnswerSDP(const SDPSessionDescription & sdp, b
   /* Shut down any media that is in a session not mentioned in answer to our offer.
      While the SIP/SDP specification says this shouldn't happen, it does
      anyway so we need to deal. */
-  for (OpalMediaStreamPtr stream(mediaStreams, PSafeReference); stream != NULL; ++stream) {
+  for (OpalMediaStreamPtr stream(m_mediaStreams, PSafeReference); stream != NULL; ++stream) {
     if (stream->GetSessionID() > mediaDescriptionCount)
       stream->Close();
   }
@@ -1245,7 +1245,7 @@ bool OpalSDPConnection::OnReceivedAnswerSDPSession(const SDPMediaDescription * m
       return false;
 
     PTRACE(5, "Opening tx " << mediaType << " stream from answer SDP");
-    if (ownerCall.OpenSourceMediaStreams(*otherParty,
+    if (m_ownerCall.OpenSourceMediaStreams(*otherParty,
                                           mediaType,
                                           sessionId,
                                           OpalMediaFormat(),
@@ -1261,7 +1261,7 @@ bool OpalSDPConnection::OnReceivedAnswerSDPSession(const SDPMediaDescription * m
 
   if (recvStream == NULL) {
     PTRACE(5, "Opening rx " << mediaType << " stream from answer SDP");
-    if (ownerCall.OpenSourceMediaStreams(*this,
+    if (m_ownerCall.OpenSourceMediaStreams(*this,
                                          mediaType,
                                          sessionId,
                                          OpalMediaFormat(),

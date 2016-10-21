@@ -217,10 +217,10 @@ class IAX2EndPoint : public OpalEndPoint
   IAX2Receiver    *receiver;
   
   /**Report the local username*/
-  PString GetLocalUserName() { return localUserName; }
+  PString GetLocalUserName() { return m_localUserName; }
   
   /**Report the number used by the computer running this program*/
-  PString GetLocalNumber() { return localNumber; }
+  PString GetLocalNumber() { return m_localNumber; }
   
   /**Set the username to some value */
   void SetLocalUserName(PString newValue); 
@@ -229,7 +229,7 @@ class IAX2EndPoint : public OpalEndPoint
   void SetLocalNumber(PString newValue);
   
   /**Report the password*/
-  PString & GetPassword() { return password; }
+  PString & GetPassword() { return m_password; }
   
   /**Set the password to some value */
   void SetPassword(PString newValue);
@@ -404,7 +404,7 @@ class IAX2EndPoint : public OpalEndPoint
   /**Report if there are frames (from the ethernet) waiting to be
      processed */
   PBoolean EthernetFramesToBeProcessed() 
-  { return packetsReadFromEthernet.GetSize() > 0; }
+  { return m_packetsReadFromEthernet.GetSize() > 0; }
   //@}
   
  protected:
@@ -414,38 +414,38 @@ class IAX2EndPoint : public OpalEndPoint
      be, this thread will create a new conneciton (to cope with a new
      incoming call) and add the new connections to the internal
      list. */
-  IAX2IncomingEthernetFrames incomingFrameHandler;
+  IAX2IncomingEthernetFrames m_incomingFrameHandler;
 
   /**List of iax2 packets which has been read from the ethernet, and
      is to be sent to the matching IAX2Connection */
-  IAX2FrameList   packetsReadFromEthernet;
+  IAX2FrameList   m_packetsReadFromEthernet;
   
   /**The socket on which all data is sent/received.*/
-  PUDPSocket  *sock;
+  PUDPSocket  *m_sock;
 
   /**Number of active calls */
-  int callnumbs;
+  int m_callnumbs;
   
   /** lock on access to call numbers variable */
-  PMutex callNumbLock;
+  PMutex m_callNumbLock;
   
   /**Time when a call was started */
-  PTime callStartTime;
+  PTime m_callStartTime;
   
   /**Name of this user, which is used as the IeCallingNumber */
-  PString localUserName;
+  PString m_localUserName;
   
   /**Number, as used by the computer on the host running this program*/
-  PString localNumber;
+  PString m_localNumber;
   
   /**Password for this user, which is used when processing an authentication request */
-  PString password;
+  PString m_password;
   
   /**Counter to use for sending on status query frames */
-  PINDEX statusQueryCounter;
+  PINDEX m_statusQueryCounter;
   
   /**Mutex for the statusQueryCounter */
-  PMutex statusQueryMutex;
+  PMutex m_statusQueryMutex;
   
   /**Pointer to the Processor class which handles special packets (eg lagrq) that have no 
      destination call to handle them. */
@@ -490,28 +490,28 @@ class IAX2EndPoint : public OpalEndPoint
      translation between the initial (or psuedo) token and the
      token that is later adopted */
 
-  PStringToString    tokenTable;
+  PStringToString  m_tokenTable;
   
   /**Threading mutex on the variable tokenTable. We can now safely
      read/write to this table, with the minimum of interference between
      threads.  */
-  PReadWriteMutex    mutexTokenTable;
+  PReadWriteMutex  m_mutexTokenTable;
 
   /**Thread safe counter which keeps track of the calls created by this endpoint.
      This value is used when giving outgoing calls a unique ID */
-  atomic<uint32_t> callsEstablished;
+  atomic<uint32_t> m_callsEstablished;
 
   /**Local copy of the media types we can handle*/
   OpalMediaFormatList localMediaFormats;
   
    /**A mutex to protect the registerProcessors collection*/
-  PMutex regProcessorsMutex;
+  PMutex m_regProcessorsMutex;
   
   /**An array of register processors.  These are created when
      another class calls register and deleted when another class
      calls unregister or class destructor is called.  This collection
      must be protected by the regProcessorsMutex*/
-  PArrayObjects regProcessors;
+  PArrayObjects m_regProcessors;
   
 };
 

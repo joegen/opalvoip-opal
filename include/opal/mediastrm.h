@@ -344,7 +344,7 @@ class OpalMediaStream : public PSafeObject
   //@{
     /** Get the owner connection.
      */
-    OpalConnection & GetConnection() const { return connection; }
+    OpalConnection & GetConnection() const { return m_connection; }
 
     /**Determine of media stream is a source or a sink.
       */
@@ -356,32 +356,32 @@ class OpalMediaStream : public PSafeObject
 
     /**Get the session number of the stream.
      */
-    unsigned GetSessionID() const { return sessionID; }
+    unsigned GetSessionID() const { return m_sessionID; }
 
     /**Get the session number of the stream.
      */
-    void SetSessionID(unsigned id) { sessionID = id; }
+    void SetSessionID(unsigned id) { m_sessionID = id; }
 
     /**  Get the ID associated with this stream. Used for detecting two 
       *  the streams associated with a bidirectional media channel
       */
-    PString GetID() const { return identifier; }
+    PString GetID() const { return m_identifier; }
 
     /**Get the timestamp of last read.
       */
-    unsigned GetTimestamp() const { return timestamp; }
+    unsigned GetTimestamp() const { return m_timestamp; }
 
     /**Set timestamp for next write.
       */
-    void SetTimestamp(unsigned ts) { timestamp = ts; }
+    void SetTimestamp(unsigned ts) { m_timestamp = ts; }
 
     /**Get the marker bit of last read.
       */
-    bool GetMarker() const { return marker; }
+    bool GetMarker() const { return m_marker; }
 
     /**Set marker bit for next write.
       */
-    void SetMarker(bool m) { marker = m; }
+    void SetMarker(bool m) { m_marker = m; }
 
     /**Get the paused state for stream.
       */
@@ -456,17 +456,17 @@ class OpalMediaStream : public PSafeObject
       */
     virtual void InternalClose() = 0;
 
-    OpalConnection & connection;
-    unsigned         sessionID;
+    OpalConnection & m_connection;
+    unsigned         m_sessionID;
     WORD             m_sequenceNumber;
-    PString          identifier;
-    OpalMediaFormat  mediaFormat;
+    PString          m_identifier;
+    OpalMediaFormat  m_mediaFormat;
     bool             m_paused;
     bool             m_isSource;
     bool             m_isOpen;
     PINDEX           m_defaultDataSize;
-    unsigned         timestamp;
-    bool             marker;
+    unsigned         m_timestamp;
+    bool             m_marker;
 
     OpalMediaPatchPtr m_mediaPatch;
 

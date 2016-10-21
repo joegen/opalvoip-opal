@@ -123,7 +123,7 @@ H4504_MixedExtension::operator const H225_NonStandardParameter &() const
 
 PBoolean H4504_MixedExtension::CreateObject()
 {
-  switch (tag) {
+  switch (m_tag) {
     case e_extension :
       choice = new H4501_Extension();
       return true;

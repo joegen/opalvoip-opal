@@ -325,8 +325,8 @@ void OpalTransportAddressArray::GetIpAndPort(PINDEX index, PIPAddressAndPort & a
 bool OpalTransportAddressArray::AppendStringCollection(const PCollection & coll)
 {
   bool atLeastOne = false;
-  for (PINDEX i = 0; i < coll.GetSize(); i++) {
-    PString * str = dynamic_cast<PString *>(coll.GetAt(i));
+  for (PINDEX idx = 0; idx < coll.GetSize(); idx++) {
+    PString * str = dynamic_cast<PString *>(coll.GetAt(idx));
     if (str != NULL) {
       PCaselessString addr = *str;
 

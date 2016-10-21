@@ -207,7 +207,7 @@ PluginLID_Errors OpalPluginLID::CheckError(PluginLID_Errors error, const char * 
     PTRACE(2, "LID Plugin\tFunction " << fnName << " in " << m_definition.name << " returned error " << error);
   }
 
-  osError = error;
+  m_osError = error;
   return error;
 }
 
@@ -217,7 +217,7 @@ PluginLID_Errors OpalPluginLID::CheckError(PluginLID_Errors error, const char * 
 #else // PTRACING
 
 #define BAD_FN(fn) (m_context == NULL || m_definition.fn == NULL)
-#define CHECK_FN(fn, args) (m_context == NULL ? PluginLID_BadContext : m_definition.fn == NULL ? PluginLID_UnimplementedFunction : (osError = m_definition.fn args))
+#define CHECK_FN(fn, args) (m_context == NULL ? PluginLID_BadContext : m_definition.fn == NULL ? PluginLID_UnimplementedFunction : (m_osError = m_definition.fn args))
 
 #endif // PTRACING
 
@@ -230,7 +230,7 @@ PBoolean OpalPluginLID::Open(const PString & device)
   Close();
 
 
-  switch (osError = m_definition.Open(m_context, device)) {
+  switch (m_osError = m_definition.Open(m_context, device)) {
     case PluginLID_NoError :
       break;
 
@@ -260,12 +260,12 @@ PBoolean OpalPluginLID::Open(const PString & device)
       return false;
 
     default :
-      PTRACE(1, "LID Plugin\tOpen of \"" << device << "\" in " << m_definition.name << " returned error " << osError);
+      PTRACE(1, "LID Plugin\tOpen of \"" << device << "\" in " << m_definition.name << " returned error " << m_osError);
       return false;
   }
 
   m_deviceName = device;
-  os_handle = 1;
+  m_osHandle = 1;
   return true;
 }
 
@@ -1081,8 +1081,8 @@ OpalLineInterfaceDevice::CallProgressTones OpalPluginLID::DialOut(unsigned line,
   pparams.m_progressTimeout = params.m_progressTimeout;
   pparams.m_commaDelay = params.m_commaDelay;
 
-  osError = m_definition.DialOut(m_context, line, number, &pparams);
-  switch (osError)
+  m_osError = m_definition.DialOut(m_context, line, number, &pparams);
+  switch (m_osError)
   {
     case PluginLID_NoError :
       return RingTone;
@@ -1094,7 +1094,7 @@ OpalLineInterfaceDevice::CallProgressTones OpalPluginLID::DialOut(unsigned line,
       return ClearTone;
 #if PTRACING
     default :
-      CheckError((PluginLID_Errors)osError, "DialOut");
+      CheckError((PluginLID_Errors)m_osError, "DialOut");
 #endif
   }
 

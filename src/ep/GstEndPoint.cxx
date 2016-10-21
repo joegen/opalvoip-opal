@@ -194,14 +194,14 @@ static struct GstInitInfo {
 #else
   { OPAL_H261,          "",              "ffdec_h261",  "",                   "ffenc_h261" },
   { OPAL_H263,          "rtph263depay",  "ffdec_h263",  "rtph263pay",         "ffenc_h263"
-                                                                              " rtp-payload-size={"OPAL_GST_MTU"}"
+                                                                              " rtp-payload-size={" OPAL_GST_MTU "}"
                                                                               " max-key-interval=125"
                                                                               " me-method=5"
                                                                               " max-bframes=0"
                                                                               " gop-size=125"
                                                                               " rc-buffer-size=65536000"
                                                                               " rc-min-rate=0"
-                                                                              " rc-max-rate={"OPAL_GST_BIT_RATE"}"
+                                                                              " rc-max-rate={" OPAL_GST_BIT_RATE "}"
                                                                               " rc-qsquish=0"
                                                                               " rc-eq=1"
                                                                               " max-qdiff=10"
@@ -212,14 +212,14 @@ static struct GstInitInfo {
                                                                               " qmin=2"
   },
   { OPAL_H263plus,      "rtph263pdepay", "ffdec_h263",  "rtph263ppay",        "ffenc_h263p"
-                                                                             " rtp-payload-size={"OPAL_GST_MTU"}"
+                                                                             " rtp-payload-size={" OPAL_GST_MTU "}"
                                                                              " max-key-interval=125"
                                                                              " me-method=5"
                                                                              " max-bframes=0"
                                                                              " gop-size=125"
                                                                              " rc-buffer-size=65536000"
                                                                              " rc-min-rate=0"
-                                                                             " rc-max-rate={"OPAL_GST_BIT_RATE"}"
+                                                                             " rc-max-rate={" OPAL_GST_BIT_RATE "}"
                                                                              " rc-qsquish=0"
                                                                              " rc-eq=1"
                                                                              " max-qdiff=10"
@@ -234,7 +234,7 @@ static struct GstInitInfo {
                                                                               " byte-stream=true"
                                                                               " bframes=0"
                                                                               " b-adapt=0"
-                                                                              " bitrate={"OPAL_GST_BIT_RATE_K"}"
+                                                                              " bitrate={" OPAL_GST_BIT_RATE_K "}"
                                                                               " tune=0x4"
                                                                               " speed-preset=3"
                                                                               " sliced-threads=false"
@@ -348,7 +348,7 @@ GstEndPoint::GstEndPoint(OpalManager & manager, const char *prefix)
   , m_jitterBuffer() // don't use jitterbuffer in GStreamer 1.0
 #else
   , m_rtpbin("gstrtpbin")
-  , m_jitterBuffer("gstrtpjitterbuffer latency={"OPAL_GST_LATENCY"}")
+  , m_jitterBuffer("gstrtpjitterbuffer latency={" OPAL_GST_LATENCY "}")
 #endif
   , m_audioSourceDevice(GetDefaultDevice("Source/Audio", PreferredAudioSourceDevice, PARRAYSIZE(PreferredAudioSourceDevice)))
   , m_audioSinkDevice(GetDefaultDevice("Sink/Audio", PreferredAudioSinkDevice, PARRAYSIZE(PreferredAudioSinkDevice)))
@@ -1144,7 +1144,7 @@ PBoolean GstMediaStream::Open()
   }
   else {
     // Our source, their sink, and vice versa
-    PString name = mediaFormat.GetMediaType();
+    PString name = m_mediaFormat.GetMediaType();
     if (IsSource()) {
       name += APP_SINK_SUFFIX;
       if (!m_pipeline.GetByName(name, m_pipeSink)) {
@@ -1181,7 +1181,7 @@ void GstMediaStream::InternalClose()
 
 PBoolean GstMediaStream::SetDataSize(PINDEX dataSize, PINDEX frameTime)
 {
-  if (IsSink() || mediaFormat.GetMediaType() != OpalMediaType::Audio())
+  if (IsSink() || m_mediaFormat.GetMediaType() != OpalMediaType::Audio())
     return OpalMediaStream::SetDataSize(dataSize, frameTime);
 
   PINDEX oldSize = GetDataSize();
