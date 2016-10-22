@@ -3739,22 +3739,16 @@ ostream & operator<<(ostream & strm, const SIPParameters & params)
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-#ifdef _MSC_VER
-#define P_DISABLE_MSVC_WARNING_4355(member) __pragma(warning(disable:4355)) member __pragma(warning(default:4355))
-#else
-#define P_DISABLE_MSVC_WARNING_4355(member) member
-#endif
-
 class SIPTransactionOwnerDummy : public PSafeObject, public SIPTransactionOwner
 {
   public:
     SIPTransactionOwnerDummy(SIPEndPoint & endpoint, const SIPURL & targetURI)
-      : P_DISABLE_MSVC_WARNING_4355(SIPTransactionOwner(*this, endpoint))
+      : P_DISABLE_MSVC_WARNINGS(4355, SIPTransactionOwner(*this, endpoint))
     {
       m_dialog.SetRequestURI(targetURI);
     }
     SIPTransactionOwnerDummy(SIPEndPoint & endpoint, const SIPDialogContext & context)
-      : P_DISABLE_MSVC_WARNING_4355(SIPTransactionOwner(*this, endpoint))
+      : P_DISABLE_MSVC_WARNINGS(4355, SIPTransactionOwner(*this, endpoint))
     {
       m_dialog = context;
     }
