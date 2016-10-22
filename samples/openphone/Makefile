@@ -32,15 +32,6 @@ VERSION_FILE    := version.h
 USING_WX_WIDGETS:=yes
 
 
-ifneq (,$(DEBUG_BUILD))
-  ifneq (,$(shell $(WX_CONFIG) --list | grep debug))
-    WX_CONFIG += --debug=$(DEBUG_BUILD)
-  else
-    CPPFLAGS += -DOPAL_WX_DEBUG_HACK
-  endif
-endif
-
-
 # Need this before the include of opal.mak
 .DEFAULT_GOAL := bundle
 
@@ -49,6 +40,15 @@ ifdef OPALDIR
   include $(OPALDIR)/make/opal.mak
 else
   include $(shell pkg-config opal --variable=makedir)/opal.mak
+endif
+
+
+ifneq (,$(DEBUG_BUILD))
+  ifneq (,$(shell $(WX_CONFIG) --list | grep debug))
+    WX_CONFIG += --debug=$(DEBUG_BUILD)
+  else
+    CPPFLAGS += -DOPAL_WX_DEBUG_HACK
+  endif
 endif
 
 
