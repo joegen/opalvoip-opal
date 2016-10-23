@@ -585,7 +585,7 @@ class H264FlashPacketizer
       if (!rtp.SetPayloadSize(pBuffer - rtp.GetPayloadPtr()))
         return false;
 
-      toLen = rtp.GetPacketSize();
+      toLen = (unsigned)rtp.GetPacketSize();
       return true;
     }
 };

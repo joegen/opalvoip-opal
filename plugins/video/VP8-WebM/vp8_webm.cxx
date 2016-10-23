@@ -555,7 +555,7 @@ class VP8Encoder : public PluginVideoEncoder<VP8_CODEC>
       if (quality >= 0 && len < bufferSize)
         len += snprintf(bufferPtr+len, bufferSize-len, "Quality=%u\n", quality);
 
-      return len;
+      return (int)len;
     }
 
 

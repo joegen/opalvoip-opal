@@ -270,7 +270,7 @@ unsigned H261EncoderContext::SetEncodedPacket(PluginCodec_RTP & dstRTP, bool isL
   flags |= isLast ? PluginCodec_ReturnCoderLastFrame : 0;  // marker bit on last frame of video
   flags |= PluginCodec_ReturnCoderIFrame;                       // sadly, this encoder *always* returns I-frames :(
 
-  return dstRTP.GetPacketSize();
+  return (unsigned)dstRTP.GetPacketSize();
 }
 
 static void * create_encoder(const struct PluginCodec_Definition * /*codec*/)
@@ -400,7 +400,7 @@ class H261DecoderContext
       expectedSequenceNumber = (u_short)(sequenceNumber+1);
 
       videoDecoder->mark(now);
-      if (!videoDecoder->decode(srcRTP.GetPayloadPtr(), srcRTP.GetPayloadSize(), lostPreviousPacket)) {
+      if (!videoDecoder->decode(srcRTP.GetPayloadPtr(), (int)srcRTP.GetPayloadSize(), lostPreviousPacket)) {
         flags = PluginCodec_ReturnCoderRequestIFrame;
         return 1;
       }
@@ -448,7 +448,7 @@ class H261DecoderContext
 
       videoDecoder->resetndblk();
 
-      dstLen = dstRTP.GetPacketSize();
+      dstLen = (unsigned)dstRTP.GetPacketSize();
       flags = PluginCodec_ReturnCoderLastFrame | PluginCodec_ReturnCoderIFrame;   // TODO: THIS NEEDS TO BE CHANGED TO DO CORRECT I-FRAME DETECTION
       return 1;
     }

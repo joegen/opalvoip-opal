@@ -768,7 +768,7 @@ class H264_Encoder : public PluginVideoEncoder<MY_CODEC>
       if (m_quality >= 0 && len < bufferSize)
         len += snprintf(bufferPtr+len, bufferSize-len, "Quality=%u\n", m_quality);
 
-      return len;
+      return (int)len;
     }
 
 

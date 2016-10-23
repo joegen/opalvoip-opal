@@ -553,7 +553,7 @@ class H263_Base_Encoder : public PluginVideoEncoder<MY_CODEC>, public FFMPEGCode
       if (m_picture->quality >= 0 && len < bufferSize)
         len += snprintf(bufferPtr+len, bufferSize-len, "Quality=%u\n", m_picture->quality);
 
-      return len;
+      return (int)len;
     }
 };
 

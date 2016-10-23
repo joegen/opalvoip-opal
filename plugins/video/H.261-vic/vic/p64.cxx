@@ -742,7 +742,7 @@ void P64Decoder::mvblka(u_char* in, u_char* out, u_int stride)
 void P64Decoder::mvblk(u_char* in, u_char* out, u_int stride)
 {
 #ifdef INT_64
-	if (((u_long)in & 7) == 0) {
+	if (((intptr_t)in & 7) == 0) {
 		mvblka(in, out, stride);
 		return;
 	}
@@ -851,7 +851,7 @@ int P64Decoder::parse_gob_hdr(int ebit)
 		 * are a start code and throw them away.
 		 * But first check that we have the bits.
 		 */
-		int nbit = ((es_ - bs_) << 4) + nbb_ - ebit;
+		size_t nbit = ((es_ - bs_) << 4) + nbb_ - ebit;
 		if (nbit < 20)
 			return (0);
 
@@ -1201,7 +1201,7 @@ bool P64Decoder::decode(const unsigned char *hdrPtr, int buffLen,
 	 * If input buffer not aligned, prime bit-buffer
 	 * with 8 bits; otherwise, prime it with a 16.
 	 */
-	if ((long)bp & 1) {
+	if ((intptr_t)bp & 1) {
 		bs_ = (u_short*)(bp + 1);
 		bb_ = *bp;
 		nbb_ = 8 - sbit;
