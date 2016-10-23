@@ -185,12 +185,10 @@ static int codec_decoder(const struct PluginCodec_Definition * codec,
     return 0;
   }
 
-  int status = 0;
-
   // if this is a packet loss concealment frame, generate interpolated data
   // else decode the real data
   if (*flag & PluginCodec_CoderSilenceFrame) {
-    status = speex_decode_int(context->coderState, NULL, sampleBuffer);
+    speex_decode_int(context->coderState, NULL, sampleBuffer);
   }
   else {
     speex_bits_read_from(&context->speexBits, (char *)from, *fromLen); 
