@@ -417,13 +417,10 @@ bool RFC2190Depacketizer::AddPacket(const PluginCodec_RTP & packet, unsigned & f
   unsigned int sbit = (payload[0] >> 3) & 0x07;
   unsigned hdrLen;
 
-  char mode;
-
   // handle mode A frames
   if ((payload[0] & 0x80) == 0) {
     m_isIFrame = (payload[1] & 0x10) == 0;
     hdrLen = 4;
-    mode = 'A';
   }
 
   // handle mode B frames
@@ -432,7 +429,6 @@ bool RFC2190Depacketizer::AddPacket(const PluginCodec_RTP & packet, unsigned & f
       return LostSync(flags);
     m_isIFrame = (payload[4] & 0x80) == 0;
     hdrLen = 8;
-    mode = 'B';
   }
 
   // handle mode C frames
@@ -441,7 +437,6 @@ bool RFC2190Depacketizer::AddPacket(const PluginCodec_RTP & packet, unsigned & f
       return LostSync(flags);
     m_isIFrame = (payload[4] & 0x80) == 0;
     hdrLen = 12;
-    mode = 'C';
   }
 
   // if ebit and sbit do not add up, then we have lost sync

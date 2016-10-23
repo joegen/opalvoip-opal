@@ -206,7 +206,6 @@ bool RFC2429Frame::GetPacket(PluginCodec_RTP & frame, unsigned int & flags)
               " packets for this frame");
   }
 
-  bool hasStartCode = false;
   uint8_t* payloadPtr = frame.GetPayloadPtr();  
 
   // RFC 2429 / RFC 4629 header
@@ -221,10 +220,8 @@ bool RFC2429Frame::GetPacket(PluginCodec_RTP & frame, unsigned int & flags)
   payloadPtr [1] = 0;
 
   // skip all start codes below m_minPayloadSize
-  while ((!m_startCodes.empty()) && (m_startCodes.front() < m_minPayloadSize)) {
-    hasStartCode = true;
+  while ((!m_startCodes.empty()) && (m_startCodes.front() < m_minPayloadSize))
     m_startCodes.erase(m_startCodes.begin());
-  }
 
   // if there is a startcode between m_minPayloadSize and m_maxPayloadSize set 
   // the packet boundary there, if not, use m_maxPayloadSize
