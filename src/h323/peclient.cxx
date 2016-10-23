@@ -706,7 +706,7 @@ PBoolean H323PeerElement::OnReceiveServiceConfirmation(const H501PDU & pdu, cons
   if (!H323_AnnexG::OnReceiveServiceConfirmation(pdu, pduBody))
     return false;
 
-  if (lastRequest->m_responseInfo != NULL)
+  if (m_lastRequest->m_responseInfo != NULL)
     dynamic_cast<H501PDU &>(*m_lastRequest->m_responseInfo) = pdu;
 
   return true;
@@ -1158,7 +1158,7 @@ PBoolean H323PeerElement::OnReceiveDescriptorUpdateACK(const H501PDU & pdu, cons
   if (!H323_AnnexG::OnReceiveDescriptorUpdateACK(pdu, pduBody))
     return false;
 
-  if (lastRequest->m_responseInfo != NULL)
+  if (m_lastRequest->m_responseInfo != NULL)
     dynamic_cast<H501_MessageCommonInfo &>(*m_lastRequest->m_responseInfo) = pdu.m_common;
 
   return true;
@@ -1440,7 +1440,7 @@ PBoolean H323PeerElement::OnReceiveAccessConfirmation(const H501PDU & pdu, const
   if (!H323_AnnexG::OnReceiveAccessConfirmation(pdu, pduBody))
     return false;
 
-  if (lastRequest->m_responseInfo != NULL)
+  if (m_lastRequest->m_responseInfo != NULL)
     dynamic_cast<H501PDU &>(*m_lastRequest->m_responseInfo) = pdu;
 
   return true;
