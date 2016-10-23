@@ -1,7 +1,5 @@
 ﻿Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Express 2013 for Windows Desktop
-VisualStudioVersion = 12.0.21005.1
-MinimumVisualStudioVersion = 10.0.40219.1
+# Visual Studio 14
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Audio - GSM 06.10", "audio\GSM0610\gsm0610_2015.vcxproj", "{E6897206-9765-4B73-9A98-DAC5787814CE}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Audio - iLBC", "audio\iLBC\ilbccodec_2015.vcxproj", "{F1C13640-A056-4280-B1C6-6582E5890B89}"
@@ -64,13 +62,13 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Play RTP", "..\samples\play
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Audio - Opus", "audio\Opus\OpusCodec_2015.vcxproj", "{8FD8CFC0-086C-4B92-9F17-F28FB71869DD}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "opus", "audio\Opus\opus\win32\VS2013\opus.vcxproj", "{219EC965-228A-1824-174D-96449D05F88A}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "opus", "audio\Opus\opus\win32\VS2015\opus.vcxproj", "{219EC965-228A-1824-174D-96449D05F88A}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "celt", "audio\Opus\opus\win32\VS2013\celt.vcxproj", "{245603E3-F580-41A5-9632-B25FE3372CBF}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "celt", "audio\Opus\opus\win32\VS2015\celt.vcxproj", "{245603E3-F580-41A5-9632-B25FE3372CBF}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "silk_common", "audio\Opus\opus\win32\VS2013\silk_common.vcxproj", "{C303D2FC-FF97-49B8-9DDD-467B4C9A0B16}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "silk_common", "audio\Opus\opus\win32\VS2015\silk_common.vcxproj", "{C303D2FC-FF97-49B8-9DDD-467B4C9A0B16}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "silk_float", "audio\Opus\opus\win32\VS2013\silk_float.vcxproj", "{9C4961D2-5DDB-40C7-9BE8-CA918DC4E782}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "silk_float", "audio\Opus\opus\win32\VS2015\silk_float.vcxproj", "{9C4961D2-5DDB-40C7-9BE8-CA918DC4E782}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Audio - iSAC", "audio\iSAC\isaccodec_2015.vcxproj", "{851A8648-5021-4FC3-ACED-40D2802D9C5E}"
 EndProject

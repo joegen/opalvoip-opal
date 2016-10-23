@@ -541,7 +541,7 @@ static int LimitPayloadUb(ISACUBEncStruct* ISACencUB_obj,
   int k;
   double bytesSpecCoderUsed;
   double transcodeScale;
-  const int16_t kAveragePitchGain = 0.0;
+  const int16_t kAveragePitchGain = 0;
 
   do {
     if (iterCntr >= MAX_PAYLOAD_LIMIT_ITERATION) {
@@ -662,7 +662,7 @@ int WebRtcIsac_EncodeUb16(float* in, ISACUBEncStruct* ISACencUB_obj,
   transcode_obj transcodingParam;
   uint16_t payloadLimitBytes;
   double s2nr;
-  const int16_t kAveragePitchGain = 0.0;
+  const int16_t kAveragePitchGain = 0;
   int bytesLeftSpecCoding;
 
   /* Buffer speech samples (by 10ms packet) until the frame-length is   */
@@ -854,7 +854,7 @@ int WebRtcIsac_EncodeUb12(float* in, ISACUBEncStruct* ISACencUB_obj,
   transcode_obj transcodingParam;
   uint16_t payloadLimitBytes;
   double s2nr;
-  const int16_t kAveragePitchGain = 0.0;
+  const int16_t kAveragePitchGain = 0;
   double bytesLeftSpecCoding;
 
   /* Buffer speech samples (by 10ms packet) until the framelength is  */
@@ -1144,7 +1144,7 @@ int WebRtcIsac_EncodeStoredDataUb(
   int16_t imagFFT[FRAMESAMPLES_HALF];
   const uint16_t** shape_cdf;
   int shape_len;
-  const int16_t kAveragePitchGain = 0.0;
+  const int16_t kAveragePitchGain = 0;
   enum ISACBand band;
   /* Reset bitstream. */
   WebRtcIsac_ResetBitstream(bitStream);
@@ -1228,7 +1228,7 @@ int16_t WebRtcIsac_GetRedPayloadUb(
   int16_t realFFT[FRAMESAMPLES_HALF];
   int16_t imagFFT[FRAMESAMPLES_HALF];
   enum ISACBand band;
-  const int16_t kAveragePitchGain = 0.0;
+  const int16_t kAveragePitchGain = 0;
   /* Store bit-stream object. */
   memcpy(bitStreamObj, &ISACSavedEncObj->bitStreamObj, sizeof(Bitstr));
 

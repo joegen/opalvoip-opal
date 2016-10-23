@@ -84,3 +84,4 @@ src/java/java_swig_wrapper.inc
 /plugins/audio/Opus/opus/win32/version.h
 *.db
 *.opendb
+plugins/audio/Opus/opus/win32/VS2015/Win32/
