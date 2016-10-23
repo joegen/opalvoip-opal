@@ -11,6 +11,7 @@ lib*
 bin
 html
 ipch/
+*.user
 *.sdf
 *.suo
 *.opensdf
