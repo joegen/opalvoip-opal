@@ -77,8 +77,8 @@
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">x264plugin_helper</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">x264plugin_helper</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">x264plugin_helper</TargetName>
-    <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\x264;..\..\..\..\..\external\x264;..\..\common\ffmpeg-win32-dev\lib;..\..\..\..\..\external\ffmpeg-win32-dev\lib;$(VCInstallDir)lib;$(VCInstallDir)atlmfc\lib;$(WindowsSDK_LibraryPath_x86)</LibraryPath>
-    <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\x264;..\..\..\..\..\external\x264;..\..\common\ffmpeg-win32-dev\lib;..\..\..\..\..\external\ffmpeg-win32-dev\lib;$(VCInstallDir)lib;$(VCInstallDir)atlmfc\lib;$(WindowsSDK_LibraryPath_x86)</LibraryPath>
+    <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\x264;..\..\..\..\..\external\x264;..\..\common\ffmpeg-win32-dev\lib;..\..\..\..\..\external\ffmpeg-win32-dev\lib;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
+    <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\x264;..\..\..\..\..\external\x264;..\..\common\ffmpeg-win32-dev\lib;..\..\..\..\..\external\ffmpeg-win32-dev\lib;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
     <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\x264;..\..\..\..\..\external\x264;..\..\common;..\..\..\..\include;$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSDK_IncludePath)</IncludePath>
     <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\x264;..\..\..\..\..\external\x264;..\..\common\ffmpeg-win64-dev\include;..\..\..\..\..\external\ffmpeg-win64-dev\include;..\..\common;..\..\..\..\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
   </PropertyGroup>

@@ -18,9 +18,6 @@
     <ClCompile Include="..\common\h264frame.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\common\h264frame.h">
-      <Filter>Header Files</Filter>
-    </ClCompile>
     <ClCompile Include="x264wrap.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -39,6 +36,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\common\encframe.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\h264frame.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
