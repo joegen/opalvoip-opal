@@ -296,7 +296,8 @@ static int   FFTRADIX (REAL Re[],
 
 
   // initialize to avoid warnings
-  k3 = c2 = c3 = s2 = s3 = 0.0;
+  k3 = 0;
+  c2 = c3 = s2 = s3 = 0.0;
 
   if (nPass < 2)
     return 0;
