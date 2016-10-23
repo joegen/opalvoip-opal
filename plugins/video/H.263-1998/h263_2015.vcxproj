@@ -87,14 +87,14 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>..\..\..\bin\plugins\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(OutDir)$(ProjectName)\</IntDir>
-    <IncludePath>..\common\ffmpeg-win64-dev\include;..\..\..\..\external\ffmpeg-win64-dev\include;..\common;..\..\..\include;$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSDK_IncludePath);</IncludePath>
-    <LibraryPath>..\common\ffmpeg-win64-dev\lib;..\..\..\..\external\ffmpeg-win64-dev\lib;$(VCInstallDir)lib\amd64;$(VCInstallDir)atlmfc\lib\amd64;$(WindowsSDK_LibraryPath_x64);</LibraryPath>
+    <IncludePath>..\common\ffmpeg-win64-dev\include;..\..\..\..\external\ffmpeg-win64-dev\include;..\common;..\..\..\include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
+    <LibraryPath>..\common\ffmpeg-win64-dev\lib;..\..\..\..\external\ffmpeg-win64-dev\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>..\..\..\bin\plugins\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(OutDir)$(ProjectName)\</IntDir>
-    <IncludePath>..\common\ffmpeg-win64-dev\include;..\..\..\..\external\ffmpeg-win64-dev\include;..\common;..\..\..\include;$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSDK_IncludePath);</IncludePath>
-    <LibraryPath>..\common\ffmpeg-win64-dev\lib;..\..\..\..\external\ffmpeg-win64-dev\lib;$(VCInstallDir)lib\amd64;$(VCInstallDir)atlmfc\lib\amd64;$(WindowsSDK_LibraryPath_x64);</LibraryPath>
+    <IncludePath>..\common\ffmpeg-win64-dev\include;..\..\..\..\external\ffmpeg-win64-dev\include;..\common;..\..\..\include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
+    <LibraryPath>..\common\ffmpeg-win64-dev\lib;..\..\..\..\external\ffmpeg-win64-dev\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <IncludePath>$(FFMPEGDIR)\include;..\common\ffmpeg-win32-dev\include;..\..\..\..\external\ffmpeg-win32-dev\include;..\common;..\..\..\include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>

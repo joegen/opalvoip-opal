@@ -85,13 +85,13 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>..\..\..\..\bin\plugins\$(Configuration)\</OutDir>
     <IntDir>$(OutDir)$(ProjectName)\$(Platform)\</IntDir>
-    <LibraryPath>..\x264;..\..\..\..\..\external\x264;..\..\common\ffmpeg-win64-dev\lib;..\..\..\..\..\external\ffmpeg-win64-dev\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);</LibraryPath>
+    <LibraryPath>..\x264;..\..\..\..\..\external\x264;..\..\common\ffmpeg-win64-dev\lib;..\..\..\..\..\external\ffmpeg-win64-dev\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>..\..\..\..\bin\plugins\$(Configuration)\</OutDir>
     <IntDir>$(OutDir)$(ProjectName)\$(Platform)\</IntDir>
     <IncludePath>..\x264;..\..\..\..\..\external\x264;..\..\common\ffmpeg-win64-dev\include;..\..\..\..\..\external\ffmpeg-win64-dev\include;..\..\common;..\..\..\..\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
-    <LibraryPath>..\x264;..\..\..\..\..\external\x264;..\..\common\ffmpeg-win64-dev\lib;..\..\..\..\..\external\ffmpeg-win64-dev\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);</LibraryPath>
+    <LibraryPath>..\x264;..\..\..\..\..\external\x264;..\..\common\ffmpeg-win64-dev\lib;..\..\..\..\..\external\ffmpeg-win64-dev\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <IncludePath>..\x264;..\..\..\..\..\external\x264;..\..\common\ffmpeg-win32-dev\include;..\..\..\..\..\external\ffmpeg-win32-dev\include;..\..\common;..\..\..\..\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
