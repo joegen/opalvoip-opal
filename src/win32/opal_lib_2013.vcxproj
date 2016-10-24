@@ -404,17 +404,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="..\codec\opusmf.cxx" />
-    <ClCompile Include="..\codec\opusmf_inc.cxx">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Android'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </ClCompile>
     <ClCompile Include="..\codec\speexmf.cxx" />
     <ClCompile Include="..\codec\vp8mf.cxx" />
     <ClCompile Include="..\codec\vp8mf_inc.cxx">
@@ -1930,12 +1919,12 @@ exit 0
     <None Include="..\..\configure.ac" />
     <CustomBuild Include="..\..\revision.h.in">
       <FileType>Document</FileType>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(RootDir)%(Directory).svn\wc.db</AdditionalInputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(RootDir)%(Directory).svn\wc.db</AdditionalInputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">%(RootDir)%(Directory).svn\wc.db</AdditionalInputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">%(RootDir)%(Directory).svn\wc.db</AdditionalInputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(RootDir)%(Directory).svn\wc.db</AdditionalInputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(RootDir)%(Directory).svn\wc.db</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(RootDir)%(Directory).git\index</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(RootDir)%(Directory).git\index</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">%(RootDir)%(Directory).git\index</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">%(RootDir)%(Directory).git\index</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(RootDir)%(Directory).git\index</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(RootDir)%(Directory).git\index</AdditionalInputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(RootDir)%(Directory)%(Filename)</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(RootDir)%(Directory)%(Filename)</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">%(RootDir)%(Directory)%(Filename)</Outputs>
@@ -1948,51 +1937,51 @@ exit 0
       <Message Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">Updating SVN revision include file.</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Updating SVN revision include file.</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Updating SVN revision include file.</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">PATH %PATH%;%ProgramFiles(x86)%\TortoiseSVN\bin;%ProgramW6432%\TortoiseSVN\bin
-del %(RootDir)%(Directory)%(Filename)
-SubWCRev %(RootDir)%(Directory) %(FullPath) %(RootDir)%(Directory)%(Filename)
-if errorlevel 1 "$(ProjectDir)..\..\..\svn_getrev" %(FullPath) %(RootDir)%(Directory)%(Filename)</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">PATH %PATH%;%ProgramFiles(x86)%\TortoiseSVN\bin;%ProgramW6432%\TortoiseSVN\bin
-del %(RootDir)%(Directory)%(Filename)
-SubWCRev %(RootDir)%(Directory) %(FullPath) %(RootDir)%(Directory)%(Filename)
-if errorlevel 1 "$(ProjectDir)..\..\..\svn_getrev" %(FullPath) %(RootDir)%(Directory)%(Filename)</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">PATH %PATH%;%ProgramFiles(x86)%\TortoiseSVN\bin;%ProgramW6432%\TortoiseSVN\bin
-del %(RootDir)%(Directory)%(Filename)
-SubWCRev %(RootDir)%(Directory) %(FullPath) %(RootDir)%(Directory)%(Filename)
-if errorlevel 1 "$(ProjectDir)..\..\..\svn_getrev" %(FullPath) %(RootDir)%(Directory)%(Filename)</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">PATH %PATH%;%ProgramFiles(x86)%\TortoiseSVN\bin;%ProgramW6432%\TortoiseSVN\bin
-del %(RootDir)%(Directory)%(Filename)
-SubWCRev %(RootDir)%(Directory) %(FullPath) %(RootDir)%(Directory)%(Filename)
-if errorlevel 1 "$(ProjectDir)..\..\..\svn_getrev" %(FullPath) %(RootDir)%(Directory)%(Filename)</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">PATH %PATH%;%ProgramFiles(x86)%\TortoiseSVN\bin;%ProgramW6432%\TortoiseSVN\bin
-del %(RootDir)%(Directory)%(Filename)
-SubWCRev %(RootDir)%(Directory) %(FullPath) %(RootDir)%(Directory)%(Filename)
-if errorlevel 1 "$(ProjectDir)..\..\..\svn_getrev" %(FullPath) %(RootDir)%(Directory)%(Filename)</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">PATH %PATH%;%ProgramFiles(x86)%\TortoiseSVN\bin;%ProgramW6432%\TortoiseSVN\bin
-del %(RootDir)%(Directory)%(Filename)
-SubWCRev %(RootDir)%(Directory) %(FullPath) %(RootDir)%(Directory)%(Filename)
-if errorlevel 1 "$(ProjectDir)..\..\..\svn_getrev" %(FullPath) %(RootDir)%(Directory)%(Filename)</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">PATH %PATH%;%ProgramFiles(x86)%\TortoiseSVN\bin;%ProgramW6432%\TortoiseSVN\bin
-del %(RootDir)%(Directory)%(Filename)
-SubWCRev %(RootDir)%(Directory) %(FullPath) %(RootDir)%(Directory)%(Filename)
-if errorlevel 1 "$(ProjectDir)..\..\..\svn_getrev" %(FullPath) %(RootDir)%(Directory)%(Filename)</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">PATH %PATH%;%ProgramFiles(x86)%\TortoiseSVN\bin;%ProgramW6432%\TortoiseSVN\bin
-del %(RootDir)%(Directory)%(Filename)
-SubWCRev %(RootDir)%(Directory) %(FullPath) %(RootDir)%(Directory)%(Filename)
-if errorlevel 1 "$(ProjectDir)..\..\..\svn_getrev" %(FullPath) %(RootDir)%(Directory)%(Filename)</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Android'">PATH %PATH%;%ProgramFiles(x86)%\TortoiseSVN\bin;%ProgramW6432%\TortoiseSVN\bin
-del %(RootDir)%(Directory)%(Filename)
-SubWCRev %(RootDir)%(Directory) %(FullPath) %(RootDir)%(Directory)%(Filename)
-if errorlevel 1 "$(ProjectDir)..\..\..\svn_getrev" %(FullPath) %(RootDir)%(Directory)%(Filename)</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">cd %(RootDir)%(Directory)
+PATH=%PATH%;"C:\Program Files\Git\bin"
+sh -c '../ptlib/tools/get_revision.sh %(Filename)'
+if errorlevel 1 copy %(FullPath)+nul %(RootDir)%(Directory)%(FileName)</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">cd %(RootDir)%(Directory)
+PATH=%PATH%;"C:\Program Files\Git\bin"
+sh -c '../ptlib/tools/get_revision.sh %(Filename)'
+if errorlevel 1 copy %(FullPath)+nul %(RootDir)%(Directory)%(FileName)</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">cd %(RootDir)%(Directory)
+PATH=%PATH%;"C:\Program Files\Git\bin"
+sh -c '../ptlib/tools/get_revision.sh %(Filename)'
+if errorlevel 1 copy %(FullPath)+nul %(RootDir)%(Directory)%(FileName)</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">cd %(RootDir)%(Directory)
+PATH=%PATH%;"C:\Program Files\Git\bin"
+sh -c '../ptlib/tools/get_revision.sh %(Filename)'
+if errorlevel 1 copy %(FullPath)+nul %(RootDir)%(Directory)%(FileName)</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">cd %(RootDir)%(Directory)
+PATH=%PATH%;"C:\Program Files\Git\bin"
+sh -c '../ptlib/tools/get_revision.sh %(Filename)'
+if errorlevel 1 copy %(FullPath)+nul %(RootDir)%(Directory)%(FileName)</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">cd %(RootDir)%(Directory)
+PATH=%PATH%;"C:\Program Files\Git\bin"
+sh -c '../ptlib/tools/get_revision.sh %(Filename)'
+if errorlevel 1 copy %(FullPath)+nul %(RootDir)%(Directory)%(FileName)</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">cd %(RootDir)%(Directory)
+PATH=%PATH%;"C:\Program Files\Git\bin"
+sh -c '../ptlib/tools/get_revision.sh %(Filename)'
+if errorlevel 1 copy %(FullPath)+nul %(RootDir)%(Directory)%(FileName)</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">cd %(RootDir)%(Directory)
+PATH=%PATH%;"C:\Program Files\Git\bin"
+sh -c '../ptlib/tools/get_revision.sh %(Filename)'
+if errorlevel 1 copy %(FullPath)+nul %(RootDir)%(Directory)%(FileName)</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Android'">cd %(RootDir)%(Directory)
+PATH=%PATH%;"C:\Program Files\Git\bin"
+sh -c '../ptlib/tools/get_revision.sh %(Filename)'
+if errorlevel 1 copy %(FullPath)+nul %(RootDir)%(Directory)%(FileName)</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">Updating SVN revision include file.</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">Updating SVN revision include file.</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Android'">Updating SVN revision include file.</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">%(RootDir)%(Directory)%(Filename)</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">%(RootDir)%(Directory)%(Filename)</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Android'">%(RootDir)%(Directory)%(Filename)</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">%(RootDir)%(Directory).svn\wc.db</AdditionalInputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">%(RootDir)%(Directory).svn\wc.db</AdditionalInputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Android'">%(RootDir)%(Directory).svn\wc.db</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">%(RootDir)%(Directory).git\index</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">%(RootDir)%(Directory).git\index</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Android'">%(RootDir)%(Directory).git\index</AdditionalInputs>
     </CustomBuild>
     <None Include="..\asn\gcc.asn" />
     <None Include="..\asn\h225.asn" />
