@@ -1,9 +1,9 @@
 /*
  * lyncep.cxx
  *
- * Header file for Lync (uaCSTA) interface
+ * Header file for Lync (UCMA) interface
  *
- * Copyright (C) 2016 Equivalence Pty. Ltd.
+ * Copyright (C) 2016 Vox Lucida Pty. Ltd.
  *
  * The contents of this file are subject to the Mozilla Public License
  * Version 1.0 (the "License"); you may not use this file except in
@@ -24,12 +24,99 @@
 
 #include <ptlib.h>
 
-#include <opal_config.h>
-
 #include <ep/lyncep.h>
 
+#if OPAL_LYNC
 
 ///////////////////////////////////////////////////////////////
 
+OpalLyncEndPoint::OpalLyncEndPoint(OpalManager & manager, const char *prefix)
+  : OpalEndPoint(manager, prefix, IsNetworkEndPoint)
+{
+}
+
+
+OpalLyncEndPoint::~OpalLyncEndPoint()
+{
+}
+
+
+void OpalLyncEndPoint::ShutDown()
+{
+}
+
+
+OpalMediaFormatList OpalLyncEndPoint::GetMediaFormats() const
+{
+  return OpalMediaFormatList();
+}
+
+
+PSafePtr<OpalConnection> OpalLyncEndPoint::MakeConnection(OpalCall & call,
+                                                          const PString & party,
+                                                          void * userData,
+                                                          unsigned int options,
+                                                          OpalConnection::StringOptions * stringOptions)
+{
+  return new OpalLyncConnection(call, *this, party, userData, options, stringOptions);
+}
+
+
+PBoolean OpalLyncEndPoint::GarbageCollection()
+{
+  return false;
+}
+
+
+///////////////////////////////////////////////////////////////////////
+
+OpalLyncConnection::OpalLyncConnection(OpalCall & call,
+                                       OpalLyncEndPoint & ep,
+                                       const PString & /*dialNumber*/,
+                                       void * /*userData*/,
+                                       unsigned options,
+                                       OpalConnection::StringOptions * stringOptions)
+  : OpalConnection(call, ep, ep.GetManager().GetNextToken('L'), options, stringOptions)
+{
+}
+
+
+PBoolean OpalLyncConnection::SetUpConnection()
+{
+  return false;
+}
+
+
+void OpalLyncConnection::OnReleased()
+{
+}
+
+
+OpalMediaFormatList OpalLyncConnection::GetMediaFormats() const
+{
+  return m_endpoint.GetMediaFormats();
+}
+
+
+PBoolean OpalLyncConnection::SetAlerting(const PString & /*calleeName*/, PBoolean /*withMedia*/)
+{
+  return false;
+}
+
+
+PBoolean OpalLyncConnection::SetConnected()
+{
+  return false;
+}
+
+
+OpalTransportAddress OpalLyncConnection::GetRemoteAddress() const
+{
+  return OpalTransportAddress();
+}
+
+
+
+#endif // OPAL_LYNC
 
 // End of File /////////////////////////////////////////////////////////////

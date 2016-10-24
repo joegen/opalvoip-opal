@@ -369,11 +369,11 @@ dnl MSWIN_DISPLAY  skinny,Cisco SCCP (skinny) support
 dnl MSWIN_DEFINE   skinny,OPAL_SKINNY
 OPAL_SIMPLE_OPTION(skinny,OPAL_SKINNY, [Cisco SCCP (skinny) support])
 
-dnl MSWIN_DISPLAY    lync,Microsoft Lync (uaCSTA) support
-dnl MSWIN_CHECK_FILE lync,jpeglib.h,OPAL_RFC2435=1
-dnl MSWIN_DIR_SYMBOL lync,OPAL_LYNC
-dnl MSWIN_CHECK_DIR  lync,%ProgramFiles%\GnuWin32\include\
-dnl MSWIN_CHECK_DIR  lync,%ProgramW6432%\GnuWin32\include\
+dnl MSWIN_DISPLAY    lync,Microsoft Lync (UCMA) support
+dnl MSWIN_CHECK_FILE lync,SDK\Core\Bin\Microsoft.Rtc.Collaboration.dll,OPAL_LYNC=1
+dnl MSWIN_DIR_SYMBOL lync,OPAL_LYNC_DIR
+dnl MSWIN_CHECK_DIR  lync,%ProgramFiles%\Microsoft UCMA*
+dnl MSWIN_CHECK_DIR  lync,%ProgramW6432%\Microsoft UCMA*
 
 dnl MSWIN_DISPLAY  h224,H.224 support
 dnl MSWIN_DEFINE   h224,OPAL_HAS_H224

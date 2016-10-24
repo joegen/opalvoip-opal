@@ -1,9 +1,9 @@
 /*
  * lyncep.h
  *
- * Header file for Lync (uaCSTA) interface
+ * Header file for Lync (UCMA) interface
  *
- * Copyright (C) 2016 Equivalence Pty. Ltd.
+ * Copyright (C) 2016 Vox Lucida Pty. Ltd.
  *
  * The contents of this file are subject to the Mozilla Public License
  * Version 1.0 (the "License"); you may not use this file except in
@@ -31,15 +31,16 @@
 
 #include <opal/endpoint.h>
 #include <opal/connection.h>
+#include "lyncshim.h"
 
 //////////////////////////////////////////////////////////////////
 
 class OpalLyncConnection;
 
 
-/**Endpoint for interfacing Microsoft Lync via uaCSTA.
+/**Endpoint for interfacing Microsoft Lync via UCMA.
  */
-class OpalLyncEndPoint : public OpalEndPoint
+class OpalLyncEndPoint : public OpalEndPoint, public OpalLyncSim
 {
   PCLASSINFO(OpalLyncEndPoint, OpalEndPoint);
 public:
@@ -65,15 +66,6 @@ public:
       */
   virtual void ShutDown();
 
-  /** Get the default transports for the endpoint type.
-      Overrides the default behaviour to return udp and tcp.
-      */
-  virtual PString GetDefaultTransport() const;
-
-  /** Get the default signal port for this endpoint.
-    */
-  virtual WORD GetDefaultSignalPort() const;
-
   /**Get the data formats this endpoint is capable of operating.
      This provides a list of media data format names that may be used by an
      OpalMediaStream may be created by a connection from this endpoint.
@@ -82,13 +74,6 @@ public:
      media formats returned here, but should return no more.
      */
   virtual OpalMediaFormatList GetMediaFormats() const;
-
-  /** Handle new incoming connection from listener.
-    */
-  virtual void NewIncomingConnection(
-    OpalListener & listener,            ///<  Listner that created transport
-    const OpalTransportPtr & transport  ///<  Transport connection came in on
-  );
 
   /** Set up a connection to a remote party.
       This is called from the OpalManager::MakeConnection() function once
@@ -133,7 +118,7 @@ public:
 };
 
 
-/**Connection for interfacing Microsoft Lync via uaCSTA.
+/**Connection for interfacing Microsoft Lync via UCMA.
   */
 class OpalLyncConnection : public OpalConnection
 {
@@ -145,9 +130,7 @@ class OpalLyncConnection : public OpalConnection
      */
     OpalLyncConnection(
       OpalCall & call,
-      OpalSkinnyEndPoint & ep,
-      OpalSkinnyEndPoint::PhoneDevice & client,
-      unsigned callIdentifier,
+      OpalLyncEndPoint & ep,
       const PString & dialNumber,
       void * /*userData*/,
       unsigned options,
@@ -212,37 +195,6 @@ class OpalLyncConnection : public OpalConnection
     /**Indicate to remote endpoint we are connected.
       */
     virtual PBoolean SetConnected();
-
-    /** Indicate whether a particular media type can auto-start.
-        This is typically used for things like video or fax to contol if on
-        initial connection, that media type is opened straight away. Streams
-        of that type may be opened later, during the call, by using the
-        OpalCall::OpenSourceMediaStreams() function.
-    */
-    virtual OpalMediaType::AutoStartMode GetAutoStart(
-      const OpalMediaType & mediaType  ///< media type to check
-    ) const;
-
-    /** Get alerting type information of an incoming call.
-        The type of "distinctive ringing" for the call. The string is protocol
-        dependent, so the caller would need to be aware of the type of call
-        being made. Some protocols may ignore the field completely.
-
-        For SIP this corresponds to the string contained in the "Alert-Info"
-        header field of the INVITE. This is typically a URI for the ring file.
-
-        For H.323 this must be a string representation of an integer from 0 to 7
-        which will be contained in the Q.931 SIGNAL (0x34) Information Element.
-    */
-    virtual PString GetAlertingType() const;
-
-    /**Call back for closed a media stream.
-
-       The default behaviour calls the OpalEndPoint function of the same name.
-      */
-    virtual void OnClosedMediaStream(
-      const OpalMediaStream & stream     ///<  Media stream being closed
-    );
 
     /** Get the remote transport address
       */

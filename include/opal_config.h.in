@@ -133,7 +133,6 @@
 #endif
 #undef  OPAL_IAX2
 #undef  OPAL_SKINNY
-#undef  OPAL_LYNC
 #undef  OPAL_LID
 #undef  OPAL_CAPI
 #undef  OPAL_DAHDI
@@ -373,6 +372,17 @@
 #if OPAL_JAVA && defined(_MSC_VER)
   #pragma include_alias(<jni.h>,    <@JAVA_DIR@/include/jni.h>)
   #pragma include_alias("jni_md.h", "@JAVA_DIR@/include/win32/jni_md.h")
+#endif
+
+
+/////////////////////////////////////////////////
+//
+// Lync (UCMA) support
+//
+
+#undef  OPAL_LYNC
+#if OPAL_LYNC && defined(_MSC_VER)
+  #define OPAL_LYNC_LIBRARY "@OPAL_LYNC_DIR@/SDK/Core/Bin/Microsoft.Rtc.Collaboration.dll"
 #endif
 
 
