@@ -133,6 +133,7 @@
 #endif
 #undef  OPAL_IAX2
 #undef  OPAL_SKINNY
+#undef  OPAL_LYNC
 #undef  OPAL_LID
 #undef  OPAL_CAPI
 #undef  OPAL_DAHDI
