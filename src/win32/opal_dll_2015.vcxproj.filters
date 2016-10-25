@@ -28,23 +28,23 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="opal_2013_x86.dtf">
-      <Filter>Win32</Filter>
-    </CustomBuild>
-    <CustomBuild Include="opald_2013_x86.dtf">
-      <Filter>Win32</Filter>
-    </CustomBuild>
-    <CustomBuild Include="opaln_2013_x86.dtf">
-      <Filter>Win32</Filter>
-    </CustomBuild>
-    <CustomBuild Include="opal_2013_x64.dtf">
+    <CustomBuild Include="opal_2015_x64.dtf">
       <Filter>Win64</Filter>
     </CustomBuild>
-    <CustomBuild Include="opald_2013_x64.dtf">
+    <CustomBuild Include="opald_2015_x64.dtf">
       <Filter>Win64</Filter>
     </CustomBuild>
-    <CustomBuild Include="opaln_2013_x64.dtf">
+    <CustomBuild Include="opaln_2015_x64.dtf">
       <Filter>Win64</Filter>
+    </CustomBuild>
+    <CustomBuild Include="opal_2015_x86.dtf">
+      <Filter>Win32</Filter>
+    </CustomBuild>
+    <CustomBuild Include="opald_2015_x86.dtf">
+      <Filter>Win32</Filter>
+    </CustomBuild>
+    <CustomBuild Include="opaln_2015_x86.dtf">
+      <Filter>Win32</Filter>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
