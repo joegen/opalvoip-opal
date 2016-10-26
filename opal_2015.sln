@@ -9,9 +9,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OPAL Static", "src\win32\op
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OPAL DLL", "src\win32\opal_dll_2015.vcxproj", "{B2830E08-B1F1-492F-8849-F3D8461E450F}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Console Application", "samples\console\Console_Static_2015.vcxproj", "{ACD44F8A-C686-4E99-8867-EB4BB516B111}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Console Application - Static", "samples\console\Console_Static_2015.vcxproj", "{ACD44F8A-C686-4E99-8867-EB4BB516B111}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Console Application", "samples\console\Console_DLL_2015.vcxproj", "{48F898BB-A51C-4B2E-BC39-D78449C1C5F0}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Console Application - DLL", "samples\console\Console_DLL_2015.vcxproj", "{48F898BB-A51C-4B2E-BC39-D78449C1C5F0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
