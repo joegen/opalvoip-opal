@@ -1334,9 +1334,6 @@
     <ClInclude Include="..\..\include\ep\lyncep.h">
       <Filter>Header Files\Endpoints</Filter>
     </ClInclude>
-    <ClInclude Include="..\ep\lyncshim.h">
-      <Filter>Source Files\Endpoints</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="..\..\include\opal_config.h.in">
