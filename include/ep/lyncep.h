@@ -29,18 +29,42 @@
 
 #if OPAL_LYNC
 
+/* Class to hide Lync UCMA Managed code
+   This odd arrangement is so when compiling the shim and we include this header
+   file, we do not get all the PTLib stuff which interferes with the managed
+   code interfacing.
+ */
+class OpalLyncShim
+{
+public:
+  OpalLyncShim(const char * userAgent);
+  ~OpalLyncShim();
+
+  struct UserEndpoint;
+  UserEndpoint * CreateUserEndpoint(const char * uri);
+  void DestroyUserEndpoint(UserEndpoint * user);
+
+private:
+  struct Platform;
+  Platform * m_platform;
+};
+
+
+#ifndef OPAL_LYNC_SHIM
+
 #include <opal/endpoint.h>
 #include <opal/connection.h>
-#include "lyncshim.h"
+
 
 //////////////////////////////////////////////////////////////////
 
+class OpalLyncShim;
 class OpalLyncConnection;
 
 
 /**Endpoint for interfacing Microsoft Lync via UCMA.
  */
-class OpalLyncEndPoint : public OpalEndPoint, public OpalLyncSim
+class OpalLyncEndPoint : public OpalEndPoint, public OpalLyncShim
 {
   PCLASSINFO(OpalLyncEndPoint, OpalEndPoint);
 public:
@@ -115,6 +139,20 @@ public:
       */
   virtual PBoolean GarbageCollection();
   //@}
+
+  //@{
+  bool Register(
+    const PString & uri
+  );
+  bool Unregister(
+    const PString & uri
+  );
+  //@}
+
+protected:
+  typedef std::map<PString, OpalLyncShim::UserEndpoint *> RegistrationMap;
+  RegistrationMap m_registrations;
+  PMutex          m_registrationMutex;
 };
 
 
@@ -202,6 +240,8 @@ class OpalLyncConnection : public OpalConnection
   //@}
 };
 
+
+#endif // OPAL_LYNC_INTERNAL
 
 #endif // OPAL_LYNC
 

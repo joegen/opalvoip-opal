@@ -900,5 +900,5 @@ EXPORTS
 	__vsprintf_l
     fprintf
     printf
-	*OpalLyncSim*
+	*OpalLyncShim*
 	*gcroot*

@@ -58,6 +58,7 @@ public class OPAL {
   public static readonly string OPAL_PREFIX_IM = OPALPINVOKE.OPAL_PREFIX_IM_get();
   public static readonly string OPAL_PREFIX_GST = OPALPINVOKE.OPAL_PREFIX_GST_get();
   public static readonly string OPAL_PREFIX_SKINNY = OPALPINVOKE.OPAL_PREFIX_SKINNY_get();
+  public static readonly string OPAL_PREFIX_LYNC = OPALPINVOKE.OPAL_PREFIX_LYNC_get();
   public static readonly string OPAL_PREFIX_ALL = OPALPINVOKE.OPAL_PREFIX_ALL_get();
   public static readonly string OPAL_MWI_EVENT_PACKAGE = OPALPINVOKE.OPAL_MWI_EVENT_PACKAGE_get();
   public static readonly string OPAL_LINE_APPEARANCE_EVENT_PACKAGE = OPALPINVOKE.OPAL_LINE_APPEARANCE_EVENT_PACKAGE_get();

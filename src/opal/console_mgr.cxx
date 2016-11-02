@@ -883,10 +883,10 @@ OpalConsoleSkinnyEndPoint::OpalConsoleSkinnyEndPoint(OpalConsoleManager & manage
 void OpalConsoleSkinnyEndPoint::GetArgumentSpec(ostream & strm) const
 {
   strm << "[SCCP options:]"
-    "-no-sccp.        Disable Skinny Client Control Protocol\n"
-    "-sccp-server:    Set Skinny server address.\n"
-    "-sccp-name:      Set device name for Skinny client, may be present multiple times.\n"
-    "-sccp-device:    Set device type code for Skinny clients.\n";
+          "-no-sccp.        Disable Skinny Client Control Protocol\n"
+          "-sccp-server:    Set Skinny server address.\n"
+          "-sccp-name:      Set device name for Skinny client, may be present multiple times.\n"
+          "-sccp-device:    Set device type code for Skinny clients.\n";
 }
 
 
@@ -957,6 +957,68 @@ void OpalConsoleSkinnyEndPoint::AddCommands(PCLI & cli)
 }
 #endif // P_CLI
 #endif // OPAL_SKINNY
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+#if OPAL_LYNC
+OpalConsoleLyncEndPoint::OpalConsoleLyncEndPoint(OpalConsoleManager & manager)
+: OpalLyncEndPoint(manager)
+, OpalConsoleEndPoint(manager)
+{
+}
+
+
+void OpalConsoleLyncEndPoint::GetArgumentSpec(ostream & strm) const
+{
+  strm << "[Lync options:]"
+          "-no-lync.        Disable Lync (UCMA) protocol\n"
+          "-lync-uri:       Lync URI to register\n";
+}
+
+
+bool OpalConsoleLyncEndPoint::Initialise(PArgList & args, bool verbose, const PString & defaultRoute)
+{
+  OpalConsoleManager::LockedStream lockedOutput(m_console);
+  ostream & output = lockedOutput;
+
+  // If we have LIDs speficied in command line, load them
+  if (args.HasOption("no-lync")) {
+    if (verbose)
+      output << "Lync disabled.\n";
+    return true;
+  }
+
+  PStringArray names = args.GetOptionString("lync-uri").Lines();
+  for (PINDEX i = 0; i < names.GetSize(); ++i) {
+    PString name = names[i];
+    if (!Register(name))
+      output << "Could not register " << name << " with Lync server" << endl;
+    else if (verbose)
+      output << "Lync client: " << name << '\n';
+  }
+
+  AddRoutesFor(this, defaultRoute);
+  return true;
+}
+
+
+#if P_CLI
+void OpalConsoleLyncEndPoint::CmdRegister(PCLI::Arguments & args, P_INT_PTR)
+{
+  if (args.GetCount() < 1)
+    args.WriteUsage();
+  else if (!Register(args[0]))
+    args.WriteError() << "Could not register \"" << args[0] << "\" with Lync server" << endl;
+}
+
+
+void OpalConsoleLyncEndPoint::AddCommands(PCLI & cli)
+{
+  cli.SetCommand("lync register", PCREATE_NOTIFIER(CmdRegister), "Set Lync URI name", "[ <name> ]");
+}
+#endif // P_CLI
+#endif // OPAL_LYNC
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -2310,6 +2372,11 @@ OpalConsoleEndPoint * OpalConsoleManager::GetConsoleEndPoint(const PString & pre
       ep = CreateSkinnyEndPoint();
     else
 #endif // OPAL_SKINNY
+#if OPAL_LYNC
+    if (prefix == OPAL_PREFIX_LYNC)
+      ep = CreateLyncEndPoint();
+    else
+#endif // OPAL_LYNC
 #if OPAL_LID
     if (prefix == OPAL_PREFIX_PSTN)
       ep = CreateLineEndPoint();
@@ -2375,6 +2442,14 @@ OpalConsoleSkinnyEndPoint * OpalConsoleManager::CreateSkinnyEndPoint()
   return new OpalConsoleSkinnyEndPoint(*this);
 }
 #endif // OPAL_SKINNY
+
+
+#if OPAL_LYNC
+OpalConsoleLyncEndPoint * OpalConsoleManager::CreateLyncEndPoint()
+{
+  return new OpalConsoleLyncEndPoint(*this);
+}
+#endif // OPAL_LYNC
 
 
 #if OPAL_LID

@@ -580,11 +580,21 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_OPAL_PREFIX_SKINNY_get() {
 }
 
 
+SWIGEXPORT char * SWIGSTDCALL CSharp_OPAL_PREFIX_LYNC_get() {
+  char * jresult ;
+  char *result = 0 ;
+  
+  result = (char *)("lync");
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
 SWIGEXPORT char * SWIGSTDCALL CSharp_OPAL_PREFIX_ALL_get() {
   char * jresult ;
   char *result = 0 ;
   
-  result = (char *)("sip h323 iax2 sdp pc local pots pstn fax t38 ivr mcu im");
+  result = (char *)("sip h323 iax2 sdp sccp lync pc local pots pstn fax t38 ivr mcu im");
   jresult = SWIG_csharp_string_callback((const char *)result); 
   return jresult;
 }

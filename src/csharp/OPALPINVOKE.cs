@@ -268,6 +268,9 @@ class OPALPINVOKE {
   [global::System.Runtime.InteropServices.DllImport("OPAL", EntryPoint="CSharp_OPAL_PREFIX_SKINNY_get")]
   public static extern string OPAL_PREFIX_SKINNY_get();
 
+  [global::System.Runtime.InteropServices.DllImport("OPAL", EntryPoint="CSharp_OPAL_PREFIX_LYNC_get")]
+  public static extern string OPAL_PREFIX_LYNC_get();
+
   [global::System.Runtime.InteropServices.DllImport("OPAL", EntryPoint="CSharp_OPAL_PREFIX_ALL_get")]
   public static extern string OPAL_PREFIX_ALL_get();
 

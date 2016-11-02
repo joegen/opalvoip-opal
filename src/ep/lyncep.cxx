@@ -26,12 +26,14 @@
 
 #include <ep/lyncep.h>
 
+
 #if OPAL_LYNC
 
 ///////////////////////////////////////////////////////////////
 
 OpalLyncEndPoint::OpalLyncEndPoint(OpalManager & manager, const char *prefix)
   : OpalEndPoint(manager, prefix, IsNetworkEndPoint)
+  , OpalLyncShim(PProcess::Current().GetName())
 {
 }
 
@@ -64,7 +66,38 @@ PSafePtr<OpalConnection> OpalLyncEndPoint::MakeConnection(OpalCall & call,
 
 PBoolean OpalLyncEndPoint::GarbageCollection()
 {
-  return false;
+  return true;
+}
+
+
+bool OpalLyncEndPoint::Register(const PString & uri)
+{
+  PWaitAndSignal lock(m_registrationMutex);
+
+  RegistrationMap::iterator it = m_registrations.find(uri);
+  if (it != m_registrations.end())
+    return false;
+
+  UserEndpoint * user = CreateUserEndpoint(uri);
+  if (user == NULL)
+    return false;
+
+  m_registrations[uri] = user;
+  return true;
+}
+
+
+bool OpalLyncEndPoint::Unregister(const PString & uri)
+{
+  PWaitAndSignal lock(m_registrationMutex);
+
+  RegistrationMap::iterator it = m_registrations.find(uri);
+  if (it == m_registrations.end())
+    return false;
+
+  DestroyUserEndpoint(it->second);
+  m_registrations.erase(it);
+  return true;
 }
 
 

@@ -31,6 +31,7 @@ public interface OPALConstants {
   public final static String OPAL_PREFIX_IM = OPALJNI.OPAL_PREFIX_IM_get();
   public final static String OPAL_PREFIX_GST = OPALJNI.OPAL_PREFIX_GST_get();
   public final static String OPAL_PREFIX_SKINNY = OPALJNI.OPAL_PREFIX_SKINNY_get();
+  public final static String OPAL_PREFIX_LYNC = OPALJNI.OPAL_PREFIX_LYNC_get();
   public final static String OPAL_PREFIX_ALL = OPALJNI.OPAL_PREFIX_ALL_get();
   public final static String OPAL_MWI_EVENT_PACKAGE = OPALJNI.OPAL_MWI_EVENT_PACKAGE_get();
   public final static String OPAL_LINE_APPEARANCE_EVENT_PACKAGE = OPALJNI.OPAL_LINE_APPEARANCE_EVENT_PACKAGE_get();

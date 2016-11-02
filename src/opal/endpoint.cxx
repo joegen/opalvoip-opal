@@ -206,7 +206,7 @@ bool OpalEndPoint::StartListeners(const PStringArray & listenerAddresses, bool a
 }
 
 
-PBoolean OpalEndPoint::StartListener(const OpalTransportAddress & listenerAddress)
+bool OpalEndPoint::StartListener(const PString & listenerAddress)
 {
   OpalListener * listener;
 
@@ -239,7 +239,7 @@ PBoolean OpalEndPoint::StartListener(const OpalTransportAddress & listenerAddres
 }
 
 
-PBoolean OpalEndPoint::StartListener(OpalListener * listener)
+bool OpalEndPoint::StartListener(OpalListener * listener)
 {
   if (PAssertNULL(listener) == NULL)
     return false;

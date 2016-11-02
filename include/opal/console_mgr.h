@@ -46,6 +46,7 @@
 #include <ep/ivr.h>
 #include <ep/opalmixer.h>
 #include <ep/skinnyep.h>
+#include <ep/lyncep.h>
 
 #include <ptclib/cli.h>
 
@@ -58,6 +59,7 @@ class OpalH281Client;
                               OPAL_PREFIX_H323  " " \
                               OPAL_PREFIX_SDP   " " \
                               OPAL_PREFIX_SKINNY" " \
+                              OPAL_PREFIX_LYNC" " \
                               OPAL_PREFIX_PSTN  " " \
                               OPAL_PREFIX_CAPI  " "
 
@@ -201,6 +203,24 @@ public:
 #endif // P_CLI
 };
 #endif // OPAL_SKINNY
+
+
+#if OPAL_LYNC
+class OpalConsoleLyncEndPoint : public OpalLyncEndPoint, public OpalConsoleEndPoint
+{
+  PCLASSINFO(OpalConsoleLyncEndPoint, OpalLyncEndPoint)
+public:
+  OpalConsoleLyncEndPoint(OpalConsoleManager & manager);
+
+  virtual void GetArgumentSpec(ostream & strm) const;
+  virtual bool Initialise(PArgList & args, bool verbose, const PString & defaultRoute);
+
+#if P_CLI
+  PDECLARE_NOTIFIER(PCLI::Arguments, OpalConsoleLyncEndPoint, CmdRegister);
+  virtual void AddCommands(PCLI & cli);
+#endif // P_CLI
+};
+#endif // OPAL_LYNC
 
 
 #if OPAL_LID
@@ -439,6 +459,9 @@ class OpalConsoleManager : public OpalManager
 #endif
 #if OPAL_SKINNY
     virtual OpalConsoleSkinnyEndPoint * CreateSkinnyEndPoint();
+#endif
+#if OPAL_LYNC
+    virtual OpalConsoleLyncEndPoint * CreateLyncEndPoint();
 #endif
 #if OPAL_LID
     virtual OpalConsoleLineEndPoint * CreateLineEndPoint();

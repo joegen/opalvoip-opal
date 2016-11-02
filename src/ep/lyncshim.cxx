@@ -22,7 +22,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#include "lyncshim.h"
+#define OPAL_LYNC_SHIM 1
+#include <ep/lyncep.h>
 
 #if OPAL_LYNC
 
@@ -31,36 +32,51 @@
 
 using namespace Microsoft::Rtc;
 
-struct OpalLyncSim::Impl
+struct OpalLyncShim::UserEndpoint : gcroot<Collaboration::UserEndpoint^>
 {
-  gcroot<Collaboration::CollaborationPlatform^> m_pCollaborationPlatform;
-  gcroot<Collaboration::ApplicationEndpoint^> m_pApplicationEndpoint;
+  UserEndpoint(Collaboration::UserEndpoint^ ep) : gcroot<Collaboration::UserEndpoint^>(ep) { }
+};
 
-  Impl()
-  {
-    Collaboration::ClientPlatformSettings^ cps = gcnew Collaboration::ClientPlatformSettings(nullptr, Signaling::SipTransportType::Tcp);
-    m_pCollaborationPlatform = gcnew Collaboration::CollaborationPlatform(cps);
-
-    Collaboration::ApplicationEndpointSettings^ aes = gcnew Collaboration::ApplicationEndpointSettings(nullptr);
-    m_pApplicationEndpoint = gcnew Collaboration::ApplicationEndpoint(m_pCollaborationPlatform, aes);
-  }
-
-  ~Impl()
-  {
-  }
+struct OpalLyncShim::Platform : gcroot<Collaboration::CollaborationPlatform^>
+{
+  Platform(Collaboration::CollaborationPlatform^ p) : gcroot<Collaboration::CollaborationPlatform^>(p) { }
 };
 
 
-OpalLyncSim::OpalLyncSim()
-  : m_impl(new Impl)
+///////////////////////////////////////////////////////////////////////////////
+
+OpalLyncShim::OpalLyncShim(const char * appName)
 {
+  System::String^ userAgent = nullptr;
+  if (appName != NULL && *appName != '\0')
+    userAgent = gcnew System::String(appName);
+
+  Collaboration::ClientPlatformSettings^ cps = gcnew Collaboration::ClientPlatformSettings(userAgent, Signaling::SipTransportType::Tcp);
+  m_platform = new Platform(gcnew Collaboration::CollaborationPlatform(cps));
 }
 
 
-OpalLyncSim::~OpalLyncSim()
+OpalLyncShim::~OpalLyncShim()
 {
-  delete m_impl;
+  delete m_platform;
 }
+
+
+OpalLyncShim::UserEndpoint * OpalLyncShim::CreateUserEndpoint(const char * uri)
+{
+    Collaboration::UserEndpointSettings^ ues = gcnew Collaboration::UserEndpointSettings(gcnew System::String(uri));
+    Collaboration::UserEndpoint^ uep = gcnew Collaboration::UserEndpoint(*m_platform, ues);
+    if (uep != nullptr)
+      return new UserEndpoint(uep);
+    return NULL;
+}
+
+
+void OpalLyncShim::DestroyUserEndpoint(UserEndpoint * user)
+{
+  delete user;
+}
+
 
 
 #endif // OPAL_LYNC
