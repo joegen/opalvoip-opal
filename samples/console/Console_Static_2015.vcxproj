@@ -311,7 +311,7 @@
       <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
       <WarningLevel>Level4</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <PrecompiledHeaderOutputFile>$(VS_PCH_DIR)$(IntDir)$(TargetName).pch</PrecompiledHeaderOutputFile>
       <AdditionalOptions>-Zm128 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
@@ -419,7 +419,7 @@
     <ClInclude Include="precompile.h" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\ptlib\src\ptlib\msos\Console_2013.vcxproj">
+    <ProjectReference Include="..\..\..\ptlib\src\ptlib\msos\Console_2015.vcxproj">
       <Project>{d11e1c9d-406c-4d7c-8f37-913c0bfd9e0d}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\src\win32\opal_lib_2015.vcxproj">

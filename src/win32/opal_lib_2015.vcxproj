@@ -2140,12 +2140,12 @@ exit 0
       <Outputs Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">%(RootDir)%(Directory)%(Filename)</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(RootDir)%(Directory)%(Filename)</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(RootDir)%(Directory)%(Filename)</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Updating SVN revision include file.</Message>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Updating SVN revision include file.</Message>
-      <Message Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">Updating SVN revision include file.</Message>
-      <Message Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">Updating SVN revision include file.</Message>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Updating SVN revision include file.</Message>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Updating SVN revision include file.</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Updating revision include file.</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Updating revision include file.</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">Updating revision include file.</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">Updating revision include file.</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Updating revision include file.</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Updating revision include file.</Message>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">cd %(RootDir)%(Directory)
 PATH=%PATH%;"C:\Program Files\Git\bin"
 sh -c '../ptlib/tools/get_revision.sh %(Filename)'

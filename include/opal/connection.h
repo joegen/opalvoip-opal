@@ -84,7 +84,6 @@ class PURL;
 #define OPAL_OPT_CALLED_DISPLAY_NAME  "Called-Display-Name"   ///< String option to set outgoing display name
 #define OPAL_OPT_REDIRECTING_PARTY    "Redirecting-Party"     ///< String option to set redirecting/refferred-by party
 #define OPAL_OPT_PRESENTATION_BLOCK   "Presentation-Block"    ///< String option to block outgoing calling number presentation
-#define OPAL_OPT_ORIGINATOR_ADDRESS   "Originator-Address"    ///< String option for originator address used by IVR
 #define OPAL_OPT_INTERFACE            "Interface"             ///< String option to set the interface used for outgoing call
 #define OPAL_OPT_USER_INPUT_MODE      "User-Input-Mode"       ///< String option to set User Input indication mode:
                                                               ///< "RFC2833", "String", "Tone", "Q.931" or "InBand"

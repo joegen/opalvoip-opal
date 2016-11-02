@@ -184,7 +184,7 @@
     <ClInclude Include="main.h" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\ptlib\src\ptlib\msos\Console_2013.vcxproj">
+    <ProjectReference Include="..\..\..\..\ptlib\src\ptlib\msos\Console_2015.vcxproj">
       <Project>{d11e1c9d-406c-4d7c-8f37-913c0bfd9e0d}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\..\src\win32\opal_lib_2015.vcxproj">
