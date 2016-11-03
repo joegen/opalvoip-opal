@@ -362,7 +362,7 @@
     </ResourceCompile>
     <Link>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <GenerateDebugInformation>DebugFastLink</GenerateDebugInformation>
       <ProgramDatabaseFile>$(OutDir)$(TargetName).pdb</ProgramDatabaseFile>
       <SubSystem>Console</SubSystem>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
@@ -372,6 +372,7 @@
       <DelayLoadDLLs>LIBGSTREAMER-0.10-0.DLL;LIBGSTAPP-0.10-0.DLL;LIBGOBJECT-2.0-0.DLL;LIBGLIB-2.0-0.DLL;JPEG62.DLL;SDL.DLL;LUA5.1.DLL;OPENLDAP.DLL;LIBEAY32.DLL;SSLEAY32.DLL;LIBSASL.DLL;QWAVE.DLL;%(DelayLoadDLLs)</DelayLoadDLLs>
       <AdditionalOptions>/ignore:4099 /ignore:4199 %(AdditionalOptions)</AdditionalOptions>
       <IgnoreSpecificDefaultLibraries>libcmt;libcmtd</IgnoreSpecificDefaultLibraries>
+      <FullProgramDatabaseFile>true</FullProgramDatabaseFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
