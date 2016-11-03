@@ -28,9 +28,12 @@
 #if OPAL_LYNC
 
 #include <vcclr.h>
+#include <msclr\marshal_cppstd.h>
+
 #using OPAL_LYNC_LIBRARY
 
 using namespace Microsoft::Rtc;
+
 
 struct OpalLyncShim::UserEndpoint : gcroot<Collaboration::UserEndpoint^>
 {
@@ -45,30 +48,90 @@ struct OpalLyncShim::Platform : gcroot<Collaboration::CollaborationPlatform^>
 
 ///////////////////////////////////////////////////////////////////////////////
 
-OpalLyncShim::OpalLyncShim(const char * appName)
+OpalLyncShim::OpalLyncShim()
+  : m_platform(nullptr)
 {
-  System::String^ userAgent = nullptr;
-  if (appName != NULL && *appName != '\0')
-    userAgent = gcnew System::String(appName);
-
-  Collaboration::ClientPlatformSettings^ cps = gcnew Collaboration::ClientPlatformSettings(userAgent, Signaling::SipTransportType::Tcp);
-  m_platform = new Platform(gcnew Collaboration::CollaborationPlatform(cps));
 }
 
 
 OpalLyncShim::~OpalLyncShim()
 {
+  ShutdownPlatform();
+}
+
+
+bool OpalLyncShim::StartPlatform(const char * appName)
+{
+  m_lastError.clear();
+
+  if (m_platform != nullptr)
+    return true;
+
+  System::String^ userAgent = nullptr;
+  if (appName != NULL && *appName != '\0')
+    userAgent = gcnew System::String(appName);
+
+  Collaboration::CollaborationPlatform^ platform;
+  try {
+    Collaboration::ClientPlatformSettings^ cps = gcnew Collaboration::ClientPlatformSettings(userAgent, Signaling::SipTransportType::Tls);
+    platform = gcnew Collaboration::CollaborationPlatform(cps);
+    platform->EndStartup(platform->BeginStartup(nullptr, nullptr));
+  }
+  catch (System::Exception^ err) {
+    m_lastError = msclr::interop::marshal_as<std::string>(err->ToString());
+    return false;
+  }
+
+  m_platform = new Platform(platform);
+  return true;
+}
+
+
+bool OpalLyncShim::ShutdownPlatform()
+{
+  m_lastError.clear();
+
+  if (m_platform == nullptr)
+    return false;
+
+  Collaboration::CollaborationPlatform^ platform = *m_platform;
+  if (platform == nullptr)
+    return false;
+
+  bool ok = true;
+  try {
+    platform->EndShutdown(platform->BeginShutdown(nullptr, nullptr));
+  }
+  catch (System::Exception^ err) {
+    m_lastError = msclr::interop::marshal_as<std::string>(err->ToString());
+    ok = false;
+  }
+
   delete m_platform;
+  m_platform = nullptr;
+  return ok;
 }
 
 
 OpalLyncShim::UserEndpoint * OpalLyncShim::CreateUserEndpoint(const char * uri)
 {
+  m_lastError.clear();
+
+  if (m_platform == nullptr)
+    return nullptr;
+
+  Collaboration::UserEndpoint^ uep;
+  try {
     Collaboration::UserEndpointSettings^ ues = gcnew Collaboration::UserEndpointSettings(gcnew System::String(uri));
-    Collaboration::UserEndpoint^ uep = gcnew Collaboration::UserEndpoint(*m_platform, ues);
-    if (uep != nullptr)
-      return new UserEndpoint(uep);
-    return NULL;
+    uep = gcnew Collaboration::UserEndpoint(*m_platform, ues);
+    uep->EndEstablish(uep->BeginEstablish(nullptr, nullptr));
+  }
+  catch (System::Exception^ err) {
+    m_lastError = msclr::interop::marshal_as<std::string>(err->ToString());
+    return nullptr;
+  }
+
+  return new UserEndpoint(uep);
 }
 
 

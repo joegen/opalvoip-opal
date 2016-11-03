@@ -29,6 +29,8 @@
 
 #if OPAL_LYNC
 
+#include <string>
+
 /* Class to hide Lync UCMA Managed code
    This odd arrangement is so when compiling the shim and we include this header
    file, we do not get all the PTLib stuff which interferes with the managed
@@ -37,16 +39,24 @@
 class OpalLyncShim
 {
 public:
-  OpalLyncShim(const char * userAgent);
+  OpalLyncShim();
   ~OpalLyncShim();
+
+protected:
+  bool StartPlatform(const char * userAgent);
+  bool ShutdownPlatform();
 
   struct UserEndpoint;
   UserEndpoint * CreateUserEndpoint(const char * uri);
   void DestroyUserEndpoint(UserEndpoint * user);
 
+  const std::string & GetLastError() const { return m_lastError; }
+
 private:
   struct Platform;
   Platform * m_platform;
+
+  std::string m_lastError;
 };
 
 

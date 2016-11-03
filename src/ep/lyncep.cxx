@@ -26,6 +26,9 @@
 
 #include <ep/lyncep.h>
 
+#define new PNEW
+#define PTraceModule() "LyncEP"
+
 
 #if OPAL_LYNC
 
@@ -33,7 +36,6 @@
 
 OpalLyncEndPoint::OpalLyncEndPoint(OpalManager & manager, const char *prefix)
   : OpalEndPoint(manager, prefix, IsNetworkEndPoint)
-  , OpalLyncShim(PProcess::Current().GetName())
 {
 }
 
@@ -45,6 +47,16 @@ OpalLyncEndPoint::~OpalLyncEndPoint()
 
 void OpalLyncEndPoint::ShutDown()
 {
+  {
+    PWaitAndSignal lock(m_registrationMutex);
+    for (RegistrationMap::iterator it = m_registrations.begin(); it != m_registrations.end(); ++it)
+      DestroyUserEndpoint(it->second);
+    m_registrations.clear();
+  }
+
+  if (!ShutdownPlatform()) {
+    PTRACE_IF(2, !GetLastError().empty(), "Error shutting down Lync UCMA platform: " << GetLastError());
+  }
 }
 
 
@@ -74,13 +86,20 @@ bool OpalLyncEndPoint::Register(const PString & uri)
 {
   PWaitAndSignal lock(m_registrationMutex);
 
+  if (!StartPlatform(PProcess::Current().GetName())) {
+    PTRACE(2, "Error initialising Lync UCMA platform: " << GetLastError());
+    return false;
+  }
+
   RegistrationMap::iterator it = m_registrations.find(uri);
   if (it != m_registrations.end())
     return false;
 
   UserEndpoint * user = CreateUserEndpoint(uri);
-  if (user == NULL)
+  if (user == NULL) {
+    PTRACE(2, "Error registering \"" << uri << "\" as Lync UCMA user: " << GetLastError());
     return false;
+  }
 
   m_registrations[uri] = user;
   return true;
