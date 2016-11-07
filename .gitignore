@@ -21,8 +21,8 @@ ipch/
 *.db
 *.opendb
 .libs/
-lib_*/
-obj_*/
+lib*/
+obj*/
 opal.xcodeproj/xcuserdata
 make/opal_config.mak
 include/opal_config.h
@@ -117,7 +117,6 @@ src/rtp/libsrtp/test/replay_driver
 src/rtp/libsrtp/test/roc_driver
 src/rtp/libsrtp/test/rtpw
 src/rtp/libsrtp/test/srtp_driver
-samples/c_api/obj/
 samples/openphone/resource.cpp
 samples/openphone/openphone.cxx
 samples/openphone/version.wxs
