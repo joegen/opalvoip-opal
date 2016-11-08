@@ -645,10 +645,17 @@ void OpalMediaTransport::RemoveReadNotifier(PObject * target, SubChannels subcha
 }
 
 
+PChannel * OpalMediaTransport::GetChannel(SubChannels subchannel) const
+{
+  return (size_t)subchannel < m_subchannels.size() ? m_subchannels[subchannel].m_channel : NULL;
+}
+
+
 void OpalMediaTransport::SetRemoteBehindNAT()
 {
   m_remoteBehindNAT = true;
 }
+
 
 OpalMediaTransport::Transport::Transport(OpalMediaTransport * owner, SubChannels subchannel, PChannel * chan)
   : m_owner(owner)
@@ -789,13 +796,12 @@ void OpalMediaTransport::InternalRxData(SubChannels subchannel, const PBYTEArray
 
 void OpalMediaTransport::Start()
 {
+  if (m_started.exchange(true))
+    return;
+
   PSafeLockReadWrite lock(*this);
   if (!lock.IsLocked())
     return;
-
-  if (m_started)
-    return;
-  m_started = true;
 
   PTRACE(4, *this << "starting read theads, " << m_subchannels.size() << " sub-channels");
   for (size_t subchannel = 0; subchannel < m_subchannels.size(); ++subchannel) {
@@ -878,32 +884,13 @@ OpalUDPMediaTransport::OpalUDPMediaTransport(const PString & name)
 
 OpalTransportAddress OpalUDPMediaTransport::GetLocalAddress(SubChannels subchannel) const
 {
-  PSafeLockReadOnly lock(*this);
-  if (lock.IsLocked()) {
-    PUDPSocket * socket = GetSubChannelAsSocket(subchannel);
-    if (socket != NULL) {
-      PIPSocketAddressAndPort ap;
-      if (socket->GetLocalAddress(ap) && ap.IsValid())
-        return OpalTransportAddress(ap, OpalTransportAddress::UdpPrefix());
-    }
-  }
-  return OpalTransportAddress();
+  return GetChannel(subchannel) ? m_socketInfo[subchannel].m_localAddress : OpalTransportAddress();
 }
 
 
 OpalTransportAddress OpalUDPMediaTransport::GetRemoteAddress(SubChannels subchannel) const
 {
-  PSafeLockReadOnly lock(*this);
-  if (lock.IsLocked()) {
-    PUDPSocket * socket = GetSubChannelAsSocket(subchannel);
-    if (socket != NULL) {
-      PIPSocketAddressAndPort ap;
-      socket->GetSendAddress(ap);
-      if (ap.IsValid())
-        return OpalTransportAddress(ap, OpalTransportAddress::UdpPrefix());
-    }
-  }
-  return OpalTransportAddress();
+  return GetChannel(subchannel) ? m_socketInfo[subchannel].m_remoteAddress : OpalTransportAddress();
 }
 
 
@@ -966,6 +953,7 @@ bool OpalUDPMediaTransport::InternalSetRemoteAddress(const PIPSocket::AddressAnd
     return false;
   }
 
+  m_socketInfo[subchannel].m_remoteAddress = OpalTransportAddress(newAP, OpalTransportAddress::UdpPrefix());
   socket->SetSendAddress(newAP);
   m_remoteAddressSet = true;
   m_subchannels[subchannel].m_consecutiveUnavailableErrors = 0; // Prevent errors from previous address.
@@ -1150,9 +1138,16 @@ bool OpalUDPMediaTransport::Open(OpalMediaSession & session,
       m_subchannels.push_back(Transport(this, (SubChannels)m_subchannels.size(), sockets[i]));
   }
 
+  m_socketInfo.resize(m_subchannels.size());
+
   for (size_t subchannel = 0; subchannel < m_subchannels.size(); ++subchannel) {
-    PUDPSocket & socket = *GetSubChannelAsSocket((SubChannels)subchannel);
+    PUDPSocket & socket = *dynamic_cast<PUDPSocket *>(m_subchannels[subchannel].m_channel);
+    m_socketInfo[subchannel].m_socket = &socket;
     PTRACE_CONTEXT_ID_TO(socket);
+
+    PIPSocketAddressAndPort ap;
+    if (socket.GetLocalAddress(ap) && ap.IsValid())
+      m_socketInfo[subchannel].m_localAddress = OpalTransportAddress(ap, OpalTransportAddress::UdpPrefix());
 
     /* Make socket timeout slightly longer (200ms) than media timeout to avoid
        a race condition with m_mediaTimer expiring. */
@@ -1176,8 +1171,10 @@ bool OpalUDPMediaTransport::Write(const void * data, PINDEX length, SubChannels 
     return false;
 
   PUDPSocket * socket = GetSubChannelAsSocket(subchannel);
-  if (PAssertNULL(socket) == NULL)
+  if (socket == NULL) {
+    PTRACE(4, *this << "write to closed/unopened subchannel " << subchannel);
     return false;
+  }
 
   PIPSocketAddressAndPort sendAddr;
   if (dest != NULL)
@@ -1211,10 +1208,7 @@ bool OpalUDPMediaTransport::Write(const void * data, PINDEX length, SubChannels 
 
 PUDPSocket * OpalUDPMediaTransport::GetSubChannelAsSocket(SubChannels subchannel) const
 {
-  PChannel * chanPtr = GetChannel(subchannel);
-  if (chanPtr == NULL)
-    return NULL;
-  return dynamic_cast<PUDPSocket *>(chanPtr->GetBaseReadChannel());
+  return GetChannel(subchannel) != NULL ? m_socketInfo[subchannel].m_socket : NULL;
 }
 
 

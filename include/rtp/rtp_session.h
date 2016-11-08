@@ -712,7 +712,7 @@ class OpalRTPSession : public OpalMediaSession
       unsigned m_packets;
       uint64_t m_octets;
       unsigned m_senderReports;
-      unsigned m_NACKs;
+      atomic<unsigned> m_NACKs;
       int      m_packetsLost;
       unsigned m_packetsOutOfOrder;
       int      m_lateOutOfOrder;

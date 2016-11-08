@@ -452,7 +452,7 @@ public:
 
     /**Get channel object for subchannel index.
       */
-    PChannel * GetChannel(SubChannels subchannel = e_Media) const { return (size_t)subchannel < m_subchannels.size() ? m_subchannels[subchannel].m_channel : NULL; }
+    PChannel * GetChannel(SubChannels subchannel = e_Media) const;
 
     void SetRemoteBehindNAT();
 
@@ -468,7 +468,7 @@ public:
     PSimpleTimer  m_mediaTimer;
     PTimeInterval m_maxNoTransmitTime;
     atomic<bool>  m_opened;
-    bool          m_started;
+    atomic<bool>  m_started;
 
     struct Transport
     {
@@ -534,6 +534,16 @@ class OpalUDPMediaTransport : public OpalMediaTransport
     virtual bool InternalSetRemoteAddress(const PIPSocket::AddressAndPort & ap, SubChannels subchannel, bool dontOverride PTRACE_PARAM(, const char * source));
 
     bool m_localHasRestrictedNAT;
+
+    struct SocketInfo
+    {
+      PUDPSocket         * m_socket;
+      OpalTransportAddress m_localAddress;
+      OpalTransportAddress m_remoteAddress;
+
+      SocketInfo() : m_socket(NULL) { }
+    };
+    vector<SocketInfo> m_socketInfo;
 };
 
 
