@@ -279,6 +279,17 @@
 						<label>Analyse</label>
 						<default>0</default>
 					</object>
+					<object class="wxStaticText" name="m_staticText4">
+						<style>wxALIGN_RIGHT</style>
+						<label>   Run to packet:</label>
+						<wrap>-1</wrap>
+					</object>
+					<object class="wxSpinCtrl" name="PlayToPacket">
+						<style>wxSP_ARROW_KEYS</style>
+						<value>0</value>
+						<min>0</min>
+						<max>10000000</max>
+					</object>
 				</object>
 			</object>
 		</object>
