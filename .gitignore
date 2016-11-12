@@ -126,3 +126,4 @@ samples/openphone/openphone.app/
 samples/openphone/server.cer
 samples/openphone/server.key
 
+samples/opalshark/resource.cpp
