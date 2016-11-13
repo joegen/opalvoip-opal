@@ -49,7 +49,8 @@
 #endif
 
 extern "C" {
-#include "spandsp.h"
+  #define _INTTYPES_H_ 1
+  #include "spandsp.h"
 };
 
 
@@ -78,8 +79,8 @@ static PluginCodec_LogFunction LogFunction;
 
 #define PTRACE(level, args) \
     if (LogFunction != NULL && LogFunction(level, NULL, 0, NULL, NULL)) { \
-    std::ostringstream strm; strm << args; \
-      LogFunction(level, __FILE__, __LINE__, "FaxCodec", strm.str().c_str()); \
+    std::ostringstream ptrace_strm; ptrace_strm << args; \
+      LogFunction(level, __FILE__, __LINE__, "FaxCodec", ptrace_strm.str().c_str()); \
     } else (void)0
 
 static void SpanDSP_Message(int level, const char *text)
