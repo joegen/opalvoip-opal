@@ -4385,7 +4385,7 @@ BEGIN_EVENT_TABLE(OptionsDialog, wxDialog)
   EVT_LIST_ITEM_SELECTED(XRCID("Presentities"), OptionsDialog::SelectedPresentity)
   EVT_LIST_ITEM_DESELECTED(XRCID("Presentities"), OptionsDialog::DeselectedPresentity)
   EVT_LIST_END_LABEL_EDIT(XRCID("Presentities"), OptionsDialog::EditedPresentity)
-  EVT_GRID_CMD_CELL_CHANGE(XRCID("PresentityAttributes"), OptionsDialog::ChangedPresentityAttribute)
+  EVT_GRID_CMD_CELL_CHANGED(XRCID("PresentityAttributes"), OptionsDialog::ChangedPresentityAttribute)
 #endif // OPAL_HAS_PRESENCE
 
   ////////////////////////////////////////
@@ -6095,7 +6095,7 @@ bool OptionsDialog::FillPresentityAttributes(OpalPresentity * presentity)
     PwxString value = presentity->GetAttributes().Get(name,
                             attribute.GetSize() > 2 ? attribute[2] : DefaultAttributeValue);
     m_PresentityAttributes->SetRowLabelValue(i, PwxString(name));
-    m_PresentityAttributes->SetCellValue(value, i, 0);
+    m_PresentityAttributes->SetCellValue(i, 0, value);
   }
   m_PresentityAttributes->SetRowLabelSize(wxGRID_AUTOSIZE);
   m_PresentityAttributes->SetColSize(0, m_PresentityAttributes->GetSize().GetWidth() -
@@ -6715,7 +6715,7 @@ NetOptionsDialog::NetOptionsDialog(MyManager * manager, OpalRTPEndPoint * ep)
   int row = 0;
   for (PStringList::iterator it = optionNames.begin(); it != optionNames.end(); ++it, ++row) {
     m_stringOptions->SetRowLabelValue(row, PwxString(*it));
-    m_stringOptions->SetCellValue(PwxString(defaultOptions(*it, DefaultAttributeValue)), row, 0);
+    m_stringOptions->SetCellValue(row, 0, PwxString(defaultOptions(*it, DefaultAttributeValue)));
   }
 
   m_stringOptions->SetRowLabelSize(wxGRID_AUTOSIZE);
@@ -6729,7 +6729,7 @@ void NetOptionsDialog::SaveOptions(wxConfigBase * config, const wxChar * stringO
   wxString oldPath = config->GetPath();
   config->DeleteGroup(stringOptionsGroup);
   config->SetPath(stringOptionsGroup);
-  for (int row = 0; row < m_stringOptions->GetRows(); ++row) {
+  for (int row = 0; row < m_stringOptions->GetNumberRows(); ++row) {
     PwxString key = m_stringOptions->GetRowLabelValue(row);
     PwxString value = m_stringOptions->GetCellValue(row, 0);
     if (value == DefaultAttributeValue)
