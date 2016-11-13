@@ -1,9 +1,5 @@
 <?xml version='1.0'?>
 
-<?define ProductName = "OPAL Shark" ?>
-<?define ProductVersion = "1.0.1" ?>
-<?define ProductManufacturer = "Vox Lucida Pty. Ltd." ?>
-
 <?include $(sys.CURRENTDIR)\config.wxs ?>
 
 <?if $(var.Architecture) = "x86" ?>
@@ -29,9 +25,9 @@
    <Product Name='$(var.ProductName)'
             Language='1033'
             Version='$(var.ProductVersion)'
-            Manufacturer='Vox Lucida Pty. Ltd.'
+            Manufacturer='$(var.ProductManufacturer)'
             Id='*'
-            UpgradeCode='03198F5B-EC70-4DBF-A047-5A740C6B8109'>
+            UpgradeCode='$(var.ProductGUID)'>
       <Package Description='$(var.ProductName)'
                Comments='$(var.Platform) Media Player for RTP in PCAP files, Version $(var.ProductVersion)'
                Manufacturer='$(var.ProductManufacturer)'
@@ -130,7 +126,7 @@
                              Guid='*'>
                      <File Id='openH264_DLL'
                            Name='openh264_$(var.Architecture).dll'
-                           Source='$(var.PluginDir)\openh264_$(var.Architecture).dll'
+                           Source='$(var.OpenH264Dir)\openh264_$(var.Architecture).dll'
                            DiskId='1'
                            KeyPath='yes' />
                   </Component>
@@ -228,8 +224,8 @@
                              Win64="$(var.IsWin64)"
                              Guid='*'>
                      <File Id='AVCODEC_DLL'
-                           Name='AVCODEC-56.DLL'
-                           Source='$(var.PluginDir)\AVCODEC-56.DLL'
+                           Name='AVCODEC-$(var.AVCODECVer).DLL'
+                           Source='$(var.FFMPEGDir)\AVCODEC-$(var.AVCODECVer).DLL'
                            DiskId='1'
                            KeyPath='yes' />
                   </Component>
@@ -237,8 +233,8 @@
                              Win64="$(var.IsWin64)"
                              Guid='*'>
                      <File Id='AVUTIL_DLL'
-                           Name='AVUTIL-54.DLL'
-                           Source='$(var.PluginDir)\AVUTIL-54.DLL'
+                           Name='AVUTIL-$(var.AVUTILVer).DLL'
+                           Source='$(var.FFMPEGDir)\AVUTIL-$(var.AVUTILVer).DLL'
                            DiskId='1'
                            KeyPath='yes' />
                   </Component>
@@ -246,8 +242,8 @@
                              Win64="$(var.IsWin64)"
                              Guid='*'>
                      <File Id='SWRESAMPLE_DLL'
-                           Name='SWRESAMPLE-1.DLL'
-                           Source='$(var.PluginDir)\SWRESAMPLE-1.DLL'
+                           Name='SWRESAMPLE-$(var.SWRESAMPLEVer).DLL'
+                           Source='$(var.FFMPEGDir)\SWRESAMPLE-$(var.SWRESAMPLEVer).DLL'
                            DiskId='1'
                            KeyPath='yes' />
                   </Component>
@@ -339,54 +335,54 @@
                   <Component Id='WxXRC'
                              Win64="$(var.IsWin64)"
                              Guid='*'>
-                     <File Id='WXMSW30U_XRC_DLL'
-                           Name='WXMSW30U_XRC_VC$(var.WxPlatform).DLL'
-                           Source='$(var.WxDllDir)\WXMSW30U_XRC_VC$(var.WxPlatform).DLL'
+                     <File Id='WXMSW$(var.WxVer)U_XRC_DLL'
+                           Name='WXMSW$(var.WxVer)U_XRC_VC$(var.WxPlatform).DLL'
+                           Source='$(var.WxDllDir)\WXMSW$(var.WxVer)U_XRC_VC$(var.WxPlatform).DLL'
                            DiskId='1'
                            KeyPath='yes' />
                   </Component>
                   <Component Id='WxHTML'
                              Win64="$(var.IsWin64)"
                              Guid='*'>
-                     <File Id='WXMSW30U_HTML_DLL'
-                           Name='WXMSW30U_HTML_VC$(var.WxPlatform).DLL'
-                           Source='$(var.WxDllDir)\WXMSW30U_HTML_VC$(var.WxPlatform).DLL'
+                     <File Id='WXMSW$(var.WxVer)U_HTML_DLL'
+                           Name='WXMSW$(var.WxVer)U_HTML_VC$(var.WxPlatform).DLL'
+                           Source='$(var.WxDllDir)\WXMSW$(var.WxVer)U_HTML_VC$(var.WxPlatform).DLL'
                            DiskId='1'
                            KeyPath='yes' />
                   </Component>
                   <Component Id='WxADV'
                              Win64="$(var.IsWin64)"
                              Guid='*'>
-                     <File Id='WXMSW30U_ADV_DLL'
-                           Name='WXMSW30U_ADV_VC$(var.WxPlatform).DLL'
-                           Source='$(var.WxDllDir)\WXMSW30U_ADV_VC$(var.WxPlatform).DLL'
+                     <File Id='WXMSW$(var.WxVer)U_ADV_DLL'
+                           Name='WXMSW$(var.WxVer)U_ADV_VC$(var.WxPlatform).DLL'
+                           Source='$(var.WxDllDir)\WXMSW$(var.WxVer)U_ADV_VC$(var.WxPlatform).DLL'
                            DiskId='1'
                            KeyPath='yes' />
                   </Component>
                   <Component Id='WxCore'
                              Win64="$(var.IsWin64)"
                              Guid='*'>
-                     <File Id='WXMSW30U_CORE_DLL'
-                           Name='WXMSW30U_CORE_VC$(var.WxPlatform).DLL'
-                           Source='$(var.WxDllDir)\WXMSW30U_CORE_VC$(var.WxPlatform).DLL'
+                     <File Id='WXMSW$(var.WxVer)U_CORE_DLL'
+                           Name='WXMSW$(var.WxVer)U_CORE_VC$(var.WxPlatform).DLL'
+                           Source='$(var.WxDllDir)\WXMSW$(var.WxVer)U_CORE_VC$(var.WxPlatform).DLL'
                            DiskId='1'
                            KeyPath='yes' />
                   </Component>
                   <Component Id='WxXML'
                              Win64="$(var.IsWin64)"
                              Guid='*'>
-                     <File Id='WXBASE30U_XML_DLL'
-                           Name='WXBASE30U_XML_VC$(var.WxPlatform).DLL'
-                           Source='$(var.WxDllDir)\WXBASE30U_XML_VC$(var.WxPlatform).DLL'
+                     <File Id='WXBASE$(var.WxVer)U_XML_DLL'
+                           Name='WXBASE$(var.WxVer)U_XML_VC$(var.WxPlatform).DLL'
+                           Source='$(var.WxDllDir)\WXBASE$(var.WxVer)U_XML_VC$(var.WxPlatform).DLL'
                            DiskId='1'
                            KeyPath='yes' />
                   </Component>
                   <Component Id='WxBase'
                              Win64="$(var.IsWin64)"
                              Guid='*'>
-                     <File Id='WXBASE30U_DLL'
-                           Name='WXBASE30U_VC$(var.WxPlatform).DLL'
-                           Source='$(var.WxDllDir)\WXBASE30U_VC$(var.WxPlatform).DLL'
+                     <File Id='WXBASE$(var.WxVer)U_DLL'
+                           Name='WXBASE$(var.WxVer)U_VC$(var.WxPlatform).DLL'
+                           Source='$(var.WxDllDir)\WXBASE$(var.WxVer)U_VC$(var.WxPlatform).DLL'
                            DiskId='1'
                            KeyPath='yes' />
                   </Component>

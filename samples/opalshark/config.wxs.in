@@ -1,12 +1,26 @@
 <Include>
-   <?if $(var.Architecture) = "x86" ?>
-      <?define PluginDir = "$(env.ProgramFiles)\PTLib Plug Ins" ?>
-      <?define SSLDir = "$(env.ProgramFiles)\OpenSSL-Win32\bin" ?>
-   <?else?>
-      <?define PluginDir = "$(env.ProgramW6432)\PTLib Plug Ins" ?>
-      <?define SSLDir = "$(env.ProgramW6432)\OpenSSL-Win64\bin" ?>
-   <?endif?>
-   <?define WxDir = "$(env.WXDIR)" ?>
-   <?define PTLibDir = "..\..\..\ptlib" ?>
-   <?define OPALDir = "..\.." ?>
+    <?define ProductName = "OPAL Shark" ?>
+    <?define ProductVersion = "1.1.0" ?>
+    <?define ProductManufacturer = "Vox Lucida Pty. Ltd." ?>
+    <?define ProductGUID = "48bff92f-98f9-45fb-a233-db3e2c496d4a" ?>
+
+    <?if $(var.Architecture) = "x86" ?>
+        <?define SSLDir = "$(env.ProgramW6432)\OpenSSL-Win32\bin" ?>
+        <?define FFMPEGDir = "..\..\..\external\ffmpeg-win32-dev\bin" ?>
+        <?define OpenH264Dir = "$(env.ProgramFiles)\PTLib Plug Ins" ?>
+    <?else?>
+        <?define SSLDir = "$(env.ProgramW6432)\OpenSSL-Win64\bin" ?>
+        <?define FFMPEGDir = "..\..\..\external\ffmpeg-win64-dev\bin" ?>
+        <?define OpenH264Dir = "$(env.ProgramW6432)\PTLib Plug Ins" ?>
+    <?endif?>
+
+    <?define AVCODECVer = "57" ?>
+    <?define AVUTILVer = "55" ?>
+    <?define SWRESAMPLEVer = "2" ?>
+
+    <?define WxDir = "$(env.WXDIR)" ?>
+    <?define WxVer = "310" ?>
+  
+    <?define PTLibDir = "..\..\..\ptlib" ?>
+    <?define OPALDir = "..\.." ?>
 </Include>
