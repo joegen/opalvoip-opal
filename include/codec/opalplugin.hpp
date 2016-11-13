@@ -87,8 +87,8 @@
         (PluginCodec_LogFunctionInstance != NULL && PluginCodec_LogFunctionInstance(level, NULL, 0, NULL, NULL))
     #define PTRACE(level, section, args) \
       if (PTRACE_CHECK(level)) { \
-        std::ostringstream strm; strm << args; \
-        PluginCodec_LogFunctionInstance(level, __FILE__, __LINE__, section, strm.str().c_str()); \
+        std::ostringstream ptrace_strm; ptrace_strm << args; \
+        PluginCodec_LogFunctionInstance(level, __FILE__, __LINE__, section, ptrace_strm.str().c_str()); \
       } else (void)0
   #else
     #define PTRACE_CHECK(level)
