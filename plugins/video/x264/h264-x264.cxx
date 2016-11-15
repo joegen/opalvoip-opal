@@ -535,8 +535,8 @@ class H264_PluginMediaFormat : public PluginCodec_VideoFormat<MY_CODEC>
 public:
   typedef PluginCodec_VideoFormat<MY_CODEC> BaseClass;
 
-  H264_PluginMediaFormat(const char * formatName, OptionsTable options)
-    : BaseClass(formatName, H264EncodingName, MyDescription, LevelInfo[sizeof(LevelInfo)/sizeof(LevelInfo[0])-1].m_MaxBitRate, options)
+  H264_PluginMediaFormat(const char * formatName, OptionsTable options, const char * encodingName = H264EncodingName)
+    : BaseClass(formatName, encodingName, MyDescription, LevelInfo[sizeof(LevelInfo)/sizeof(LevelInfo[0])-1].m_MaxBitRate, options)
   {
     m_h323CapabilityType = PluginCodec_H323Codec_generic;
     m_h323CapabilityData = &MyH323GenericData;
@@ -570,11 +570,11 @@ public:
 static H264_PluginMediaFormat const MyMediaFormatInfo_Mode0 (H264_Mode0_FormatName, MyOptionTable_0);
 static H264_PluginMediaFormat const MyMediaFormatInfo_Mode1 (H264_Mode1_FormatName, MyOptionTable_1);
 static H264_PluginMediaFormat const MyMediaFormatInfo_High  (H264_High_FormatName,  MyOptionTable_High);
-static H264_PluginMediaFormat const MyMediaFormatInfo_Flash (H264_Flash_FormatName, MyOptionTable_Flash);
+static H264_PluginMediaFormat const MyMediaFormatInfo_Flash (H264_Flash_FormatName, MyOptionTable_Flash, H264FlashEncodingName);
 static H264_PluginMediaFormat const MyMediaFormatInfo_xMode0("x" OPAL_H264_MODE0,   MyOptionTable_0);
 static H264_PluginMediaFormat const MyMediaFormatInfo_xMode1("x" OPAL_H264_MODE1,   MyOptionTable_1);
 static H264_PluginMediaFormat const MyMediaFormatInfo_xHigh ("x" OPAL_H264_High,    MyOptionTable_High);
-static H264_PluginMediaFormat const MyMediaFormatInfo_xFlash("x" OPAL_H264_Flash,   MyOptionTable_Flash);
+static H264_PluginMediaFormat const MyMediaFormatInfo_xFlash("x" OPAL_H264_Flash,   MyOptionTable_Flash, H264FlashEncodingName);
 
 
 ///////////////////////////////////////////////////////////////////////////////
