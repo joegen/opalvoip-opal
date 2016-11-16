@@ -395,16 +395,29 @@ bool OpalIntraFrameControl::RequireIntraFrame()
 
 void OpalIntraFrameControl::IntraFrameDetected()
 {
+  PTimeInterval newTimeout;
+
   {
     PWaitAndSignal mutex(m_mutex);
-    if (m_state != e_Requested)
-      return;
 
-    m_state = e_Throttled;
-    PTRACE(4, "I-Frame detected: throttle=" << m_currentThrottleTime << " this=" << this);
+    switch (m_state) {
+      case e_Idle :
+        newTimeout = m_periodicTime;
+        break;
+
+      case e_Requested:
+        m_state = e_Throttled;
+        newTimeout = m_currentThrottleTime;
+        PTRACE(4, "I-Frame detected: throttle=" << m_currentThrottleTime << " this=" << this);
+        break;
+
+      default :
+        break;
+    }
   }
 
-  m_requestTimer = m_currentThrottleTime; // Outside mutex
+  if (newTimeout > 0)
+    m_requestTimer = newTimeout; // Outside mutex
 }
 
 
