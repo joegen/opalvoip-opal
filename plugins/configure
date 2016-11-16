@@ -705,7 +705,7 @@ OPT_CFLAGS
 OPT_CPPFLAGS
 DEBUG_CFLAGS
 DEBUG_CPPFLAGS
-CPP11_FLAGS
+CPLUSPLUS_STD
 ARFLAGS
 DEBUGINFOEXT
 STATICLIBEXT
@@ -796,6 +796,7 @@ ac_user_opts='
 enable_option_checking
 enable_ios
 enable_cpp11
+enable_cpp14
 enable_force32
 with_profiling
 with_plugin_installdir
@@ -1510,6 +1511,7 @@ Optional Features:
   --enable-ios=iphone|simulator
                           enable iOS support
   --enable-cpp11          Enable C++11 build
+  --enable-cpp14          Enable C++14 build
   --enable-force32        Force 32-bit x86 build
   --disable-silk          disable Skype SILK audio codec
   --disable-gsmamr        disable GSM-AMR audio codec
@@ -5564,7 +5566,13 @@ ARFLAGS="rc"
 
 # Check whether --enable-cpp11 was given.
 if test "${enable_cpp11+set}" = set; then :
-  enableval=$enable_cpp11; CPP11_FLAGS="-std=c++11"
+  enableval=$enable_cpp11; CPLUSPLUS_STD="-std=c++11"
+
+fi
+
+# Check whether --enable-cpp14 was given.
+if test "${enable_cpp14+set}" = set; then :
+  enableval=$enable_cpp14; CPLUSPLUS_STD="-std=c++14"
 
 fi
 
@@ -5611,6 +5619,7 @@ fi
       target_release=`sw_vers -productVersion`
 
       CPPFLAGS="-mmacosx-version-min=10.8 $CPPFLAGS"
+      LDFLAGS="-mmacosx-version-min=10.8 $LDFLAGS"
       LIBS="-framework AVFoundation -framework CoreVideo -framework CoreMedia -framework AudioUnit $LIBS"
    ;;
 

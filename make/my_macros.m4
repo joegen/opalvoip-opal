@@ -464,7 +464,8 @@ AC_SUBST(ARFLAGS, "rc")
 
 
 dnl Check for latest and greatest
-AC_ARG_ENABLE(cpp11, AS_HELP_STRING([--enable-cpp11],[Enable C++11 build]),AC_SUBST(CPP11_FLAGS,"-std=c++11"))
+AC_ARG_ENABLE(cpp11, AS_HELP_STRING([--enable-cpp11],[Enable C++11 build]),AC_SUBST(CPLUSPLUS_STD,"-std=c++11"))
+AC_ARG_ENABLE(cpp14, AS_HELP_STRING([--enable-cpp14],[Enable C++14 build]),AC_SUBST(CPLUSPLUS_STD,"-std=c++14"))
 
 
 case "$target_os" in
@@ -505,6 +506,7 @@ case "$target_os" in
       target_release=`sw_vers -productVersion`
 
       CPPFLAGS="-mmacosx-version-min=10.8 $CPPFLAGS"
+      LDFLAGS="-mmacosx-version-min=10.8 $LDFLAGS"
       LIBS="-framework AVFoundation -framework CoreVideo -framework CoreMedia -framework AudioUnit $LIBS"
    ;;
 
