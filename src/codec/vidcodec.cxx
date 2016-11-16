@@ -377,6 +377,13 @@ bool OpalIntraFrameControl::RequireIntraFrame()
       m_state = e_Idle;
       break;
 
+    case e_Idle :
+      if (m_maxThrottleTime > 0 && m_retryTime > 0 && m_periodicTime > 0 && !m_requestTimer.IsRunning()) {
+        m_requestTimer = m_periodicTime;
+        PTRACE(4, "Initial Periodic I-Frame request: next=" << m_periodicTime << " this=" << this);
+      }
+      // Do default case
+
     default:
       return false;
   }
