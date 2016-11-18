@@ -98,6 +98,7 @@ OpalBaseMixer::OpalBaseMixer(bool pushThread, unsigned periodMS, unsigned period
 
 OpalBaseMixer::~OpalBaseMixer()
 {
+  RemoveAllStreams();
   delete m_pushFrame;
 }
 
