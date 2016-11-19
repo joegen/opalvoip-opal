@@ -1959,11 +1959,9 @@ swig -c++ -csharp -w451 "-I..\..\include" -o "%(RootDir)%(Directory)csharp_swig_
 if errorlevel 2 goto missing
 if errorlevel 1 exit 1
 copy "%(RootDir)%(Directory)\csharp_swig_wrapper.inc" "%(RootDir)%(Directory)csharp_swig_wrapper.cxx" &gt; nul
-exit 0
 :missing
 echo Ignoring missing SWIG and using pre-compiled versions.
 copy "%(RootDir)%(Directory)\csharp_swig_wrapper.cxx" "%(RootDir)%(Directory)\csharp_swig_wrapper.inc" &gt; nul
-exit 0
 </Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">Generating C# files</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">%(RootDir)%(Directory)csharp_swig_wrapper.inc</Outputs>
@@ -1973,11 +1971,9 @@ swig -c++ -csharp -w451 "-I..\..\include" -o "%(RootDir)%(Directory)csharp_swig_
 if errorlevel 2 goto missing
 if errorlevel 1 exit 1
 copy "%(RootDir)%(Directory)\csharp_swig_wrapper.inc" "%(RootDir)%(Directory)csharp_swig_wrapper.cxx" &gt; nul
-exit 0
 :missing
 echo Ignoring missing SWIG and using pre-compiled versions.
 copy "%(RootDir)%(Directory)\csharp_swig_wrapper.cxx" "%(RootDir)%(Directory)\csharp_swig_wrapper.inc" &gt; nul
-exit 0
 </Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">Generating C# files</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">%(RootDir)%(Directory)csharp_swig_wrapper.inc</Outputs>
@@ -1987,11 +1983,9 @@ swig -c++ -csharp -w451 "-I..\..\include" -o "%(RootDir)%(Directory)csharp_swig_
 if errorlevel 2 goto missing
 if errorlevel 1 exit 1
 copy "%(RootDir)%(Directory)\csharp_swig_wrapper.inc" "%(RootDir)%(Directory)csharp_swig_wrapper.cxx" &gt; nul
-exit 0
 :missing
 echo Ignoring missing SWIG and using pre-compiled versions.
 copy "%(RootDir)%(Directory)\csharp_swig_wrapper.cxx" "%(RootDir)%(Directory)\csharp_swig_wrapper.inc" &gt; nul
-exit 0
 </Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Android'">Generating C# files</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Android'">%(RootDir)%(Directory)csharp_swig_wrapper.inc</Outputs>
@@ -2005,7 +1999,6 @@ goto done
 echo Ignoring missing SWIG and using pre-compiled version "%(RootDir)%(Directory)\csharp_swig_wrapper.cxx".
 :done
 copy "%(RootDir)%(Directory)\csharp_swig_wrapper.cxx" "%(RootDir)%(Directory)\csharp_swig_wrapper.inc" &gt; nul
-exit 0
 </Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Generating C# files</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(RootDir)%(Directory)csharp_swig_wrapper.inc</Outputs>
@@ -2019,7 +2012,6 @@ goto done
 echo Ignoring missing SWIG and using pre-compiled version "%(RootDir)%(Directory)\csharp_swig_wrapper.cxx".
 :done
 copy "%(RootDir)%(Directory)\csharp_swig_wrapper.cxx" "%(RootDir)%(Directory)\csharp_swig_wrapper.inc" &gt; nul
-exit 0
 </Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">Generating C# files</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">%(RootDir)%(Directory)csharp_swig_wrapper.inc</Outputs>
@@ -2033,7 +2025,6 @@ goto done
 echo Ignoring missing SWIG and using pre-compiled version "%(RootDir)%(Directory)\csharp_swig_wrapper.cxx".
 :done
 copy "%(RootDir)%(Directory)\csharp_swig_wrapper.cxx" "%(RootDir)%(Directory)\csharp_swig_wrapper.inc" &gt; nul
-exit 0
 </Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Generating C# files</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(RootDir)%(Directory)csharp_swig_wrapper.inc</Outputs>
@@ -2047,7 +2038,6 @@ goto done
 echo Ignoring missing SWIG and using pre-compiled version "%(RootDir)%(Directory)\csharp_swig_wrapper.cxx".
 :done
 copy "%(RootDir)%(Directory)\csharp_swig_wrapper.cxx" "%(RootDir)%(Directory)\csharp_swig_wrapper.inc" &gt; nul
-exit 0
 </Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Generating C# files</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(RootDir)%(Directory)csharp_swig_wrapper.inc</Outputs>
@@ -2061,7 +2051,6 @@ goto done
 echo Ignoring missing SWIG and using pre-compiled version "%(RootDir)%(Directory)\csharp_swig_wrapper.cxx".
 :done
 copy "%(RootDir)%(Directory)\csharp_swig_wrapper.cxx" "%(RootDir)%(Directory)\csharp_swig_wrapper.inc" &gt; nul
-exit 0
 </Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">Generating C# files</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">%(RootDir)%(Directory)csharp_swig_wrapper.inc</Outputs>
@@ -2075,7 +2064,6 @@ goto done
 echo Ignoring missing SWIG and using pre-compiled version "%(RootDir)%(Directory)\csharp_swig_wrapper.cxx".
 :done
 copy "%(RootDir)%(Directory)\csharp_swig_wrapper.cxx" "%(RootDir)%(Directory)\csharp_swig_wrapper.inc" &gt; nul
-exit 0
 </Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Generating C# files</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(RootDir)%(Directory)csharp_swig_wrapper.inc</Outputs>
@@ -2223,11 +2211,9 @@ swig -c++ -java -package org.opalvoip.opal -w451 "-I$(ProjectDir)..\..\include" 
 if errorlevel 2 goto missing
 if errorlevel 1 exit 1
 copy "%(RootDir)%(Directory)\java_swig_wrapper.inc" "%(RootDir)%(Directory)java_swig_wrapper.cxx" &gt; nul
-exit 0
 :missing
 echo Ignoring missing SWIG and using pre-compiled versions.
 copy "%(RootDir)%(Directory)\java_swig_wrapper.cxx" "%(RootDir)%(Directory)\java_swig_wrapper.inc" &gt; nul
-exit 0
 </Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">Generating Java JNI files</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">%(RootDir)%(Directory)java_swig_wrapper.inc</Outputs>
@@ -2237,11 +2223,9 @@ swig -c++ -java -package org.opalvoip.opal -w451 "-I$(ProjectDir)..\..\include" 
 if errorlevel 2 goto missing
 if errorlevel 1 exit 1
 copy "%(RootDir)%(Directory)\java_swig_wrapper.inc" "%(RootDir)%(Directory)java_swig_wrapper.cxx" &gt; nul
-exit 0
 :missing
 echo Ignoring missing SWIG and using pre-compiled versions.
 copy "%(RootDir)%(Directory)\java_swig_wrapper.cxx" "%(RootDir)%(Directory)\java_swig_wrapper.inc" &gt; nul
-exit 0
 </Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">Generating Java JNI files</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">%(RootDir)%(Directory)java_swig_wrapper.inc</Outputs>
@@ -2251,11 +2235,9 @@ swig -c++ -java -package org.opalvoip.opal -w451 "-I$(ProjectDir)..\..\include" 
 if errorlevel 2 goto missing
 if errorlevel 1 exit 1
 copy "%(RootDir)%(Directory)\java_swig_wrapper.inc" "%(RootDir)%(Directory)java_swig_wrapper.cxx" &gt; nul
-exit 0
 :missing
 echo Ignoring missing SWIG and using pre-compiled versions.
 copy "%(RootDir)%(Directory)\java_swig_wrapper.cxx" "%(RootDir)%(Directory)\java_swig_wrapper.inc" &gt; nul
-exit 0
 </Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Android'">Generating Java JNI files</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Android'">%(RootDir)%(Directory)java_swig_wrapper.inc</Outputs>
@@ -2287,7 +2269,6 @@ goto done
 echo Ignoring missing SWIG and using pre-compiled version "%(RootDir)%(Directory)java_swig_wrapper.cxx".
 :done
 copy "%(RootDir)%(Directory)java_swig_wrapper.cxx" "%(RootDir)%(Directory)java_swig_wrapper.inc" &gt; nul
-exit 0
 </Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">path $(ProjectDir)..\..\..\external\swigwin;$(ProjectDir)..\..\..\swigwin;C:\swigwin;%PATH%
 swig -c++ -java -package org.opalvoip.opal -w451 "-I$(ProjectDir)..\..\include" -o "%(RootDir)%(Directory)java_swig_wrapper.cxx" "%(FullPath)"
@@ -2298,7 +2279,6 @@ goto done
 echo Ignoring missing SWIG and using pre-compiled version "%(RootDir)%(Directory)java_swig_wrapper.cxx".
 :done
 copy "%(RootDir)%(Directory)java_swig_wrapper.cxx" "%(RootDir)%(Directory)java_swig_wrapper.inc" &gt; nul
-exit 0
 </Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">path $(ProjectDir)..\..\..\external\swigwin;$(ProjectDir)..\..\..\swigwin;C:\swigwin;%PATH%
 swig -c++ -java -package org.opalvoip.opal -w451 "-I$(ProjectDir)..\..\include" -o "%(RootDir)%(Directory)java_swig_wrapper.cxx" "%(FullPath)"
@@ -2309,7 +2289,6 @@ goto done
 echo Ignoring missing SWIG and using pre-compiled version "%(RootDir)%(Directory)java_swig_wrapper.cxx".
 :done
 copy "%(RootDir)%(Directory)java_swig_wrapper.cxx" "%(RootDir)%(Directory)java_swig_wrapper.inc" &gt; nul
-exit 0
 </Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">path $(ProjectDir)..\..\..\external\swigwin;$(ProjectDir)..\..\..\swigwin;C:\swigwin;%PATH%
 swig -c++ -java -package org.opalvoip.opal -w451 "-I$(ProjectDir)..\..\include" -o "%(RootDir)%(Directory)java_swig_wrapper.cxx" "%(FullPath)"
@@ -2320,7 +2299,6 @@ goto done
 echo Ignoring missing SWIG and using pre-compiled version "%(RootDir)%(Directory)java_swig_wrapper.cxx".
 :done
 copy "%(RootDir)%(Directory)java_swig_wrapper.cxx" "%(RootDir)%(Directory)java_swig_wrapper.inc" &gt; nul
-exit 0
 </Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">path $(ProjectDir)..\..\..\external\swigwin;$(ProjectDir)..\..\..\swigwin;C:\swigwin;%PATH%
 swig -c++ -java -package org.opalvoip.opal -w451 "-I$(ProjectDir)..\..\include" -o "%(RootDir)%(Directory)java_swig_wrapper.cxx" "%(FullPath)"
@@ -2331,7 +2309,6 @@ goto done
 echo Ignoring missing SWIG and using pre-compiled version "%(RootDir)%(Directory)java_swig_wrapper.cxx".
 :done
 copy "%(RootDir)%(Directory)java_swig_wrapper.cxx" "%(RootDir)%(Directory)java_swig_wrapper.inc" &gt; nul
-exit 0
 </Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">path $(ProjectDir)..\..\..\external\swigwin;$(ProjectDir)..\..\..\swigwin;C:\swigwin;%PATH%
 swig -c++ -java -package org.opalvoip.opal -w451 "-I$(ProjectDir)..\..\include" -o "%(RootDir)%(Directory)java_swig_wrapper.cxx" "%(FullPath)"
@@ -2342,7 +2319,6 @@ goto done
 echo Ignoring missing SWIG and using pre-compiled version "%(RootDir)%(Directory)java_swig_wrapper.cxx".
 :done
 copy "%(RootDir)%(Directory)java_swig_wrapper.cxx" "%(RootDir)%(Directory)java_swig_wrapper.inc" &gt; nul
-exit 0
 </Command>
     </CustomBuild>
     <None Include="..\java\java_swig_wrapper.inc" />

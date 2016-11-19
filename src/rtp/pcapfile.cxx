@@ -79,6 +79,8 @@ bool OpalPCAPFile::InternalOpen(OpenMode mode, OpenOptions opts, PFileInfo::Perm
 {
   PAssert(mode != PFile::ReadWrite, PInvalidParameter);
 
+  PWaitAndSignal mutex(m_writeMutex);
+
   if (!PFile::InternalOpen(mode, opts, permissions))
     return false;
 

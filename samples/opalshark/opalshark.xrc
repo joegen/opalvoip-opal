@@ -133,6 +133,7 @@
 						<flag>wxRIGHT|wxTOP</flag>
 						<border>20</border>
 						<object class="wxGrid" name="Mappings">
+							<style>wxSIMPLE_BORDER</style>
 							<size>250,100</size>
 						</object>
 					</object>
@@ -140,7 +141,7 @@
 			</object>
 			<object class="sizeritem">
 				<option>0</option>
-				<flag>wxALIGN_RIGHT|wxEXPAND</flag>
+				<flag>wxEXPAND</flag>
 				<border>0</border>
 				<object class="wxBoxSizer">
 					<orient>wxHORIZONTAL</orient>
@@ -278,6 +279,17 @@
 					<object class="wxButton" name="Analyse">
 						<label>Analyse</label>
 						<default>0</default>
+					</object>
+					<object class="wxStaticText" name="m_staticText4">
+						<style>wxALIGN_RIGHT</style>
+						<label>   Run to packet:</label>
+						<wrap>-1</wrap>
+					</object>
+					<object class="wxSpinCtrl" name="PlayToPacket">
+						<style>wxSP_ARROW_KEYS</style>
+						<value>0</value>
+						<min>0</min>
+						<max>10000000</max>
 					</object>
 				</object>
 			</object>

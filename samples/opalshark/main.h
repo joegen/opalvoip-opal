@@ -94,7 +94,7 @@ class VideoOutputWindow : public wxScrolledWindow
     ~VideoOutputWindow();
 
     void OutputVideo(const RTP_DataFrame & data);
-    void OnVideoUpdate(wxCommandEvent &);
+    void OnVideoUpdate();
     void OnPaint(wxPaintEvent &);
 
     PColourConverter * m_converter;
@@ -112,7 +112,6 @@ class MyPlayer : public wxMDIChildFrame
     MyPlayer(MyManager * manager, const PFilePath & filename);
     ~MyPlayer();
 
-  private:
     void OnCloseWindow(wxCloseEvent &);
     void OnClose(wxCommandEvent &);
     void OnListChanged(wxGridEvent &);
@@ -122,6 +121,7 @@ class MyPlayer : public wxMDIChildFrame
     void OnResume(wxCommandEvent &);
     void OnStep(wxCommandEvent &);
     void OnAnalyse(wxCommandEvent &);
+    void OnAnalysisUpdate(wxString, bool);
 
     void Discover();
     PDECLARE_NOTIFIER2(OpalPCAPFile, MyPlayer, DiscoverProgress, OpalPCAPFile::Progress &);
@@ -135,6 +135,8 @@ class MyPlayer : public wxMDIChildFrame
       CtlStop
     };
     void StartPlaying(Controls ctrl);
+    void OnPaused();
+    void OnPlayEnded();
 
     void PlayAudio();
     void PlayVideo();
@@ -147,6 +149,7 @@ class MyPlayer : public wxMDIChildFrame
     PThread          * m_discoverThread;
     wxProgressDialog * m_discoverProgress;
     OpalPCAPFile::DiscoveredRTP m_discoveredRTP;
+    unsigned m_packetCount;
 
     enum
     {
@@ -166,14 +169,16 @@ class MyPlayer : public wxMDIChildFrame
     wxListCtrl * m_analysisList;
 
     Controls  m_playThreadCtrl;
+    unsigned  m_pausePacket;
     PThread * m_playThread;
 
-    wxButton * m_play;
-    wxButton * m_stop;
-    wxButton * m_pause;
-    wxButton * m_resume;
-    wxButton * m_step;
-    wxButton * m_analyse;
+    wxButton   * m_play;
+    wxButton   * m_stop;
+    wxButton   * m_pause;
+    wxButton   * m_resume;
+    wxButton   * m_step;
+    wxButton   * m_analyse;
+    wxSpinCtrl * m_playToPacket;
 
   wxDECLARE_EVENT_TABLE();
 };

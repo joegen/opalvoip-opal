@@ -247,7 +247,22 @@ struct OpalKeyFrameDetectorH264 : OpalVideoFormat::FrameDetector
   }
 };
 
-PFACTORY_CREATE(OpalVideoFormat::FrameDetectFactory, OpalKeyFrameDetectorH264, "H264");
+PFACTORY_CREATE(OpalVideoFormat::FrameDetectFactory, OpalKeyFrameDetectorH264, H264EncodingName);
+
+
+struct OpalKeyFrameDetectorFlashH264 : OpalVideoFormat::FrameDetector
+{
+    virtual OpalVideoFormat::FrameType GetFrameType(const BYTE * rtp, PINDEX size)
+    {
+      if (size < (PINDEX)sizeof(FlashSPS_PPS))
+        return OpalVideoFormat::e_NonFrameBoundary;
+      if (memcmp(rtp, FlashSPS_PPS, sizeof(FlashSPS_PPS)) == 0)
+        return OpalVideoFormat::e_IntraFrame;
+      return OpalVideoFormat::e_InterFrame;
+    }
+};
+
+PFACTORY_CREATE(OpalVideoFormat::FrameDetectFactory, OpalKeyFrameDetectorFlashH264, H264FlashEncodingName);
 
 
 #endif // OPAL_VIDEO

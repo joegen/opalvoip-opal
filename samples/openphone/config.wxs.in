@@ -1,18 +1,37 @@
 <Include>
-   <?if $(var.Architecture) = "x86" ?>
-      <?define PluginDir = "$(env.ProgramFiles)\PTLib Plug Ins" ?>
-      <?define SSLDir = "$(env.ProgramW6432)\OpenSSL-Win32\bin" ?>
-      <?define LuaDir = "$(env.ProgramFiles)\lua\5.1" ?>
-      <?define JPEGDir = "C:\Tools\bin" ?>
-      <?define SaslDir = "C:\Tools\bin" ?>
-      <?define LDAPDir = "C:\Tools\bin" ?>
-      <?define SpanDspDir = "..\..\..\external\spandsp-0.0.6\src\Release" ?>
-   <?else?>
-      <?define PluginDir = "$(env.ProgramW6432)\PTLib Plug Ins" ?>
-      <?define SSLDir = "$(env.ProgramW6432)\OpenSSL-Win64\bin" ?>
-      <?define SpanDspDir = "..\..\..\external\spandsp-0.0.6\src\x64\Release" ?>
-   <?endif?>
-   <?define WxDir = "C:\Tools\wxWidgets-3.0.1" ?>
-   <?define PTLibDir = "..\..\..\ptlib" ?>
-   <?define OPALDir = "..\.." ?>
+    <?include version.wxs ?>
+
+    <?define ProductName = "Open Phone" ?>
+    <?define ProductDescription = "VoIP client for OPAL" ?>
+    <?define ProductBaseFilename = "OpenPhone" ?>
+    <?define ProductVersion = "$(var.OPAL_VERSION)" ?>
+    <?define ProductManufacturer = "Vox Lucida Pty. Ltd." ?>
+    <?define ProductGUID = "56E04FF6-6AEB-4917-B8FC-6C0C1F5831F1" ?>
+
+    <?if $(var.Architecture) = "x86" ?>
+        <?define SSLDir = "$(env.ProgramW6432)\OpenSSL-Win32\bin" ?>
+        <?define LuaDir = "$(env.ProgramFiles)\lua\5.1" ?>
+        <?define JPEGDir = "C:\Tools\bin" ?>
+        <?define SaslDir = "C:\Tools\bin" ?>
+        <?define LDAPDir = "C:\Tools\bin" ?>
+        <?define FFMPEGDir = "..\..\..\external\ffmpeg-win32-dev\bin" ?>
+        <?define OpenH264Dir = "$(env.ProgramFiles)\PTLib Plug Ins" ?>
+        <?define SpanDspDir = "..\..\..\external\spandsp-0.0.6\src\Release" ?>
+    <?else?>
+        <?define SSLDir = "$(env.ProgramW6432)\OpenSSL-Win64\bin" ?>
+        <?define FFMPEGDir = "..\..\..\external\ffmpeg-win64-dev\bin" ?>
+        <?define OpenH264Dir = "$(env.ProgramW6432)\PTLib Plug Ins" ?>
+        <?define SpanDspDir = "..\..\..\external\spandsp-0.0.6\src\x64\Release" ?>
+    <?endif?>
+
+    <?define AVCODECVer = "57" ?>
+    <?define AVUTILVer = "55" ?>
+    <?define SWRESAMPLEVer = "2" ?>
+
+    <?define WxDir = "$(env.WXDIR)" ?>
+    <?define WxVer = "$(env.WXVER)0" ?>
+  
+    <?define PTLibDir = "..\..\..\ptlib" ?>
+    <?define OPALDir = "..\.." ?>
+
 </Include>

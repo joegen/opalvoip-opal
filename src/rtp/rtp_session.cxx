@@ -2601,11 +2601,14 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::WriteData(RTP_DataFrame & fram
   if (!transport->IsEstablished())
     return e_IgnorePacket;
 
-  PSafeLockReadWrite lock(*this);
-  if (!lock.IsLocked())
+  if (!LockReadWrite())
     return e_AbortTransport;
 
-  switch (OnSendData(frame, rewrite)) {
+  SendReceiveStatus status = OnSendData(frame, rewrite);
+
+  UnlockReadWrite();
+
+  switch (status) {
     case e_IgnorePacket :
       return e_IgnorePacket;
 
@@ -2637,24 +2640,28 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::WriteControl(RTP_ControlFrame 
   if (!transport->IsEstablished())
     return e_IgnorePacket;
 
-  PSafeLockReadWrite lock(*this);
-  if (!lock.IsLocked())
+  if (!LockReadWrite())
     return e_AbortTransport;
 
-  PIPSocketAddressAndPort remoteRTCP;
-  if (remote == NULL && m_singlePortRx && !m_singlePortTx) {
-    GetRemoteAddress(false).GetIpAndPort(remoteRTCP);
-    remote = &remoteRTCP;
-  }
+  SendReceiveStatus status = OnSendControl(frame);
 
-  switch (OnSendControl(frame)) {
+  UnlockReadWrite();
+
+  switch (status) {
     case e_IgnorePacket :
       return e_IgnorePacket;
 
-    case e_ProcessPacket :
-      if (transport->Write(frame.GetPointer(), frame.GetPacketSize(), m_singlePortRx ? e_Data : e_Control, remote))
-        return e_ProcessPacket;
+    case e_ProcessPacket:
+      {
+        PIPSocketAddressAndPort remoteRTCP;
+        if (remote == NULL && m_singlePortRx && !m_singlePortTx) {
+          GetRemoteAddress(false).GetIpAndPort(remoteRTCP);
+          remote = &remoteRTCP;
+        }
 
+        if (transport->Write(frame.GetPointer(), frame.GetPacketSize(), m_singlePortRx ? e_Data : e_Control, remote))
+          return e_ProcessPacket;
+      }
       // Do abort case
     default :
       break;

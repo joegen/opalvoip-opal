@@ -766,7 +766,7 @@ bool H264Encoder::Load(void * instance)
     char * tempDirs = strdup(pluginDirs);
     const char * token = strtok(tempDirs, DIR_TOKENISER);
     while (token != NULL) {
-      snprintf(executablePath, sizeof(executablePath), "%s"DIR_SEPARATOR"%s", token, ExecutableName);
+      snprintf(executablePath, sizeof(executablePath), "%s" DIR_SEPARATOR "%s", token, ExecutableName);
       if (IsExecutable(executablePath))
         break;
 

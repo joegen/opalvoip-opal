@@ -219,7 +219,7 @@ opus_int32 opus_repacketizer_out_range_impl(OpusRepacketizer *rp, int begin, int
    }
    if (pad)
    {
-      for (size_t j=ptr-data;j<maxlen;j++)
+      for (size_t j=ptr-data;j<(size_t)maxlen;j++)
          data[j] = 0;
    }
    return tot_size;
