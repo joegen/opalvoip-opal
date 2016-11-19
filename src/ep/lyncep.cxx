@@ -36,6 +36,7 @@
 
 OpalLyncEndPoint::OpalLyncEndPoint(OpalManager & manager, const char *prefix)
   : OpalEndPoint(manager, prefix, IsNetworkEndPoint)
+  , m_platform(nullptr)
 {
 }
 
@@ -54,31 +55,46 @@ void OpalLyncEndPoint::ShutDown()
     m_registrations.clear();
   }
 
-  if (!ShutdownPlatform()) {
+  if (!DestroyPlatform(m_platform)) {
     PTRACE_IF(2, !GetLastError().empty(), "Error shutting down Lync UCMA platform: " << GetLastError());
   }
+
+  m_platform = nullptr;
 }
 
 
 OpalMediaFormatList OpalLyncEndPoint::GetMediaFormats() const
 {
-  return OpalMediaFormatList();
+  // just raw audio for now, then work out what Lync supports, somehow ...
+  OpalMediaFormatList formats;
+  formats += OpalPCM16;
+  return formats;
 }
 
 
 PSafePtr<OpalConnection> OpalLyncEndPoint::MakeConnection(OpalCall & call,
-                                                          const PString & party,
+                                                          const PString & uri,
                                                           void * userData,
                                                           unsigned int options,
                                                           OpalConnection::StringOptions * stringOptions)
 {
-  return new OpalLyncConnection(call, *this, party, userData, options, stringOptions);
+  return AddConnection(CreateConnection(call, uri, userData, options, stringOptions));
+}
+
+
+OpalLyncConnection * OpalLyncEndPoint::CreateConnection(OpalCall & call,
+                                                        const PString & uri,
+                                                        void * userData,
+                                                        unsigned int options,
+                                                        OpalConnection::StringOptions * stringOptions)
+{
+  return new OpalLyncConnection(call, *this, uri, userData, options, stringOptions);
 }
 
 
 PBoolean OpalLyncEndPoint::GarbageCollection()
 {
-  return true;
+  return OpalEndPoint::GarbageCollection();
 }
 
 
@@ -86,22 +102,26 @@ bool OpalLyncEndPoint::Register(const PString & uri)
 {
   PWaitAndSignal lock(m_registrationMutex);
 
-  if (!StartPlatform(PProcess::Current().GetName())) {
-    PTRACE(2, "Error initialising Lync UCMA platform: " << GetLastError());
-    return false;
+  if (m_platform == nullptr) {
+    m_platform = CreatePlatform(PProcess::Current().GetName());
+    if (m_platform == nullptr) {
+      PTRACE(2, "Error initialising Lync UCMA platform: " << GetLastError());
+      return false;
+    }
   }
 
   RegistrationMap::iterator it = m_registrations.find(uri);
   if (it != m_registrations.end())
     return false;
 
-  UserEndpoint * user = CreateUserEndpoint(uri);
+  UserEndpoint * user = CreateUserEndpoint(*m_platform, uri);
   if (user == NULL) {
     PTRACE(2, "Error registering \"" << uri << "\" as Lync UCMA user: " << GetLastError());
     return false;
   }
 
   m_registrations[uri] = user;
+  PTRACE(3, "Registered \"" << uri << "\" as Lync UCMA.");
   return true;
 }
 
@@ -116,7 +136,17 @@ bool OpalLyncEndPoint::Unregister(const PString & uri)
 
   DestroyUserEndpoint(it->second);
   m_registrations.erase(it);
+  PTRACE(3, "Unregistered \"" << uri << "\" as Lync UCMA.");
   return true;
+}
+
+
+OpalLyncShim::UserEndpoint * OpalLyncEndPoint::GetRegistration(const PString & uri)
+{
+  PWaitAndSignal lock(m_registrationMutex);
+
+  RegistrationMap::iterator it = uri.IsEmpty() || uri == "*" ? m_registrations.begin() : m_registrations.find(uri);
+  return it != m_registrations.end() ? it->second : nullptr;
 }
 
 
@@ -129,18 +159,62 @@ OpalLyncConnection::OpalLyncConnection(OpalCall & call,
                                        unsigned options,
                                        OpalConnection::StringOptions * stringOptions)
   : OpalConnection(call, ep, ep.GetManager().GetNextToken('L'), options, stringOptions)
+  , m_endpoint(ep)
+  , m_conversation(nullptr)
+  , m_audioVideoCall(nullptr)
 {
 }
 
 
 PBoolean OpalLyncConnection::SetUpConnection()
 {
-  return false;
+  OpalLyncShim::UserEndpoint * uep = m_endpoint.GetRegistration(GetLocalPartyURL());
+  if (uep == nullptr) {
+    PTRACE(2, "Cannot find registration for user: " << GetLocalPartyURL());
+    return false;
+  }
+
+  m_conversation = CreateConversation(*uep);
+  if (m_conversation == nullptr) {
+    PTRACE(2, "Error creating Lync UCMA conversation: " << GetLastError());
+    return false;
+  }
+
+  m_audioVideoCall = CreateAudioVideoCall(*m_conversation, GetRemotePartyURL());
+  if (m_audioVideoCall == nullptr) {
+    PTRACE(2, "Error creating Lync UCMA conversation: " << GetLastError());
+    return false;
+  }
+
+  PTRACE(3, "Lync UCMA call from " << GetLocalPartyURL() << " to " << GetRemotePartyURL() << " started.");
+  return true;
+}
+
+
+void OpalLyncConnection::OnCallStateChanged(int previousState, int newState)
+{
+  PTRACE(3, "Lync UCMA call stat changed from " << previousState << " to " << newState);
+}
+
+
+void OpalLyncConnection::OnEndCallEstablished(const std::string & error)
+{
+  if (error.empty())
+    InternalOnEstablished();
+  else {
+    PTRACE(2, "Error establishing Lync UCMA call: " << error);
+    Release(EndedByConnectFail);
+  }
 }
 
 
 void OpalLyncConnection::OnReleased()
 {
+  DestroyAudioVideoCall(m_audioVideoCall);
+  m_audioVideoCall = nullptr;
+
+  DestroyConversation(m_conversation);
+  m_conversation = nullptr;
 }
 
 

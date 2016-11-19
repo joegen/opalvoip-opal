@@ -38,25 +38,33 @@
  */
 class OpalLyncShim
 {
-public:
-  OpalLyncShim();
-  ~OpalLyncShim();
+  public:
+    OpalLyncShim();
+    ~OpalLyncShim();
 
-protected:
-  bool StartPlatform(const char * userAgent);
-  bool ShutdownPlatform();
+    struct Platform;
+    Platform * CreatePlatform(const char * userAgent);
+    bool DestroyPlatform(Platform * platform);
 
-  struct UserEndpoint;
-  UserEndpoint * CreateUserEndpoint(const char * uri);
-  void DestroyUserEndpoint(UserEndpoint * user);
+    struct UserEndpoint;
+    UserEndpoint * CreateUserEndpoint(Platform & platform, const char * uri);
+    void DestroyUserEndpoint(UserEndpoint * user);
+    virtual void OnConferenceInvitationReceived(const std::string & uri) { }
 
-  const std::string & GetLastError() const { return m_lastError; }
+    struct Conversation;
+    Conversation * CreateConversation(UserEndpoint & uep);
+    void DestroyConversation(Conversation * conv);
 
-private:
-  struct Platform;
-  Platform * m_platform;
+    struct AudioVideoCall;
+    AudioVideoCall * CreateAudioVideoCall(Conversation & conv, const char * uri);
+    void DestroyAudioVideoCall(AudioVideoCall * call);
+    virtual void OnCallStateChanged(int previousState, int newState) { }
+    virtual void OnEndCallEstablished(const std::string & /*error*/) { }
 
-  std::string m_lastError;
+    const std::string & GetLastError() const { return m_lastError; }
+
+  private:
+    std::string m_lastError;
 };
 
 
@@ -76,99 +84,123 @@ class OpalLyncConnection;
  */
 class OpalLyncEndPoint : public OpalEndPoint, public OpalLyncShim
 {
-  PCLASSINFO(OpalLyncEndPoint, OpalEndPoint);
-public:
-  /**@name Construction */
-  //@{
-  /**Create a new endpoint.
-   */
-  OpalLyncEndPoint(
-    OpalManager & manager,
-    const char *prefix = "lync"
-  );
-
-  /**Destroy endpoint.
-   */
-  virtual ~OpalLyncEndPoint();
-  //@}
-
-  /**@name Overrides from OpalEndPoint */
-  //@{
-  /** Shut down the endpoint, this is called by the OpalManager just before
-      destroying the object and can be handy to make sure some things are
-      stopped before the vtable gets clobbered.
-      */
-  virtual void ShutDown();
-
-  /**Get the data formats this endpoint is capable of operating.
-     This provides a list of media data format names that may be used by an
-     OpalMediaStream may be created by a connection from this endpoint.
-
-     Note that a specific connection may not actually support all of the
-     media formats returned here, but should return no more.
+    PCLASSINFO(OpalLyncEndPoint, OpalEndPoint);
+  public:
+    /**@name Construction */
+    //@{
+    /**Create a new endpoint.
      */
-  virtual OpalMediaFormatList GetMediaFormats() const;
+    OpalLyncEndPoint(
+      OpalManager & manager,
+      const char *prefix = "lync"
+    );
 
-  /** Set up a connection to a remote party.
-      This is called from the OpalManager::MakeConnection() function once
-      it has determined that this is the endpoint for the protocol.
+    /**Destroy endpoint.
+     */
+    virtual ~OpalLyncEndPoint();
+    //@}
 
-      The general form for this party parameter is:
+    /**@name Overrides from OpalEndPoint */
+    //@{
+    /** Shut down the endpoint, this is called by the OpalManager just before
+        destroying the object and can be handy to make sure some things are
+        stopped before the vtable gets clobbered.
+        */
+    virtual void ShutDown();
 
-      [proto:][alias@][transport$]address[:port]
+    /**Get the data formats this endpoint is capable of operating.
+       This provides a list of media data format names that may be used by an
+       OpalMediaStream may be created by a connection from this endpoint.
 
-      where the various fields will have meanings specific to the endpoint
-      type. For example, with H.323 it could be "h323:Fred@site.com" which
-      indicates a user Fred at gatekeeper size.com. Whereas for the PSTN
-      endpoint it could be "pstn:5551234" which is to call 5551234 on the
-      first available PSTN line.
+       Note that a specific connection may not actually support all of the
+       media formats returned here, but should return no more.
+       */
+    virtual OpalMediaFormatList GetMediaFormats() const;
 
-      The proto field is optional when passed to a specific endpoint. If it
-      is present, however, it must agree with the endpoints protocol name or
-      false is returned.
+    /** Set up a connection to a remote party.
+        This is called from the OpalManager::MakeConnection() function once
+        it has determined that this is the endpoint for the protocol.
 
-      This function usually returns almost immediately with the connection
-      continuing to occur in a new background thread.
+        The general form for this party parameter is:
 
-      If false is returned then the connection could not be established. For
-      example if a PSTN endpoint is used and the assiciated line is engaged
-      then it may return immediately. Returning a non-NULL value does not
-      mean that the connection will succeed, only that an attempt is being
-      made.
+        [proto:][alias@][transport$]address[:port]
+
+        where the various fields will have meanings specific to the endpoint
+        type. For example, with H.323 it could be "h323:Fred@site.com" which
+        indicates a user Fred at gatekeeper size.com. Whereas for the PSTN
+        endpoint it could be "pstn:5551234" which is to call 5551234 on the
+        first available PSTN line.
+
+        The proto field is optional when passed to a specific endpoint. If it
+        is present, however, it must agree with the endpoints protocol name or
+        false is returned.
+
+        This function usually returns almost immediately with the connection
+        continuing to occur in a new background thread.
+
+        If false is returned then the connection could not be established. For
+        example if a PSTN endpoint is used and the assiciated line is engaged
+        then it may return immediately. Returning a non-NULL value does not
+        mean that the connection will succeed, only that an attempt is being
+        made.
+        */
+    virtual PSafePtr<OpalConnection> MakeConnection(
+      OpalCall & call,                         ///<  Owner of connection
+      const PString & party,                   ///<  Remote party to call
+      void * userData,                         ///<  Arbitrary data to pass to connection
+      unsigned int options,                    ///<  options to pass to conneciton
+      OpalConnection::StringOptions * stringOptions  ///<  complex string options
+    );
+
+    /** Execute garbage collection for endpoint.
+        Returns true if all garbage has been collected.
+        */
+    virtual PBoolean GarbageCollection();
+    //@}
+
+    /**@name User registrations */
+    //@{
+    /// Register URI as a local user with Lync server
+    bool Register(
+      const PString & uri
+    );
+
+    /// Unregister URI as a local user with Lync server
+    bool Unregister(
+      const PString & uri
+    );
+
+    /// Get registered URI with Lync server
+    UserEndpoint * GetRegistration(
+      const PString & uri
+    );
+    //@}
+
+    /**@name Customisation call backs */
+    //@{
+    /** Create a connection for the skinny endpoint.
       */
-  virtual PSafePtr<OpalConnection> MakeConnection(
-    OpalCall & call,                         ///<  Owner of connection
-    const PString & party,                   ///<  Remote party to call
-    void * userData,                         ///<  Arbitrary data to pass to connection
-    unsigned int options,                    ///<  options to pass to conneciton
-    OpalConnection::StringOptions * stringOptions  ///<  complex string options
-  );
+    virtual OpalLyncConnection * CreateConnection(
+      OpalCall & call,     ///< Owner of connection
+      const PString & uri, ///< Number to dial out, empty if incoming
+      void * userData,     ///< Arbitrary data to pass to connection
+      unsigned int options,
+      OpalConnection::StringOptions * stringOptions = NULL
+    );
+    //@}
 
-  /** Execute garbage collection for endpoint.
-      Returns true if all garbage has been collected.
-      */
-  virtual PBoolean GarbageCollection();
-  //@}
+  protected:
+    Platform * m_platform;
 
-  //@{
-  bool Register(
-    const PString & uri
-  );
-  bool Unregister(
-    const PString & uri
-  );
-  //@}
-
-protected:
-  typedef std::map<PString, OpalLyncShim::UserEndpoint *> RegistrationMap;
-  RegistrationMap m_registrations;
-  PMutex          m_registrationMutex;
+    typedef std::map<PString, UserEndpoint *> RegistrationMap;
+    RegistrationMap m_registrations;
+    PMutex          m_registrationMutex;
 };
 
 
 /**Connection for interfacing Microsoft Lync via UCMA.
   */
-class OpalLyncConnection : public OpalConnection
+class OpalLyncConnection : public OpalConnection, public OpalLyncShim
 {
     PCLASSINFO(OpalLyncConnection, OpalConnection);
   public:
@@ -179,8 +211,8 @@ class OpalLyncConnection : public OpalConnection
     OpalLyncConnection(
       OpalCall & call,
       OpalLyncEndPoint & ep,
-      const PString & dialNumber,
-      void * /*userData*/,
+      const PString & uri,
+      void * userData,
       unsigned options,
       OpalConnection::StringOptions * stringOptions
     );
@@ -248,6 +280,16 @@ class OpalLyncConnection : public OpalConnection
       */
     virtual OpalTransportAddress GetRemoteAddress() const;
   //@}
+
+  protected:
+    OpalLyncEndPoint & m_endpoint;
+
+    Conversation   * m_conversation;
+    AudioVideoCall * m_audioVideoCall;
+
+    virtual void OnConferenceInvitationReceived(const std::string & uri) override;
+    virtual void OnCallStateChanged(int previousState, int newState) override;
+    virtual void OnEndCallEstablished(const std::string & error) override;
 };
 
 

@@ -45,85 +45,122 @@ struct OpalLyncShim::Platform : gcroot<Collaboration::CollaborationPlatform^>
   Platform(Collaboration::CollaborationPlatform^ p) : gcroot<Collaboration::CollaborationPlatform^>(p) { }
 };
 
+struct OpalLyncShim::Conversation : gcroot<Collaboration::Conversation^>
+{
+  Conversation(Collaboration::Conversation^ p) : gcroot<Collaboration::Conversation^>(p) { }
+};
+
+struct OpalLyncShim::AudioVideoCall : gcroot<Collaboration::AudioVideo::AudioVideoCall^>
+{
+  AudioVideoCall(Collaboration::AudioVideo::AudioVideoCall^ p) : gcroot<Collaboration::AudioVideo::AudioVideoCall^>(p) { }
+};
+
+
+ref class OpalLyncShim_Callbacks : public System::Object
+{
+    OpalLyncShim & m_shim;
+  public:
+    OpalLyncShim_Callbacks(OpalLyncShim & shim)
+      : m_shim(shim)
+    {
+    }
+
+    void ConferenceInvitationReceived(System::Object^ sender, Collaboration::ConferenceInvitationReceivedEventArgs^ args)
+    {
+      m_shim.OnConferenceInvitationReceived(msclr::interop::marshal_as<std::string>(args->Invitation->ConferenceUri));
+    }
+
+    void CallStateChanged(System::Object^ sender, Collaboration::CallStateChangedEventArgs^ args)
+    {
+      m_shim.OnCallStateChanged((int)args->PreviousState, (int)args->State);
+    }
+
+    void CallEndEstablish(System::IAsyncResult^ ar)
+    {
+      std::string error;
+      try {
+        Collaboration::Call^ call = dynamic_cast<Collaboration::Call^>(ar->AsyncState);
+        call->EndEstablish(ar);
+      }
+      catch (System::Exception^ err) {
+        error = msclr::interop::marshal_as<std::string>(err->ToString());
+      }
+      m_shim.OnEndCallEstablished(error);
+    }
+};
+
 
 ///////////////////////////////////////////////////////////////////////////////
 
 OpalLyncShim::OpalLyncShim()
-  : m_platform(nullptr)
 {
 }
 
 
 OpalLyncShim::~OpalLyncShim()
 {
-  ShutdownPlatform();
 }
 
 
-bool OpalLyncShim::StartPlatform(const char * appName)
+OpalLyncShim::Platform * OpalLyncShim::CreatePlatform(const char * appName)
 {
   m_lastError.clear();
-
-  if (m_platform != nullptr)
-    return true;
 
   System::String^ userAgent = nullptr;
   if (appName != NULL && *appName != '\0')
     userAgent = gcnew System::String(appName);
 
-  Collaboration::CollaborationPlatform^ platform;
+  Collaboration::CollaborationPlatform^ cp;
   try {
     Collaboration::ClientPlatformSettings^ cps = gcnew Collaboration::ClientPlatformSettings(userAgent, Signaling::SipTransportType::Tls);
-    platform = gcnew Collaboration::CollaborationPlatform(cps);
-    platform->EndStartup(platform->BeginStartup(nullptr, nullptr));
+    cp = gcnew Collaboration::CollaborationPlatform(cps);
+    cp->EndStartup(cp->BeginStartup(nullptr, nullptr));
+  }
+  catch (System::Exception^ err) {
+    m_lastError = msclr::interop::marshal_as<std::string>(err->ToString());
+    return nullptr;
+  }
+
+  return new Platform(cp);
+}
+
+
+bool OpalLyncShim::DestroyPlatform(Platform * platform)
+{
+  m_lastError.clear();
+
+  if (platform == nullptr)
+    return false;
+
+  Collaboration::CollaborationPlatform^ cp = *platform;
+  delete platform;
+
+  if (cp == nullptr)
+    return false;
+
+  try {
+    cp->EndShutdown(cp->BeginShutdown(nullptr, nullptr));
   }
   catch (System::Exception^ err) {
     m_lastError = msclr::interop::marshal_as<std::string>(err->ToString());
     return false;
   }
 
-  m_platform = new Platform(platform);
   return true;
 }
 
 
-bool OpalLyncShim::ShutdownPlatform()
+OpalLyncShim::UserEndpoint * OpalLyncShim::CreateUserEndpoint(Platform & platform, const char * uri)
 {
   m_lastError.clear();
-
-  if (m_platform == nullptr)
-    return false;
-
-  Collaboration::CollaborationPlatform^ platform = *m_platform;
-  if (platform == nullptr)
-    return false;
-
-  bool ok = true;
-  try {
-    platform->EndShutdown(platform->BeginShutdown(nullptr, nullptr));
-  }
-  catch (System::Exception^ err) {
-    m_lastError = msclr::interop::marshal_as<std::string>(err->ToString());
-    ok = false;
-  }
-
-  delete m_platform;
-  m_platform = nullptr;
-  return ok;
-}
-
-
-OpalLyncShim::UserEndpoint * OpalLyncShim::CreateUserEndpoint(const char * uri)
-{
-  m_lastError.clear();
-
-  if (m_platform == nullptr)
-    return nullptr;
 
   Collaboration::UserEndpoint^ uep;
   try {
+    OpalLyncShim_Callbacks^ callbacks = gcnew OpalLyncShim_Callbacks(*this);
     Collaboration::UserEndpointSettings^ ues = gcnew Collaboration::UserEndpointSettings(gcnew System::String(uri));
-    uep = gcnew Collaboration::UserEndpoint(*m_platform, ues);
+    uep = gcnew Collaboration::UserEndpoint(platform, ues);
+    uep->ConferenceInvitationReceived += gcnew System::EventHandler<Collaboration::ConferenceInvitationReceivedEventArgs^>
+                                                        (callbacks, &OpalLyncShim_Callbacks::ConferenceInvitationReceived);
     uep->EndEstablish(uep->BeginEstablish(nullptr, nullptr));
   }
   catch (System::Exception^ err) {
@@ -140,6 +177,59 @@ void OpalLyncShim::DestroyUserEndpoint(UserEndpoint * user)
   delete user;
 }
 
+
+OpalLyncShim::Conversation * OpalLyncShim::CreateConversation(UserEndpoint & uep)
+{
+  m_lastError.clear();
+
+  Collaboration::Conversation^ conv;
+  try {
+    Collaboration::ConversationSettings^ cs = gcnew Collaboration::ConversationSettings();
+    conv = gcnew Collaboration::Conversation(uep, cs);
+  }
+  catch (System::Exception^ err) {
+    m_lastError = msclr::interop::marshal_as<std::string>(err->ToString());
+    return nullptr;
+  }
+
+  return new Conversation(conv);
+}
+
+
+void OpalLyncShim::DestroyConversation(Conversation * conv)
+{
+  delete conv;
+}
+
+
+OpalLyncShim::AudioVideoCall * OpalLyncShim::CreateAudioVideoCall(Conversation & conv, const char * uri)
+{
+  m_lastError.clear();
+
+  Collaboration::AudioVideo::AudioVideoCall^ call;
+  try {
+    OpalLyncShim_Callbacks^ callbacks = gcnew OpalLyncShim_Callbacks(*this);
+    call = gcnew Collaboration::AudioVideo::AudioVideoCall(conv);
+    call->StateChanged += gcnew System::EventHandler<Collaboration::CallStateChangedEventArgs^>
+                                            (callbacks, &OpalLyncShim_Callbacks::CallStateChanged);
+    call->EndEstablish(call->BeginEstablish(gcnew System::String(uri),
+                       nullptr,
+                       gcnew System::AsyncCallback(callbacks, &OpalLyncShim_Callbacks::CallEndEstablish),
+                       call));
+  }
+  catch (System::Exception^ err) {
+    m_lastError = msclr::interop::marshal_as<std::string>(err->ToString());
+    return nullptr;
+  }
+
+  return new AudioVideoCall(call);
+}
+
+
+void OpalLyncShim::DestroyAudioVideoCall(AudioVideoCall * call)
+{
+  delete call;
+}
 
 
 #endif // OPAL_LYNC
