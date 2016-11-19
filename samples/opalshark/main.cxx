@@ -557,6 +557,7 @@ MyPlayer::MyPlayer(MyManager * manager, const PFilePath & filename)
   FindWindowByNameAs(m_analysisList, this, wxT("Analysis"));
   m_analysisList->AppendColumn("#");
   m_analysisList->AppendColumn("Time");
+  m_analysisList->AppendColumn("Delta (ms)");
   m_analysisList->AppendColumn("Sequence");
   m_analysisList->AppendColumn("Timestamp");
   m_analysisList->AppendColumn("Delta");
@@ -841,10 +842,12 @@ void MyPlayer::OnStep(wxCommandEvent &)
 struct Analyser
 {
   MyPlayer & m_player;
+  bool       m_asyncUpdate;
   bool       m_isVideo;
   bool       m_isDecoded;
   bool       m_firstPacket;
   PTime      m_firstTime;
+  PTime      m_lastTime;
   unsigned   m_firstTimestamp;
   unsigned   m_lastSequenceNumber;
   unsigned   m_lastTimestamp;
@@ -852,12 +855,14 @@ struct Analyser
   OpalAudioFormat m_audioFormat;
   OpalAudioFormat::FrameDetectorPtr m_audioFrameDetector;
 
-  Analyser(MyPlayer & player, const OpalMediaFormat & mediaFormat, bool decoded = false)
+  Analyser(MyPlayer & player, bool async, const OpalMediaFormat & mediaFormat, bool decoded = false)
     : m_player(player)
+    , m_asyncUpdate(async)
     , m_isVideo(mediaFormat.GetMediaType() == OpalMediaType::Video())
     , m_isDecoded(decoded)
     , m_firstPacket(true)
     , m_firstTime(0)
+    , m_lastTime(0)
     , m_firstTimestamp(0)
     , m_lastSequenceNumber(0)
     , m_lastTimestamp(0)
@@ -871,7 +876,7 @@ struct Analyser
   {
     RTP_SequenceNumber thisSequenceNumber = data.GetSequenceNumber();
     RTP_Timestamp thisTimestamp = data.GetTimestamp();
-    wxString delta, jitter, notes;
+    wxString deltaMS, deltaTS, jitter, notes;
 
     if (m_firstPacket) {
       m_firstPacket = false;
@@ -880,7 +885,8 @@ struct Analyser
     }
     else {
       if (!m_isVideo || data.GetMarker()) {
-        delta << (thisTimestamp - m_lastTimestamp);
+        deltaMS << (thisTime - m_lastTime).GetMilliSeconds();
+        deltaTS << (thisTimestamp - m_lastTimestamp);
         int usJit = (thisTime - (m_firstTime + (thisTimestamp - m_firstTimestamp) / 48)).GetMicroSeconds();
         if (usJit < -100) {
           usJit = -usJit;
@@ -903,6 +909,7 @@ struct Analyser
         notes << "Silent ";
     }
 
+    m_lastTime = thisTime;
     m_lastSequenceNumber = thisSequenceNumber;
     if (!m_isVideo || data.GetMarker())
       m_lastTimestamp = thisTimestamp;
@@ -910,12 +917,16 @@ struct Analyser
     wxString info;
     info << m_packetNumber << '\n'
          << PwxString(thisTime.AsString("hh:mm:ss.uuu")) << '\n'
+         << deltaMS << '\n'
          << thisSequenceNumber << '\n'
          << thisTimestamp << '\n'
-         << delta << '\n'
+         << deltaTS << '\n'
          << jitter << '\n'
          << notes;
-    m_player.CallAfter<MyPlayer, wxString, wxString>(&MyPlayer::OnAnalysisUpdate, info);
+    if (m_asyncUpdate)
+      m_player.CallAfter<MyPlayer, wxString, bool, wxString, bool>(&MyPlayer::OnAnalysisUpdate, info, true);
+    else
+      m_player.OnAnalysisUpdate(info, false);
   }
 };
 
@@ -929,6 +940,8 @@ void MyPlayer::OnAnalyse(wxCommandEvent &)
     return;
   }
 
+  m_analysisList->DeleteAllItems();
+
   off_t fileLength = m_pcapFile.GetLength();
   wxProgressDialog progress(OpalSharkString,
                             PwxString(PSTRSTRM("Analysing " << m_pcapFile.GetFilePath())),
@@ -936,7 +949,7 @@ void MyPlayer::OnAnalyse(wxCommandEvent &)
                             this,
                             wxPD_CAN_ABORT|wxPD_AUTO_HIDE);
 
-  Analyser analysis(*this, m_discoveredRTP[m_selectedRTP].m_mediaFormat);
+  Analyser analysis(*this, false, m_discoveredRTP[m_selectedRTP].m_mediaFormat);
   while (!m_pcapFile.IsEndOfFile()) {
     ++analysis.m_packetNumber;
 
@@ -948,21 +961,27 @@ void MyPlayer::OnAnalyse(wxCommandEvent &)
     if (!progress.Update(m_pcapFile.GetPosition()*1000LL/fileLength))
       break;
   }
+
+  for (int i = 0; i < m_analysisList->GetColumnCount(); ++i)
+    m_analysisList->SetColumnWidth(i, wxLIST_AUTOSIZE_USEHEADER);
 }
 
 
-void MyPlayer::OnAnalysisUpdate(wxString info)
+void MyPlayer::OnAnalysisUpdate(wxString info, bool async)
 {
   wxStringTokenizer parser(info, wxT("\n"));
 
   long pos = m_analysisList->InsertItem(INT_MAX, parser.GetNextToken());
-  m_analysisList->SetItem(pos, 1, parser.GetNextToken());
-  m_analysisList->SetItem(pos, 2, parser.GetNextToken());
-  m_analysisList->SetItem(pos, 3, parser.GetNextToken());
-  m_analysisList->SetItem(pos, 4, parser.GetNextToken());
-  m_analysisList->SetItem(pos, 5, parser.GetNextToken());
-  m_analysisList->SetItem(pos, 6, parser.GetNextToken());
-  m_analysisList->EnsureVisible(pos);
+  for (int i = 1; i < m_analysisList->GetColumnCount(); ++i)
+    m_analysisList->SetItem(pos, i, parser.GetNextToken());
+
+  if (async) {
+    if (pos == 0) {
+      for (int i = 0; i < m_analysisList->GetColumnCount(); ++i)
+        m_analysisList->SetColumnWidth(i, wxLIST_AUTOSIZE_USEHEADER);
+    }
+    m_analysisList->EnsureVisible(pos);
+  }
 }
 
 
@@ -1033,7 +1052,7 @@ void MyPlayer::PlayVideo()
   PTime fileStartTime(0);
   RTP_Timestamp startTimestamp = 0;
 
-  Analyser analysis(*this, m_discoveredRTP[m_selectedRTP].m_mediaFormat, true);
+  Analyser analysis(*this, true, m_discoveredRTP[m_selectedRTP].m_mediaFormat, true);
 
   OpalPCAPFile::DecodeContext decodeContext;
   while (m_playThreadCtrl != CtlStop && !m_pcapFile.IsEndOfFile()) {

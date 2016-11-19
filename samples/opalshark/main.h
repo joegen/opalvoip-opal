@@ -121,7 +121,7 @@ class MyPlayer : public wxMDIChildFrame
     void OnResume(wxCommandEvent &);
     void OnStep(wxCommandEvent &);
     void OnAnalyse(wxCommandEvent &);
-    void OnAnalysisUpdate(wxString);
+    void OnAnalysisUpdate(wxString, bool);
 
     void Discover();
     PDECLARE_NOTIFIER2(OpalPCAPFile, MyPlayer, DiscoverProgress, OpalPCAPFile::Progress &);
