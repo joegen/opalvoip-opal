@@ -2087,7 +2087,10 @@ void OpalManager_C::HandleRegistration(const OpalMessage & command, OpalMessageB
 #if OPAL_LYNC
   OpalLyncEndPoint * lyncEP = dynamic_cast<OpalLyncEndPoint *>(ep);
   if (lyncEP != NULL) {
-    if (!lyncEP->Register(command.m_param.m_registrationInfo.m_identifier))
+    OpalLyncEndPoint::RegistrationInfo info;
+    info.m_uri = command.m_param.m_registrationInfo.m_identifier;
+    info.m_password = command.m_param.m_registrationInfo.m_password;
+    if (!lyncEP->Register(info))
       response.SetError("Failed to initiate Lync registration.");
     return;
   }

@@ -46,24 +46,64 @@ class OpalLyncShim
     Platform * CreatePlatform(const char * userAgent);
     bool DestroyPlatform(Platform * platform);
 
+    struct AppEndpoint;
+    AppEndpoint * CreateAppEndpoint(Platform & platform);
+    void DestroyAppEndpoint(AppEndpoint * app);
+
     struct UserEndpoint;
-    UserEndpoint * CreateUserEndpoint(Platform & platform, const char * uri);
+    UserEndpoint * CreateUserEndpoint(Platform & platform,
+                                      const char * uri,
+                                      const char * password,
+                                      const char * authID,
+                                      const char * domain);
     void DestroyUserEndpoint(UserEndpoint * user);
-    virtual void OnConferenceInvitationReceived(const std::string & uri) { }
 
     struct Conversation;
     Conversation * CreateConversation(UserEndpoint & uep);
     void DestroyConversation(Conversation * conv);
 
     struct AudioVideoCall;
-    AudioVideoCall * CreateAudioVideoCall(Conversation & conv, const char * uri);
+    AudioVideoCall * CreateAudioVideoCall(Conversation & conv, const char * uri, bool answering);
     void DestroyAudioVideoCall(AudioVideoCall * call);
-    virtual void OnCallStateChanged(int previousState, int newState) { }
-    virtual void OnEndCallEstablished(const std::string & /*error*/) { }
+
+    struct AudioVideoFlow;
+    AudioVideoFlow * CreateAudioVideoFlow(AudioVideoCall & call);
+    void DestroyAudioVideoFlow(AudioVideoFlow * flow);
+
+    struct SpeechRecognitionConnector;
+    SpeechRecognitionConnector * CreateSpeechRecognitionConnector(AudioVideoFlow & flow);
+    void DestroySpeechRecognitionConnector(SpeechRecognitionConnector * connector);
+
+    struct SpeechSynthesisConnector;
+    SpeechSynthesisConnector * CreateSpeechSynthesisConnector(AudioVideoFlow & flow);
+    void DestroySpeechSynthesisConnector(SpeechSynthesisConnector * connector);
+
+    struct AudioVideoStream;
+    AudioVideoStream * CreateAudioVideoStream(SpeechRecognitionConnector & connector);
+    AudioVideoStream * CreateAudioVideoStream(SpeechSynthesisConnector & connector);
+    int ReadAudioVideoStream(AudioVideoStream & stream, unsigned char * data, int size);
+    int WriteAudioVideoStream(AudioVideoStream & stream, const unsigned char * data, int length);
+    void DestroyAudioVideoStream(AudioVideoStream * stream);
+
+    static int const CallStateEstablishing;
+    static int const CallStateEstablished;
+    static int const CallStateTerminating;
+    static int const MediaFlowActive;
+
+    virtual void OnIncomingLyncCall(AudioVideoCall * /*call*/) { }
+    virtual void OnLyncCallStateChanged(int /*previousState*/, int /*newState*/) { }
+    virtual void OnLyncCallFailed(const std::string & /*error*/) { }
+    virtual void OnMediaFlowStateChanged(int /*previousState*/, int /*newState*/) { }
 
     const std::string & GetLastError() const { return m_lastError; }
 
+#if PTRACING
+    virtual void OnTraceOutput(unsigned level, const char * file, unsigned line, const std::string & out) = 0;
+#endif
+
   private:
+    struct Callbacks;
+    Callbacks * m_callbacks;
     std::string m_lastError;
 };
 
@@ -76,13 +116,21 @@ class OpalLyncShim
 
 //////////////////////////////////////////////////////////////////
 
-class OpalLyncShim;
 class OpalLyncConnection;
+
+#if PTRACING
+  class OpalLyncShimBase : public OpalLyncShim
+  {
+    virtual void OnTraceOutput(unsigned level, const char * file, unsigned line, const std::string & out) override;
+  };
+#else
+  typedef OpalLyncShim OpalLyncShimBase;
+#endif
 
 
 /**Endpoint for interfacing Microsoft Lync via UCMA.
  */
-class OpalLyncEndPoint : public OpalEndPoint, public OpalLyncShim
+class OpalLyncEndPoint : public OpalEndPoint, public OpalLyncShimBase
 {
     PCLASSINFO(OpalLyncEndPoint, OpalEndPoint);
   public:
@@ -160,9 +208,17 @@ class OpalLyncEndPoint : public OpalEndPoint, public OpalLyncShim
 
     /**@name User registrations */
     //@{
+    struct RegistrationInfo
+    {
+      PString m_uri;
+      PString m_authID;
+      PString m_password;
+      PString m_domain;
+    };
+
     /// Register URI as a local user with Lync server
     bool Register(
-      const PString & uri
+      const RegistrationInfo & info
     );
 
     /// Unregister URI as a local user with Lync server
@@ -182,14 +238,17 @@ class OpalLyncEndPoint : public OpalEndPoint, public OpalLyncShim
       */
     virtual OpalLyncConnection * CreateConnection(
       OpalCall & call,     ///< Owner of connection
+      AudioVideoCall * avCall,
       const PString & uri, ///< Number to dial out, empty if incoming
       void * userData,     ///< Arbitrary data to pass to connection
       unsigned int options,
-      OpalConnection::StringOptions * stringOptions = NULL
+      OpalConnection::StringOptions * stringOptions
     );
     //@}
 
   protected:
+    virtual void OnIncomingLyncCall(AudioVideoCall * call) override;
+
     Platform * m_platform;
 
     typedef std::map<PString, UserEndpoint *> RegistrationMap;
@@ -200,7 +259,7 @@ class OpalLyncEndPoint : public OpalEndPoint, public OpalLyncShim
 
 /**Connection for interfacing Microsoft Lync via UCMA.
   */
-class OpalLyncConnection : public OpalConnection, public OpalLyncShim
+class OpalLyncConnection : public OpalConnection, public OpalLyncShimBase
 {
     PCLASSINFO(OpalLyncConnection, OpalConnection);
   public:
@@ -211,6 +270,7 @@ class OpalLyncConnection : public OpalConnection, public OpalLyncShim
     OpalLyncConnection(
       OpalCall & call,
       OpalLyncEndPoint & ep,
+      AudioVideoCall * avCall,
       const PString & uri,
       void * userData,
       unsigned options,
@@ -279,17 +339,102 @@ class OpalLyncConnection : public OpalConnection, public OpalLyncShim
     /** Get the remote transport address
       */
     virtual OpalTransportAddress GetRemoteAddress() const;
+
+    /**Create a new media stream.
+       This will create a media stream of an appropriate subclass as required
+       by the underlying connection protocol. For instance H.323 would create
+       an OpalRTPStream.
+
+       The sessionID parameter may not be needed by a particular media stream
+       and may be ignored. In the case of an OpalRTPStream it us used.
+
+       Note that media streams may be created internally to the underlying
+       protocol. This function is not the only way a stream can come into
+       existance.
+     */
+    virtual OpalMediaStream * CreateMediaStream(
+      const OpalMediaFormat & mediaFormat, ///<  Media format for stream
+      unsigned sessionID,                  ///<  Session number for stream
+      PBoolean isSource                        ///<  Is a source stream
+    );
   //@}
+
+    AudioVideoFlow * GetAudioVideoFlow() const { return m_flow; }
 
   protected:
     OpalLyncEndPoint & m_endpoint;
 
     Conversation   * m_conversation;
     AudioVideoCall * m_audioVideoCall;
+    AudioVideoFlow * m_flow;
 
-    virtual void OnConferenceInvitationReceived(const std::string & uri) override;
-    virtual void OnCallStateChanged(int previousState, int newState) override;
-    virtual void OnEndCallEstablished(const std::string & error) override;
+    virtual void OnLyncCallStateChanged(int previousState, int newState) override;
+    virtual void OnLyncCallFailed(const std::string & error) override;
+    virtual void OnMediaFlowStateChanged(int previousState, int newState) override;
+};
+
+
+/**This class describes a media stream that transfers data to/from Microsoft Lync via UCMA.
+  */
+class OpalLyncMediaStream : public OpalMediaStream, public OpalLyncShimBase
+{
+    PCLASSINFO(OpalLyncMediaStream, OpalMediaStream);
+  public:
+  /**@name Construction */
+  //@{
+    /**Construct a new media stream for Line Interface Devices.
+      */
+    OpalLyncMediaStream(
+      OpalLyncConnection & conn,           ///< Owner connection
+      const OpalMediaFormat & mediaFormat, ///<  Media format for stream
+      unsigned sessionID,                  ///<  Session number for stream
+      bool isSource                        ///<  Is a source stream
+    );
+  //@}
+
+    ~OpalLyncMediaStream();
+
+
+  /**@name Overrides of OpalMediaStream class */
+  //@{
+    /**Open the media stream.
+
+       The default behaviour sets the OpalLineInterfaceDevice format and
+       calls Resume() on the associated OpalMediaPatch thread.
+      */
+    virtual PBoolean Open();
+
+    /**Read raw media data from the source media stream.
+       The default behaviour reads from the OpalLine object.
+      */
+    virtual PBoolean ReadData(
+      BYTE * data,      ///<  Data buffer to read to
+      PINDEX size,      ///<  Size of buffer
+      PINDEX & length   ///<  Length of data actually read
+    );
+
+    /**Write raw media data to the sink media stream.
+       The default behaviour writes to the OpalLine object.
+      */
+    virtual PBoolean WriteData(
+      const BYTE * data,   ///<  Data to write
+      PINDEX length,       ///<  Length of data to read.
+      PINDEX & written     ///<  Length of data actually written
+    );
+
+    /**Indicate if the media stream is synchronous.
+       Returns true for LID streams.
+      */
+    virtual PBoolean IsSynchronous() const;
+  //@}
+
+  protected:
+    virtual void InternalClose();
+
+    OpalLyncConnection         & m_connection;
+    SpeechRecognitionConnector * m_inputConnector;
+    SpeechSynthesisConnector   * m_outputConnector;
+    AudioVideoStream           * m_avStream;
 };
 
 
