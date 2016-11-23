@@ -517,8 +517,9 @@ void RTP_DataFrame::PrintOn(ostream & strm) const
        << " TS=" << GetTimestamp()
        << " SSRC=" << RTP_TRACE_SRC(GetSyncSource())
        << " CSRS=" << csrcCount
-       << " hdr-sz=" << GetHeaderSize()
-       << " pay-sz=" << GetPayloadSize();
+       << " hdr-sz=" << m_headerSize
+       << " pay-sz=" << m_payloadSize
+       << " pad-sz=" << m_paddingSize;
 
   if (summary)
     return;
