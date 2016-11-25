@@ -898,7 +898,12 @@ EXPORTS
 	__vfprintf_l
 	__vsnprintf_l
 	__vsprintf_l
+	_vfprintf_l
     fprintf
     printf
 	*OpalLyncShim*
-	*gcroot*
+	*@gcroot@*
+	*$gcroot@*
+	*@msclr@*
+	*<Marshal*
+	??2@$$FYAPEAX_KPEAX@Z
