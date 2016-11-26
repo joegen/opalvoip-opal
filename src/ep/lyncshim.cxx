@@ -42,6 +42,13 @@ using namespace Microsoft::Rtc;
 #endif
 
 
+template <class CLS> void DeleteAndSetNull(CLS * & p)
+{
+  delete p;
+  p = nullptr;
+}
+
+
 int const OpalLyncShim::CallStateEstablishing = (int)Collaboration::CallState::Establishing;
 int const OpalLyncShim::CallStateEstablished = (int)Collaboration::CallState::Established;
 int const OpalLyncShim::CallStateTerminating = (int)Collaboration::CallState::Terminating;
@@ -97,11 +104,11 @@ struct OpalLyncShim::AudioVideoStream : gcroot<System::IO::Stream^>
 };
 
 
-ref class OpalLyncShim_Callbacks : public System::Object
+ref class OpalLyncShim_Notifications : public System::Object
 {
     OpalLyncShim & m_shim;
   public:
-    OpalLyncShim_Callbacks(OpalLyncShim & shim)
+    OpalLyncShim_Notifications(OpalLyncShim & shim)
       : m_shim(shim)
     {
     }
@@ -110,12 +117,26 @@ ref class OpalLyncShim_Callbacks : public System::Object
     {
       ep->RegisterForIncomingCall<Collaboration::AudioVideo::AudioVideoCall^>(
                  gcnew Collaboration::IncomingCallDelegate<Collaboration::AudioVideo::AudioVideoCall^>
-                                                     (this, &OpalLyncShim_Callbacks::OnIncomingCall));
+                                                     (this, &OpalLyncShim_Notifications::OnIncomingCall));
     }
 
     void OnIncomingCall(System::Object^ /*sender*/, Collaboration::CallReceivedEventArgs<Collaboration::AudioVideo::AudioVideoCall^>^ args)
     {
-      m_shim.OnIncomingLyncCall(new OpalLyncShim::AudioVideoCall(args->Call));
+      OpalLyncShim::IncomingLyncCallInfo info;
+      info.m_call = new OpalLyncShim::AudioVideoCall(args->Call);
+      info.m_remoteUri = msclr::interop::marshal_as<std::string>(args->RemoteParticipant->Uri);
+      info.m_displayName = msclr::interop::marshal_as<std::string>(args->RemoteParticipant->DisplayName);
+      info.m_destinationUri = msclr::interop::marshal_as<std::string>(args->RequestData->ToHeader->Uri);
+      info.m_transferredBy = msclr::interop::marshal_as<std::string>(args->TransferredBy);
+      m_shim.OnIncomingLyncCall(info);
+    }
+
+    void RegisterForCallNotifications(Collaboration::AudioVideo::AudioVideoCall^ call)
+    {
+      call->StateChanged += gcnew System::EventHandler<Collaboration::CallStateChangedEventArgs^>
+                                            (this, &OpalLyncShim_Notifications::CallStateChanged);
+      call->AudioVideoFlowConfigurationRequested += gcnew System::EventHandler<Collaboration::AudioVideo::AudioVideoFlowConfigurationRequestedEventArgs^>
+                                                                                (this, &OpalLyncShim_Notifications::AudioVideoFlowConfigurationRequested);
     }
 
     void CallStateChanged(System::Object^ /*sender*/, Collaboration::CallStateChangedEventArgs^ args)
@@ -126,7 +147,7 @@ ref class OpalLyncShim_Callbacks : public System::Object
     void AudioVideoFlowConfigurationRequested(System::Object^, Collaboration::AudioVideo::AudioVideoFlowConfigurationRequestedEventArgs^ args)
     {
       args->Flow->StateChanged += gcnew System::EventHandler<Collaboration::MediaFlowStateChangedEventArgs^>
-                                                      (this, &OpalLyncShim_Callbacks::MediaFlowStateChanged);
+                                                      (this, &OpalLyncShim_Notifications::MediaFlowStateChanged);
     }
 
     void MediaFlowStateChanged(System::Object^, Collaboration::MediaFlowStateChangedEventArgs^ args)
@@ -148,23 +169,24 @@ ref class OpalLyncShim_Callbacks : public System::Object
 };
 
 
-struct OpalLyncShim::Callbacks : gcroot<OpalLyncShim_Callbacks^>
+struct OpalLyncShim::Notifications : gcroot<OpalLyncShim_Notifications^>
 {
-  Callbacks(OpalLyncShim_Callbacks^ p) : gcroot<OpalLyncShim_Callbacks^>(p) { }
+  Notifications(OpalLyncShim_Notifications^ p) : gcroot<OpalLyncShim_Notifications^>(p) { }
 };
 
 
 ///////////////////////////////////////////////////////////////////////////////
 
 OpalLyncShim::OpalLyncShim()
-  : m_callbacks(new Callbacks(gcnew OpalLyncShim_Callbacks(*this)))
+  : m_allocatedNotifications(new Notifications(gcnew OpalLyncShim_Notifications(*this)))
+  , m_notifications(*m_allocatedNotifications)
 {
 }
 
 
 OpalLyncShim::~OpalLyncShim()
 {
-  delete m_callbacks;
+  delete m_allocatedNotifications;
 }
 
 
@@ -191,7 +213,7 @@ OpalLyncShim::Platform * OpalLyncShim::CreatePlatform(const char * appName)
 }
 
 
-bool OpalLyncShim::DestroyPlatform(Platform * platform)
+bool OpalLyncShim::DestroyPlatform(Platform * &platform)
 {
   m_lastError.clear();
 
@@ -199,7 +221,7 @@ bool OpalLyncShim::DestroyPlatform(Platform * platform)
     return false;
 
   Collaboration::CollaborationPlatform^ cp = *platform;
-  delete platform;
+  DeleteAndSetNull(platform);
 
   if (cp == nullptr)
     return false;
@@ -224,7 +246,7 @@ OpalLyncShim::AppEndpoint * OpalLyncShim::CreateAppEndpoint(Platform & platform)
   try {
     Collaboration::ApplicationEndpointSettings^ aes = gcnew Collaboration::ApplicationEndpointSettings(nullptr);
     aep = gcnew Collaboration::ApplicationEndpoint(platform, aes);
-    (*m_callbacks)->RegisterForIncomingCall(aep);
+    m_notifications->RegisterForIncomingCall(aep);
     aep->EndEstablish(aep->BeginEstablish(nullptr, nullptr));
   }
   catch (System::Exception^ err) {
@@ -236,9 +258,9 @@ OpalLyncShim::AppEndpoint * OpalLyncShim::CreateAppEndpoint(Platform & platform)
 }
 
 
-void OpalLyncShim::DestroyAppEndpoint(AppEndpoint * app)
+void OpalLyncShim::DestroyAppEndpoint(AppEndpoint * & app)
 {
-  delete app;
+  DeleteAndSetNull(app);
 }
 
 
@@ -257,7 +279,7 @@ OpalLyncShim::UserEndpoint * OpalLyncShim::CreateUserEndpoint(Platform & platfor
                                                            gcnew System::String(password),
                                                            gcnew System::String(domain));
     uep = gcnew Collaboration::UserEndpoint(platform, ues);
-    (*m_callbacks)->RegisterForIncomingCall(uep);
+    m_notifications->RegisterForIncomingCall(uep);
     uep->EndEstablish(uep->BeginEstablish(nullptr, nullptr));
   }
   catch (System::Exception^ err) {
@@ -269,9 +291,9 @@ OpalLyncShim::UserEndpoint * OpalLyncShim::CreateUserEndpoint(Platform & platfor
 }
 
 
-void OpalLyncShim::DestroyUserEndpoint(UserEndpoint * user)
+void OpalLyncShim::DestroyUserEndpoint(UserEndpoint * & user)
 {
-  delete user;
+  DeleteAndSetNull(user);
 }
 
 
@@ -293,13 +315,14 @@ OpalLyncShim::Conversation * OpalLyncShim::CreateConversation(UserEndpoint & uep
 }
 
 
-void OpalLyncShim::DestroyConversation(Conversation * conv)
+void OpalLyncShim::DestroyConversation(Conversation * & conv)
 {
   if (conv == nullptr)
     return;
 
   Collaboration::Conversation^ conversation = *conv;
-  delete conv;
+  DeleteAndSetNull(conv);
+
   if (conversation == nullptr)
     return;
 
@@ -319,17 +342,14 @@ OpalLyncShim::AudioVideoCall * OpalLyncShim::CreateAudioVideoCall(Conversation &
   Collaboration::AudioVideo::AudioVideoCall^ call;
   try {
     call = gcnew Collaboration::AudioVideo::AudioVideoCall(conv);
-    call->StateChanged += gcnew System::EventHandler<Collaboration::CallStateChangedEventArgs^>
-                                      (*m_callbacks, &OpalLyncShim_Callbacks::CallStateChanged);
-    call->AudioVideoFlowConfigurationRequested += gcnew System::EventHandler<Collaboration::AudioVideo::AudioVideoFlowConfigurationRequestedEventArgs^>
-                                                                          (*m_callbacks, &OpalLyncShim_Callbacks::AudioVideoFlowConfigurationRequested);
+    m_notifications->RegisterForCallNotifications(call);
 
     if (answering) {
     }
     else
       call->BeginEstablish(gcnew System::String(uri),
                            nullptr,
-                           gcnew System::AsyncCallback(*m_callbacks, &OpalLyncShim_Callbacks::CallEndEstablish),
+                           gcnew System::AsyncCallback(m_notifications, &OpalLyncShim_Notifications::CallEndEstablish),
                            call);
   }
   catch (System::Exception^ err) {
@@ -341,13 +361,29 @@ OpalLyncShim::AudioVideoCall * OpalLyncShim::CreateAudioVideoCall(Conversation &
 }
 
 
-void OpalLyncShim::DestroyAudioVideoCall(AudioVideoCall * avc)
+bool OpalLyncShim::AcceptAudioVideoCall(AudioVideoCall & call)
+{
+  try {
+    m_notifications->RegisterForCallNotifications(call);
+    call->EndAccept(call->BeginAccept(nullptr, nullptr));
+  }
+  catch (System::Exception^ err) {
+    m_lastError = msclr::interop::marshal_as<std::string>(err->ToString());
+    return false;
+  }
+
+  return true;
+}
+
+
+void OpalLyncShim::DestroyAudioVideoCall(AudioVideoCall * & avc)
 {
   if (avc == nullptr)
     return;
 
   Collaboration::AudioVideo::AudioVideoCall^ call = *avc;
-  delete avc;
+  DeleteAndSetNull(avc);
+
   if (call == nullptr)
     return;
 
@@ -369,9 +405,9 @@ OpalLyncShim::AudioVideoFlow * OpalLyncShim::CreateAudioVideoFlow(AudioVideoCall
 }
 
 
-void OpalLyncShim::DestroyAudioVideoFlow(AudioVideoFlow * flow)
+void OpalLyncShim::DestroyAudioVideoFlow(AudioVideoFlow * & flow)
 {
-  delete flow;
+  DeleteAndSetNull(flow);
 }
 
 
@@ -393,9 +429,12 @@ OpalLyncShim::SpeechRecognitionConnector * OpalLyncShim::CreateSpeechRecognition
 }
 
 
-void OpalLyncShim::DestroySpeechRecognitionConnector(SpeechRecognitionConnector * connector)
+void OpalLyncShim::DestroySpeechRecognitionConnector(SpeechRecognitionConnector * & connector)
 {
-  delete connector;
+  if (connector != nullptr) {
+    (*connector)->DetachFlow();
+    DeleteAndSetNull(connector);
+  }
 }
 
 
@@ -417,9 +456,12 @@ OpalLyncShim::SpeechSynthesisConnector * OpalLyncShim::CreateSpeechSynthesisConn
 }
 
 
-void OpalLyncShim::DestroySpeechSynthesisConnector(SpeechSynthesisConnector * connector)
+void OpalLyncShim::DestroySpeechSynthesisConnector(SpeechSynthesisConnector * & connector)
 {
-  delete connector;
+  if (connector != nullptr) {
+    (*connector)->DetachFlow();
+    DeleteAndSetNull(connector);
+  }
 }
 
 
@@ -492,9 +534,23 @@ int OpalLyncShim::WriteAudioVideoStream(AudioVideoStream & stream, const unsigne
 }
 
 
-void OpalLyncShim::DestroyAudioVideoStream(AudioVideoStream * stream)
+void OpalLyncShim::DestroyAudioVideoStream(SpeechRecognitionConnector & connector, AudioVideoStream * & stream)
 {
-  delete stream;
+  if (stream != nullptr) {
+    connector->Stop();
+    (*stream)->Close();
+    DeleteAndSetNull(stream);
+  }
+}
+
+
+void OpalLyncShim::DestroyAudioVideoStream(SpeechSynthesisConnector & connector, AudioVideoStream * & stream)
+{
+  if (stream != nullptr) {
+    connector->Stop();
+    (*stream)->Close();
+    DeleteAndSetNull(stream);
+  }
 }
 
 

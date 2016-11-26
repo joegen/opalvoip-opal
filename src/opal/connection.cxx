@@ -510,7 +510,11 @@ void OpalConnection::OnReleased()
 
 PBoolean OpalConnection::OnIncomingConnection(unsigned options, OpalConnection::StringOptions * stringOptions)
 {
-  return m_endpoint.OnIncomingConnection(*this, options, stringOptions);
+  if (m_endpoint.OnIncomingConnection(*this, options, stringOptions))
+    return true;
+
+  Release(EndedByNoUser);
+  return false;
 }
 
 

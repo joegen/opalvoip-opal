@@ -44,11 +44,11 @@ class OpalLyncShim
 
     struct Platform;
     Platform * CreatePlatform(const char * userAgent);
-    bool DestroyPlatform(Platform * platform);
+    bool DestroyPlatform(Platform * & platform);
 
     struct AppEndpoint;
     AppEndpoint * CreateAppEndpoint(Platform & platform);
-    void DestroyAppEndpoint(AppEndpoint * app);
+    void DestroyAppEndpoint(AppEndpoint * & app);
 
     struct UserEndpoint;
     UserEndpoint * CreateUserEndpoint(Platform & platform,
@@ -56,41 +56,50 @@ class OpalLyncShim
                                       const char * password,
                                       const char * authID,
                                       const char * domain);
-    void DestroyUserEndpoint(UserEndpoint * user);
+    void DestroyUserEndpoint(UserEndpoint * & user);
 
     struct Conversation;
     Conversation * CreateConversation(UserEndpoint & uep);
-    void DestroyConversation(Conversation * conv);
+    void DestroyConversation(Conversation * & conv);
 
     struct AudioVideoCall;
     AudioVideoCall * CreateAudioVideoCall(Conversation & conv, const char * uri, bool answering);
-    void DestroyAudioVideoCall(AudioVideoCall * call);
+    bool AcceptAudioVideoCall(AudioVideoCall & call);
+    void DestroyAudioVideoCall(AudioVideoCall * & call);
 
     struct AudioVideoFlow;
     AudioVideoFlow * CreateAudioVideoFlow(AudioVideoCall & call);
-    void DestroyAudioVideoFlow(AudioVideoFlow * flow);
+    void DestroyAudioVideoFlow(AudioVideoFlow * & flow);
 
     struct SpeechRecognitionConnector;
     SpeechRecognitionConnector * CreateSpeechRecognitionConnector(AudioVideoFlow & flow);
-    void DestroySpeechRecognitionConnector(SpeechRecognitionConnector * connector);
+    void DestroySpeechRecognitionConnector(SpeechRecognitionConnector * & connector);
 
     struct SpeechSynthesisConnector;
     SpeechSynthesisConnector * CreateSpeechSynthesisConnector(AudioVideoFlow & flow);
-    void DestroySpeechSynthesisConnector(SpeechSynthesisConnector * connector);
+    void DestroySpeechSynthesisConnector(SpeechSynthesisConnector * & connector);
 
     struct AudioVideoStream;
     AudioVideoStream * CreateAudioVideoStream(SpeechRecognitionConnector & connector);
     AudioVideoStream * CreateAudioVideoStream(SpeechSynthesisConnector & connector);
     int ReadAudioVideoStream(AudioVideoStream & stream, unsigned char * data, int size);
     int WriteAudioVideoStream(AudioVideoStream & stream, const unsigned char * data, int length);
-    void DestroyAudioVideoStream(AudioVideoStream * stream);
+    void DestroyAudioVideoStream(SpeechRecognitionConnector & connector, AudioVideoStream * & stream);
+    void DestroyAudioVideoStream(SpeechSynthesisConnector & connector, AudioVideoStream * & stream);
 
     static int const CallStateEstablishing;
     static int const CallStateEstablished;
     static int const CallStateTerminating;
     static int const MediaFlowActive;
 
-    virtual void OnIncomingLyncCall(AudioVideoCall * /*call*/) { }
+    struct IncomingLyncCallInfo {
+      AudioVideoCall * m_call;
+      std::string      m_remoteUri;
+      std::string      m_displayName;
+      std::string      m_destinationUri;
+      std::string      m_transferredBy;
+    };
+    virtual void OnIncomingLyncCall(const IncomingLyncCallInfo & /*info*/) { }
     virtual void OnLyncCallStateChanged(int /*previousState*/, int /*newState*/) { }
     virtual void OnLyncCallFailed(const std::string & /*error*/) { }
     virtual void OnMediaFlowStateChanged(int /*previousState*/, int /*newState*/) { }
@@ -102,8 +111,9 @@ class OpalLyncShim
 #endif
 
   private:
-    struct Callbacks;
-    Callbacks * m_callbacks;
+    struct Notifications;
+    Notifications * m_allocatedNotifications;
+    Notifications & m_notifications;
     std::string m_lastError;
 };
 
@@ -238,8 +248,6 @@ class OpalLyncEndPoint : public OpalEndPoint, public OpalLyncShimBase
       */
     virtual OpalLyncConnection * CreateConnection(
       OpalCall & call,     ///< Owner of connection
-      AudioVideoCall * avCall,
-      const PString & uri, ///< Number to dial out, empty if incoming
       void * userData,     ///< Arbitrary data to pass to connection
       unsigned int options,
       OpalConnection::StringOptions * stringOptions
@@ -247,7 +255,7 @@ class OpalLyncEndPoint : public OpalEndPoint, public OpalLyncShimBase
     //@}
 
   protected:
-    virtual void OnIncomingLyncCall(AudioVideoCall * call) override;
+    virtual void OnIncomingLyncCall(const IncomingLyncCallInfo & info) override;
 
     Platform * m_platform;
 
@@ -270,8 +278,6 @@ class OpalLyncConnection : public OpalConnection, public OpalLyncShimBase
     OpalLyncConnection(
       OpalCall & call,
       OpalLyncEndPoint & ep,
-      AudioVideoCall * avCall,
-      const PString & uri,
       void * userData,
       unsigned options,
       OpalConnection::StringOptions * stringOptions
@@ -336,10 +342,6 @@ class OpalLyncConnection : public OpalConnection, public OpalLyncShimBase
       */
     virtual PBoolean SetConnected();
 
-    /** Get the remote transport address
-      */
-    virtual OpalTransportAddress GetRemoteAddress() const;
-
     /**Create a new media stream.
        This will create a media stream of an appropriate subclass as required
        by the underlying connection protocol. For instance H.323 would create
@@ -359,6 +361,7 @@ class OpalLyncConnection : public OpalConnection, public OpalLyncShimBase
     );
   //@}
 
+    void SetUpIncomingLyncCall(const IncomingLyncCallInfo & info);
     AudioVideoFlow * GetAudioVideoFlow() const { return m_flow; }
 
   protected:
