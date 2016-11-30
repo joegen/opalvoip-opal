@@ -149,7 +149,7 @@ class OpalJitterBuffer : public PObject
       */
     virtual bool WriteData(
       const RTP_DataFrame & frame,        ///< Frame to feed into jitter buffer
-      PTimeInterval tick = PTimer::Tick() ///< Real time tick for packet arrival
+      const PTimeInterval & tick = PTimer::Tick() ///< Real time tick for packet arrival
     ) = 0;
 
     /**Read a data frame from the jitter buffer.
@@ -159,7 +159,7 @@ class OpalJitterBuffer : public PObject
     virtual bool ReadData(
       RTP_DataFrame & frame,              ///<  Frame to extract from jitter buffer
       const PTimeInterval & timeout = PMaxTimeInterval  ///< Time out for read
-      PTRACE_PARAM(, PTimeInterval tick = PMaxTimeInterval)
+      PTRACE_PARAM(, const PTimeInterval & tick = PMaxTimeInterval)
     ) = 0;
 
     /**Get current delay for jitter buffer.
@@ -256,7 +256,7 @@ class OpalAudioJitterBuffer : public OpalJitterBuffer
       */
     virtual bool WriteData(
       const RTP_DataFrame & frame,        ///< Frame to feed into jitter buffer
-      PTimeInterval tick = PTimer::Tick() ///< Real time tick for packet arrival
+      const PTimeInterval & tick = PTimer::Tick() ///< Real time tick for packet arrival
     );
 
     /**Read a data frame from the jitter buffer.
@@ -266,7 +266,7 @@ class OpalAudioJitterBuffer : public OpalJitterBuffer
     virtual bool ReadData(
       RTP_DataFrame & frame,              ///<  Frame to extract from jitter buffer
       const PTimeInterval & timeout = PMaxTimeInterval  ///< Time out for read
-      PTRACE_PARAM(, PTimeInterval tick = PMaxTimeInterval)
+      PTRACE_PARAM(, const PTimeInterval & tick = PMaxTimeInterval)
     );
 
     /**Get current delay for jitter buffer.
@@ -370,7 +370,7 @@ class OpalNonJitterBuffer : public OpalJitterBuffer
       */
     virtual bool WriteData(
       const RTP_DataFrame & frame,        ///< Frame to feed into jitter buffer
-      PTimeInterval tick = PTimer::Tick() ///< Real time tick for packet arrival
+      const PTimeInterval & tick = PTimer::Tick() ///< Real time tick for packet arrival
     );
 
     /**Read a data frame from the jitter buffer.
@@ -380,7 +380,7 @@ class OpalNonJitterBuffer : public OpalJitterBuffer
     virtual bool ReadData(
       RTP_DataFrame & frame,              ///<  Frame to extract from jitter buffer
       const PTimeInterval & timeout = PMaxTimeInterval  ///< Time out for read
-      PTRACE_PARAM(, PTimeInterval tick = PMaxTimeInterval)
+      PTRACE_PARAM(, const PTimeInterval & tick = PMaxTimeInterval)
     );
   //@}
 

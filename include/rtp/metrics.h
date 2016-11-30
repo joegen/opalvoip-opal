@@ -301,7 +301,7 @@ class RTCP_XR_Metrics : public PObject
     /**Create a period of time with an Ie value associated.
       */
     IePeriod CreateIePeriod(
-      TimePeriod timePeriod   ///< Period of time to calculate the Ie.
+      const TimePeriod & timePeriod   ///< Period of time to calculate the Ie.
     );
 
     /* data associated with the payload */

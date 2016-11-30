@@ -224,7 +224,7 @@ class H323Transactor : public PObject
 
         PBoolean Poll(H323Transactor &,
                       unsigned numRetries = 0,
-                      PTimeInterval timeout = 0);
+                      const PTimeInterval & timeout = 0);
         void CheckResponse(unsigned, const PASN_Choice *);
         void OnReceiveRIP(unsigned milliseconds);
 

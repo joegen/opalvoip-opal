@@ -492,7 +492,7 @@ RTCP_XR_Metrics::IdPeriod RTCP_XR_Metrics::CreateIdPeriod(const PTime & beginTim
 }
 
 
-RTCP_XR_Metrics::IePeriod RTCP_XR_Metrics::CreateIePeriod(RTCP_XR_Metrics::TimePeriod timePeriod)
+RTCP_XR_Metrics::IePeriod RTCP_XR_Metrics::CreateIePeriod(const RTCP_XR_Metrics::TimePeriod & timePeriod)
 {
   /* Calculate a perceptual Ie average value, according to the extended E-Model, presented by Alan Clark */
   float Ieg = 0;

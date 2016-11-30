@@ -252,17 +252,19 @@ bool OpalRTPMediaStream::InternalSetPaused(bool pause, bool fromUser, bool fromP
 
 
 #if OPAL_VIDEO
-static bool VideoThrottled(PSimpleTimer & throttleTimer, PTimeInterval throttleTime, const OpalRTPSession & rtpSession)
+static bool VideoThrottled(PSimpleTimer & throttleTimer, const PTimeInterval & throttleTime, const OpalRTPSession & rtpSession)
 {
   if (throttleTimer.IsRunning())
     return true;
 
-  if (throttleTime < 0) {
-    throttleTime = rtpSession.GetRoundTripTime()*2;
-    if (throttleTime == 0)
-      throttleTime.SetInterval(0, 1);
+  if (throttleTime >= 0)
+    throttleTimer = throttleTime;
+  else {
+    PTimeInterval rtt2 = rtpSession.GetRoundTripTime()*2;
+    if (rtt2 == 0)
+      rtt2.SetInterval(0, 1);
+    throttleTimer = rtt2;
   }
-  throttleTimer = throttleTime;
   return false;
 }
 #endif // OPAL_VIDEO

@@ -522,7 +522,7 @@ H323Transactor::Request::Request(unsigned seqNum,
 }
 
 
-PBoolean H323Transactor::Request::Poll(H323Transactor & rasChannel, unsigned numRetries, PTimeInterval timeout)
+PBoolean H323Transactor::Request::Poll(H323Transactor & rasChannel, unsigned numRetries, const PTimeInterval & p_timeout)
 {
   H323EndPoint & endpoint = rasChannel.GetEndPoint();
 
@@ -530,9 +530,8 @@ PBoolean H323Transactor::Request::Poll(H323Transactor & rasChannel, unsigned num
   
   if (numRetries == 0)
     numRetries = endpoint.GetRasRequestRetries();
-  
-  if (timeout == 0)
-    timeout = endpoint.GetRasRequestTimeout();
+ 
+  PTimeInterval timeout = p_timeout > 0 ? p_timeout : endpoint.GetRasRequestTimeout();
 
   for (unsigned retry = 1; retry <= numRetries; retry++) {
     // To avoid race condition with RIP must set timeout before sending the packet
