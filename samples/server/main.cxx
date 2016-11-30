@@ -74,6 +74,16 @@ static const PConstString SkinnyNamesKey("SCCP Device Names");
 static const PConstString SkinnySimulatedAudioFileKey("SCCP Simulated Audio File");
 #endif
 
+#if OPAL_LYNC
+#define LYNC_REGISTRATIONS_SECTION "Lync Registrations"
+#define LYNC_REGISTRATIONS_KEY     LYNC_REGISTRATIONS_SECTION"\\Registration %u\\"
+
+static const char LyncUriKey[] = "URI";
+static const char LyncAuthIDKey[] = "Auth ID";
+static const char LyncPasswordKey[] = "Password";
+static const char LyncDomainKey[] = "Domain";
+#endif
+
 #if OPAL_LID
 static const PConstString LIDKey("Line Interface Devices");
 #endif
@@ -284,7 +294,7 @@ PBoolean MyProcess::Initialise(const char * initMsg)
          << PHTML::BreakLine()
          << PHTML::HotLink(gkStatusPage->GetHotLink()) << "Gatekeeper Status" << PHTML::HotLink()
 #endif // OPAL_H323
-#if OPAL_H323 | OPAL_SIP | OPAL_SKINNY
+#if OPAL_H323 | OPAL_SIP | OPAL_SKINNY | OPAL_LYNC
          << PHTML::BreakLine()
          << PHTML::HotLink(registrationStatusPage->GetHotLink()) << "Registration Status" << PHTML::HotLink()
 #endif
@@ -637,6 +647,11 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
     return false;
 #endif // OPAL_SKINNY
 
+#if OPAL_LYNC
+  if (!GetSkinnyEndPoint().Configure(cfg, rsrc))
+    return false;
+#endif // OPAL_LYNC
+
 #if OPAL_LID
   // Add POTS and PSTN endpoints
   if (!FindEndPointAs<OpalLineEndPoint>(OPAL_PREFIX_POTS)->AddDeviceNames(rsrc->AddSelectArrayField(LIDKey, false,
@@ -935,5 +950,54 @@ void MySkinnyEndPoint::ExpandWildcards(const PStringArray & input, PStringArray 
 
 #endif // OPAL_SKINNY
 
+
+///////////////////////////////////////////////////////////////////////////////
+
+#if OPAL_LYNC
+
+OpalConsoleLyncEndPoint * MyManager::CreateLyncEndPoint()
+{
+  return new MyLyncEndPoint(*this);
+}
+
+
+MyLyncEndPoint::MyLyncEndPoint(MyManager & mgr)
+  : OpalConsoleLyncEndPoint(mgr)
+  , m_manager(mgr)
+{
+}
+
+
+bool MyLyncEndPoint::Configure(PConfig & cfg, PConfigPage * rsrc)
+{
+  PHTTPCompositeField * registrationsFields = new PHTTPCompositeField(LYNC_REGISTRATIONS_KEY, LYNC_REGISTRATIONS_SECTION, "Registration of Lync URI");
+  registrationsFields->Append(new PHTTPStringField(LyncUriKey, 0, NULL, NULL, 1, 20));
+  registrationsFields->Append(new PHTTPStringField(LyncAuthIDKey, 0, NULL, NULL, 1, 15));
+  registrationsFields->Append(new PHTTPPasswordField(LyncPasswordKey, 15));
+  registrationsFields->Append(new PHTTPIntegerField(LyncDomainKey, 1, 86400, 300));
+  PHTTPFieldArray * registrationsArray = new PHTTPFieldArray(registrationsFields, false);
+  rsrc->Add(registrationsArray);
+
+  if (!registrationsArray->LoadFromConfig(cfg)) {
+    for (PINDEX i = 0; i < registrationsArray->GetSize(); ++i) {
+      PHTTPCompositeField & item = dynamic_cast<PHTTPCompositeField &>((*registrationsArray)[i]);
+
+      OpalLyncEndPoint::RegistrationInfo info;
+      info.m_uri = item[0].GetValue();
+      if (!info.m_uri.IsEmpty()) {
+        info.m_authID = item[1].GetValue();
+        info.m_password = item[2].GetValue();
+        info.m_domain = item[2].GetValue();
+        if (Register(info))
+          PSYSTEMLOG(Info, "Started register of " << info.m_uri);
+        else
+          PSYSTEMLOG(Error, "Could not register " << info.m_uri);
+      }
+    }
+  }
+  return true;
+}
+
+#endif // OPAL_LYNC
 
 // End of File ///////////////////////////////////////////////////////////////

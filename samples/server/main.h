@@ -335,6 +335,25 @@ protected:
 
 ///////////////////////////////////////
 
+#if OPAL_LYNC
+
+class MyLyncEndPoint : public OpalConsoleLyncEndPoint
+{
+  PCLASSINFO(MyLyncEndPoint, OpalConsoleLyncEndPoint);
+public:
+  MyLyncEndPoint(MyManager & mgr);
+
+  bool Configure(PConfig & cfg, PConfigPage * rsrc);
+
+protected:
+  MyManager  & m_manager;
+};
+
+#endif // OPAL_LYNC
+
+
+///////////////////////////////////////
+
 class BaseStatusPage : public PServiceHTTPString
 {
     PCLASSINFO(BaseStatusPage, PServiceHTTPString);
@@ -384,6 +403,10 @@ class RegistrationStatusPage : public BaseStatusPage
     void GetSkinny(StatusMap & copy) const;
     size_t GetSkinnyCount() const { return m_skinny.size(); }
 #endif
+#if OPAL_LYNC
+    void GetLync(StatusMap & copy) const;
+    size_t GetLyncCount() const { return m_lync.size(); }
+#endif
 
   protected:
     virtual PString LoadText(PHTTPRequest & request);
@@ -398,6 +421,9 @@ class RegistrationStatusPage : public BaseStatusPage
 #endif
 #if OPAL_SKINNY
     StatusMap m_skinny;
+#endif
+#if OPAL_LYNC
+    StatusMap m_lync;
 #endif
     PMutex m_mutex;
 };
@@ -520,7 +546,7 @@ class MyManager : public MyManagerParent
 
     PString OnLoadCallStatus(const PString & htmlBlock);
 
-#if OPAL_SIP && (OPAL_H323 || OPAL_SKINNY)
+#if OPAL_SIP && (OPAL_H323 || OPAL_SKINNY || OPAL_LYNC)
     void OnChangedRegistrarAoR(const PURL & aor, bool registering);
 #endif
 
@@ -535,6 +561,10 @@ class MyManager : public MyManagerParent
 #if OPAL_SKINNY
     virtual OpalConsoleSkinnyEndPoint * CreateSkinnyEndPoint();
     MySkinnyEndPoint & GetSkinnyEndPoint() const { return *FindEndPointAs<MySkinnyEndPoint>(OPAL_PREFIX_SKINNY); }
+#endif
+#if OPAL_LYNC
+    virtual OpalConsoleLyncEndPoint * CreateLyncEndPoint();
+    MyLyncEndPoint & GetLyncEndPoint() const { return *FindEndPointAs<MyLyncEndPoint>(OPAL_PREFIX_LYNC); }
 #endif
 
     void DropCDR(const MyCall & call, bool final);
