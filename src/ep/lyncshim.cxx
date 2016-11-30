@@ -42,7 +42,7 @@ using namespace Microsoft::Rtc;
 #endif
 
 
-template <class CLS> void DeleteAndSetNull(CLS * & p)
+template <class CLS> static void DeleteAndSetNull(CLS * & p)
 {
   delete p;
   p = nullptr;
@@ -122,12 +122,13 @@ ref class OpalLyncShim_Notifications : public System::Object
 
     void OnIncomingCall(System::Object^ /*sender*/, Collaboration::CallReceivedEventArgs<Collaboration::AudioVideo::AudioVideoCall^>^ args)
     {
+      msclr::interop::marshal_context marshalContext;
       OpalLyncShim::IncomingLyncCallInfo info;
       info.m_call = new OpalLyncShim::AudioVideoCall(args->Call);
-      info.m_remoteUri = msclr::interop::marshal_as<std::string>(args->RemoteParticipant->Uri);
-      info.m_displayName = msclr::interop::marshal_as<std::string>(args->RemoteParticipant->DisplayName);
-      info.m_destinationUri = msclr::interop::marshal_as<std::string>(args->RequestData->ToHeader->Uri);
-      info.m_transferredBy = msclr::interop::marshal_as<std::string>(args->TransferredBy);
+      info.m_remoteUri = marshalContext.marshal_as<const char *>(args->RemoteParticipant->Uri);
+      info.m_displayName = marshalContext.marshal_as<const char *>(args->RemoteParticipant->DisplayName);
+      info.m_destinationUri = marshalContext.marshal_as<const char *>(args->RequestData->ToHeader->Uri);
+      info.m_transferredBy = marshalContext.marshal_as<const char *>(args->TransferredBy);
       m_shim.OnIncomingLyncCall(info);
     }
 

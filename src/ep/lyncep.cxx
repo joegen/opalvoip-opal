@@ -33,7 +33,7 @@
 #if OPAL_LYNC
 
 #if PTRACING
-void OpalLyncShimBase::OnTraceOutput(unsigned level, const char * file, unsigned line, const std::string & out)
+void OpalLyncShimBase::OnTraceOutput(unsigned level, const char * file, unsigned line, const char * out)
 {
   if (PTrace::CanTrace(level))
     PTrace::Begin(level, file, line, nullptr, "LyncShim") << out << PTrace::End;

@@ -94,10 +94,10 @@ class OpalLyncShim
 
     struct IncomingLyncCallInfo {
       AudioVideoCall * m_call;
-      std::string      m_remoteUri;
-      std::string      m_displayName;
-      std::string      m_destinationUri;
-      std::string      m_transferredBy;
+      const char     * m_remoteUri;
+      const char     * m_displayName;
+      const char     * m_destinationUri;
+      const char     * m_transferredBy;
     };
     virtual void OnIncomingLyncCall(const IncomingLyncCallInfo & /*info*/) { }
     virtual void OnLyncCallStateChanged(int /*previousState*/, int /*newState*/) { }
@@ -106,8 +106,9 @@ class OpalLyncShim
 
     const std::string & GetLastError() const { return m_lastError; }
 
+  protected:
 #if PTRACING
-    virtual void OnTraceOutput(unsigned level, const char * file, unsigned line, const std::string & out) = 0;
+    virtual void OnTraceOutput(unsigned level, const char * file, unsigned line, const char * out) = 0;
 #endif
 
   private:
@@ -131,7 +132,8 @@ class OpalLyncConnection;
 #if PTRACING
   class OpalLyncShimBase : public OpalLyncShim
   {
-    virtual void OnTraceOutput(unsigned level, const char * file, unsigned line, const std::string & out) override;
+    protected:
+      virtual void OnTraceOutput(unsigned level, const char * file, unsigned line, const char * out) override;
   };
 #else
   typedef OpalLyncShim OpalLyncShimBase;
