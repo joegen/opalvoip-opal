@@ -242,6 +242,9 @@ class OpalLyncEndPoint : public OpalEndPoint, public OpalLyncShimBase
     UserEndpoint * GetRegistration(
       const PString & uri
     );
+
+    /// Get all registered URI names
+    PStringArray GetRegisteredURIs() const;
     //@}
 
     /**@name Customisation call backs */

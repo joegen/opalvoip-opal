@@ -107,8 +107,8 @@ bool MySIPEndPoint::Configure(PConfig & cfg, PConfigPage * rsrc)
       registrar.m_addressOfRecord = item[0].GetValue();
       if (!registrar.m_addressOfRecord.IsEmpty()) {
         registrar.m_authID = item[1].GetValue();
-        registrar.m_password = item[2].GetValue();
         registrar.m_expire = item[2].GetValue().AsUnsigned();
+        registrar.m_password = PHTTPPasswordField::Decrypt(item[3].GetValue());
         registrar.m_compatibility = (SIPRegister::CompatibilityModes)item[4].GetValue().AsUnsigned();
         PString aor;
         if (Register(registrar, aor))

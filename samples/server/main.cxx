@@ -648,7 +648,7 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
 #endif // OPAL_SKINNY
 
 #if OPAL_LYNC
-  if (!GetSkinnyEndPoint().Configure(cfg, rsrc))
+  if (!GetLyncEndPoint().Configure(cfg, rsrc))
     return false;
 #endif // OPAL_LYNC
 
@@ -973,8 +973,8 @@ bool MyLyncEndPoint::Configure(PConfig & cfg, PConfigPage * rsrc)
   PHTTPCompositeField * registrationsFields = new PHTTPCompositeField(LYNC_REGISTRATIONS_KEY, LYNC_REGISTRATIONS_SECTION, "Registration of Lync URI");
   registrationsFields->Append(new PHTTPStringField(LyncUriKey, 0, NULL, NULL, 1, 20));
   registrationsFields->Append(new PHTTPStringField(LyncAuthIDKey, 0, NULL, NULL, 1, 15));
+  registrationsFields->Append(new PHTTPStringField(LyncDomainKey, 0, NULL, NULL, 1, 15));
   registrationsFields->Append(new PHTTPPasswordField(LyncPasswordKey, 15));
-  registrationsFields->Append(new PHTTPIntegerField(LyncDomainKey, 1, 86400, 300));
   PHTTPFieldArray * registrationsArray = new PHTTPFieldArray(registrationsFields, false);
   rsrc->Add(registrationsArray);
 
@@ -986,8 +986,8 @@ bool MyLyncEndPoint::Configure(PConfig & cfg, PConfigPage * rsrc)
       info.m_uri = item[0].GetValue();
       if (!info.m_uri.IsEmpty()) {
         info.m_authID = item[1].GetValue();
-        info.m_password = item[2].GetValue();
         info.m_domain = item[2].GetValue();
+        info.m_password = PHTTPPasswordField::Decrypt(item[3].GetValue());
         if (Register(info))
           PSYSTEMLOG(Info, "Started register of " << info.m_uri);
         else

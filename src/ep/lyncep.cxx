@@ -160,7 +160,11 @@ bool OpalLyncEndPoint::Register(const RegistrationInfo & info)
 
   UserEndpoint * user = CreateUserEndpoint(*m_platform, url.AsString(), info.m_password, authID, domain);
   if (user == NULL) {
-    PTRACE(2, "Error registering \"" << info.m_uri << "\" as Lync UCMA user: " << GetLastError());
+    PTRACE(2, "Error registering \"" << info.m_uri << "\""
+              " (" << url << ","
+              " authID=\"" << authID << "\","
+              " domain=\"" << domain << "\")"
+              " as Lync UCMA user: " << GetLastError());
     return false;
   }
 
@@ -194,6 +198,17 @@ OpalLyncShim::UserEndpoint * OpalLyncEndPoint::GetRegistration(const PString & u
 
   RegistrationMap::iterator it = m_registrations.find(uri.IsEmpty() || uri == "*" ? GetDefaultLocalPartyName() : uri);
   return it != m_registrations.end() ? it->second : nullptr;
+}
+
+
+PStringArray OpalLyncEndPoint::GetRegisteredURIs() const
+{
+  PWaitAndSignal lock(m_registrationMutex);
+  PStringArray uris(m_registrations.size());
+  PINDEX i = 0;
+  for (RegistrationMap::const_iterator it = m_registrations.begin(); it != m_registrations.end(); ++it)
+    uris[i++] = it->first;
+  return uris;
 }
 
 
