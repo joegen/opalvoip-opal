@@ -284,7 +284,7 @@ PBoolean OpalLyncConnection::SetUpConnection()
 }
 
 
-void OpalLyncConnection::OnLyncCallStateChanged(int previousState, int newState)
+void OpalLyncConnection::OnLyncCallStateChanged(int PTRACE_PARAM(previousState), int newState)
 {
   PTRACE(3, "Lync UCMA call stat changed from " << previousState << " to " << newState);
 
@@ -360,7 +360,7 @@ OpalMediaStream * OpalLyncConnection::CreateMediaStream(const OpalMediaFormat & 
 }
 
 
-void OpalLyncConnection::OnMediaFlowStateChanged(int previousState, int newState)
+void OpalLyncConnection::OnMediaFlowStateChanged(int PTRACE_PARAM(previousState), int newState)
 {
   PTRACE(3, "Lync UCMA media flow state changed from " << previousState << " to " << newState);
 
