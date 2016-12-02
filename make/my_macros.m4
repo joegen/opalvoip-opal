@@ -456,7 +456,7 @@ AC_TYPE_LONG_DOUBLE()
 dnl Most unix'ish platforms are like this
 AC_SUBST(LD, $CXX)
 AC_SUBST(SHARED_CPPFLAGS, "-fPIC")
-AC_SUBST(SHARED_LDFLAGS, [['-shared -Wl,-soname,$(LIB_SONAME)']])
+AC_SUBST(SHARED_LDFLAGS, [['-shared -Wl,--build-id,-soname,$(LIB_SONAME)']])
 AC_SUBST(SHAREDLIBEXT, "so")
 AC_SUBST(STATICLIBEXT, "a")
 AC_SUBST(DEBUGINFOEXT, "debug")
