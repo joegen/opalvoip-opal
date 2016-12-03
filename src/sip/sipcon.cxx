@@ -572,7 +572,13 @@ PBoolean SIPConnection::SetAlerting(const PString & /*calleeName*/, PBoolean wit
 
   PTRACE(3, "SetAlerting " << (withMedia ? "with" : "no") << " media");
 
-  if (!withMedia && (!m_prackEnabled || m_lastReceivedINVITE->GetSDP() != NULL))
+  bool ciscoEndpoint = false;
+  if (m_lastReceivedINVITE != NULL) {
+    PSafePtr<SIPHandler> handler = m_sipEndpoint.FindSIPHandlerByUrl(m_lastReceivedINVITE->GetMIME().GetTo(), SIP_PDU::Method_REGISTER, PSafeReference);
+    ciscoEndpoint = dynamic_cast<SIPRegisterHandler *>(&*handler)->GetParams().m_compatibility == SIPRegister::e_Cisco;
+  }
+
+  if (ciscoEndpoint || (!withMedia && (!m_prackEnabled || m_lastReceivedINVITE->GetSDP() != NULL)))
     SendInviteResponse(SIP_PDU::Information_Ringing);
   else {
     if (!OnSendAnswer(SIP_PDU::Information_Session_Progress, false)) {

@@ -1023,6 +1023,9 @@ class SIPEndPoint : public OpalSDPEndPoint
     PSafePtr<SIPHandler> FindSIPHandlerByCallID(const PString & callID, PSafetyMode m)
       { return activeSIPHandlers.FindSIPHandlerByCallID(callID, m); }
 
+    PSafePtr<SIPHandler> FindSIPHandlerByUrl(const PString & aor, SIP_PDU::Methods method, PSafetyMode mode)
+      { return activeSIPHandlers.FindSIPHandlerByUrl(aor, method, mode); }
+
     void UpdateHandlerIndexes(SIPHandler * handler)
       { activeSIPHandlers.Update(handler); }
 
