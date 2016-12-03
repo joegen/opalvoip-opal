@@ -325,7 +325,7 @@ void SIPHandler::SetExpire(int e)
 
 void SIPHandler::WriteTransaction(OpalTransport & transport, bool & succeeded)
 {
-  SIPTransaction * transaction = CreateTransaction(transport);
+  PSafePtr<SIPTransaction> transaction = CreateTransaction(transport);
   if (transaction == NULL) {
     PTRACE(2, "Could not create transaction on " << transport);
     return;
@@ -563,6 +563,19 @@ SIPRegisterHandler::SIPRegisterHandler(SIPEndPoint & endpoint, const SIPRegister
 }
 
 
+
+static PString CreateCiscoDeviceName(const PString & pattern, const PString & name)
+{
+  if (name.GetLength() > pattern.GetLength())
+    return name(name.GetLength() - pattern.GetLength(), name.GetLength());
+
+  if (name.GetLength() < pattern.GetLength())
+    return pattern(0, pattern.GetLength() - name.GetLength() - 1) + name;
+
+  return name;
+}
+
+
 PString SIPRegisterHandler::CreateRegisterContact(const OpalTransportAddress & address, int q)
 {
   SIPURL contact(m_addressOfRecord.GetUserName(), address, 0, m_addressOfRecord.GetScheme());
@@ -576,8 +589,8 @@ PString SIPRegisterHandler::CreateRegisterContact(const OpalTransportAddress & a
     params.Set("+sip.instance", "<urn:uuid:" + m_parameters.m_instanceId.AsString() + '>');
     params.SetInteger("reg-id", m_rfc5626_reg_id);
     if (m_parameters.m_compatibility == SIPRegister::e_Cisco) {
-      params.Set("+u.sip!devicename.ccm.features.cisco.com", "\"SEP000C299130BE\"");
-      params.Set("+u.sip!model.ccm.cisco.com", "\"30016\"");
+      params.Set("+u.sip!devicename.ccm.features.cisco.com", "\"" + CreateCiscoDeviceName(m_parameters.m_ciscoDevicePattern, contact.GetUserName()) + "\"");
+      params.Set("+u.sip!model.ccm.cisco.com", "\"" + m_parameters.m_ciscoDeviceType + "\"");
     }
   }
 
@@ -687,6 +700,22 @@ SIPTransaction * SIPRegisterHandler::CreateTransaction(OpalTransport & transport
                                   "</x-cisco-remotecc-request>",
                                   "application/x-cisco-remotecc-request+xml",
                                   "session;handling=optional");
+
+            params.m_mime.AddSupported("replaces");
+            params.m_mime.AddSupported("join");
+            params.m_mime.AddSupported("sdp-anat");
+            params.m_mime.AddSupported("norefersub");
+            params.m_mime.AddSupported("extended-refer");
+            params.m_mime.AddSupported("X-cisco-callinfo");
+            params.m_mime.AddSupported("X-cisco-serviceuri");
+            params.m_mime.AddSupported("X-cisco-escapecodes");
+            params.m_mime.AddSupported("X-cisco-service-control");
+            params.m_mime.AddSupported("X-cisco-srtp-fallback");
+            params.m_mime.AddSupported("X-cisco-monrec");
+            params.m_mime.AddSupported("X-cisco-config");
+            params.m_mime.AddSupported("X-cisco-sis-5.1.0");
+            params.m_mime.AddSupported("X-cisco-xsi-8.5.1");
+          
             break;
         }
 

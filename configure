@@ -5553,7 +5553,7 @@ LD=$CXX
 
 SHARED_CPPFLAGS="-fPIC"
 
-SHARED_LDFLAGS='-shared -Wl,-soname,$(LIB_SONAME)'
+SHARED_LDFLAGS='-shared -Wl,--build-id,-soname,$(LIB_SONAME)'
 
 SHAREDLIBEXT="so"
 

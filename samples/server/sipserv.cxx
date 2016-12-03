@@ -36,6 +36,8 @@ static const char SIPUsernameKey[] = "SIP User Name";
 static const char SIPPrackKey[] = "SIP Provisional Responses";
 static const char SIPProxyKey[] = "SIP Proxy URL";
 static const char SIPLocalRegistrarKey[] = "SIP Local Registrar Domains";
+static const char SIPCiscoDeviceTypeKey[] = "SIP Cisco Device Type";
+static const char SIPCiscoDevicePatternKey[] = "SIP Cisco Device Pattern";
 #if OPAL_H323
 static const char SIPAutoRegisterH323Key[] = "SIP Auto-Register H.323";
 #endif
@@ -64,6 +66,8 @@ MySIPEndPoint::MySIPEndPoint(MyManager & mgr)
   , m_autoRegisterSkinny(false)
 #endif
   , m_manager(mgr)
+  , m_ciscoDeviceType(OpalSkinnyEndPoint::DefaultDeviceType)
+  , m_ciscoDevicePattern("SEPFFFFFFFFFFFF")
 {
 }
 
@@ -99,6 +103,24 @@ bool MySIPEndPoint::Configure(PConfig & cfg, PConfigPage * rsrc)
   PHTTPFieldArray * registrationsArray = new PHTTPFieldArray(registrationsFields, false);
   rsrc->Add(registrationsArray);
 
+  SetRegistrarDomains(rsrc->AddStringArrayField(SIPLocalRegistrarKey, false, 25,
+    PStringArray(m_registrarDomains), "SIP local registrar domain names"));
+
+  m_ciscoDeviceType = rsrc->AddIntegerField(SIPCiscoDeviceTypeKey, 1, 32767, m_ciscoDeviceType, "",
+    "Device type for SIP Cisco Devices. Default 30016 = Cisco IP Communicator.");
+
+  m_ciscoDevicePattern = rsrc->AddStringField(SIPCiscoDevicePatternKey, 0, m_ciscoDevicePattern,
+    "Pattern used to register SIP Cisco Devices. Default SEPFFFFFFFFFFFF", 1, 80);
+
+#if OPAL_H323
+  m_autoRegisterH323 = rsrc->AddBooleanField(SIPAutoRegisterH323Key, m_autoRegisterH323,
+                                             "Auto-register H.323 alias of same name as incoming SIP registration");
+#endif
+#if OPAL_SKINNY
+  m_autoRegisterSkinny = rsrc->AddBooleanField(SIPAutoRegisterSkinnyKey, m_autoRegisterSkinny,
+                                               "Auto-register SCCP device of same name as incoming SIP registration");
+#endif
+
   if (!registrationsArray->LoadFromConfig(cfg)) {
     for (PINDEX i = 0; i < registrationsArray->GetSize(); ++i) {
       PHTTPCompositeField & item = dynamic_cast<PHTTPCompositeField &>((*registrationsArray)[i]);
@@ -110,6 +132,8 @@ bool MySIPEndPoint::Configure(PConfig & cfg, PConfigPage * rsrc)
         registrar.m_expire = item[2].GetValue().AsUnsigned();
         registrar.m_password = PHTTPPasswordField::Decrypt(item[3].GetValue());
         registrar.m_compatibility = (SIPRegister::CompatibilityModes)item[4].GetValue().AsUnsigned();
+        registrar.m_ciscoDeviceType = PString(m_ciscoDeviceType);
+        registrar.m_ciscoDevicePattern = m_ciscoDevicePattern;
         PString aor;
         if (Register(registrar, aor))
           PSYSTEMLOG(Info, "Started register of " << aor);
@@ -119,18 +143,7 @@ bool MySIPEndPoint::Configure(PConfig & cfg, PConfigPage * rsrc)
     }
   }
 
-  SetRegistrarDomains(rsrc->AddStringArrayField(SIPLocalRegistrarKey, false, 25,
-                      PStringArray(m_registrarDomains), "SIP local registrar domain names"));
-
-#if OPAL_H323
-  m_autoRegisterH323 = rsrc->AddBooleanField(SIPAutoRegisterH323Key, m_autoRegisterH323,
-                                             "Auto-register H.323 alias of same name as incoming SIP registration");
-#endif
-#if OPAL_SKINNY
-  m_autoRegisterSkinny = rsrc->AddBooleanField(SIPAutoRegisterSkinnyKey, m_autoRegisterSkinny,
-                                               "Auto-register SCCP device of same name as incoming SIP registration");
-#endif
-    return true;
+  return true;
 }
 
 
@@ -139,6 +152,38 @@ void MySIPEndPoint::OnChangedRegistrarAoR(RegistrarAoR & ua)
 {
   m_manager.OnChangedRegistrarAoR(ua.GetAoR(), ua.HasBindings());
 }
+
+
+void MySIPEndPoint::AutoRegisterCisco(const PString & server, const PString & wildcard, const PString & deviceType, bool registering)
+{
+  PStringArray names, servers;
+  ExpandWildcards(wildcard, server, names, servers);
+
+  for (PINDEX i = 0; i < names.GetSize(); ++i) {
+    PString addressOfRecord = "sip:" + names[i] + "@" + server;
+
+    if (registering) {
+      SIPRegister::Params registrar;
+      registrar.m_addressOfRecord = addressOfRecord;
+      registrar.m_compatibility = SIPRegister::CompatibilityModes::e_Cisco;
+      if (deviceType.IsEmpty())
+        registrar.m_ciscoDeviceType = PString(m_ciscoDeviceType);
+      else
+        registrar.m_ciscoDeviceType = deviceType;
+
+      registrar.m_ciscoDevicePattern = m_ciscoDevicePattern;
+      PString aor;
+      if (Register(registrar, aor))
+        PSYSTEMLOG(Info, "Started register of " << aor);
+      else
+        PSYSTEMLOG(Error, "Could not register " << registrar.m_addressOfRecord);
+    }
+    else {
+      Unregister(addressOfRecord);
+    }
+  }
+}
+
 
 void MyManager::OnChangedRegistrarAoR(const PURL & aor, bool registering)
 {
@@ -163,6 +208,9 @@ void MyManager::OnChangedRegistrarAoR(const PURL & aor, bool registering)
   else if (GetSIPEndPoint().m_autoRegisterSkinny && aor.GetScheme().NumCompare("sip") == EqualTo)
     GetSkinnyEndPoint().AutoRegister(PString::Empty(), aor.GetUserName(), aor.GetParamVars()("interface"), registering);
 #endif // OPAL_SKINNY
+
+  if (aor.GetScheme() == "sip" && (aor.GetParamVars()("type") *= "cisco"))
+    GetSIPEndPoint().AutoRegisterCisco(aor.GetHostPort(), aor.GetUserName(), aor.GetParamVars()("device"), registering);
 }
 #endif // OPAL_H323 || OPAL_SKINNY
 

@@ -1259,11 +1259,15 @@ class SIPRegister : public SIPTransaction
         , m_registrarAddress(m_remoteAddress)
         , m_compatibility(param.m_compatibility)
         , m_instanceId(param.m_instanceId)
+        , m_ciscoDeviceType(param.m_ciscoDeviceType)
+        , m_ciscoDevicePattern(param.m_ciscoDevicePattern)
       { }
 
       PCaselessString  & m_registrarAddress; // For backward compatibility
       CompatibilityModes m_compatibility;
       PGloballyUniqueID  m_instanceId;
+      PString            m_ciscoDeviceType;
+      PString            m_ciscoDevicePattern;
     };
 
     SIPRegister(

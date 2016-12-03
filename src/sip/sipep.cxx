@@ -1263,10 +1263,16 @@ bool SIPEndPoint::OnReceivedREFER(SIP_PDU & request)
 {
   // REFER outside of a connect dialog is bizarre, but that's Cisco for you
 
-  SIPURL to = request.GetMIME().GetTo();
-  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(to, SIP_PDU::Method_REGISTER, PSafeReference);
+  SIPURL url = request.GetMIME().GetTo();
+  PSafePtr<SIPHandler> handler = FindSIPHandlerByUrl(url, SIP_PDU::Method_REGISTER, PSafeReference);
+
+  if (handler == NULL) {
+    url = request.GetMIME().GetFrom();
+    handler = FindSIPHandlerByUrl(url, SIP_PDU::Method_REGISTER, PSafeReference);
+  }
+
   if (handler == NULL || dynamic_cast<SIPRegisterHandler *>(&*handler)->GetParams().m_compatibility != SIPRegister::e_Cisco) {
-    PTRACE(3, "Could not find a Cisco REGISTER corresponding to the REFER " << to);
+    PTRACE(3, "Could not find a Cisco REGISTER corresponding to the REFER " << url);
     return false; // Returns method not allowed
   }
 

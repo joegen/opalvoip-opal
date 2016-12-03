@@ -843,6 +843,45 @@ void MyManager::OnStopMediaPatch(OpalConnection & connection, OpalMediaPatch & p
 
 ///////////////////////////////////////////////////////////////////////////////
 
+#if OPAL_SIP || OPAL_SKINNY
+
+void ExpandWildcards(const PStringArray & input, const PString & defaultServer, PStringArray & names, PStringArray & servers)
+{
+  for (PINDEX i = 0; i < input.GetSize(); ++i) {
+    PString str = input[i];
+
+    PIntArray starts(4), ends(4);
+    static PRegularExpression const Wildcards("([0-9]+)\\.\\.([0-9]+)(@.*)?$", PRegularExpression::Extended);
+    if (Wildcards.Execute(str, starts, ends)) {
+      PString server = (ends[3] - starts[3]) > 2 ? str(starts[3] + 1, ends[3] - 1) : defaultServer;
+      uint64_t number = str(starts[1], ends[1] - 1).AsUnsigned64();
+      uint64_t lastNumber = str(starts[2], ends[2] - 1).AsUnsigned64();
+      unsigned digits = ends[1] - starts[1];
+      str.Delete(starts[1], P_MAX_INDEX);
+      while (number <= lastNumber) {
+        names.AppendString(PSTRSTRM(str << setfill('0') << setw(digits) << number++));
+        servers.AppendString(server);
+      }
+    }
+    else {
+      PString name, server;
+      if (str.Split('@', name, server)) {
+        names.AppendString(name);
+        servers.AppendString(server);
+      }
+      else {
+        names.AppendString(str);
+        servers.AppendString(defaultServer);
+      }
+    }
+  }
+}
+
+#endif // OPAL_SIP || OPAL_SKINNY
+
+
+///////////////////////////////////////////////////////////////////////////////
+
 #if OPAL_SKINNY
 
 OpalConsoleSkinnyEndPoint * MyManager::CreateSkinnyEndPoint()
@@ -873,7 +912,7 @@ bool MySkinnyEndPoint::Configure(PConfig &, PConfigPage * rsrc)
                         "WAV file to simulate audio on SCCP when can't gateway channel.", 1, 80));
 
   PStringArray newExpandedNames, servers;
-  ExpandWildcards(m_deviceNames, newExpandedNames, servers);
+  ExpandWildcards(m_deviceNames, m_defaultServer, newExpandedNames, servers);
   unsigned unregisterCount = 0;
   for (PINDEX i = 0; i < m_expandedDeviceNames.GetSize(); ++i) {
     if (newExpandedNames.GetValuesIndex(m_expandedDeviceNames[i]) == P_MAX_INDEX) {
@@ -903,7 +942,7 @@ void MySkinnyEndPoint::AutoRegister(const PString & server, const PString & wild
   PString actualServer = server.IsEmpty() ? m_defaultServer : server;
 
   PStringArray names, servers;
-  ExpandWildcards(wildcard, names, servers);
+  ExpandWildcards(wildcard, m_defaultServer, names, servers);
 
   for (PINDEX i = 0; i < names.GetSize(); ++i) {
     PString name = names[i];
@@ -912,39 +951,6 @@ void MySkinnyEndPoint::AutoRegister(const PString & server, const PString & wild
       Register(actualServer, name, m_deviceType, localInterface);
     else
       Unregister(name);
-  }
-}
-
-
-void MySkinnyEndPoint::ExpandWildcards(const PStringArray & input, PStringArray & names, PStringArray & servers)
-{
-  for (PINDEX i = 0; i < input.GetSize(); ++i) {
-    PString str = input[i];
-
-    PIntArray starts(4), ends(4);
-    static PRegularExpression const Wildcards("([0-9]+)\\.\\.([0-9]+)(@.*)?$", PRegularExpression::Extended);
-    if (Wildcards.Execute(str, starts, ends)) {
-      PString server = (ends[3] - starts[3]) > 2 ? str(starts[3]+1, ends[3]-1) : m_defaultServer;
-      uint64_t number = str(starts[1], ends[1] - 1).AsUnsigned64();
-      uint64_t lastNumber = str(starts[2], ends[2] - 1).AsUnsigned64();
-      unsigned digits = ends[1] - starts[1];
-      str.Delete(starts[1], P_MAX_INDEX);
-      while (number <= lastNumber) {
-        names.AppendString(PSTRSTRM(str << setfill('0') << setw(digits) << number++));
-        servers.AppendString(server);
-      }
-    }
-    else {
-      PString name, server;
-      if (str.Split('@', name, server)) {
-        names.AppendString(name);
-        servers.AppendString(server);
-      }
-      else {
-        names.AppendString(str);
-        servers.AppendString(m_defaultServer);
-      }
-    }
   }
 }
 

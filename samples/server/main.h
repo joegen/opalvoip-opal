@@ -36,6 +36,9 @@
 class MyManager;
 
 
+void ExpandWildcards(const PStringArray & input, const PString & defaultServer, PStringArray & names, PStringArray & servers);
+
+
 ///////////////////////////////////////
 
 class CallDetailRecord
@@ -285,6 +288,8 @@ class MySIPEndPoint : public SIPConsoleEndPoint
 public:
   MySIPEndPoint(MyManager & mgr);
 
+  void AutoRegisterCisco(const PString & server, const PString & wildcard, const PString & deviceType, bool registering);
+
   bool Configure(PConfig & cfg, PConfigPage * rsrc);
 
 #if OPAL_H323 || OPAL_SKINNY
@@ -300,6 +305,9 @@ public:
 
 protected:
   MyManager & m_manager;
+
+  unsigned m_ciscoDeviceType;
+  PString  m_ciscoDevicePattern;
 };
 
 #endif // OPAL_SIP
@@ -320,8 +328,6 @@ public:
   void AutoRegister(const PString & server, const PString & name, const PString & localInterface, bool registering);
 
 protected:
-  void ExpandWildcards(const PStringArray & input, PStringArray & names, PStringArray & servers);
-
   MyManager  & m_manager;
   PString      m_defaultServer;
   PString      m_defaultInterface;
