@@ -500,7 +500,7 @@ bool SIPConnection::TransferConnection(const PString & remoteParty)
     m_sentReferTo = remoteParty;
     m_sentReferTo.Sanitise(SIPURL::RedirectURI);
     PTRACE(3, "Blind transfer of " << *this << " to " << m_sentReferTo << ", referSubMode=" << referSubMode);
-    SIPRefer * referTransaction = new SIPRefer(*this, m_sentReferTo, m_dialog.GetLocalURI(), referSubMode);
+    PSafePtr<SIPTransaction> referTransaction = new SIPRefer(*this, m_sentReferTo, m_dialog.GetLocalURI(), referSubMode);
     m_referOfRemoteInProgress = referTransaction->Start();
     return m_referOfRemoteInProgress;
   }
@@ -542,7 +542,7 @@ bool SIPConnection::TransferConnection(const PString & remoteParty)
          << ";from-tag=" << sip->GetDialog().GetLocalTag();
       m_sentReferTo.SetQueryVar("Replaces", id);
 
-      SIPRefer * referTransaction = new SIPRefer(*this, m_sentReferTo, m_dialog.GetLocalURI(), referSubMode);
+      PSafePtr<SIPTransaction> referTransaction = new SIPRefer(*this, m_sentReferTo, m_dialog.GetLocalURI(), referSubMode);
       referTransaction->GetMIME().AddSupported("replaces");
       m_referOfRemoteInProgress = referTransaction->Start();
       return m_referOfRemoteInProgress;
@@ -1007,7 +1007,7 @@ bool SIPConnection::SendReINVITE(PTRACE_PARAM(const char * msg,) int operation)
 
   m_needReINVITE = true;
 
-  SIPTransaction * invite = new SIPInvite(*this);
+  PSafePtr<SIPTransaction> invite = new SIPInvite(*this);
 
   // To avoid overlapping INVITE transactions, we place the new transaction
   // in a queue, if queue is empty we can start immediately, otherwise
@@ -1098,7 +1098,7 @@ void SIPConnection::WriteINVITE(OpalTransport & transport, bool & succeeded)
   NotifyDialogState(SIPDialogNotification::Trying);
 
   m_needReINVITE = false;
-  SIPTransaction * invite = new SIPInvite(*this, &transport);
+  PSafePtr<SIPTransaction> invite = new SIPInvite(*this, &transport);
 
   if (!m_stringOptions.Contains(SIP_HEADER_CONTACT) && (changedUserName || changedDisplayName)) {
     SIPMIMEInfo & mime = invite->GetMIME();
@@ -1116,7 +1116,6 @@ void SIPConnection::WriteINVITE(OpalTransport & transport, bool & succeeded)
   // sent out.
   if (IsReleased()) {
     PTRACE(2, "Aborting INVITE transaction since connection is in releasing phase");
-    delete invite; // Before Start() is called we are responsible for deletion
     return;
   }
 
@@ -1595,7 +1594,7 @@ bool SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
         PTRACE(3, "No PRACK on cancelled transaction");
       }
       else {
-        SIPTransaction * prack = new SIPPrack(*this, *transaction.GetTransport(), rseq & transaction.GetMIME().GetCSeq());
+        PSafePtr<SIPTransaction> prack = new SIPPrack(*this, *transaction.GetTransport(), rseq & transaction.GetMIME().GetCSeq());
         prack->Start();
       }
     }
@@ -1940,7 +1939,8 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
     if (!referToken.IsEmpty()) {
       PSafePtr<SIPConnection> referred = GetEndPoint().GetSIPConnectionWithLock(referToken, PSafeReadOnly);
       if (referred != NULL) {
-        (new SIPReferNotify(*referred, response.GetStatusCode()))->Start();
+        PSafePtr<SIPTransaction> referNotify = new SIPReferNotify(*referred, response.GetStatusCode());
+        referNotify->Start();
 
         if (response.GetStatusCode() >= 300) {
           PTRACE(3, "Failed to transfer " << *referred);
@@ -2012,7 +2012,7 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
           return;
 
         case SIP_PDU::Successful_OK :
-          SIPTransaction * newTransaction = transaction.CreateDuplicate();
+          PSafePtr<SIPTransaction> newTransaction = transaction.CreateDuplicate();
           if (!newTransaction->Start()) {
             PTRACE(2, "Could not restart " << transaction << " for switch to TCP");
             break;
@@ -2655,7 +2655,10 @@ void SIPConnection::OnDelayedRefer()
                                    cleanedReferTo.AsQuotedString(),
                                    NULL) &&
       m_delayedReferTo.GetQueryVars().GetBoolean("ReferSub"))
-    (new SIPReferNotify(*this, SIP_PDU::GlobalFailure_Decline))->Start();
+  {
+    PSafePtr<SIPTransaction> referNotify = new SIPReferNotify(*this, SIP_PDU::GlobalFailure_Decline);
+    referNotify->Start();
+  }
 
   m_delayedReferTo = PString::Empty();
 }
@@ -2848,7 +2851,7 @@ PBoolean SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transa
   if (status != SIP_PDU::Successful_OK)
     return false;
 
-  SIPTransaction * newTransaction = transaction.CreateDuplicate();
+  PSafePtr<SIPTransaction> newTransaction = transaction.CreateDuplicate();
   if (newTransaction == NULL) {
     PTRACE(1, "Cannot create duplicate transaction for " << transaction);
     return false;

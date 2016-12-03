@@ -325,7 +325,7 @@ void SIPHandler::SetExpire(int e)
 
 void SIPHandler::WriteTransaction(OpalTransport & transport, bool & succeeded)
 {
-  SIPTransaction * transaction = CreateTransaction(transport);
+  PSafePtr<SIPTransaction> transaction = CreateTransaction(transport);
   if (transaction == NULL) {
     PTRACE(2, "Could not create transaction on " << transport);
     return;
