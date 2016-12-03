@@ -1006,7 +1006,7 @@ bool OpalConsoleLyncEndPoint::Initialise(PArgList & args, bool verbose, const PS
   PStringArray authID = args.GetOptionString("lync-auth-id").Lines();
   PStringArray domain = args.GetOptionString("lync-domain").Lines();
   for (PINDEX i = 0; i < uri.GetSize(); ++i) {
-    RegistrationInfo info;
+    RegistrationParams info;
     info.m_uri = uri[i];
 
     if (!password.IsEmpty())
@@ -1018,11 +1018,12 @@ bool OpalConsoleLyncEndPoint::Initialise(PArgList & args, bool verbose, const PS
     if (!domain.IsEmpty())
       info.m_domain = domain[std::min(i, domain.GetSize()-1)];
 
-    if (!Register(info))
+    PString registeredURI = RegisterUser(info);
+    if (registeredURI.IsEmpty())
       output << "Could not register " << info.m_uri << " with Lync server" << endl;
     else {
       if (verbose)
-        output << "Lync registered: " << info.m_uri << '\n';
+        output << "Lync registered: " << registeredURI << '\n';
     }
   }
 
@@ -1040,13 +1041,16 @@ void OpalConsoleLyncEndPoint::CmdRegister(PCLI::Arguments & args, P_INT_PTR)
   if (args.GetCount() < 1)
     args.WriteUsage();
   else {
-    RegistrationInfo info;
+    RegistrationParams info;
     info.m_uri = args[0];
     info.m_password = args[1];
     info.m_authID = args.GetOptionString("auth-id");
     info.m_domain = args.GetOptionString("domain");
-    if (!Register(info))
-      args.WriteError() << "Could not register \"" << args[0] << "\" with Lync server" << endl;
+    PString uri = RegisterUser(info);
+    if (uri.IsEmpty())
+      args.WriteError() << "Could not register \"" << info.m_uri << "\" with Lync server" << endl;
+    else
+      args.GetContext() << "Registered " << uri << " with Lync server." << endl;
   }
 }
 

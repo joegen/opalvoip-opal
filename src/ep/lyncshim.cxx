@@ -34,9 +34,11 @@
 #using OPAL_LYNC_LIBRARY
 
 using namespace Microsoft::Rtc;
+using namespace msclr::interop;
+
 
 #if PTRACING
-  #define PTRACE(level, args) { std::ostringstream strm; strm << args; OnTraceOutput(level, __FILE__, __LINE__, strm.str()); }
+  #define PTRACE(level, args) { std::ostringstream strm; strm << args; OnTraceOutput(level, __FILE__, __LINE__, strm.str().c_str()); }
 #else
   #define PTRACE(...)
 #endif
@@ -54,9 +56,9 @@ int const OpalLyncShim::CallStateEstablished = (int)Collaboration::CallState::Es
 int const OpalLyncShim::CallStateTerminating = (int)Collaboration::CallState::Terminating;
 int const OpalLyncShim::MediaFlowActive = (int)Collaboration::MediaFlowState::Active;
 
-struct OpalLyncShim::AppEndpoint : gcroot<Collaboration::ApplicationEndpoint^>
+struct OpalLyncShim::ApplicationEndpoint : gcroot<Collaboration::ApplicationEndpoint^>
 {
-  AppEndpoint(Collaboration::ApplicationEndpoint^ ep) : gcroot<Collaboration::ApplicationEndpoint^>(ep) { }
+  ApplicationEndpoint(Collaboration::ApplicationEndpoint^ ep) : gcroot<Collaboration::ApplicationEndpoint^>(ep) { }
 };
 
 struct OpalLyncShim::UserEndpoint : gcroot<Collaboration::UserEndpoint^>
@@ -113,6 +115,15 @@ ref class OpalLyncShim_Notifications : public System::Object
     {
     }
 
+    void ApplicationEndpointOwnerDiscovered(System::Object^ sender, Collaboration::ApplicationEndpointSettingsDiscoveredEventArgs^ args)
+    {
+      Collaboration::CollaborationPlatform^ platform = dynamic_cast<Collaboration::CollaborationPlatform^>(sender);
+      Collaboration::ApplicationEndpoint^ aep = gcnew Collaboration::ApplicationEndpoint(platform, args->ApplicationEndpointSettings);
+      OpalLyncShim::ApplicationEndpoint * aepp = new OpalLyncShim::ApplicationEndpoint(aep);
+      if (!m_shim.OnApplicationProvisioning(aepp))
+        delete aepp;
+    }
+
     void RegisterForIncomingCall(Collaboration::LocalEndpoint^ ep)
     {
       ep->RegisterForIncomingCall<Collaboration::AudioVideo::AudioVideoCall^>(
@@ -122,13 +133,13 @@ ref class OpalLyncShim_Notifications : public System::Object
 
     void OnIncomingCall(System::Object^ /*sender*/, Collaboration::CallReceivedEventArgs<Collaboration::AudioVideo::AudioVideoCall^>^ args)
     {
-      msclr::interop::marshal_context marshalContext;
+      marshal_context marshal;
       OpalLyncShim::IncomingLyncCallInfo info;
       info.m_call = new OpalLyncShim::AudioVideoCall(args->Call);
-      info.m_remoteUri = marshalContext.marshal_as<const char *>(args->RemoteParticipant->Uri);
-      info.m_displayName = marshalContext.marshal_as<const char *>(args->RemoteParticipant->DisplayName);
-      info.m_destinationUri = marshalContext.marshal_as<const char *>(args->RequestData->ToHeader->Uri);
-      info.m_transferredBy = marshalContext.marshal_as<const char *>(args->TransferredBy);
+      info.m_remoteUri = marshal.marshal_as<const char *>(args->RemoteParticipant->Uri);
+      info.m_displayName = marshal.marshal_as<const char *>(args->RemoteParticipant->DisplayName);
+      info.m_destinationUri = marshal.marshal_as<const char *>(args->RequestData->ToHeader->Uri);
+      info.m_transferredBy = marshal.marshal_as<const char *>(args->TransferredBy);
       m_shim.OnIncomingLyncCall(info);
     }
 
@@ -151,7 +162,7 @@ ref class OpalLyncShim_Notifications : public System::Object
                                                       (this, &OpalLyncShim_Notifications::MediaFlowStateChanged);
     }
 
-    void MediaFlowStateChanged(System::Object^, Collaboration::MediaFlowStateChangedEventArgs^ args)
+    void MediaFlowStateChanged(System::Object^ /*sender*/, Collaboration::MediaFlowStateChangedEventArgs^ args)
     {
       //if (Collaboration::MediaFlowState::Active)
       m_shim.OnMediaFlowStateChanged((int)args->PreviousState, (int)args->State);
@@ -164,7 +175,7 @@ ref class OpalLyncShim_Notifications : public System::Object
         call->EndEstablish(ar);
       }
       catch (System::Exception^ err) {
-        m_shim.OnLyncCallFailed(msclr::interop::marshal_as<std::string>(err->ToString()));
+        m_shim.OnLyncCallFailed(marshal_as<std::string>(err->ToString()));
       }
     }
 };
@@ -191,13 +202,85 @@ OpalLyncShim::~OpalLyncShim()
 }
 
 
+OpalLyncShim::Platform * OpalLyncShim::CreatePlatform(const PlatformParams & params)
+{
+  m_lastError.clear();
+
+  Collaboration::CollaborationPlatform^ cp;
+  try {
+    Collaboration::ServerPlatformSettings^ sps = nullptr;
+    if (params.m_certificateFriendlyName.empty())
+      sps = gcnew Collaboration::ServerPlatformSettings(marshal_as<System::String^>(params.m_appName),
+                                                        marshal_as<System::String^>(params.m_localHost),
+                                                        params.m_localPort,
+                                                        marshal_as<System::String^>(params.m_GRUU));
+    else {
+      using namespace System::Security::Cryptography::X509Certificates;
+      X509Store^ store = gcnew X509Store(StoreLocation::LocalMachine);
+      store->Open(OpenFlags::ReadOnly);
+      X509Certificate2Collection^ certificates = store->Certificates;
+      store->Close();
+
+      System::String^ friendlyName = marshal_as<System::String^>(params.m_certificateFriendlyName);
+      for each(X509Certificate2^ certificate in certificates) {
+        if (certificate->FriendlyName->Equals(friendlyName, System::StringComparison::OrdinalIgnoreCase)) {
+          sps = gcnew Collaboration::ServerPlatformSettings(marshal_as<System::String^>(params.m_appName),
+                                                            marshal_as<System::String^>(params.m_localHost),
+                                                            params.m_localPort,
+                                                            marshal_as<System::String^>(params.m_GRUU),
+                                                            certificate);
+          break;
+        }
+      }
+    }
+
+    if (sps != nullptr) {
+      cp = gcnew Collaboration::CollaborationPlatform(sps);
+      cp->EndStartup(cp->BeginStartup(nullptr, nullptr));
+    }
+  }
+  catch (System::Exception^ err) {
+    m_lastError = marshal_as<std::string>(err->ToString());
+    return nullptr;
+  }
+
+  return new Platform(cp);
+}
+
+
+OpalLyncShim::Platform * OpalLyncShim::CreatePlatform(const char * appName, const char * provisioningID)
+{
+  m_lastError.clear();
+
+  System::String^ userAgent = nullptr;
+  if (appName != NULL && *appName != '\0')
+    userAgent = marshal_as<System::String^>(appName);
+
+  Collaboration::CollaborationPlatform^ cp;
+  try {
+    Collaboration::ProvisionedApplicationPlatformSettings^ paps = gcnew Collaboration::ProvisionedApplicationPlatformSettings(
+                                                                        userAgent, marshal_as<System::String^>(provisioningID));
+    cp = gcnew Collaboration::CollaborationPlatform(paps);
+    cp->RegisterForApplicationEndpointSettings(gcnew System::EventHandler<Collaboration::ApplicationEndpointSettingsDiscoveredEventArgs^>
+                                                       (m_notifications, &OpalLyncShim_Notifications::ApplicationEndpointOwnerDiscovered));
+    cp->EndStartup(cp->BeginStartup(nullptr, nullptr));
+  }
+  catch (System::Exception^ err) {
+    m_lastError = marshal_as<std::string>(err->ToString());
+    return nullptr;
+  }
+
+  return new Platform(cp);
+}
+
+
 OpalLyncShim::Platform * OpalLyncShim::CreatePlatform(const char * appName)
 {
   m_lastError.clear();
 
   System::String^ userAgent = nullptr;
   if (appName != NULL && *appName != '\0')
-    userAgent = gcnew System::String(appName);
+    userAgent = marshal_as<System::String^>(appName);
 
   Collaboration::CollaborationPlatform^ cp;
   try {
@@ -206,7 +289,7 @@ OpalLyncShim::Platform * OpalLyncShim::CreatePlatform(const char * appName)
     cp->EndStartup(cp->BeginStartup(nullptr, nullptr));
   }
   catch (System::Exception^ err) {
-    m_lastError = msclr::interop::marshal_as<std::string>(err->ToString());
+    m_lastError = marshal_as<std::string>(err->ToString());
     return nullptr;
   }
 
@@ -231,7 +314,7 @@ bool OpalLyncShim::DestroyPlatform(Platform * &platform)
     cp->EndShutdown(cp->BeginShutdown(nullptr, nullptr));
   }
   catch (System::Exception^ err) {
-    m_lastError = msclr::interop::marshal_as<std::string>(err->ToString());
+    m_lastError = marshal_as<std::string>(err->ToString());
     return false;
   }
 
@@ -239,27 +322,48 @@ bool OpalLyncShim::DestroyPlatform(Platform * &platform)
 }
 
 
-OpalLyncShim::AppEndpoint * OpalLyncShim::CreateAppEndpoint(Platform & platform)
+bool OpalLyncShim::OnApplicationProvisioning(ApplicationEndpoint * aep)
+{
+  m_lastError.clear();
+
+  try {
+    m_notifications->RegisterForIncomingCall(*aep);
+    (*aep)->EndEstablish((*aep)->BeginEstablish(nullptr, nullptr));
+  }
+  catch (System::Exception^ err) {
+    m_lastError = marshal_as<std::string>(err->ToString());
+    return false;
+  }
+
+  return true;
+}
+
+
+OpalLyncShim::ApplicationEndpoint * OpalLyncShim::CreateApplicationEndpoint(Platform & platform, const ApplicationParams & params)
 {
   m_lastError.clear();
 
   Collaboration::ApplicationEndpoint^ aep;
   try {
-    Collaboration::ApplicationEndpointSettings^ aes = gcnew Collaboration::ApplicationEndpointSettings(nullptr);
+    Collaboration::ApplicationEndpointSettings^ aes = gcnew Collaboration::ApplicationEndpointSettings(marshal_as<System::String^>(params.m_ownerURI),
+                                                                                                       marshal_as<System::String^>(params.m_proxyHost),
+                                                                                                       params.m_proxyPort);
+    aes->IsDefaultRoutingEndpoint = params.m_defaultRoutingEndpoint;
+    aes->AutomaticPresencePublicationEnabled = params.m_publicisePresence;
     aep = gcnew Collaboration::ApplicationEndpoint(platform, aes);
     m_notifications->RegisterForIncomingCall(aep);
     aep->EndEstablish(aep->BeginEstablish(nullptr, nullptr));
   }
   catch (System::Exception^ err) {
-    m_lastError = msclr::interop::marshal_as<std::string>(err->ToString());
+    m_lastError = marshal_as<std::string>(err->ToString());
     return nullptr;
   }
 
-  return new AppEndpoint(aep);
+  return new ApplicationEndpoint(aep);
 }
 
 
-void OpalLyncShim::DestroyAppEndpoint(AppEndpoint * & app)
+void OpalLyncShim::DestroyApplicationEndpoint(ApplicationEndpoint * & app)
 {
   DeleteAndSetNull(app);
 }
@@ -275,16 +379,16 @@ OpalLyncShim::UserEndpoint * OpalLyncShim::CreateUserEndpoint(Platform & platfor
 
   Collaboration::UserEndpoint^ uep;
   try {
-    Collaboration::UserEndpointSettings^ ues = gcnew Collaboration::UserEndpointSettings(gcnew System::String(uri));
-    ues->Credential = gcnew System::Net::NetworkCredential(gcnew System::String(authID),
-                                                           gcnew System::String(password),
-                                                           gcnew System::String(domain));
+    Collaboration::UserEndpointSettings^ ues = gcnew Collaboration::UserEndpointSettings(marshal_as<System::String^>(uri));
+    ues->Credential = gcnew System::Net::NetworkCredential(marshal_as<System::String^>(authID),
+                                                           marshal_as<System::String^>(password),
+                                                           marshal_as<System::String^>(domain));
     uep = gcnew Collaboration::UserEndpoint(platform, ues);
     m_notifications->RegisterForIncomingCall(uep);
     uep->EndEstablish(uep->BeginEstablish(nullptr, nullptr));
   }
   catch (System::Exception^ err) {
-    m_lastError = msclr::interop::marshal_as<std::string>(err->ToString());
+    m_lastError = marshal_as<std::string>(err->ToString());
     return nullptr;
   }
 
@@ -308,7 +412,7 @@ OpalLyncShim::Conversation * OpalLyncShim::CreateConversation(UserEndpoint & uep
     conv = gcnew Collaboration::Conversation(uep, cs);
   }
   catch (System::Exception^ err) {
-    m_lastError = msclr::interop::marshal_as<std::string>(err->ToString());
+    m_lastError = marshal_as<std::string>(err->ToString());
     return nullptr;
   }
 
@@ -331,7 +435,7 @@ void OpalLyncShim::DestroyConversation(Conversation * & conv)
     conversation->EndTerminate(conversation->BeginTerminate(nullptr, nullptr));
   }
   catch (System::Exception^ err) {
-    m_lastError = msclr::interop::marshal_as<std::string>(err->ToString());
+    m_lastError = marshal_as<std::string>(err->ToString());
   }
 }
 
@@ -348,13 +452,13 @@ OpalLyncShim::AudioVideoCall * OpalLyncShim::CreateAudioVideoCall(Conversation &
     if (answering) {
     }
     else
-      call->BeginEstablish(gcnew System::String(uri),
+      call->BeginEstablish(marshal_as<System::String^>(uri),
                            nullptr,
                            gcnew System::AsyncCallback(m_notifications, &OpalLyncShim_Notifications::CallEndEstablish),
                            call);
   }
   catch (System::Exception^ err) {
-    m_lastError = msclr::interop::marshal_as<std::string>(err->ToString());
+    m_lastError = marshal_as<std::string>(err->ToString());
     return nullptr;
   }
 
@@ -369,7 +473,7 @@ bool OpalLyncShim::AcceptAudioVideoCall(AudioVideoCall & call)
     call->EndAccept(call->BeginAccept(nullptr, nullptr));
   }
   catch (System::Exception^ err) {
-    m_lastError = msclr::interop::marshal_as<std::string>(err->ToString());
+    m_lastError = marshal_as<std::string>(err->ToString());
     return false;
   }
 
@@ -392,7 +496,7 @@ void OpalLyncShim::DestroyAudioVideoCall(AudioVideoCall * & avc)
     call->EndTerminate(call->BeginTerminate(nullptr, nullptr));
   }
   catch (System::Exception^ err) {
-    m_lastError = msclr::interop::marshal_as<std::string>(err->ToString());
+    m_lastError = marshal_as<std::string>(err->ToString());
   }
 }
 
@@ -422,7 +526,7 @@ OpalLyncShim::SpeechRecognitionConnector * OpalLyncShim::CreateSpeechRecognition
     connector->AttachFlow(flow);
   }
   catch (System::Exception^ err) {
-    m_lastError = msclr::interop::marshal_as<std::string>(err->ToString());
+    m_lastError = marshal_as<std::string>(err->ToString());
     return nullptr;
   }
 
@@ -449,7 +553,7 @@ OpalLyncShim::SpeechSynthesisConnector * OpalLyncShim::CreateSpeechSynthesisConn
     connector->AttachFlow(flow);
   }
   catch (System::Exception^ err) {
-    m_lastError = msclr::interop::marshal_as<std::string>(err->ToString());
+    m_lastError = marshal_as<std::string>(err->ToString());
     return nullptr;
   }
 
@@ -470,12 +574,13 @@ OpalLyncShim::AudioVideoStream * OpalLyncShim::CreateAudioVideoStream(SpeechReco
 {
   m_lastError.clear();
 
-  System::IO::Stream^ stream;
+  Collaboration::AudioVideo::SpeechRecognitionStream^ stream;
   try {
     stream = connector->Start();
+    PTRACE(3, "Started SpeechRecognitionConnector: format=" << (int)stream->AudioFormat);
   }
   catch (System::Exception^ err) {
-    m_lastError = msclr::interop::marshal_as<std::string>(err->ToString());
+    m_lastError = marshal_as<std::string>(err->ToString());
     return nullptr;
   }
 
@@ -489,10 +594,13 @@ OpalLyncShim::AudioVideoStream * OpalLyncShim::CreateAudioVideoStream(SpeechSynt
 
   System::IO::Stream^ stream;
   try {
+    connector->AudioFormat = Collaboration::AudioVideo::AudioFormat::LinearPCM8Khz16bitMono;
+    connector->Start();
+    PTRACE(3, "Started SpeechSynthesisConnector: format=" << (int)connector->AudioFormat);
     stream = connector->Stream;
   }
   catch (System::Exception^ err) {
-    m_lastError = msclr::interop::marshal_as<std::string>(err->ToString());
+    m_lastError = marshal_as<std::string>(err->ToString());
     return nullptr;
   }
 
@@ -512,7 +620,7 @@ int OpalLyncShim::ReadAudioVideoStream(AudioVideoStream & stream, unsigned char 
     }
   }
   catch (System::Exception^ err) {
-    m_lastError = msclr::interop::marshal_as<std::string>(err->ToString());
+    m_lastError = marshal_as<std::string>(err->ToString());
   }
   return result;
 }
@@ -529,7 +637,7 @@ int OpalLyncShim::WriteAudioVideoStream(AudioVideoStream & stream, const unsigne
     result = length;
   }
   catch (System::Exception^ err) {
-    m_lastError = msclr::interop::marshal_as<std::string>(err->ToString());
+    m_lastError = marshal_as<std::string>(err->ToString());
   }
   return result;
 }

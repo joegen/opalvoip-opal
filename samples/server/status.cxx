@@ -209,9 +209,9 @@ PString RegistrationStatusPage::LoadText(PHTTPRequest & request)
   m_lync.clear();
   OpalLyncEndPoint * lyncEP = m_manager.FindEndPointAs<OpalLyncEndPoint>(OPAL_PREFIX_LYNC);
   if (lyncEP != NULL) {
-    PStringArray uris = lyncEP->GetRegisteredURIs();
+    PStringArray uris = lyncEP->GetRegisteredUsers();
     for (PINDEX i = 0; i < uris.GetSize(); ++i)
-      m_lync[uris[i]] = lyncEP->GetRegistration(uris[i]) ? "Registered" : "Failed";
+      m_lync[uris[i]] = lyncEP->GetRegisteredUser(uris[i]) ? "Registered" : "Failed";
   }
 #endif
 

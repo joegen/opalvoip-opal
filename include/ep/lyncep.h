@@ -43,12 +43,30 @@ class OpalLyncShim
     ~OpalLyncShim();
 
     struct Platform;
-    Platform * CreatePlatform(const char * userAgent);
+    struct PlatformParams {
+      std::string m_appName;
+      std::string m_localHost;
+      unsigned    m_localPort;
+      std::string m_GRUU;
+      std::string m_certificateFriendlyName;
+      PlatformParams() : m_localPort(5061) { }
+    };
+    Platform * CreatePlatform(const PlatformParams & params);
+    Platform * CreatePlatform(const char * appName, const char * provisioningID);
+    Platform * CreatePlatform(const char * appName);
     bool DestroyPlatform(Platform * & platform);
 
-    struct AppEndpoint;
-    AppEndpoint * CreateAppEndpoint(Platform & platform);
-    void DestroyAppEndpoint(AppEndpoint * & app);
+    struct ApplicationEndpoint;
+    struct ApplicationParams {
+      std::string m_ownerURI;
+      std::string m_proxyHost;
+      unsigned    m_proxyPort;
+      bool        m_defaultRoutingEndpoint;
+      bool        m_publicisePresence;
+      ApplicationParams() : m_proxyPort(0), m_defaultRoutingEndpoint(false), m_publicisePresence(true) { }
+    };
+    ApplicationEndpoint * CreateApplicationEndpoint(Platform & platform, const ApplicationParams & params);
+    void DestroyApplicationEndpoint(ApplicationEndpoint * & app);
 
     struct UserEndpoint;
     UserEndpoint * CreateUserEndpoint(Platform & platform,
@@ -103,6 +121,7 @@ class OpalLyncShim
     virtual void OnLyncCallStateChanged(int /*previousState*/, int /*newState*/) { }
     virtual void OnLyncCallFailed(const std::string & /*error*/) { }
     virtual void OnMediaFlowStateChanged(int /*previousState*/, int /*newState*/) { }
+    virtual bool OnApplicationProvisioning(ApplicationEndpoint * aep);
 
     const std::string & GetLastError() const { return m_lastError; }
 
@@ -146,8 +165,8 @@ class OpalLyncEndPoint : public OpalEndPoint, public OpalLyncShimBase
 {
     PCLASSINFO(OpalLyncEndPoint, OpalEndPoint);
   public:
-    /**@name Construction */
-    //@{
+  /**@name Construction */
+  //@{
     /**Create a new endpoint.
      */
     OpalLyncEndPoint(
@@ -158,10 +177,10 @@ class OpalLyncEndPoint : public OpalEndPoint, public OpalLyncShimBase
     /**Destroy endpoint.
      */
     virtual ~OpalLyncEndPoint();
-    //@}
+  //@}
 
-    /**@name Overrides from OpalEndPoint */
-    //@{
+  /**@name Overrides from OpalEndPoint */
+  //@{
     /** Shut down the endpoint, this is called by the OpalManager just before
         destroying the object and can be handy to make sure some things are
         stopped before the vtable gets clobbered.
@@ -216,11 +235,17 @@ class OpalLyncEndPoint : public OpalEndPoint, public OpalLyncShimBase
         Returns true if all garbage has been collected.
         */
     virtual PBoolean GarbageCollection();
-    //@}
+  //@}
 
-    /**@name User registrations */
-    //@{
-    struct RegistrationInfo
+  /**@name User registrations */
+  //@{
+    /// Register as ApplicationEndpoint
+    bool RegisterApplication(
+      const PlatformParams & platformParams,
+      const ApplicationParams & appParams
+    );
+
+    struct RegistrationParams
     {
       PString m_uri;
       PString m_authID;
@@ -228,27 +253,29 @@ class OpalLyncEndPoint : public OpalEndPoint, public OpalLyncShimBase
       PString m_domain;
     };
 
-    /// Register URI as a local user with Lync server
-    bool Register(
-      const RegistrationInfo & info
+    /** Register URI as a local user with Lync server.
+        @returns The URI string to use in UnregisterUser() or GetRegistration().
+      */
+    PString RegisterUser(
+      const RegistrationParams & info
     );
 
     /// Unregister URI as a local user with Lync server
-    bool Unregister(
+    bool UnregisterUser(
       const PString & uri
     );
 
     /// Get registered URI with Lync server
-    UserEndpoint * GetRegistration(
+    UserEndpoint * GetRegisteredUser(
       const PString & uri
-    );
+    ) const;
 
     /// Get all registered URI names
-    PStringArray GetRegisteredURIs() const;
-    //@}
+    PStringArray GetRegisteredUsers() const;
+  //@}
 
-    /**@name Customisation call backs */
-    //@{
+  /**@name Customisation call backs */
+  //@{
     /** Create a connection for the skinny endpoint.
       */
     virtual OpalLyncConnection * CreateConnection(
@@ -257,12 +284,14 @@ class OpalLyncEndPoint : public OpalEndPoint, public OpalLyncShimBase
       unsigned int options,
       OpalConnection::StringOptions * stringOptions
     );
-    //@}
+  //@}
 
   protected:
+    virtual bool OnApplicationProvisioning(ApplicationEndpoint * aep);
     virtual void OnIncomingLyncCall(const IncomingLyncCallInfo & info) override;
 
     Platform * m_platform;
+    ApplicationEndpoint * m_applicationRegistration;
 
     typedef std::map<PString, UserEndpoint *> RegistrationMap;
     RegistrationMap m_registrations;
@@ -367,7 +396,6 @@ class OpalLyncConnection : public OpalConnection, public OpalLyncShimBase
   //@}
 
     void SetUpIncomingLyncCall(const IncomingLyncCallInfo & info);
-    AudioVideoFlow * GetAudioVideoFlow() const { return m_flow; }
 
   protected:
     OpalLyncEndPoint & m_endpoint;
@@ -375,10 +403,13 @@ class OpalLyncConnection : public OpalConnection, public OpalLyncShimBase
     Conversation   * m_conversation;
     AudioVideoCall * m_audioVideoCall;
     AudioVideoFlow * m_flow;
+    bool             m_mediaActive;
 
     virtual void OnLyncCallStateChanged(int previousState, int newState) override;
     virtual void OnLyncCallFailed(const std::string & error) override;
     virtual void OnMediaFlowStateChanged(int previousState, int newState) override;
+
+  friend class OpalLyncMediaStream;
 };
 
 
@@ -443,6 +474,8 @@ class OpalLyncMediaStream : public OpalMediaStream, public OpalLyncShimBase
     SpeechRecognitionConnector * m_inputConnector;
     SpeechSynthesisConnector   * m_outputConnector;
     AudioVideoStream           * m_avStream;
+    PBYTEArray                   m_silence;
+    bool                         m_closing;
 };
 
 

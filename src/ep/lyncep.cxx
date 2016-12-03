@@ -45,6 +45,7 @@ void OpalLyncShimBase::OnTraceOutput(unsigned level, const char * file, unsigned
 OpalLyncEndPoint::OpalLyncEndPoint(OpalManager & manager, const char *prefix)
   : OpalEndPoint(manager, prefix, IsNetworkEndPoint)
   , m_platform(nullptr)
+  , m_applicationRegistration(nullptr)
 {
 }
 
@@ -63,6 +64,8 @@ void OpalLyncEndPoint::ShutDown()
     m_registrations.clear();
   }
 
+  DestroyApplicationEndpoint(m_applicationRegistration);
+
   if (!DestroyPlatform(m_platform)) {
     PTRACE_IF(2, !GetLastError().empty(), "Error shutting down Lync UCMA platform: " << GetLastError());
   }
@@ -80,8 +83,6 @@ OpalMediaFormatList OpalLyncEndPoint::GetMediaFormats() const
 
 void OpalLyncEndPoint::OnIncomingLyncCall(const IncomingLyncCallInfo & info)
 {
-  PTRACE(3, "Incoming Lync call: " << info.m_remoteUri);
-
   PSafePtr<OpalCall> call = m_manager.InternalCreateCall();
   if (call != NULL) {
     OpalLyncConnection * connection = CreateConnection(*call, nullptr, 0, nullptr);
@@ -90,6 +91,8 @@ void OpalLyncEndPoint::OnIncomingLyncCall(const IncomingLyncCallInfo & info)
       return;
     }
   }
+
+  PTRACE(2, "Incoming Lync call unexpectedly failed.");
 
   DestroyAudioVideoCall(const_cast<IncomingLyncCallInfo&>(info).m_call);
 }
@@ -123,20 +126,68 @@ PBoolean OpalLyncEndPoint::GarbageCollection()
 }
 
 
-bool OpalLyncEndPoint::Register(const RegistrationInfo & info)
+bool OpalLyncEndPoint::OnApplicationProvisioning(ApplicationEndpoint * aep)
+{
+  if (m_applicationRegistration != nullptr) {
+    PTRACE(2, "Cannot rpovision, already registered for application.");
+    return false;
+  }
+
+  if (!OpalLyncShim::OnApplicationProvisioning(aep))
+    return false;
+
+  m_applicationRegistration = aep;
+  return true;
+}
+
+
+bool OpalLyncEndPoint::RegisterApplication(const PlatformParams & platformParams, const ApplicationParams & appParams)
+{
+  if (m_applicationRegistration != nullptr) {
+    PTRACE(2, "Already registered for application.");
+    return false;
+  }
+
+  if (m_platform != nullptr) {
+    PTRACE(2, "Already registered for users.");
+    return false;
+  }
+
+  m_platform = CreatePlatform(platformParams);
+  if (m_platform == nullptr) {
+    PTRACE(2, "Error initialising Lync UCMA platform: " << GetLastError());
+    return false;
+  }
+
+  PTRACE(3, "Created Lync UCMA platform.");
+
+  m_applicationRegistration = CreateApplicationEndpoint(*m_platform, appParams);
+  if (m_applicationRegistration == nullptr) {
+    PTRACE(2, "Error initialising Lync UCMA application endpoint: " << GetLastError());
+    DestroyPlatform(m_platform);
+    return false;
+  }
+
+  PTRACE(3, "Created Lync UCMA application endpoint.");
+  return true;
+}
+
+
+PString OpalLyncEndPoint::RegisterUser(const RegistrationParams & info)
 {
   if (info.m_uri.IsEmpty()) {
     PTRACE(2, "Must proivide a URI for registration.");
-    return false;
+    return PString::Empty();
   }
 
   PWaitAndSignal lock(m_registrationMutex);
 
   if (m_platform == nullptr) {
+    PlatformParams params;
     m_platform = CreatePlatform(PProcess::Current().GetName());
     if (m_platform == nullptr) {
       PTRACE(2, "Error initialising Lync UCMA platform: " << GetLastError());
-      return false;
+      return PString::Empty();
     }
     PTRACE(3, "Created Lync UCMA platform.");
   }
@@ -146,7 +197,7 @@ bool OpalLyncEndPoint::Register(const RegistrationInfo & info)
 
   RegistrationMap::iterator it = m_registrations.find(url);
   if (it != m_registrations.end())
-    return false;
+    return PString::Empty();
 
   PString authID = info.m_authID;
   if (authID.IsEmpty())
@@ -165,7 +216,7 @@ bool OpalLyncEndPoint::Register(const RegistrationInfo & info)
               " authID=\"" << authID << "\","
               " domain=\"" << domain << "\")"
               " as Lync UCMA user: " << GetLastError());
-    return false;
+    return PString::Empty();
   }
 
   if (m_registrations.empty())
@@ -173,11 +224,11 @@ bool OpalLyncEndPoint::Register(const RegistrationInfo & info)
 
   m_registrations[url] = user;
   PTRACE(3, "Registered \"" << url << "\" as Lync UCMA.");
-  return true;
+  return url;
 }
 
 
-bool OpalLyncEndPoint::Unregister(const PString & uri)
+bool OpalLyncEndPoint::UnregisterUser(const PString & uri)
 {
   PWaitAndSignal lock(m_registrationMutex);
 
@@ -192,16 +243,16 @@ bool OpalLyncEndPoint::Unregister(const PString & uri)
 }
 
 
-OpalLyncShim::UserEndpoint * OpalLyncEndPoint::GetRegistration(const PString & uri)
+OpalLyncShim::UserEndpoint * OpalLyncEndPoint::GetRegisteredUser(const PString & uri) const
 {
   PWaitAndSignal lock(m_registrationMutex);
 
-  RegistrationMap::iterator it = m_registrations.find(uri.IsEmpty() || uri == "*" ? GetDefaultLocalPartyName() : uri);
+  RegistrationMap::const_iterator it = m_registrations.find(uri.IsEmpty() || uri == "*" ? GetDefaultLocalPartyName() : uri);
   return it != m_registrations.end() ? it->second : nullptr;
 }
 
 
-PStringArray OpalLyncEndPoint::GetRegisteredURIs() const
+PStringArray OpalLyncEndPoint::GetRegisteredUsers() const
 {
   PWaitAndSignal lock(m_registrationMutex);
   PStringArray uris(m_registrations.size());
@@ -224,24 +275,41 @@ OpalLyncConnection::OpalLyncConnection(OpalCall & call,
   , m_conversation(nullptr)
   , m_audioVideoCall(nullptr)
   , m_flow(nullptr)
+  , m_mediaActive(false)
 {
 }
 
 
 void OpalLyncConnection::SetUpIncomingLyncCall(const IncomingLyncCallInfo & info)
 {
+  if (GetPhase() != UninitialisedPhase) {
+    PTRACE(2, "Unexpected SetUpIncomingLyncCall for " << *this);
+    return;
+  }
+
+  PTRACE(3, "Incoming Lync call:"
+            " from=\"" << info.m_remoteUri << "\","
+            " name=\"" << info.m_displayName << "\","
+            " dest=\"" << info.m_destinationUri << "\","
+            " by=\"" << info.m_transferredBy << "\","
+            " conn=" << *this);
+
   m_audioVideoCall = info.m_call;
 
-  if (GetPhase() == UninitialisedPhase) {
-    m_remotePartyURL = info.m_remoteUri;
-    m_remotePartyName = info.m_displayName;
-    m_calledPartyName = info.m_destinationUri;
-    m_redirectingParty = info.m_transferredBy;
-    SetPhase(SetUpPhase);
-    OnApplyStringOptions();
-    if (OnIncomingConnection(0, NULL))
-      m_ownerCall.OnSetUp(*this);
-  }
+  m_remotePartyURL = info.m_remoteUri;
+  if (m_remotePartyURL.NumCompare("sip:") == EqualTo)
+    m_remotePartyURL.Splice(m_endpoint.GetPrefixName(), 0, 3);
+  m_remotePartyName = info.m_displayName;
+  m_calledPartyName = info.m_destinationUri;
+  m_redirectingParty = info.m_transferredBy;
+  if (m_redirectingParty.NumCompare("sip:") == EqualTo)
+    m_redirectingParty.Splice(m_endpoint.GetPrefixName(), 0, 3);
+
+  SetPhase(SetUpPhase);
+  OnApplyStringOptions();
+
+  if (OnIncomingConnection(0, NULL))
+    m_ownerCall.OnSetUp(*this);
 }
 
 
@@ -253,7 +321,7 @@ PBoolean OpalLyncConnection::SetUpConnection()
   InternalSetAsOriginating();
 
   PString localParty = m_stringOptions(OPAL_OPT_CALLING_PARTY_URL, GetLocalPartyName());
-  OpalLyncShim::UserEndpoint * uep = m_endpoint.GetRegistration(localParty);
+  OpalLyncShim::UserEndpoint * uep = m_endpoint.GetRegisteredUser(localParty);
   if (uep == nullptr) {
     PTRACE(2, "Cannot find registration for user: " << localParty);
     Release(EndedByGkAdmissionFailed);
@@ -286,7 +354,7 @@ PBoolean OpalLyncConnection::SetUpConnection()
 
 void OpalLyncConnection::OnLyncCallStateChanged(int PTRACE_PARAM(previousState), int newState)
 {
-  PTRACE(3, "Lync UCMA call stat changed from " << previousState << " to " << newState);
+  PTRACE(3, "Lync UCMA call state changed from " << previousState << " to " << newState);
 
   if (newState == CallStateEstablishing)
     OnProceeding();
@@ -306,7 +374,9 @@ void OpalLyncConnection::OnLyncCallFailed(const std::string & error)
 {
   PTRACE(2, "Failed to establish Lync UCMA call: " << error);
 
-  if (error.find("ResponseCode=480") != std::string::npos)
+  if (error.find("ResponseCode=404") != std::string::npos)
+    Release(EndedByNoUser);
+  else if (error.find("ResponseCode=480") != std::string::npos)
     Release(EndedByTemporaryFailure);
   else if (error.find("ResponseCode=60") != std::string::npos)
     Release(EndedByRefusal);
@@ -360,11 +430,12 @@ OpalMediaStream * OpalLyncConnection::CreateMediaStream(const OpalMediaFormat & 
 }
 
 
-void OpalLyncConnection::OnMediaFlowStateChanged(int PTRACE_PARAM(previousState), int newState)
+void OpalLyncConnection::OnMediaFlowStateChanged(int previousState, int newState)
 {
   PTRACE(3, "Lync UCMA media flow state changed from " << previousState << " to " << newState);
 
-  if (newState == MediaFlowActive) {
+  m_mediaActive = newState == MediaFlowActive;
+  if (m_mediaActive && previousState != MediaFlowActive) {
     AutoStartMediaStreams();
     InternalOnEstablished();
   }
@@ -382,6 +453,8 @@ OpalLyncMediaStream::OpalLyncMediaStream(OpalLyncConnection & conn,
   , m_inputConnector(nullptr)
   , m_outputConnector(nullptr)
   , m_avStream(nullptr)
+  , m_silence(10*sizeof(short)*mediaFormat.GetTimeUnits()) // At least 10ms
+  , m_closing(false)
 {
 }
 
@@ -397,14 +470,15 @@ PBoolean OpalLyncMediaStream::Open()
   if (IsOpen())
     return true;
 
-  AudioVideoFlow * flow = m_connection.GetAudioVideoFlow();
-  if (flow == nullptr) {
-    PTRACE(2, "Cannot open media stream " << *this << ", Lync UCMA flow not yet started.");
-    return false;
+  if (!m_connection.m_mediaActive || m_connection.m_flow == nullptr) {
+    PTRACE(2, "Cannot open media stream " << *this << ", Lync UCMA flow not yet active.");
+    /* Return true so does not fail setting up the stream, but as we are not really
+       open, a later call to Open () will trya again and maybe succeed. */
+    return true;
   }
 
   if (IsSource()) {
-    m_inputConnector = CreateSpeechRecognitionConnector(*flow);
+    m_inputConnector = CreateSpeechRecognitionConnector(*m_connection.m_flow);
     if (m_inputConnector == nullptr) {
       PTRACE(2, "Error creating Lync UCMA SpeechRecognitionConnector for " << *this << ": " << GetLastError());
       return false;
@@ -412,7 +486,7 @@ PBoolean OpalLyncMediaStream::Open()
     m_avStream = CreateAudioVideoStream(*m_inputConnector);
   }
   else {
-    m_outputConnector = CreateSpeechSynthesisConnector(*flow);
+    m_outputConnector = CreateSpeechSynthesisConnector(*m_connection.m_flow);
     if (m_outputConnector == nullptr) {
       PTRACE(2, "Error creating Lync UCMA SpeechSynthesisConnector for " << *this << ": " << GetLastError());
       return false;
@@ -432,6 +506,8 @@ PBoolean OpalLyncMediaStream::Open()
 
 void OpalLyncMediaStream::InternalClose()
 {
+  m_closing = true;
+
   if (m_inputConnector != nullptr) {
     DestroyAudioVideoStream(*m_inputConnector, m_avStream);
     DestroySpeechRecognitionConnector(m_inputConnector);
@@ -446,12 +522,19 @@ void OpalLyncMediaStream::InternalClose()
 
 PBoolean OpalLyncMediaStream::ReadData(BYTE * data, PINDEX size, PINDEX & length)
 {
-  if (m_avStream == NULL)
+  if (m_closing)
     return false;
-  
+
+  length = 0;
+  if (!m_connection.m_mediaActive || m_connection.m_flow == nullptr)
+    return true;
+
+  if (!Open())
+    return false;
+
   int result = ReadAudioVideoStream(*m_avStream, data, size);
   if (result < 0) {
-    PTRACE(2, "Error reading Lync UCMA Stream: " << GetLastError());
+    PTRACE(2, "Lync UCMA Stream (" << *this << ") read error: " << GetLastError());
     return false;
   }
 
@@ -462,12 +545,29 @@ PBoolean OpalLyncMediaStream::ReadData(BYTE * data, PINDEX size, PINDEX & length
 
 PBoolean OpalLyncMediaStream::WriteData(const BYTE * data, PINDEX length, PINDEX & written)
 {
-  if (m_avStream == NULL)
+  if (m_closing)
     return false;
-  
+
+  written = 0;
+  if (!m_connection.m_mediaActive || m_connection.m_flow == nullptr) {
+    PThread::Sleep(10);
+    return true;
+  }
+
+  if (!Open())
+    return false;
+
+  if (data != NULL && length != 0)
+    m_silence.SetMinSize(length);
+  else {
+    length = m_silence.GetSize();
+    data = m_silence;
+    PTRACE(6, "Playing silence " << length << " bytes");
+  }
+
   int result = WriteAudioVideoStream(*m_avStream, data, length);
   if (result < 0) {
-    PTRACE(2, "Error writing Lync UCMA Stream: " << GetLastError());
+    PTRACE(2, "Lync UCMA Stream (" << *this << ") write error: " << GetLastError());
     return false;
   }
 

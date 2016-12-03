@@ -988,16 +988,16 @@ bool MyLyncEndPoint::Configure(PConfig & cfg, PConfigPage * rsrc)
     for (PINDEX i = 0; i < registrationsArray->GetSize(); ++i) {
       PHTTPCompositeField & item = dynamic_cast<PHTTPCompositeField &>((*registrationsArray)[i]);
 
-      OpalLyncEndPoint::RegistrationInfo info;
+      OpalLyncEndPoint::RegistrationParams info;
       info.m_uri = item[0].GetValue();
       if (!info.m_uri.IsEmpty()) {
         info.m_authID = item[1].GetValue();
         info.m_domain = item[2].GetValue();
         info.m_password = PHTTPPasswordField::Decrypt(item[3].GetValue());
-        if (Register(info))
-          PSYSTEMLOG(Info, "Started register of " << info.m_uri);
-        else
+        if (RegisterUser(info).IsEmpty())
           PSYSTEMLOG(Error, "Could not register " << info.m_uri);
+        else
+          PSYSTEMLOG(Info, "Started register of " << info.m_uri);
       }
     }
   }
