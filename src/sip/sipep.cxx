@@ -741,14 +741,9 @@ bool SIPEndPoint::OnReceivedPDU(SIP_PDU * pdu)
   // Check if we have already received this request (have a transaction in play)
   // But not ACK as that is really part of the INVITE transaction
   if (pdu->GetMethod() != SIP_PDU::Method_ACK) {
-    PString id = pdu->GetTransactionID();
-    PSafePtr<SIPResponse> transaction = PSafePtrCast<SIPTransaction, SIPResponse>(GetTransaction(id, PSafeReadOnly));
-    if (transaction != NULL) {
-      PTRACE(4, "Retransmitting previous response for transaction id=" << id);
-      transaction->InitialiseHeaders(*pdu);
-      transaction->Send();
+    PSafePtr<SIPTransaction> transaction = GetTransaction(pdu->GetTransactionID(), PSafeReadOnly);
+    if (transaction != NULL && transaction->ReSend(*pdu))
       return false;
-    }
   }
 
   const SIPMIMEInfo & mime = pdu->GetMIME();

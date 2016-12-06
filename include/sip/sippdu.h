@@ -1079,6 +1079,7 @@ class SIPTransaction : public SIPTransactionBase
 
     virtual PBoolean OnReceivedResponse(SIP_PDU & response);
     virtual PBoolean OnCompleted(SIP_PDU & response);
+    virtual bool ReSend(const SIP_PDU & /*cmd*/) { return false;  }
 
     SIPEndPoint & GetEndPoint() const { return m_owner->GetEndPoint(); }
     SIPConnection * GetConnection() const;
@@ -1151,6 +1152,7 @@ class SIPResponse : public SIPTransaction
     virtual SIPTransaction * CreateDuplicate() const;
 
     virtual bool Send();
+    virtual bool ReSend(const SIP_PDU & cmd);
 };
 
 
