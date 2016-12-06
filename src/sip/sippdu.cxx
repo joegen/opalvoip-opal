@@ -3790,6 +3790,15 @@ bool SIPResponse::Send()
 }
 
 
+bool SIPResponse::ReSend(const SIP_PDU & cmd)
+{
+  PTRACE(4, "Retransmitting previous response for transaction id=" << id);
+  InitialiseHeaders(cmd);
+  Send();
+  return true;
+}
+
+
 ////////////////////////////////////////////////////////////////////////////////////
 
 SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport * transport)
