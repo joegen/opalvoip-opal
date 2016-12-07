@@ -3792,7 +3792,7 @@ bool SIPResponse::Send()
 
 bool SIPResponse::ReSend(const SIP_PDU & cmd)
 {
-  PTRACE(4, "Retransmitting previous response for transaction id=" << id);
+  PTRACE(4, "Retransmitting previous response for transaction: cmd=" << cmd.GetMethod() << ", id=" << cmd.GetTransactionID());
   InitialiseHeaders(cmd);
   Send();
   return true;
