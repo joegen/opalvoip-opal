@@ -481,6 +481,34 @@ bool OpalLyncShim::AcceptAudioVideoCall(AudioVideoCall & call)
 }
 
 
+bool OpalLyncShim::TransferAudioVideoCall(AudioVideoCall & call, AudioVideoCall & target)
+{
+  try {
+    call->EndTransfer(call->BeginTransfer(target, nullptr, nullptr));
+  }
+  catch (System::Exception^ err) {
+    m_lastError = marshal_as<std::string>(err->ToString());
+    return false;
+  }
+
+  return true;
+}
+
+
+bool OpalLyncShim::TransferAudioVideoCall(AudioVideoCall & call, const char * targetURI)
+{
+  try {
+    call->EndTransfer(call->BeginTransfer(marshal_as<System::String^>(targetURI), nullptr, nullptr));
+  }
+  catch (System::Exception^ err) {
+    m_lastError = marshal_as<std::string>(err->ToString());
+    return false;
+  }
+
+  return true;
+}
+
+
 void OpalLyncShim::DestroyAudioVideoCall(AudioVideoCall * & avc)
 {
   if (avc == nullptr)

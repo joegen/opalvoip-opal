@@ -83,6 +83,8 @@ class OpalLyncShim
     struct AudioVideoCall;
     AudioVideoCall * CreateAudioVideoCall(Conversation & conv, const char * uri, bool answering);
     bool AcceptAudioVideoCall(AudioVideoCall & call);
+    bool TransferAudioVideoCall(AudioVideoCall & call, const char * targetURI);
+    bool TransferAudioVideoCall(AudioVideoCall & call, AudioVideoCall & target);
     void DestroyAudioVideoCall(AudioVideoCall * & call);
 
     struct AudioVideoFlow;
@@ -286,6 +288,8 @@ class OpalLyncEndPoint : public OpalEndPoint, public OpalLyncShimBase
     );
   //@}
 
+    void AdjustLyncURI(PString & uri);
+
   protected:
     virtual bool OnApplicationProvisioning(ApplicationEndpoint * aep);
     virtual void OnIncomingLyncCall(const IncomingLyncCallInfo & info) override;
@@ -375,6 +379,16 @@ class OpalLyncConnection : public OpalConnection, public OpalLyncShimBase
     /**Indicate to remote endpoint we are connected.
       */
     virtual PBoolean SetConnected();
+
+    /**Initiate the transfer of an existing call (connection) to a new remote 
+       party.
+
+       If remoteParty is a valid call token, then the remote party is transferred
+       to that party (consultation transfer) and both calls are cleared.
+     */
+    virtual bool TransferConnection(
+      const PString & remoteParty   ///<  Remote party to transfer the existing call to
+    );
 
     /**Create a new media stream.
        This will create a media stream of an appropriate subclass as required

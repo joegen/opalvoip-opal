@@ -2656,10 +2656,7 @@ void SIPConnection::OnDelayedRefer()
   cleanedReferTo.SetQuery(PString::Empty());
 
   // send NOTIFY if transfer failed, but only if allowed by RFC4488
-  if (!GetEndPoint().SetupTransfer(GetToken(),
-                                   m_delayedReferTo.GetQueryVars()("Replaces"),
-                                   cleanedReferTo.AsQuotedString(),
-                                   NULL) &&
+  if (!GetEndPoint().SetupTransfer(*this, cleanedReferTo.AsQuotedString(), m_delayedReferTo.GetQueryVars()("Replaces")) &&
       m_delayedReferTo.GetQueryVars().GetBoolean("ReferSub"))
   {
     PSafePtr<SIPTransaction> referNotify = new SIPReferNotify(*this, SIP_PDU::GlobalFailure_Decline);

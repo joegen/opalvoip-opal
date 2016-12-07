@@ -192,8 +192,9 @@ PString OpalLyncEndPoint::RegisterUser(const RegistrationParams & info)
     PTRACE(3, "Created Lync UCMA platform.");
   }
 
-  PURL url(info.m_uri.NumCompare(GetPrefixName()+':') == EqualTo
-                   ? info.m_uri.Mid(GetPrefixName().GetLength()+1) : info.m_uri, "sip");
+  PString uriStr = info.m_uri;
+  AdjustLyncURI(uriStr);
+  PURL url(uriStr);
 
   RegistrationMap::iterator it = m_registrations.find(url);
   if (it != m_registrations.end())
@@ -260,6 +261,15 @@ PStringArray OpalLyncEndPoint::GetRegisteredUsers() const
   for (RegistrationMap::const_iterator it = m_registrations.begin(); it != m_registrations.end(); ++it)
     uris[i++] = it->first;
   return uris;
+}
+
+
+void OpalLyncEndPoint::AdjustLyncURI(PString & uri)
+{
+  if (uri.NumCompare(GetPrefixName()+':') == EqualTo)
+    uri.Splice("sip", 0, GetPrefixName().GetLength());
+  else
+    uri.Splice("sip:", 0);
 }
 
 
@@ -335,10 +345,7 @@ PBoolean OpalLyncConnection::SetUpConnection()
   }
 
   PString otherParty = GetRemotePartyURL();
-  if (otherParty.NumCompare(m_endpoint.GetPrefixName()+':') == EqualTo)
-    otherParty.Replace(m_endpoint.GetPrefixName(), "sip");
-  else
-    otherParty.Splice("sip:", 0);
+  m_endpoint.AdjustLyncURI(otherParty);
 
   m_audioVideoCall = CreateAudioVideoCall(*m_conversation, otherParty, false);
   if (m_audioVideoCall == nullptr) {
@@ -418,6 +425,31 @@ PBoolean OpalLyncConnection::SetConnected()
   }
 
   PTRACE(2, "Failed to accept incoming Lync UCMA call: " << GetLastError());
+  return false;
+}
+
+
+bool OpalLyncConnection::TransferConnection(const PString & remoteParty)
+{
+  if (!PAssert(m_audioVideoCall != nullptr, PLogicError))
+    return false;
+
+  PSafePtr<OpalLyncConnection> otherConnection = m_endpoint.GetConnectionWithLockAs<OpalLyncConnection>(remoteParty);
+  if (otherConnection != NULL) {
+    if (TransferAudioVideoCall(*m_audioVideoCall, *otherConnection->m_audioVideoCall)) {
+      PTRACE(3, "Transferred Lync UCMA call on " << *this << " to " << *otherConnection);
+      return true;
+    }
+  }
+  else {
+    PString uri = remoteParty;
+    m_endpoint.AdjustLyncURI(uri);
+    if (TransferAudioVideoCall(*m_audioVideoCall, uri)) {
+      PTRACE(3, "Transferred Lync UCMA call on " << *this << " to " << remoteParty);
+      return true;
+    }
+  }
+  PTRACE(2, "Failed to transfer Lync UCMA call: " << GetLastError());
   return false;
 }
 
