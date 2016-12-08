@@ -1010,17 +1010,17 @@ void OpalRTPSession::SetToolName(const PString & name)
 }
 
 
-RTPExtensionHeaders OpalRTPSession::GetExtensionHeaders() const
+RTPHeaderExtensions OpalRTPSession::GetHeaderExtensions() const
 {
   PSafeLockReadOnly lock(*this);
-  return m_extensionHeaders;
+  return m_headerExtensions;
 }
 
 
-void OpalRTPSession::SetExtensionHeader(const RTPExtensionHeaders & ext)
+void OpalRTPSession::SetHeaderExtensions(const RTPHeaderExtensions & ext)
 {
   PSafeLockReadWrite lock(*this);
-  m_extensionHeaders = ext;
+  m_headerExtensions = ext;
 }
 
 

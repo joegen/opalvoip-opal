@@ -357,11 +357,11 @@ class OpalRTPSession : public OpalMediaSession
 
     /**Get the RTP header extension codes for the session.
       */
-    RTPExtensionHeaders GetExtensionHeaders() const;
+    RTPHeaderExtensions GetHeaderExtensions() const;
 
     /**Set the RTP header extension codes for the session.
       */
-    void SetExtensionHeader(const RTPExtensionHeaders & ext);
+    void SetHeaderExtensions(const RTPHeaderExtensions & ext);
 
     /**Get the source output identifier.
       */
@@ -608,7 +608,7 @@ class OpalRTPSession : public OpalMediaSession
     bool                m_isAudio;
     unsigned            m_timeUnits;
     PString             m_toolName;
-    RTPExtensionHeaders m_extensionHeaders;
+    RTPHeaderExtensions m_headerExtensions;
     bool                m_allowAnySyncSource;
     PTimeInterval       m_staleReceiverTimeout;
     PINDEX              m_maxOutOfOrderPackets; // Number of packets before we give up waiting for an out of order packet

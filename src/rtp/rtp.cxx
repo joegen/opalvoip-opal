@@ -1362,26 +1362,21 @@ void RTP_ControlFrame::ReceiverReport::SetLostPackets(unsigned packets)
 
 /////////////////////////////////////////////////////////////////////////////
 
-RTPExtensionHeaderInfo::RTPExtensionHeaderInfo()
+RTPHeaderExtensionInfo::RTPHeaderExtensionInfo()
   : m_id(0)
   , m_direction(Undefined)
 {
 }
 
 
-PObject::Comparison RTPExtensionHeaderInfo::Compare(const PObject & obj) const
+PObject::Comparison RTPHeaderExtensionInfo::Compare(const PObject & obj) const
 {
-  const RTPExtensionHeaderInfo & other = dynamic_cast<const RTPExtensionHeaderInfo &>(obj);
-  if (m_id < other.m_id)
-    return LessThan;
-  if (m_id > other.m_id)
-    return GreaterThan;
-  return EqualTo;
+  return Compare2(m_id, dynamic_cast<const RTPHeaderExtensionInfo &>(obj).m_id);
 }
 
 
 #if OPAL_SDP
-bool RTPExtensionHeaderInfo::ParseSDP(const PString & param)
+bool RTPHeaderExtensionInfo::ParseSDP(const PString & param)
 {
   PINDEX space = param.Find(' ');
   if (space == P_MAX_INDEX)
@@ -1423,21 +1418,21 @@ bool RTPExtensionHeaderInfo::ParseSDP(const PString & param)
 }
 
 
-void RTPExtensionHeaderInfo::OutputSDP(ostream & strm) const
+void RTPHeaderExtensionInfo::OutputSDP(ostream & strm) const
 {
   strm << "a=extmap:" << m_id;
 
   switch (m_direction) {
-    case RTPExtensionHeaderInfo::Inactive :
+    case RTPHeaderExtensionInfo::Inactive :
       strm << "/inactive";
       break;
-    case RTPExtensionHeaderInfo::SendOnly :
+    case RTPHeaderExtensionInfo::SendOnly :
       strm << "/sendonly";
       break;
-    case RTPExtensionHeaderInfo::RecvOnly :
+    case RTPHeaderExtensionInfo::RecvOnly :
       strm << "/recvonly";
       break;
-    case RTPExtensionHeaderInfo::SendRecv :
+    case RTPHeaderExtensionInfo::SendRecv :
       strm << "/sendrecv";
       break;
     default :

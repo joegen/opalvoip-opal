@@ -726,9 +726,9 @@ PLIST(RTP_DataFrameList, RTP_DataFrame);
 
 /** Information for RFC 5285 header extensions.
   */
-class RTPExtensionHeaderInfo : public PObject
+class RTPHeaderExtensionInfo : public PObject
 {
-    PCLASSINFO(RTPExtensionHeaderInfo, PObject);
+    PCLASSINFO(RTPHeaderExtensionInfo, PObject);
   public:
     unsigned m_id;
 
@@ -744,7 +744,7 @@ class RTPExtensionHeaderInfo : public PObject
 
     PString m_attributes;
 
-    RTPExtensionHeaderInfo();
+    RTPHeaderExtensionInfo();
     virtual Comparison Compare(const PObject & other) const;
 
 #if OPAL_SDP
@@ -753,7 +753,7 @@ class RTPExtensionHeaderInfo : public PObject
 #endif
 };
 
-typedef std::set<RTPExtensionHeaderInfo> RTPExtensionHeaders;
+typedef std::set<RTPHeaderExtensionInfo> RTPHeaderExtensions;
 
 
 #if PTRACING

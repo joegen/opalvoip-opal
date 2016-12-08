@@ -306,7 +306,7 @@ int TranscoderThread::InitialiseCodec(PArgList & args,
   }
 
   m_calcSNR = args.HasOption("snr");
-  m_extensionHeader = (BYTE)args.GetOptionString("ext-hdr", "255").AsUnsigned();
+  m_headerExtension = (BYTE)args.GetOptionString("ext-hdr", "255").AsUnsigned();
 
   for (PINDEX i = 0; i < args.GetCount(); i++) {
     mediaFormat = args[i];
@@ -971,8 +971,8 @@ void TranscoderThread::Main()
           m_encoder->ExecuteCommand(OpalVideoUpdatePicture());
       }
 
-      if (m_extensionHeader != 255)
-        srcFrame.SetHeaderExtension(1, 1, &m_extensionHeader, RTP_DataFrame::RFC5285_OneByte);
+      if (m_headerExtension != 255)
+        srcFrame.SetHeaderExtension(1, 1, &m_headerExtension, RTP_DataFrame::RFC5285_OneByte);
 
 
       bool newInState = m_encoder->ConvertFrames(srcFrame, encFrames);

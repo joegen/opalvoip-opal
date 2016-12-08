@@ -583,9 +583,9 @@ void SDPCommonAttributes::SetAttribute(const PString & attr, const PString & val
   }
 
   if (attr *= "extmap") {
-    RTPExtensionHeaderInfo ext;
+    RTPHeaderExtensionInfo ext;
     if (ext.ParseSDP(value))
-      SetExtensionHeader(ext);
+      SetHeaderExtension(ext);
     return;
   }
 
@@ -706,7 +706,7 @@ void SDPCommonAttributes::OutputAttributes(ostream & strm) const
     strm << "a=fingerprint:" << m_fingerprint.AsString() << CRLF;
 #endif
 
-  for (RTPExtensionHeaders::const_iterator it = m_extensionHeaders.begin(); it != m_extensionHeaders.end(); ++it)
+  for (RTPHeaderExtensions::const_iterator it = m_headerExtensions.begin(); it != m_headerExtensions.end(); ++it)
     it->OutputSDP(strm);
 
 #if OPAL_ICE
@@ -2034,7 +2034,7 @@ bool SDPRTPAVPMediaDescription::ToSession(OpalMediaSession * session, RTP_SyncSo
     rtpSession->SetSinglePortTx(m_controlAddress == m_mediaAddress);
     if (m_stringOptions.GetBoolean(OPAL_OPT_RTCP_MUX))
       rtpSession->SetSinglePortRx();
-    rtpSession->SetExtensionHeader(GetExtensionHeaders());
+    rtpSession->SetHeaderExtensions(GetHeaderExtensions());
 
     for (SsrcInfo::const_iterator it = m_ssrcInfo.begin(); it != m_ssrcInfo.end(); ++it) {
       RTP_SyncSourceId ssrc = it->first;
