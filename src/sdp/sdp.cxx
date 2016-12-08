@@ -545,6 +545,13 @@ const PCaselessString & SDPCommonAttributes::ConferenceTotalBandwidthType()     
 const PCaselessString & SDPCommonAttributes::ApplicationSpecificBandwidthType()  { static const PConstCaselessString s("AS");   return s; }
 const PCaselessString & SDPCommonAttributes::TransportIndependentBandwidthType() { static const PConstCaselessString s("TIAS"); return s; }
 
+void SDPCommonAttributes::SetHeaderExtension(RTPHeaderExtensionInfo & ext)
+{
+  m_headerExtensions.AddUniqueID(ext);
+  PTRACE(4, "Added header extension: id=" << ext.m_id << ", uri=" << ext.m_uri);
+}
+
+
 void SDPCommonAttributes::ParseAttribute(const PString & value)
 {
   PINDEX pos = value.FindSpan(TokenChars); // Legal chars from RFC
@@ -2020,6 +2027,11 @@ bool SDPRTPAVPMediaDescription::FromSession(OpalMediaSession * session,
       m_setupMode = SDPCommonAttributes::SetupActive;
   }
 #endif
+
+  if (m_stringOptions.GetBoolean(OPAL_OPT_OFFER_SDP_ABS_SEND_TIME)) {
+    RTPHeaderExtensionInfo ext(OpalRTPSession::GetAbsSendTimeHdrExtURI());
+    SetHeaderExtension(ext);
+  }
 
   return SDPMediaDescription::FromSession(session, offer, ssrc);
 }

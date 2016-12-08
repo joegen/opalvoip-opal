@@ -656,8 +656,10 @@ class RTP_DataFrame : public PBYTEArray
     {
         MetaData();
 
-        PTime    m_absoluteTime; // Wall clock time packet was sent, as calculated via RTCP and timestamp
-        PTime    m_networkTime;  // Wall clock time packet physically read from socket
+        // Note the first two times here are not synchronised with the local CPU clock, but the remote systems.
+        PTime    m_absoluteTime; // Wall clock time media was sampled, as calculated via RTCP and timestamp
+        PTime    m_transmitTime; // Wall clock time packet was transmitted (calculated from header extensions)
+        PTime    m_receivedTime; // Wall clock time packet physically read from socket
         unsigned m_discontinuity;
         PString  m_lipSyncId;
     };
@@ -670,14 +672,19 @@ class RTP_DataFrame : public PBYTEArray
       */
     void SetMetaData(const MetaData & metaData) { m_metaData = metaData; }
 
-    /**Get absolute (wall clock) time of packet, if known.
+    /**Get absolute (wall clock) time of packet, as calculated via RTCP and timestamp, if available.
       */
     PTime GetAbsoluteTime() const { return m_metaData.m_absoluteTime; }
 
-    /**Set absolute (wall clock) time of packet.
+    /**Set absolute (wall clock) time of media, as calculated via RTCP and timestamp.
       */
     void SetAbsoluteTime() { m_metaData.m_absoluteTime.SetCurrentTime(); }
     void SetAbsoluteTime(const PTime & t) { m_metaData.m_absoluteTime = t; }
+
+    /**Set transmit (wall clock) time of packet transmission.
+      */
+    void SetTransmitTime() { m_metaData.m_transmitTime.SetCurrentTime(); }
+    void SetTransmitTimeNTP(uint64_t ntp) { m_metaData.m_transmitTime.SetNTP(ntp); }
 
     /** Get sequence number discontinuity.
         If non-zero this indicates the number of packets detected as missing
@@ -745,6 +752,11 @@ class RTPHeaderExtensionInfo : public PObject
     PString m_attributes;
 
     RTPHeaderExtensionInfo();
+    explicit RTPHeaderExtensionInfo(
+      const PURL & uri,
+      const PString & attributes = PString::Empty()
+    );
+
     virtual Comparison Compare(const PObject & other) const;
 
 #if OPAL_SDP
@@ -753,7 +765,11 @@ class RTPHeaderExtensionInfo : public PObject
 #endif
 };
 
-typedef std::set<RTPHeaderExtensionInfo> RTPHeaderExtensions;
+class RTPHeaderExtensions : public std::set<RTPHeaderExtensionInfo>
+{
+public:
+  void AddUniqueID(RTPHeaderExtensionInfo & info);
+};
 
 
 #if PTRACING

@@ -363,6 +363,8 @@ class OpalRTPSession : public OpalMediaSession
       */
     void SetHeaderExtensions(const RTPHeaderExtensions & ext);
 
+    static const PString & GetAbsSendTimeHdrExtURI();
+
     /**Get the source output identifier.
       */
     RTP_SyncSourceId GetSyncSourceIn() const { return GetSyncSource(0, e_Receiver).m_sourceIdentifier; }
@@ -609,6 +611,7 @@ class OpalRTPSession : public OpalMediaSession
     unsigned            m_timeUnits;
     PString             m_toolName;
     RTPHeaderExtensions m_headerExtensions;
+    int                 m_absSendTimeHdrExtId;
     bool                m_allowAnySyncSource;
     PTimeInterval       m_staleReceiverTimeout;
     PINDEX              m_maxOutOfOrderPackets; // Number of packets before we give up waiting for an out of order packet
