@@ -160,7 +160,7 @@ bool OpalVideoTranscoder::UpdateMediaFormats(const OpalMediaFormat & input, cons
   int periodMilliseconds = outputMediaFormat.GetOptionInteger(OpalVideoFormat::RateControlPeriodOption());
   m_frameDropPeriod = periodMilliseconds*outputMediaFormat.GetTimeUnits();
   m_frameDropRate = periodMilliseconds > 0 && outputMediaFormat.GetOptionBoolean(OpalVideoFormat::FrameDropOption(), true)
-                  ? (unsigned)(outputMediaFormat.GetOptionInteger(OpalMediaFormat::TargetBitRateOption())*1000LL/periodMilliseconds) : 0;
+                  ? (unsigned)((uint64_t)outputMediaFormat.GetOptionInteger(OpalMediaFormat::TargetBitRateOption())*periodMilliseconds/1000) : 0;
 
   m_freezeTillIFrame = inputMediaFormat.GetOptionBoolean(OpalVideoFormat::FreezeUntilIntraFrameOption()) ||
                       outputMediaFormat.GetOptionBoolean(OpalVideoFormat::FreezeUntilIntraFrameOption());
