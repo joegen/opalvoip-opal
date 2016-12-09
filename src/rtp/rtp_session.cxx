@@ -1018,6 +1018,8 @@ RTPHeaderExtensions OpalRTPSession::GetHeaderExtensions() const
 }
 
 
+const PString & OpalRTPSession::GetAbsSendTimeHdrExtURI() { static const PConstString s("http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time"); return s; }
+
 void OpalRTPSession::SetHeaderExtensions(const RTPHeaderExtensions & ext)
 {
   PSafeLockReadWrite lock(*this);
