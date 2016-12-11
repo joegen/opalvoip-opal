@@ -434,6 +434,14 @@ bool OpalLyncConnection::TransferConnection(const PString & remoteParty)
   if (!PAssert(m_audioVideoCall != nullptr, PLogicError))
     return false;
 
+  PTRACE_THROTTLE(throttleWaitForEstablish, 2, 2000);
+  while (!IsEstablished()) {
+    if (IsReleased())
+      return false;
+    PTRACE(throttleWaitForEstablish, "Awaiting call set up before transferring Lync UCMA call on " << *this << " to \"" << remoteParty << '"');
+    PThread::Sleep(100);
+  }
+
   PSafePtr<OpalLyncConnection> otherConnection = m_endpoint.GetConnectionWithLockAs<OpalLyncConnection>(remoteParty);
   if (otherConnection != NULL) {
     if (TransferAudioVideoCall(*m_audioVideoCall, *otherConnection->m_audioVideoCall)) {
@@ -445,11 +453,12 @@ bool OpalLyncConnection::TransferConnection(const PString & remoteParty)
     PString uri = remoteParty;
     m_endpoint.AdjustLyncURI(uri);
     if (TransferAudioVideoCall(*m_audioVideoCall, uri)) {
-      PTRACE(3, "Transferred Lync UCMA call on " << *this << " to " << remoteParty);
+      PTRACE(3, "Transferred Lync UCMA call on " << *this << " to \"" << remoteParty << '"');
       return true;
     }
   }
-  PTRACE(2, "Failed to transfer Lync UCMA call: " << GetLastError());
+
+  PTRACE(2, "Failed to transfer Lync UCMA call to \"" << remoteParty << "\" : " << GetLastError());
   return false;
 }
 
