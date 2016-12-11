@@ -457,6 +457,10 @@ class OpalLyncMediaStream : public OpalMediaStream, public OpalLyncShimBase
       */
     virtual PBoolean Open();
 
+    /**Returns true if the media stream is established.
+    */
+    virtual bool IsEstablished() const;
+
     /**Read raw media data from the source media stream.
        The default behaviour reads from the OpalLine object.
       */

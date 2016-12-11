@@ -467,7 +467,7 @@ void OpalLyncConnection::OnMediaFlowStateChanged(int previousState, int newState
   PTRACE(3, "Lync UCMA media flow state changed from " << previousState << " to " << newState);
 
   m_mediaActive = newState == MediaFlowActive;
-  if (m_mediaActive && previousState != MediaFlowActive) {
+  if (m_mediaActive && previousState != MediaFlowActive && !IsReleased()) {
     AutoStartMediaStreams();
     InternalOnEstablished();
   }
@@ -502,6 +502,9 @@ PBoolean OpalLyncMediaStream::Open()
   if (IsOpen())
     return true;
 
+  if (m_connection.IsReleased())
+    return false;
+
   if (!m_connection.m_mediaActive || m_connection.m_flow == nullptr) {
     PTRACE(2, "Cannot open media stream " << *this << ", Lync UCMA flow not yet active.");
     /* Return true so does not fail setting up the stream, but as we are not really
@@ -533,6 +536,12 @@ PBoolean OpalLyncMediaStream::Open()
 
   PTRACE(3, "Opened Lync UCMA stream " << *this);
   return OpalMediaStream::Open();
+}
+
+
+bool OpalLyncMediaStream::IsEstablished() const
+{
+  return m_avStream != nullptr;
 }
 
 
