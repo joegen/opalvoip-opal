@@ -1049,9 +1049,9 @@ bool MyLyncEndPoint::Configure(PConfig & cfg, PConfigPage * rsrc)
         info.m_domain = item[2].GetValue();
         info.m_password = PHTTPPasswordField::Decrypt(item[3].GetValue());
         if (RegisterUser(info).IsEmpty())
-          PSYSTEMLOG(Error, "Could not register " << info.m_uri);
+          PSYSTEMLOG(Error, "Could not register Lync user " << info.m_uri);
         else
-          PSYSTEMLOG(Info, "Started register of " << info.m_uri);
+          PSYSTEMLOG(Info, "Register Lync user " << info.m_uri);
       }
     }
   }
