@@ -92,9 +92,9 @@ bool MySIPEndPoint::Configure(PConfig & cfg, PConfigPage * rsrc)
   PHTTPCompositeField * registrationsFields = new PHTTPCompositeField(REGISTRATIONS_KEY, REGISTRATIONS_SECTION,
                                                   "Registration of SIP username at domain/hostname/IP address");
   registrationsFields->Append(new PHTTPStringField(SIPAddressofRecordKey, 0, NULL, NULL, 1, 20));
-  registrationsFields->Append(new PHTTPStringField(SIPAuthIDKey, 0, NULL, NULL, 1, 15));
+  registrationsFields->Append(new PHTTPStringField(SIPAuthIDKey, 0, NULL, NULL, 1, 10));
   registrationsFields->Append(new PHTTPIntegerField(SIPRegTTLKey, 1, 86400, 300));
-  registrationsFields->Append(new PHTTPPasswordField(SIPPasswordKey, 15));
+  registrationsFields->Append(new PHTTPPasswordField(SIPPasswordKey, 10));
   static const char * const compatibilityModes[] = {
       "Compliant", "Single Contact", "No Private", "ALGw", "RFC 5626", "Cisco"
   };

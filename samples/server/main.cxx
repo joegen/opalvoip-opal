@@ -779,7 +779,7 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
     "the whole B Party string if these are not present.</dd>"
     "<dt><code>&lt;!du&gt;</code></dt><dd>"
     "The rest of the B Party string after the &lt;du&gt; section. The "
-    "protocol is still omitted. This is usually the '@' and onward. "
+    "protocol is still omitted. This is usually everything after the '@'. "
     "Note, if there is already an '@' in the destination before the "
     "&lt;!du&gt; and what is about to replace it also has an '@' then "
     "everything between the @ and the &lt;!du&gt; (inclusive) is deleted, "
