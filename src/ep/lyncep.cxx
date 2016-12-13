@@ -457,6 +457,8 @@ bool OpalLyncConnection::TransferConnection(const PString & remoteParty)
   if (otherConnection != NULL) {
     if (TransferAudioVideoCall(*m_audioVideoCall, *otherConnection->m_audioVideoCall)) {
       PTRACE(3, "Transferred Lync UCMA call on " << *this << " to " << *otherConnection);
+      otherConnection->Release(EndedByCallForwarded);
+      Release(EndedByCallForwarded);
       return true;
     }
   }
@@ -465,6 +467,7 @@ bool OpalLyncConnection::TransferConnection(const PString & remoteParty)
     m_endpoint.AdjustLyncURI(uri);
     if (TransferAudioVideoCall(*m_audioVideoCall, uri)) {
       PTRACE(3, "Transferred Lync UCMA call on " << *this << " to \"" << remoteParty << '"');
+      Release(EndedByCallForwarded);
       return true;
     }
   }
