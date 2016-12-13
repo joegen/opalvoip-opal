@@ -270,6 +270,14 @@ class OpalRTPSession : public OpalMediaSession
     */
     bool IsSinglePortTx() { return m_singlePortTx; }
 
+    /**Set flag for RFC5506 reduced size RTCP.
+      */
+    void SetReducedSizeRTCP(bool v = true) { m_reducedSizeRTCP = v; }
+
+    /**Get flag for RFC5506 reduced size RTCP.
+    */
+    bool UseReducedSizeRTCP() const { return m_reducedSizeRTCP; }
+
     /**Get flag for is audio RTP.
       */
     bool IsAudio() const { return m_isAudio; }
@@ -607,6 +615,7 @@ class OpalRTPSession : public OpalMediaSession
     OpalManager       & m_manager;
     bool                m_singlePortRx;
     bool                m_singlePortTx;
+    bool                m_reducedSizeRTCP;
     bool                m_isAudio;
     unsigned            m_timeUnits;
     PString             m_toolName;

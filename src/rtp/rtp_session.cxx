@@ -101,6 +101,7 @@ OpalRTPSession::OpalRTPSession(const Init & init)
   , m_manager(m_endpoint.GetManager())
   , m_singlePortRx(false)
   , m_singlePortTx(false)
+  , m_reducedSizeRTCP(false)
   , m_isAudio(init.m_mediaType == OpalMediaType::Audio())
   , m_timeUnits(m_isAudio ? 8 : 90)
   , m_toolName(PProcess::Current().GetName())
@@ -1300,6 +1301,9 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnOutOfOrderPacket(RTP_DataFra
 
 void OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & frame, SyncSource & sender)
 {
+  if (m_reducedSizeRTCP)
+    return;
+
   frame.AddReceiverReport(sender.m_sourceIdentifier, 0);
   frame.EndPacket();
 }

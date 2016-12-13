@@ -739,6 +739,7 @@ void SDPCommonAttributes::OutputAttributes(ostream & strm) const
 SDPMediaDescription::SDPMediaDescription()
   : m_port(0)
   , m_portCount(1)
+  , m_reducedSizeRTCP(false)
 {
 }
 
@@ -748,6 +749,7 @@ SDPMediaDescription::SDPMediaDescription(const OpalTransportAddress & address, c
   , m_port(0)
   , m_portCount(1)
   , m_mediaType(type)
+  , m_reducedSizeRTCP(false)
 {
   PIPSocket::Address ip;
   if (m_mediaAddress.GetIpAndPort(ip, m_port))
@@ -1787,6 +1789,9 @@ void SDPRTPAVPMediaDescription::OutputAttributes(ostream & strm) const
       strm << "a=rtcp:" << port << ' ' << GetConnectAddressString(m_mediaAddress) << CRLF;
   }
 
+  if (m_reducedSizeRTCP)
+    strm << "a=rtcp-rsize\r\n";
+
   for (SsrcInfo::const_iterator it1 = m_ssrcInfo.begin(); it1 != m_ssrcInfo.end(); ++it1) {
     for (PStringOptions::const_iterator it2 = it1->second.begin(); it2 != it1->second.end(); ++it2)
       strm << "a=ssrc:" << it1->first << ' ' << it2->first << ':' << it2->second << CRLF;
@@ -1898,6 +1903,11 @@ void SDPRTPAVPMediaDescription::SetAttribute(const PString & attr, const PString
     return;
   }
 
+  if (attr *= "rtcp-rsize") {
+    m_reducedSizeRTCP = true;
+    return;
+  }
+
   if (attr *= "rtcp") {
     m_controlAddress = ParseConnectAddress(value.Mid(value.Find(' ')+1), (WORD)value.AsUnsigned());
     PTRACE_IF(4, !m_controlAddress.IsEmpty(), "Parsed rtcp connection address " << m_controlAddress);
@@ -1983,6 +1993,9 @@ bool SDPRTPAVPMediaDescription::FromSession(OpalMediaSession * session,
 {
   const OpalRTPSession * rtpSession = dynamic_cast<const OpalRTPSession *>(session);
   if (rtpSession != NULL) {
+    if (m_stringOptions.GetBoolean(OPAL_OPT_OFFER_REDUCED_SIZE_RTCP, true) || rtpSession->UseReducedSizeRTCP())
+      m_reducedSizeRTCP = true;
+
     RTP_SyncSourceArray ssrcs;
     if (ssrc != 0)
       ssrcs.push_back(ssrc);
@@ -2046,6 +2059,7 @@ bool SDPRTPAVPMediaDescription::ToSession(OpalMediaSession * session, RTP_SyncSo
     rtpSession->SetSinglePortTx(m_controlAddress == m_mediaAddress);
     if (m_stringOptions.GetBoolean(OPAL_OPT_RTCP_MUX))
       rtpSession->SetSinglePortRx();
+    rtpSession->SetReducedSizeRTCP(m_reducedSizeRTCP);
     rtpSession->SetHeaderExtensions(GetHeaderExtensions());
 
     for (SsrcInfo::const_iterator it = m_ssrcInfo.begin(); it != m_ssrcInfo.end(); ++it) {
