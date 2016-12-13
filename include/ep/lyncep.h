@@ -110,7 +110,14 @@ class OpalLyncShim
     static int const CallStateEstablishing;
     static int const CallStateEstablished;
     static int const CallStateTerminating;
+#if PTRACING
+    static std::string GetCallStateName(int callState);
+#endif
+
     static int const MediaFlowActive;
+#if PTRACING
+    static std::string GetMediaFlowName(int mediaFlow);
+#endif
 
     struct IncomingLyncCallInfo {
       AudioVideoCall * m_call;

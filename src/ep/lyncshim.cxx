@@ -54,7 +54,24 @@ template <class CLS> static void DeleteAndSetNull(CLS * & p)
 int const OpalLyncShim::CallStateEstablishing = (int)Collaboration::CallState::Establishing;
 int const OpalLyncShim::CallStateEstablished = (int)Collaboration::CallState::Established;
 int const OpalLyncShim::CallStateTerminating = (int)Collaboration::CallState::Terminating;
+
+#if PTRACING
+std::string OpalLyncShim::GetCallStateName(int callState)
+{
+  return marshal_as<std::string>(((Collaboration::CallState)callState).ToString());
+}
+#endif
+
+
 int const OpalLyncShim::MediaFlowActive = (int)Collaboration::MediaFlowState::Active;
+
+#if PTRACING
+std::string OpalLyncShim::GetMediaFlowName(int mediaFlow)
+{
+  return marshal_as<std::string>(((Collaboration::MediaFlowState)mediaFlow).ToString());
+}
+#endif
+
 
 struct OpalLyncShim::ApplicationEndpoint : gcroot<Collaboration::ApplicationEndpoint^>
 {
