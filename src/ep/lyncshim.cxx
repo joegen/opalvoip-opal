@@ -484,7 +484,7 @@ bool OpalLyncShim::AcceptAudioVideoCall(AudioVideoCall & call)
 bool OpalLyncShim::TransferAudioVideoCall(AudioVideoCall & call, AudioVideoCall & target)
 {
   try {
-    Collaboration::CallTransferOptions^ options = gcnew Collaboration::CallTransferOptions(Collaboration::CallTransferType::Unattended);
+    Collaboration::CallTransferOptions^ options = gcnew Collaboration::CallTransferOptions(Collaboration::CallTransferType::Attended);
     call->EndTransfer(call->BeginTransfer(target, options, nullptr, nullptr));
   }
   catch (System::Exception^ err) {
@@ -499,7 +499,8 @@ bool OpalLyncShim::TransferAudioVideoCall(AudioVideoCall & call, AudioVideoCall 
 bool OpalLyncShim::TransferAudioVideoCall(AudioVideoCall & call, const char * targetURI)
 {
   try {
-    call->EndTransfer(call->BeginTransfer(marshal_as<System::String^>(targetURI), nullptr, nullptr));
+    Collaboration::CallTransferOptions^ options = gcnew Collaboration::CallTransferOptions(Collaboration::CallTransferType::Unattended);
+    call->EndTransfer(call->BeginTransfer(marshal_as<System::String^>(targetURI), options, nullptr, nullptr));
   }
   catch (System::Exception^ err) {
     m_lastError = marshal_as<std::string>(err->ToString());

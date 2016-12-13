@@ -2645,6 +2645,19 @@ void SIPConnection::OnReceivedREFER(SIP_PDU & request)
 
 void SIPConnection::OnDelayedRefer()
 {
+  PSafePtr<OpalConnection> other = GetOtherPartyConnection();
+  if (other == NULL) {
+    PSafePtr<SIPTransaction> referNotify = new SIPReferNotify(*this, SIP_PDU::Failure_Gone);
+    referNotify->Start();
+    return;
+  }
+
+  if (!other->IsEstablished()) {
+    PTRACE(4, "Delaying REFER due to other side not yet established.");
+    m_delayedReferTimer = 500;
+    return;
+  }
+
   PSafePtr<SIPConnection> b2bua = GetB2BUA();
   if (b2bua != NULL && b2bua->m_handlingINVITE) {
     PTRACE(4, "Delaying REFER due to INVITE on other side of B2BUA in progress.");

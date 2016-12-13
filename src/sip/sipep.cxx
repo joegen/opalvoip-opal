@@ -656,7 +656,7 @@ PBoolean SIPEndPoint::SetupTransfer(SIPConnection & transferredConnection,
 
   if (!replaces.IsEmpty()) {
     options.SetAt(SIP_HEADER_REPLACES, replaces);
-    PSafePtr<SIPConnection> replacedConnection = GetSIPConnectionWithLock(replaces, PSafeReadOnly);
+    PSafePtr<SIPConnection> replacedConnection = GetSIPConnectionWithLock(replaces, PSafeReference);
     if (replacedConnection != NULL) {
       // We are transferring to another part of our system, see if it can be short circuited.
       PSafePtr<OpalConnection> transferredOtherConnection = transferredConnection.GetOtherPartyConnection();

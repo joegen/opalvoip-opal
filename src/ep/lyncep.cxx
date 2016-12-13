@@ -363,17 +363,31 @@ void OpalLyncConnection::OnLyncCallStateChanged(int PTRACE_PARAM(previousState),
 {
   PTRACE(3, "Lync UCMA call state changed from " << previousState << " to " << newState);
 
-  if (newState == CallStateEstablishing)
-    OnProceeding();
-  else if (newState == CallStateTerminating) {
-    if (!IsOriginating() || GetPhase() > SetUpPhase)
-      Release(EndedByRemoteUser);
-    // else get OnLyncCallFailed() with more info on why
+  if (newState == CallStateEstablishing) {
+    if (IsOriginating())
+      OnProceeding();
+    return;
   }
-  else if (newState == CallStateEstablished) {
-      m_flow = CreateAudioVideoFlow(*m_audioVideoCall);
+
+  if (newState == CallStateEstablished) {
+    m_flow = CreateAudioVideoFlow(*m_audioVideoCall);
+    if (m_flow != NULL) {
       InternalOnConnected();
+      if (m_mediaActive) {
+        AutoStartMediaStreams();
+        InternalOnEstablished();
+      }
+    }
+    else {
+      PTRACE(2, "Error creating Lync UCMA A/V flow: " << GetLastError());
+      Release(EndedByCallerAbort);
+    }
+    return;
   }
+
+  if (newState == CallStateTerminating && (!IsOriginating() || GetPhase() > SetUpPhase))
+    Release(EndedByRemoteUser);
+  // else get OnLyncCallFailed() with more info on why
 }
 
 
@@ -434,15 +448,12 @@ bool OpalLyncConnection::TransferConnection(const PString & remoteParty)
   if (!PAssert(m_audioVideoCall != nullptr, PLogicError))
     return false;
 
-  PTRACE_THROTTLE(throttleWaitForEstablish, 2, 2000);
-  while (!IsEstablished()) {
-    if (IsReleased())
-      return false;
-    PTRACE(throttleWaitForEstablish, "Awaiting call set up before transferring Lync UCMA call on " << *this << " to \"" << remoteParty << '"');
-    PThread::Sleep(100);
+  if (!IsEstablished()) {
+    PTRACE(4, "Not yet establishedm cannot transfer Lync UCMA call on " << *this << " to \"" << remoteParty << '"');
+    return false;
   }
 
-  PSafePtr<OpalLyncConnection> otherConnection = m_endpoint.GetConnectionWithLockAs<OpalLyncConnection>(remoteParty);
+  PSafePtr<OpalLyncConnection> otherConnection = m_endpoint.GetConnectionWithLockAs<OpalLyncConnection>(remoteParty, PSafeReadOnly);
   if (otherConnection != NULL) {
     if (TransferAudioVideoCall(*m_audioVideoCall, *otherConnection->m_audioVideoCall)) {
       PTRACE(3, "Transferred Lync UCMA call on " << *this << " to " << *otherConnection);
