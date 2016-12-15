@@ -219,18 +219,25 @@ OpalLyncShim::~OpalLyncShim()
 }
 
 
-OpalLyncShim::Platform * OpalLyncShim::CreatePlatform(const PlatformParams & params)
+static System::String^ GetNonEmptyString(const char * str)
+{
+  return str != NULL && *str != '\0' ? marshal_as<System::String^>(str) : nullptr;
+}
+
+OpalLyncShim::Platform * OpalLyncShim::CreatePlatform(const char * userAgent, const PlatformParams & params)
 {
   m_lastError.clear();
 
   Collaboration::CollaborationPlatform^ cp;
   try {
     Collaboration::ServerPlatformSettings^ sps = nullptr;
-    if (params.m_certificateFriendlyName.empty())
-      sps = gcnew Collaboration::ServerPlatformSettings(marshal_as<System::String^>(params.m_appName),
+    if (params.m_certificateFriendlyName.empty()) {
+      PTRACE(4, "Creating Collaboration::ServerPlatformSettings");
+      sps = gcnew Collaboration::ServerPlatformSettings(GetNonEmptyString(userAgent),
                                                         marshal_as<System::String^>(params.m_localHost),
                                                         params.m_localPort,
                                                         marshal_as<System::String^>(params.m_GRUU));
+    }
     else {
       using namespace System::Security::Cryptography::X509Certificates;
       X509Store^ store = gcnew X509Store(StoreLocation::LocalMachine);
@@ -241,7 +248,7 @@ OpalLyncShim::Platform * OpalLyncShim::CreatePlatform(const PlatformParams & par
       System::String^ friendlyName = marshal_as<System::String^>(params.m_certificateFriendlyName);
       for each(X509Certificate2^ certificate in certificates) {
         if (certificate->FriendlyName->Equals(friendlyName, System::StringComparison::OrdinalIgnoreCase)) {
-          sps = gcnew Collaboration::ServerPlatformSettings(marshal_as<System::String^>(params.m_appName),
+          sps = gcnew Collaboration::ServerPlatformSettings(GetNonEmptyString(userAgent),
                                                             marshal_as<System::String^>(params.m_localHost),
                                                             params.m_localPort,
                                                             marshal_as<System::String^>(params.m_GRUU),
@@ -253,6 +260,7 @@ OpalLyncShim::Platform * OpalLyncShim::CreatePlatform(const PlatformParams & par
 
     if (sps != nullptr) {
       cp = gcnew Collaboration::CollaborationPlatform(sps);
+      PTRACE(4, "Starting Collaboration::CollaborationPlatform");
       cp->EndStartup(cp->BeginStartup(nullptr, nullptr));
     }
   }
@@ -265,18 +273,14 @@ OpalLyncShim::Platform * OpalLyncShim::CreatePlatform(const PlatformParams & par
 }
 
 
-OpalLyncShim::Platform * OpalLyncShim::CreatePlatform(const char * appName, const char * provisioningID)
+OpalLyncShim::Platform * OpalLyncShim::CreatePlatform(const char * userAgent, const char * provisioningID)
 {
   m_lastError.clear();
-
-  System::String^ userAgent = nullptr;
-  if (appName != NULL && *appName != '\0')
-    userAgent = marshal_as<System::String^>(appName);
 
   Collaboration::CollaborationPlatform^ cp;
   try {
     Collaboration::ProvisionedApplicationPlatformSettings^ paps = gcnew Collaboration::ProvisionedApplicationPlatformSettings(
-                                                                        userAgent, marshal_as<System::String^>(provisioningID));
+                                                    GetNonEmptyString(userAgent), marshal_as<System::String^>(provisioningID));
     cp = gcnew Collaboration::CollaborationPlatform(paps);
     cp->RegisterForApplicationEndpointSettings(gcnew System::EventHandler<Collaboration::ApplicationEndpointSettingsDiscoveredEventArgs^>
                                                        (m_notifications, &OpalLyncShim_Notifications::ApplicationEndpointOwnerDiscovered));
@@ -291,17 +295,14 @@ OpalLyncShim::Platform * OpalLyncShim::CreatePlatform(const char * appName, cons
 }
 
 
-OpalLyncShim::Platform * OpalLyncShim::CreatePlatform(const char * appName)
+OpalLyncShim::Platform * OpalLyncShim::CreatePlatform(const char * userAgent)
 {
   m_lastError.clear();
 
-  System::String^ userAgent = nullptr;
-  if (appName != NULL && *appName != '\0')
-    userAgent = marshal_as<System::String^>(appName);
-
   Collaboration::CollaborationPlatform^ cp;
   try {
-    Collaboration::ClientPlatformSettings^ cps = gcnew Collaboration::ClientPlatformSettings(userAgent, Signaling::SipTransportType::Tls);
+    Collaboration::ClientPlatformSettings^ cps = gcnew Collaboration::ClientPlatformSettings(
+                              GetNonEmptyString(userAgent), Signaling::SipTransportType::Tls);
     cp = gcnew Collaboration::CollaborationPlatform(cps);
     cp->EndStartup(cp->BeginStartup(nullptr, nullptr));
   }

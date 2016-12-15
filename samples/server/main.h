@@ -352,7 +352,7 @@ public:
   bool Configure(PConfig & cfg, PConfigPage * rsrc);
 
 protected:
-  MyManager  & m_manager;
+  MyManager & m_manager;
 };
 
 #endif // OPAL_LYNC

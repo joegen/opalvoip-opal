@@ -75,6 +75,7 @@ static const PConstString SkinnySimulatedAudioFileKey("SCCP Simulated Audio File
 #endif
 
 #if OPAL_LYNC
+static const PConstString LyncRegistrationModeKey("Lync Registration Mode");
 static const PConstString LyncAppNameKey("Lync Application Name");
 static const PConstString LyncLocalHostKey("Lync Local Host");
 static const PConstString LyncLocalPortKey("Lync Local Port");
@@ -85,6 +86,7 @@ static const PConstString LyncProxyHostKey("Lync Proxy Host");
 static const PConstString LyncProxyPortKey("Lync Proxy Port");
 static const PConstString LyncDefaultRouteKey("Lync Default Route");
 static const PConstString LyncPubPresenceKey("Lync Publicise Presence");
+static const PConstString LyncProvisioningIdKey("Lync Provisioning ID");
 
 #define LYNC_REGISTRATIONS_SECTION "Lync Registrations"
 #define LYNC_REGISTRATIONS_KEY     LYNC_REGISTRATIONS_SECTION"\\Registration %u\\"
@@ -1008,11 +1010,30 @@ MyLyncEndPoint::MyLyncEndPoint(MyManager & mgr)
 
 bool MyLyncEndPoint::Configure(PConfig & cfg, PConfigPage * rsrc)
 {
+  enum {
+    UserRegistrationMode,
+    ApplicationRegistrationMode,
+    ProvisionedRegistrationMode
+  } registrationMode = cfg.GetEnum(LyncRegistrationModeKey, UserRegistrationMode);
+
+  static const char * const RegistrationModeValues[] = { "0", "1", "2" };
+  static const char * const RegistrationModeTitles[] = { "User", "Application", "Provisioned" };
+  rsrc->Add(new PHTTPRadioField(LyncRegistrationModeKey,
+                                PARRAYSIZE(RegistrationModeValues), RegistrationModeValues, RegistrationModeTitles,
+                                registrationMode, "Lync registration mode."));
+
+  PHTTPCompositeField * registrationsFields = new PHTTPCompositeField(LYNC_REGISTRATIONS_KEY, LYNC_REGISTRATIONS_SECTION,
+                                                                          "Registration of Lync User. Note, 'Registration Mode' must be set to 'User'.");
+  registrationsFields->Append(new PHTTPStringField(LyncUriKey, 0, NULL, NULL, 1, 20));
+  registrationsFields->Append(new PHTTPStringField(LyncAuthIDKey, 0, NULL, NULL, 1, 15));
+  registrationsFields->Append(new PHTTPStringField(LyncDomainKey, 0, NULL, NULL, 1, 15));
+  registrationsFields->Append(new PHTTPPasswordField(LyncPasswordKey, 15));
+  PHTTPFieldArray * registrationsArray = new PHTTPFieldArray(registrationsFields, false);
+  rsrc->Add(registrationsArray);
+
   PlatformParams pparam;
-  pparam.m_appName = rsrc->AddStringField(LyncAppNameKey, 0, PString::Empty(),
-                                    "Name for Lync ApplicationEndpoint.", 1, 30).GetPointer();
   pparam.m_localHost = rsrc->AddStringField(LyncLocalHostKey, 0, PString::Empty(),
-                                    "Local Host FQDN for Lync ApplicationEndpoint.", 1, 30).GetPointer();
+                                    "Local Host FQDN for Lync ApplicationEndpoint. Note, 'Registration Mode' must be set to 'Application'.", 1, 30).GetPointer();
   pparam.m_localPort = rsrc->AddIntegerField(LyncLocalPortKey, 1, 65535, 5061, "",
                                     "Local Port FQDN for Lync ApplicationEndpoint.");
   pparam.m_GRUU = rsrc->AddStringField(LyncGruuKey, 0, PString::Empty(),
@@ -1030,31 +1051,50 @@ bool MyLyncEndPoint::Configure(PConfig & cfg, PConfigPage * rsrc)
                                     "Set Lync ApplicationEndpoint as default route.");
   aparam.m_publicisePresence = rsrc->AddBooleanField(LyncPubPresenceKey, false,
                                     "Publicise presence of Lync ApplicationEndpoint.");
-  PHTTPCompositeField * registrationsFields = new PHTTPCompositeField(LYNC_REGISTRATIONS_KEY, LYNC_REGISTRATIONS_SECTION, "Registration of Lync URI");
-  registrationsFields->Append(new PHTTPStringField(LyncUriKey, 0, NULL, NULL, 1, 20));
-  registrationsFields->Append(new PHTTPStringField(LyncAuthIDKey, 0, NULL, NULL, 1, 15));
-  registrationsFields->Append(new PHTTPStringField(LyncDomainKey, 0, NULL, NULL, 1, 15));
-  registrationsFields->Append(new PHTTPPasswordField(LyncPasswordKey, 15));
-  PHTTPFieldArray * registrationsArray = new PHTTPFieldArray(registrationsFields, false);
-  rsrc->Add(registrationsArray);
 
-  if (!registrationsArray->LoadFromConfig(cfg)) {
-    for (PINDEX i = 0; i < registrationsArray->GetSize(); ++i) {
-      PHTTPCompositeField & item = dynamic_cast<PHTTPCompositeField &>((*registrationsArray)[i]);
+  PString provisioningID = rsrc->AddStringField(LyncProvisioningIdKey, 0, PString::Empty(),
+                                                    "Lync Provisioning Identifier. Note, 'Registration Mode' must be set to 'Provisioned'.", 1, 30);
 
-      OpalLyncEndPoint::RegistrationParams info;
-      info.m_uri = item[0].GetValue();
-      if (!info.m_uri.IsEmpty()) {
-        info.m_authID = item[1].GetValue();
-        info.m_domain = item[2].GetValue();
-        info.m_password = PHTTPPasswordField::Decrypt(item[3].GetValue());
-        if (RegisterUser(info).IsEmpty())
-          PSYSTEMLOG(Error, "Could not register Lync user " << info.m_uri);
-        else
-          PSYSTEMLOG(Info, "Register Lync user " << info.m_uri);
+  switch (registrationMode) {
+    case UserRegistrationMode:
+      if (!registrationsArray->LoadFromConfig(cfg)) {
+        for (PINDEX i = 0; i < registrationsArray->GetSize(); ++i) {
+          PHTTPCompositeField & item = dynamic_cast<PHTTPCompositeField &>((*registrationsArray)[i]);
+
+          OpalLyncEndPoint::UserParams info;
+          info.m_uri = item[0].GetValue();
+          if (!info.m_uri.IsEmpty()) {
+            info.m_authID = item[1].GetValue();
+            info.m_domain = item[2].GetValue();
+            info.m_password = PHTTPPasswordField::Decrypt(item[3].GetValue());
+            if (RegisterUser(info).IsEmpty())
+              PSYSTEMLOG(Error, "Could not register Lync user " << info.m_uri);
+            else
+              PSYSTEMLOG(Info, "Registered Lync user " << info.m_uri);
+          }
+        }
       }
-    }
+      break;
+
+    case ApplicationRegistrationMode:
+      if (!pparam.m_localHost.empty()) {
+        if (RegisterApplication(pparam, aparam))
+          PSYSTEMLOG(Info, "Registered Lync application " << pparam.m_localHost);
+        else
+          PSYSTEMLOG(Error, "Could not register Lync application " << pparam.m_localHost);
+      }
+      break;
+
+    case ProvisionedRegistrationMode:
+      if (!provisioningID.empty()) {
+        if (Register(provisioningID))
+          PSYSTEMLOG(Info, "Registered Lync via provisioning ID \"" << provisioningID << '"');
+        else
+          PSYSTEMLOG(Error, "Could not register Lync via provisioning ID \"" << provisioningID << '"');
+      }
+      break;
   }
+
   return true;
 }
 

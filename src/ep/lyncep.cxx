@@ -141,6 +141,29 @@ bool OpalLyncEndPoint::OnApplicationProvisioning(ApplicationEndpoint * aep)
 }
 
 
+bool OpalLyncEndPoint::Register(const PString & provisioningID)
+{
+  if (m_applicationRegistration != nullptr) {
+    PTRACE(2, "Already registered for application.");
+    return false;
+  }
+
+  if (m_platform != nullptr) {
+    PTRACE(2, "Already registered for users.");
+    return false;
+  }
+
+  m_platform = CreatePlatform(PProcess::Current().GetName(), provisioningID);
+  if (m_platform == nullptr) {
+    PTRACE(2, "Error initialising Lync UCMA platform: " << GetLastError());
+    return false;
+  }
+
+  PTRACE(3, "Created Lync UCMA platform.");
+  return true;
+}
+
+
 bool OpalLyncEndPoint::RegisterApplication(const PlatformParams & platformParams, const ApplicationParams & appParams)
 {
   if (m_applicationRegistration != nullptr) {
@@ -153,7 +176,7 @@ bool OpalLyncEndPoint::RegisterApplication(const PlatformParams & platformParams
     return false;
   }
 
-  m_platform = CreatePlatform(platformParams);
+  m_platform = CreatePlatform(PProcess::Current().GetName(), platformParams);
   if (m_platform == nullptr) {
     PTRACE(2, "Error initialising Lync UCMA platform: " << GetLastError());
     return false;
@@ -173,7 +196,7 @@ bool OpalLyncEndPoint::RegisterApplication(const PlatformParams & platformParams
 }
 
 
-PString OpalLyncEndPoint::RegisterUser(const RegistrationParams & info)
+PString OpalLyncEndPoint::RegisterUser(const UserParams & info)
 {
   if (info.m_uri.IsEmpty()) {
     PTRACE(2, "Must proivide a URI for registration.");
@@ -449,7 +472,7 @@ bool OpalLyncConnection::TransferConnection(const PString & remoteParty)
     return false;
 
   if (!IsEstablished()) {
-    PTRACE(4, "Not yet establishedm cannot transfer Lync UCMA call on " << *this << " to \"" << remoteParty << '"');
+    PTRACE(4, "Not yet established, cannot transfer Lync UCMA call on " << *this << " to \"" << remoteParty << '"');
     return false;
   }
 

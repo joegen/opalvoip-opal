@@ -1006,7 +1006,7 @@ bool OpalConsoleLyncEndPoint::Initialise(PArgList & args, bool verbose, const PS
   PStringArray authID = args.GetOptionString("lync-auth-id").Lines();
   PStringArray domain = args.GetOptionString("lync-domain").Lines();
   for (PINDEX i = 0; i < uri.GetSize(); ++i) {
-    RegistrationParams info;
+    UserParams info;
     info.m_uri = uri[i];
 
     if (!password.IsEmpty())
@@ -1041,7 +1041,7 @@ void OpalConsoleLyncEndPoint::CmdRegister(PCLI::Arguments & args, P_INT_PTR)
   if (args.GetCount() < 1)
     args.WriteUsage();
   else {
-    RegistrationParams info;
+    UserParams info;
     info.m_uri = args[0];
     info.m_password = args[1];
     info.m_authID = args.GetOptionString("auth-id");

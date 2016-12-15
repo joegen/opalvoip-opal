@@ -2087,7 +2087,7 @@ void OpalManager_C::HandleRegistration(const OpalMessage & command, OpalMessageB
 #if OPAL_LYNC
   OpalLyncEndPoint * lyncEP = dynamic_cast<OpalLyncEndPoint *>(ep);
   if (lyncEP != NULL) {
-    OpalLyncEndPoint::RegistrationParams info;
+    OpalLyncEndPoint::UserParams info;
     info.m_uri = command.m_param.m_registrationInfo.m_identifier;
     info.m_password = command.m_param.m_registrationInfo.m_password;
     PString registeredURI = lyncEP->RegisterUser(info);

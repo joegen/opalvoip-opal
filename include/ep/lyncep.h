@@ -44,16 +44,15 @@ class OpalLyncShim
 
     struct Platform;
     struct PlatformParams {
-      std::string m_appName;
       std::string m_localHost;
       unsigned    m_localPort;
       std::string m_GRUU;
       std::string m_certificateFriendlyName;
       PlatformParams() : m_localPort(5061) { }
     };
-    Platform * CreatePlatform(const PlatformParams & params);
-    Platform * CreatePlatform(const char * appName, const char * provisioningID);
-    Platform * CreatePlatform(const char * appName);
+    Platform * CreatePlatform(const char * userAgent, const PlatformParams & params);
+    Platform * CreatePlatform(const char * userAgent, const char * provisioningID);
+    Platform * CreatePlatform(const char * userAgent);
     bool DestroyPlatform(Platform * & platform);
 
     struct ApplicationEndpoint;
@@ -248,13 +247,18 @@ class OpalLyncEndPoint : public OpalEndPoint, public OpalLyncShimBase
 
   /**@name User registrations */
   //@{
+    /// Register as provisioned
+    bool Register(
+      const PString & provisioningID
+    );
+
     /// Register as ApplicationEndpoint
     bool RegisterApplication(
       const PlatformParams & platformParams,
       const ApplicationParams & appParams
     );
 
-    struct RegistrationParams
+    struct UserParams
     {
       PString m_uri;
       PString m_authID;
@@ -266,7 +270,7 @@ class OpalLyncEndPoint : public OpalEndPoint, public OpalLyncShimBase
         @returns The URI string to use in UnregisterUser() or GetRegistration().
       */
     PString RegisterUser(
-      const RegistrationParams & info
+      const UserParams & info
     );
 
     /// Unregister URI as a local user with Lync server
