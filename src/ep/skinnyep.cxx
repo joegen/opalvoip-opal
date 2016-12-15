@@ -336,6 +336,42 @@ bool OpalSkinnyEndPoint::Unregister(const PString & name)
 }
 
 
+PFilePath OpalSkinnyEndPoint::GetEndpointSimulatedAudioFile(const PString& name, unsigned sessionId) const
+{
+  static const PString farSuffix = "_far";
+  static const PString nearSuffix = "_near";
+  static const PString extension = ".wav";
+
+  bool first = (sessionId % 2) == 0;
+
+  PFilePath stationAudio;
+  if (!m_simulatedAudioFolder.IsEmpty())
+  {
+    stationAudio = m_simulatedAudioFolder + PDIR_SEPARATOR + name + (first ? farSuffix : nearSuffix) + extension;
+    bool found = PFile::Exists(stationAudio);
+
+    if (!found)
+    {
+      PTRACE(4, "Session Id: " << sessionId << ". Wav file \"" << stationAudio << "\" not found");
+      stationAudio = m_simulatedAudioFolder + PDIR_SEPARATOR + name + extension;
+      found = PFile::Exists(stationAudio);
+    }
+
+    if (found)
+    {
+      PTRACE(4, "Session Id: " << sessionId << ". Wav file \"" << stationAudio << "\" found");
+      return stationAudio;
+    }
+
+    PTRACE(4, "Session Id: " << sessionId << ". Wav file \"" << stationAudio << "\" not found, returning default simulated audio file");
+  }
+
+  stationAudio = first ? m_simulatedFarAudioFile : m_simulatedNearAudioFile;
+  PTRACE(4, "Session Id: " << sessionId << ". Using default " << (first ? "far" : "near") << " wav file \"" << stationAudio << "\"");
+  return stationAudio;
+}
+
+
 OpalSkinnyEndPoint::PhoneDevice * OpalSkinnyEndPoint::CreatePhoneDevice(const PString & name, unsigned deviceType, const PIPAddressAndPort & binding)
 {
   return new PhoneDevice(*this, name, deviceType, binding);
@@ -1232,7 +1268,7 @@ void OpalSkinnyConnection::OpenMediaChannel(const MediaInfo & info)
   if (!info.m_receiver)
     mediaSession->SetRemoteAddress(info.m_mediaAddress);
 
-  bool canSimulate = !info.m_receiver && !m_endpoint.GetSimulatedAudioFile().IsEmpty() && mediaType == OpalMediaType::Audio();
+  bool canSimulate = !info.m_receiver && !m_endpoint.GetEndpointSimulatedAudioFile(m_phoneDevice.GetName(), info.m_sessionId).IsEmpty() && mediaType == OpalMediaType::Audio();
 
   if (canSimulate && info.m_sessionId > 1 && m_endpoint.IsSecondaryAudioAlwaysSimulated()) {
     OpenSimulatedMediaChannel(info, mediaFormat);
@@ -1262,7 +1298,6 @@ void OpalSkinnyConnection::OpenMediaChannel(const MediaInfo & info)
   StartMediaStreams();
 }
 
-
 void OpalSkinnyConnection::OpenSimulatedMediaChannel(const MediaInfo & info, const OpalMediaFormat & mediaFormat)
 {
   m_simulatedTransmitters.insert(info.m_sessionId);
@@ -1289,16 +1324,18 @@ void OpalSkinnyConnection::OpenSimulatedMediaChannel(const MediaInfo & info, con
     return;
 
 #if OPAL_PTLIB_WAVFILE
+  PFilePath simulatedAudioFile = m_endpoint.GetEndpointSimulatedAudioFile(m_phoneDevice.GetName(), info.m_sessionId);
+
   std::auto_ptr<OpalMediaStream> sourceStream;
   {
-    std::auto_ptr<OpalWAVFile> wavFile(new OpalWAVFile(m_endpoint.GetSimulatedAudioFile(),
+    std::auto_ptr<OpalWAVFile> wavFile(new OpalWAVFile(simulatedAudioFile,
                                                        PFile::ReadOnly,
                                                        PFile::ModeDefault,
                                                        PWAVFile::fmt_PCM,
                                                        false));
     if (!wavFile->IsOpen()) {
       PTRACE(3, "Could not simulate transmit " << mediaFormat << " stream, session=" << info.m_sessionId
-             << ", file=" << m_endpoint.GetSimulatedAudioFile() << ": " << wavFile->GetErrorText());
+             << ", file=" << simulatedAudioFile << ": " << wavFile->GetErrorText());
       return;
     }
 
@@ -1307,7 +1344,7 @@ void OpalSkinnyConnection::OpenSimulatedMediaChannel(const MediaInfo & info, con
     else {
       if (!wavFile->SetAutoconvert()) {
         PTRACE(3, "Could not simulate transmit " << mediaFormat << " stream, session=" << info.m_sessionId
-               << ", file=" << m_endpoint.GetSimulatedAudioFile() << ": unsupported codec");
+               << ", file=" << simulatedAudioFile << ": unsupported codec");
         return;
       }
       sourceStream.reset(new OpalFileMediaStream(*this, OpalPCM16, info.m_sessionId, true, wavFile.release()));
@@ -1330,7 +1367,7 @@ void OpalSkinnyConnection::OpenSimulatedMediaChannel(const MediaInfo & info, con
 
   m_mediaStreams.Append(sourceStream.release());
 
-  PTRACE(3, "Simulating transmit " << mediaFormat << " stream, session=" << info.m_sessionId << ", file=" << m_endpoint.GetSimulatedAudioFile());
+  PTRACE(3, "Simulating transmit " << mediaFormat << " stream, session=" << info.m_sessionId << ", file=" << simulatedAudioFile);
   StartMediaStreams();
 }
 

@@ -71,7 +71,9 @@ static const PConstString SkinnyServerKey("SCCP Server");
 static const PConstString SkinnyInterfaceKey("SCCP Interface");
 static const PConstString SkinnyTypeKey("SCCP Device Type");
 static const PConstString SkinnyNamesKey("SCCP Device Names");
-static const PConstString SkinnySimulatedAudioFileKey("SCCP Simulated Audio File");
+static const PConstString SkinnySimulatedAudioFolderKey("SCCP Simulated Audio Folder");
+static const PConstString SkinnySimulatedFarAudioKey("SCCP Simulated Far Audio");
+static const PConstString SkinnySimulatedNearAudioKey("SCCP Simulated Near Audio");
 #endif
 
 #if OPAL_LID
@@ -893,8 +895,12 @@ bool MySkinnyEndPoint::Configure(PConfig &, PConfigPage * rsrc)
                                        "Device type for SCCP. Default 30016 = Cisco IP Communicator.");
   m_deviceNames = rsrc->AddStringArrayField(SkinnyNamesKey, false, 0, m_deviceNames,
                                             "Names of all devices to simulate for SCCP.", 1, 50);
-  SetSimulatedAudioFile(rsrc->AddStringField(SkinnySimulatedAudioFileKey, 0, GetSimulatedAudioFile(),
-                        "WAV file to simulate audio on SCCP when can't gateway channel.", 1, 80));
+  SetSimulatedAudioFolder(rsrc->AddStringField(SkinnySimulatedAudioFolderKey, 0, GetSimulatedAudioFolder(),
+                        "Folder where to place WAV files to simulate audio on SCCP when can't gateway channel. The file names have to match station names, if a file is not found \"SCCP Simulated Audio File\" will be used. Optionally, the station name can be followed by \"_near\" or \"_far\", to cater for stream direction.", 1, 80));
+  SetSimulatedFarAudioFile(rsrc->AddStringField(SkinnySimulatedFarAudioKey, 0, GetSimulatedFarAudioFile(),
+                        "WAV file used to simulate far audio on SCCP when can't gateway channel.", 1, 80));
+  SetSimulatedNearAudioFile(rsrc->AddStringField(SkinnySimulatedNearAudioKey, 0, GetSimulatedNearAudioFile(),
+                        "WAV file used to simulate near audio on SCCP when can't gateway channel.", 1, 80));
 
   PStringArray newExpandedNames, servers;
   ExpandWildcards(m_deviceNames, m_defaultServer, newExpandedNames, servers);

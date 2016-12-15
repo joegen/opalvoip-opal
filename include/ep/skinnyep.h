@@ -618,8 +618,15 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
 #pragma pack()
   //@}
 
-    const PFilePath & GetSimulatedAudioFile() const { return m_simulatedAudioFile; }
-    void SetSimulatedAudioFile(const PString str) { m_simulatedAudioFile = str; }
+    const PFilePath & GetSimulatedFarAudioFile() const { return m_simulatedFarAudioFile; }
+    void SetSimulatedFarAudioFile(const PString str) { m_simulatedFarAudioFile = str; }
+    const PFilePath & GetSimulatedNearAudioFile() const { return m_simulatedNearAudioFile; }
+    void SetSimulatedNearAudioFile(const PString str) { m_simulatedNearAudioFile = str; }
+
+    const PDirectory & GetSimulatedAudioFolder() const { return m_simulatedAudioFolder; }
+    void SetSimulatedAudioFolder(const PString str) { m_simulatedAudioFolder = str; }
+
+    PFilePath GetEndpointSimulatedAudioFile(const PString& name, unsigned sessionId) const;
 
     bool IsSecondaryAudioAlwaysSimulated() const { return m_secondaryAudioAlwaysSimulated; }
     void SetSecondaryAudioAlwaysSimulated(bool v) { m_secondaryAudioAlwaysSimulated = v; }
@@ -633,7 +640,9 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
     PhoneDeviceDict           m_phoneDevices;
     PDECLARE_MUTEX(m_phoneDevicesMutex);
     OpalTransportAddressArray m_serverInterfaces;
-    PFilePath                 m_simulatedAudioFile;
+    PFilePath                 m_simulatedFarAudioFile;
+    PFilePath                 m_simulatedNearAudioFile;
+    PDirectory                m_simulatedAudioFolder;
     bool                      m_secondaryAudioAlwaysSimulated;
 };
 
