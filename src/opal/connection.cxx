@@ -1536,12 +1536,22 @@ PString OpalConnection::GetCalledPartyURL()
 
 void OpalConnection::CopyPartyNames(const OpalConnection & other)
 {
-  m_remotePartyName     = other.m_remotePartyName;
-  m_remotePartyNumber   = other.m_remotePartyNumber;
-  m_remotePartyURL    = other.m_remotePartyURL;
-  m_calledPartyName   = other.m_calledPartyName;
-  m_calledPartyNumber = other.m_calledPartyNumber;
-  m_remoteProductInfo   = other.m_remoteProductInfo;
+  if (IsNetworkConnection()) {
+    m_localPartyName = other.GetRemotePartyURL();
+    if (m_localPartyName.NumCompare(other.GetPrefixName()+':') == EqualTo)
+      m_localPartyName.Delete(0, other.GetPrefixName().GetLength()+1);
+    if (m_localPartyName.NumCompare(GetPrefixName()+':') != EqualTo)
+      m_localPartyName.Splice(GetPrefixName()+':', 0);
+    m_displayName = other.GetRemotePartyName();
+  }
+  else {
+    m_remotePartyName = other.GetRemotePartyName();
+    m_remotePartyNumber = other.GetRemotePartyNumber();
+    m_remotePartyURL = other.GetRemotePartyURL();
+    m_calledPartyName = other.GetCalledPartyName();
+    m_calledPartyNumber = other.GetCalledPartyNumber();
+    m_remoteProductInfo = other.GetRemoteProductInfo();
+  }
 }
 
 

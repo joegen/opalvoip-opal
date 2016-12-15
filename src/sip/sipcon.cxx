@@ -1058,37 +1058,47 @@ void SIPConnection::WriteINVITE(OpalTransport & transport, bool & succeeded)
 {
   m_dialog.SetForking(GetInterface().IsEmpty());
 
+  bool changedUserName = false;
+  bool changedDisplayName = false;
+
   SIPURL myAddress = m_stringOptions(OPAL_OPT_CALLING_PARTY_URL);
-  if (myAddress.IsEmpty())
-    myAddress = GetEndPoint().GetDefaultLocalURL(transport);
+  if (myAddress.IsEmpty()) {
+    if (GetLocalPartyName() == GetEndPoint().GetDefaultLocalPartyName())
+      myAddress = GetEndPoint().GetDefaultLocalURL(transport);
+    else {
+      myAddress = GetLocalPartyName();
+      myAddress.SetDisplayName(GetDisplayName());
+      changedUserName = true;
+      changedDisplayName = true;
+    }
+  }
 
   PString transportProtocol = m_dialog.GetRequestURI().GetTransportProto();
   if (!transportProtocol.IsEmpty())
     myAddress.SetParamVar("transport", transportProtocol);
 
-  bool changedUserName = false;
   if (IsOriginating()) {
     // only allow override of calling party number if the local party
     // name hasn't been first specified by a register handler. i.e a
     // register handler's target number is always used
-    changedUserName = m_stringOptions.Contains(OPAL_OPT_CALLING_PARTY_NUMBER);
-    if (changedUserName)
+    if (m_stringOptions.Contains(OPAL_OPT_CALLING_PARTY_NUMBER)) {
       myAddress.SetUserName(m_stringOptions[OPAL_OPT_CALLING_PARTY_NUMBER]);
-    else {
-      changedUserName = m_stringOptions.Contains(OPAL_OPT_CALLING_PARTY_NAME);
-      if (changedUserName)
-        myAddress.SetUserName(m_stringOptions[OPAL_OPT_CALLING_PARTY_NAME]);
+      changedUserName = true;
+    }
+    else if (m_stringOptions.Contains(OPAL_OPT_CALLING_PARTY_NAME)) {
+      myAddress.SetUserName(m_stringOptions[OPAL_OPT_CALLING_PARTY_NAME]);
+      changedUserName = true;
     }
   }
-  else {
-    changedUserName = m_stringOptions.Contains(OPAL_OPT_CALLED_PARTY_NAME);
-    if (changedUserName)
-      myAddress.SetUserName(m_stringOptions[OPAL_OPT_CALLED_PARTY_NAME]);
+  else if (m_stringOptions.Contains(OPAL_OPT_CALLED_PARTY_NAME)) {
+    myAddress.SetUserName(m_stringOptions[OPAL_OPT_CALLED_PARTY_NAME]);
+    changedUserName = true;
   }
 
-  bool changedDisplayName = myAddress.GetDisplayName() != GetDisplayName();
-  if (changedDisplayName)
+  if (myAddress.GetDisplayName() != GetDisplayName()) {
     myAddress.SetDisplayName(GetDisplayName());
+    changedDisplayName = true;
+  }
 
   // Domain cannot be an empty string so do not set if override is empty
   {
