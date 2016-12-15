@@ -420,6 +420,28 @@ void OpalLyncShim::DestroyUserEndpoint(UserEndpoint * & user)
 }
 
 
+OpalLyncShim::Conversation * OpalLyncShim::CreateConversation(ApplicationEndpoint & aep,
+                                                              const char * uri,
+                                                              const char * phone,
+                                                              const char * display)
+{
+  m_lastError.clear();
+
+  Collaboration::Conversation^ conv;
+  try {
+    Collaboration::ConversationSettings^ cs = gcnew Collaboration::ConversationSettings();
+    conv = gcnew Collaboration::Conversation(aep, cs);
+    conv->Impersonate(GetNonEmptyString(uri), GetNonEmptyString(phone), GetNonEmptyString(display));
+  }
+  catch (System::Exception^ err) {
+    m_lastError = marshal_as<std::string>(err->ToString());
+    return nullptr;
+  }
+
+  return new Conversation(conv);
+}
+
+
 OpalLyncShim::Conversation * OpalLyncShim::CreateConversation(UserEndpoint & uep)
 {
   m_lastError.clear();

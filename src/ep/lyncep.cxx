@@ -353,18 +353,37 @@ PBoolean OpalLyncConnection::SetUpConnection()
   SetPhase(SetUpPhase);
   InternalSetAsOriginating();
 
-  PString localParty = m_stringOptions(OPAL_OPT_CALLING_PARTY_URL, GetLocalPartyName());
-  OpalLyncShim::UserEndpoint * uep = m_endpoint.GetRegisteredUser(localParty);
-  if (uep == nullptr) {
-    PTRACE(2, "Cannot find registration for user: " << localParty);
-    Release(EndedByGkAdmissionFailed);
-    return false;
-  }
+  ApplicationEndpoint * aep = m_endpoint.GetRegisteredApplication();
+  if (aep != NULL) {
+    PSafePtr<OpalConnection> otherParty = GetOtherPartyConnection();
+    if (otherParty == NULL)
+      return false;
 
-  m_conversation = CreateConversation(*uep);
-  if (m_conversation == nullptr) {
-    PTRACE(2, "Error creating Lync UCMA conversation: " << GetLastError());
-    return false;
+    PString localParty = m_stringOptions(OPAL_OPT_CALLING_PARTY_URL, otherParty->GetRemotePartyURL());
+    m_endpoint.AdjustLyncURI(localParty);
+
+    m_conversation = CreateConversation(*aep, localParty, nullptr, otherParty->GetDisplayName());
+    if (m_conversation == nullptr) {
+      PTRACE(2, "Error creating Lync UCMA conversation: " << GetLastError());
+      return false;
+    }
+  }
+  else {
+    PString localParty = m_stringOptions(OPAL_OPT_CALLING_PARTY_URL, GetLocalPartyName());
+    m_endpoint.AdjustLyncURI(localParty);
+
+    OpalLyncShim::UserEndpoint * uep = m_endpoint.GetRegisteredUser(localParty);
+    if (uep == nullptr) {
+      PTRACE(2, "Cannot find registration for user: " << localParty);
+      Release(EndedByGkAdmissionFailed);
+      return false;
+    }
+
+    m_conversation = CreateConversation(*uep);
+    if (m_conversation == nullptr) {
+      PTRACE(2, "Error creating Lync UCMA conversation: " << GetLastError());
+      return false;
+    }
   }
 
   PString otherParty = GetRemotePartyURL();

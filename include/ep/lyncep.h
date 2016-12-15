@@ -76,6 +76,7 @@ class OpalLyncShim
     void DestroyUserEndpoint(UserEndpoint * & user);
 
     struct Conversation;
+    Conversation * CreateConversation(ApplicationEndpoint & aep, const char * uri, const char * phone, const char * display);
     Conversation * CreateConversation(UserEndpoint & uep);
     void DestroyConversation(Conversation * & conv);
 
@@ -257,6 +258,9 @@ class OpalLyncEndPoint : public OpalEndPoint, public OpalLyncShimBase
       const PlatformParams & platformParams,
       const ApplicationParams & appParams
     );
+
+    /// Get the internal application endpoint, if registered.
+    ApplicationEndpoint * GetRegisteredApplication() const { return m_applicationRegistration; }
 
     struct UserParams
     {
