@@ -439,11 +439,16 @@ void OpalLyncConnection::OnLyncCallFailed(const std::string & error)
 
 void OpalLyncConnection::OnReleased()
 {
-  DestroyAudioVideoFlow(m_flow);
-  DestroyAudioVideoCall(m_audioVideoCall);
-  DestroyConversation(m_conversation);
-
   OpalConnection::OnReleased();
+
+  PTRACE(4, "DestroyAudioVideoFlow " << *this);
+  DestroyAudioVideoFlow(m_flow);
+
+  PTRACE(4, "DestroyAudioVideoCall " << *this);
+  DestroyAudioVideoCall(m_audioVideoCall);
+
+  PTRACE(4, "DestroyConversation " << *this);
+  DestroyConversation(m_conversation);
 }
 
 
@@ -617,7 +622,7 @@ void OpalLyncMediaStream::InternalClose()
 
 PBoolean OpalLyncMediaStream::ReadData(BYTE * data, PINDEX size, PINDEX & length)
 {
-  if (m_closing)
+  if (m_closing || m_connection.IsReleased())
     return false;
 
   length = 0;
@@ -640,7 +645,7 @@ PBoolean OpalLyncMediaStream::ReadData(BYTE * data, PINDEX size, PINDEX & length
 
 PBoolean OpalLyncMediaStream::WriteData(const BYTE * data, PINDEX length, PINDEX & written)
 {
-  if (m_closing)
+  if (m_closing || m_connection.IsReleased())
     return false;
 
   written = 0;
