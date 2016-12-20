@@ -313,6 +313,14 @@ OpalLyncConnection::OpalLyncConnection(OpalCall & call,
 }
 
 
+static PString ToOpalLyncURI(const PString & uri, const PString & prefix)
+{
+  if (uri.NumCompare("sip:") == PObject::EqualTo)
+    return prefix + uri.Mid(3);
+  
+  return prefix + ':' + uri;
+}
+
 void OpalLyncConnection::SetUpIncomingLyncCall(const IncomingLyncCallInfo & info)
 {
   if (GetPhase() != UninitialisedPhase) {
@@ -329,14 +337,13 @@ void OpalLyncConnection::SetUpIncomingLyncCall(const IncomingLyncCallInfo & info
 
   m_audioVideoCall = info.m_call;
 
-  m_remotePartyName = info.m_remoteUri;
-  if (m_remotePartyName.NumCompare("sip:") == EqualTo)
-    m_remotePartyName.Delete(0, 4);
-  m_displayName = info.m_displayName;
+  m_remotePartyURL = ToOpalLyncURI(info.m_remoteUri, GetPrefixName());
+  m_remotePartyNumber = m_remotePartyURL(m_remotePartyURL.Find(':')+1, m_remotePartyURL.Find('@')-1);
+  if (!OpalIsE164(m_remotePartyNumber))
+    m_remotePartyNumber.MakeEmpty();
+  m_remotePartyName = info.m_displayName;
   m_calledPartyName = info.m_destinationUri;
-  m_redirectingParty = info.m_transferredBy;
-  if (m_redirectingParty.NumCompare("sip:") == EqualTo)
-    m_redirectingParty.Splice(m_endpoint.GetPrefixName(), 0, 3);
+  m_redirectingParty = ToOpalLyncURI(info.m_transferredBy, GetPrefixName());
 
   SetPhase(SetUpPhase);
   OnApplyStringOptions();
