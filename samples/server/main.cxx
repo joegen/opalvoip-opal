@@ -76,6 +76,29 @@ static const PConstString SkinnySimulatedFarAudioKey("SCCP Simulated Far Audio")
 static const PConstString SkinnySimulatedNearAudioKey("SCCP Simulated Near Audio");
 #endif
 
+#if OPAL_LYNC
+static const PConstString LyncRegistrationModeKey("Lync Registration Mode");
+static const PConstString LyncAppNameKey("Lync Application Name");
+static const PConstString LyncLocalHostKey("Lync Local Host");
+static const PConstString LyncLocalPortKey("Lync Local Port");
+static const PConstString LyncGruuKey("Lync GRUU");
+static const PConstString LyncCertificateKey("Lync Certificate");
+static const PConstString LyncOwnerUriKey("Lync Owner URI");
+static const PConstString LyncProxyHostKey("Lync Proxy Host");
+static const PConstString LyncProxyPortKey("Lync Proxy Port");
+static const PConstString LyncDefaultRouteKey("Lync Default Route");
+static const PConstString LyncPubPresenceKey("Lync Publicise Presence");
+static const PConstString LyncProvisioningIdKey("Lync Provisioning ID");
+
+#define LYNC_REGISTRATIONS_SECTION "Lync Registrations"
+#define LYNC_REGISTRATIONS_KEY     LYNC_REGISTRATIONS_SECTION"\\Registration %u\\"
+
+static const char LyncUriKey[] = "URI";
+static const char LyncAuthIDKey[] = "Auth ID";
+static const char LyncPasswordKey[] = "Password";
+static const char LyncDomainKey[] = "Domain";
+#endif
+
 #if OPAL_LID
 static const PConstString LIDKey("Line Interface Devices");
 #endif
@@ -243,6 +266,8 @@ PBoolean MyProcess::Initialise(const char * initMsg)
   if (!m_manager->Configure(cfg, params.m_configPage))
     return false;
 
+  params.m_configPage->Add(new PHTTPDividerField());
+
   // Finished the resource to add, generate HTML for it and add to name space
   PServiceHTML cfgHTML("System Parameters");
   params.m_configPage->BuildHTML(cfgHTML);
@@ -288,7 +313,7 @@ PBoolean MyProcess::Initialise(const char * initMsg)
          << PHTML::BreakLine()
          << PHTML::HotLink(gkStatusPage->GetHotLink()) << "Gatekeeper Status" << PHTML::HotLink()
 #endif // OPAL_H323
-#if OPAL_H323 | OPAL_SIP | OPAL_SKINNY
+#if OPAL_H323 | OPAL_SIP | OPAL_SKINNY | OPAL_LYNC
          << PHTML::BreakLine()
          << PHTML::HotLink(registrationStatusPage->GetHotLink()) << "Registration Status" << PHTML::HotLink()
 #endif
@@ -466,8 +491,19 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
   }
 #endif //P_CLI && P_TELNET
 
+  rsrc->Add(new PHTTPDividerField());
+
   // General parameters for all endpoint types
   SetDefaultDisplayName(rsrc->AddStringField(DisplayNameKey, 25, GetDefaultDisplayName(), "Display name used in various protocols"));
+
+  bool overrideProductInfo = rsrc->AddBooleanField(OverrideProductInfoKey, false, "Override the default product information");
+  m_savedProductInfo.vendor = rsrc->AddStringField(VendorNameKey, 20, m_savedProductInfo.vendor);
+  m_savedProductInfo.name = rsrc->AddStringField(ProductNameKey, 20, m_savedProductInfo.name);
+  m_savedProductInfo.version = rsrc->AddStringField(ProductVersionKey, 20, m_savedProductInfo.version);
+  if (overrideProductInfo)
+    SetProductInfo(m_savedProductInfo);
+
+  rsrc->Add(new PHTTPDividerField());
 
   m_mediaTransferMode = cfg.GetEnum(MediaTransferModeKey, m_mediaTransferMode);
   static const char * const MediaTransferModeValues[] = { "0", "1", "2" };
@@ -592,6 +628,8 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
   SetMediaTypeOfService(rsrc->AddIntegerField(RTPTOSKey, 0, 255, GetMediaTypeOfService(), "", "Value for DIFSERV Quality of Service"));
 
 #if P_STUN
+  rsrc->Add(new PHTTPDividerField());
+
   {
     std::set<NATInfo> natInfo;
 
@@ -611,24 +649,20 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
   }
 #endif // P_NAT
 
-  bool overrideProductInfo = rsrc->AddBooleanField(OverrideProductInfoKey, false, "Override the default product information");
-  m_savedProductInfo.vendor = rsrc->AddStringField(VendorNameKey, 20, m_savedProductInfo.vendor);
-  m_savedProductInfo.name = rsrc->AddStringField(ProductNameKey, 20, m_savedProductInfo.name);
-  m_savedProductInfo.version = rsrc->AddStringField(ProductVersionKey, 20, m_savedProductInfo.version);
-  if (overrideProductInfo)
-    SetProductInfo(m_savedProductInfo);
-
 #if OPAL_H323
+  rsrc->Add(new PHTTPDividerField());
   if (!GetH323EndPoint().Configure(cfg, rsrc))
     return false;
 #endif // OPAL_H323
 
 #if OPAL_SIP
+  rsrc->Add(new PHTTPDividerField());
   if (!GetSIPEndPoint().Configure(cfg, rsrc))
     return false;
 #endif // OPAL_SIP
 
 #if OPAL_SDP_HTTP
+  rsrc->Add(new PHTTPDividerField());
   {
     OpalSDPHTTPEndPoint * ep = FindEndPointAs<OpalSDPHTTPEndPoint>(OPAL_PREFIX_SDP);
     if (!ConfigureCommon(ep, "SDP", cfg, rsrc))
@@ -637,11 +671,19 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
 #endif // OPAL_SDP_HTTP
 
 #if OPAL_SKINNY
+  rsrc->Add(new PHTTPDividerField());
   if (!GetSkinnyEndPoint().Configure(cfg, rsrc))
     return false;
 #endif // OPAL_SKINNY
 
+#if OPAL_LYNC
+  rsrc->Add(new PHTTPDividerField());
+  if (!GetLyncEndPoint().Configure(cfg, rsrc))
+    return false;
+#endif // OPAL_LYNC
+
 #if OPAL_LID
+  rsrc->Add(new PHTTPDividerField());
   // Add POTS and PSTN endpoints
   if (!FindEndPointAs<OpalLineEndPoint>(OPAL_PREFIX_POTS)->AddDeviceNames(rsrc->AddSelectArrayField(LIDKey, false,
     OpalLineInterfaceDevice::GetAllDevices(), PStringArray(), "Line Interface Devices (PSTN, ISDN etc) to monitor, if any"))) {
@@ -651,6 +693,7 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
 
 
 #if OPAL_CAPI
+  rsrc->Add(new PHTTPDividerField());
   m_enableCAPI = rsrc->AddBooleanField(EnableCAPIKey, m_enableCAPI, "Enable CAPI ISDN controller(s), if available");
   if (m_enableCAPI && FindEndPointAs<OpalCapiEndPoint>(OPAL_PREFIX_CAPI)->OpenControllers() == 0) {
     PSYSTEMLOG(Error, "No CAPI controllers!");
@@ -659,6 +702,7 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
 
 
 #if OPAL_IVR
+  rsrc->Add(new PHTTPDividerField());
   {
     OpalIVREndPoint * ivrEP = FindEndPointAs<OpalIVREndPoint>(OPAL_PREFIX_IVR);
     // Set IVR protocol handler
@@ -672,6 +716,7 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
 #endif
 
 #if OPAL_HAS_MIXER
+  rsrc->Add(new PHTTPDividerField());
   {
     OpalMixerEndPoint * mcuEP = FindEndPointAs<OpalMixerEndPoint>(OPAL_PREFIX_MIXER);
     OpalMixerNodeInfo adHoc;
@@ -692,6 +737,8 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
     mcuEP->SetAdHocNodeInfo(adHoc);
   }
 #endif
+
+  rsrc->Add(new PHTTPDividerField());
 
 #if OPAL_SCRIPT
   PStringArray languages = PScriptLanguage::GetLanguages();
@@ -738,7 +785,7 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
     "the whole B Party string if these are not present.</dd>"
     "<dt><code>&lt;!du&gt;</code></dt><dd>"
     "The rest of the B Party string after the &lt;du&gt; section. The "
-    "protocol is still omitted. This is usually the '@' and onward. "
+    "protocol is still omitted. This is usually everything after the '@'. "
     "Note, if there is already an '@' in the destination before the "
     "&lt;!du&gt; and what is about to replace it also has an '@' then "
     "everything between the @ and the &lt;!du&gt; (inclusive) is deleted, "
@@ -790,6 +837,8 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
   }
 
   SetRouteTable(routes);
+
+  rsrc->Add(new PHTTPDividerField());
 
   return ConfigureCDR(cfg, rsrc);
 }
@@ -949,5 +998,114 @@ void MySkinnyEndPoint::AutoRegister(const PString & server, const PString & wild
 
 #endif // OPAL_SKINNY
 
+
+///////////////////////////////////////////////////////////////////////////////
+
+#if OPAL_LYNC
+
+OpalConsoleLyncEndPoint * MyManager::CreateLyncEndPoint()
+{
+  return new MyLyncEndPoint(*this);
+}
+
+
+MyLyncEndPoint::MyLyncEndPoint(MyManager & mgr)
+  : OpalConsoleLyncEndPoint(mgr)
+  , m_manager(mgr)
+{
+}
+
+
+bool MyLyncEndPoint::Configure(PConfig & cfg, PConfigPage * rsrc)
+{
+  enum {
+    UserRegistrationMode,
+    ApplicationRegistrationMode,
+    ProvisionedRegistrationMode
+  } registrationMode = cfg.GetEnum(LyncRegistrationModeKey, UserRegistrationMode);
+
+  static const char * const RegistrationModeValues[] = { "0", "1", "2" };
+  static const char * const RegistrationModeTitles[] = { "User", "Application", "Provisioned" };
+  rsrc->Add(new PHTTPRadioField(LyncRegistrationModeKey,
+                                PARRAYSIZE(RegistrationModeValues), RegistrationModeValues, RegistrationModeTitles,
+                                registrationMode, "Lync registration mode."));
+
+  PHTTPCompositeField * registrationsFields = new PHTTPCompositeField(LYNC_REGISTRATIONS_KEY, LYNC_REGISTRATIONS_SECTION,
+                                                                          "Registration of Lync User. Note, 'Registration Mode' must be set to 'User'.");
+  registrationsFields->Append(new PHTTPStringField(LyncUriKey, 0, NULL, NULL, 1, 20));
+  registrationsFields->Append(new PHTTPStringField(LyncAuthIDKey, 0, NULL, NULL, 1, 15));
+  registrationsFields->Append(new PHTTPStringField(LyncDomainKey, 0, NULL, NULL, 1, 15));
+  registrationsFields->Append(new PHTTPPasswordField(LyncPasswordKey, 15));
+  PHTTPFieldArray * registrationsArray = new PHTTPFieldArray(registrationsFields, false);
+  rsrc->Add(registrationsArray);
+
+  PlatformParams pparam;
+  pparam.m_localHost = rsrc->AddStringField(LyncLocalHostKey, 0, PString::Empty(),
+                                    "Local Host FQDN for Lync ApplicationEndpoint. Note, 'Registration Mode' must be set to 'Application'.", 1, 30).GetPointer();
+  pparam.m_localPort = rsrc->AddIntegerField(LyncLocalPortKey, 1, 65535, 5061, "",
+                                    "Local Port FQDN for Lync ApplicationEndpoint.");
+  pparam.m_GRUU = rsrc->AddStringField(LyncGruuKey, 0, PString::Empty(),
+                                    "GRUU for Lync ApplicationEndpoint.", 1, 30).GetPointer();
+  pparam.m_certificateFriendlyName = rsrc->AddStringField(LyncCertificateKey, 0, PString::Empty(),
+                                    "Certificate \"friendly name\" for Lync ApplicationEndpoint.", 1, 30).GetPointer();
+  ApplicationParams aparam;
+  aparam.m_ownerURI = rsrc->AddStringField(LyncOwnerUriKey, 0, PString::Empty(),
+                                    "Owner URI for Lync ApplicationEndpoint.", 1, 30).GetPointer();
+  aparam.m_proxyHost = rsrc->AddStringField(LyncProxyHostKey, 0, PString::Empty(),
+                                    "Proxy Host FQDN for Lync ApplicationEndpoint.", 1, 30).GetPointer();
+  aparam.m_proxyPort = rsrc->AddIntegerField(LyncProxyPortKey, 1, 65535, 5061, "",
+                                    "Proxy Port FQDN for Lync ApplicationEndpoint.");
+  aparam.m_defaultRoutingEndpoint = rsrc->AddBooleanField(LyncDefaultRouteKey, false,
+                                    "Set Lync ApplicationEndpoint as default route.");
+  aparam.m_publicisePresence = rsrc->AddBooleanField(LyncPubPresenceKey, false,
+                                    "Publicise presence of Lync ApplicationEndpoint.");
+
+  PString provisioningID = rsrc->AddStringField(LyncProvisioningIdKey, 0, PString::Empty(),
+                                                    "Lync Provisioning Identifier. Note, 'Registration Mode' must be set to 'Provisioned'.", 1, 30);
+
+  switch (registrationMode) {
+    case UserRegistrationMode:
+      if (!registrationsArray->LoadFromConfig(cfg)) {
+        for (PINDEX i = 0; i < registrationsArray->GetSize(); ++i) {
+          PHTTPCompositeField & item = dynamic_cast<PHTTPCompositeField &>((*registrationsArray)[i]);
+
+          OpalLyncEndPoint::UserParams info;
+          info.m_uri = item[0].GetValue();
+          if (!info.m_uri.IsEmpty()) {
+            info.m_authID = item[1].GetValue();
+            info.m_domain = item[2].GetValue();
+            info.m_password = PHTTPPasswordField::Decrypt(item[3].GetValue());
+            if (RegisterUser(info).IsEmpty())
+              PSYSTEMLOG(Error, "Could not register Lync user " << info.m_uri);
+            else
+              PSYSTEMLOG(Info, "Registered Lync user " << info.m_uri);
+          }
+        }
+      }
+      break;
+
+    case ApplicationRegistrationMode:
+      if (!pparam.m_localHost.empty()) {
+        if (RegisterApplication(pparam, aparam))
+          PSYSTEMLOG(Info, "Registered Lync application " << pparam.m_localHost);
+        else
+          PSYSTEMLOG(Error, "Could not register Lync application " << pparam.m_localHost);
+      }
+      break;
+
+    case ProvisionedRegistrationMode:
+      if (!provisioningID.empty()) {
+        if (Register(provisioningID))
+          PSYSTEMLOG(Info, "Registered Lync via provisioning ID \"" << provisioningID << '"');
+        else
+          PSYSTEMLOG(Error, "Could not register Lync via provisioning ID \"" << provisioningID << '"');
+      }
+      break;
+  }
+
+  return true;
+}
+
+#endif // OPAL_LYNC
 
 // End of File ///////////////////////////////////////////////////////////////

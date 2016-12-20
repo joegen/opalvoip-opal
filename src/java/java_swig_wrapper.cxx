@@ -584,13 +584,25 @@ SWIGEXPORT jstring JNICALL Java_org_opalvoip_opal_OPALJNI_OPAL_1PREFIX_1SKINNY_1
 }
 
 
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_opal_OPALJNI_OPAL_1PREFIX_1LYNC_1get(JNIEnv *jenv, jclass jcls) {
+  jstring jresult = 0 ;
+  char *result = 0 ;
+  
+  (void)jenv;
+  (void)jcls;
+  result = (char *)("lync");
+  if (result) jresult = jenv->NewStringUTF((const char *)result);
+  return jresult;
+}
+
+
 SWIGEXPORT jstring JNICALL Java_org_opalvoip_opal_OPALJNI_OPAL_1PREFIX_1ALL_1get(JNIEnv *jenv, jclass jcls) {
   jstring jresult = 0 ;
   char *result = 0 ;
   
   (void)jenv;
   (void)jcls;
-  result = (char *)("sip h323 iax2 sdp pc local pots pstn fax t38 ivr mcu im");
+  result = (char *)("sip h323 iax2 sdp sccp lync pc local pots pstn fax t38 ivr mcu im");
   if (result) jresult = jenv->NewStringUTF((const char *)result);
   return jresult;
 }

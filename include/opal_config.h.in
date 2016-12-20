@@ -377,6 +377,17 @@
 
 /////////////////////////////////////////////////
 //
+// Lync (UCMA) support
+//
+
+#undef  OPAL_LYNC
+#if OPAL_LYNC && defined(_MSC_VER)
+  #define OPAL_LYNC_LIBRARY "@OPAL_LYNC_DIR@/SDK/Core/Bin/Microsoft.Rtc.Collaboration.dll"
+#endif
+
+
+/////////////////////////////////////////////////
+//
 // C# interface support
 //
 

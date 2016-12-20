@@ -147,6 +147,15 @@ void RegistrationStatusPage::GetSkinny(StatusMap & copy) const
 #endif
 
 
+#if OPAL_LYNC
+void RegistrationStatusPage::GetLync(StatusMap & copy) const
+{
+  PWaitAndSignal lock(m_mutex);
+  copy = m_lync;
+}
+#endif
+
+
 PString RegistrationStatusPage::LoadText(PHTTPRequest & request)
 {
   m_mutex.Wait();
@@ -180,11 +189,11 @@ PString RegistrationStatusPage::LoadText(PHTTPRequest & request)
 
 #if OPAL_SKINNY
   m_skinny.clear();
-  OpalSkinnyEndPoint * ep = m_manager.FindEndPointAs<OpalSkinnyEndPoint>(OPAL_PREFIX_SKINNY);
-  if (ep != NULL) {
-    PArray<PString> names = ep->GetPhoneDeviceNames();
+  OpalSkinnyEndPoint * skinnyEP = m_manager.FindEndPointAs<OpalSkinnyEndPoint>(OPAL_PREFIX_SKINNY);
+  if (skinnyEP != NULL) {
+    PArray<PString> names = skinnyEP->GetPhoneDeviceNames();
     for (PINDEX i = 0; i < names.GetSize(); ++i) {
-      OpalSkinnyEndPoint::PhoneDevice * phoneDevice = ep->GetPhoneDevice(names[i]);
+      OpalSkinnyEndPoint::PhoneDevice * phoneDevice = skinnyEP->GetPhoneDevice(names[i]);
       if (phoneDevice != NULL) {
         PStringStream str;
         str << *phoneDevice;
@@ -193,6 +202,16 @@ PString RegistrationStatusPage::LoadText(PHTTPRequest & request)
           m_skinny[name] = status;
       }
     }
+  }
+#endif
+
+#if OPAL_LYNC
+  m_lync.clear();
+  OpalLyncEndPoint * lyncEP = m_manager.FindEndPointAs<OpalLyncEndPoint>(OPAL_PREFIX_LYNC);
+  if (lyncEP != NULL) {
+    PStringArray uris = lyncEP->GetRegisteredUsers();
+    for (PINDEX i = 0; i < uris.GetSize(); ++i)
+      m_lync[uris[i]] = lyncEP->GetRegisteredUser(uris[i]) ? "Registered" : "Failed";
   }
 #endif
 
@@ -273,6 +292,19 @@ void RegistrationStatusPage::CreateContent(PHTML & html, const PStringToString &
          << "<!--#status Status-->"
        << "<!--#macroend SkinnyRegistrationStatus-->"
 #endif // OPAL_SKINNY
+
+#if OPAL_LYNC
+       << PHTML::TableRow()
+       << PHTML::TableHeader(PHTML::NoWrap, "rowspan=<!--#macro LyncRegistrationCount-->")
+       << " Lync URIs "
+       << "<!--#macrostart LyncRegistrationStatus-->"
+         << PHTML::TableRow()
+         << PHTML::TableData(PHTML::NoWrap)
+         << "<!--#status Name-->"
+         << PHTML::TableData(PHTML::NoWrap)
+         << "<!--#status Status-->"
+       << "<!--#macroend LyncRegistrationStatus-->"
+#endif // OPAL_LYNC
 
 #if OPAL_PTLIB_NAT
        << PHTML::TableRow()
@@ -432,6 +464,20 @@ PCREATE_SERVICE_MACRO(SkinnyRegistrationCount, resource, P_EMPTY)
 PCREATE_SERVICE_MACRO_BLOCK(SkinnyRegistrationStatus, resource, P_EMPTY, htmlBlock)
 {
   return GetRegistrationStatus(resource, htmlBlock, &RegistrationStatusPage::GetSkinny);
+}
+#endif // OPAL_SKINNY
+
+
+#if OPAL_LYNC
+PCREATE_SERVICE_MACRO(LyncRegistrationCount, resource, P_EMPTY)
+{
+  return GetRegistrationCount(resource, &RegistrationStatusPage::GetLyncCount);
+}
+
+
+PCREATE_SERVICE_MACRO_BLOCK(LyncRegistrationStatus, resource, P_EMPTY, htmlBlock)
+{
+  return GetRegistrationStatus(resource, htmlBlock, &RegistrationStatusPage::GetLync);
 }
 #endif // OPAL_SKINNY
 

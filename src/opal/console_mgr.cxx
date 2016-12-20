@@ -883,10 +883,10 @@ OpalConsoleSkinnyEndPoint::OpalConsoleSkinnyEndPoint(OpalConsoleManager & manage
 void OpalConsoleSkinnyEndPoint::GetArgumentSpec(ostream & strm) const
 {
   strm << "[SCCP options:]"
-    "-no-sccp.        Disable Skinny Client Control Protocol\n"
-    "-sccp-server:    Set Skinny server address.\n"
-    "-sccp-name:      Set device name for Skinny client, may be present multiple times.\n"
-    "-sccp-device:    Set device type code for Skinny clients.\n";
+          "-no-sccp.        Disable Skinny Client Control Protocol\n"
+          "-sccp-server:    Set Skinny server address.\n"
+          "-sccp-name:      Set device name for Skinny client, may be present multiple times.\n"
+          "-sccp-device:    Set device type code for Skinny clients.\n";
 }
 
 
@@ -902,6 +902,8 @@ bool OpalConsoleSkinnyEndPoint::Initialise(PArgList & args, bool verbose, const 
     return true;
   }
 
+  bool none = true;
+
   unsigned deviceType = args.GetOptionAs<unsigned>("sccp-device", OpalSkinnyEndPoint::DefaultDeviceType);
   PString server = args.GetOptionString("sccp-server");
   if (!server.IsEmpty()) {
@@ -910,10 +912,16 @@ bool OpalConsoleSkinnyEndPoint::Initialise(PArgList & args, bool verbose, const 
       PString name = names[i];
       if (!Register(server, name, deviceType))
         output << "Could not register " << name << " with skinny server \"" << server << '"' << endl;
-      else if (verbose)
-        output << "Skinny client: " << name << '@' << server << '\n';
+      else {
+        if (verbose)
+          output << "Skinny client: " << name << '@' << server << '\n';
+        none = false;
+      }
     }
   }
+
+  if (none)
+    output << "SCCP has no phone devices registered" << endl;
 
   AddRoutesFor(this, defaultRoute);
   return true;
@@ -946,7 +954,7 @@ void OpalConsoleSkinnyEndPoint::CmdStatus(PCLI::Arguments & args, P_INT_PTR)
   }
 
   if (none)
-    out << "No phone devices registered" << endl;
+    out << "SCCP has no phone devices registered" << endl;
 }
 
 
@@ -957,6 +965,106 @@ void OpalConsoleSkinnyEndPoint::AddCommands(PCLI & cli)
 }
 #endif // P_CLI
 #endif // OPAL_SKINNY
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+#if OPAL_LYNC
+OpalConsoleLyncEndPoint::OpalConsoleLyncEndPoint(OpalConsoleManager & manager)
+: OpalLyncEndPoint(manager)
+, OpalConsoleEndPoint(manager)
+{
+}
+
+
+void OpalConsoleLyncEndPoint::GetArgumentSpec(ostream & strm) const
+{
+  strm << "[Lync options:]"
+          "-no-lync.        Disable Lync (UCMA) protocol\n"
+          "-lync-uri:       Lync URI to register\n"
+          "-lync-password:  Lync password for corresponding URI\n"
+          "-lync-auth-id:   Lync authorisation identifier for corresponding URI\n"
+          "-lync-domain:    Lync authentication domain for corresponding URI\n";
+}
+
+
+bool OpalConsoleLyncEndPoint::Initialise(PArgList & args, bool verbose, const PString & defaultRoute)
+{
+  OpalConsoleManager::LockedStream lockedOutput(m_console);
+  ostream & output = lockedOutput;
+
+  // If we have LIDs speficied in command line, load them
+  if (args.HasOption("no-lync")) {
+    if (verbose)
+      output << "Lync disabled.\n";
+    return true;
+  }
+
+  bool none = true;
+  PStringArray uri = args.GetOptionString("lync-uri").Lines();
+  PStringArray password = args.GetOptionString("lync-password").Lines();
+  PStringArray authID = args.GetOptionString("lync-auth-id").Lines();
+  PStringArray domain = args.GetOptionString("lync-domain").Lines();
+  for (PINDEX i = 0; i < uri.GetSize(); ++i) {
+    UserParams info;
+    info.m_uri = uri[i];
+
+    if (!password.IsEmpty())
+      info.m_password = password[std::min(i, password.GetSize()-1)];
+
+    if (!authID.IsEmpty())
+      info.m_authID = authID[std::min(i, authID.GetSize()-1)];
+
+    if (!domain.IsEmpty())
+      info.m_domain = domain[std::min(i, domain.GetSize()-1)];
+
+    PString registeredURI = RegisterUser(info);
+    if (registeredURI.IsEmpty())
+      output << "Could not register " << info.m_uri << " with Lync server" << endl;
+    else {
+      if (verbose)
+        output << "Lync registered: " << registeredURI << '\n';
+    }
+  }
+
+  if (none && verbose)
+    output << "Lync has no users registered" << endl;
+
+  AddRoutesFor(this, defaultRoute);
+  return true;
+}
+
+
+#if P_CLI
+void OpalConsoleLyncEndPoint::CmdRegister(PCLI::Arguments & args, P_INT_PTR)
+{
+  if (args.GetCount() < 1)
+    args.WriteUsage();
+  else {
+    UserParams info;
+    info.m_uri = args[0];
+    info.m_password = args[1];
+    info.m_authID = args.GetOptionString("auth-id");
+    info.m_domain = args.GetOptionString("domain");
+    PString uri = RegisterUser(info);
+    if (uri.IsEmpty())
+      args.WriteError() << "Could not register \"" << info.m_uri << "\" with Lync server" << endl;
+    else
+      args.GetContext() << "Registered " << uri << " with Lync server." << endl;
+  }
+}
+
+
+void OpalConsoleLyncEndPoint::AddCommands(PCLI & cli)
+{
+  cli.SetCommand("lync register", PCREATE_NOTIFIER(CmdRegister),
+                  "Register Lync URI",
+                  "[ <options> ... ] <address> [ <password> ]",
+                  "a-auth-id: Override user for authorisation\n"
+                  "d-domain: Set domain for authorisation\n");
+}
+#endif // P_CLI
+#endif // OPAL_LYNC
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -2147,10 +2255,21 @@ bool OpalConsoleManager::Initialise(PArgList & args, bool verbose, const PString
   }
 
   for (PINDEX i = 0; i < m_endpointPrefixes.GetSize(); ++i) {
+    if (verbose)
+      output << "---------------------------------\n";
     OpalConsoleEndPoint * ep = GetConsoleEndPoint(m_endpointPrefixes[i]);
-    if (ep != NULL && !ep->Initialise(args, verbose, defaultRoute))
-      return false;
+    if (ep != NULL) {
+      if (!ep->Initialise(args, verbose, defaultRoute))
+        return false;
+    }
+    else {
+      if (verbose)
+        output << m_endpointPrefixes[i] << " unavailable.\n";
+    }
   }
+
+  if (verbose)
+    output << "---------------------------------\n";
 
   PString telProto = args.GetOptionString("tel");
   if (!telProto.IsEmpty()) {
@@ -2310,6 +2429,11 @@ OpalConsoleEndPoint * OpalConsoleManager::GetConsoleEndPoint(const PString & pre
       ep = CreateSkinnyEndPoint();
     else
 #endif // OPAL_SKINNY
+#if OPAL_LYNC
+    if (prefix == OPAL_PREFIX_LYNC)
+      ep = CreateLyncEndPoint();
+    else
+#endif // OPAL_LYNC
 #if OPAL_LID
     if (prefix == OPAL_PREFIX_PSTN)
       ep = CreateLineEndPoint();
@@ -2375,6 +2499,14 @@ OpalConsoleSkinnyEndPoint * OpalConsoleManager::CreateSkinnyEndPoint()
   return new OpalConsoleSkinnyEndPoint(*this);
 }
 #endif // OPAL_SKINNY
+
+
+#if OPAL_LYNC
+OpalConsoleLyncEndPoint * OpalConsoleManager::CreateLyncEndPoint()
+{
+  return new OpalConsoleLyncEndPoint(*this);
+}
+#endif // OPAL_LYNC
 
 
 #if OPAL_LID

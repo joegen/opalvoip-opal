@@ -137,8 +137,8 @@ class OpalEndPoint : public PObject
        See OpalTransportAddress for more details on the syntax of an interface
        definition.
       */
-    PBoolean StartListener(
-      const OpalTransportAddress & iface ///<  Address of interface to listen on.
+    virtual bool StartListener(
+      const PString & address ///<  Address of interface to listen on.
     );
 
     /**Add a listener to the endoint.
@@ -146,7 +146,7 @@ class OpalEndPoint : public PObject
        application should use OnConnectionEstablished() to monitor when calls
        have arrived and been successfully negotiated.
       */
-    PBoolean StartListener(
+    virtual bool StartListener(
       OpalListener * listener ///<  Transport dependent listener.
     );
 

@@ -941,7 +941,9 @@ void OpalCall::SetPartyNames()
     return;
 
   if (connectionB->IsNetworkConnection()) {
-    if (!networkA)
+    if (networkA)
+      connectionB->CopyPartyNames(*connectionA);
+    else
       connectionA->CopyPartyNames(*connectionB);
     m_partyB = connectionB->GetRemotePartyURL();
     m_nameB = connectionB->GetRemotePartyName();

@@ -36,6 +36,7 @@ public class OPALJNI {
   public final static native String OPAL_PREFIX_IM_get();
   public final static native String OPAL_PREFIX_GST_get();
   public final static native String OPAL_PREFIX_SKINNY_get();
+  public final static native String OPAL_PREFIX_LYNC_get();
   public final static native String OPAL_PREFIX_ALL_get();
   public final static native void OpalParamGeneral_audioRecordDevice_set(long jarg1, OpalParamGeneral jarg1_, String jarg2);
   public final static native String OpalParamGeneral_audioRecordDevice_get(long jarg1, OpalParamGeneral jarg1_);

@@ -51,6 +51,7 @@
 #include <im/im_ep.h>
 #include <ep/GstEndPoint.h>
 #include <ep/skinnyep.h>
+#include <ep/lyncep.h>
 
 #include <queue>
 
@@ -1003,6 +1004,10 @@ OpalManager_C::OpalManager_C(unsigned version, const PArgList & args)
   bool hasSkinny = CheckProto(args, OPAL_PREFIX_SKINNY, "<dn>", defProto, defProtoPos);
 #endif
 
+#if OPAL_LYNC
+  bool hasLync = CheckProto(args, OPAL_PREFIX_LYNC, "<dn>", defProto, defProtoPos);
+#endif
+
 #if OPAL_LID
   bool hasPOTS = CheckProto(args, OPAL_PREFIX_POTS, "<dn>", defUser, defUserPos);
   bool hasPSTN = CheckProto(args, OPAL_PREFIX_PSTN, "<dn>", defProto, defProtoPos);
@@ -1058,6 +1063,13 @@ OpalManager_C::OpalManager_C(unsigned version, const PArgList & args)
   if (hasSkinny) {
     new OpalSkinnyEndPoint(*this);
     AddRouteEntry(OPAL_PREFIX_SKINNY":.*=" + defUser);
+  }
+#endif
+
+#if OPAL_LYNC
+  if (hasLync) {
+    new OpalLyncEndPoint(*this);
+    AddRouteEntry(OPAL_PREFIX_LYNC":.*=" + defUser);
   }
 #endif
 
@@ -2071,6 +2083,21 @@ void OpalManager_C::HandleRegistration(const OpalMessage & command, OpalMessageB
     return;
   }
 #endif // OPAL_SKINNY
+
+#if OPAL_LYNC
+  OpalLyncEndPoint * lyncEP = dynamic_cast<OpalLyncEndPoint *>(ep);
+  if (lyncEP != NULL) {
+    OpalLyncEndPoint::UserParams info;
+    info.m_uri = command.m_param.m_registrationInfo.m_identifier;
+    info.m_password = command.m_param.m_registrationInfo.m_password;
+    PString registeredURI = lyncEP->RegisterUser(info);
+    if (registeredURI.IsEmpty())
+      response.SetError("Failed to initiate Lync registration.");
+    else
+      SET_MESSAGE_STRING(response, m_param.m_registrationInfo.m_identifier, registeredURI);
+    return;
+  }
+#endif // OPAL_LYNC
 
     response.SetError("Protocol prefix does not support registration.");
 }

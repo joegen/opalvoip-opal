@@ -753,6 +753,12 @@
     <ClCompile Include="..\codec\opusmf_inc.cxx">
       <Filter>Source Files\Codec</Filter>
     </ClCompile>
+    <ClCompile Include="..\ep\lyncep.cxx">
+      <Filter>Source Files\Endpoints</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ep\lyncshim.cxx">
+      <Filter>Source Files\Endpoints</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\codec\echocancel.h">
@@ -1324,6 +1330,9 @@
     </ClInclude>
     <ClInclude Include="..\..\include\sdp\ice.h">
       <Filter>Header Files\SDP</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\ep\lyncep.h">
+      <Filter>Header Files\Endpoints</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

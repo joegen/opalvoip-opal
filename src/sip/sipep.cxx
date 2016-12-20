@@ -646,42 +646,48 @@ SIPConnection * SIPEndPoint::CreateConnection(const SIPConnection::Init & init)
 }
 
 
-PBoolean SIPEndPoint::SetupTransfer(const PString & token,
-                                    const PString & callId,
+PBoolean SIPEndPoint::SetupTransfer(SIPConnection & transferredConnection,
                                     const PString & remoteParty,
-                                    void * userData)
+                                    const PString & replaces)
 {
-  // Make a new connection
-  PSafePtr<OpalConnection> otherConnection = GetConnectionWithLock(token, PSafeReference);
-  if (otherConnection == NULL)
-    return false;
-
-  OpalCall & call = otherConnection->GetCall();
-
-  PTRACE(3, "Transferring " << *otherConnection << " to " << remoteParty << " in call " << call);
-
   OpalConnection::StringOptions options;
-  if (!callId.IsEmpty())
-    options.SetAt(SIP_HEADER_REPLACES, callId);
-  options.SetAt(SIP_HEADER_REFERRED_BY, otherConnection->GetRedirectingParty());
-  options.SetAt(OPAL_OPT_CALLING_PARTY_URL, otherConnection->GetLocalPartyURL());
+  options.SetAt(SIP_HEADER_REFERRED_BY, transferredConnection.GetRedirectingParty());
+  options.SetAt(OPAL_OPT_CALLING_PARTY_URL, transferredConnection.GetLocalPartyURL());
 
-  SIPConnection::Init init(call, *this);
+  if (!replaces.IsEmpty()) {
+    options.SetAt(SIP_HEADER_REPLACES, replaces);
+    PSafePtr<SIPConnection> replacedConnection = GetSIPConnectionWithLock(replaces, PSafeReference);
+    if (replacedConnection != NULL) {
+      // We are transferring to another part of our system, see if it can be short circuited.
+      PSafePtr<OpalConnection> transferredOtherConnection = transferredConnection.GetOtherPartyConnection();
+      PSafePtr<OpalConnection> replacedOtherConnection = replacedConnection->GetOtherPartyConnection();
+      if (transferredOtherConnection != NULL && replacedOtherConnection != NULL &&
+          transferredOtherConnection->GetPrefixName() == replacedOtherConnection->GetPrefixName() &&
+          transferredOtherConnection->TransferConnection(replacedOtherConnection->GetToken()))
+      {
+        PTRACE(3, "Bypassed transfer of " << *transferredOtherConnection << " to " << *replacedOtherConnection);
+        return true;
+      }
+    }
+  }
+
+  PTRACE(3, "Transferring " << transferredConnection << " to " << remoteParty << (replaces.IsEmpty() ? "" : " replacing ") << replaces);
+
+  SIPConnection::Init init(transferredConnection.GetCall(), *this);
   init.m_token = SIPURL::GenerateTag();
-  init.m_userData = userData;
   init.m_address = TranslateENUM(remoteParty);
   init.m_stringOptions = &options;
-  SIPConnection * connection = CreateConnection(init);
-  if (!AddConnection(connection))
+  SIPConnection * newConnection = CreateConnection(init);
+  if (!AddConnection(newConnection))
     return false;
 
-  if (remoteParty.Find(";OPAL-" OPAL_SIP_REFERRED_CONNECTION) == P_MAX_INDEX)
-    otherConnection->Release(OpalConnection::EndedByCallForwarded);
+  if (remoteParty.Find(OPAL_MAKE_URL_PARAM(OPAL_SIP_REFERRED_CONNECTION)) == P_MAX_INDEX)
+    transferredConnection.Release(OpalConnection::EndedByCallForwarded);
   else
-    otherConnection->SetPhase(OpalConnection::ForwardingPhase);
-  otherConnection->CloseMediaStreams();
+    transferredConnection.SetPhase(OpalConnection::ForwardingPhase);
+  transferredConnection.CloseMediaStreams();
 
-  return connection->SetUpConnection();
+  return newConnection->SetUpConnection();
 }
 
 
