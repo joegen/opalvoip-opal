@@ -247,7 +247,9 @@ PBoolean MyProcess::Initialise(const char * initMsg)
   PServiceHTML cfgHTML("System Parameters");
   params.m_configPage->BuildHTML(cfgHTML);
 
+#if OPAL_PTLIB_HTTP && OPAL_PTLIB_SSL
   m_httpNameSpace.AddResource(new OpalHTTPConnector(*m_manager, "/websocket", params.m_authority), PHTTPSpace::Overwrite);
+#endif // OPAL_PTLIB_HTTP && OPAL_PTLIB_SSL
 #if OPAL_SDP
   m_httpNameSpace.AddResource(new OpalSDPHTTPResource(*m_manager->FindEndPointAs<OpalSDPHTTPEndPoint>(OPAL_PREFIX_SDP), "/sdp", params.m_authority), PHTTPSpace::Overwrite);
 #endif
