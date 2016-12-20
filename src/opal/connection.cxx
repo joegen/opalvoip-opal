@@ -1537,7 +1537,7 @@ PString OpalConnection::GetCalledPartyURL()
 void OpalConnection::CopyPartyNames(const OpalConnection & other)
 {
   if (IsNetworkConnection()) {
-    m_localPartyName = other.GetRemotePartyURL();
+    m_localPartyName = other.GetRemoteIdentity();
     if (m_localPartyName.NumCompare(other.GetPrefixName()+':') == EqualTo)
       m_localPartyName.Delete(0, other.GetPrefixName().GetLength()+1);
     if (m_localPartyName.NumCompare(GetPrefixName()+':') != EqualTo)
