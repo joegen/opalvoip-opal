@@ -55,22 +55,24 @@ int const OpalLyncShim::CallStateEstablishing = (int)Collaboration::CallState::E
 int const OpalLyncShim::CallStateEstablished = (int)Collaboration::CallState::Established;
 int const OpalLyncShim::CallStateTerminating = (int)Collaboration::CallState::Terminating;
 
+int const OpalLyncShim::MediaFlowActive = (int)Collaboration::MediaFlowState::Active;
+
 #if PTRACING
 std::string OpalLyncShim::GetCallStateName(int callState)
 {
   return marshal_as<std::string>(((Collaboration::CallState)callState).ToString());
 }
-#endif
 
+std::string OpalLyncShim::GetTransferStateName(int transferState)
+{
+  return marshal_as<std::string>(((Microsoft::Rtc::Signaling::ReferState)transferState).ToString());
+}
 
-int const OpalLyncShim::MediaFlowActive = (int)Collaboration::MediaFlowState::Active;
-
-#if PTRACING
 std::string OpalLyncShim::GetMediaFlowName(int mediaFlow)
 {
   return marshal_as<std::string>(((Collaboration::MediaFlowState)mediaFlow).ToString());
 }
-#endif
+#endif // PTRACING
 
 
 struct OpalLyncShim::ApplicationEndpoint : gcroot<Collaboration::ApplicationEndpoint^>
@@ -162,6 +164,11 @@ ref class OpalLyncShim_Notifications : public System::Object
 
     void RegisterForCallNotifications(Collaboration::AudioVideo::AudioVideoCall^ call)
     {
+	  call->TransferReceived += gcnew System::EventHandler<Collaboration::AudioVideo::AudioVideoCallTransferReceivedEventArgs^>
+                                                                      (this, &OpalLyncShim_Notifications::CallTransferReceived);
+	  call->TransferStateChanged += gcnew System::EventHandler<Collaboration::TransferStateChangedEventArgs^>
+                                                (this, &OpalLyncShim_Notifications::CallTransferStateChanged);
+
       call->StateChanged += gcnew System::EventHandler<Collaboration::CallStateChangedEventArgs^>
                                             (this, &OpalLyncShim_Notifications::CallStateChanged);
       call->AudioVideoFlowConfigurationRequested += gcnew System::EventHandler<Collaboration::AudioVideo::AudioVideoFlowConfigurationRequestedEventArgs^>
@@ -172,6 +179,16 @@ ref class OpalLyncShim_Notifications : public System::Object
     {
       m_shim.OnLyncCallStateChanged((int)args->PreviousState, (int)args->State);
     }
+
+	void CallTransferReceived(System::Object^ /*sender*/, Collaboration::AudioVideo::AudioVideoCallTransferReceivedEventArgs^ args)
+	{
+		m_shim.OnLyncCallTransferReceived(marshal_as<std::string>(args->TransferDestination), marshal_as<std::string>(args->TransferredBy));
+	}
+
+	void CallTransferStateChanged(System::Object^ /*sender*/, Collaboration::TransferStateChangedEventArgs^ args)
+	{
+		m_shim.OnLyncCallTransferStateChanged((int)args->PreviousState, (int)args->State);
+	}
 
     void AudioVideoFlowConfigurationRequested(System::Object^, Collaboration::AudioVideo::AudioVideoFlowConfigurationRequestedEventArgs^ args)
     {
@@ -521,8 +538,11 @@ bool OpalLyncShim::AcceptAudioVideoCall(AudioVideoCall & call)
 bool OpalLyncShim::TransferAudioVideoCall(AudioVideoCall & call, AudioVideoCall & target)
 {
   try {
-    Collaboration::CallTransferOptions^ options = gcnew Collaboration::CallTransferOptions(Collaboration::CallTransferType::Attended);
-    call->EndTransfer(call->BeginTransfer(target, options, nullptr, nullptr));
+	  PTRACE(4, "TransferAudioVideoCall, invoking transfer:"
+                " call-id=" << marshal_as<std::string>(call->CallId) << ","
+                " target-id=" << marshal_as<std::string>(target->CallId) << ","
+                " mode=default ");
+	  call->EndTransfer(call->BeginTransfer(target, nullptr, nullptr));
   }
   catch (System::Exception^ err) {
     m_lastError = marshal_as<std::string>(err->ToString());
@@ -536,6 +556,10 @@ bool OpalLyncShim::TransferAudioVideoCall(AudioVideoCall & call, AudioVideoCall 
 bool OpalLyncShim::TransferAudioVideoCall(AudioVideoCall & call, const char * targetURI)
 {
   try {
+	PTRACE(4, "TransferAudioVideoCall, invoking transfer:"
+              " call-Id=" << marshal_as<std::string>(call->CallId)  << ","
+              " URI=" << targetURI << ","
+              " mode=Unattended ");
     Collaboration::CallTransferOptions^ options = gcnew Collaboration::CallTransferOptions(Collaboration::CallTransferType::Unattended);
     call->EndTransfer(call->BeginTransfer(marshal_as<System::String^>(targetURI), options, nullptr, nullptr));
   }

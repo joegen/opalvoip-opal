@@ -112,6 +112,7 @@ class OpalLyncShim
     static int const CallStateTerminating;
 #if PTRACING
     static std::string GetCallStateName(int callState);
+	static std::string GetTransferStateName(int transferState);
 #endif
 
     static int const MediaFlowActive;
@@ -128,6 +129,9 @@ class OpalLyncShim
     };
     virtual void OnIncomingLyncCall(const IncomingLyncCallInfo & /*info*/) { }
     virtual void OnLyncCallStateChanged(int /*previousState*/, int /*newState*/) { }
+	virtual void OnLyncCallTransferReceived(const std::string & /*TransferDestination*/, const std::string & /*TransferredBy*/) { }
+	virtual void OnLyncCallTransferStateChanged(int /*previousState*/, int /*newState*/) { }
+
     virtual void OnLyncCallFailed(const std::string & /*error*/) { }
     virtual void OnMediaFlowStateChanged(int /*previousState*/, int /*newState*/) { }
     virtual bool OnApplicationProvisioning(ApplicationEndpoint * aep);
@@ -435,6 +439,9 @@ class OpalLyncConnection : public OpalConnection, public OpalLyncShimBase
     bool             m_mediaActive;
 
     virtual void OnLyncCallStateChanged(int previousState, int newState) override;
+	virtual void OnLyncCallTransferReceived(const std::string & transferDestination, const std::string & tansferredBy) override;
+	virtual void OnLyncCallTransferStateChanged(int previousState, int newState) override;
+
     virtual void OnLyncCallFailed(const std::string & error) override;
     virtual void OnMediaFlowStateChanged(int previousState, int newState) override;
 

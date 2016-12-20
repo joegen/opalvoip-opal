@@ -422,6 +422,19 @@ void OpalLyncConnection::OnLyncCallStateChanged(int PTRACE_PARAM(previousState),
 }
 
 
+void OpalLyncConnection::OnLyncCallTransferReceived(const std::string & transferDestination, const std::string & tansferredBy) 
+{
+  PTRACE(3, "Lync UCMA call Transfer Received - destination " << transferDestination << " by " << tansferredBy);
+}
+
+
+void OpalLyncConnection::OnLyncCallTransferStateChanged(int previousState, int newState) 
+{
+  PTRACE(3, "Lync UCMA call transfer state changed from " << GetTransferStateName(previousState) << " to " << GetTransferStateName(newState));
+}
+
+
+
 void OpalLyncConnection::OnLyncCallFailed(const std::string & error)
 {
   PTRACE(2, "Failed to establish Lync UCMA call: " << error);
