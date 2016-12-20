@@ -81,7 +81,7 @@ class OpalLyncShim
     void DestroyConversation(Conversation * & conv);
 
     struct AudioVideoCall;
-    AudioVideoCall * CreateAudioVideoCall(Conversation & conv, const char * uri, bool answering);
+    AudioVideoCall * CreateAudioVideoCall(Conversation & conv, const char * uri);
     bool AcceptAudioVideoCall(AudioVideoCall & call);
     bool TransferAudioVideoCall(AudioVideoCall & call, const char * targetURI);
     bool TransferAudioVideoCall(AudioVideoCall & call, AudioVideoCall & target);

@@ -378,7 +378,7 @@ PBoolean OpalLyncConnection::SetUpConnection()
   PString otherParty = GetRemotePartyURL();
   m_endpoint.AdjustLyncURI(otherParty);
 
-  m_audioVideoCall = CreateAudioVideoCall(*m_conversation, otherParty, false);
+  m_audioVideoCall = CreateAudioVideoCall(*m_conversation, otherParty);
   if (m_audioVideoCall == nullptr) {
     PTRACE(2, "Error creating Lync UCMA conversation: " << GetLastError());
     Release(EndedByIllegalAddress);

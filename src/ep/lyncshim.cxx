@@ -480,7 +480,7 @@ void OpalLyncShim::DestroyConversation(Conversation * & conv)
 }
 
 
-OpalLyncShim::AudioVideoCall * OpalLyncShim::CreateAudioVideoCall(Conversation & conv, const char * uri, bool answering)
+OpalLyncShim::AudioVideoCall * OpalLyncShim::CreateAudioVideoCall(Conversation & conv, const char * uri)
 {
   m_lastError.clear();
 
@@ -489,13 +489,10 @@ OpalLyncShim::AudioVideoCall * OpalLyncShim::CreateAudioVideoCall(Conversation &
     call = gcnew Collaboration::AudioVideo::AudioVideoCall(conv);
     m_notifications->RegisterForCallNotifications(call);
 
-    if (answering) {
-    }
-    else
-      call->BeginEstablish(marshal_as<System::String^>(uri),
-                           nullptr,
-                           gcnew System::AsyncCallback(m_notifications, &OpalLyncShim_Notifications::CallEndEstablish),
-                           call);
+    call->BeginEstablish(marshal_as<System::String^>(uri),
+                          nullptr,
+                          gcnew System::AsyncCallback(m_notifications, &OpalLyncShim_Notifications::CallEndEstablish),
+                          call);
   }
   catch (System::Exception^ err) {
     m_lastError = marshal_as<std::string>(err->ToString());
