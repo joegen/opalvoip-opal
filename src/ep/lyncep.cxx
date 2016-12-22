@@ -362,6 +362,8 @@ PBoolean OpalLyncConnection::SetUpConnection()
 
   PString localParty = m_stringOptions(OPAL_OPT_CALLING_PARTY_URL, GetLocalPartyName());
   m_endpoint.AdjustLyncURI(localParty);
+  if (OpalIsE164(localParty(localParty.Find(':')+1, localParty.Find('@')-1)))
+    localParty += ";user=phone";
 
   ApplicationEndpoint * aep = m_endpoint.GetRegisteredApplication();
   if (aep != NULL)
