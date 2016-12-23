@@ -519,7 +519,8 @@ ostream & operator<<(ostream & strm, OpalMediaTransportChannelTypes::SubChannels
 
 
 OpalMediaTransport::OpalMediaTransport(const PString & name)
-  : m_name(name)
+  : PSafeObject(m_instrumentedMutex)
+  , m_name(name)
   , m_remoteBehindNAT(false)
   , m_remoteAddressSet(false)
   , m_packetSize(2048)
@@ -1215,7 +1216,8 @@ PUDPSocket * OpalUDPMediaTransport::GetSubChannelAsSocket(SubChannels subchannel
 /////////////////////////////////////////////////////////////////////////////
 
 OpalMediaSession::OpalMediaSession(const Init & init)
-  : m_connection(init.m_connection)
+  : PSafeObject(m_instrumentedMutex)
+  , m_connection(init.m_connection)
   , m_sessionId(init.m_sessionId)
   , m_mediaType(init.m_mediaType)
   , m_remoteBehindNAT(init.m_remoteBehindNAT)

@@ -348,7 +348,9 @@ ostream & operator<<(ostream & strm, OpalMediaTransportChannelTypes::SubChannels
 class OpalMediaTransport : public PSafeObject, public OpalMediaTransportChannelTypes
 {
     PCLASSINFO(OpalMediaTransport, PSafeObject);
-public:
+  private:
+    PDECLARE_INSTRUMENTED_READ_WRITE_MUTEX(m_instrumentedMutex, OpalMediaTransport, 500, 100);
+  public:
     OpalMediaTransport(const PString & name);
     ~OpalMediaTransport() { InternalStop(); }
 
@@ -554,6 +556,8 @@ class OpalUDPMediaTransport : public OpalMediaTransport
 class OpalMediaSession : public PSafeObject, public OpalMediaTransportChannelTypes
 {
     PCLASSINFO(OpalMediaSession, PSafeObject);
+  private:
+    PDECLARE_INSTRUMENTED_READ_WRITE_MUTEX(m_instrumentedMutex, OpalMediaSession, 500, 100);
   public:
     /// Initialisation information for constructing a session
     struct Init {

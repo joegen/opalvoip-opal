@@ -56,7 +56,8 @@
 /////////////////////////////////////////////////////////////////////////////
 
 OpalMediaPatch::OpalMediaPatch(OpalMediaStream & src)
-  : m_source(src)
+  : PSafeObject(m_instrumentedMutex)
+  , m_source(src)
   , m_bypassToPatch(NULL)
   , m_bypassFromPatch(NULL)
   , m_patchThread(NULL)

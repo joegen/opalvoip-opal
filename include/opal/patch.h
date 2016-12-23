@@ -60,6 +60,8 @@ class OpalTranscoder;
 class OpalMediaPatch : public PSafeObject
 {
     PCLASSINFO(OpalMediaPatch, PObject);
+  private:
+    PDECLARE_INSTRUMENTED_READ_WRITE_MUTEX(m_instrumentedMutex, OpalMediaPatch, 500, 100);
   public:
   /**@name Construction */
   //@{
