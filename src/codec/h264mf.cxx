@@ -237,7 +237,31 @@ struct OpalKeyFrameDetectorH264 : OpalVideoFormat::FrameDetector
           m_gotPPS = true;
           return OpalVideoFormat::e_NonFrameBoundary;
 
-        case 28: // Fragment
+        case 25 : // STAP-B
+          if (size < 4)
+            break;
+          rtp += 2; // Skip the DON
+          size -= 2;
+          // Do STAP-A case
+
+        case 24 : // STAP-A
+          while (size > 2) {
+            PINDEX aggLen = *(PUInt16b *)rtp;
+            rtp += 2;
+            size -= 2;
+            if (aggLen > size)
+              break;
+
+            OpalVideoFormat::FrameType type = GetFrameType(rtp, aggLen);
+            if (type != OpalVideoFormat::e_NonFrameBoundary)
+              return type;
+
+            rtp += aggLen;
+            size -= aggLen;
+          }
+          break;
+
+        case 28: // FU-A (fragment)
           if ((*rtp & 0x80) != 0)
             return GetFrameType(rtp, size - 1);
       }
