@@ -129,7 +129,7 @@ PBoolean OpalLyncEndPoint::GarbageCollection()
 bool OpalLyncEndPoint::OnApplicationProvisioning(ApplicationEndpoint * aep)
 {
   if (m_applicationRegistration != nullptr) {
-    PTRACE(2, "Cannot rpovision, already registered for application.");
+    PTRACE(2, "Cannot provision, already registered for application.");
     return false;
   }
 
@@ -308,6 +308,7 @@ OpalLyncConnection::OpalLyncConnection(OpalCall & call,
   , m_conversation(nullptr)
   , m_audioVideoCall(nullptr)
   , m_flow(nullptr)
+  , m_toneController(nullptr)
   , m_mediaActive(false)
 {
 }
@@ -431,19 +432,6 @@ void OpalLyncConnection::OnLyncCallStateChanged(int PTRACE_PARAM(previousState),
 }
 
 
-void OpalLyncConnection::OnLyncCallTransferReceived(const std::string & transferDestination, const std::string & tansferredBy) 
-{
-  PTRACE(3, "Lync UCMA call Transfer Received - destination " << transferDestination << " by " << tansferredBy);
-}
-
-
-void OpalLyncConnection::OnLyncCallTransferStateChanged(int previousState, int newState) 
-{
-  PTRACE(3, "Lync UCMA call transfer state changed from " << GetTransferStateName(previousState) << " to " << GetTransferStateName(newState));
-}
-
-
-
 void OpalLyncConnection::OnLyncCallFailed(const std::string & error)
 {
   PTRACE(2, "Failed to establish Lync UCMA call: " << error);
@@ -462,6 +450,9 @@ void OpalLyncConnection::OnLyncCallFailed(const std::string & error)
 void OpalLyncConnection::OnReleased()
 {
   OpalConnection::OnReleased();
+
+  PTRACE(4, "DestroyToneController " << *this);
+  DestroyToneController(m_toneController);
 
   PTRACE(4, "DestroyAudioVideoFlow " << *this);
   DestroyAudioVideoFlow(m_flow);
@@ -535,6 +526,18 @@ bool OpalLyncConnection::TransferConnection(const PString & remoteParty)
 }
 
 
+void OpalLyncConnection::OnLyncCallTransferReceived(const std::string & transferDestination, const std::string & tansferredBy) 
+{
+  PTRACE(3, "Lync UCMA call Transfer Received - destination " << transferDestination << " by " << tansferredBy);
+}
+
+
+void OpalLyncConnection::OnLyncCallTransferStateChanged(int previousState, int newState) 
+{
+  PTRACE(3, "Lync UCMA call transfer state changed from " << GetTransferStateName(previousState) << " to " << GetTransferStateName(newState));
+}
+
+
 OpalMediaStream * OpalLyncConnection::CreateMediaStream(const OpalMediaFormat & mediaFormat,
                                                         unsigned sessionID,
                                                         PBoolean isSource)
@@ -549,9 +552,47 @@ void OpalLyncConnection::OnMediaFlowStateChanged(int previousState, int newState
 
   m_mediaActive = newState == MediaFlowActive;
   if (m_mediaActive && previousState != MediaFlowActive && !IsReleased()) {
+    m_toneController = CreateToneController(*m_flow);
+    PTRACE_IF(2, m_toneController == nullptr, "Error creating Lync UCMA ToneController for " << *this << ": " << GetLastError());
+
     AutoStartMediaStreams();
     InternalOnEstablished();
   }
+}
+
+
+static PConstString const ToneChars("0123456789*#ABCD!");
+
+void OpalLyncConnection::OnLyncCallToneReceived(int toneId, float volume)
+{
+  PTRACE(4, "OnLyncToneReceived: toneId=" << toneId << ", DTMF=" << GetToneIdName(toneId) << ", volume=" << volume);
+  if (toneId >= 0 && toneId < ToneChars.GetLength())
+    OnUserInputTone(ToneChars[toneId], 100);
+}
+
+
+void OpalLyncConnection::OnLyncCallIncomingFaxDetected()
+{
+  PTRACE(4, "OnLyncIncomingFaxDetected");
+}
+
+
+PBoolean OpalLyncConnection::SendUserInputTone(char tone, unsigned /*duration*/)
+{
+  if (m_toneController == nullptr) {
+    PTRACE(2, "Tone Controller not available yet.");
+    return false;
+  }
+
+  PINDEX toneId = ToneChars.Find(tone);
+  if (!PAssert(toneId != P_MAX_INDEX, PInvalidParameter))
+    return false;
+
+  if (SendTone(*m_toneController, toneId))
+    return true;
+
+  PTRACE(2, "Could not send tone to Lync UCMA connectiobn " << *this << " : " << GetLastError());
+  return false;
 }
 
 
@@ -599,6 +640,7 @@ PBoolean OpalLyncMediaStream::Open()
       PTRACE(2, "Error creating Lync UCMA SpeechRecognitionConnector for " << *this << ": " << GetLastError());
       return false;
     }
+
     m_avStream = CreateAudioVideoStream(*m_inputConnector);
   }
   else {

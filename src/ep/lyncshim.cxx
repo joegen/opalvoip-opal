@@ -68,6 +68,11 @@ std::string OpalLyncShim::GetTransferStateName(int transferState)
   return marshal_as<std::string>(((Microsoft::Rtc::Signaling::ReferState)transferState).ToString());
 }
 
+std::string OpalLyncShim::GetToneIdName(int toneId)
+{
+  return marshal_as<std::string>(((Microsoft::Rtc::Collaboration::AudioVideo::ToneId)toneId).ToString());
+}
+
 std::string OpalLyncShim::GetMediaFlowName(int mediaFlow)
 {
   return marshal_as<std::string>(((Collaboration::MediaFlowState)mediaFlow).ToString());
@@ -112,6 +117,10 @@ struct OpalLyncShim::SpeechRecognitionConnector : gcroot<Collaboration::AudioVid
   SpeechRecognitionConnector(Collaboration::AudioVideo::SpeechRecognitionConnector^ p) : gcroot<Collaboration::AudioVideo::SpeechRecognitionConnector^>(p) { }
 };
 
+struct OpalLyncShim::ToneController : gcroot<Collaboration::AudioVideo::ToneController^>
+{
+  ToneController(Collaboration::AudioVideo::ToneController^ p) : gcroot<Collaboration::AudioVideo::ToneController^>(p) { }
+};
 
 struct OpalLyncShim::SpeechSynthesisConnector : gcroot<Collaboration::AudioVideo::SpeechSynthesisConnector^>
 {
@@ -164,9 +173,9 @@ ref class OpalLyncShim_Notifications : public System::Object
 
     void RegisterForCallNotifications(Collaboration::AudioVideo::AudioVideoCall^ call)
     {
-	  call->TransferReceived += gcnew System::EventHandler<Collaboration::AudioVideo::AudioVideoCallTransferReceivedEventArgs^>
+      call->TransferReceived += gcnew System::EventHandler<Collaboration::AudioVideo::AudioVideoCallTransferReceivedEventArgs^>
                                                                       (this, &OpalLyncShim_Notifications::CallTransferReceived);
-	  call->TransferStateChanged += gcnew System::EventHandler<Collaboration::TransferStateChangedEventArgs^>
+      call->TransferStateChanged += gcnew System::EventHandler<Collaboration::TransferStateChangedEventArgs^>
                                                 (this, &OpalLyncShim_Notifications::CallTransferStateChanged);
 
       call->StateChanged += gcnew System::EventHandler<Collaboration::CallStateChangedEventArgs^>
@@ -180,15 +189,15 @@ ref class OpalLyncShim_Notifications : public System::Object
       m_shim.OnLyncCallStateChanged((int)args->PreviousState, (int)args->State);
     }
 
-	void CallTransferReceived(System::Object^ /*sender*/, Collaboration::AudioVideo::AudioVideoCallTransferReceivedEventArgs^ args)
-	{
-		m_shim.OnLyncCallTransferReceived(marshal_as<std::string>(args->TransferDestination), marshal_as<std::string>(args->TransferredBy));
-	}
+    void CallTransferReceived(System::Object^ /*sender*/, Collaboration::AudioVideo::AudioVideoCallTransferReceivedEventArgs^ args)
+    {
+      m_shim.OnLyncCallTransferReceived(marshal_as<std::string>(args->TransferDestination), marshal_as<std::string>(args->TransferredBy));
+    }
 
-	void CallTransferStateChanged(System::Object^ /*sender*/, Collaboration::TransferStateChangedEventArgs^ args)
-	{
-		m_shim.OnLyncCallTransferStateChanged((int)args->PreviousState, (int)args->State);
-	}
+    void CallTransferStateChanged(System::Object^ /*sender*/, Collaboration::TransferStateChangedEventArgs^ args)
+    {
+      m_shim.OnLyncCallTransferStateChanged((int)args->PreviousState, (int)args->State);
+    }
 
     void AudioVideoFlowConfigurationRequested(System::Object^, Collaboration::AudioVideo::AudioVideoFlowConfigurationRequestedEventArgs^ args)
     {
@@ -211,6 +220,27 @@ ref class OpalLyncShim_Notifications : public System::Object
       catch (System::Exception^ err) {
         m_shim.OnLyncCallFailed(marshal_as<std::string>(err->ToString()));
       }
+    }
+
+    void RegisterForToneNotifications(Collaboration::AudioVideo::ToneController^ toneController)
+    {
+        // Subscribe to callback to receive DTMFs
+      toneController->ToneReceived += gcnew System::EventHandler<Collaboration::AudioVideo::ToneControllerEventArgs^>
+                                                                    (this, &OpalLyncShim_Notifications::ToneReceived);
+
+      // Subscribe to callback to receive fax tones
+      toneController->IncomingFaxDetected += gcnew System::EventHandler<Collaboration::AudioVideo::IncomingFaxDetectedEventArgs^>
+                                                                         (this, &OpalLyncShim_Notifications::IncomingFaxDetected);
+    }
+
+    void ToneReceived(System::Object^ /*sender*/, Collaboration::AudioVideo::ToneControllerEventArgs^ args)
+    {
+      m_shim.OnLyncCallToneReceived(args->Tone, args->Volume);
+    }
+
+    void IncomingFaxDetected(System::Object^ /*sender*/, Collaboration::AudioVideo::IncomingFaxDetectedEventArgs^ /* args */)
+    {
+      m_shim.OnLyncCallIncomingFaxDetected();
     }
 };
 
@@ -448,6 +478,9 @@ OpalLyncShim::Conversation * OpalLyncShim::CreateConversation(ApplicationEndpoin
   try {
     Collaboration::ConversationSettings^ cs = gcnew Collaboration::ConversationSettings();
     conv = gcnew Collaboration::Conversation(aep, cs);
+    PTRACE(4, "Impersonating Uri=" << (uri != NULL && *uri != '\0' ? uri : "NULL") 
+           << ", phoneUri=" << (phone != NULL && *phone != '\0' ? phone : "NULL")
+           << ", display name=" << (display != NULL && *display != '\0' ? display : "NULL"));
     conv->Impersonate(GetNonEmptyString(uri), GetNonEmptyString(phone), GetNonEmptyString(display));
   }
   catch (System::Exception^ err) {
@@ -538,11 +571,11 @@ bool OpalLyncShim::AcceptAudioVideoCall(AudioVideoCall & call)
 bool OpalLyncShim::TransferAudioVideoCall(AudioVideoCall & call, AudioVideoCall & target)
 {
   try {
-	  PTRACE(4, "TransferAudioVideoCall, invoking transfer:"
-                " call-id=" << marshal_as<std::string>(call->CallId) << ","
-                " target-id=" << marshal_as<std::string>(target->CallId) << ","
-                " mode=default ");
-	  call->EndTransfer(call->BeginTransfer(target, nullptr, nullptr));
+    PTRACE(4, "TransferAudioVideoCall, invoking transfer:"
+              " call-id=" << marshal_as<std::string>(call->CallId) << ","
+              " target-id=" << marshal_as<std::string>(target->CallId) << ","
+              " mode=default ");
+    call->EndTransfer(call->BeginTransfer(target, nullptr, nullptr));
   }
   catch (System::Exception^ err) {
     m_lastError = marshal_as<std::string>(err->ToString());
@@ -556,7 +589,7 @@ bool OpalLyncShim::TransferAudioVideoCall(AudioVideoCall & call, AudioVideoCall 
 bool OpalLyncShim::TransferAudioVideoCall(AudioVideoCall & call, const char * targetURI)
 {
   try {
-	PTRACE(4, "TransferAudioVideoCall, invoking transfer:"
+    PTRACE(4, "TransferAudioVideoCall, invoking transfer:"
               " call-Id=" << marshal_as<std::string>(call->CallId)  << ","
               " URI=" << targetURI << ","
               " mode=Unattended ");
@@ -630,6 +663,56 @@ void OpalLyncShim::DestroySpeechRecognitionConnector(SpeechRecognitionConnector 
   if (connector != nullptr) {
     (*connector)->DetachFlow();
     DeleteAndSetNull(connector);
+  }
+}
+
+OpalLyncShim::ToneController * OpalLyncShim::CreateToneController(AudioVideoFlow & flow)
+{
+  m_lastError.clear();
+
+  PTRACE(4, "CreateToneController:"
+            " Tone=" << (flow->ToneEnabled ? "enabled" : "disabled") << ","
+            " Policy=" << marshal_as<std::string>(flow->TonePolicy.ToString()) << ","
+            " call id=" << marshal_as<std::string>(flow->Call->CallId));
+
+  Collaboration::AudioVideo::ToneController^ toneController;
+  try {
+    toneController = gcnew Collaboration::AudioVideo::ToneController();
+
+    // Subscribe to callback to receive DTMFs
+    m_notifications->RegisterForToneNotifications(toneController);
+
+    toneController->AttachFlow(flow);
+  }
+  catch (System::Exception^ err) {
+    m_lastError = marshal_as<std::string>(err->ToString());
+    return nullptr;
+  }
+
+  return new ToneController(toneController);
+}
+
+
+bool OpalLyncShim::SendTone(ToneController & toneController, int toneId)
+{
+  m_lastError.clear();
+
+  try {
+    toneController->Send((Collaboration::AudioVideo::ToneId)toneId);
+  }
+  catch (System::Exception^ err) {
+    m_lastError = marshal_as<std::string>(err->ToString());
+    return false;
+  }
+
+  return true;
+}
+
+void OpalLyncShim::DestroyToneController(ToneController * & toneController)
+{
+  if (toneController != nullptr) {
+    (*toneController)->DetachFlow();
+    DeleteAndSetNull(toneController);
   }
 }
 
