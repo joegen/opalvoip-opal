@@ -83,6 +83,7 @@ class OpalLyncShim
     struct AudioVideoCall;
     AudioVideoCall * CreateAudioVideoCall(Conversation & conv, const char * uri);
     bool AcceptAudioVideoCall(AudioVideoCall & call);
+    bool ForwardAudioVideoCall(AudioVideoCall & call, const char * targetURI);
     bool TransferAudioVideoCall(AudioVideoCall & call, const char * targetURI);
     bool TransferAudioVideoCall(AudioVideoCall & call, AudioVideoCall & target);
     void DestroyAudioVideoCall(AudioVideoCall * & call);
@@ -405,6 +406,19 @@ class OpalLyncConnection : public OpalConnection, public OpalLyncShimBase
     /**Indicate to remote endpoint we are connected.
       */
     virtual PBoolean SetConnected();
+
+    /**Forward incoming call to specified address.
+       This would typically be called from within the OnIncomingCall()
+       function when an application wishes to redirct an unwanted incoming
+       call.
+
+       The return value is true if the call is to be forwarded, false
+       otherwise. Note that if the call is forwarded the current connection is
+       cleared with teh ended call code of EndedByCallForwarded.
+      */
+    virtual PBoolean ForwardCall(
+      const PString & forwardParty   ///<  Party to forward call to.
+    );
 
     /**Initiate the transfer of an existing call (connection) to a new remote 
        party.

@@ -568,10 +568,27 @@ bool OpalLyncShim::AcceptAudioVideoCall(AudioVideoCall & call)
 }
 
 
+bool OpalLyncShim::ForwardAudioVideoCall(AudioVideoCall & call, const char * targetURI)
+{
+  try {
+    PTRACE(4, "ForwardAudioVideoCall:"
+              " call-Id=" << marshal_as<std::string>(call->CallId)  << ","
+              " URI=" << targetURI);
+    call->Forward(marshal_as<System::String^>(targetURI));
+  }
+  catch (System::Exception^ err) {
+    m_lastError = marshal_as<std::string>(err->ToString());
+    return false;
+  }
+
+  return true;
+}
+
+
 bool OpalLyncShim::TransferAudioVideoCall(AudioVideoCall & call, AudioVideoCall & target)
 {
   try {
-    PTRACE(4, "TransferAudioVideoCall, invoking transfer:"
+    PTRACE(4, "TransferAudioVideoCall:"
               " call-id=" << marshal_as<std::string>(call->CallId) << ","
               " target-id=" << marshal_as<std::string>(target->CallId) << ","
               " mode=default ");
@@ -589,7 +606,7 @@ bool OpalLyncShim::TransferAudioVideoCall(AudioVideoCall & call, AudioVideoCall 
 bool OpalLyncShim::TransferAudioVideoCall(AudioVideoCall & call, const char * targetURI)
 {
   try {
-    PTRACE(4, "TransferAudioVideoCall, invoking transfer:"
+    PTRACE(4, "TransferAudioVideoCall:"
               " call-Id=" << marshal_as<std::string>(call->CallId)  << ","
               " URI=" << targetURI << ","
               " mode=Unattended ");

@@ -492,15 +492,36 @@ PBoolean OpalLyncConnection::SetConnected()
 }
 
 
+PBoolean OpalLyncConnection::ForwardCall(const PString & forwardParty)
+{
+  if (!PAssert(m_audioVideoCall != nullptr, PLogicError))
+    return false;
+
+  if (IsEstablished()) {
+    PTRACE(4, "Call established, cannot forward Lync UCMA call on " << *this << " to \"" << forwardParty << '"');
+    return false;
+  }
+
+  PString uri = forwardParty;
+  m_endpoint.AdjustLyncURI(uri);
+  if (ForwardAudioVideoCall(*m_audioVideoCall, uri)) {
+    PTRACE(3, "Transferred Lync UCMA call on " << *this << " to \"" << forwardParty << '"');
+    Release(EndedByCallForwarded);
+    return true;
+  }
+
+  PTRACE(2, "Failed to transfer Lync UCMA call to \"" << forwardParty << "\" : " << GetLastError());
+  return false;
+}
+
+
 bool OpalLyncConnection::TransferConnection(const PString & remoteParty)
 {
   if (!PAssert(m_audioVideoCall != nullptr, PLogicError))
     return false;
 
-  if (!IsEstablished()) {
-    PTRACE(4, "Not yet established, cannot transfer Lync UCMA call on " << *this << " to \"" << remoteParty << '"');
-    return false;
-  }
+  if (!IsEstablished())
+    return ForwardCall(remoteParty);
 
   PSafePtr<OpalLyncConnection> otherConnection = m_endpoint.GetConnectionWithLockAs<OpalLyncConnection>(remoteParty, PSafeReadOnly);
   if (otherConnection != NULL) {

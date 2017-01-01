@@ -654,7 +654,17 @@ PBoolean SIPEndPoint::SetupTransfer(SIPConnection & transferredConnection,
   options.SetAt(SIP_HEADER_REFERRED_BY, transferredConnection.GetRedirectingParty());
   options.SetAt(OPAL_OPT_CALLING_PARTY_URL, transferredConnection.GetLocalPartyURL());
 
-  if (!replaces.IsEmpty()) {
+  if (replaces.IsEmpty()) {
+    PSafePtr<OpalConnection> transferredOtherConnection = transferredConnection.GetOtherPartyConnection();
+    if (transferredOtherConnection != NULL &&
+        remoteParty.NumCompare(transferredOtherConnection->GetPrefixName()+':') == EqualTo &&
+        transferredOtherConnection->TransferConnection(remoteParty))
+    {
+      PTRACE(3, "Bypassed transfer of " << *transferredOtherConnection << " to \"" << remoteParty << '"');
+      return true;
+    }
+  }
+  else {
     options.SetAt(SIP_HEADER_REPLACES, replaces);
     PSafePtr<SIPConnection> replacedConnection = GetSIPConnectionWithLock(replaces, PSafeReference);
     if (replacedConnection != NULL) {
@@ -693,6 +703,15 @@ PBoolean SIPEndPoint::SetupTransfer(SIPConnection & transferredConnection,
 
 PBoolean SIPEndPoint::ForwardConnection(SIPConnection & connection, const PString & forwardParty)
 {
+  PSafePtr<OpalConnection> otherConnection = connection.GetOtherPartyConnection();
+  if (otherConnection != NULL &&
+      forwardParty.NumCompare(otherConnection->GetPrefixName()+':') == EqualTo &&
+      otherConnection->ForwardCall(forwardParty))
+  {
+    PTRACE(3, "Bypassed forward of " << *otherConnection << " to \"" << forwardParty << '"');
+    return true;
+  }
+
   OpalCall & call = connection.GetCall();
   
   SIPConnection::Init init(call, *this);
