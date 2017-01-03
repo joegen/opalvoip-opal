@@ -104,7 +104,7 @@ OpalRTPSession::OpalRTPSession(const Init & init)
   , m_isAudio(init.m_mediaType == OpalMediaType::Audio())
   , m_timeUnits(m_isAudio ? 8 : 90)
   , m_toolName(PProcess::Current().GetName())
-  , m_absSendTimeHdrExtId(-1)
+  , m_absSendTimeHdrExtId(UINT_MAX)
   , m_allowAnySyncSource(true)
   , m_staleReceiverTimeout(m_manager.GetStaleReceiverTimeout())
   , m_maxOutOfOrderPackets(20)
@@ -1172,14 +1172,6 @@ void OpalRTPSession::SyncSource::OnRxDelayLastReceiverReport(const RTP_DelayLast
 
 OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendData(RTP_DataFrame & frame, RewriteMode rewrite)
 {
-  frame.SetTransmitTime();
-
-  if (rewrite != e_RewriteNothing && m_absSendTimeHdrExtId > 0) {
-    unsigned ntp = (frame.GetMetaData().m_transmitTime.GetNTP() >> 14) & 0x00ffffff;
-    BYTE data[3] = { (BYTE)(ntp >> 16), (BYTE)(ntp >> 8), (BYTE)ntp };
-    frame.SetHeaderExtension(m_absSendTimeHdrExtId, sizeof(data), data, RTP_DataFrame::RFC5285_OneByte);
-  }
-
   RTP_SyncSourceId ssrc = frame.GetSyncSource();
   SyncSource * syncSource;
   if (GetSyncSource(ssrc, e_Sender, syncSource)) {
@@ -1221,7 +1213,19 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendData(RTP_DataFrame & fra
     GetSyncSource(ssrc, e_Sender, syncSource);
   }
 
-  return syncSource->OnSendData(frame, rewrite);
+  SendReceiveStatus status = syncSource->OnSendData(frame, rewrite);
+  if (status != e_ProcessPacket)
+    return status;
+
+  frame.SetTransmitTime();
+
+  if (rewrite != e_RewriteNothing && m_absSendTimeHdrExtId <= RTP_DataFrame::MaxHeaderExtensionIdOneByte) {
+    unsigned ntp = (frame.GetMetaData().m_transmitTime.GetNTP() >> 14) & 0x00ffffff;
+    BYTE data[3] = { (BYTE)(ntp >> 16), (BYTE)(ntp >> 8), (BYTE)ntp };
+    frame.SetHeaderExtension(m_absSendTimeHdrExtId, sizeof(data), data, RTP_DataFrame::RFC5285_OneByte);
+  }
+
+  return status;
 }
 
 
@@ -1275,7 +1279,9 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveData(RTP_DataFrame & 
     ntp <<=  8; ntp |= *absTime++;
     ntp <<= 14; ntp |= highBits.GetNTP() & (-1LL<<38);
     frame.SetTransmitTimeNTP(ntp);
-    PTRACE(6, "Set transmit time on RTP: sn=" << frame.GetSequenceNumber() << " time=" << frame.GetMetaData().m_transmitTime);
+    PTRACE(6, "Set transmit time on RTP:"
+              " sn=" << frame.GetSequenceNumber() << ","
+              " time=" << frame.GetMetaData().m_transmitTime.AsString(PTime::TodayFormat));
   }
 
   return e_ProcessPacket;

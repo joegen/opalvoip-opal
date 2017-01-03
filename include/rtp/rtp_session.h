@@ -611,7 +611,7 @@ class OpalRTPSession : public OpalMediaSession
     unsigned            m_timeUnits;
     PString             m_toolName;
     RTPHeaderExtensions m_headerExtensions;
-    int                 m_absSendTimeHdrExtId;
+    unsigned            m_absSendTimeHdrExtId;
     bool                m_allowAnySyncSource;
     PTimeInterval       m_staleReceiverTimeout;
     PINDEX              m_maxOutOfOrderPackets; // Number of packets before we give up waiting for an out of order packet

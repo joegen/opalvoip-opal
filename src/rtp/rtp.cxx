@@ -325,6 +325,9 @@ BYTE * RTP_DataFrame::GetHeaderExtension(unsigned & id, PINDEX & length, int idx
 
 BYTE * RTP_DataFrame::GetHeaderExtension(HeaderExtensionType type, unsigned idToFind, PINDEX & length) const
 {
+  if (idToFind > MaxHeaderExtensionId)
+    return NULL;
+
   if (!GetExtension())
     return NULL;
 
@@ -370,14 +373,25 @@ BYTE * RTP_DataFrame::GetHeaderExtension(HeaderExtensionType type, unsigned idTo
         return NULL;
 
       for (;;) {
-        idPresent = ptr[0];
-        length = ptr[1];
+        idPresent = *ptr++;
+        --extensionSize;
+
+        if (idPresent == 0) {
+          if (extensionSize > 0)
+            continue;
+          return NULL;
+        }
+
+        length = *ptr++;
+        --extensionSize;
+
         if (idPresent == idToFind)
-          return ptr+2;
+          return ptr;
 
         if (extensionSize <= length)
           return NULL;
         extensionSize -= length;
+        ptr += length;
       }
 
     default :
@@ -390,79 +404,140 @@ BYTE * RTP_DataFrame::GetHeaderExtension(HeaderExtensionType type, unsigned idTo
 
 bool RTP_DataFrame::SetHeaderExtension(unsigned id, PINDEX length, const BYTE * data, HeaderExtensionType type)
 {
-  PINDEX headerExtBase = MinHeaderSize + 4*GetContribSrcCount();
+  if (!PAssert(data != NULL || length == 0, PInvalidParameter))
+    return false;
+
+  PINDEX baseHeaderSize = MinHeaderSize + 4*GetContribSrcCount();
+  PUInt16b * baseExtension = (PUInt16b *)&theArray[baseHeaderSize];
+  BYTE * currentExtension = (BYTE *)&theArray[baseHeaderSize+4];
+
+  unsigned oldId;
+  PINDEX extensionSize;
+  if (GetExtension()) {
+    oldId = baseExtension[0];
+    extensionSize = baseExtension[1];
+  }
+  else {
+    oldId = UINT_MAX; // definitely won't match anything
+    extensionSize = 0;
+  }
 
   switch (type) {
     case RFC3550 :
-      if (PAssert(id < 65536U && length < (1<<16)*4, PInvalidParameter) && SetExtensionSizeDWORDs((length + 3) / 4)) {
-        BYTE * exthdr = (BYTE *)&theArray[headerExtBase];
-        *(PUInt16b *)exthdr = (uint16_t)id;
-        if (data != NULL && length > 0)
-          memcpy(exthdr + 4, data, length);
-        return true;
-      }
-      return false;
+      // Have maximum length of 16 bit field header, and it is in DWORDs, that's a 265kbyte header extension, really?
+      if (!PAssert(id <= MaxHeaderExtensionId && length < (1<<16)*4, PInvalidParameter) && SetExtensionSizeDWORDs((length + 3)/4))
+        return false;
+
+      // Primitive, and there can be only one.
+      *baseExtension = (uint16_t)id;
+      memcpy(currentExtension, data, length);
+      return true;
 
     case RFC5285_OneByte :
-      if (PAssert(id < 15 && length > 0 && length <= 16, PInvalidParameter))
-        break;
-      return false;
+      if (!PAssert(id > 0 && id <= MaxHeaderExtensionIdOneByte && length > 0 && length <= 16, PInvalidParameter))
+        return false;
 
-    case RFC5285_TwoByte :
-      if (PAssert(id < 256 && length < 256, PInvalidParameter))
-        break;
-      return false;
-  }
-
-  PINDEX oldSizeDWORDs = 0;
-
-  if (GetExtension()) {
-    BYTE * exthdr = (BYTE *)&theArray[headerExtBase];
-    unsigned oldId = *(PUInt16b *)exthdr;
-    if (type == RFC5285_OneByte ? (oldId != 0xbede) : ((oldId&0xfff0) != 0x1000))
-      SetExtension(false);
-    else {
-      oldSizeDWORDs = GetExtensionSizeDWORDs();
-
-      PINDEX previousLength = 0;
-      BYTE * previousData = GetHeaderExtension(type, id, previousLength);
-      if (previousData != NULL) {
-        if (previousLength < length) {
-          // These calculations are all a bit dodgy, needs detailed checking
-          if (!SetExtensionSizeDWORDs(oldSizeDWORDs + (length - previousLength + 3)/4))
-            return false;
-          memmove(previousData+length, previousData+previousLength, oldSizeDWORDs*4-(previousData-exthdr)-length);
-        }
-
-        if (data != NULL && length > 0)
-          memcpy(previousData, data, length);
-
+      if (oldId != 0xbede) {
+        /* There was not a RFC3550 header extension at all, or was not of the
+           correct type for RFC5285 One Byte mode, maybe two byte mode for
+           example. So overwrite it, setting new RFC3550 header extension size
+           and copying in our one new extension. */
+        if (!SetExtensionSizeDWORDs((length + 1 + 3) / 4))
+          return false;
+        *baseExtension = 0xbede;
+        *currentExtension++ = (BYTE)((id << 4)|(length-1));
+        memcpy(currentExtension, data, length);
         return true;
       }
 
-      if (!SetExtensionSizeDWORDs(oldSizeDWORDs + (length + (type == RFC5285_OneByte ? 1 : 2) + 3)/4))
+      // Search for the end of the existing headers, checking if id already there
+      for (;;) {
+        unsigned currentId = *currentExtension >> 4;
+        PINDEX currentLen = (*currentExtension & 0xf)+1;
+        if (currentId == id) {
+          // Already present, so overwrite it, but we don't support a change in size
+          if (!PAssert(length != currentLen, PInvalidParameter))
+            return false;
+          memcpy(currentExtension+1, data, length);
+          return true;
+        }
+
+        // By definition, the end of extensions, leave currentExtension pointing at it and overwrite
+        if (currentId == 15)
+          break;
+
+        if (currentId > 0)
+          ++currentLen; // Not pad, so length is really 1 to 16
+
+        currentExtension += currentLen; // Add in before the break, so is pointing at end of all extensions
+        if (extensionSize <= currentLen)
+          break;
+        extensionSize -= currentLen;
+      }
+      break;
+
+    case RFC5285_TwoByte :
+      if (PAssert(id > 0 && id <= MaxHeaderExtensionIdTwoByte && length < 256, PInvalidParameter))
         return false;
-    }
+
+      if ((oldId & 0xfff0) != 0x1000) {
+        /* There was not a RFC3550 header extension at all, or was not of the
+           correct type for RFC5285 Two Byte mode, maybe one byte mode for
+           example. So overwrite it, setting new RFC3550 header extension size
+           and copying in our one new extension. */
+        if (!SetExtensionSizeDWORDs((length + 2 + 3) / 4))
+          return false;
+        *baseExtension = 0x1000;
+        *currentExtension++ = (BYTE)id;
+        *currentExtension++ = (BYTE)length;
+        memcpy(currentExtension, data, length);
+        return true;
+      }
+
+      // Search for the end of the existing headers, checking if id already there
+      for (;;) {
+        unsigned currentId = *currentExtension++;
+        --extensionSize;
+
+        if (currentId == 0) {
+          if (extensionSize > 0)
+            continue;
+          break;
+        }
+
+        PINDEX currentLen = *currentExtension++;
+        --extensionSize;
+
+        if (currentId == id) {
+          // Already present, so overwrite it, but we don't support a change in size
+          if (!PAssert(length != currentLen, PInvalidParameter))
+            return false;
+          memcpy(currentExtension, data, length);
+          return true;
+        }
+
+        currentExtension += currentLen; // Add in before the break, so is pointing at end of all extensions
+        if (extensionSize <= currentLen)
+          break;
+        extensionSize -= currentLen;
+      }
   }
 
-  if (!GetExtension()) {
-    if (!SetHeaderExtension(type == RFC5285_OneByte ? 0xbede : 0x1000,
-                            length + (type == RFC5285_OneByte ? 1 : 2),
-                            NULL, RFC3550))
-      return false;
-  }
+  // Calculate new RFC3550 header extension size, as we append new one to the end
+  if (!SetExtensionSizeDWORDs(((currentExtension - (BYTE *)&baseExtension[2]) // Previous header size
+                              + (type == RFC5285_OneByte ? 1 : 2) + length // New appended header size
+                              + 3)/4)) // Converted to whole DWORDs
+    return false;
 
-  BYTE * exthdr = (BYTE *)&theArray[headerExtBase + 4 + oldSizeDWORDs*4];;
+  // Set the header extensions header
   if (type == RFC5285_OneByte)
-    *exthdr++ = (BYTE)((id << 4)|(length-1));
+    *currentExtension++ = (BYTE)((id << 4)|(length-1));
   else {
-    *exthdr++ = (BYTE)id;
-    *exthdr++ = (BYTE)length;
+    *currentExtension++ = (BYTE)id;
+    *currentExtension++ = (BYTE)length;
   }
 
-  if (data != NULL && length > 0)
-    memcpy(exthdr, data, length);
-
+  memcpy(currentExtension, data, length);
   return true;
 }
 
