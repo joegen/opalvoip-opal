@@ -456,7 +456,7 @@ bool RTP_DataFrame::SetHeaderExtension(unsigned id, PINDEX length, const BYTE * 
         PINDEX currentLen = (*currentExtension & 0xf)+1;
         if (currentId == id) {
           // Already present, so overwrite it, but we don't support a change in size
-          if (!PAssert(length != currentLen, PInvalidParameter))
+          if (!PAssert(length == currentLen, PSTRSTRM("Header Extension size changed: old=" << currentLen << " new=" << length)))
             return false;
           memcpy(currentExtension+1, data, length);
           return true;
@@ -510,7 +510,7 @@ bool RTP_DataFrame::SetHeaderExtension(unsigned id, PINDEX length, const BYTE * 
 
         if (currentId == id) {
           // Already present, so overwrite it, but we don't support a change in size
-          if (!PAssert(length != currentLen, PInvalidParameter))
+          if (!PAssert(length == currentLen, PSTRSTRM("Header Extension size changed: old=" << currentLen << " new=" << length)))
             return false;
           memcpy(currentExtension, data, length);
           return true;
