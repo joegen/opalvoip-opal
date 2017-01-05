@@ -1993,8 +1993,14 @@ bool SDPRTPAVPMediaDescription::FromSession(OpalMediaSession * session,
 {
   const OpalRTPSession * rtpSession = dynamic_cast<const OpalRTPSession *>(session);
   if (rtpSession != NULL) {
-    if (m_stringOptions.GetBoolean(OPAL_OPT_OFFER_REDUCED_SIZE_RTCP, true) || rtpSession->UseReducedSizeRTCP())
-      m_reducedSizeRTCP = true;
+    if (offer != NULL)
+      m_headerExtensions = rtpSession->GetHeaderExtensions();
+    else {
+      if (m_stringOptions.GetBoolean(OPAL_OPT_OFFER_SDP_ABS_SEND_TIME)) {
+        RTPHeaderExtensionInfo ext(OpalRTPSession::GetAbsSendTimeHdrExtURI());
+        SetHeaderExtension(ext);
+      }
+    }
 
     RTP_SyncSourceArray ssrcs;
     if (ssrc != 0)
@@ -2040,11 +2046,6 @@ bool SDPRTPAVPMediaDescription::FromSession(OpalMediaSession * session,
       m_setupMode = SDPCommonAttributes::SetupActive;
   }
 #endif
-
-  if (m_stringOptions.GetBoolean(OPAL_OPT_OFFER_SDP_ABS_SEND_TIME)) {
-    RTPHeaderExtensionInfo ext(OpalRTPSession::GetAbsSendTimeHdrExtURI());
-    SetHeaderExtension(ext);
-  }
 
   return SDPMediaDescription::FromSession(session, offer, ssrc);
 }

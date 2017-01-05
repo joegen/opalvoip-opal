@@ -1024,13 +1024,16 @@ const PString & OpalRTPSession::GetAbsSendTimeHdrExtURI() { static const PConstS
 void OpalRTPSession::SetHeaderExtensions(const RTPHeaderExtensions & ext)
 {
   PSafeLockReadWrite lock(*this);
-  m_headerExtensions = ext;
 
   for (RTPHeaderExtensions::const_iterator it = ext.begin(); it != ext.end(); ++it) {
-    if (it->m_uri.AsString() == GetAbsSendTimeHdrExtURI()) {
+    PCaselessString uri = it->m_uri.AsString();
+    if (uri == GetAbsSendTimeHdrExtURI())
       m_absSendTimeHdrExtId = it->m_id;
-      break;
+    else {
+      PTRACE(3, "Unsupported header extension: id=" << it->m_id << ", uri=" << it->m_uri);
+      continue;
     }
+    m_headerExtensions.insert(*it);
   }
 }
 
