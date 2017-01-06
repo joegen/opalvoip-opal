@@ -592,10 +592,10 @@ class OpalManagerCLI : public OpalConsoleManager
 template <class Manager,                   ///< Class of OpalConsoleManager derived class
           const char Manuf[],              ///< Name of manufacturer
           const char Name[],               ///< Name of product
-          WORD MajorVersion = OPAL_MAJOR,  ///< Major version number of the product
-          WORD MinorVersion = OPAL_MINOR,  ///< Minor version number of the product
+          unsigned MajorVersion = OPAL_MAJOR,  ///< Major version number of the product
+          unsigned MinorVersion = OPAL_MINOR,  ///< Minor version number of the product
           PProcess::CodeStatus Status = PProcess::ReleaseCode, ///< Development status of the product
-          WORD BuildNumber = OPAL_BUILD,   ///< Build number of the product
+          unsigned BuildNumber = OPAL_BUILD,   ///< Build number of the product
           bool Verbose = true>
 class OpalConsoleProcess : public PProcess
 {
