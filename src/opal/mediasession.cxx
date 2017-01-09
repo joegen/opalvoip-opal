@@ -529,6 +529,39 @@ OpalMediaTransport::OpalMediaTransport(const PString & name)
   , m_opened(false)
   , m_started(false)
 {
+  m_ccTimer.SetNotifier(PCREATE_NOTIFIER(ProcessCongestionControl), "RTP-CC");
+}
+
+
+OpalMediaTransport::~OpalMediaTransport()
+{
+  m_ccTimer.Stop();
+  delete m_congestionControl.exchange(NULL);
+
+  InternalStop();
+}
+
+
+OpalMediaTransport::CongestionControl * OpalMediaTransport::SetCongestionControl(CongestionControl * cc)
+{
+  CongestionControl * previous = NULL;
+  if (m_congestionControl.compare_exchange_strong(previous, cc)) {
+    if (cc != NULL && !m_ccTimer.IsRunning())
+      m_ccTimer.RunContinuous(cc->GetProcessInterval());
+    return cc;
+  }
+
+  delete cc;
+  return previous;
+}
+
+
+void OpalMediaTransport::ProcessCongestionControl(PTimer&, P_INT_PTR)
+{
+  PTRACE_CONTEXT_ID_PUSH_THREAD(*this);
+  CongestionControl * cc = GetCongestionControl();
+  if (cc != NULL && !cc->ProcessReceivedPackets())
+    m_ccTimer.Stop();
 }
 
 

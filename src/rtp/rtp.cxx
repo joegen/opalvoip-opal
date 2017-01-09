@@ -1274,6 +1274,189 @@ bool RTP_ControlFrame::ParseTMMB(RTP_SyncSourceId & senderSSRC, RTP_SyncSourceId
 }
 
 
+RTP_TransportWideCongestionControl::RTP_TransportWideCongestionControl()
+  : m_rtcpSequenceNumber(0)
+{
+}
+
+
+void RTP_ControlFrame::AddTWCC(RTP_SyncSourceId syncSourceOut, const RTP_TransportWideCongestionControl & info)
+{
+  // Build the hideously complex format from https://tools.ietf.org/html/draft-holmer-rmcat-transport-wide-cc-extensions-01
+
+  RTP_TransportWideCongestionControl::PacketMap::const_iterator itPkt = info.m_packets.begin();
+
+  if (!PAssert(itPkt != info.m_packets.end(), PInvalidParameter))
+    return;
+
+  unsigned initialSN = itPkt->first;
+  unsigned statusCount = info.m_packets.rbegin()->first - initialSN + 1;
+  if (!PAssert(statusCount < 65536, PInvalidParameter))
+    return;
+
+  // Our reference time is the time of the first (lowest SN) packet, rounded down
+  PTimeInterval referenceTime(itPkt->second.m_timestamp.GetMilliSeconds()/64*64);
+
+  // Calculate the 250us quantised delta times between each packet, INT_MAX means missing.
+  vector<int> quarterMillisecond(statusCount);
+  quarterMillisecond[0] = (int)((itPkt->second.m_timestamp - referenceTime).GetMicroSeconds()/250);
+  for (unsigned index = 1; index < statusCount; ++index)
+    quarterMillisecond[index] = numeric_limits<int>::max();
+  for (RTP_TransportWideCongestionControl::PacketMap::const_iterator prevPkt = itPkt++; itPkt != info.m_packets.end(); ++prevPkt,++itPkt)
+    quarterMillisecond[itPkt->first - initialSN] = (int)((itPkt->second.m_timestamp - prevPkt->second.m_timestamp).GetMicroSeconds()/250);
+
+  // Now calculate the status bits for each packet, either run length or matrix form
+  vector<PUInt16b> statusChunks((statusCount+6)/7); // Worst case
+  PUInt16b * statusPtr = statusChunks.data();
+  unsigned runLength = 0;
+  unsigned lastStatus = 0;
+  for (unsigned index = 0; index < statusCount; ++index) {
+    unsigned currentStatus = quarterMillisecond[index] < 0 ? 0 : (quarterMillisecond[index] < 256 ? 1 : 2);
+    // Find a run length for same status, but stop and generate chunk on last packet
+    if ((runLength == 0 || currentStatus == lastStatus) && index < statusCount - 1) {
+      ++runLength;
+      lastStatus = currentStatus; 
+    }
+    else {
+      unsigned chunk;
+      if (runLength >= 7) {
+        if (currentStatus == lastStatus) // Edge case for last packet being in the run
+          ++runLength;
+        chunk = (lastStatus << 13) | runLength;  // Run length chunk
+        --index;
+      }
+      else {
+        // Vector chunk, we are not bothering with the 14x1 bit version for now.
+        chunk = 3;
+        for (unsigned run = 0; run < runLength; ++run)
+          chunk = (chunk << 2) | lastStatus;
+        chunk = (chunk << 2) | currentStatus;
+        while (runLength < 6 && ++index < statusCount) {
+          chunk = (chunk << 2) | (quarterMillisecond[index] < 0 ? 0 : (quarterMillisecond[index] < 256 ? 1 : 2));
+          ++runLength;
+        }
+        while (runLength++ < 6)
+          chunk <<= 2;
+      }
+      *statusPtr++ = (uint16_t)chunk;
+      runLength = 0;
+    }
+  }
+  size_t statusSize = (uint8_t *)statusPtr - (uint8_t *)statusChunks.data();
+
+  // Then set the delta byte or word entries
+  vector<uint8_t> deltas(statusCount*2); // Worst case is big for all
+  uint8_t * deltaPtr = deltas.data();
+  for (itPkt = info.m_packets.begin(); itPkt != info.m_packets.end(); ++itPkt) {
+    int quarterMS = quarterMillisecond[itPkt->first - initialSN];
+    if (quarterMS >= 0 && quarterMS < 256)
+      *deltaPtr++ = (uint8_t)quarterMS;
+    else if (quarterMS >= numeric_limits<int16_t>::min() && quarterMS <= numeric_limits<int16_t>::max()) {
+      *(PInt16b *)deltaPtr = (int16_t)quarterMS;
+      deltaPtr += 2;
+    }
+  }
+  size_t deltaSize = deltaPtr - deltas.data();
+
+  // Now we build the actual RTCP packet
+  FbTWCC * twcc = (FbTWCC *)AddFeedback(e_TransportLayerFeedBack, e_TWCC, sizeof(FbTWCC) + statusSize + deltaSize);
+
+  twcc->senderSSRC = syncSourceOut;
+  twcc->mediaSSRC = 0;
+  twcc->baseSN = (uint16_t)initialSN;
+  twcc->statusCount = (uint16_t)statusCount;
+  unsigned ms = (unsigned)referenceTime.GetMilliSeconds();
+  twcc->referenceTime[0] = (uint8_t)(ms >> 21); // In 64ms increments
+  twcc->referenceTime[1] = (uint8_t)(ms >> 13);
+  twcc->referenceTime[2] = (uint8_t)(ms >> 5);
+  twcc->rtcpSN = (uint8_t)info.m_rtcpSequenceNumber;
+  memcpy(twcc+1, statusChunks.data(), statusSize);
+  memcpy((BYTE *)(twcc+1)+statusSize, deltas.data(), deltaSize);
+}
+
+
+bool RTP_ControlFrame::ParseTWCC(RTP_SyncSourceId & senderSSRC, RTP_TransportWideCongestionControl & info)
+{
+  // Parse the hideously complex format from https://tools.ietf.org/html/draft-holmer-rmcat-transport-wide-cc-extensions-01
+
+  info.m_packets.clear();
+
+  size_t size = GetPayloadSize();
+  if (size <= sizeof(FbTWCC))
+    return false;
+
+  // Get the basic bits of the packet timing info
+  const FbTWCC * twcc = (const FbTWCC *)GetPayloadPtr();
+  senderSSRC = twcc->senderSSRC;
+  unsigned baseSN = twcc->baseSN;
+  unsigned count = twcc->statusCount;
+  PTimeInterval referenceTime((twcc->referenceTime[0] << 21U) | (twcc->referenceTime[1] << 13U) | (twcc->referenceTime[2] << 5U));
+  info.m_rtcpSequenceNumber = twcc->rtcpSN;
+
+  // Parse the status bits so we know if packet missing, small delta, or large delta
+  vector<unsigned> status(count);
+  unsigned index = 0;
+
+  size -= sizeof(*twcc);
+  const PUInt16b * chunks = (const PUInt16b *)(twcc+1);
+  while (size >= 2 && index < count) {
+    uint16_t chunk = *chunks++;
+
+    if ((chunk & 0x8000) == 0) {
+      // RUn length chunk, all the same
+      unsigned runStatus = chunk >> 13;
+      unsigned runLength = std::min(count, (chunk&0x1fffU));
+      while (runLength-- > 0)
+        status[index++] = runStatus;
+    }
+    else if ((chunk & 0x4000) == 0) {
+      // single bit vector chunk, we assume "present" means small delta
+      unsigned bits = 14;
+      while (bits-- > 0 && index < count) {
+        status[index++] = (chunk&0x2000) != 0;
+        chunk <<= 1;
+      }
+    }
+    else {
+      // dual bit vector chunk
+      unsigned bitPairs = 7;
+      while (bitPairs-- > 0 && index < count) {
+        status[index++] = (chunk&0x3000) >> 12;
+        chunk <<= 2;
+      }
+    }
+  }
+
+  /* Now extract the delta times, based on the status bits extracted, and add
+     the reference time so all times in PacketTimeMap are relative to whatever
+     reference the remote is using. */
+  const uint8_t * delta = (const uint8_t *)chunks;
+  for (index = 0; index < count && size > 0; ++index) {
+    int quarterMilliseconds;
+    switch (status[index]) {
+      case 1 : // Small delta
+        quarterMilliseconds = *delta++ & 0xff;
+        --size;
+        break;
+
+      case 2 : // Large delta
+        quarterMilliseconds = *(PInt16b *)delta;
+        delta += 2;
+        size -= 2;
+        break;
+
+      default : // Absent
+        continue;
+    }
+
+    referenceTime += PTimeInterval::MicroSeconds(quarterMilliseconds * 250U);
+    info.m_packets.insert(make_pair(baseSN + index, referenceTime));
+  }
+
+  return !info.m_packets.empty();
+}
+
+
 void RTP_ControlFrame::AddPLI(RTP_SyncSourceId syncSourceOut, RTP_SyncSourceId syncSourceIn)
 {
   FbHeader * hdr = AddFeedback(e_PayloadSpecificFeedBack, e_PictureLossIndication, sizeof(FbHeader));

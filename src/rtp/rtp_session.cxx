@@ -106,6 +106,7 @@ OpalRTPSession::OpalRTPSession(const Init & init)
   , m_timeUnits(m_isAudio ? 8 : 90)
   , m_toolName(PProcess::Current().GetName())
   , m_absSendTimeHdrExtId(UINT_MAX)
+  , m_transportWideSeqNumHdrExtId(UINT_MAX)
   , m_allowAnySyncSource(true)
   , m_staleReceiverTimeout(m_manager.GetStaleReceiverTimeout())
   , m_maxOutOfOrderPackets(20)
@@ -1020,6 +1021,7 @@ RTPHeaderExtensions OpalRTPSession::GetHeaderExtensions() const
 
 
 const PString & OpalRTPSession::GetAbsSendTimeHdrExtURI() { static const PConstString s("http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time"); return s; }
+const PString & OpalRTPSession::GetTransportWideSeqNumHdrExtURI() { static const PConstString s("http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01"); return s; }
 
 void OpalRTPSession::SetHeaderExtensions(const RTPHeaderExtensions & ext)
 {
@@ -1029,10 +1031,13 @@ void OpalRTPSession::SetHeaderExtensions(const RTPHeaderExtensions & ext)
     PCaselessString uri = it->m_uri.AsString();
     if (uri == GetAbsSendTimeHdrExtURI())
       m_absSendTimeHdrExtId = it->m_id;
+    else if (uri == GetTransportWideSeqNumHdrExtURI())
+      m_transportWideSeqNumHdrExtId = it->m_id;
     else {
       PTRACE(3, "Unsupported header extension: id=" << it->m_id << ", uri=" << it->m_uri);
       continue;
     }
+
     m_headerExtensions.insert(*it);
   }
 }
@@ -1223,10 +1228,18 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendData(RTP_DataFrame & fra
 
   frame.SetTransmitTime();
 
-  if (rewrite != e_RewriteNothing && m_absSendTimeHdrExtId <= RTP_DataFrame::MaxHeaderExtensionIdOneByte) {
-    unsigned ntp = (frame.GetMetaData().m_transmitTime.GetNTP() >> 14) & 0x00ffffff;
-    BYTE data[3] = { (BYTE)(ntp >> 16), (BYTE)(ntp >> 8), (BYTE)ntp };
-    frame.SetHeaderExtension(m_absSendTimeHdrExtId, sizeof(data), data, RTP_DataFrame::RFC5285_OneByte);
+  if (rewrite != e_RewriteNothing) {
+    if (m_absSendTimeHdrExtId <= RTP_DataFrame::MaxHeaderExtensionIdOneByte) {
+      unsigned ntp = (frame.GetMetaData().m_transmitTime.GetNTP() >> 14) & 0x00ffffff;
+      BYTE data[3] = { (BYTE)(ntp >> 16), (BYTE)(ntp >> 8), (BYTE)ntp };
+      frame.SetHeaderExtension(m_absSendTimeHdrExtId, sizeof(data), data, RTP_DataFrame::RFC5285_OneByte);
+    }
+
+    OpalMediaTransport::CongestionControl * cc = GetCongestionControl();
+    if (cc != NULL) {
+      PUInt16b sn((uint16_t)cc->HandleTransmitPacket(m_sessionId, frame.GetSyncSource()));
+      frame.SetHeaderExtension(m_transportWideSeqNumHdrExtId, 2, (const BYTE *)&sn, RTP_DataFrame::RFC5285_OneByte);
+    }
   }
 
   return status;
@@ -1272,23 +1285,154 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnPreReceiveData(RTP_DataFrame
 
 OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveData(RTP_DataFrame & frame)
 {
-  PINDEX length;
-  BYTE * absTime = frame.GetHeaderExtension(RTP_DataFrame::RFC5285_OneByte, m_absSendTimeHdrExtId, length);
-  if (absTime != NULL) {
+  BYTE * exthdr;
+  PINDEX hdrlen;
+  if ((exthdr = frame.GetHeaderExtension(RTP_DataFrame::RFC5285_OneByte, m_absSendTimeHdrExtId, hdrlen)) != NULL) {
     PTime highBits = frame.GetAbsoluteTime();
     if (!highBits.IsValid())
       highBits.SetCurrentTime();
-    uint64_t    ntp  = *absTime++;
-    ntp <<=  8; ntp |= *absTime++;
-    ntp <<=  8; ntp |= *absTime++;
-    ntp <<= 14; ntp |= highBits.GetNTP() & (-1LL<<38);
+    uint64_t    ntp  = *exthdr++;
+    ntp <<= 8;  ntp |= *exthdr++;
+    ntp <<= 8;  ntp |= *exthdr++;
+    ntp <<= 14; ntp |= highBits.GetNTP() & (-1LL << 38);
     frame.SetTransmitTimeNTP(ntp);
     PTRACE(6, "Set transmit time on RTP:"
               " sn=" << frame.GetSequenceNumber() << ","
               " time=" << frame.GetMetaData().m_transmitTime.AsString(PTime::TodayFormat));
   }
 
+  if ((exthdr = frame.GetHeaderExtension(RTP_DataFrame::RFC5285_OneByte, m_transportWideSeqNumHdrExtId, hdrlen)) != NULL) {
+    uint16_t sn = *(PUInt16b *)exthdr;
+    OpalMediaTransport::CongestionControl * cc = GetCongestionControl();
+    PTRACE(6, *this << "Received TWCC sequence number: len=" << hdrlen << " sn=" << sn << " cc=" << cc);
+    if (cc != NULL)
+      cc->HandleReceivePacket(sn, frame.GetMetaData().m_receivedTime);
+  }
+
   return e_ProcessPacket;
+}
+
+
+// Support for http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions
+class RTP_TransportWideCongestionControlHandler : public OpalMediaTransport::CongestionControl
+{
+protected:
+  OpalRTPSession & m_session;
+
+  // For transmit
+  atomic<uint16_t> m_transportWideSequenceNumber;
+  RTP_TransportWideCongestionControl::PacketMap m_sentPackets;
+
+  // For receive
+  struct Info
+  {
+    unsigned m_transportWideSequenceNumber;
+    PTime    m_receivedTime;
+
+    Info(unsigned sn, const PTime & received)
+      : m_transportWideSequenceNumber(sn)
+      , m_receivedTime(received)
+    { }
+  };
+  std::queue<Info> m_queue;
+  PTime m_packetBaseTime;
+  unsigned m_rtcpSequenceNumber;
+
+public:
+  RTP_TransportWideCongestionControlHandler(OpalRTPSession & session)
+    : m_session(session)
+    , m_packetBaseTime(0)
+    , m_rtcpSequenceNumber(0)
+  {
+  }
+
+  virtual unsigned HandleTransmitPacket(unsigned sessionID, uint32_t ssrc)
+  {
+    unsigned sn = ++m_transportWideSequenceNumber;
+    m_sentPackets.insert(make_pair(sn, RTP_TransportWideCongestionControl::Info(0, sessionID, ssrc)));
+    return sn;
+  }
+
+  virtual void HandleReceivePacket(unsigned sn, const PTime & received)
+  {
+    m_queue.push(Info(sn, received));
+  }
+
+  virtual PTimeInterval GetProcessInterval() const
+  {
+    static PTimeInterval const interval(200); // Needs to be frequent, but not ridiculously so.
+    return interval;
+  }
+
+  virtual bool ProcessReceivedPackets()
+  {
+    if (m_queue.empty())
+      return true;
+
+    /* These are used to detect when SN wraps around, and make sequence number
+       larger than 16 bit, so we can maintain the correct order in the
+       RTP_TransportWideCongestionControl::PacketTimeMap */
+    bool wrapped = false;
+    unsigned lastSN = 0;
+
+    RTP_TransportWideCongestionControl twcc;
+    twcc.m_rtcpSequenceNumber = ++m_rtcpSequenceNumber;
+    do {
+      const Info & info = m_queue.front();
+
+      unsigned sn = info.m_transportWideSequenceNumber;
+
+      // detect when we go from top 32768 to bottom 32768
+      if (!wrapped && (lastSN & 0x8000) != 0 && (sn & 0x8000) == 0)
+        wrapped = true;
+      lastSN = sn;
+
+      /* Only add in the 17th bit if on bottom 32768, so out of order packets
+         don't end up in wrong half. */
+      if (wrapped && (sn & 0x8000) == 0)
+        sn |= 0x10000;
+
+      if (!m_packetBaseTime.IsValid())
+        m_packetBaseTime = info.m_receivedTime;
+      twcc.m_packets.insert(make_pair(sn, info.m_receivedTime - m_packetBaseTime));
+
+      m_queue.pop();
+    } while (!m_queue.empty());
+
+    return m_session.SendTWCC(twcc) != OpalRTPSession::e_AbortTransport;
+  }
+
+  virtual void ProcessTWCC(RTP_TransportWideCongestionControl & twcc)
+  {
+    for (RTP_TransportWideCongestionControl::PacketMap::iterator pkt = twcc.m_packets.begin(); pkt != twcc.m_packets.end(); ++pkt) {
+      RTP_TransportWideCongestionControl::PacketMap::iterator sent = m_sentPackets.find(pkt->first);
+      if (sent != m_sentPackets.end()) {
+        pkt->second.m_sessionID = sent->second.m_sessionID;
+        pkt->second.m_SSRC = sent->second.m_SSRC;
+        m_sentPackets.erase(sent);
+      }
+    }
+  }
+};
+
+
+
+OpalMediaTransport::CongestionControl * OpalRTPSession::GetCongestionControl()
+{
+  // Yes, this is all thread safe
+  if (m_transportWideSeqNumHdrExtId > RTP_DataFrame::MaxHeaderExtensionIdOneByte)
+    return NULL;
+
+  OpalMediaTransportPtr transport = m_transport;
+  if (transport == NULL)
+    return NULL;
+
+  OpalMediaTransport::CongestionControl * cc = transport->GetCongestionControl();
+  if (cc != NULL)
+    return cc;
+
+  PTRACE(3, *this << "setting TWCC handler");
+  return transport->SetCongestionControl(new RTP_TransportWideCongestionControlHandler(*this));
 }
 
 
@@ -1780,6 +1924,20 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
             }
             break;
           }
+
+          case RTP_ControlFrame::e_TWCC:
+          {
+            RTP_TransportWideCongestionControl twcc;
+            RTP_SyncSourceId senderSSRC;
+            if (frame.ParseTWCC(senderSSRC, twcc)) {
+              OpalMediaTransport::CongestionControl * cc = GetCongestionControl();
+              if (cc != NULL)
+                cc->ProcessTWCC(twcc);
+              OnRxTWCC(twcc);
+            }
+            else
+              PTRACE(2, *this << "PWCC packet truncated - " << frame);
+          }
         }
         break;
 
@@ -2033,6 +2191,16 @@ void OpalRTPSession::OnRxNACK(RTP_SyncSourceId PTRACE_PARAM(ssrc), const RTP_Con
 }
 
 
+void OpalRTPSession::OnRxTWCC(const RTP_TransportWideCongestionControl & PTRACE_PARAM(twcc))
+{
+  PTRACE(5, *this << "OnRxTWCC:"
+                     " rtcp-sn=" << twcc.m_rtcpSequenceNumber <<
+                     " init-sn=" << twcc.m_packets.begin()->first <<
+                     " end-sn=" << twcc.m_packets.rbegin()->first <<
+                     " sz=" << twcc.m_packets.size());
+}
+
+
 void OpalRTPSession::OnRxApplDefined(const RTP_ControlFrame::ApplDefinedInfo & info)
 {
   PTRACE(3, *this << "OnApplDefined: \""
@@ -2077,6 +2245,45 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SendNACK(const RTP_ControlFram
 
     request.AddNACK(sender->m_sourceIdentifier, receiver->m_sourceIdentifier, lostPackets);
     ++receiver->m_NACKs;
+  }
+
+  // Send it
+  request.EndPacket();
+  return WriteControl(request);
+}
+
+
+OpalRTPSession::SendReceiveStatus OpalRTPSession::SendTWCC(const RTP_TransportWideCongestionControl & twcc)
+{
+  if (twcc.m_packets.empty())
+    return e_IgnorePacket;
+
+  RTP_ControlFrame request;
+
+  {
+    PSafeLockReadOnly lock(*this);
+    if (!lock.IsLocked())
+      return e_AbortTransport;
+
+    if (m_transportWideSeqNumHdrExtId > RTP_DataFrame::MaxHeaderExtensionIdOneByte) {
+      PTRACE(3, *this << "remote not capable of TWCC");
+      return e_IgnorePacket;
+    }
+
+    SyncSource * sender;
+    if (!GetSyncSource(0, e_Sender, sender))
+      return e_ProcessPacket;
+
+    // Packet always starts with SR or RR, use empty RR as place holder
+    InitialiseControlFrame(request, *sender);
+
+    PTRACE(5, *this << "sending TWCC RTCP command:"
+                       " ssrc=" << RTP_TRACE_SRC(sender->m_sourceIdentifier) <<
+                       " rtcp-sn=" << twcc.m_rtcpSequenceNumber <<
+                       " init-sn=" << twcc.m_packets.begin()->first <<
+                       " end-sn=" << twcc.m_packets.rbegin()->first <<
+                       " sz=" << twcc.m_packets.size());
+    request.AddTWCC(sender->m_sourceIdentifier, twcc);
   }
 
   // Send it
@@ -2684,6 +2891,8 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::WriteControl(RTP_ControlFrame 
 
   if (!transport->IsEstablished())
     return e_IgnorePacket;
+
+  PTRACE(6, *this << "Writing control packet:\n" << frame);
 
   if (!LockReadWrite())
     return e_AbortTransport;

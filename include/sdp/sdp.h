@@ -109,6 +109,13 @@
   */
 #define OPAL_OPT_OFFER_SDP_ABS_SEND_TIME "Offer-SDP-Abs-Send-Time"
 
+/**OpalConnection::StringOption key to a boolean indicating the transport
+   wide congestion control header extension and RTCP support
+   (http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions)
+   should be offered in the SDP. Default false.
+  */
+#define OPAL_OPT_OFFER_SDP_TRANSPORT_CONGESTION_CONTROL "Offer-SDP-Transport-Congestion-Control"
+
 
 /////////////////////////////////////////////////////////
 

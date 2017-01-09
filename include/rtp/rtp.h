@@ -72,6 +72,34 @@ class RTP_SourceDescription : public PObject
 typedef PArray<RTP_SourceDescription> RTP_SourceDescriptionArray;
 
 
+class RTP_TransportWideCongestionControl : public PObject
+{
+    PCLASSINFO(RTP_TransportWideCongestionControl, PObject);
+  public:
+    RTP_TransportWideCongestionControl();
+
+    struct Info
+    {
+      Info(const PTimeInterval & ts = 0, unsigned id = 0, RTP_SyncSourceId ssrc = 0)
+        : m_timestamp(ts)
+        , m_sessionID(id)
+        , m_SSRC(ssrc)
+      { }
+
+      PTimeInterval    m_timestamp;  ///< Time relative to an arbitrary moment in time
+      unsigned         m_sessionID;  ///< Session ID we sent packet on, unused on rx RTCP
+      RTP_SyncSourceId m_SSRC;       ///< SSRC we sent packet with, unused on rx RTCP
+    };
+    /* Note, map index is (effectively) a 17 bit transport wide sequence
+       number, even though the over the wire value is 16 bit, as wraparound
+       is compensated for to make sure the correct order in the map of the
+       packets is maintained. */
+    typedef std::map<unsigned, Info> PacketMap;
+    PacketMap m_packets;            ///< Info of each packet that was sent
+    unsigned  m_rtcpSequenceNumber; ///< RTCP sequence number, note, lower 8 bits only are significant
+};
+
+
 /**An RTP control frame encapsulation.
   */
 class RTP_ControlFrame : public PBYTEArray
@@ -304,7 +332,8 @@ class RTP_ControlFrame : public PBYTEArray
     enum TransportLayerFbTypes {
       e_TransportNACK = 1,
       e_TMMBR = 3,
-      e_TMMBN
+      e_TMMBN,
+      e_TWCC = 15
     };
 
     struct FbNACK : FbHeader {
@@ -346,6 +375,21 @@ class RTP_ControlFrame : public PBYTEArray
       RTP_SyncSourceId & targetSSRC,
       unsigned & maxBitRate,
       unsigned & overhead
+    );
+
+    struct FbTWCC : FbHeader {
+      PUInt16b baseSN;
+      PUInt16b statusCount;
+      uint8_t  referenceTime[3];
+      uint8_t  rtcpSN;
+    };
+    void AddTWCC(
+      RTP_SyncSourceId syncSourceOut,
+      const RTP_TransportWideCongestionControl & info
+    );
+    bool ParseTWCC(
+      RTP_SyncSourceId & senderSSRC,
+      RTP_TransportWideCongestionControl & info
     );
 
     enum PayloadSpecificFbTypes {

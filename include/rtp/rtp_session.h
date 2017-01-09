@@ -225,6 +225,7 @@ class OpalRTPSession : public OpalMediaSession
     virtual void OnRxSourceDescription(const RTP_SourceDescriptionArray & descriptions);
     virtual void OnRxGoodbye(const RTP_SyncSourceArray & sources, const PString & reason);
     virtual void OnRxNACK(RTP_SyncSourceId ssrc, const RTP_ControlFrame::LostPacketMask lostPackets);
+    virtual void OnRxTWCC(const RTP_TransportWideCongestionControl & twcc);
     virtual void OnRxApplDefined(const RTP_ControlFrame::ApplDefinedInfo & info);
     virtual bool OnReceiveExtendedReports(const RTP_ControlFrame & frame);
     virtual void OnRxReceiverReferenceTimeReport(RTP_SyncSourceId ssrc, const PTime & ntp);
@@ -372,6 +373,7 @@ class OpalRTPSession : public OpalMediaSession
     void SetHeaderExtensions(const RTPHeaderExtensions & ext);
 
     static const PString & GetAbsSendTimeHdrExtURI();
+    static const PString & GetTransportWideSeqNumHdrExtURI();
 
     /**Get the source output identifier.
       */
@@ -565,7 +567,11 @@ class OpalRTPSession : public OpalMediaSession
     /// Send BYE command
     virtual SendReceiveStatus SendBYE(RTP_SyncSourceId ssrc = 0);
 
+    /// Send NACK RTCP command
     virtual SendReceiveStatus SendNACK(const RTP_ControlFrame::LostPacketMask & lostPackets, RTP_SyncSourceId ssrc = 0);
+
+    /// Send Transport Wide Congestion Control RTCP command
+    virtual SendReceiveStatus SendTWCC(const RTP_TransportWideCongestionControl & twcc);
 
     /**Send flow control Request/Notification.
        This uses Temporary Maximum Media Stream Bit Rate from RFC 5104.
@@ -621,6 +627,7 @@ class OpalRTPSession : public OpalMediaSession
     PString             m_toolName;
     RTPHeaderExtensions m_headerExtensions;
     unsigned            m_absSendTimeHdrExtId;
+    unsigned            m_transportWideSeqNumHdrExtId;
     bool                m_allowAnySyncSource;
     PTimeInterval       m_staleReceiverTimeout;
     PINDEX              m_maxOutOfOrderPackets; // Number of packets before we give up waiting for an out of order packet
@@ -798,11 +805,16 @@ class OpalRTPSession : public OpalMediaSession
     PTimer m_reportTimer;
     PDECLARE_NOTIFIER(PTimer, OpalRTPSession, TimedSendReport);
 
+    // Congestion control
+    OpalMediaTransport::CongestionControl * GetCongestionControl();
+
+    // Quality of service support
     PIPSocket::QoS m_qos;
     unsigned       m_packetOverhead;
     WORD           m_remoteControlPort;
     bool           m_sendEstablished;
 
+    // Call backs for transport data
     OpalMediaTransport::ReadNotifier m_dataNotifier;
     OpalMediaTransport::ReadNotifier m_controlNotifier;
 

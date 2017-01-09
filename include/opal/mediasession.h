@@ -47,6 +47,7 @@ class OpalMediaStream;
 class OpalMediaFormat;
 class OpalMediaFormatList;
 class OpalMediaCryptoSuite;
+class RTP_TransportWideCongestionControl;
 class H235SecurityCapability;
 class H323Capability;
 class PSTUNClient;
@@ -352,7 +353,7 @@ class OpalMediaTransport : public PSafeObject, public OpalMediaTransportChannelT
     PDECLARE_INSTRUMENTED_READ_WRITE_MUTEX(m_instrumentedMutex, OpalMediaTransport, 500, 100);
   public:
     OpalMediaTransport(const PString & name);
-    ~OpalMediaTransport() { InternalStop(); }
+    ~OpalMediaTransport();
 
     virtual void PrintOn(ostream & strm) const;
 
@@ -458,6 +459,20 @@ class OpalMediaTransport : public PSafeObject, public OpalMediaTransportChannelT
 
     void SetRemoteBehindNAT();
 
+    /// Congestion control handling
+    struct CongestionControl
+    {
+      virtual ~CongestionControl() { }
+      virtual unsigned HandleTransmitPacket(unsigned sessionID, uint32_t ssrc) = 0;
+      virtual void HandleReceivePacket(unsigned sn, const PTime & received) = 0;
+      virtual PTimeInterval GetProcessInterval() const = 0;
+      virtual bool ProcessReceivedPackets() = 0;
+      virtual void ProcessTWCC(RTP_TransportWideCongestionControl & twcc) = 0;
+    };
+
+    CongestionControl * SetCongestionControl(CongestionControl * cc);
+    CongestionControl * GetCongestionControl() const { return m_congestionControl; }
+
   protected:
     virtual void InternalClose();
     virtual void InternalStop();
@@ -471,6 +486,10 @@ class OpalMediaTransport : public PSafeObject, public OpalMediaTransportChannelT
     PTimeInterval m_maxNoTransmitTime;
     atomic<bool>  m_opened;
     atomic<bool>  m_started;
+
+    atomic<CongestionControl *> m_congestionControl;
+    PTimer m_ccTimer;
+    PDECLARE_NOTIFIER(PTimer, OpalMediaTransport, ProcessCongestionControl);
 
     struct Transport
     {
