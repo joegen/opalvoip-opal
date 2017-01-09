@@ -528,6 +528,7 @@ OpalMediaTransport::OpalMediaTransport(const PString & name)
   , m_maxNoTransmitTime(0, 10)    // Sending data for 10 seconds, ICMP says still not there
   , m_opened(false)
   , m_started(false)
+  , m_congestionControl(NULL)
 {
   m_ccTimer.SetNotifier(PCREATE_NOTIFIER(ProcessCongestionControl), "RTP-CC");
 }
