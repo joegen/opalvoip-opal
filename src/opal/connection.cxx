@@ -1119,7 +1119,14 @@ void OpalConnection::DisableRecording()
 void OpalConnection::OnRecordAudio(RTP_DataFrame & frame, P_INT_PTR param)
 {
   const OpalMediaPatch * patch = (const OpalMediaPatch *)param;
-  m_ownerCall.OnRecordAudio(MakeRecordingKey(*patch), frame);
+  GetEndPoint().GetManager().QueueDecoupledEvent(new PSafeWorkArg2<OpalConnection, PString, RTP_DataFrame>(
+                             this, MakeRecordingKey(*patch), frame, &OpalConnection::InternalOnRecordAudio));
+}
+
+
+void OpalConnection::InternalOnRecordAudio(PString key, RTP_DataFrame frame)
+{
+  ownerCall.OnRecordAudio(key, frame);
 }
 
 
@@ -1128,7 +1135,14 @@ void OpalConnection::OnRecordAudio(RTP_DataFrame & frame, P_INT_PTR param)
 void OpalConnection::OnRecordVideo(RTP_DataFrame & frame, P_INT_PTR param)
 {
   const OpalMediaPatch * patch = (const OpalMediaPatch *)param;
-  m_ownerCall.OnRecordVideo(MakeRecordingKey(*patch), frame);
+  GetEndPoint().GetManager().QueueDecoupledEvent(new PSafeWorkArg2<OpalConnection, PString, RTP_DataFrame>(
+                             this, MakeRecordingKey(*patch), frame, &OpalConnection::InternalOnRecordVideo));
+}
+
+
+void OpalConnection::InternalOnRecordVideo(PString key, RTP_DataFrame frame)
+{
+  ownerCall.OnRecordVideo(key, frame);
 }
 
 #endif // OPAL_VIDEO

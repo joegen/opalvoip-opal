@@ -316,23 +316,29 @@ PBoolean OpalCall::OnConnected(OpalConnection & connection)
 
 PBoolean OpalCall::OnEstablished(OpalConnection & connection)
 {
-  PTRACE(3, "OnEstablished " << connection);
+  PTRACE(4, "OnEstablished " << connection);
 
   PSafeLockReadWrite lock(*this);
-  if (m_isClearing || !lock.IsLocked())
+  if (m_isClearing || !lock.IsLocked()) {
+    PTRACE(3, "OnEstablished " << connection << ", ignored as clearing call.");
     return false;
+  }
 
   if (m_isEstablished)
     return true;
 
-  if (m_connectionsActive.GetSize() < 2)
+  if (connectionsActive.GetSize() < 2) {
+    PTRACE(3, "OnEstablished " << connection << ", not enough connections.");
     return false;
+  }
 
   connection.StartMediaStreams();
 
   for (PSafePtr<OpalConnection> conn(m_connectionsActive, PSafeReference); conn != NULL; ++conn) {
-    if (conn->GetPhase() != OpalConnection::EstablishedPhase)
+    if (conn->GetPhase() != OpalConnection::EstablishedPhase) {
+      PTRACE(3, "OnEstablished " << connection << ", other side not established yet.");
       return false;
+    }
   }
 
   m_isEstablished = true;

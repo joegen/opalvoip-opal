@@ -961,7 +961,7 @@ class SIPEndPoint : public OpalSDPEndPoint
        If no active registration is available, the result of GetLocalURL() on
        the given transport is set to the Contact field.
      */
-    void AdjustToRegistration(
+    virtual void AdjustToRegistration(
       SIP_PDU & pdu,
       SIPConnection * connection = NULL,
       const OpalTransport * transport = NULL

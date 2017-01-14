@@ -1910,8 +1910,10 @@ class OpalConnection : public PSafeObject
     virtual void DisableRecording();
 
     PDECLARE_NOTIFIER(RTP_DataFrame, OpalConnection, OnRecordAudio);
+    void InternalOnRecordAudio(PString key, RTP_DataFrame frame);
 #if OPAL_VIDEO
     PDECLARE_NOTIFIER(RTP_DataFrame, OpalConnection, OnRecordVideo);
+    void InternalOnRecordVideo(PString key, RTP_DataFrame frame);
 #endif
 
     virtual void OnStartRecording(OpalMediaPatch * patch);
