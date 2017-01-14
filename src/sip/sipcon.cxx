@@ -575,7 +575,8 @@ PBoolean SIPConnection::SetAlerting(const PString & /*calleeName*/, PBoolean wit
   bool ciscoEndpoint = false;
   if (m_lastReceivedINVITE != NULL) {
     PSafePtr<SIPHandler> handler = m_sipEndpoint.FindSIPHandlerByUrl(m_lastReceivedINVITE->GetMIME().GetTo(), SIP_PDU::Method_REGISTER, PSafeReference);
-    ciscoEndpoint = dynamic_cast<SIPRegisterHandler *>(&*handler)->GetParams().m_compatibility == SIPRegister::e_Cisco;
+    if (handler != NULL)
+      ciscoEndpoint = dynamic_cast<SIPRegisterHandler *>(&*handler)->GetParams().m_compatibility == SIPRegister::e_Cisco;
   }
 
   if (ciscoEndpoint || (!withMedia && (!m_prackEnabled || m_lastReceivedINVITE->GetSDP() != NULL)))
