@@ -1119,14 +1119,15 @@ void OpalConnection::DisableRecording()
 void OpalConnection::OnRecordAudio(RTP_DataFrame & frame, P_INT_PTR param)
 {
   const OpalMediaPatch * patch = (const OpalMediaPatch *)param;
-  GetEndPoint().GetManager().QueueDecoupledEvent(new PSafeWorkArg2<OpalConnection, PString, RTP_DataFrame>(
-                             this, MakeRecordingKey(*patch), frame, &OpalConnection::InternalOnRecordAudio));
+  std::auto_ptr<RTP_DataFrame> copyFrame(new RTP_DataFrame(frame.GetPointer(), frame.GetSize()));
+  GetEndPoint().GetManager().QueueDecoupledEvent(new PSafeWorkArg2<OpalConnection, PString, std::auto_ptr<RTP_DataFrame>>(
+                                       this, MakeRecordingKey(*patch), copyFrame, &OpalConnection::InternalOnRecordAudio));
 }
 
 
-void OpalConnection::InternalOnRecordAudio(PString key, RTP_DataFrame frame)
+void OpalConnection::InternalOnRecordAudio(PString key, std::auto_ptr<RTP_DataFrame> frame)
 {
-  m_ownerCall.OnRecordAudio(key, frame);
+  m_ownerCall.OnRecordAudio(key, *frame);
 }
 
 
@@ -1135,14 +1136,15 @@ void OpalConnection::InternalOnRecordAudio(PString key, RTP_DataFrame frame)
 void OpalConnection::OnRecordVideo(RTP_DataFrame & frame, P_INT_PTR param)
 {
   const OpalMediaPatch * patch = (const OpalMediaPatch *)param;
-  GetEndPoint().GetManager().QueueDecoupledEvent(new PSafeWorkArg2<OpalConnection, PString, RTP_DataFrame>(
-                             this, MakeRecordingKey(*patch), frame, &OpalConnection::InternalOnRecordVideo));
+  std::auto_ptr<RTP_DataFrame> copyFrame(new RTP_DataFrame(frame.GetPointer(), frame.GetSize()));
+  GetEndPoint().GetManager().QueueDecoupledEvent(new PSafeWorkArg2<OpalConnection, PString, std::auto_ptr<RTP_DataFrame>>(
+                                       this, MakeRecordingKey(*patch), copyFrame, &OpalConnection::InternalOnRecordVideo));
 }
 
 
-void OpalConnection::InternalOnRecordVideo(PString key, RTP_DataFrame frame)
+void OpalConnection::InternalOnRecordVideo(PString key, std::auto_ptr<RTP_DataFrame> frame)
 {
-  m_ownerCall.OnRecordVideo(key, frame);
+  m_ownerCall.OnRecordVideo(key, *frame);
 }
 
 #endif // OPAL_VIDEO

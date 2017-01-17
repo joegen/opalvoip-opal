@@ -1297,7 +1297,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveData(RTP_DataFrame & 
       m_absSendTimeHighBits = highBits.GetNTP() & (-1LL << 38);
     }
 
-    uint64_t    ntp  = *exthdr++;
+    int64_t     ntp  = *exthdr++;
     ntp <<= 8;  ntp |= *exthdr++;
     ntp <<= 8;  ntp |= *exthdr++;
     ntp <<= 14; ntp |= m_absSendTimeHighBits;
