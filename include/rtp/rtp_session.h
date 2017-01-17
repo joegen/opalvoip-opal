@@ -627,6 +627,8 @@ class OpalRTPSession : public OpalMediaSession
     PString             m_toolName;
     RTPHeaderExtensions m_headerExtensions;
     unsigned            m_absSendTimeHdrExtId;
+    int64_t             m_absSendTimeHighBits;
+    int64_t             m_absSendTimeAllBits;
     unsigned            m_transportWideSeqNumHdrExtId;
     bool                m_allowAnySyncSource;
     PTimeInterval       m_staleReceiverTimeout;
