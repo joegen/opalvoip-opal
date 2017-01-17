@@ -327,7 +327,7 @@ PBoolean OpalCall::OnEstablished(OpalConnection & connection)
   if (m_isEstablished)
     return true;
 
-  if (connectionsActive.GetSize() < 2) {
+  if (m_connectionsActive.GetSize() < 2) {
     PTRACE(3, "OnEstablished " << connection << ", not enough connections.");
     return false;
   }

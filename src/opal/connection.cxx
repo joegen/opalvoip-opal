@@ -1126,7 +1126,7 @@ void OpalConnection::OnRecordAudio(RTP_DataFrame & frame, P_INT_PTR param)
 
 void OpalConnection::InternalOnRecordAudio(PString key, RTP_DataFrame frame)
 {
-  ownerCall.OnRecordAudio(key, frame);
+  m_ownerCall.OnRecordAudio(key, frame);
 }
 
 
@@ -1142,7 +1142,7 @@ void OpalConnection::OnRecordVideo(RTP_DataFrame & frame, P_INT_PTR param)
 
 void OpalConnection::InternalOnRecordVideo(PString key, RTP_DataFrame frame)
 {
-  ownerCall.OnRecordVideo(key, frame);
+  m_ownerCall.OnRecordVideo(key, frame);
 }
 
 #endif // OPAL_VIDEO
