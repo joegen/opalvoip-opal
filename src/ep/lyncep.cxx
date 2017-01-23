@@ -547,13 +547,13 @@ bool OpalLyncConnection::TransferConnection(const PString & remoteParty)
 }
 
 
-void OpalLyncConnection::OnLyncCallTransferReceived(const std::string & transferDestination, const std::string & tansferredBy) 
+void OpalLyncConnection::OnLyncCallTransferReceived(const std::string & PTRACE_PARAM(transferDestination), const std::string & PTRACE_PARAM(tansferredBy)) 
 {
   PTRACE(3, "Lync UCMA call Transfer Received - destination " << transferDestination << " by " << tansferredBy);
 }
 
 
-void OpalLyncConnection::OnLyncCallTransferStateChanged(int previousState, int newState) 
+void OpalLyncConnection::OnLyncCallTransferStateChanged(int PTRACE_PARAM(previousState), int PTRACE_PARAM(newState)) 
 {
   PTRACE(3, "Lync UCMA call transfer state changed from " << GetTransferStateName(previousState) << " to " << GetTransferStateName(newState));
 }
@@ -584,7 +584,7 @@ void OpalLyncConnection::OnMediaFlowStateChanged(int previousState, int newState
 
 static PConstString const ToneChars("0123456789*#ABCD!");
 
-void OpalLyncConnection::OnLyncCallToneReceived(int toneId, float volume)
+void OpalLyncConnection::OnLyncCallToneReceived(int toneId, float PTRACE_PARAM(volume))
 {
   PTRACE(4, "OnLyncToneReceived: toneId=" << toneId << ", DTMF=" << GetToneIdName(toneId) << ", volume=" << volume);
   if (toneId >= 0 && toneId < ToneChars.GetLength())
