@@ -155,11 +155,11 @@ bool OpalLyncEndPoint::Register(const PString & provisioningID)
 
   m_platform = CreatePlatform(PProcess::Current().GetName(), provisioningID);
   if (m_platform == nullptr) {
-    PTRACE(2, "Error initialising Lync UCMA platform: " << GetLastError());
+    PTRACE(2, "Error initialising Lync UCMA platform, with automatic provisioning: " << GetLastError());
     return false;
   }
 
-  PTRACE(3, "Created Lync UCMA platform.");
+  PTRACE(3, "Created Lync UCMA platform with automatic provisioning.");
   return true;
 }
 
@@ -178,11 +178,11 @@ bool OpalLyncEndPoint::RegisterApplication(const PlatformParams & platformParams
 
   m_platform = CreatePlatform(PProcess::Current().GetName(), platformParams);
   if (m_platform == nullptr) {
-    PTRACE(2, "Error initialising Lync UCMA platform: " << GetLastError());
+    PTRACE(2, "Error initialising Lync UCMA platform, manually provisioned: " << GetLastError());
     return false;
   }
 
-  PTRACE(3, "Created Lync UCMA platform.");
+  PTRACE(3, "Created Lync UCMA platform, manually provisioned.");
 
   m_applicationRegistration = CreateApplicationEndpoint(*m_platform, appParams);
   if (m_applicationRegistration == nullptr) {
@@ -209,10 +209,10 @@ PString OpalLyncEndPoint::RegisterUser(const UserParams & info)
     PlatformParams params;
     m_platform = CreatePlatform(PProcess::Current().GetName());
     if (m_platform == nullptr) {
-      PTRACE(2, "Error initialising Lync UCMA platform: " << GetLastError());
+      PTRACE(2, "Error initialising Lync UCMA platform for user application mode: " << GetLastError());
       return PString::Empty();
     }
-    PTRACE(3, "Created Lync UCMA platform.");
+    PTRACE(3, "Created Lync UCMA platform for user application mode.");
   }
 
   PString uriStr = info.m_uri;
@@ -413,8 +413,15 @@ void OpalLyncConnection::OnLyncCallStateChanged(int PTRACE_PARAM(previousState),
   if (newState == CallStateEstablished) {
     m_flow = CreateAudioVideoFlow(*m_audioVideoCall);
     if (m_flow != NULL) {
+   	  PTRACE(2, "Created Lync UCMA A/V flow wrapper");
       InternalOnConnected();
       if (m_mediaActive) {
+        if (m_toneController == NULL) {
+          PTRACE(4, "Media is active but no tone controller has been created yet. Creating...");
+          m_toneController = CreateToneController(*m_flow);
+          PTRACE_IF(2, m_toneController == nullptr, "Error creating Lync UCMA ToneController for " << *this << ": " << GetLastError());
+        }
+
         AutoStartMediaStreams();
         InternalOnEstablished();
       }
@@ -573,11 +580,16 @@ void OpalLyncConnection::OnMediaFlowStateChanged(int previousState, int newState
 
   m_mediaActive = newState == MediaFlowActive;
   if (m_mediaActive && previousState != MediaFlowActive && !IsReleased()) {
-    m_toneController = CreateToneController(*m_flow);
-    PTRACE_IF(2, m_toneController == nullptr, "Error creating Lync UCMA ToneController for " << *this << ": " << GetLastError());
+    if (m_flow == NULL) {
+      PTRACE(4, "Media is active, but still not ready to create Lync UCMA ToneController");
+    }
+    else if (m_toneController == NULL) {
+      m_toneController = CreateToneController(*m_flow);
+      PTRACE_IF(2, m_toneController == nullptr, "Error creating Lync UCMA ToneController for " << *this << ": " << GetLastError());
 
-    AutoStartMediaStreams();
-    InternalOnEstablished();
+      AutoStartMediaStreams();
+      InternalOnEstablished();
+    }
   }
 }
 
