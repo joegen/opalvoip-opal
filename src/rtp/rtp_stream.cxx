@@ -336,13 +336,6 @@ PBoolean OpalRTPMediaStream::ReadPacket(RTP_DataFrame & packet)
 
   m_timestamp = packet.GetTimestamp();
 
-#if OPAL_VIDEO
-  if (packet.GetDiscontinuity() > 0 && m_mediaFormat.GetMediaType() == OpalMediaType::Video()) {
-    PTRACE(3, "Automatically requesting video update due to " << packet.GetDiscontinuity() << " missing packets.");
-    ExecuteCommand(OpalVideoPictureLoss(packet.GetSequenceNumber(), m_timestamp, 0, packet.GetSyncSource()));
-  }
-#endif
-
 #if OPAL_JITTER_BUFFER_LATENCY_CHECK
   if (PTrace::CanTrace(3) && packet.GetPayloadSize() > 0) {
     unsigned jbDelay = m_jitterBuffer->GetCurrentJitterDelay();
