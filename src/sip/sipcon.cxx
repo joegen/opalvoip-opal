@@ -2676,11 +2676,17 @@ void SIPConnection::OnDelayedRefer()
     return;
   }
 
-  SIPURL cleanedReferTo = m_delayedReferTo;
-  cleanedReferTo.SetQuery(PString::Empty());
+  SIPURL adjustedReferTo = m_delayedReferTo;
+  adjustedReferTo.SetQuery(PString::Empty());
+  adjustedReferTo.Sanitise(SIPURL::ExternalURI);
+  PString remoteParty = adjustedReferTo.AsString();
+
+  PString forceRoute = m_delayedReferTo.GetParamVars().GetString("X-OPAL-Force-Route");
+  if (!forceRoute.IsEmpty())
+    remoteParty.Splice(forceRoute, 0, adjustedReferTo.GetScheme().GetLength());
 
   // send NOTIFY if transfer failed, but only if allowed by RFC4488
-  if (!GetEndPoint().SetupTransfer(*this, cleanedReferTo.AsQuotedString(), m_delayedReferTo.GetQueryVars()("Replaces")) &&
+  if (!GetEndPoint().SetupTransfer(*this, remoteParty, m_delayedReferTo.GetQueryVars()("Replaces")) &&
       m_delayedReferTo.GetQueryVars().GetBoolean("ReferSub"))
   {
     PSafePtr<SIPTransaction> referNotify = new SIPReferNotify(*this, SIP_PDU::GlobalFailure_Decline);
