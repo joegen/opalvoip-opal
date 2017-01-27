@@ -66,7 +66,7 @@ void OpalLyncEndPoint::ShutDown()
 
   DestroyApplicationEndpoint(m_applicationRegistration);
 
-  if (!DestroyPlatform(m_platform)) {
+  if (m_platform != NULL && !DestroyPlatform(m_platform)) {
     PTRACE_IF(2, !GetLastError().empty(), "Error shutting down Lync UCMA platform: " << GetLastError());
   }
 }
@@ -187,7 +187,9 @@ bool OpalLyncEndPoint::RegisterApplication(const PlatformParams & platformParams
   m_applicationRegistration = CreateApplicationEndpoint(*m_platform, appParams);
   if (m_applicationRegistration == nullptr) {
     PTRACE(2, "Error initialising Lync UCMA application endpoint: " << GetLastError());
-    DestroyPlatform(m_platform);
+	if (m_platform != NULL) {
+		DestroyPlatform(m_platform);
+	}
     return false;
   }
 
