@@ -354,9 +354,13 @@ bool MyManager::ConfigureCommon(OpalEndPoint * ep,
 {
   PString normalPrefix = ep->GetPrefixName();
 
-  if (!ep->StartListeners(rsrc->AddStringArrayField(cfgPrefix + " Interfaces", false, 25, PStringArray(),
-                          "Local network interfaces and ports to listen on, blank means all"))) {
-    PSYSTEMLOG(Error, "Could not open any listeners for " << normalPrefix);
+  bool disabled = !rsrc->AddBooleanField(cfgPrefix & "Enabled", true);
+  PStringArray listeners = rsrc->AddStringArrayField(cfgPrefix & "Interfaces", false, 25, PStringArray(),
+                                      "Local network interfaces and ports to listen on, blank means all");
+  if (disabled)
+    ep->RemoveListener(NULL);
+  else if (!ep->StartListeners(listeners)) {
+    PSYSTEMLOG(Error, "Could not open any listeners for " << cfgPrefix);
   }
 
 #if OPAL_PTLIB_SSL
