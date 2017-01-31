@@ -764,6 +764,7 @@ class H264_Encoder : public PluginVideoEncoder<MY_CODEC>
     virtual int GetStatistics(char * bufferPtr, unsigned bufferSize)
     {
       size_t len = BaseClass::GetStatistics(bufferPtr, bufferSize);
+      len += snprintf(bufferPtr+len, bufferSize-len, "Width=%u\nHeight=%u\n", m_width, m_height);
 
       if (m_quality >= 0 && len < bufferSize)
         len += snprintf(bufferPtr+len, bufferSize-len, "Quality=%u\n", m_quality);
@@ -918,6 +919,14 @@ class H264_Decoder : public PluginVideoDecoder<MY_CODEC>
     }
 
 
+    virtual int GetStatistics(char * bufferPtr, unsigned bufferSize)
+    {
+      size_t len = BaseClass::GetStatistics(bufferPtr, bufferSize);
+      len += snprintf(bufferPtr+len, bufferSize-len, "Width=%u\nHeight=%u\n", m_width, m_height);
+      return (int)len;
+    }
+
+
     virtual bool Transcode(const void * fromPtr,
                              unsigned & fromLen,
                                  void * toPtr,
@@ -971,6 +980,9 @@ class H264_Decoder : public PluginVideoDecoder<MY_CODEC>
 
       if (m_bufferInfo.iBufferStatus != 0) {
         PluginCodec_RTP out(toPtr, toLen);
+
+        m_width = m_bufferInfo.UsrData.sSystemBuffer.iWidth;
+        m_height = m_bufferInfo.UsrData.sSystemBuffer.iHeight;
 
         // Why make it so hard?
         int raster[3] = {

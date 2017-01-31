@@ -547,6 +547,7 @@ class VP8Encoder : public PluginVideoEncoder<VP8_CODEC>
     virtual int GetStatistics(char * bufferPtr, unsigned bufferSize)
     {
       size_t len = BaseClass::GetStatistics(bufferPtr, bufferSize);
+      len += snprintf(bufferPtr+len, bufferSize-len, "Width=%u\nHeight=%u\n", m_width, m_height);
 
       WaitAndSignal lock(m_mutex);
 
@@ -814,6 +815,14 @@ class VP8Decoder : public PluginVideoDecoder<VP8_CODEC>
     }
 
 
+    virtual int GetStatistics(char * bufferPtr, unsigned bufferSize)
+    {
+      size_t len = BaseClass::GetStatistics(bufferPtr, bufferSize);
+      len += snprintf(bufferPtr+len, bufferSize-len, "Width=%u\nHeight=%u\n", m_width, m_height);
+      return (int)len;
+    }
+
+
     bool BadDecode(unsigned & flags, bool ok)
     {
       if (ok)
@@ -915,6 +924,9 @@ class VP8Decoder : public PluginVideoDecoder<VP8_CODEC>
         PTRACE(1, MY_CODEC_LOG, "Unsupported image format from decoder.");
         return false;
       }
+
+      m_width = image->d_w;
+      m_height = image->d_h;
 
       PluginCodec_RTP dstRTP(toPtr, toLen);
       toLen = OutputImage(image->planes, image->stride, image->d_w, image->d_h, dstRTP, flags);

@@ -783,18 +783,19 @@ class H264_Encoder : public PluginVideoEncoder<MY_CODEC>
     }
 
 
-#ifdef WHEN_WE_FIGURE_OUT_HOW_TO_GET_QUALITY_FROM_X264
     virtual int GetStatistics(char * bufferPtr, unsigned bufferSize)
     {
       size_t len = BaseClass::GetStatistics(bufferPtr, bufferSize);
+      len += snprintf(bufferPtr+len, bufferSize-len, "Width=%u\nHeight=%u\n", m_width, m_height);
 
+#ifdef WHEN_WE_FIGURE_OUT_HOW_TO_GET_QUALITY_FROM_X264
       int quality = m_encoder.GetQuality();
       if (quality >= 0 && len < bufferSize)
         len += snprintf(bufferPtr+len, bufferSize-len, "Quality=%u\n", quality);
-
-      return len;
-    }
 #endif
+
+      return (int)len;
+    }
 
 
     virtual bool Transcode(const void * fromPtr,
@@ -803,10 +804,22 @@ class H264_Encoder : public PluginVideoEncoder<MY_CODEC>
                              unsigned & toLen,
                              unsigned & flags)
     {
-      return m_encoder.EncodeFrames((const unsigned char *)fromPtr, fromLen,
-                                    (unsigned char *)toPtr, toLen,
-                                     PluginCodec_RTP_GetHeaderLength(toPtr),
-                                     flags);
+      if (!m_encoder.EncodeFrames((const unsigned char *)fromPtr, fromLen,
+                                  (unsigned char *)toPtr, toLen,
+                                   PluginCodec_RTP_GetHeaderLength(toPtr),
+                                   flags))
+        return false;
+
+#if defined(X264_LICENSED)
+      m_width = m_encoder.GetWidth();
+      m_height = m_encoder.GetHeight();
+#else
+      PluginCodec_RTP srcRTP(fromPtr, fromLen);
+      PluginCodec_Video_FrameHeader * header = (PluginCodec_Video_FrameHeader *)srcRTP.GetPayloadPtr();
+      m_width = header->width&~1;
+      m_height = header->height&~1;
+#endif
+      return true;
     }
 };
 
@@ -850,6 +863,14 @@ class H264_Decoder : public PluginVideoDecoder<MY_CODEC>, public FFMPEGCodec
     }
 
 
+    virtual int GetStatistics(char * bufferPtr, unsigned bufferSize)
+    {
+      size_t len = BaseClass::GetStatistics(bufferPtr, bufferSize);
+      len += snprintf(bufferPtr+len, bufferSize-len, "Width=%u\nHeight=%u\n", m_width, m_height);
+      return (int)len;
+    }
+
+
     virtual bool Transcode(const void * fromPtr,
                              unsigned & fromLen,
                                  void * toPtr,
@@ -861,6 +882,9 @@ class H264_Decoder : public PluginVideoDecoder<MY_CODEC>, public FFMPEGCodec
 
       if ((flags&PluginCodec_ReturnCoderLastFrame) == 0)
         return true;
+
+      m_width = PICTURE_WIDTH;
+      m_height = PICTURE_HEIGHT;
 
       PluginCodec_RTP out(toPtr, toLen);
       toLen = OutputImage(m_picture->data, m_picture->linesize, PICTURE_WIDTH, PICTURE_HEIGHT, out, flags);
@@ -917,7 +941,7 @@ class H264_FlashEncoder : public H264_Encoder, protected H264FlashPacketizer
       if (m_naluBuffer.empty())
         m_naluBuffer.resize(m_maxRTPSize);
 
-      naluLen = m_naluBuffer.size();
+      naluLen = (unsigned)m_naluBuffer.size();
       if (!m_encoder.EncodeFrames((const unsigned char *)fromPtr, fromLen,
                                   m_naluBuffer.data(), naluLen, PluginCodec_RTP_MinHeaderSize, flags))
         return false;
@@ -983,7 +1007,7 @@ class H264_FlashDecoder : public PluginVideoDecoder<MY_CODEC>, public FFMPEGCode
           CloseCodec();
           m_sps_pps.assign(payloadPtr, payloadPtr+payloadLen);
           m_context->extradata = m_sps_pps.data();
-          m_context->extradata_size = payloadLen;
+          m_context->extradata_size = (int)payloadLen;
           if (!OpenCodec())
             return false;
           PTRACE(4, MY_CODEC_LOG, "Re-opened decoder with new SPS/PPS: " << payloadLen << " bytes");
