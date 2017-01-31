@@ -2676,14 +2676,21 @@ void SIPConnection::OnDelayedRefer()
     return;
   }
 
-  SIPURL adjustedReferTo = m_delayedReferTo;
-  adjustedReferTo.SetQuery(PString::Empty());
-  adjustedReferTo.Sanitise(SIPURL::ExternalURI);
-  PString remoteParty = adjustedReferTo.AsString();
-
-  PString forceRoute = m_delayedReferTo.GetParamVars().GetString("X-OPAL-Force-Route");
-  if (!forceRoute.IsEmpty())
-    remoteParty.Splice(forceRoute, 0, adjustedReferTo.GetScheme().GetLength());
+  PString remoteParty;
+  {
+    SIPURL adjustedReferTo = m_delayedReferTo;
+    adjustedReferTo.SetQuery(PString::Empty());
+    adjustedReferTo.Sanitise(SIPURL::ExternalURI);
+    static PConstCaselessString const ForceRouteKey("X-OPAL-Force-Route");
+    PString forceRoute = adjustedReferTo.GetParamVars().GetString(ForceRouteKey);
+    if (forceRoute.IsEmpty())
+      remoteParty = adjustedReferTo.AsString();
+    else {
+      adjustedReferTo.SetParamVar(ForceRouteKey, PString::Empty());
+      remoteParty = adjustedReferTo.AsString();
+      remoteParty.Splice(forceRoute, 0, adjustedReferTo.GetScheme().GetLength());
+    }
+  }
 
   // send NOTIFY if transfer failed, but only if allowed by RFC4488
   if (!GetEndPoint().SetupTransfer(*this, remoteParty, m_delayedReferTo.GetQueryVars()("Replaces")) &&
