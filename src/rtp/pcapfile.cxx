@@ -303,6 +303,7 @@ int OpalPCAPFile::GetDecodedRTP(RTP_DataFrame & decodedRTP, DecodeContext & cont
       for (PINDEX i = 0; i < 100; ++i) {
         if (GetRTP(encodedRTP) >= 0 && encodedRTP.GetSequenceNumber() == expectedSequenceNumber) {
           PTRACE(3, "Restoring out of order packet at " << expectedSequenceNumber);
+          thisSequenceNumber = expectedSequenceNumber;
           missing = false;
           break;
         }
