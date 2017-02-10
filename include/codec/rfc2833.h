@@ -143,7 +143,7 @@ class OpalRFC2833Proto : public PObject
   protected:
     bool InternalTransmitFrame();
     bool AbortTransmit();
-    WORD GetTimestampSince(const PTimeInterval & tick) const;
+    WORD GetTimestampSince(const PTime & when) const;
 
     PDECLARE_RTPDataNotifier(OpalRFC2833Proto, ReceivedPacket);
     PDECLARE_NOTIFIER(PTimer, OpalRFC2833Proto, ReceiveTimeout);
@@ -165,13 +165,14 @@ class OpalRFC2833Proto : public PObject
       TransmitEnding1,
       TransmitEnding2,
       TransmitEnding3,
-    }                m_transmitState;
-    PTimer           m_transmitUpdateTimer;
-    PTimer           m_transmitDurationTimer;
-    DWORD            m_transmitTimestamp;
-    PTimeInterval    m_transmitStartTime;
-    BYTE             m_transmitCode;
-    WORD             m_transmitDuration;
+    }      m_transmitState;
+    PTimer m_transmitUpdateTimer;
+    PTimer m_transmitDurationTimer;
+    DWORD  m_transmitTimestamp;
+    PTime  m_transmitStartTime;
+    BYTE   m_transmitCode;
+    WORD   m_transmitDuration;
+
     PDECLARE_MUTEX(m_transmitMutex);
 
     bool     m_receiveIdle;

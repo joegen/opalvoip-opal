@@ -94,7 +94,8 @@ struct OpalNetworkStatistics
   int      m_jitterBufferDelay; // Milliseconds (-1 is N/A)
   int      m_roundTripTime;     // Milliseconds (-1 is N/A)
   int      m_lastPacketRTP;     // (-1 is N/A)
-  PTime    m_lastPacketTime;
+  PTime    m_lastPacketAbsTime;
+  PTime    m_lastPacketNetTime;
   PTime    m_lastReportTime;
   unsigned m_targetBitRate;    // As configured, not actual, which is calculated from m_totalBytes
   float    m_targetFrameRate;  // As configured, not actual, which is calculated from m_totalFrames

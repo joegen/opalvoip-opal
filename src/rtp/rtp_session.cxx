@@ -406,16 +406,15 @@ void OpalRTPSession::SyncSource::CalculateStatistics(const RTP_DataFrame & frame
     ++m_markerCount;
 
   RTP_Timestamp lastTimestamp = m_lastPacketTimestamp;
-  PTimeInterval lastPacketTick = m_lastPacketTick;
 
-  PTimeInterval tick = PTimer::Tick();
-  m_lastPacketTick = tick;
+  PTime previousPacketNetTime = m_lastPacketNetTime;
+  m_lastPacketNetTime.SetCurrentTime();
+
   m_lastPacketAbsTime = frame.GetAbsoluteTime();
   if (!m_lastPacketAbsTime.IsValid())
     m_lastPacketAbsTime.SetCurrentTime();
+
   m_lastPacketTimestamp = frame.GetTimestamp();
-
-
 
   /* For audio we do not do statistics on start of talk burst as that
       could be a substantial time and is not useful, so we only calculate
@@ -428,7 +427,7 @@ void OpalRTPSession::SyncSource::CalculateStatistics(const RTP_DataFrame & frame
   if (m_session.IsAudio() ? frame.GetMarker() : (lastTimestamp == frame.GetTimestamp()))
     return;
 
-  unsigned diff = (tick - lastPacketTick).GetInterval();
+  unsigned diff = (m_lastPacketNetTime - previousPacketNetTime).GetInterval();
 
   m_averageTimeAccum += diff;
   if (diff > m_maximumTimeAccum)
@@ -553,7 +552,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveData(RTP_
   // Check packet sequence numbers
   if (m_packets == 0) {
     m_firstPacketTime.SetCurrentTime();
-    m_lastPacketTick = PTimer::Tick();
+    m_lastPacketNetTime.SetCurrentTime();
 
     PTRACE(3, &m_session, m_session << "first receive data:" << setw(1) << frame);
 
@@ -1578,7 +1577,7 @@ bool OpalRTPSession::SyncSource::IsStaleReceiver() const
     return false;
 
   // Are still getting packets
-  if ((PTimer::Tick() - m_lastPacketTick) < m_session.m_staleReceiverTimeout)
+  if (m_lastPacketNetTime.GetElapsed() < m_session.m_staleReceiverTimeout)
     return false;
 
   PTRACE(3, &m_session, *this << "removing stale receiver");
@@ -1689,7 +1688,8 @@ void OpalRTPSession::GetStatistics(OpalMediaStatistics & statistics, Direction d
   statistics.m_jitterBufferDelay = -1;
   statistics.m_roundTripTime     = m_roundTripTime;
   statistics.m_lastPacketRTP     = -1;
-  statistics.m_lastPacketTime    = 0;
+  statistics.m_lastPacketAbsTime = 0;
+  statistics.m_lastPacketNetTime = 0;
   statistics.m_lastReportTime    = 0;
 
   if (statistics.m_SSRC != 0) {
@@ -1742,8 +1742,11 @@ void OpalRTPSession::GetStatistics(OpalMediaStatistics & statistics, Direction d
         if (statistics.m_lastPacketRTP < ssrcStats.m_lastPacketRTP)
           statistics.m_lastPacketRTP = ssrcStats.m_lastPacketRTP;
 
-        if (statistics.m_lastPacketTime < ssrcStats.m_lastPacketTime)
-          statistics.m_lastPacketTime = ssrcStats.m_lastPacketTime;
+        if (statistics.m_lastPacketAbsTime < ssrcStats.m_lastPacketAbsTime)
+          statistics.m_lastPacketAbsTime = ssrcStats.m_lastPacketAbsTime;
+
+        if (statistics.m_lastPacketNetTime < ssrcStats.m_lastPacketNetTime)
+          statistics.m_lastPacketNetTime = ssrcStats.m_lastPacketNetTime;
 
         if (statistics.m_lastReportTime < ssrcStats.m_lastReportTime)
           statistics.m_lastReportTime = ssrcStats.m_lastReportTime;
@@ -1774,7 +1777,8 @@ void OpalRTPSession::SyncSource::GetStatistics(OpalMediaStatistics & statistics)
   statistics.m_maximumJitter     = m_maximumJitter;
   if (m_packets > 0)
     statistics.m_lastPacketRTP   = m_lastPacketTimestamp;
-  statistics.m_lastPacketTime    = m_lastPacketAbsTime;
+  statistics.m_lastPacketAbsTime = m_lastPacketAbsTime;
+  statistics.m_lastPacketNetTime = m_lastPacketNetTime;
   statistics.m_lastReportTime    = m_lastSenderReportTime;
 
   if (m_direction == e_Receiver) {

@@ -225,6 +225,7 @@ OpalRFC2833Proto::OpalRFC2833Proto(const PNotifier & rx, const OpalMediaFormat &
   , m_rtpSession(NULL)
   , m_transmitState(TransmitIdle)
   , m_transmitTimestamp(0)
+  , m_transmitStartTime(0)
   , m_transmitCode('\0')
   , m_transmitDuration(0)
   , m_receiveIdle(true)
@@ -311,9 +312,9 @@ PBoolean OpalRFC2833Proto::SendToneAsync(char tone, unsigned milliseconds)
 }
 
 
-WORD OpalRFC2833Proto::GetTimestampSince(const PTimeInterval & tick) const
+WORD OpalRFC2833Proto::GetTimestampSince(const PTime & when) const
 {
-  return (WORD)((PTimer::Tick() - tick).GetMilliSeconds() * m_baseMediaFormat.GetTimeUnits());
+  return (WORD)(when.GetElapsed().GetMilliSeconds() * m_baseMediaFormat.GetTimeUnits());
 }
 
 
@@ -355,13 +356,13 @@ bool OpalRFC2833Proto::InternalTransmitFrame()
   switch (m_transmitState) {
     case TransmitActive:
       // set duration to time since start of time
-      if (m_transmitStartTime != 0) 
+      if (m_transmitStartTime.IsValid()) 
         m_transmitDuration = GetTimestampSince(m_transmitStartTime);
       else {
         frame.SetMarker(true);
         m_transmitDuration = 0;
-        m_transmitStartTime = PTimer::Tick();
-        m_transmitTimestamp = m_rtpSession->GetLastSentTimestamp() + GetTimestampSince(m_rtpSession->GetLastSentPacketTime());
+        m_transmitStartTime.SetCurrentTime();
+        m_transmitTimestamp = m_rtpSession->GetLastSentTimestamp() + GetTimestampSince(m_rtpSession->GetLastSentNetTime());
       }
       break;
 
