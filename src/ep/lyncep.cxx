@@ -445,6 +445,10 @@ void OpalLyncConnection::OnLyncCallStateChanged(int PTRACE_PARAM(previousState),
   // else get OnLyncCallFailed() with more info on why
 }
 
+void OpalLyncConnection::OnLyncCallEstablished()
+{
+	PTRACE(4, "Lync UCMA call established " << *this);
+}
 
 void OpalLyncConnection::OnLyncCallFailed(const std::string & error)
 {

@@ -136,6 +136,7 @@ class OpalLyncShim
     };
     virtual void OnIncomingLyncCall(const IncomingLyncCallInfo & /*info*/) { }
     virtual void OnLyncCallStateChanged(int /*previousState*/, int /*newState*/) { }
+	virtual void OnLyncCallEstablished() { }
     virtual void OnLyncCallFailed(const std::string & /*error*/) { }
     virtual void OnLyncCallTransferReceived(const std::string & /*TransferDestination*/, const std::string & /*TransferredBy*/) { }
     virtual void OnLyncCallTransferStateChanged(int /*previousState*/, int /*newState*/) { }
@@ -477,6 +478,7 @@ class OpalLyncConnection : public OpalConnection, public OpalLyncShimBase
     bool             m_mediaActive;
 
     virtual void OnLyncCallStateChanged(int previousState, int newState) override;
+	virtual void OnLyncCallEstablished() override;
     virtual void OnLyncCallFailed(const std::string & error) override;
     virtual void OnLyncCallTransferReceived(const std::string & transferDestination, const std::string & tansferredBy) override;
     virtual void OnLyncCallTransferStateChanged(int previousState, int newState) override;
