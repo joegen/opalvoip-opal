@@ -321,13 +321,33 @@ OpalLyncConnection::OpalLyncConnection(OpalCall & call,
 }
 
 
-static PString ToOpalLyncURI(const PString & uri, const PString & prefix)
+PString OpalLyncConnection::InternalConvertLyncURI(const PString & uri) const
 {
   if (uri.NumCompare("sip:") == PObject::EqualTo)
-    return prefix + uri.Mid(3);
-  
-  return prefix + ':' + uri;
+    return GetPrefixName() + uri.Mid(3);
+
+  if (uri.NumCompare("tel:") != PObject::EqualTo)
+    return PSTRSTRM(GetPrefixName() << ':' << uri);
+
+  PURL tel(uri);
+  PString domain = tel.GetHostName();
+  if (domain.IsEmpty() || domain == "enterprise") {
+    PString localParty = GetLocalPartyURL();
+    PINDEX at = localParty.Find('@');
+    if (at != P_MAX_INDEX)
+      domain = localParty.Mid(at+1);
+    else
+      domain = PIPSocket::GetHostName();
+  }
+  else {
+    PINDEX at = domain.Find('@');
+    if (at != P_MAX_INDEX)
+      domain.Delete(0, at+1);
+  }
+
+  return PSTRSTRM(GetPrefixName() << ':' << tel.GetUserName() << '@' << domain);
 }
+
 
 void OpalLyncConnection::SetUpIncomingLyncCall(const IncomingLyncCallInfo & info)
 {
@@ -345,13 +365,13 @@ void OpalLyncConnection::SetUpIncomingLyncCall(const IncomingLyncCallInfo & info
 
   m_audioVideoCall = info.m_call;
 
-  m_remotePartyURL = ToOpalLyncURI(info.m_remoteUri, GetPrefixName());
+  m_remotePartyURL = InternalConvertLyncURI(info.m_remoteUri);
   m_remotePartyNumber = m_remotePartyURL(m_remotePartyURL.Find(':')+1, m_remotePartyURL.Find('@')-1);
   if (!OpalIsE164(m_remotePartyNumber))
     m_remotePartyNumber.MakeEmpty();
   m_remotePartyName = info.m_displayName;
   m_calledPartyName = info.m_destinationUri;
-  m_redirectingParty = ToOpalLyncURI(info.m_transferredBy, GetPrefixName());
+  m_redirectingParty = InternalConvertLyncURI(info.m_transferredBy);
 
   SetPhase(SetUpPhase);
   OnApplyStringOptions();

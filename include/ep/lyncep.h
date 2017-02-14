@@ -486,6 +486,8 @@ class OpalLyncConnection : public OpalConnection, public OpalLyncShimBase
     virtual void OnLyncCallIncomingFaxDetected() override;
     virtual void OnMediaFlowStateChanged(int previousState, int newState) override;
 
+    PString InternalConvertLyncURI(const PString & uri) const;
+
   friend class OpalLyncMediaStream;
 };
 
