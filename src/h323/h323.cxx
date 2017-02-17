@@ -5229,7 +5229,7 @@ PBoolean H323Connection::OnStartLogicalChannel(H323Channel & channel)
       PTRACE(4, "H323\tWaiting for other channel in switch of T.38");
   }
 #else
-  t38ModeChangeCapabilities.MakeEmpty();
+  m_t38ModeChangeCapabilities.MakeEmpty();
 #endif // OPAL_T38_CAPABILITY
 
   return m_endpoint.OnStartLogicalChannel(*this, channel);
