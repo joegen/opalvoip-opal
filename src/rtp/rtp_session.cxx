@@ -1832,8 +1832,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
         unsigned count;
         if (frame.ParseSenderReport(txReport, rr, count)) {
           OnRxSenderReport(txReport);
-          for (unsigned i = 0; i < count; ++i)
-            OnRxReceiverReport(txReport.sourceIdentifier, rr[i]);
+          OnRxReceiverReports(txReport.sourceIdentifier, rr, count);
         }
         else {
           PTRACE(2, *this << "SenderReport packet truncated - " << frame);
@@ -1848,8 +1847,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
         unsigned count;
         if (frame.ParseReceiverReport(ssrc, rr, count)) {
           if (count != 0) {
-            for (unsigned i = 0; i < count; ++i)
-              OnRxReceiverReport(ssrc, rr[i]);
+            OnRxReceiverReports(ssrc, rr, count);
           }
           else {
             PTRACE(m_throttleRxEmptyRR, *this << "received empty ReceiverReport: sender SSRC=" << RTP_TRACE_SRC(ssrc));
@@ -2165,13 +2163,27 @@ void OpalRTPSession::OnRxSenderReport(const RTP_SenderReport & senderReport)
 }
 
 
-void OpalRTPSession::OnRxReceiverReport(RTP_SyncSourceId ssrc, const RTP_ControlFrame::ReceiverReport & rr)
+void OpalRTPSession::OnRxReceiverReports(RTP_SyncSourceId ssrc, const RTP_ControlFrame::ReceiverReport * rr, unsigned count)
 {
-  SyncSource * sender = NULL;
-  if (CheckControlSSRC(ssrc, rr.ssrc, sender PTRACE_PARAM(, "RR"))) {
-    RTP_ReceiverReport report(rr, sender->m_ntpPassThrough);
-    sender->OnRxReceiverReport(report);
-    OnRxReceiverReport(ssrc, report);
+  std::vector<RTP_ReceiverReport> reports;
+  for (unsigned i = 0; i < count; ++i) {
+    OnRxReceiverReport(ssrc, rr[i]);
+
+    SyncSource * sender = NULL;
+    if (CheckControlSSRC(ssrc, rr[i].ssrc, sender PTRACE_PARAM(, "RR"))) {
+      RTP_ReceiverReport report(rr[i], sender->m_ntpPassThrough);
+      sender->OnRxReceiverReport(report);
+      reports.push_back(report);
+    }
+  }
+  OnRxReceiverReports(ssrc, reports);
+}
+
+
+void OpalRTPSession::OnRxReceiverReports(RTP_SyncSourceId ssrc, const std::vector<RTP_ReceiverReport> & reports)
+{
+  for (unsigned i = 0; i < reports.size(); ++i) {
+    OnRxReceiverReport(ssrc, reports[i]);        
   }
 }
 
