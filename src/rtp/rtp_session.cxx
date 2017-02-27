@@ -524,7 +524,8 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnSendData(RTP_Dat
       frame.SetAbsoluteTime();
 
   PTRACE_IF(3, !m_reportAbsoluteTime.IsValid() && frame.GetAbsoluteTime().IsValid(), &m_session,
-            m_session << "sent first RTP with absolute time: " << frame.GetAbsoluteTime().AsString(PTime::TodayFormat));
+            m_session << "sent first RTP with absolute time: " <<
+            frame.GetAbsoluteTime().AsString(PTime::TodayFormat, PTrace::GetTimeZone()));
 
   m_reportAbsoluteTime = frame.GetAbsoluteTime();
   m_reportTimestamp = frame.GetTimestamp();
@@ -1118,9 +1119,9 @@ void OpalRTPSession::SyncSource::OnRxSenderReport(const RTP_SenderReport & repor
   PTRACE_IF(2, m_reportAbsoluteTime.IsValid() && m_lastSenderReportTime.IsValid() && report.realTimestamp.IsValid() &&
                abs(report.realTimestamp - m_reportAbsoluteTime) > std::max(PTimeInterval(0,10),(now - m_lastSenderReportTime)*2),
             &m_session, m_session << "OnRxSenderReport: remote NTP time jumped by unexpectedly large amount,"
-            " was " << m_reportAbsoluteTime.AsString(PTime::TodayFormat) << ","
-            " now " << report.realTimestamp.AsString(PTime::TodayFormat) << ","
-            " last report " << m_lastSenderReportTime.AsString(PTime::TodayFormat));
+            " was " << m_reportAbsoluteTime.AsString(PTime::TodayFormat, PTrace::GetTimeZone()) << ","
+            " now " << report.realTimestamp.AsString(PTime::TodayFormat, PTrace::GetTimeZone()) << ","
+            " last report " << m_lastSenderReportTime.AsString(PTime::TodayFormat, PTrace::GetTimeZone()));
   m_ntpPassThrough = report.ntpPassThrough;
   m_reportAbsoluteTime =  report.realTimestamp;
   m_reportTimestamp = report.rtpTimestamp;
@@ -1510,7 +1511,7 @@ bool OpalRTPSession::InternalSendReport(RTP_ControlFrame & report, SyncSource & 
     sender.m_lastSenderReportTime.SetCurrentTime();
 
     PTRACE(logLevel, sender << "sending " << forcedStr << "SenderReport:"
-              " ntp=" << sender.m_reportAbsoluteTime.AsString(PTime::TodayFormat)
+              " ntp=" << sender.m_reportAbsoluteTime.AsString(PTime::TodayFormat, PTrace::GetTimeZone())
            << " 0x" << hex << sender.m_ntpPassThrough << dec
            << " rtp=" << sender.m_reportTimestamp
            << " psent=" << sender.m_packets
