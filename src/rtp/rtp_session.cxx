@@ -2189,6 +2189,11 @@ void OpalRTPSession::OnRxReceiverReports(RTP_SyncSourceId ssrc, const std::vecto
 }
 
 
+void OpalRTPSession::OnRxReceiverReport(RTP_SyncSourceId, const RTP_ControlFrame::ReceiverReport &)
+{
+}
+
+
 void OpalRTPSession::OnRxReceiverReport(RTP_SyncSourceId, const RTP_ReceiverReport & report)
 {
   m_connection.ExecuteMediaCommand(OpalMediaPacketLoss(report.fractionLost * 100 / 255, m_mediaType, m_sessionId, report.sourceIdentifier), true);
