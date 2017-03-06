@@ -1011,6 +1011,7 @@ class OpalTransport : public PSafeObject
     PChannel * GetChannel() const { return m_channel; }
 
     bool IsIdle() const { return m_referenceCount == 0 && m_idleTimer.HasExpired(); }
+    void ResetIdle();
 
     void Reference()   { ++m_referenceCount; }
     void Dereference() { --m_referenceCount; }

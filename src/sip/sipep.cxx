@@ -353,6 +353,7 @@ OpalTransportPtr SIPEndPoint::GetTransport(const SIPTransactionOwner & transacto
     }
     else {
       PTRACE(4, "Re-opening transport " << *transport);
+      transport->ResetIdle();
     }
 
     // Link just created or was closed/lost
@@ -575,6 +576,7 @@ PBoolean SIPEndPoint::GarbageCollection()
   bool handlersDone = activeSIPHandlers.DeleteObjectsToBeRemoved();
 
 
+  m_transportsTable.GetMutex().Wait();
   for (PSafeDictionary<OpalTransportAddress, OpalTransport>::iterator it = m_transportsTable.begin(); it != m_transportsTable.end(); ++it) {
     if (it->second->IsIdle()) {
       PTRACE(3, "Removing transport to " << it->first);
@@ -582,6 +584,7 @@ PBoolean SIPEndPoint::GarbageCollection()
       m_transportsTable.RemoveAt(it->first);
     }
   }
+  m_transportsTable.GetMutex().Signal();
   bool transportsDone = m_transportsTable.DeleteObjectsToBeRemoved();
 
   for (PSafePtr<RegistrarAoR> ua(m_registeredUAs); ua != NULL; ++ua) {
