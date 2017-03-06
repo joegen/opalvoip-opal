@@ -526,6 +526,7 @@ PBoolean OpalLyncConnection::SetConnected()
   }
 
   PTRACE(2, "Failed to accept incoming Lync UCMA call: " << GetLastError());
+  Release(EndedByCallerAbort);
   return false;
 }
 
