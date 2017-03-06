@@ -1230,9 +1230,15 @@ PBoolean OpalTransport::Write(const void * buf, PINDEX len)
   if (!IsOpen())
     return false;
 
-  m_idleTimer = m_endpoint.GetManager().GetTransportIdleTime();
+  ResetIdle();
   m_keepAliveTimer.Reset();
   return m_channel->Write(buf, len);
+}
+
+
+void OpalTransport::ResetIdle()
+{
+  m_idleTimer = m_endpoint.GetManager().GetTransportIdleTime();
 }
 
 
