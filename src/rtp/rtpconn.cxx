@@ -477,6 +477,11 @@ void OpalRTPConnection::DetermineRTPNAT(const OpalTransport & transport, const O
     return;
   }
 
+  if (m_stringOptions.GetBoolean(OPAL_OPT_DISABLE_NAT)) {
+    PTRACE(4, "NAT detection has been disabled");
+    return;
+  }
+
   PIPSocket::Address localAddr, peerAddr, sigAddr;
 
   transport.GetLocalAddress().GetIpAddress(localAddr);

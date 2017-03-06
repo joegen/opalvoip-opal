@@ -47,6 +47,13 @@
 class OpalRTPEndPoint;
 
 
+/**OpalConnection::StringOption key to an enum indicating that silence
+   detection on the sound recording is to be executed.
+   Default false.
+  */
+#define OPAL_OPT_DISABLE_NAT  "Disable-NAT"
+
+
 /**This is the base class for OpalConnections that use RTP sessions, 
    such as H.323 and SIPconnections to an endpoint.
  */

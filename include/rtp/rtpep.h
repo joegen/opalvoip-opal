@@ -99,6 +99,10 @@ class OpalRTPEndPoint : public OpalEndPoint
 
   /**@name Overrides from OpalEndPoint */
   //@{
+    /** Get available string option names.
+      */
+    virtual PStringList GetAvailableStringOptions() const;
+
     /**A call back function whenever a connection is broken.
        This function can do any internal cleaning up and waiting on background
        threads that may be using the connection object.
