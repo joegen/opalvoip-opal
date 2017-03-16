@@ -589,14 +589,11 @@ bool OpalLyncShim::ForwardAudioVideoCall(AudioVideoCall & call, const char * tar
 bool OpalLyncShim::TransferAudioVideoCall(AudioVideoCall & call, AudioVideoCall & target)
 {
   try {
-	PTRACE(4, "Sleeping before transfer");
-	System::Threading::Thread::Sleep(500);
-
 	PTRACE(4, "TransferAudioVideoCall:"
 		" call-id=" << marshal_as<std::string>(call->CallId) << ","
 		" target-id=" << marshal_as<std::string>(target->CallId) << ","
 		" mode=default ");
-    target->EndTransfer(target->BeginTransfer(call, nullptr, nullptr));
+    call->EndTransfer(call->BeginTransfer(target, nullptr, nullptr));
   }
   catch (System::Exception^ err) {
     m_lastError = marshal_as<std::string>(err->ToString());
