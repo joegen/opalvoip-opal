@@ -293,13 +293,19 @@ void OpalLyncEndPoint::AdjustLyncURI(PString & uri)
 {
   if (uri.NumCompare(GetPrefixName()+':') == EqualTo)
     uri.Splice("sip", 0, GetPrefixName().GetLength()); // Swap "lync" with "sip"
-  else if (uri.NumCompare("sip:") != EqualTo)
-    uri.Splice("sip:", 0);                             // If not got "sip:" add it
 
-  if (uri.Find('@') == P_MAX_INDEX)
-    uri.Splice("tel", 0, 3); // No @ implies a telephone number
+  PURL parsed(uri, "sip");
+  if (parsed.GetScheme() == "sip") {
+    parsed.SetParameters(PString::Empty()); // Remove any extraneous parameters as Lync very fussy
+    if (OpalIsE164(parsed.GetUserName()))
+      parsed.SetParamVar("user", "phone"); // Very fussy indeed
+  }
+  else if (parsed.GetScheme() == "tel") {
+    if (parsed.GetHostName().IsEmpty())
+      parsed.SetParamVar("phone-context", "enterprise");
+  }
 
-  uri.Delete(uri.Find(';'), P_MAX_INDEX); // Remove any extraneous parameters as Lync very fussy
+  uri = parsed.AsString();
 }
 
 
@@ -390,8 +396,6 @@ PBoolean OpalLyncConnection::SetUpConnection()
 
   PString localParty = m_stringOptions(OPAL_OPT_CALLING_PARTY_URL, GetLocalPartyName());
   m_endpoint.AdjustLyncURI(localParty);
-  if (OpalIsE164(localParty(localParty.Find(':')+1, localParty.Find('@')-1)))
-    localParty += ";user=phone";
 
   ApplicationEndpoint * aep = m_endpoint.GetRegisteredApplication();
   if (aep != NULL)
