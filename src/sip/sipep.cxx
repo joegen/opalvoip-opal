@@ -654,15 +654,15 @@ PBoolean SIPEndPoint::SetupTransfer(SIPConnection & transferredConnection,
                                     const PString & replaces)
 {
   OpalConnection::StringOptions options;
-  options.SetAt(SIP_HEADER_REFERRED_BY, transferredConnection.GetRedirectingParty());
-  options.SetAt(OPAL_OPT_CALLING_PARTY_URL, transferredConnection.GetLocalPartyURL());
 
   if (replaces.IsEmpty()) {
     PSafePtr<OpalConnection> transferredOtherConnection = transferredConnection.GetOtherPartyConnection();
     if (transferredOtherConnection != NULL &&
-        remoteParty.NumCompare(transferredOtherConnection->GetPrefixName()+':') == EqualTo &&
-        transferredOtherConnection->TransferConnection(remoteParty))
+        m_manager.FindEndPoint(transferredOtherConnection->GetPrefixName()) != this &&
+        remoteParty.NumCompare(transferredOtherConnection->GetPrefixName()+':') == EqualTo)
     {
+      if (!transferredOtherConnection->TransferConnection(remoteParty))
+        return false;
       PTRACE(3, "Bypassed transfer of " << *transferredOtherConnection << " to \"" << remoteParty << '"');
       return true;
     }
@@ -676,8 +676,10 @@ PBoolean SIPEndPoint::SetupTransfer(SIPConnection & transferredConnection,
       PSafePtr<OpalConnection> replacedOtherConnection = replacedConnection->GetOtherPartyConnection();
       if (transferredOtherConnection != NULL && replacedOtherConnection != NULL &&
           transferredOtherConnection->GetPrefixName() == replacedOtherConnection->GetPrefixName() &&
-          transferredOtherConnection->TransferConnection(replacedOtherConnection->GetToken()))
+          m_manager.FindEndPoint(transferredOtherConnection->GetPrefixName()) != this)
       {
+        if (!transferredOtherConnection->TransferConnection(replacedOtherConnection->GetToken()))
+          return false;
         PTRACE(3, "Bypassed transfer of " << *transferredOtherConnection << " to " << *replacedOtherConnection);
         return true;
       }
@@ -685,6 +687,8 @@ PBoolean SIPEndPoint::SetupTransfer(SIPConnection & transferredConnection,
   }
 
   PTRACE(3, "Transferring " << transferredConnection << " to " << remoteParty << (replaces.IsEmpty() ? "" : " replacing ") << replaces);
+  options.SetAt(SIP_HEADER_REFERRED_BY, transferredConnection.GetRedirectingParty());
+  options.SetAt(OPAL_OPT_CALLING_PARTY_URL, transferredConnection.GetLocalPartyURL());
 
   SIPConnection::Init init(transferredConnection.GetCall(), *this);
   init.m_token = SIPURL::GenerateTag();
