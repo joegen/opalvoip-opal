@@ -130,13 +130,21 @@ class OpalMediaFlowControl : public OpalMediaCommand
       unsigned sessionID = 0,          ///< Session for media stream, 0 is use first \p mediaType stream
       unsigned ssrc = 0                ///< Sync Source for media stream (if RTP)
     );
+    OpalMediaFlowControl(
+      OpalBandwidth bitRate,           ///< Bandwidth to use
+      const OpalMediaType & mediaType, ///< Media type to search for in open streams
+      unsigned sessionID,              ///< Session for media stream, 0 is use first \p mediaType stream
+      const RTP_SyncSourceArray & ssrcs ///< Sync Source(s) for media stream(s) (if RTP)
+    );
 
     virtual PString GetName() const;
 
     const OpalBandwidth & GetMaxBitRate() const { return m_bitRate; }
+    const RTP_SyncSourceArray & GetSSRCs() const { return m_ssrcs; }
 
   protected:
     OpalBandwidth m_bitRate;
+    RTP_SyncSourceArray m_ssrcs;
 };
 
 

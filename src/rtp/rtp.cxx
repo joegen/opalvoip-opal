@@ -1553,7 +1553,7 @@ void RTP_ControlFrame::AddREMB(RTP_SyncSourceId syncSourceOut, RTP_SyncSourceId 
 }
 
 
-bool RTP_ControlFrame::ParseREMB(RTP_SyncSourceId & senderSSRC, RTP_SyncSourceId & targetSSRC, unsigned & maxBitRate)
+bool RTP_ControlFrame::ParseREMB(RTP_SyncSourceId & senderSSRC, RTP_SyncSourceArray & targetSSRCs, unsigned & maxBitRate)
 {
   size_t size = GetPayloadSize();
   if (size < sizeof(FbREMB))
@@ -1563,8 +1563,15 @@ bool RTP_ControlFrame::ParseREMB(RTP_SyncSourceId & senderSSRC, RTP_SyncSourceId
   if (memcmp(remb->id, REMB_ID, 4) != 0)
     return false;
 
+  if (remb->numSSRC == 0)
+    return false;
+  if (remb->numSSRC > 1 && size < sizeof(FbREMB) + (remb->numSSRC - 1) * sizeof(remb->feedbackSSRC))
+    return false;
+
   senderSSRC = remb->senderSSRC;
-  targetSSRC = remb->feedbackSSRC[0];
+  targetSSRCs.resize(remb->numSSRC);
+  for (int i = 0; i < remb->numSSRC; ++i)
+      targetSSRCs[i] = remb->feedbackSSRC[i];
   maxBitRate = (((remb->bitRate[0]&0x3)<<16)|(remb->bitRate[1]<<8)|remb->bitRate[2])*(1 << (remb->bitRate[0] >> 2));
   return true;
 }

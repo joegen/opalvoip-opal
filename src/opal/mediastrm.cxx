@@ -1578,6 +1578,18 @@ OpalMediaFlowControl::OpalMediaFlowControl(OpalBandwidth bitRate,
                                            unsigned ssrc)
   : OpalMediaCommand(mediaType, sessionID, ssrc)
   , m_bitRate(bitRate)
+  , m_ssrcs(1, ssrc)
+{
+}
+
+
+OpalMediaFlowControl::OpalMediaFlowControl(OpalBandwidth bitRate,
+                                           const OpalMediaType & mediaType,
+                                           unsigned sessionID,
+                                           const RTP_SyncSourceArray & ssrcs)
+  : OpalMediaCommand(mediaType, sessionID, ssrcs.empty() ? 0 : ssrcs[0])
+  , m_bitRate(bitRate)
+  , m_ssrcs(ssrcs)
 {
 }
 

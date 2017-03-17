@@ -2037,16 +2037,17 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
 
           case RTP_ControlFrame::e_ApplicationLayerFbMessage:
           {
-            RTP_SyncSourceId senderSSRC, targetSSRC;
+            RTP_SyncSourceId senderSSRC;
+            RTP_SyncSourceArray targetSSRCs;
             unsigned maxBitRate;
-            if (frame.ParseREMB(senderSSRC, targetSSRC, maxBitRate)) {
+            if (frame.ParseREMB(senderSSRC, targetSSRCs, maxBitRate)) {
               SyncSource * ssrc;
-              if (CheckControlSSRC(senderSSRC, targetSSRC, ssrc PTRACE_PARAM(,"REMB"))) {
+              if (CheckControlSSRC(senderSSRC, targetSSRCs[0], ssrc PTRACE_PARAM(,"REMB"))) {
                 PTRACE(4, *this << "received REMB:"
                        " maxBitRate=" << maxBitRate << ","
-                       " receiver SSRC=" << RTP_TRACE_SRC(targetSSRC) << ","
+                       " first receiver SSRC=" << RTP_TRACE_SRC(targetSSRCs[0]) << ","
                        " sender SSRC=" << RTP_TRACE_SRC(senderSSRC));
-                m_connection.ExecuteMediaCommand(OpalMediaFlowControl(maxBitRate, m_mediaType, m_sessionId, targetSSRC), true);
+                m_connection.ExecuteMediaCommand(OpalMediaFlowControl(maxBitRate, m_mediaType, m_sessionId, targetSSRCs), true);
               }
               break;
             }

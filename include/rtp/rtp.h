@@ -459,7 +459,7 @@ class RTP_ControlFrame : public PBYTEArray
     );
     bool ParseREMB(
       RTP_SyncSourceId & senderSSRC,
-      RTP_SyncSourceId & targetSSRC,
+      RTP_SyncSourceArray & targetSSRCs,
       unsigned & maxBitRate
     );
 
