@@ -41,17 +41,23 @@ static const char UseInBandFEC_OptionName[]    = "Use In-Band FEC";
 static const char UseInBandFEC_FMTPName[]      = "useinbandfec";
 static const char UseDTX_OptionName[]          = "Use DTX";
 static const char UseDTX_FMTPName[]            = "usedtx";
-static const char MaxPlaybackRate_OptionName[] = "Max Playback Rate";
+static const char ConstantBitRate_OptionName[] = "Constant Bit Rate";
+static const char ConstantBitRate_FMTPName[]   = "cbr";
+static const char MaxPlaybackRate_OptionName[] = "Max Playback Sample Rate";
 static const char MaxPlaybackRate_FMTPName[]   = "maxplaybackrate";
-static const char MaxCaptureRate_OptionName[]  = "Max Capture Rate";
+static const char MaxCaptureRate_OptionName[]  = "Max Capture Sample Rate";
 static const char MaxCaptureRate_FMTPName[]    = "sprop-maxcapturerate";
 static const char PlaybackStereo_OptionName[]  = "Playback Stereo";
 static const char PlaybackStereo_FMTPName[]    = "stereo";
 static const char CaptureStereo_OptionName[]   = "Capture Stereo";
 static const char CaptureStereo_FMTPName[]     = "sprop-stereo";
+static const char MaxAverageBitRate_FMTPName[] = "maxaveragebitrate";
 
 #define OPUS_FRAME_MS    20
 #define OPUS_SAMPLE_RATE 48000
+
+#define MIN_SAMPLE_RATE 8000
+#define MAX_SAMPLE_RATE 48000
 
 #define MIN_BIT_RATE 6000
 #define MAX_BIT_RATE 510000
@@ -59,6 +65,7 @@ static const char CaptureStereo_FMTPName[]     = "sprop-stereo";
 #define DEFAULT_BIT_RATE 64000
 #define DEFAULT_USE_FEC  1
 #define DEFAULT_USE_DTX  0
+#define DEFAULT_CBR      0
 #define DEFAULT_STEREO   0
 
 

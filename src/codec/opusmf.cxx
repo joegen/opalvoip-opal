@@ -58,15 +58,19 @@ class OpalOpusFormat : public OpalAudioFormatInternal
       AddOption(option);
 
       option = new OpalMediaOptionBoolean(UseDTX_OptionName, true, OpalMediaOption::AndMerge, DEFAULT_USE_DTX);
-      option->SetFMTP(UseDTX_FMTPName, NULL);
+      option->SetFMTP(UseDTX_FMTPName, "0");
       AddOption(option);
 
-      option = new OpalMediaOptionInteger(MaxPlaybackRate_OptionName, true, OpalMediaOption::MinMerge, DEFAULT_BIT_RATE, MIN_BIT_RATE, MAX_BIT_RATE);
-      option->SetFMTP(MaxPlaybackRate_FMTPName, NULL);
+      option = new OpalMediaOptionBoolean(ConstantBitRate_OptionName, true, OpalMediaOption::AndMerge, DEFAULT_CBR);
+      option->SetFMTP(ConstantBitRate_FMTPName, "0");
       AddOption(option);
 
-      option = new OpalMediaOptionInteger(MaxCaptureRate_OptionName, true, OpalMediaOption::MinMerge, DEFAULT_BIT_RATE, MIN_BIT_RATE, MAX_BIT_RATE);
-      option->SetFMTP(MaxCaptureRate_FMTPName, NULL);
+      option = new OpalMediaOptionInteger(MaxPlaybackRate_OptionName, true, OpalMediaOption::MinMerge, OPUS_SAMPLE_RATE, MIN_SAMPLE_RATE, MAX_SAMPLE_RATE);
+      option->SetFMTP(MaxPlaybackRate_FMTPName, STRINGIZE(MAX_SAMPLE_RATE));
+      AddOption(option);
+
+      option = new OpalMediaOptionInteger(MaxCaptureRate_OptionName, true, OpalMediaOption::MinMerge, OPUS_SAMPLE_RATE, MIN_SAMPLE_RATE, MAX_SAMPLE_RATE);
+      option->SetFMTP(MaxCaptureRate_FMTPName, STRINGIZE(MAX_SAMPLE_RATE));
       AddOption(option);
 
       option = new OpalMediaOptionBoolean(PlaybackStereo_OptionName, true, OpalMediaOption::AndMerge, DEFAULT_STEREO);
@@ -75,6 +79,10 @@ class OpalOpusFormat : public OpalAudioFormatInternal
 
       option = new OpalMediaOptionBoolean(CaptureStereo_OptionName, true, OpalMediaOption::AndMerge, DEFAULT_STEREO);
       option->SetFMTP(CaptureStereo_FMTPName, NULL);
+      AddOption(option);
+
+      option = FindOption(OpalMediaFormat::MaxBitRateOption());
+      option->SetFMTP(MaxAverageBitRate_FMTPName, NULL);
       AddOption(option);
 #endif
     }

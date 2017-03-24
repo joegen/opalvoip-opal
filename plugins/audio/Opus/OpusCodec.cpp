@@ -101,7 +101,19 @@ static struct PluginCodec_Option const UseDTX =
   false,
   PluginCodec_AndMerge,
   STRINGIZE(DEFAULT_USE_DTX),
-  UseDTX_FMTPName
+  UseDTX_FMTPName,
+  "0"
+};
+
+static struct PluginCodec_Option const ConstantBitRate =
+{
+  PluginCodec_BoolOption,
+  ConstantBitRate_OptionName,
+  false,
+  PluginCodec_AndMerge,
+  STRINGIZE(DEFAULT_CBR),
+  ConstantBitRate_FMTPName,
+  "0"
 };
 
 static struct PluginCodec_Option const MaxPlaybackRate =
@@ -110,12 +122,12 @@ static struct PluginCodec_Option const MaxPlaybackRate =
   MaxPlaybackRate_OptionName,
   true,
   PluginCodec_NoMerge,
-  STRINGIZE(DEFAULT_BIT_RATE),
+  STRINGIZE(OPUS_SAMPLE_RATE),
   MaxPlaybackRate_FMTPName,
-  "",
+  STRINGIZE(MAX_SAMPLE_RATE),
   0,
-  STRINGIZE(MIN_BIT_RATE),
-  STRINGIZE(MAX_BIT_RATE)
+  STRINGIZE(MIN_SAMPLE_RATE),
+  STRINGIZE(MAX_SAMPLE_RATE)
 };
 
 static struct PluginCodec_Option const MaxCaptureRate =
@@ -124,12 +136,12 @@ static struct PluginCodec_Option const MaxCaptureRate =
   MaxCaptureRate_OptionName,
   true,
   PluginCodec_NoMerge,
-  STRINGIZE(DEFAULT_BIT_RATE),
+  STRINGIZE(OPUS_SAMPLE_RATE),
   MaxCaptureRate_FMTPName,
-  "",
+  STRINGIZE(MAX_SAMPLE_RATE),
   0,
-  STRINGIZE(MIN_BIT_RATE),
-  STRINGIZE(MAX_BIT_RATE)
+  STRINGIZE(MIN_SAMPLE_RATE),
+  STRINGIZE(MAX_SAMPLE_RATE)
 };
 
 static struct PluginCodec_Option const PlaybackStereo =
@@ -150,6 +162,20 @@ static struct PluginCodec_Option const CaptureStereo =
   PluginCodec_NoMerge,
   STRINGIZE(DEFAULT_STEREO),
   CaptureStereo_FMTPName
+};
+
+static struct PluginCodec_Option const MaxAverageBitRate =
+{
+  PluginCodec_IntegerOption,
+  PLUGINCODEC_OPTION_MAX_BIT_RATE,
+  true,
+  PluginCodec_MinMerge,
+  STRINGIZE(DEFAULT_BIT_RATE),
+  MaxAverageBitRate_FMTPName,
+  "",
+  0,
+  STRINGIZE(MIN_BIT_RATE),
+  STRINGIZE(MAX_BIT_RATE)
 };
 
 static struct PluginCodec_Option const DynamicPacketLoss =
@@ -181,10 +207,12 @@ static struct PluginCodec_Option const Complexity =
 static struct PluginCodec_Option const * const MyOptions[] = {
   &UseInBandFEC,
   &UseDTX,
+  &ConstantBitRate,
   &MaxPlaybackRate,
   &MaxCaptureRate,
   &PlaybackStereo,
   &CaptureStereo,
+  &MaxAverageBitRate,
   &DynamicPacketLoss,
   &Complexity,
   NULL
@@ -225,8 +253,6 @@ class OpusPluginMediaFormat : public PluginCodec_AudioFormat<MY_CODEC>
 
     virtual bool ToCustomised(OptionMap & original, OptionMap & changed) const
     {
-      changed[MaxPlaybackRate.m_name] = original[PLUGINCODEC_OPTION_MAX_BIT_RATE];
-      changed[MaxCaptureRate.m_name] = original[PLUGINCODEC_OPTION_TARGET_BIT_RATE];
       changed[PlaybackStereo.m_name] = changed[CaptureStereo.m_name] = m_actualChannels == 1 ? "0" : "1";
       return true;
     }
