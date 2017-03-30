@@ -20,10 +20,6 @@
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
  * Contributor(s): ______________________________________.
- *
- * $Revision: 28481 $
- * $Author: rjongbloed $
- * $Date: 2012-10-05 18:13:17 +1000 (Fri, 05 Oct 2012) $
  */
 
 #include <ptlib.h>

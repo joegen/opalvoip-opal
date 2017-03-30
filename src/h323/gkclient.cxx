@@ -25,10 +25,6 @@
  * iFace In, http://www.iface.com
  *
  * Contributor(s): ______________________________________.
- *
- * $Revision$
- * $Author$
- * $Date$
  */
 
 #include <ptlib.h>

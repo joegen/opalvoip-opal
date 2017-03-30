@@ -26,10 +26,6 @@
  *
  *
  * Contributor(s): ______________________________________.
- *
- * $Revision$
- * $Author$
- * $Date$
  */
 
 #ifndef OPAL_IAX2_IAX2_H

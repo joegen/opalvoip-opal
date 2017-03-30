@@ -22,10 +22,6 @@
  * The Initial Developer of the Original Code is Vox Lucida (Robert Jongbloed)
  *
  * Contributor(s): ______________________________________.
- *
- * $Revision$
- * $Author$
- * $Date$
  */
 
 #define _CRT_NONSTDC_NO_WARNINGS

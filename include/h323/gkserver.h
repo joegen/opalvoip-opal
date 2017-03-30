@@ -25,10 +25,6 @@
  * to Ashley Unitt for his efforts.
  *
  * Contributor(s): ______________________________________.
- *
- * $Revision$
- * $Author$
- * $Date$
  */
 
 #ifndef OPAL_H323_GKSERVER_H

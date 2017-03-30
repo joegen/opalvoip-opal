@@ -22,10 +22,6 @@
  * The Initial Developer of the Original Code is Hannes Friederich and Post Increment
  *
  * Contributor(s): ______________________________________.
- *
- * $Revision$
- * $Author$
- * $Date$
  */
 
 #ifndef OPAL_OPAL_MEDIATYPE_H

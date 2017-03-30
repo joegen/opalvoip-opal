@@ -20,10 +20,6 @@
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
  * Contributor(s): ______________________________________.
- *
- * $Revision: 28208 $
- * $Author: rjongbloed $
- * $Date: 2012-08-17 11:54:46 +1000 (Fri, 17 Aug 2012) $
  */
 
 #ifndef _OPAL_MAIN_H

@@ -20,10 +20,6 @@
  * The Initial Developer of the Original Code is Post Increment
  *
  * Contributor(s): ______________________________________.
- *
- * $Revision$
- * $Author$
- * $Date$
  */
 
 #ifndef OPAL_CODEC_RFC2435_H

@@ -24,10 +24,6 @@
  * All Rights Reserved.
  *
  * Contributor(s): ______________________________________.
- *
- * $Revision$
- * $Author$
- * $Date$
  */
 
 #ifndef PTLIB_PCAPFILE_H

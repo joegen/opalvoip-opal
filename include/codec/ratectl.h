@@ -23,10 +23,6 @@
  * The Initial Developer of the Original Code is Matthias Schneider 
  *
  * Contributor(s): Post Increment
- *
- * $Revision$
- * $Author$
- * $Date$
  */
 
 #ifndef OPAL_RATE_CONTROL_H

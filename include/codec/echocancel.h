@@ -21,10 +21,6 @@
  * The author of this code is Damien Sandras
  *
  * Contributor(s): Miguel Rodriguez Perez
- *
- * $Revision$
- * $Author$
- * $Date$
  */
 
 #ifndef OPAL_CODEC_ECHOCANCEL_H

@@ -25,10 +25,6 @@
  * Vovida Networks, Inc. http://www.vovida.com.
  *
  * Contributor(s): ______________________________________.
- *
- * $Revision$
- * $Author$
- * $Date$
  */
 
 #ifndef OPAL_H323_H323RTP_H

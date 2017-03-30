@@ -25,10 +25,6 @@
  * Vovida Networks, Inc. http://www.vovida.com.
  *
  * Contributor(s): Many thanks to Simon Horne.
- *
- * $Revision$
- * $Author$
- * $Date$
  */
 
 #include <ptlib.h>

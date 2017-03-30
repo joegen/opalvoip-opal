@@ -22,10 +22,6 @@
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
  * Contributor(s): __________________________________
- *
- * $Revision$
- * $Author$
- * $Date$
  */
 
 #include <ptlib.h>

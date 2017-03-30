@@ -18,10 +18,6 @@
  * under the License.
  *
  * Contributor(s): ______________________________________.
- *
- * $Revision$
- * $Author$
- * $Date$
  */
 
 #ifndef OPAL_H224_H323H224_H

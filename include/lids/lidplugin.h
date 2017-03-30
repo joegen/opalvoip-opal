@@ -23,10 +23,6 @@
  * The Initial Developer of the Original Code is Post Increment
  *
  * Contributor(s): ______________________________________.
- *
- * $Revision$
- * $Author$
- * $Date$
  */
 
 #ifndef OPAL_LIDS_LIDPLUGIN_H

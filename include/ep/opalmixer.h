@@ -24,10 +24,6 @@
  *
  * Contributor(s): Craig Southeren (craigs@postincrement.com)
  *                 Robert Jongbloed (robertj@voxlucida.com.au)
- *
- * $Revision$
- * $Author$
- * $Date$
  */
 
 

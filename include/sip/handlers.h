@@ -22,10 +22,6 @@
  * The Initial Developer of the Original Code is Damien Sandras. 
  *
  * Contributor(s): ______________________________________.
- *
- * $Revision$
- * $Author$
- * $Date$
  */
 
 #ifndef OPAL_SIP_HANDLERS_H

@@ -23,10 +23,6 @@
  * The Initial Developer of the Original Code is Matthias Schneider 
  *
  * Contributor(s): Post Increment
- *
- * $Revision$
- * $Author$
- * $Date$
  */
 
 #include <ptlib.h>

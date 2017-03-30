@@ -25,10 +25,6 @@
  * Quicknet Technologies, Inc. http://www.quicknet.net.
  * 
  * Contributor(s): ______________________________________.
- *
- * $Revision$
- * $Author$
- * $Date$
  */
 
 #ifndef OPAL_LIDS_LIDEP_H

@@ -32,10 +32,6 @@
  * The Initial Developer of the Original Code is ISVO (Asia) Pte. Ltd.
  *
  * Contributor(s): Many thanks to Simon Horne.
- *
- * $Revision$
- * $Author$
- * $Date$
  */
 
 #ifndef OPAL_H460_H460P_H

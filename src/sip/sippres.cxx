@@ -22,10 +22,6 @@
  * The Initial Developer of the Original Code is Post Increment
  *
  * Contributor(s): ______________________________________.
- *
- * $Revision: 22858 $
- * $Author: csoutheren $
- * $Date: 2009-06-12 22:50:19 +1000 (Fri, 12 Jun 2009) $
  */
 
 /*

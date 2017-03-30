@@ -20,10 +20,6 @@
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
  * Contributor(s): ______________________________________.
- *
- * $Revision: 22301 $
- * $Author: rjongbloed $
- * $Date: 2009-03-26 15:25:06 +1100 (Thu, 26 Mar 2009) $
  */
 
 #include <opal/manager.h>

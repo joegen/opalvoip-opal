@@ -20,10 +20,6 @@
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
  * Contributor(s): ______________________________________.
- *
- * $Revision: 30477 $
- * $Author: rjongbloed $
- * $Date: 2013-09-09 15:54:29 +1000 (Mon, 09 Sep 2013) $
  */
 
 #include "precompile.h"

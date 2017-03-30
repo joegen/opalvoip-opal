@@ -22,10 +22,6 @@
  * The Initial Developer of the Original Code is Hannes Friederich and Post Increment
  *
  * Contributor(s): ______________________________________.
- *
- * $Revision$
- * $Author$
- * $Date$
  */
 
 #include <ptlib.h>
