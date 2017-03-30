@@ -32,10 +32,6 @@
  * The Initial Developer of the Original Code is ISVO (Asia) Pte. Ltd.
  *
  * Contributor(s): Many thanks to Simon Horne.
- *
- * $Revision$
- * $Author$
- * $Date$
  */
 
 #include <ptlib.h>

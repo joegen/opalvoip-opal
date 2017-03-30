@@ -22,10 +22,6 @@
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
  * Contributor(s): ______________________________________.
- *
- * $Revision$
- * $Author$
- * $Date$
  */
 
 #include <ptlib.h>
@@ -627,10 +623,12 @@ PStringList SIPEndPoint::GetAvailableStringOptions() const
     OPAL_OPT_OFFER_SDP_PTIME,
     OPAL_OPT_OFFER_RTCP_FB,
     OPAL_OPT_FORCE_RTCP_FB,
-    OPAL_OPT_OFFER_ICE
+    OPAL_OPT_SUPPRESS_UDP_TLS,
+    OPAL_OPT_OFFER_ICE,
+    OPAL_OPT_ICE_LITE
   };
 
-  PStringList list = OpalEndPoint::GetAvailableStringOptions();
+  PStringList list = OpalSDPEndPoint::GetAvailableStringOptions();
   list += PStringList(PARRAYSIZE(StringOpts), StringOpts, true);
   return list;
 }

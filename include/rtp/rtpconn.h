@@ -22,10 +22,6 @@
  * The Initial Developer of the Original Code is Post Increment
  *
  * Contributor(s): ______________________________________.
- *
- * $Revision$
- * $Author$
- * $Date$
  */
 
 #ifndef OPAL_OPAL_RTPCONN_H
@@ -45,6 +41,13 @@
 
 
 class OpalRTPEndPoint;
+
+
+/**OpalConnection::StringOption key to an enum indicating that silence
+   detection on the sound recording is to be executed.
+   Default false.
+  */
+#define OPAL_OPT_DISABLE_NAT  "Disable-NAT"
 
 
 /**This is the base class for OpalConnections that use RTP sessions, 

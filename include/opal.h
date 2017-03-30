@@ -25,10 +25,6 @@
  * Stonevoice. http://www.stonevoice.com.
  *
  * Contributor(s): ______________________________________.
- *
- * $Revision$
- * $Author$
- * $Date$
  */
 
 #ifndef OPAL_OPAL_H

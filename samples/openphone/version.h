@@ -23,10 +23,6 @@
  * The Initial Developer of the Original Code is Robert Jongbloed
  *
  * Contributor(s): ______________________________________.
- *
- * $Revision$
- * $Author$
- * $Date$
  */
 
 #ifndef _OpenPhone_VERSION_H

@@ -25,10 +25,6 @@
  * to Ashley Unitt for his efforts.
  *
  * Contributor(s): ______________________________________.
- *
- * $Revision$
- * $Author$
- * $Date$
  */
 
 #include <ptlib.h>

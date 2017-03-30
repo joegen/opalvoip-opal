@@ -25,10 +25,6 @@
  * iFace, Inc. http://www.iface.com
  *
  * Contributor(s): ______________________________________.
- *
- * $Revision$
- * $Author$
- * $Date$
  */
 
 #ifndef OPAL_H323_GKCLIENT_H

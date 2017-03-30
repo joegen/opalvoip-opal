@@ -22,10 +22,6 @@
  * The Initial Developer of the Original Code is Vox Lucida
  *
  * Contributor(s): ______________________________________.
- *
- * $Revision$
- * $Author$
- * $Date$
  */
 
 #ifndef OPAL_RTP_H235_SESSION_H

@@ -18,10 +18,6 @@
  * under the License.
  *
  * Contributor(s): ______________________________________.
- *
- * $Revision$
- * $Author$
- * $Date$
  */
 
 #ifdef __GNUC__

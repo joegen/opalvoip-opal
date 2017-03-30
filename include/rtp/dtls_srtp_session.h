@@ -22,10 +22,6 @@
  * The Initial Developer of the Original Code is Sysolyatin Pavel
  *
  * Contributor(s): ______________________________________.
- *
- * $Revision$
- * $Author$
- * $Date$
  */
 
 #ifndef OPAL_RTP_DTLS_SRTP_SESSION_H

@@ -20,10 +20,6 @@
  * The Initial Developer of the Original Code is Post Increment
  *
  * Contributor(s): ______________________________________.
- *
- * $Revision$
- * $Author$
- * $Date$
  */
 
 #include <ptlib.h>
@@ -155,6 +151,18 @@ OpalRTPEndPoint::OpalRTPEndPoint(OpalManager & manager,     ///<  Manager of all
 
 OpalRTPEndPoint::~OpalRTPEndPoint()
 {
+}
+
+
+PStringList OpalRTPEndPoint::GetAvailableStringOptions() const
+{
+  static char const * const StringOpts[] = {
+    OPAL_OPT_DISABLE_NAT
+  };
+
+  PStringList list = OpalEndPoint::GetAvailableStringOptions();
+  list += PStringList(PARRAYSIZE(StringOpts), StringOpts, true);
+  return list;
 }
 
 

@@ -22,10 +22,6 @@
  * Approved in 1999-09, www.itu.int.
  *
  * Contributor(s): ______________________________________.
- *
- * $Revision$
- * $Author$
- * $Date$
  */
 
 #ifndef OPAL_CODEC_G711A1_PLC_H

@@ -22,10 +22,6 @@
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
  * Contributor(s): 
- *
- * $Revision$
- * $Author$
- * $Date$
  */
 
 #ifndef OPAL_CODEC_VIDCODEC_H

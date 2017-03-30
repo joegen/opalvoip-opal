@@ -20,10 +20,6 @@
 * The Initial Developer of the Original Code is Derek J Smithies
 *
 * Contributor(s): Robert Jongbloed.
-*
-* $Revision$
-* $Author$
-* $Date$
 */
 
 #ifdef P_USE_PRAGMA

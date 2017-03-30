@@ -23,10 +23,6 @@
  * The Initial Developer of the Original Code is Indranet Technologies Ltd.
  *
  * The author of this code is Derek J Smithies
- *
- * $Revision$
- * $Author$
- * $Date$
  */
 
 #ifndef OPAL_IAX2_CALLPROCESSOR_H

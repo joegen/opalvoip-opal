@@ -23,10 +23,6 @@
  * The Initial Developer of the Original Code is Vox Lucida Pty. Ltd.
  *
  * Contributor(s): Robert Jongbloed (robertj@voxlucida.com.au).
- *
- * $Revision$
- * $Author$
- * $Date$
  */
 
 #ifndef OPAL_SKINNY_H

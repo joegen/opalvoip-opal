@@ -25,10 +25,6 @@
  * Vovida Networks, Inc. http://www.vovida.com.
  *
  * Contributor(s): Many thanks to Simon Horne.
- *
- * $Revision$
- * $Author$
- * $Date$
  */
 
 #include <ptlib.h>
@@ -828,7 +824,7 @@ PStringList H323EndPoint::GetAvailableStringOptions() const
     OPAL_OPT_Q931_BEARER_CAPS
   };
 
-  PStringList list = OpalEndPoint::GetAvailableStringOptions();
+  PStringList list = OpalRTPEndPoint::GetAvailableStringOptions();
   list += PStringList(PARRAYSIZE(StringOpts), StringOpts, true);
   return list;
 }

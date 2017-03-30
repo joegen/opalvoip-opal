@@ -6,10 +6,6 @@
  * Main program entry point.
  *
  * Copyright (c) 2007 Equivalence Pty. Ltd.
- *
- * $Revision$
- * $Author$
- * $Date$
  */
 
 #include "precompile.h"

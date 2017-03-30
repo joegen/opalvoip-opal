@@ -22,10 +22,6 @@
  *
  * Contributor(s): Vox Lucida Pty. Ltd.
  *                 BCS Global, Inc.
- *
- * $Revision$
- * $Author$
- * $Date$
  */
 
 #ifndef _OPALSRV_MAIN_H

@@ -17,10 +17,6 @@
  * under the License.
  *
  * Contributor(s): ______________________________________.
- *
- * $Revision$
- * $Author$
- * $Date$
  */
 
 #ifndef OPAL_H224_H281HANDLER_H

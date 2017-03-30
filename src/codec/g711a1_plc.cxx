@@ -22,10 +22,6 @@
 * Approved in 1999-09, www.itu.int.
 *
 * Contributor(s): ______________________________________.
-*
-* $Revision$
-* $Author$
-* $Date$
 */
 
 #ifndef SBC_DISABLE_PTLIB

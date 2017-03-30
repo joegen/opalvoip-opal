@@ -20,10 +20,6 @@
  * The Initial Developer of the Original Code is Vox Lucida Pty. Ltd.
  *
  * Contributor(s): ______________________________________.
- *
- * $Revision$
- * $Author$
- * $Date$
  */
 
 #include <opal/manager.h>

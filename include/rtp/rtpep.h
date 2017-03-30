@@ -20,10 +20,6 @@
  * The Initial Developer of the Original Code is Post Increment
  *
  * Contributor(s): ______________________________________.
- *
- * $Revision$
- * $Author$
- * $Date$
  */
 
 #ifndef OPAL_OPAL_RTPEP_H
@@ -99,6 +95,10 @@ class OpalRTPEndPoint : public OpalEndPoint
 
   /**@name Overrides from OpalEndPoint */
   //@{
+    /** Get available string option names.
+      */
+    virtual PStringList GetAvailableStringOptions() const;
+
     /**A call back function whenever a connection is broken.
        This function can do any internal cleaning up and waiting on background
        threads that may be using the connection object.

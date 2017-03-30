@@ -20,10 +20,6 @@
  * The Original Code is Open H323 Library.
  *
  * Contributor(s): ______________________________________.
- *
- * $Revision$
- * $Author$
- * $Date$
  */
 
 #ifndef OPAL_CODEC_OPALWAVFILE_H

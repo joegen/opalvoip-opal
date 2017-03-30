@@ -31,10 +31,6 @@
  *
  * Contributor(s): Many thanks to Simon Horne.
  *                 Robert Jongbloed (robertj@voxlucida.com.au).
- *
- * $Revision$
- * $Author$
- * $Date$
  */
 
 #ifndef OPAL_H460_STD24_H
