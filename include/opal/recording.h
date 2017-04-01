@@ -34,6 +34,9 @@
 
 #if OPAL_HAS_MIXER
 
+#include <ptlib/vconvert.h>
+
+
 class OpalMediaFormat;
 class RTP_DataFrame;
 
@@ -177,6 +180,7 @@ class OpalRecordManager
     /** Push audio through the mixer.
       */
     virtual bool OnPushAudio() = 0;
+    virtual unsigned GetPushAudioPeriodMS() const = 0;
 
     /**Write audio to the recording file.
       */
@@ -189,6 +193,7 @@ class OpalRecordManager
     /** Push video through the mixer.
       */
     virtual bool OnPushVideo() = 0;
+    virtual unsigned GetPushVideoPeriodMS() const = 0;
 
     /**Write video to the recording file.
       */

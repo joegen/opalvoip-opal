@@ -154,6 +154,10 @@ class OpalBaseMixer : public PSmartObject
       */
     void StopPushThread(bool lock = true);
 
+    /**Get the period for mixing in milliseconds.
+      */
+    unsigned GetPeriodMS() const { return m_periodMS; }
+
     /**Get the period for mixing in RTP timestamp units.
       */
     unsigned GetPeriodTS() const { return m_periodTS; }

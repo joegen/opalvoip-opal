@@ -158,8 +158,7 @@ bool OpalBaseMixer::WriteStream(const Key_T & key, const RTP_DataFrame & rtp)
   if (rtp.GetPayloadSize() == 0)
     return true;
 
-  RTP_DataFrame uniqueRTP = rtp;
-  uniqueRTP.MakeUnique();
+  RTP_DataFrame uniqueRTP((const BYTE *)rtp, rtp.GetPacketSize());
   if (uniqueRTP.IsEmpty())
     return false;
 
