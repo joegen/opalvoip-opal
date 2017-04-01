@@ -22,6 +22,7 @@
  * The Initial Developer of the Original Code is Post Increment
  *
  * Contributor(s): ______________________________________.
+ *
  */
 
 
@@ -54,7 +55,11 @@ class OpalWAVRecordManager : public OpalRecordManager
     virtual bool OpenStream(const PString & strmId, const OpalMediaFormat & format);
     virtual bool CloseStream(const PString & strmId);
     virtual bool OnPushAudio();
+    virtual unsigned GetPushAudioPeriodMS() const;
+#if OPAL_VIDEO
     virtual bool OnPushVideo();
+    virtual unsigned GetPushVideoPeriodMS() const;
+#endif
     virtual bool WriteAudio(const PString & strmId, const RTP_DataFrame & rtp);
     virtual bool WriteVideo(const PString & strmId, const RTP_DataFrame & rtp);
 
@@ -161,10 +166,24 @@ bool OpalWAVRecordManager::OnPushAudio()
 }
 
 
+unsigned OpalWAVRecordManager::GetPushAudioPeriodMS() const
+{
+  PWaitAndSignal mutex(m_mutex);
+  return m_mixer != NULL ? m_mixer->GetPeriodMS() : 0;
+}
+
+#if OPAL_VIDEO
 bool OpalWAVRecordManager::OnPushVideo()
 {
   return false;
 }
+
+
+unsigned OpalWAVRecordManager::GetPushVideoPeriodMS() const
+{
+  return 0;
+}
+#endif
 
 
 bool OpalWAVRecordManager::WriteAudio(const PString & strm, const RTP_DataFrame & rtp)
@@ -273,7 +292,11 @@ class OpalAVIRecordManager : public OpalRecordManager
     virtual bool OpenStream(const PString & strmId, const OpalMediaFormat & format);
     virtual bool CloseStream(const PString & strmId);
     virtual bool OnPushAudio();
+    virtual unsigned GetPushAudioPeriodMS() const;
+#if OPAL_VIDEO
     virtual bool OnPushVideo();
+    virtual unsigned GetPushVideoPeriodMS() const;
+#endif
     virtual bool WriteAudio(const PString & strmId, const RTP_DataFrame & rtp);
     virtual bool WriteVideo(const PString & strmId, const RTP_DataFrame & rtp);
 
@@ -564,11 +587,27 @@ bool OpalAVIRecordManager::OnPushAudio()
 }
 
 
+unsigned OpalAVIRecordManager::GetPushAudioPeriodMS() const
+{
+  PWaitAndSignal mutex(m_mutex);
+  return m_audioMixer != NULL ? m_audioMixer->GetPeriodMS() : 0;
+}
+
+
+#if OPAL_VIDEO
 bool OpalAVIRecordManager::OnPushVideo()
 {
   PWaitAndSignal mutex(m_mutex);
   return m_videoMixer != NULL && m_videoMixer->OnPush();
 }
+
+
+unsigned OpalAVIRecordManager::GetPushVideoPeriodMS() const
+{
+  PWaitAndSignal mutex(m_mutex);
+  return m_videoMixer != NULL ? m_videoMixer->GetPeriodMS() : 0;
+}
+#endif
 
 
 bool OpalAVIRecordManager::WriteAudio(const PString & strmId, const RTP_DataFrame & rtp)

@@ -19,10 +19,6 @@
 #
 # Contributor(s): ______________________________________.
 #
-# $Revision$
-# $Author$
-# $Date$
-#
 
 ifeq (,$(OPAL_PLATFORM_DIR))
   $(error Plugins can only be built from top level Makefile)

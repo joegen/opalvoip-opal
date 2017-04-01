@@ -21,9 +21,6 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Revision$
- * $Author$
- * $Date$
  */
 
 %Module(name=PyQt4.QtGui, keyword_arguments="Optional")

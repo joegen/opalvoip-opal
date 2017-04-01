@@ -22,6 +22,7 @@
  * The Initial Developer of the Original Code is Sysolyatin Pavel
  *
  * Contributor(s): ______________________________________.
+ *
  */
 
 #include <ptlib.h>

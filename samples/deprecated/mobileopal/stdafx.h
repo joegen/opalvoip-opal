@@ -23,9 +23,6 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Revision$
- * $Author$
- * $Date$
  */
 
 // include file for standard system include files,

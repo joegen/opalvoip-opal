@@ -6,6 +6,7 @@
  * Precompiled header generation file.
  *
  * Copyright 1999 Equivalence
+ *
  */
 
 #include <ptlib.h>

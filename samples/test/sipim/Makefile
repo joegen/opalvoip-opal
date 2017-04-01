@@ -21,10 +21,7 @@
 #
 # Contributor(s): ______________________________________.
 #
-# $Revision$
-# $Auther$
-# $Date$
-#
+
 
 PROG = sipim
 SOURCES := main.cxx

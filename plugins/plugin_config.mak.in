@@ -19,10 +19,6 @@
 #
 # Contributor(s): ______________________________________.
 #
-# $Revision$
-# $Author$
-# $Date$
-#
 
 prefix         := @prefix@
 exec_prefix    := @exec_prefix@

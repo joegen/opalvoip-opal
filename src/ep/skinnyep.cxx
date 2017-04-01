@@ -23,6 +23,7 @@
  * The Initial Developer of the Original Code is Vox Lucida Pty. Ltd.
  *
  * Contributor(s): Robert Jongbloed (robertj@voxlucida.com.au).
+ *
  */
 
 #include <ptlib.h>

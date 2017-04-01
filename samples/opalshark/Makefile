@@ -21,10 +21,6 @@
 #
 # Contributor(s): ______________________________________.
 #
-# $Revision$
-# $Author$
-# $Date$
-#
 
 PROG		:= opalshark
 SOURCES		:= main.cxx opalshark.cxx

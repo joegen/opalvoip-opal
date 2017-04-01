@@ -21,10 +21,6 @@
 #
 # Contributor(s): Vox Lucida Pty. Ltd.
 #
-# $Revision$
-# $Author$
-# $Date$
-#
 
 PROG	= opalsrv
 SOURCES	:= main.cxx custom.cxx h323serv.cxx sipserv.cxx status.cxx cdr.cxx

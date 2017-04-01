@@ -3,9 +3,6 @@
  *
  * Copyright (C) 2004 MX Telecom Ltd.
  *
- * $Revision$
- * $Author$
- * $Date$
  */
 
 #define _CRT_NONSTDC_NO_DEPRECATE 1

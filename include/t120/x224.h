@@ -23,9 +23,6 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Revision$
- * $Author$
- * $Date$
  */
 
 #ifndef OPAL_T120_X224_H

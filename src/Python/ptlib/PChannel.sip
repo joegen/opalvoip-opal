@@ -21,9 +21,6 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Revision$
- * $Author$
- * $Date$
  */
 
 /** Abstract class defining I/O channel semantics. An I/O channel can be a

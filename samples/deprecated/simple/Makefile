@@ -21,10 +21,6 @@
 #
 # Contributor(s): Matthias Schneider (ma30002000@yahoo.de)
 #
-# $Revision: 21713 $
-# $Auther$
-# $Date: 2008-12-08 19:14:44 +1100 (Mon, 08 Dec 2008) $
-#
 
 PROG = simpleopal
 SRCS = main.cxx

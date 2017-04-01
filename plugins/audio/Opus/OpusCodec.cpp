@@ -24,9 +24,6 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Revision$
- * $Author$
- * $Date$
  */
 
 #include <codec/opalplugin.hpp>

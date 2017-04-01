@@ -21,9 +21,6 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Revision$
- * $Author$
- * $Date$
  */
 
 /** Class for ASN basic Encoding Rules stream.

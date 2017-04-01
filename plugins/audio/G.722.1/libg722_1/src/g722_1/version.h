@@ -10,7 +10,6 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  *
- * $Id: version.h.in,v 1.2 2008/09/20 16:52:51 steveu Exp $
  */
 
 #if !defined(_G722_1_VERSION_H_)

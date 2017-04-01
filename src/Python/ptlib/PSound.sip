@@ -21,9 +21,6 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Revision$
- * $Author$
- * $Date$
  */
 
 /** A class representing a sound. A sound is a highly platform dependent

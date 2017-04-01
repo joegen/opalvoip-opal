@@ -21,9 +21,6 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Revision$
- * $Author$
- * $Date$
  */
 
 class OpalEchoCanceler : PObject

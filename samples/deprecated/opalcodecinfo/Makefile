@@ -21,10 +21,6 @@
 #
 # Contributor(s): ______________________________________.
 #
-# $Revision$
-# $Author$
-# $Date$
-#
 
 PROG		= codecinfo
 SOURCES		:= main.cxx

@@ -20,6 +20,7 @@
  * The Initial Developer of the Original Code is Derek J Smithies
  *
  * Contributor(s): Robert Jongbloed.
+ *
  */
 
 #ifndef _Jester_MAIN_H

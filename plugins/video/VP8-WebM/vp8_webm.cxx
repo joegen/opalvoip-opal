@@ -21,9 +21,6 @@
  *
  * Contributor(s): Robert Jongbloed (robertj@voxlucida.com.au)
  *
- * $Revision$
- * $Author$
- * $Date$
  */
 
 #include "../common/platform.h"
@@ -457,7 +454,7 @@ class VP8Encoder : public PluginVideoEncoder<VP8_CODEC>
       if (!OnChangedOptions())
         return false;
 
-      PTRACE(4, MY_CODEC_LOG, "Encoder opened: " << vpx_codec_version_str() << ", revision $Revision$");
+      PTRACE(4, MY_CODEC_LOG, "Encoder opened: " << vpx_codec_version_str());
       return true;
     }
 
@@ -810,7 +807,7 @@ class VP8Decoder : public PluginVideoDecoder<VP8_CODEC>
       if (IS_ERROR(vpx_codec_dec_init, (&m_codec, m_iface, NULL, m_flags)))
         return false;
 
-      PTRACE(4, MY_CODEC_LOG, "Decoder opened: " << vpx_codec_version_str() << ", revision $Revision$");
+      PTRACE(4, MY_CODEC_LOG, "Decoder opened: " << vpx_codec_version_str());
       return true;
     }
 

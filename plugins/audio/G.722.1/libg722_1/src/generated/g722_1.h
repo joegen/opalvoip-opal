@@ -8,7 +8,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * $Id: g722_1.h.in,v 1.1.1.1 2008/09/20 09:47:17 steveu Exp $
  */
 
 /*! \file */

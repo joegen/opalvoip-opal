@@ -54,7 +54,7 @@
 #include "../../common/dyna.cxx"
 
 
-static const char Version[] = "$Revision$";
+static const char Version[] = "1";
 
 
 #ifdef WIN32

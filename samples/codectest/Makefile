@@ -21,10 +21,6 @@
 #
 # Contributor(s): ______________________________________.
 #
-# $Revision$
-# $Author$
-# $Date$
-#
 
 PROG = codectest
 SOURCES := main.cxx

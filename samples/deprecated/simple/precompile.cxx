@@ -7,9 +7,6 @@
  *
  * Copyright 1999 Equivalence
  *
- * $Revision$
- * $Author$
- * $Date$
  */
 
 #include <ptlib.h>

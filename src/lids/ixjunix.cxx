@@ -25,6 +25,7 @@
  * Quicknet Technologies, Inc. http://www.quicknet.net.
  * 
  * Contributor(s): ______________________________________.
+ *
  */
 
 #include <ptlib.h>

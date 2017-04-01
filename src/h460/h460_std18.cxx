@@ -32,6 +32,8 @@
  *
  * Contributor(s): Many thanks to Simon Horne.
  *                 Robert Jongbloed (robertj@voxlucida.com.au).
+ *
+09:15:04 +0100 (Tue, 12 Aug 2014) $
  */
 
 #include <ptlib.h>

@@ -21,10 +21,6 @@
 #
 # Contributor(s): ______________________________________.
 #
-# $Revision$
-# $Author$
-# $Date$
-#
 
 OPAL_TOP_LEVEL_DIR := $(abspath $(dir $(lastword $(MAKEFILE_LIST)))..)
 ifneq ($(CURDIR),$(OPAL_TOP_LEVEL_DIR))

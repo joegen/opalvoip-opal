@@ -24,9 +24,6 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Revision$
- * $Author$
- * $Date$
  */
 /*
 #define HAS_EASYG722    1

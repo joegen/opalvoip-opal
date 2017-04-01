@@ -19,10 +19,6 @@
 #
 # Contributor(s): ______________________________________.
 #
-# $Revision$
-# $Author$
-# $Date$
-#
 
 BASE_NAME:=
 SUBDIRS=$(PLUGIN_SUBDIRS)

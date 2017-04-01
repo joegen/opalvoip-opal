@@ -22,7 +22,6 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: bitstream.h,v 1.8 2007/12/13 11:31:32 steveu Exp $
  */
 
 /*! \file */

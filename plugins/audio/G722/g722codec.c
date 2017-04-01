@@ -19,9 +19,6 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Revision$
- * $Author$
- * $Date$
  */
 
 #ifndef PLUGIN_CODEC_DLL_EXPORTS

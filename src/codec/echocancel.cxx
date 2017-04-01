@@ -21,6 +21,7 @@
  * The author of this code is Damien Sandras
  *
  * Contributor(s): Miguel Rodriguez Perez.
+ *
  */
 
 #include <ptlib.h>

@@ -21,10 +21,6 @@
 #
 # Contributor(s): ______________________________________.
 #
-# $Revision$
-# $Auther$
-# $Date$
-#
 
 PROG = faxopal
 SOURCES := main.cxx

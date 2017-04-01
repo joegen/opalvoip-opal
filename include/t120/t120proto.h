@@ -23,9 +23,6 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Revision$
- * $Author$
- * $Date$
  */
 
 #ifndef OPAL_T120_T120PROTO_H

@@ -23,7 +23,6 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: dc_restore.h,v 1.18 2007/04/08 08:16:17 steveu Exp $
  */
 
 /*! \file */

@@ -20,6 +20,7 @@
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
  * Contributor(s): ______________________________________.
+ *
  */
 
 #ifndef _OPAL_MCU_MAIN_H

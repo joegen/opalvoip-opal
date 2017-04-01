@@ -21,10 +21,6 @@
 #
 # Contributor(s): ______________________________________.
 #
-# $Revision$
-# $Author$
-# $Date$
-#
 
 OPAL_MAJOR :=@OPAL_MAJOR@
 OPAL_MINOR :=@OPAL_MINOR@

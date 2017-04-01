@@ -21,10 +21,6 @@
 #
 # Contributor(s): ______________________________________.
 #
-# $Revision: 29555 $
-# $Author: rjongbloed $
-# $Date: 2013-04-23 22:36:53 +1000 (Tue, 23 Apr 2013) $
-#
 
 PROG = conopal
 SOURCES := main.cxx

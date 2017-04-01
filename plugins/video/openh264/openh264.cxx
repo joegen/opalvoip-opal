@@ -22,9 +22,6 @@
  *                 Derek Smithies (derek@indranet.co.nz)
  *                 Robert Jongbloed (robertj@voxlucida.com.au)
  *
- * $Revision$
- * $Author$
- * $Date$
  */
 
 #include "../common/platform.h"
@@ -549,11 +546,11 @@ static void CheckVersion(bool encoder)
   WelsGetCodecVersionEx(&version);
   if (version.uMajor == OPENH264_MAJOR && version.uMinor == OPENH264_MINOR && version.uRevision == OPENH264_REVISION) {
     PTRACE(4, MY_CODEC_LOG, "Created " << (encoder ? "encoder" : "decoder")
-           << ", plugin $Revision$, DLL/API version " << version.uMajor << '.' << version.uMinor << '.' << version.uRevision);
+           << ", plugin DLL/API version " << version.uMajor << '.' << version.uMinor << '.' << version.uRevision);
   }
   else {
     PTRACE(1, MY_CODEC_LOG, "WARNING! Created " << (encoder ? "encoder" : "decoder")
-           << ", plugin $Revision$, with DLL version " << version.uMajor << '.' << version.uMinor << '.' << version.uRevision
+           << ", plugin with DLL version " << version.uMajor << '.' << version.uMinor << '.' << version.uRevision
            << " but API version " << OPENH264_MAJOR << '.' << OPENH264_MINOR << '.' << OPENH264_REVISION);
   }
 }
