@@ -100,9 +100,9 @@
     <OutDir>$(ProjectDir)..\..\lib\</OutDir>
     <IntDir>$(OutDir)$(Platform)\$(Configuration)\dll\</IntDir>
     <TargetName>opald</TargetName>
-    <ExecutablePath>$(ProjectDir)..\..\..\ptlib\lib;$(ExecutablePath)</ExecutablePath>
     <IncludePath>$(ProjectDir)..\..\lib\$(Platform)\include;$(ProjectDir)..\..\include;$(ProjectDir)..\..\..\ptlib\lib\$(Platform)\include;$(ProjectDir)..\..\..\ptlib\include;$(PTLIBDIR)..\..\..\ptlib\lib\$(Platform)\include;$(PTLIBDIR)..\..\..\ptlib\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)..\..\lib;$(ProjectDir)..\..\..\ptlib\lib;$(PTLIBDIR)..\..\..\ptlib\lib;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
+    <ExecutablePath>$(ProjectDir)..\..\..\ptlib\lib;$(ProjectDir)..\..\..\ptlib\tools;$(VC_ExecutablePath_x86);$(WindowsSDK_ExecutablePath);$(VS_ExecutablePath);$(MSBuild_ExecutablePath);$(SystemRoot)\SysWow64;$(FxCopDir);$(PATH);</ExecutablePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
@@ -115,12 +115,12 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <ExecutablePath>$(ProjectDir)..\..\..\ptlib\lib;$(ExecutablePath)</ExecutablePath>
     <OutDir>$(ProjectDir)..\..\lib\</OutDir>
     <IntDir>$(OutDir)$(Platform)\$(Configuration)\dll\</IntDir>
     <TargetName>opal</TargetName>
     <IncludePath>$(ProjectDir)..\..\lib\$(Platform)\include;$(ProjectDir)..\..\include;$(ProjectDir)..\..\..\ptlib\lib\$(Platform)\include;$(ProjectDir)..\..\..\ptlib\include;$(PTLIBDIR)..\..\..\ptlib\lib\$(Platform)\include;$(PTLIBDIR)..\..\..\ptlib\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)..\..\lib;$(ProjectDir)..\..\..\ptlib\lib;$(PTLIBDIR)..\..\..\ptlib\lib;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
+    <ExecutablePath>$(ProjectDir)..\..\..\ptlib\lib;$(ProjectDir)..\..\..\ptlib\tools;$(VC_ExecutablePath_x86);$(WindowsSDK_ExecutablePath);$(VS_ExecutablePath);$(MSBuild_ExecutablePath);$(SystemRoot)\SysWow64;$(FxCopDir);$(PATH);</ExecutablePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ExecutablePath>$(ProjectDir)..\..\..\ptlib\lib;$(ExecutablePath)</ExecutablePath>
@@ -136,9 +136,9 @@
     <OutDir>$(ProjectDir)..\..\lib\</OutDir>
     <IntDir>$(OutDir)$(Platform)\$(Configuration)\dll\</IntDir>
     <TargetName>opaln</TargetName>
-    <ExecutablePath>$(ProjectDir)..\..\..\ptlib\lib;$(ExecutablePath)</ExecutablePath>
     <IncludePath>$(ProjectDir)..\..\lib\$(Platform)\include;$(ProjectDir)..\..\include;$(ProjectDir)..\..\..\ptlib\lib\$(Platform)\include;$(ProjectDir)..\..\..\ptlib\include;$(PTLIBDIR)..\..\..\ptlib\lib\$(Platform)\include;$(PTLIBDIR)..\..\..\ptlib\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)..\..\lib;$(ProjectDir)..\..\..\ptlib\lib;$(PTLIBDIR)..\..\..\ptlib\lib;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
+    <ExecutablePath>$(ProjectDir)..\..\..\ptlib\lib;$(ProjectDir)..\..\..\ptlib\tools;$(VC_ExecutablePath_x86);$(WindowsSDK_ExecutablePath);$(VS_ExecutablePath);$(MSBuild_ExecutablePath);$(SystemRoot)\SysWow64;$(FxCopDir);$(PATH);</ExecutablePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -366,7 +366,7 @@
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Private.def;$(OutDir)opalsd.lib;%(AdditionalInputs)</AdditionalInputs>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Merging symbols ...</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)$(TargetName).def;%(Outputs)</Outputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">PATH=%PATH%;..\..\..\ptlib\lib
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">PATH=..\..\..\ptlib\lib;..\..\..\ptlib\tools;%PATH%
 MergeSym -I "..\..\..\ptlib;$(PTLIBDIR)" -x "lib\$(Platform)\$(ConfigurationName)\dll\ptlibd.def" -x "%(RootDir)%(Directory)Private.def" "$(OutDir)\opalsd.lib" "%(FullPath)" "$(IntDir)\$(TargetName).def"
 </Command>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
@@ -386,7 +386,7 @@ MergeSym -I "..\..\..\ptlib;$(PTLIBDIR)" -x "lib\$(Platform)\$(ConfigurationName
       <Outputs Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">$(IntDir)$(TargetName).def;%(Outputs)</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">
       </Outputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">PATH=%PATH%;..\..\..\ptlib\lib
+      <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">PATH=..\..\..\ptlib\lib;..\..\..\ptlib\tools;%PATH%
 MergeSym -I "..\..\..\ptlib;$(PTLIBDIR)" -x "lib\$(Platform)\$(ConfigurationName)\dll\ptlibn.def" -x "%(RootDir)%(Directory)Private.def" "$(OutDir)\opalsn.lib" "%(FullPath)" "$(IntDir)\$(TargetName).def"
 </Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">
@@ -398,7 +398,7 @@ MergeSym -I "..\..\..\ptlib;$(PTLIBDIR)" -x "lib\$(Platform)\$(ConfigurationName
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Merging symbols ...</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)$(TargetName).def;%(Outputs)</Outputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)opals.lib;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">PATH=%PATH%;..\..\..\ptlib\lib
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">PATH=..\..\..\ptlib\lib;..\..\..\ptlib\tools;%PATH%
 MergeSym -I "..\..\..\ptlib;$(PTLIBDIR)" -x "lib\$(Platform)\$(ConfigurationName)\dll\ptlib.def" -x "%(RootDir)%(Directory)Private.def" "$(OutDir)\opals.lib" "%(FullPath)" "$(IntDir)\$(TargetName).def"
 </Command>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
@@ -412,7 +412,7 @@ MergeSym -I "..\..\..\ptlib;$(PTLIBDIR)" -x "lib\$(Platform)\$(ConfigurationName
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <FileType>Document</FileType>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">PATH=%PATH%;..\..\..\ptlib\lib
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">PATH=..\..\..\ptlib\lib;..\..\..\ptlib\tools;%PATH%
 MergeSym -I "..\..\..\ptlib;$(PTLIBDIR)" -x "lib\$(Platform)\$(ConfigurationName)\dll\ptlib64d.def" -x "%(RootDir)%(Directory)Private.def" "$(OutDir)\opal64sd.lib" "%(FullPath)" "$(IntDir)\$(TargetName).def"
 </Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Merging symbols ...</Message>
@@ -426,7 +426,7 @@ MergeSym -I "..\..\..\ptlib;$(PTLIBDIR)" -x "lib\$(Platform)\$(ConfigurationName
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <FileType>Document</FileType>
-      <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">PATH=%PATH%;..\..\..\ptlib\lib
+      <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">PATH=..\..\..\ptlib\lib;..\..\..\ptlib\tools;%PATH%
 MergeSym -I "..\..\..\ptlib;$(PTLIBDIR)" -x "lib\$(Platform)\$(ConfigurationName)\dll\ptlib64n.def" -x "%(RootDir)%(Directory)Private.def" "$(OutDir)\opal64sn.lib" "%(FullPath)" "$(IntDir)\$(TargetName).def"</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">Merging symbols ...</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">$(IntDir)$(TargetName).def;%(Outputs)</Outputs>
@@ -439,7 +439,7 @@ MergeSym -I "..\..\..\ptlib;$(PTLIBDIR)" -x "lib\$(Platform)\$(ConfigurationName
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">true</ExcludedFromBuild>
       <FileType>Document</FileType>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">PATH=%PATH%;..\..\..\ptlib\lib
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">PATH=..\..\..\ptlib\lib;..\..\..\ptlib\tools;%PATH%
 MergeSym -I "..\..\..\ptlib;$(PTLIBDIR)" -x "lib\$(Platform)\$(ConfigurationName)\dll\ptlib64.def" -x "%(RootDir)%(Directory)Private.def" "$(OutDir)\opal64s.lib" "%(FullPath)" "$(IntDir)\$(TargetName).def"</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Merging symbols ...</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)$(TargetName).def;%(Outputs)</Outputs>

@@ -7,6 +7,9 @@
     <Filter Include="Source Files">
       <UniqueIdentifier>{1d9f1e31-8189-42a0-a49d-dc675e352a41}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Cisco">
+      <UniqueIdentifier>{11bfd25c-769a-48a4-a8f8-7f3a333998cc}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\common\encframe.h">
@@ -28,13 +31,19 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="openh264_x86.def" />
+    <CustomBuild Include="openh264_x64.def">
+      <Filter>Cisco</Filter>
+    </CustomBuild>
+    <CustomBuild Include="openh264_x86.def">
+      <Filter>Cisco</Filter>
+    </CustomBuild>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="openh264_x64.def" />
-  </ItemGroup>
-  <ItemGroup>
-    <Library Include="..\..\..\bin\plugins\Win32\Release\Video - H.264 (Cisco OpenH264)\openh264_x86.lib" />
-    <Library Include="..\..\..\bin\plugins\x64\Release\Video - H.264 (Cisco OpenH264)\openh264_x64.lib" />
+    <Library Include="..\..\..\bin\plugins\x64\openh264_x64.lib">
+      <Filter>Cisco</Filter>
+    </Library>
+    <Library Include="..\..\..\bin\plugins\Win32\openh264_x86.lib">
+      <Filter>Cisco</Filter>
+    </Library>
   </ItemGroup>
 </Project>
