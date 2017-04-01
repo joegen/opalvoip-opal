@@ -85,12 +85,6 @@ static void logCallbackFFMPEG(void * avcl, int severity, const char* fmt , va_li
   if (buffer[0] == '\0')
     return;
 
-  // Check for bogus errors, everything works so what do these mean? Bump up level so don't get the noise
-  if (strstr(buffer, "Frame num gap") != NULL ||
-      strstr(buffer, "Too many slices") != NULL ||
-      (len == 2 && isxdigit(buffer[1])))
-    level = 6;
-
   if (avcl != NULL && strcmp((*(AVClass**)avcl)->class_name, "AVCodecContext") == 0 && static_cast<AVCodecContext *>(avcl)->opaque != NULL)
     static_cast<FFMPEGCodec *>(static_cast<AVCodecContext *>(avcl)->opaque)->ErrorCallback(level, buffer);
   else
@@ -108,6 +102,7 @@ FFMPEGCodec::FFMPEGCodec(const char * prefix, OpalPluginFrame * fullFrame)
   , m_picture(NULL)
   , m_fullFrame(fullFrame)
   , m_open(false)
+  , m_consecutiveFails(0)
   , m_errorCount(0)
   , m_hadMissingPacket(false)
 {
@@ -601,11 +596,13 @@ bool FFMPEGCodec::DecodeVideoFrame(const uint8_t * frame, size_t length, unsigne
   int bytesDecoded = avcodec_decode_video2(m_context, m_picture, &gotPicture, &m_packet);
 #endif
 
-  if (bytesDecoded < 0) {
-    PTRACE(1, m_prefix, "Decoder failed!");
-    return false;
+  if (bytesDecoded >= 0)
+    m_consecutiveFails = 0;
+  else {
+    ++m_consecutiveFails;
+    PTRACE(m_consecutiveFails >= 100 ? 1 : 3, m_prefix, "Decoder failed!");
+    return m_consecutiveFails <  100;
   }
-
   int errorsAfter = m_errorCount;
 #ifdef FFMPEG_HAS_DECODE_ERROR_COUNT
   errorsAfter += m_context->decode_error_count;
@@ -633,15 +630,33 @@ bool FFMPEGCodec::DecodeVideoFrame(const uint8_t * frame, size_t length, unsigne
 }
 
 
-void FFMPEGCodec::ErrorCallback(unsigned level, const char * msg)
+#if PLUGINCODEC_TRACING
+void FFMPEGCodec::ErrorCallback(unsigned ffmpegLevel, const char * msg)
 {
+  unsigned ptlibLevel;
+
+  // Check for bogus errors, everything works so what do these mean? Bump up level so don't get the noise
+  if (strstr(msg, "Frame num gap") != NULL ||
+      strstr(msg, "Too many slices") != NULL ||
+      (isxdigit(msg[1]) && msg[2] == '\0'))
+    ptlibLevel = 6;
   // This is not really so severe an error, everything decodes fine! Happens with flash, a lot.
-  if (strcmp(msg, "non-existing SPS 32 referenced in buffering period") == 0)
-    level = 4;
-
-  PTRACE(level > 2 ? level > 4 ? 5 : 4 : 3, m_prefix, "FFMPEG(" << level << "): " << msg);
-
-  if (level < 2)
+  else if (strcmp(msg, "non-existing SPS 32 referenced in buffering period") == 0)
+    ptlibLevel = 5;
+  else if (ffmpegLevel > 2)
+    ptlibLevel = ffmpegLevel;
+  else if (ffmpegLevel > 1)
+    ptlibLevel = 3;
+  else {
+    ptlibLevel = 2;
     ++m_errorCount;
+  }
+
+  PTRACE(ptlibLevel, m_prefix, "FFMPEG(" << ffmpegLevel << "): " << msg);
 }
+#else
+void FFMPEGCodec::ErrorCallback(unsigned, const char *)
+{
+}
+#endif
 

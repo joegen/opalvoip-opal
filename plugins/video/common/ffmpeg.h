@@ -93,6 +93,7 @@ class FFMPEGCodec
     void           * m_alignedYUV[3];
     OpalPluginFrame *m_fullFrame;
     bool             m_open;
+    unsigned         m_consecutiveFails;
     int              m_errorCount;
     bool             m_hadMissingPacket;
 
