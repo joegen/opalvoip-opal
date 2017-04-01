@@ -43,9 +43,6 @@
  * Initial implementation of MPEG4 codec plugin using ffmpeg.
  * Untested under Windows or H.323
  *
- * $Revision$
- * $Author$
- * $Date$
  */
 
 #define _CRT_SECURE_NO_DEPRECATE
@@ -354,7 +351,7 @@ class MPEG4_Encoder : public PluginVideoEncoder<MY_CODEC>, public FFMPEGCodec
       : BaseClass(defn)
       , FFMPEGCodec(MY_CODEC_LOG, new MPEG4_EncodedFrame)
     { 
-      PTRACE(4, m_prefix, "Created encoder $Revision$");
+      PTRACE(4, m_prefix, "Created encoder");
     }
 
 

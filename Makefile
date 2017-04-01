@@ -21,10 +21,6 @@
 #
 # Contributor(s): ______________________________________.
 #
-# $Revision: 27217 $
-# $Author: rjongbloed $
-# $Date: 2012-03-17 21:28:55 +1100 (Sat, 17 Mar 2012) $
-#
 
 # autoconf.mak uses this for if we are run as "make -f ../Makefile"
 TOP_LEVEL_DIR := $(abspath $(dir $(firstword $(MAKEFILE_LIST))))

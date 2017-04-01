@@ -21,9 +21,6 @@
 #
 # Contributor(s): ______________________________________.
 #
-# $Revision: 20959 $
-# $Author: ms30002000 $
-# $Date: 2008-09-15 03:57:09 +1000 (Mon, 15 Sep 2008) $
 #
 
 OPAL_TOP_LEVEL_DIR := $(abspath $(dir $(lastword $(MAKEFILE_LIST)))..)

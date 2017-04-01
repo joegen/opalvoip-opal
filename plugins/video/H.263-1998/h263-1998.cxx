@@ -40,9 +40,6 @@
  *                 Craig Southeren (craigs@postincrement.com)
  *                 Robert Jongbloed (robertj@voxlucida.com.au)
  *
- * $Revision$
- * $Author$
- * $Date$
  */
 
 #include "../common/platform.h"
@@ -421,7 +418,7 @@ class H263_Base_Encoder : public PluginVideoEncoder<MY_CODEC>, public FFMPEGCode
       : BaseClass(defn)
       , FFMPEGCodec(prefix, packetizer)
     { 
-      PTRACE(4, m_prefix, "Created encoder $Revision$");
+      PTRACE(4, m_prefix, "Created encoder");
     }
 
 
@@ -656,7 +653,7 @@ class H263_Base_Decoder : public PluginVideoDecoder<MY_CODEC>, public FFMPEGCode
       : BaseClass(defn)
       , FFMPEGCodec(prefix, depacketizer)
     {
-      PTRACE(4, m_prefix, "Created decoder $Revision$");
+      PTRACE(4, m_prefix, "Created decoder");
     }
 
 

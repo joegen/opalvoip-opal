@@ -19,10 +19,6 @@
 #
 # Contributor(s): Matthias Schneider (ma30002000@yahoo.de)
 #
-# $Revision$
-# $Author$
-# $Date$
-#
 
 BASENAME=theora
 

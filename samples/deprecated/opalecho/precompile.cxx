@@ -19,9 +19,6 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Revision:$
- * $Author:$
- * $Date:$
  */
 
 #include "precompile.h"

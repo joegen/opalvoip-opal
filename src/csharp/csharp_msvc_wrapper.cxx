@@ -31,6 +31,7 @@
  * The Initial Developer of the Original Code is Vox Lucida Pty. Ltd.
  *
  * Contributor(s): ______________________________________.
+ *
  */
 
 #include <opal_config.h>

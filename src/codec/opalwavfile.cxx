@@ -20,6 +20,7 @@
  * The Original Code is Open H323 Library.
  *
  * Contributor(s): ______________________________________.
+ *
  */
 
 #include <ptlib.h>

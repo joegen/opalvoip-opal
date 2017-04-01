@@ -20,6 +20,7 @@
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
  * Contributor(s): ______________________________________.
+ *
  */
 
 #ifndef _ExtRTP_MAIN_H

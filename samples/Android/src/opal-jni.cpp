@@ -18,6 +18,7 @@
  * The Initial Developer of the Original Code is Vox Lucida (Robert Jongbloed)
  *
  * Contributor(s): ______________________________________.
+ *
  */
 
 #include <jni.h>

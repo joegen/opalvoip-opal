@@ -21,10 +21,6 @@
 #
 # Contributor(s): ______________________________________.
 #
-# $Revision$
-# $Auther$
-# $Date$
-#
 
 PROG = ivropal
 SOURCES := main.cxx

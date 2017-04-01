@@ -23,6 +23,7 @@
  * The Initial Developer of the Original Code is Robert Jongbloed
  *
  * Contributor(s): ______________________________________.
+ *
  */
 
 //#ifdef __GNUG__

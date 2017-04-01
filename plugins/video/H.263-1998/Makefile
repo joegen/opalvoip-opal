@@ -19,10 +19,6 @@
 #
 # Contributor(s): Matthias Schneider.
 #
-# $Revision$
-# $Author$
-# $Date$
-#
 
 BASENAME := h263_ffmpeg
 

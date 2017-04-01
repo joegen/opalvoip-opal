@@ -24,12 +24,6 @@
  * Mountain View, California  94043
  */
 
-/*
- * $Revision$
- * $Author$
- * $Date$
- */
-
 #include "g72x.h"
 #include "private.h"
 

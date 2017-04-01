@@ -25,6 +25,7 @@
  * Vovida Networks, Inc. http://www.vovida.com.
  *
  * Contributor(s): ______________________________________.
+ *
  */
 
 #ifndef OPAL_RTP_JITTER_H

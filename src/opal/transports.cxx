@@ -27,6 +27,7 @@
  *     Portions of this code were written with the assistance of funding from
  *     US Joint Forces Command Joint Concept Development & Experimentation (J9)
  *     http://www.jfcom.mil/about/abt_j9.htm
+ *
  */
 
 #include <ptlib.h>

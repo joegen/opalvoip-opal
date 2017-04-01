@@ -23,6 +23,7 @@
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
  * Contributor(s): ______________________________________.
+ *
  */
 
 #include <ptlib.h>
@@ -334,7 +335,7 @@ PBoolean OpalCall::OnEstablished(OpalConnection & connection)
     if (conn->GetPhase() != OpalConnection::EstablishedPhase) {
       PTRACE(3, "OnEstablished " << connection << ", other side not established yet.");
       return false;
-    }
+  }
   }
 
   m_isEstablished = true;

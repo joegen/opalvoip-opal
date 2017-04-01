@@ -19,9 +19,6 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Revision:$
- * $Author:$
- * $Date:$
  */
 
 #ifndef _OpalEcho_MAIN_H

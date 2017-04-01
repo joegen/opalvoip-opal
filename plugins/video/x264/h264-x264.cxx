@@ -31,9 +31,6 @@
  *                 Derek Smithies (derek@indranet.co.nz)
  *                 Robert Jongbloed (robertj@voxlucida.com.au)
  *
- * $Revision$
- * $Author$
- * $Date$
  */
 
 #include "../common/platform.h"
@@ -611,7 +608,7 @@ class H264_Encoder : public PluginVideoEncoder<MY_CODEC>
       , m_isH323(false)
       , m_rateControlPeriod(1000)
     {
-      PTRACE(4, MY_CODEC_LOG, "Created encoder $Revision$");
+      PTRACE(4, MY_CODEC_LOG, "Created encoder");
     }
 
 
@@ -822,7 +819,7 @@ class H264_Decoder : public PluginVideoDecoder<MY_CODEC>, public FFMPEGCodec
       : BaseClass(defn)
       , FFMPEGCodec(MY_CODEC_LOG, new H264Frame)
     {
-      PTRACE(4, MY_CODEC_LOG, "Created decoder $Revision$");
+      PTRACE(4, MY_CODEC_LOG, "Created decoder");
     }
 
 
@@ -940,7 +937,7 @@ class H264_FlashDecoder : public PluginVideoDecoder<MY_CODEC>, public FFMPEGCode
       : BaseClass(defn)
       , FFMPEGCodec(MY_CODEC_LOG, NULL)
     {
-      PTRACE(4, MY_CODEC_LOG, "Created flash decoder $Revision$");
+      PTRACE(4, MY_CODEC_LOG, "Created flash decoder");
     }
 
 

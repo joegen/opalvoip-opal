@@ -21,10 +21,6 @@
 #
 # Contributor(s): ______________________________________.
 #
-# $Revision$
-# $Auther$
-# $Date$
-#
 
 PROG = testpresent
 SOURCES := main.cxx

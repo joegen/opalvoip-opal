@@ -25,6 +25,7 @@
  * to Ashley Unitt for his efforts.
  *
  * Contributor(s): ______________________________________.
+ *
  */
 
 #include <ptlib.h>

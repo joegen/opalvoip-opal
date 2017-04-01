@@ -24,9 +24,6 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Revision$
- * $Author$
- * $Date$
  */
 
 #include <codec/opalplugin.hpp>
@@ -278,7 +275,7 @@ class OpusPluginEncoder : public OpusPluginCodec
       , m_useDTX(false)
       , m_bitRate(12000)
     {
-      PTRACE(4, MY_CODEC_LOG, "Encoder created: $Revision$, version \"" << opus_get_version_string() << '"');
+      PTRACE(4, MY_CODEC_LOG, "Encoder created: version \"" << opus_get_version_string() << '"');
     }
 
 
@@ -367,7 +364,7 @@ class OpusPluginDecoder : public OpusPluginCodec
       : OpusPluginCodec(defn)
       , m_decoder(NULL)
     {
-      PTRACE(4, MY_CODEC_LOG, "Decoder created: $Revision$, version \"" << opus_get_version_string() << '"');
+      PTRACE(4, MY_CODEC_LOG, "Decoder created: version \"" << opus_get_version_string() << '"');
     }
 
 
