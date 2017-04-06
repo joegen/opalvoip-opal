@@ -248,20 +248,10 @@ xcopy /y/f "$(TargetDir)$(TargetName).*d*" "C:\Program Files (x86)\PTLib Plug In
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)%(Filename).lib</Outputs>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Creating stub library</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Creating stub library</Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)%(Filename).lib</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)%(Filename).lib</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Creating stub library</Message>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Creating stub library</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">lib /def:"%(FullPath)" /out:"$(IntDir)%(Filename).lib" /machine:$(PlatformTargetAsMSBuildArchitecture)</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">lib /def:"%(FullPath)" /out:"$(IntDir)%(Filename).lib" /machine:$(PlatformTargetAsMSBuildArchitecture)</Command>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </CustomBuild>
     <CustomBuild Include="openh264_x64.def">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">lib /def:"%(FullPath)" /out:"$(IntDir)%(Filename).lib" /machine:$(PlatformTargetAsMSBuildArchitecture)</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)%(Filename).lib</Outputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">lib /def:"%(FullPath)" /out:"$(IntDir)%(Filename).lib" /machine:$(PlatformTargetAsMSBuildArchitecture)</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)%(Filename).lib</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Creating stub library</Message>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Creating stub library</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)%(Filename).lib</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)%(Filename).lib</Outputs>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Creating stub library</Message>

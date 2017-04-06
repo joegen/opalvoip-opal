@@ -1,4 +1,4 @@
-LIBRARY openh264_x86
+LIBRARY openh264_x64
 EXPORTS
 	WelsCreateDecoder @1
 	WelsCreateSVCEncoder @2
