@@ -282,7 +282,7 @@
                                    Win64="$(var.IsWin64)"
                                    Guid='*'>
                             <File Id='OPAL_DLL'
-                                  Name='OPAL.DLL'
+                                  Name='$(var.OPALName).DLL'
                                   Source='$(var.OPALDir)\lib\$(var.OPALName).DLL'
                                   DiskId='1'
                                   KeyPath='yes' />
@@ -291,7 +291,7 @@
                                    Win64="$(var.IsWin64)"
                                    Guid='*'>
                             <File Id='PTLib_DLL'
-                                  Name='PTLib.DLL'
+                                  Name='$(var.PTLibName).DLL'
                                   Source='$(var.PTLibDir)\lib\$(var.PTLibName).DLL'
                                   DiskId='1'
                                   KeyPath='yes' />
