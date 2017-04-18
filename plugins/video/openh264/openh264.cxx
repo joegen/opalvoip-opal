@@ -116,6 +116,20 @@ static struct PluginCodec_Option const Level =
   H264_LEVEL_STR_5_1
 };
 
+static struct PluginCodec_Option const ConstraintFlags =
+{
+  PluginCodec_IntegerOption,          // Option type
+  ConstraintFlagsName,                // User visible name
+  true,                               // User Read/Only flag
+  PluginCodec_AndMerge,               // Merge mode
+  "0",                                // Initial value
+  NULL,                               // FMTP option name
+  "0",                                // FMTP default value
+  0,                                  // H.245 generic capability code and bit mask
+  "0",                                // Minimum value
+  "255"                               // Maximum value
+};
+
 #if HAS_HI_PROFILE
 static struct PluginCodec_Option const HiProfile =
 {
@@ -407,6 +421,7 @@ static struct PluginCodec_Option const PacketizationModeSDP_1 =
 static struct PluginCodec_Option const * const MyOptionTable_0[] = {
   &Profile,
   &Level,
+  &ConstraintFlags,
   &H241Profiles,
   &H241Level,
   &SDPProfileAndLevel,
@@ -429,6 +444,7 @@ static struct PluginCodec_Option const * const MyOptionTable_0[] = {
 static struct PluginCodec_Option const * const MyOptionTable_1[] = {
   &Profile,
   &Level,
+  &ConstraintFlags,
   &H241Profiles,
   &H241Level,
   &SDPProfileAndLevel,
@@ -565,6 +581,7 @@ class H264_Encoder : public PluginVideoEncoder<MY_CODEC>
   protected:
     EProfileIdc m_profile;
     ELevelIdc   m_level;
+    unsigned    m_constraints;
     unsigned    m_sdpMBPS;
     unsigned    m_h241MBPS;
     unsigned    m_maxNALUSize;
@@ -581,6 +598,7 @@ class H264_Encoder : public PluginVideoEncoder<MY_CODEC>
       : BaseClass(defn)
       , m_profile((EProfileIdc)DefaultProfileInt)
       , m_level(LEVEL_3_1)
+      , m_constraints(0)
       , m_sdpMBPS(MAX_MBPS_SDP)
       , m_h241MBPS(MAX_MBPS_H241)
       , m_maxNALUSize(H241_MAX_NALU_SIZE)
@@ -647,6 +665,9 @@ class H264_Encoder : public PluginVideoEncoder<MY_CODEC>
         }
         return false;
       }
+
+      if (strcasecmp(optionName, ConstraintFlags.m_name) == 0)
+        return SetOptionUnsigned(m_constraints, optionValue, 0, 255);
 
       if (
 #ifdef PLUGIN_CODEC_VERSION_INTERSECT

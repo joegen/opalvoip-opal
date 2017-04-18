@@ -111,6 +111,7 @@ enum
 static char const ProfileName[] = PLUGINCODEC_OPTION_PROFILE;
 static char const LevelName[] = PLUGINCODEC_OPTION_LEVEL;
 static char const MaxNALUSizeName[] = PLUGINCODEC_OPTION_MAX_NALU_SIZE;
+static char const ConstraintFlagsName[] = "Constraint Flags";
 
 static char const H241ProfilesName[] = "H.241 Profile Mask";
 static char const H241LevelName[] = "H.241 Level";
@@ -122,7 +123,7 @@ static char const H241ForcedName[] = "H.241 Forced";
 
 static char const SDPProfileAndLevelName[] = "SIP/SDP Profile & Level";
 static char const SDPProfileAndLevelFMTPName[] = "profile-level-id";
-static char const SDPProfileAndLevelFMTPDflt[] = "42800A";
+static char const SDPProfileAndLevelFMTPDflt[] = "42000A";
 static char const MaxMBPS_SDP_Name[] = "SIP/SDP Max MBPS";
 static char const MaxMBPS_FMTPName[] = "max-mbps";
 static char const MaxSMBPS_SDP_Name[] = "SIP/SDP Max SMBPS";
@@ -158,12 +159,11 @@ static struct {
   char     m_Name[9];
   unsigned m_H264;
   unsigned m_H241;
-  unsigned m_Constraints;
 } const ProfileInfo[] = {
-  { H264_PROFILE_STR_BASELINE, H264_PROFILE_INT_BASELINE, 64, 0x80 },
-  { H264_PROFILE_STR_MAIN,     H264_PROFILE_INT_MAIN,     32, 0x40 },
-  { H264_PROFILE_STR_EXTENDED, H264_PROFILE_INT_EXTENDED, 16, 0x20 },
-  { H264_PROFILE_STR_HIGH,     H264_PROFILE_INT_HIGH,     8,  0x00 }
+  { H264_PROFILE_STR_BASELINE, H264_PROFILE_INT_BASELINE, 64 },
+  { H264_PROFILE_STR_MAIN,     H264_PROFILE_INT_MAIN,     32 },
+  { H264_PROFILE_STR_EXTENDED, H264_PROFILE_INT_EXTENDED, 16 },
+  { H264_PROFILE_STR_HIGH,     H264_PROFILE_INT_HIGH,      8 }
 };
 
 static struct LevelInfoStruct {
@@ -276,6 +276,8 @@ static bool MyToNormalised(PluginCodec_OptionMap & original, PluginCodec_OptionM
     }
 
     unsigned sdpConstraints = hexbyte(&sdpProfLevel[2]);
+    PluginCodec_Utilities::Change(sdpConstraints, original, changed, ConstraintFlagsName);
+
     unsigned sdpLevel = hexbyte(&sdpProfLevel[4]);
 
     // convert sdpLevel to an index into LevelInfo
@@ -290,7 +292,7 @@ static bool MyToNormalised(PluginCodec_OptionMap & original, PluginCodec_OptionM
         break;
 
       // if reached the level, stop if constraints are the same
-      if ((sdpConstraints & 0x10) == LevelInfo[levelIndex].m_constraints)
+      if ((sdpConstraints & LevelInfo[levelIndex].m_constraints) == LevelInfo[levelIndex].m_constraints)
         break;
     }
     maxMBPS = original.GetUnsigned(MaxMBPS_SDP_Name)%MAX_MBPS_SDP;
@@ -331,16 +333,16 @@ static bool MyToNormalised(PluginCodec_OptionMap & original, PluginCodec_OptionM
   if (maxFrameSizeInMB < LevelInfo[levelIndex].m_MaxFrameSize)
     maxFrameSizeInMB = LevelInfo[levelIndex].m_MaxFrameSize;
   PluginCodec_Utilities::ClampResolution(original, changed,
-																			   original.GetUnsigned(PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH),
-																				 original.GetUnsigned(PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT),
-																				 maxFrameSizeInMB);
+                                         original.GetUnsigned(PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH),
+                                         original.GetUnsigned(PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT),
+                                         maxFrameSizeInMB);
 
   // Frame rate
   if (maxMBPS < LevelInfo[levelIndex].m_MaxMBPS)
     maxMBPS = LevelInfo[levelIndex].m_MaxMBPS;
   PluginCodec_Utilities::ClampMin(PluginCodec_Utilities::GetMacroBlocks(original.GetUnsigned(PLUGINCODEC_OPTION_MIN_RX_FRAME_WIDTH),
-                                      original.GetUnsigned(PLUGINCODEC_OPTION_MIN_RX_FRAME_HEIGHT))*PLUGINCODEC_VIDEO_CLOCK/maxMBPS,
-            original, changed, PLUGINCODEC_OPTION_FRAME_TIME);
+                                  original.GetUnsigned(PLUGINCODEC_OPTION_MIN_RX_FRAME_HEIGHT))*PLUGINCODEC_VIDEO_CLOCK/maxMBPS,
+                                  original, changed, PLUGINCODEC_OPTION_FRAME_TIME);
 
   // Bit rate
   if (maxBitRate < LevelInfo[levelIndex].m_MaxBitRate)
@@ -411,7 +413,7 @@ static bool MyToCustomised(PluginCodec_OptionMap & original, PluginCodec_OptionM
   char sdpProfLevel[3*8*2+1];
   sprintf(sdpProfLevel, "%02x%02x%02x",
           ProfileInfo[profileIndex].m_H264,
-          ProfileInfo[profileIndex].m_Constraints | LevelInfo[levelIndex].m_constraints,
+          original.GetUnsigned(ConstraintFlagsName) | LevelInfo[levelIndex].m_constraints,
           LevelInfo[levelIndex].m_H264);
   PluginCodec_Utilities::Change(sdpProfLevel, original, changed, SDPProfileAndLevelName);
 

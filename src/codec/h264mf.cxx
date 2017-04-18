@@ -85,6 +85,8 @@ class OpalH264Format : public OpalVideoFormatInternal
       };
       AddOption(option = new OpalMediaOptionEnum(LevelName, false, levels, PARRAYSIZE(levels), OpalMediaOption::MinMerge, PARRAYSIZE(levels)-1));
 
+      AddOption(option = new OpalMediaOptionUnsigned(ConstraintFlagsName, false, OpalMediaOption::AndMerge, 0, 0, 0xff));
+
 #if OPAL_H323
       option = new OpalMediaOptionUnsigned(H241ProfilesName, true, OpalMediaOption::IntersectionMerge, DefaultProfileH241, 1, 127);
       option->SetH245Generic(OpalMediaOption::H245GenericInfo(H241_PROFILES));
