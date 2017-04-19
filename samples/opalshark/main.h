@@ -49,6 +49,7 @@ class wxProgressDialog;
 class wxGrid;
 class wxGridEvent;
 class wxListCtrl;
+class wxSpinCtrl;
 
 
 struct MyOptions
