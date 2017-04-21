@@ -858,7 +858,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SendBYE(RTP_SyncSourceId ssrc)
 
   SendReceiveStatus status = sender->SendBYE();
   if (status == e_ProcessPacket) {
-    P_INSTRUMENTED_LOCK_READ_WRITE();
+    P_INSTRUMENTED_LOCK_READ_WRITE2(writeLock, *this);
 
     // Now remove the shut down SSRC
     SyncSourceMap::iterator it = m_SSRC.find(ssrc);
