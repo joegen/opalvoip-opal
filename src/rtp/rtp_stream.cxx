@@ -512,6 +512,8 @@ void OpalRTPMediaStream::GetStatistics(OpalMediaStatistics & statistics, bool fr
 {
   OpalMediaStream::GetStatistics(statistics, fromPatch);
   m_rtpSession.GetStatistics(statistics, IsSource() ? OpalRTPSession::e_Receiver : OpalRTPSession::e_Sender);
+  if (statistics.m_payloadType < 0 && m_mediaFormat.IsTransportable())
+    statistics.m_payloadType = m_mediaFormat.GetPayloadType();
 }
 #endif
 

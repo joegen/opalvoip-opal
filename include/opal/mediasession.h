@@ -62,6 +62,18 @@ class PSTUNClient;
 
 #if OPAL_STATISTICS
 
+struct OpalCodecStatistics
+{
+  OpalCodecStatistics();
+
+  OpalMediaType m_mediaType;
+  PString       m_mediaFormat;
+  uint32_t      m_SSRC;
+  int           m_payloadType;
+
+  PThreadIdentifier m_threadIdentifier;
+};
+
 struct OpalNetworkStatistics
 {
   OpalNetworkStatistics();
@@ -69,7 +81,6 @@ struct OpalNetworkStatistics
   OpalTransportAddress m_localAddress;
   OpalTransportAddress m_remoteAddress;
 
-  uint32_t m_SSRC;
   PTime    m_startTime;
   uint64_t m_totalBytes;
   unsigned m_totalPackets;
@@ -164,7 +175,11 @@ struct OpalFaxStatistics
 
 /**This class carries statistics on the media stream.
   */
-class OpalMediaStatistics : public PObject, public OpalNetworkStatistics, public OpalVideoStatistics, public OpalFaxStatistics
+class OpalMediaStatistics : public PObject
+                          , public OpalCodecStatistics
+                          , public OpalNetworkStatistics
+                          , public OpalVideoStatistics
+                          , public OpalFaxStatistics
 {
     PCLASSINFO(OpalMediaStatistics, PObject);
   public:
@@ -173,10 +188,6 @@ class OpalMediaStatistics : public PObject, public OpalNetworkStatistics, public
     OpalMediaStatistics & operator=(const OpalMediaStatistics & other);
 
     virtual void PrintOn(ostream & strm) const;
-
-    OpalMediaType     m_mediaType;
-    PString           m_mediaFormat;
-    PThreadIdentifier m_threadIdentifier;
 
     // To following fields are not copied by
     struct UpdateInfo

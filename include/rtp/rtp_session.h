@@ -727,6 +727,7 @@ class OpalRTPSession : public OpalMediaSession
       bool               m_synthesizeAbsTime;
 
       // Statistics gathered
+      RTP_DataFrame::PayloadTypes m_payloadType;
       PTime    m_firstPacketTime;
       unsigned m_packets;
       uint64_t m_octets;

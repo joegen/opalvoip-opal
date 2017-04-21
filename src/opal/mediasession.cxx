@@ -53,9 +53,16 @@
 
 #if OPAL_STATISTICS
 
-OpalNetworkStatistics::OpalNetworkStatistics()
+OpalCodecStatistics::OpalCodecStatistics()
   : m_SSRC(0)
-  , m_startTime(0)
+  , m_payloadType(-1)
+  , m_threadIdentifier(PNullThreadIdentifier)
+{
+}
+
+
+OpalNetworkStatistics::OpalNetworkStatistics()
+  : m_startTime(0)
   , m_totalBytes(0)
   , m_totalPackets(0)
   , m_controlPacketsIn(0)
@@ -171,9 +178,8 @@ ostream & operator<<(ostream & strm, OpalFaxStatistics::FaxCompression compressi
 
 
 OpalMediaStatistics::OpalMediaStatistics()
-  :  m_threadIdentifier(PNullThreadIdentifier)
 #if OPAL_FAX
-  , m_fax(*this) // Backward compatibility
+  : m_fax(*this) // Backward compatibility
 #endif
 {
 }
@@ -181,12 +187,10 @@ OpalMediaStatistics::OpalMediaStatistics()
 
 OpalMediaStatistics::OpalMediaStatistics(const OpalMediaStatistics & other)
   : PObject(other)
+  , OpalCodecStatistics(other)
   , OpalNetworkStatistics(other)
   , OpalVideoStatistics(other)
   , OpalFaxStatistics(other)
-  , m_mediaType(other.m_mediaType)
-  , m_mediaFormat(other.m_mediaFormat)
-  , m_threadIdentifier(other.m_threadIdentifier)
 #if OPAL_FAX
   , m_fax(*this) // Backward compatibility
 #endif

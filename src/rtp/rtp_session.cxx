@@ -396,6 +396,7 @@ OpalRTPSession::SyncSource::~SyncSource()
 
 void OpalRTPSession::SyncSource::CalculateStatistics(const RTP_DataFrame & frame)
 {
+  m_payloadType = frame.GetPayloadType();
   m_octets += frame.GetPayloadSize();
   m_packets++;
 
@@ -1670,6 +1671,7 @@ void OpalRTPSession::GetStatistics(OpalMediaStatistics & statistics, Direction d
 
   OpalMediaSession::GetStatistics(statistics, dir);
 
+  statistics.m_payloadType       = -1;
   statistics.m_totalBytes        = 0;
   statistics.m_totalPackets      = 0;
   statistics.m_controlPacketsIn  = m_rtcpPacketsReceived;
@@ -1708,6 +1710,7 @@ void OpalRTPSession::GetStatistics(OpalMediaStatistics & statistics, Direction d
       OpalMediaStatistics ssrcStats;
       it->second->GetStatistics(ssrcStats);
       if (ssrcStats.m_totalPackets > 0) {
+        statistics.m_payloadType   = ssrcStats.m_payloadType;
         statistics.m_totalBytes   += ssrcStats.m_totalBytes;
         statistics.m_totalPackets += ssrcStats.m_totalPackets;
 
@@ -1764,6 +1767,7 @@ void OpalRTPSession::GetStatistics(OpalMediaStatistics & statistics, Direction d
 #if OPAL_STATISTICS
 void OpalRTPSession::SyncSource::GetStatistics(OpalMediaStatistics & statistics) const
 {
+  statistics.m_payloadType       = m_payloadType;
   statistics.m_startTime         = m_firstPacketTime;
   statistics.m_totalBytes        = m_octets;
   statistics.m_totalPackets      = m_packets;
