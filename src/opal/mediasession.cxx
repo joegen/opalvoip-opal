@@ -617,9 +617,7 @@ bool OpalMediaTransport::GetCandidates(PString &, PString &, PNatCandidateList &
 
 bool OpalMediaTransport::Write(const void * data, PINDEX length, SubChannels subchannel, const PIPSocketAddressAndPort *)
 {
-  PSafeLockReadOnly lock(*this);
-  if (!lock.IsLocked())
-    return false;
+  P_INSTRUMENTED_LOCK_READ_ONLY(return false);
 
   PChannel * channel;
   if (subchannel >= (PINDEX)m_subchannels.size() || (channel = m_subchannels[subchannel].m_channel) == NULL) {
@@ -648,36 +646,33 @@ bool OpalMediaTransport::GetKeyInfo(OpalMediaCryptoKeyInfo * [2])
 
 void OpalMediaTransport::AddReadNotifier(const ReadNotifier & notifier, SubChannels subchannel)
 {
-  if (LockReadWrite()) {
-    if ((size_t)subchannel < m_subchannels.size())
-      m_subchannels[subchannel].m_notifiers.Add(notifier);
-    UnlockReadWrite();
-  }
+  P_INSTRUMENTED_LOCK_READ_WRITE(return);
+
+  if ((size_t)subchannel < m_subchannels.size())
+    m_subchannels[subchannel].m_notifiers.Add(notifier);
 }
 
 
 void OpalMediaTransport::RemoveReadNotifier(const ReadNotifier & notifier, SubChannels subchannel)
 {
-  if (LockReadWrite()) {
-    if ((size_t)subchannel < m_subchannels.size())
-      m_subchannels[subchannel].m_notifiers.Remove(notifier);
-    UnlockReadWrite();
-  }
+  P_INSTRUMENTED_LOCK_READ_WRITE(return);
+
+  if ((size_t)subchannel < m_subchannels.size())
+    m_subchannels[subchannel].m_notifiers.Remove(notifier);
 }
 
 
 void OpalMediaTransport::RemoveReadNotifier(PObject * target, SubChannels subchannel)
 {
-  if (LockReadWrite()) {
-    if (subchannel != e_AllSubChannels) {
-      if ((size_t)subchannel < m_subchannels.size())
-        m_subchannels[subchannel].m_notifiers.RemoveTarget(target);
-    }
-    else {
-      for (vector<Transport>::iterator it = m_subchannels.begin(); it != m_subchannels.end(); ++it)
-        it->m_notifiers.RemoveTarget(target);
-    }
-    UnlockReadWrite();
+  P_INSTRUMENTED_LOCK_READ_WRITE(return);
+
+  if (subchannel != e_AllSubChannels) {
+    if ((size_t)subchannel < m_subchannels.size())
+      m_subchannels[subchannel].m_notifiers.RemoveTarget(target);
+  }
+  else {
+    for (vector<Transport>::iterator it = m_subchannels.begin(); it != m_subchannels.end(); ++it)
+      it->m_notifiers.RemoveTarget(target);
   }
 }
 
@@ -789,8 +784,7 @@ bool OpalMediaTransport::Transport::HandleUnavailableError()
 
 void OpalMediaTransport::InternalClose()
 {
-  if (!LockReadOnly())
-    return;
+  P_INSTRUMENTED_LOCK_READ_ONLY(return);
 
   for (vector<Transport>::iterator it = m_subchannels.begin(); it != m_subchannels.end(); ++it) {
     if (it->m_channel != NULL) {
@@ -807,8 +801,6 @@ void OpalMediaTransport::InternalClose()
       PTRACE(3, *this << it->m_subchannel << " not created.");
     }
   }
-
-  UnlockReadOnly();
 }
 
 
@@ -819,11 +811,11 @@ void OpalMediaTransport::InternalOnStart(SubChannels)
 
 void OpalMediaTransport::InternalRxData(SubChannels subchannel, const PBYTEArray & data)
 {
-  if (!LockReadOnly())
+  if (!LockReadOnly(P_DEBUG_LOCATION))
     return;
 
   Transport::NotifierList notifiers = m_subchannels[subchannel].m_notifiers;
-  UnlockReadOnly();
+  UnlockReadOnly(P_DEBUG_LOCATION);
 
   notifiers(*this, data);
 
@@ -836,7 +828,7 @@ void OpalMediaTransport::Start()
   if (m_started.exchange(true))
     return;
 
-  PSafeLockReadWrite lock(*this);
+  P_INSTRUMENTED_LOCK_READ_WRITE();
   if (!lock.IsLocked())
     return;
 
@@ -868,11 +860,11 @@ void OpalMediaTransport::InternalStop()
   for (vector<Transport>::iterator it = m_subchannels.begin(); it != m_subchannels.end(); ++it)
     PThread::WaitAndDelete(it->m_thread);
 
-  LockReadWrite();
+  P_INSTRUMENTED_LOCK_READ_WRITE();
+
   for (vector<Transport>::iterator it = m_subchannels.begin(); it != m_subchannels.end(); ++it)
     delete it->m_channel;
   m_subchannels.clear();
-  UnlockReadWrite();
 
   PTRACE(4, *this << "stopped");
 }
@@ -966,7 +958,7 @@ bool OpalUDPMediaTransport::InternalSetRemoteAddress(const PIPSocket::AddressAnd
                                                      bool dontOverride
                                                      PTRACE_PARAM(, const char * source))
 {
-  PSafeLockReadWrite lock(*this);
+  P_INSTRUMENTED_LOCK_READ_WRITE();
   if (!lock.IsLocked())
     return false;
 
@@ -1208,9 +1200,7 @@ bool OpalUDPMediaTransport::Open(OpalMediaSession & session,
 
 bool OpalUDPMediaTransport::Write(const void * data, PINDEX length, SubChannels subchannel, const PIPSocketAddressAndPort * dest)
 {
-  PSafeLockReadOnly lock(*this);
-  if (!lock.IsLocked())
-    return false;
+  P_INSTRUMENTED_LOCK_READ_ONLY(return false);
 
   PUDPSocket * socket = GetSubChannelAsSocket(subchannel);
   if (socket == NULL) {
@@ -1361,7 +1351,7 @@ const PString & OpalMediaSession::GetBundleGroupId() { static PConstString const
 
 bool OpalMediaSession::AddGroup(const PString & groupId, const PString & mediaId, bool overwrite)
 {
-  PSafeLockReadWrite lock(*this);
+  P_INSTRUMENTED_LOCK_READ_WRITE();
 
   if (!overwrite && m_groups.Contains(groupId)) {
     if (m_groups[groupId] == mediaId)
@@ -1379,21 +1369,21 @@ bool OpalMediaSession::AddGroup(const PString & groupId, const PString & mediaId
 
 bool OpalMediaSession::IsGroupMember(const PString & groupId) const
 {
-  PSafeLockReadOnly lock(*this);
+  P_INSTRUMENTED_LOCK_READ_ONLY();
   return m_groups.Contains(groupId);
 }
 
 
 PStringArray OpalMediaSession::GetGroups() const
 {
-  PSafeLockReadOnly lock(*this);
+  P_INSTRUMENTED_LOCK_READ_ONLY();
   return m_groups.GetKeys();
 }
 
 
 PString OpalMediaSession::GetGroupMediaId(const PString & groupId) const
 {
-  PSafeLockReadOnly lock(*this);
+  P_INSTRUMENTED_LOCK_READ_ONLY();
   PString str = m_groups(groupId);
   str.MakeUnique();
   return str;
@@ -1494,7 +1484,8 @@ const PCaselessString & OpalDummySession::GetSessionType() const
 
 bool OpalDummySession::Open(const PString &, const OpalTransportAddress &)
 {
-  if (!LockReadWrite())
+  P_INSTRUMENTED_LOCK_READ_WRITE();
+  if (!lock.IsLocked())
     return false;
 
   PSafePtr<OpalConnection> otherParty = m_connection.GetOtherPartyConnection();
@@ -1521,36 +1512,35 @@ bool OpalDummySession::Open(const PString &, const OpalTransportAddress &)
     PTRACE(2, *this << "dummy could not be opened, no other connection.");
   }
 
-  UnlockReadWrite();
-
   return true;
 }
 
 
 bool OpalDummySession::IsOpen() const
 {
-  PSafeLockReadOnly lock(*this);
+  P_INSTRUMENTED_LOCK_READ_ONLY();
   return lock.IsLocked() && !m_localTransportAddress[e_Media].IsEmpty() && !m_remoteTransportAddress[e_Media].IsEmpty();
 }
 
 
 OpalTransportAddress OpalDummySession::GetLocalAddress(bool isMediaAddress) const
 {
-  PSafeLockReadOnly lock(*this);
+  P_INSTRUMENTED_LOCK_READ_ONLY();
   return lock.IsLocked() ? m_localTransportAddress[isMediaAddress ? e_Media : e_Control] : OpalTransportAddress();
 }
 
 
 OpalTransportAddress OpalDummySession::GetRemoteAddress(bool isMediaAddress) const
 {
-  PSafeLockReadOnly lock(*this);
+  P_INSTRUMENTED_LOCK_READ_ONLY();
   return lock.IsLocked() ? m_remoteTransportAddress[isMediaAddress ? e_Media : e_Control] : OpalTransportAddress();
 }
 
 
 bool OpalDummySession::SetRemoteAddress(const OpalTransportAddress & remoteAddress, bool isMediaAddress)
 {
-  if (!LockReadWrite())
+  P_INSTRUMENTED_LOCK_READ_WRITE();
+  if (!lock.IsLocked())
     return false;
 
   // Some code to keep the port if new one does not have it but old did.
@@ -1565,8 +1555,6 @@ bool OpalDummySession::SetRemoteAddress(const OpalTransportAddress & remoteAddre
   PTRACE(4, *this << "dummy remote "
          << (isMediaAddress ? "media" : "control") << " address set to "
          << m_remoteTransportAddress[subchannel]);
-
-  UnlockReadWrite();
 
   return true;
 }

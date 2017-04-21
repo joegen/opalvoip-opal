@@ -157,9 +157,7 @@ OpalRTPSession::~OpalRTPSession()
 
 RTP_SyncSourceId OpalRTPSession::AddSyncSource(RTP_SyncSourceId id, Direction dir, const char * cname)
 {
-  PSafeLockReadWrite lock(*this);
-  if (!lock.IsLocked())
-    return 0;
+  P_INSTRUMENTED_LOCK_READ_WRITE(return 0);
 
   if (id == 0) {
     do {
@@ -185,9 +183,7 @@ RTP_SyncSourceId OpalRTPSession::AddSyncSource(RTP_SyncSourceId id, Direction di
 
 bool OpalRTPSession::RemoveSyncSource(RTP_SyncSourceId ssrc)
 {
-  PSafeLockReadWrite lock(*this);
-  if (!lock.IsLocked())
-    return false;
+  P_INSTRUMENTED_LOCK_READ_WRITE(return false);
 
   SyncSourceMap::iterator it = m_SSRC.find(ssrc);
   if (it == m_SSRC.end())
@@ -240,7 +236,7 @@ RTP_SyncSourceArray OpalRTPSession::GetSyncSources(Direction dir) const
 {
   RTP_SyncSourceArray ssrcs;
 
-  PSafeLockReadOnly lock(*this);
+  P_INSTRUMENTED_LOCK_READ_ONLY();
   if (lock.IsLocked()) {
     for (SyncSourceMap::const_iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
       if (it->second->m_direction == dir)
@@ -254,7 +250,7 @@ RTP_SyncSourceArray OpalRTPSession::GetSyncSources(Direction dir) const
 
 const OpalRTPSession::SyncSource & OpalRTPSession::GetSyncSource(RTP_SyncSourceId ssrc, Direction dir) const
 {
-  PSafeLockReadOnly lock(*this);
+  P_INSTRUMENTED_LOCK_READ_ONLY();
   SyncSource * info;
   return GetSyncSource(ssrc, dir, info) ? *info : m_dummySyncSource;
 }
@@ -854,9 +850,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SendBYE(RTP_SyncSourceId ssrc)
   if (!IsOpen())
     return e_AbortTransport;
 
-  PSafeLockReadOnly lock(*this);
-  if (!lock.IsLocked())
-    return e_AbortTransport;
+  P_INSTRUMENTED_LOCK_READ_ONLY(return e_AbortTransport);
 
   SyncSource * sender;
   if (!GetSyncSource(ssrc, e_Sender, sender))
@@ -864,16 +858,14 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SendBYE(RTP_SyncSourceId ssrc)
 
   SendReceiveStatus status = sender->SendBYE();
   if (status == e_ProcessPacket) {
-    // Now remove the shut down SSRC
-    LockReadWrite();
+    P_INSTRUMENTED_LOCK_READ_WRITE();
 
+    // Now remove the shut down SSRC
     SyncSourceMap::iterator it = m_SSRC.find(ssrc);
     if (it != m_SSRC.end()) {
       delete it->second;
       m_SSRC.erase(it);
     }
-
-    UnlockReadWrite();
   }
 
   return status;
@@ -920,7 +912,7 @@ OpalJitterBuffer * OpalRTPSession::SyncSource::GetJitterBuffer() const
 
 PString OpalRTPSession::GetCanonicalName(RTP_SyncSourceId ssrc, Direction dir) const
 {
-  PSafeLockReadOnly lock(*this);
+  P_INSTRUMENTED_LOCK_READ_ONLY(return PString::Empty());
 
   SyncSource * info;
   if (!GetSyncSource(ssrc, dir, info))
@@ -934,7 +926,7 @@ PString OpalRTPSession::GetCanonicalName(RTP_SyncSourceId ssrc, Direction dir) c
 
 void OpalRTPSession::SetCanonicalName(const PString & name, RTP_SyncSourceId ssrc, Direction dir)
 {
-  PSafeLockReadWrite lock(*this);
+  P_INSTRUMENTED_LOCK_READ_WRITE(return);
 
   SyncSource * info;
   if (GetSyncSource(ssrc, dir, info)) {
@@ -947,7 +939,8 @@ void OpalRTPSession::SetCanonicalName(const PString & name, RTP_SyncSourceId ssr
 PString OpalRTPSession::GetMediaStreamId(RTP_SyncSourceId ssrc, Direction dir) const
 {
   PString s;
-  PSafeLockReadOnly lock(*this);
+  P_INSTRUMENTED_LOCK_READ_ONLY(return s);
+
   SyncSource * info;
   if (GetSyncSource(ssrc, dir, info)) {
     s = info->m_mediaStreamId;
@@ -959,7 +952,8 @@ PString OpalRTPSession::GetMediaStreamId(RTP_SyncSourceId ssrc, Direction dir) c
 
 void OpalRTPSession::SetMediaStreamId(const PString & id, RTP_SyncSourceId ssrc, Direction dir)
 {
-  PSafeLockReadWrite lock(*this);
+  P_INSTRUMENTED_LOCK_READ_WRITE(return);
+
   SyncSource * info;
   if (GetSyncSource(ssrc, dir, info)) {
     if (info->m_mediaTrackId.IsEmpty() || info->m_mediaTrackId.NumCompare(info->m_mediaStreamId + '+') == EqualTo)
@@ -974,7 +968,8 @@ void OpalRTPSession::SetMediaStreamId(const PString & id, RTP_SyncSourceId ssrc,
 PString OpalRTPSession::GetMediaTrackId(RTP_SyncSourceId ssrc, Direction dir) const
 {
   PString s;
-  PSafeLockReadOnly lock(*this);
+  P_INSTRUMENTED_LOCK_READ_ONLY(return s);
+
   SyncSource * info;
   if (GetSyncSource(ssrc, dir, info)) {
     s = info->m_mediaTrackId;
@@ -986,7 +981,8 @@ PString OpalRTPSession::GetMediaTrackId(RTP_SyncSourceId ssrc, Direction dir) co
 
 void OpalRTPSession::SetMediaTrackId(const PString & id, RTP_SyncSourceId ssrc, Direction dir)
 {
-  PSafeLockReadWrite lock(*this);
+  P_INSTRUMENTED_LOCK_READ_WRITE(return);
+
   SyncSource * info;
   if (GetSyncSource(ssrc, dir, info)) {
     info->m_mediaTrackId = id;
@@ -998,7 +994,8 @@ void OpalRTPSession::SetMediaTrackId(const PString & id, RTP_SyncSourceId ssrc, 
 
 PString OpalRTPSession::GetToolName() const
 {
-  PSafeLockReadOnly lock(*this);
+  P_INSTRUMENTED_LOCK_READ_ONLY(return PString::Empty());
+
   PString s = m_toolName;
   s.MakeUnique();
   return s;
@@ -1007,7 +1004,8 @@ PString OpalRTPSession::GetToolName() const
 
 void OpalRTPSession::SetToolName(const PString & name)
 {
-  PSafeLockReadWrite lock(*this);
+  P_INSTRUMENTED_LOCK_READ_WRITE(return);
+
   m_toolName = name;
   m_toolName.MakeUnique();
 }
@@ -1015,7 +1013,7 @@ void OpalRTPSession::SetToolName(const PString & name)
 
 RTPHeaderExtensions OpalRTPSession::GetHeaderExtensions() const
 {
-  PSafeLockReadOnly lock(*this);
+  P_INSTRUMENTED_LOCK_READ_ONLY();
   return m_headerExtensions;
 }
 
@@ -1025,7 +1023,7 @@ const PString & OpalRTPSession::GetTransportWideSeqNumHdrExtURI() { static const
 
 void OpalRTPSession::SetHeaderExtensions(const RTPHeaderExtensions & ext)
 {
-  PSafeLockReadWrite lock(*this);
+  P_INSTRUMENTED_LOCK_READ_WRITE(return);
 
   for (RTPHeaderExtensions::const_iterator it = ext.begin(); it != ext.end(); ++it) {
     PCaselessString uri = it->m_uri.AsString();
@@ -1598,7 +1596,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SendReport(RTP_SyncSourceId ss
 {
   std::list<RTP_ControlFrame> frames;
 
-  if (!LockReadOnly())
+  if (!LockReadOnly(P_DEBUG_LOCATION))
     return e_AbortTransport;
 
   // Clean out old stale SSRC's
@@ -1639,7 +1637,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SendReport(RTP_SyncSourceId ss
       m_reportTimer.RunContinuous(m_reportTimer.GetResetTime());
   }
 
-  UnlockReadOnly();
+  UnlockReadOnly(P_DEBUG_LOCATION);
 
   // Actual transmission has to be outside mutex
   SendReceiveStatus status = e_ProcessPacket;
@@ -1665,9 +1663,7 @@ static void AddSpecial(int & left, int right)
 
 void OpalRTPSession::GetStatistics(OpalMediaStatistics & statistics, Direction dir) const
 {
-  PSafeLockReadOnly lock(*this);
-  if (!lock.IsLocked())
-    return;
+  P_INSTRUMENTED_LOCK_READ_ONLY(return);
 
   OpalMediaSession::GetStatistics(statistics, dir);
 
@@ -2258,9 +2254,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SendNACK(const RTP_ControlFram
   RTP_ControlFrame request;
 
   {
-    PSafeLockReadOnly lock(*this);
-    if (!lock.IsLocked())
-      return e_AbortTransport;
+    P_INSTRUMENTED_LOCK_READ_ONLY(return e_AbortTransport);
 
     if (!(m_feedback&OpalMediaFormat::e_NACK)) {
       PTRACE(3, *this << "remote not capable of NACK");
@@ -2300,9 +2294,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SendTWCC(const RTP_TransportWi
   RTP_ControlFrame request;
 
   {
-    PSafeLockReadOnly lock(*this);
-    if (!lock.IsLocked())
-      return e_AbortTransport;
+    P_INSTRUMENTED_LOCK_READ_ONLY(return e_AbortTransport);
 
     if (m_transportWideSeqNumHdrExtId > RTP_DataFrame::MaxHeaderExtensionIdOneByte) {
       PTRACE(3, *this << "remote not capable of TWCC");
@@ -2336,9 +2328,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SendFlowControl(unsigned maxBi
   RTP_ControlFrame request;
 
   {
-    PSafeLockReadOnly lock(*this);
-    if (!lock.IsLocked())
-      return e_AbortTransport;
+    P_INSTRUMENTED_LOCK_READ_ONLY(return e_AbortTransport);
 
     if (!(m_feedback&(OpalMediaFormat::e_TMMBR | OpalMediaFormat::e_REMB))) {
       PTRACE(3, *this << "remote not capable of flow control (TMMBR or REMB)");
@@ -2387,9 +2377,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SendIntraFrameRequest(unsigned
   RTP_ControlFrame request;
 
   {
-    PSafeLockReadOnly lock(*this);
-    if (!lock.IsLocked())
-      return e_AbortTransport;
+    P_INSTRUMENTED_LOCK_READ_ONLY(return e_AbortTransport);
 
     SyncSource * sender;
     if (!GetSyncSource(0, e_Sender, sender))
@@ -2434,9 +2422,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SendTemporalSpatialTradeOff(un
   RTP_ControlFrame request;
 
   {
-    PSafeLockReadOnly lock(*this);
-    if (!lock.IsLocked())
-      return e_AbortTransport;
+    P_INSTRUMENTED_LOCK_READ_ONLY(return e_AbortTransport);
 
     if (!(m_feedback&OpalMediaFormat::e_TSTR)) {
       PTRACE(3, *this << "remote not capable of Temporal/Spatial Tradeoff (TSTR)");
@@ -2470,9 +2456,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SendTemporalSpatialTradeOff(un
 
 void OpalRTPSession::AddDataNotifier(unsigned priority, const DataNotifier & notifier, RTP_SyncSourceId ssrc)
 {
-  PSafeLockReadWrite lock(*this);
-  if (!lock.IsLocked())
-    return;
+  P_INSTRUMENTED_LOCK_READ_WRITE(return);
 
   if (ssrc != 0) {
     SyncSource * receiver;
@@ -2489,9 +2473,7 @@ void OpalRTPSession::AddDataNotifier(unsigned priority, const DataNotifier & not
 
 void OpalRTPSession::RemoveDataNotifier(const DataNotifier & notifier, RTP_SyncSourceId ssrc)
 {
-  PSafeLockReadWrite lock(*this);
-  if (!lock.IsLocked())
-    return;
+  P_INSTRUMENTED_LOCK_READ_WRITE(return);
 
   if (ssrc != 0) {
     SyncSource * receiver;
@@ -2527,9 +2509,7 @@ void OpalRTPSession::NotifierMap::Remove(const DataNotifier & notifier)
 
 void OpalRTPSession::SetJitterBuffer(OpalJitterBuffer * jitterBuffer, RTP_SyncSourceId ssrc)
 {
-  PSafeLockReadWrite lock(*this);
-  if (!lock.IsLocked())
-    return;
+  P_INSTRUMENTED_LOCK_READ_WRITE(return);
 
   if (ssrc == 0)
     m_jitterBuffer = jitterBuffer;
@@ -2565,9 +2545,7 @@ void OpalRTPSession::SetJitterBuffer(OpalJitterBuffer * jitterBuffer, RTP_SyncSo
 
 bool OpalRTPSession::UpdateMediaFormat(const OpalMediaFormat & mediaFormat)
 {
-  PSafeLockReadWrite lock(*this);
-  if (!lock.IsLocked())
-    return false;
+  P_INSTRUMENTED_LOCK_READ_WRITE(return false);
 
   if (!OpalMediaSession::UpdateMediaFormat(mediaFormat))
     return false;
@@ -2640,9 +2618,7 @@ bool OpalRTPSession::Open(const PString & localInterface, const OpalTransportAdd
   if (IsOpen())
     return true;
 
-  PSafeLockReadWrite lock(*this);
-  if (!lock.IsLocked())
-    return false;
+  P_INSTRUMENTED_LOCK_READ_WRITE(return false);
 
   PString transportName("RTP ");
   if (IsGroupMember(GetBundleGroupId()))
@@ -2670,9 +2646,7 @@ bool OpalRTPSession::SetQoS(const PIPSocket::QoS & qos)
   if (socket == NULL)
     return false;
 
-  PSafeLockReadOnly lock(*this);
-  if (!lock.IsLocked())
-    return false;
+  P_INSTRUMENTED_LOCK_READ_ONLY(return false);
 
   PIPAddress remoteAddress;
   WORD remotePort;
@@ -2691,14 +2665,14 @@ bool OpalRTPSession::Close()
   m_reportTimer.Stop(true);
   m_endpoint.RegisterLocalRTP(this, true);
 
-  if (IsOpen() && LockReadOnly()) {
+  if (IsOpen() && LockReadOnly(P_DEBUG_LOCATION)) {
     for (SyncSourceMap::iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
       if ( it->second->m_direction == e_Sender &&
            it->second->m_packets > 0 &&
            it->second->SendBYE() == e_AbortTransport)
         break;
     }
-    UnlockReadOnly();
+    UnlockReadOnly(P_DEBUG_LOCATION);
   }
 
   return OpalMediaSession::Close();
@@ -2826,9 +2800,7 @@ bool OpalRTPSession::SetRemoteAddress(const OpalTransportAddress & remoteAddress
 
 void OpalRTPSession::OnRxDataPacket(OpalMediaTransport &, PBYTEArray data)
 {
-  PSafeLockReadWrite lock(*this);
-  if (!lock.IsLocked())
-    return;
+  P_INSTRUMENTED_LOCK_READ_WRITE(return);
 
   if (data.IsEmpty()) {
     CheckMediaFailed(e_Data);
@@ -2857,9 +2829,7 @@ void OpalRTPSession::OnRxDataPacket(OpalMediaTransport &, PBYTEArray data)
 
 void OpalRTPSession::OnRxControlPacket(OpalMediaTransport &, PBYTEArray data)
 {
-  PSafeLockReadWrite lock(*this);
-  if (!lock.IsLocked())
-    return;
+  P_INSTRUMENTED_LOCK_READ_WRITE(return);
 
   if (data.IsEmpty()) {
     CheckMediaFailed(e_Control);
@@ -2892,12 +2862,12 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::WriteData(RTP_DataFrame & fram
   if (!transport->IsEstablished())
     return e_IgnorePacket;
 
-  if (!LockReadWrite())
+  if (!LockReadWrite(P_DEBUG_LOCATION))
     return e_AbortTransport;
 
   SendReceiveStatus status = OnSendData(frame, rewrite);
 
-  UnlockReadWrite();
+  UnlockReadWrite(P_DEBUG_LOCATION);
 
   switch (status) {
     case e_IgnorePacket :
@@ -2933,12 +2903,12 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::WriteControl(RTP_ControlFrame 
 
   PTRACE(6, *this << "Writing control packet:\n" << frame);
 
-  if (!LockReadWrite())
+  if (!LockReadWrite(P_DEBUG_LOCATION))
     return e_AbortTransport;
 
   SendReceiveStatus status = OnSendControl(frame);
 
-  UnlockReadWrite();
+  UnlockReadWrite(P_DEBUG_LOCATION);
 
   switch (status) {
     case e_IgnorePacket :
