@@ -1027,9 +1027,9 @@ void OpalRTPSession::SetHeaderExtensions(const RTPHeaderExtensions & ext)
 
   for (RTPHeaderExtensions::const_iterator it = ext.begin(); it != ext.end(); ++it) {
     PCaselessString uri = it->m_uri.AsString();
-    if (uri == GetAbsSendTimeHdrExtURI())
+    if (uri == GetAbsSendTimeHdrExtURI() && m_stringOptions.GetBoolean(OPAL_OPT_RTP_ABS_SEND_TIME))
       m_absSendTimeHdrExtId = it->m_id;
-    else if (uri == GetTransportWideSeqNumHdrExtURI())
+    else if (uri == GetTransportWideSeqNumHdrExtURI() && m_stringOptions.GetBoolean(OPAL_OPT_TRANSPORT_WIDE_CONGESTION_CONTROL))
       m_transportWideSeqNumHdrExtId = it->m_id;
     else {
       PTRACE(3, "Unsupported header extension: id=" << it->m_id << ", uri=" << it->m_uri);

@@ -87,6 +87,13 @@ class OpalSDPEndPoint : public OpalRTPEndPoint
     ~OpalSDPEndPoint();
   //@}
 
+  /**@name Overrides from OpalEndPoint */
+  //@{
+    /** Get available string option names.
+      */
+    virtual PStringList GetAvailableStringOptions() const;
+  //@}
+
   /**@name Actions */
     /**Create a SDP instance for the SIP packet.
        The default implementation is to create a SDPSessionDescription.

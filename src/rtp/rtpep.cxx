@@ -158,7 +158,9 @@ OpalRTPEndPoint::~OpalRTPEndPoint()
 PStringList OpalRTPEndPoint::GetAvailableStringOptions() const
 {
   static char const * const StringOpts[] = {
-    OPAL_OPT_DISABLE_NAT
+    OPAL_OPT_DISABLE_NAT,
+    OPAL_OPT_RTP_ABS_SEND_TIME,
+    OPAL_OPT_TRANSPORT_WIDE_CONGESTION_CONTROL
   };
 
   PStringList list = OpalEndPoint::GetAvailableStringOptions();

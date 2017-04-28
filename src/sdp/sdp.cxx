@@ -1995,12 +1995,12 @@ bool SDPRTPAVPMediaDescription::FromSession(OpalMediaSession * session,
       m_reducedSizeRTCP = rtpSession->UseReducedSizeRTCP();
     }
     else {
-      if (m_stringOptions.GetBoolean(OPAL_OPT_OFFER_SDP_ABS_SEND_TIME)) {
+      if (m_stringOptions.GetBoolean(OPAL_OPT_RTP_ABS_SEND_TIME)) {
         RTPHeaderExtensionInfo ext(OpalRTPSession::GetAbsSendTimeHdrExtURI());
         SetHeaderExtension(ext);
       }
 
-      if (m_stringOptions.GetBoolean(OPAL_OPT_OFFER_SDP_TRANSPORT_CONGESTION_CONTROL)) {
+      if (m_stringOptions.GetBoolean(OPAL_OPT_TRANSPORT_WIDE_CONGESTION_CONTROL)) {
         RTPHeaderExtensionInfo ext(OpalRTPSession::GetTransportWideSeqNumHdrExtURI());
         SetHeaderExtension(ext);
       }

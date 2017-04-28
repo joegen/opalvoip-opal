@@ -57,6 +57,20 @@ class RTCP_XR_Metrics;
 class RTP_MetricsReport;
 
 
+/**OpalConnection::StringOption key to a boolean indicating the AbsSendTime
+   header extension (http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time)
+   can be used. Default false.
+  */
+#define OPAL_OPT_RTP_ABS_SEND_TIME "RTP-Abs-Send-Time"
+
+/**OpalConnection::StringOption key to a boolean indicating the transport
+   wide congestion control header extension and RTCP support
+   (http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions)
+   can be used. Default false.
+  */
+#define OPAL_OPT_TRANSPORT_WIDE_CONGESTION_CONTROL "Transport-Wide-Congestion-Control"
+
+
 ///////////////////////////////////////////////////////////////////////////////
 
 /**This class is for encpsulating the IETF Real Time Protocol interface.
