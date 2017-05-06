@@ -398,7 +398,7 @@ PString OpalSRTPKeyInfo::ToString() const
 
 void OpalSRTPKeyInfo::Randomise()
 {
-  m_key = PRandom::Octets(m_key.GetSize());
+  m_key = PRandom::Octets(m_cryptoSuite.GetCipherKeyBytes());
   m_salt = PRandom::Octets(m_cryptoSuite.GetAuthSaltBytes());
 }
 
@@ -484,12 +484,12 @@ OpalMediaCryptoKeyList & OpalSRTPSession::GetOfferedCryptoKeys()
 }
 
 
-bool OpalSRTPSession::ApplyCryptoKey(OpalMediaCryptoKeyList & keys, Direction dir)
+bool OpalSRTPSession::ApplyCryptoKey(OpalMediaCryptoKeyList & keys, bool rx)
 {
   PSafeLockReadOnly lock(*this);
 
   for (OpalMediaCryptoKeyList::iterator it = keys.begin(); it != keys.end(); ++it) {
-    if (ApplyKeyToSRTP(*it, dir)) {
+    if (ApplyKeyToSRTP(*it, rx ? e_Receiver : e_Sender)) {
       keys.Select(it);
       return true;
     }
