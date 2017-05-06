@@ -481,12 +481,12 @@ OpalMediaCryptoKeyList & OpalSRTPSession::GetOfferedCryptoKeys()
 }
 
 
-bool OpalSRTPSession::ApplyCryptoKey(OpalMediaCryptoKeyList & keys, Direction dir)
+bool OpalSRTPSession::ApplyCryptoKey(OpalMediaCryptoKeyList & keys, bool rx)
 {
   PSafeLockReadOnly lock(*this);
 
   for (OpalMediaCryptoKeyList::iterator it = keys.begin(); it != keys.end(); ++it) {
-    if (ApplyKeyToSRTP(*it, dir)) {
+    if (ApplyKeyToSRTP(*it, rx ? e_Receiver : e_Sender)) {
       keys.Select(it);
       return true;
     }

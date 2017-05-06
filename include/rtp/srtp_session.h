@@ -122,7 +122,7 @@ class OpalSRTPSession : public OpalRTPSession
 
     virtual const PCaselessString & GetSessionType() const { return RTP_SAVP(); }
     virtual OpalMediaCryptoKeyList & GetOfferedCryptoKeys();
-    virtual bool ApplyCryptoKey(OpalMediaCryptoKeyList & keys, Direction dir);
+    virtual bool ApplyCryptoKey(OpalMediaCryptoKeyList & keys, bool rx);
     virtual bool IsCryptoSecured(Direction dir) const;
 
     virtual bool Open(const PString & localInterface, const OpalTransportAddress & remoteAddress);
