@@ -92,13 +92,6 @@
 */
 #define OPAL_OPT_OFFER_ICE "Offer-ICE"
 
-/**Enable ICE-Lite.
-   Defaults to true.
-   NOTE!!! This is all that is supported at this time, do not set to false
-           unless you are developing full ICE support ....
-*/
-#define OPAL_OPT_ICE_LITE "ICE-Lite"
-
 
 /////////////////////////////////////////////////////////
 

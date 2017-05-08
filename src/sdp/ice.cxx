@@ -52,6 +52,8 @@ OpalICEMediaTransport::OpalICEMediaTransport(const PString & name)
   : OpalUDPMediaTransport(name)
   , m_localUsername(PBase64::Encode(PRandom::Octets(12)))
   , m_localPassword(PBase64::Encode(PRandom::Octets(18)))
+  , m_lite(false)
+  , m_trickle(false)
   , m_promiscuous(false)
   , m_state(e_Disabled)
   , m_server(NULL)
@@ -73,8 +75,16 @@ bool OpalICEMediaTransport::Open(OpalMediaSession & session,
                                  const PString & localInterface,
                                  const OpalTransportAddress & remoteAddress)
 {
-  m_promiscuous = session.GetStringOptions().GetBoolean(OPAL_OPT_ICE_PROMISCUOUS);
-  m_iceTimeout = session.GetStringOptions().GetVar(OPAL_OPT_ICE_TIMEOUT, session.GetConnection().GetEndPoint().GetManager().GetICETimeout());
+  const PStringOptions & options = session.GetStringOptions();
+  m_lite = options.GetBoolean(OPAL_OPT_ICE_LITE, true);
+  if (!m_lite) {
+    PTRACE(2, "Only ICE-Lite supported at this time");
+    return false;
+  }
+
+  m_trickle = options.GetBoolean(OPAL_OPT_TRICKLE_ICE);
+  m_promiscuous = options.GetBoolean(OPAL_OPT_ICE_PROMISCUOUS);
+  m_iceTimeout = options.GetVar(OPAL_OPT_ICE_TIMEOUT, session.GetConnection().GetEndPoint().GetManager().GetICETimeout());
 
   // As per RFC 5425
   static const PTimeInterval MinTimeout(0,15);
@@ -237,13 +247,16 @@ bool OpalICEMediaTransport::GetCandidates(PString & user, PString & pass, PNatCa
   user = m_localUsername;
   pass = m_localPassword;
 
+  // Only do ICE-Lite right now so just offer "host" type using local address.
+  static const char LiteFoundation[] = "xyzzy";
+
   CandidatesArray newCandidates(m_subchannels.size());
   for (size_t subchannel = 0; subchannel < m_subchannels.size(); ++subchannel) {
     newCandidates.SetAt(subchannel, new CandidateStateList);
 
     // Only do ICE-Lite right now so just offer "host" type using local address.
     static const PNatMethod::Component ComponentId[2] = { PNatMethod::eComponent_RTP, PNatMethod::eComponent_RTCP };
-    PNatCandidate candidate(PNatCandidate::HostType, ComponentId[subchannel], "xyzzy");
+    PNatCandidate candidate(PNatCandidate::HostType, ComponentId[subchannel], LiteFoundation);
     GetSubChannelAsSocket((SubChannels)subchannel)->GetLocalAddress(candidate.m_baseTransportAddress);
     candidate.m_priority = (126 << 24) | (256 - candidate.m_component);
 
@@ -294,7 +307,14 @@ bool OpalICEMediaTransport::GetCandidates(PString & user, PString & pass, PNatCa
   }
 #endif
 
-  return !candidates.empty();
+  if (candidates.empty())
+    return false;
+
+  if (m_trickle) {
+      candidates.push_back(PNatCandidate(PNatCandidate::FinalType, PNatMethod::eComponent_RTP, LiteFoundation, 1));
+      candidates.back().m_baseTransportAddress.SetAddress(PIPSocket::GetDefaultIpAny(), 9);
+  }
+  return true;
 }
 
 

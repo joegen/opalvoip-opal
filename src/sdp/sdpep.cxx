@@ -79,6 +79,7 @@ PStringList OpalSDPEndPoint::GetAvailableStringOptions() const
       OPAL_OPT_ICE_LITE,
       OPAL_OPT_ICE_TIMEOUT,
       OPAL_OPT_ICE_PROMISCUOUS,
+      OPAL_OPT_TRICKLE_ICE,
     #endif
     OPAL_OPT_AV_BUNDLE,
     OPAL_OPT_MULTI_SSRC

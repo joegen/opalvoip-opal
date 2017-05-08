@@ -53,6 +53,20 @@ class PSTUNClient;
   */
 #define OPAL_OPT_ICE_PROMISCUOUS "ICE-Promiscuous"
 
+/**Enable ICE-Lite.
+   Defaults to true.
+   NOTE!!! This is all that is supported at this time, do not set to false
+           unless you are developing full ICE support ....
+*/
+#define OPAL_OPT_ICE_LITE "ICE-Lite"
+
+/**Execute trickle ICE.
+   Defaults to false.
+   NOTE!!! As only ICE-Lite is supported at this time, this effectively
+           means if a endCandidates entry is appended to offers/answers.
+*/
+#define OPAL_OPT_TRICKLE_ICE "Trickle-ICE"
+
 
 /** Class for low level transport of media that uses ICE
   */
@@ -87,6 +101,8 @@ class OpalICEMediaTransport : public OpalUDPMediaTransport
     PString       m_remoteUsername;   // ICE username expected from remote
     PString       m_remotePassword;   // ICE password expected from remote
     PTimeInterval m_iceTimeout;
+    bool          m_lite;
+    bool          m_trickle;
     bool          m_promiscuous;
 
     enum CandidateStates

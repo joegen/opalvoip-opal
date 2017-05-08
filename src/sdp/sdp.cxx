@@ -55,7 +55,7 @@ static char const CRLF[] = "\r\n";
 static PConstString const WhiteSpace(" \t\r\n");
 static char const TokenChars[] = "!#$%&'*+-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ^_`abcdefghijklmnopqrstuvwxyz{|}~"; // From RFC4566
 #if OPAL_ICE
-  static char const * const CandidateTypeNames[PNatCandidate::NumTypes] = { "host", "srflx", "prflx", "relay" };
+  static char const * const CandidateTypeNames[PNatCandidate::NumTypes] = { "host", "srflx", "prflx", "relay", "endOfCandidates" };
 #endif
 static PConstString const IceLiteOption("ice-lite");
 
