@@ -47,6 +47,7 @@
 #include <ptclib/url.h>
 #include <ptclib/enum.h>
 #include <ptclib/pils.h>
+#include <opal.h>
 
 
 #define new PNEW
@@ -62,7 +63,7 @@ const OpalProductInfo & H323EndPoint::AvayaPhone()
 /////////////////////////////////////////////////////////////////////////////
 
 H323EndPoint::H323EndPoint(OpalManager & manager)
-  : OpalRTPEndPoint(manager, "h323", IsNetworkEndPoint | SupportsE164)
+  : OpalRTPEndPoint(manager, OPAL_PREFIX_H323, IsNetworkEndPoint | SupportsE164)
   , autoCallForward(true)
   , disableFastStart(false)
   , disableH245Tunneling(false)
@@ -128,7 +129,7 @@ H323EndPoint::H323EndPoint(OpalManager & manager)
 #endif
   m_gatekeeperByAlias.DisallowDeleteObjects();
 
-  manager.AttachEndPoint(this, "h323s");
+  manager.AttachEndPoint(this, OPAL_PREFIX_H323S);
 
   SetCompatibility(H323Connection::e_NoMultipleTunnelledH245, "Cisco IOS");
   SetCompatibility(H323Connection::e_BadMasterSlaveConflict,  "NetMeeting|HDX");

@@ -432,6 +432,46 @@ public class OpalParamGeneral : global::System.IDisposable {
     } 
   }
 
+  public string caFiles {
+    set {
+      OPALPINVOKE.OpalParamGeneral_caFiles_set(swigCPtr, value);
+    } 
+    get {
+      string ret = OPALPINVOKE.OpalParamGeneral_caFiles_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public string certificate {
+    set {
+      OPALPINVOKE.OpalParamGeneral_certificate_set(swigCPtr, value);
+    } 
+    get {
+      string ret = OPALPINVOKE.OpalParamGeneral_certificate_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public string privateKey {
+    set {
+      OPALPINVOKE.OpalParamGeneral_privateKey_set(swigCPtr, value);
+    } 
+    get {
+      string ret = OPALPINVOKE.OpalParamGeneral_privateKey_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public uint autoCreateCertificate {
+    set {
+      OPALPINVOKE.OpalParamGeneral_autoCreateCertificate_set(swigCPtr, value);
+    } 
+    get {
+      uint ret = OPALPINVOKE.OpalParamGeneral_autoCreateCertificate_get(swigCPtr);
+      return ret;
+    } 
+  }
+
   public OpalParamGeneral() : this(OPALPINVOKE.new_OpalParamGeneral(), true) {
   }
 

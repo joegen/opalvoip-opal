@@ -350,6 +350,38 @@ public class OpalParamGeneral {
     return OPALJNI.OpalParamGeneral_noMediaTimeout_get(swigCPtr, this);
   }
 
+  public void setCaFiles(String value) {
+    OPALJNI.OpalParamGeneral_caFiles_set(swigCPtr, this, value);
+  }
+
+  public String getCaFiles() {
+    return OPALJNI.OpalParamGeneral_caFiles_get(swigCPtr, this);
+  }
+
+  public void setCertificate(String value) {
+    OPALJNI.OpalParamGeneral_certificate_set(swigCPtr, this, value);
+  }
+
+  public String getCertificate() {
+    return OPALJNI.OpalParamGeneral_certificate_get(swigCPtr, this);
+  }
+
+  public void setPrivateKey(String value) {
+    OPALJNI.OpalParamGeneral_privateKey_set(swigCPtr, this, value);
+  }
+
+  public String getPrivateKey() {
+    return OPALJNI.OpalParamGeneral_privateKey_get(swigCPtr, this);
+  }
+
+  public void setAutoCreateCertificate(long value) {
+    OPALJNI.OpalParamGeneral_autoCreateCertificate_set(swigCPtr, this, value);
+  }
+
+  public long getAutoCreateCertificate() {
+    return OPALJNI.OpalParamGeneral_autoCreateCertificate_get(swigCPtr, this);
+  }
+
   public OpalParamGeneral() {
     this(OPALJNI.new_OpalParamGeneral(), true);
   }

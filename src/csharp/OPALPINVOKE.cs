@@ -223,8 +223,14 @@ class OPALPINVOKE {
   [global::System.Runtime.InteropServices.DllImport("OPAL", EntryPoint="CSharp_OPAL_PREFIX_H323_get")]
   public static extern string OPAL_PREFIX_H323_get();
 
+  [global::System.Runtime.InteropServices.DllImport("OPAL", EntryPoint="CSharp_OPAL_PREFIX_H323S_get")]
+  public static extern string OPAL_PREFIX_H323S_get();
+
   [global::System.Runtime.InteropServices.DllImport("OPAL", EntryPoint="CSharp_OPAL_PREFIX_SIP_get")]
   public static extern string OPAL_PREFIX_SIP_get();
+
+  [global::System.Runtime.InteropServices.DllImport("OPAL", EntryPoint="CSharp_OPAL_PREFIX_SIPS_get")]
+  public static extern string OPAL_PREFIX_SIPS_get();
 
   [global::System.Runtime.InteropServices.DllImport("OPAL", EntryPoint="CSharp_OPAL_PREFIX_SDP_get")]
   public static extern string OPAL_PREFIX_SDP_get();
@@ -508,6 +514,30 @@ class OPALPINVOKE {
   [global::System.Runtime.InteropServices.DllImport("OPAL", EntryPoint="CSharp_OpalParamGeneral_noMediaTimeout_get")]
   public static extern uint OpalParamGeneral_noMediaTimeout_get(global::System.Runtime.InteropServices.HandleRef jarg1);
 
+  [global::System.Runtime.InteropServices.DllImport("OPAL", EntryPoint="CSharp_OpalParamGeneral_caFiles_set")]
+  public static extern void OpalParamGeneral_caFiles_set(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2);
+
+  [global::System.Runtime.InteropServices.DllImport("OPAL", EntryPoint="CSharp_OpalParamGeneral_caFiles_get")]
+  public static extern string OpalParamGeneral_caFiles_get(global::System.Runtime.InteropServices.HandleRef jarg1);
+
+  [global::System.Runtime.InteropServices.DllImport("OPAL", EntryPoint="CSharp_OpalParamGeneral_certificate_set")]
+  public static extern void OpalParamGeneral_certificate_set(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2);
+
+  [global::System.Runtime.InteropServices.DllImport("OPAL", EntryPoint="CSharp_OpalParamGeneral_certificate_get")]
+  public static extern string OpalParamGeneral_certificate_get(global::System.Runtime.InteropServices.HandleRef jarg1);
+
+  [global::System.Runtime.InteropServices.DllImport("OPAL", EntryPoint="CSharp_OpalParamGeneral_privateKey_set")]
+  public static extern void OpalParamGeneral_privateKey_set(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2);
+
+  [global::System.Runtime.InteropServices.DllImport("OPAL", EntryPoint="CSharp_OpalParamGeneral_privateKey_get")]
+  public static extern string OpalParamGeneral_privateKey_get(global::System.Runtime.InteropServices.HandleRef jarg1);
+
+  [global::System.Runtime.InteropServices.DllImport("OPAL", EntryPoint="CSharp_OpalParamGeneral_autoCreateCertificate_set")]
+  public static extern void OpalParamGeneral_autoCreateCertificate_set(global::System.Runtime.InteropServices.HandleRef jarg1, uint jarg2);
+
+  [global::System.Runtime.InteropServices.DllImport("OPAL", EntryPoint="CSharp_OpalParamGeneral_autoCreateCertificate_get")]
+  public static extern uint OpalParamGeneral_autoCreateCertificate_get(global::System.Runtime.InteropServices.HandleRef jarg1);
+
   [global::System.Runtime.InteropServices.DllImport("OPAL", EntryPoint="CSharp_new_OpalParamGeneral")]
   public static extern global::System.IntPtr new_OpalParamGeneral();
 
@@ -597,6 +627,12 @@ class OPALPINVOKE {
 
   [global::System.Runtime.InteropServices.DllImport("OPAL", EntryPoint="CSharp_OpalParamProtocol_defaultOptions_get")]
   public static extern string OpalParamProtocol_defaultOptions_get(global::System.Runtime.InteropServices.HandleRef jarg1);
+
+  [global::System.Runtime.InteropServices.DllImport("OPAL", EntryPoint="CSharp_OpalParamProtocol_mediaCryptoSuites_set")]
+  public static extern void OpalParamProtocol_mediaCryptoSuites_set(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2);
+
+  [global::System.Runtime.InteropServices.DllImport("OPAL", EntryPoint="CSharp_OpalParamProtocol_mediaCryptoSuites_get")]
+  public static extern string OpalParamProtocol_mediaCryptoSuites_get(global::System.Runtime.InteropServices.HandleRef jarg1);
 
   [global::System.Runtime.InteropServices.DllImport("OPAL", EntryPoint="CSharp_new_OpalParamProtocol")]
   public static extern global::System.IntPtr new_OpalParamProtocol();

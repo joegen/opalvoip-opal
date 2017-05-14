@@ -16,7 +16,9 @@ public interface OPALConstants {
   public final static String OPAL_SEND_MESSAGE_FUNCTION = OPALJNI.OPAL_SEND_MESSAGE_FUNCTION_get();
   public final static String OPAL_FREE_MESSAGE_FUNCTION = OPALJNI.OPAL_FREE_MESSAGE_FUNCTION_get();
   public final static String OPAL_PREFIX_H323 = OPALJNI.OPAL_PREFIX_H323_get();
+  public final static String OPAL_PREFIX_H323S = OPALJNI.OPAL_PREFIX_H323S_get();
   public final static String OPAL_PREFIX_SIP = OPALJNI.OPAL_PREFIX_SIP_get();
+  public final static String OPAL_PREFIX_SIPS = OPALJNI.OPAL_PREFIX_SIPS_get();
   public final static String OPAL_PREFIX_SDP = OPALJNI.OPAL_PREFIX_SDP_get();
   public final static String OPAL_PREFIX_IAX2 = OPALJNI.OPAL_PREFIX_IAX2_get();
   public final static String OPAL_PREFIX_PCSS = OPALJNI.OPAL_PREFIX_PCSS_get();

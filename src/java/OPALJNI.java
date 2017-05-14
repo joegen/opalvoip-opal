@@ -21,7 +21,9 @@ public class OPALJNI {
   public final static native String OPAL_SEND_MESSAGE_FUNCTION_get();
   public final static native String OPAL_FREE_MESSAGE_FUNCTION_get();
   public final static native String OPAL_PREFIX_H323_get();
+  public final static native String OPAL_PREFIX_H323S_get();
   public final static native String OPAL_PREFIX_SIP_get();
+  public final static native String OPAL_PREFIX_SIPS_get();
   public final static native String OPAL_PREFIX_SDP_get();
   public final static native String OPAL_PREFIX_IAX2_get();
   public final static native String OPAL_PREFIX_PCSS_get();
@@ -116,6 +118,14 @@ public class OPALJNI {
   public final static native String OpalParamGeneral_pcssMediaOverride_get(long jarg1, OpalParamGeneral jarg1_);
   public final static native void OpalParamGeneral_noMediaTimeout_set(long jarg1, OpalParamGeneral jarg1_, long jarg2);
   public final static native long OpalParamGeneral_noMediaTimeout_get(long jarg1, OpalParamGeneral jarg1_);
+  public final static native void OpalParamGeneral_caFiles_set(long jarg1, OpalParamGeneral jarg1_, String jarg2);
+  public final static native String OpalParamGeneral_caFiles_get(long jarg1, OpalParamGeneral jarg1_);
+  public final static native void OpalParamGeneral_certificate_set(long jarg1, OpalParamGeneral jarg1_, String jarg2);
+  public final static native String OpalParamGeneral_certificate_get(long jarg1, OpalParamGeneral jarg1_);
+  public final static native void OpalParamGeneral_privateKey_set(long jarg1, OpalParamGeneral jarg1_, String jarg2);
+  public final static native String OpalParamGeneral_privateKey_get(long jarg1, OpalParamGeneral jarg1_);
+  public final static native void OpalParamGeneral_autoCreateCertificate_set(long jarg1, OpalParamGeneral jarg1_, long jarg2);
+  public final static native long OpalParamGeneral_autoCreateCertificate_get(long jarg1, OpalParamGeneral jarg1_);
   public final static native long new_OpalParamGeneral();
   public final static native void delete_OpalParamGeneral(long jarg1);
   public final static native void OpalProductDescription_vendor_set(long jarg1, OpalProductDescription jarg1_, String jarg2);
@@ -146,6 +156,8 @@ public class OPALJNI {
   public final static native int OpalParamProtocol_userInputMode_get(long jarg1, OpalParamProtocol jarg1_);
   public final static native void OpalParamProtocol_defaultOptions_set(long jarg1, OpalParamProtocol jarg1_, String jarg2);
   public final static native String OpalParamProtocol_defaultOptions_get(long jarg1, OpalParamProtocol jarg1_);
+  public final static native void OpalParamProtocol_mediaCryptoSuites_set(long jarg1, OpalParamProtocol jarg1_, String jarg2);
+  public final static native String OpalParamProtocol_mediaCryptoSuites_get(long jarg1, OpalParamProtocol jarg1_);
   public final static native long new_OpalParamProtocol();
   public final static native void delete_OpalParamProtocol(long jarg1);
   public final static native String OPAL_MWI_EVENT_PACKAGE_get();

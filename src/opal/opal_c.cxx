@@ -986,11 +986,13 @@ OpalManager_C::OpalManager_C(unsigned version, const PArgList & args)
   PINDEX  defProtoPos = P_MAX_INDEX, defUserPos = P_MAX_INDEX;
 
 #if OPAL_H323
-  bool hasH323 = CheckProto(args, OPAL_PREFIX_H323, "<da>", defProto, defProtoPos);
+  bool hasH323  = CheckProto(args, OPAL_PREFIX_H323,  "<da>", defProto, defProtoPos);
+  bool hasH323S = CheckProto(args, OPAL_PREFIX_H323S, "<da>", defProto, defProtoPos);
 #endif
 
 #if OPAL_SIP
-  bool hasSIP = CheckProto(args, OPAL_PREFIX_SIP, "<da>", defProto, defProtoPos);
+  bool hasSIP  = CheckProto(args, OPAL_PREFIX_SIP,  "<da>", defProto, defProtoPos);
+  bool hasSIPS = CheckProto(args, OPAL_PREFIX_SIPS, "<da>", defProto, defProtoPos);
 #endif
 
 #if OPAL_IAX2
@@ -1036,16 +1038,30 @@ OpalManager_C::OpalManager_C(unsigned version, const PArgList & args)
   AddRouteEntry(".*\t[0-9]+=tel:<du>");
 
 #if OPAL_H323
-  if (hasH323) {
+  if (hasH323 || hasH323S) {
     new H323EndPoint(*this);
-    AddRouteEntry(OPAL_PREFIX_H323":.*=" + defUser);
+    if (hasH323)
+      AddRouteEntry(OPAL_PREFIX_H323":.*=" + defUser);
+    else
+      DetachEndPoint(OPAL_PREFIX_H323);
+    if (hasH323S)
+      AddRouteEntry(OPAL_PREFIX_H323S":.*=" + defUser);
+    else
+      DetachEndPoint(OPAL_PREFIX_H323S);
   }
 #endif
 
 #if OPAL_SIP
-  if (hasSIP) {
+  if (hasSIP || hasSIPS) {
     new SIPEndPoint_C(*this);
-    AddRouteEntry(OPAL_PREFIX_SIP":.*=" + defUser);
+    if (hasSIP)
+      AddRouteEntry(OPAL_PREFIX_SIP":.*=" + defUser);
+    else
+      DetachEndPoint(OPAL_PREFIX_SIP);
+    if (hasSIPS)
+      AddRouteEntry(OPAL_PREFIX_SIPS":.*=" + defUser);
+    else
+      DetachEndPoint(OPAL_PREFIX_SIPS);
   }
 #endif
 
@@ -1706,6 +1722,23 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
 
   if (command.m_param.m_general.m_noMediaTimeout > 0)
     SetNoMediaTimeout(command.m_param.m_general.m_noMediaTimeout);
+
+  if (m_apiVersion < 34)
+    return;
+
+  SET_MESSAGE_STRING(response, m_param.m_general.m_caFiles, GetSSLCertificateAuthorityFiles());
+  SET_MESSAGE_STRING(response, m_param.m_general.m_certificate, GetSSLCertificateFile());
+  SET_MESSAGE_STRING(response, m_param.m_general.m_privateKey, GetSSLPrivateKeyFile());
+  response->m_param.m_general.m_autoCreateCertificate = m_autoCreateCertificate ? 1 : 2;
+
+  if (!IsNullString(command.m_param.m_general.m_caFiles))
+    SetSSLCertificateAuthorityFiles(command.m_param.m_general.m_caFiles);
+  if (!IsNullString(command.m_param.m_general.m_certificate))
+    SetSSLCertificateFile(command.m_param.m_general.m_certificate);
+  if (!IsNullString(command.m_param.m_general.m_privateKey))
+    SetSSLPrivateKeyFile(command.m_param.m_general.m_privateKey);
+  if (command.m_param.m_general.m_autoCreateCertificate > 0)
+    SetSSLAutoCreateCertificate(command.m_param.m_general.m_autoCreateCertificate == 1);
 }
 
 
@@ -1914,6 +1947,15 @@ void OpalManager_C::HandleSetProtocol(const OpalMessage & command, OpalMessageBu
     strm >> newOptions;
     ep->SetDefaultStringOptions(newOptions);
   }
+
+  if (m_apiVersion < 34)
+    return;
+
+  strm.MakeEmpty();
+  strm << setfill('\n') << ep->GetMediaCryptoSuites();
+  SET_MESSAGE_STRING(response, m_param.m_protocol.m_mediaCryptoSuites, strm);
+  if (!IsNullString(command.m_param.m_protocol.m_mediaCryptoSuites))
+    ep->SetMediaCryptoSuites(PString(command.m_param.m_protocol.m_mediaCryptoSuites).Lines());
 }
 
 

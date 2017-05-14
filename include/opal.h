@@ -76,7 +76,7 @@ typedef struct OpalHandleStruct * OpalHandle;
 typedef struct OpalMessage OpalMessage;
 
 /// Current API version
-#define OPAL_C_API_VERSION 33
+#define OPAL_C_API_VERSION 34
 
 
 ///////////////////////////////////////
@@ -343,7 +343,9 @@ typedef void (OPAL_EXPORT *OpalFreeMessageFunction)(OpalMessage * message);
 ///////////////////////////////////////
 
 #define OPAL_PREFIX_H323   "h323"   ///< H.323 Protocol supported string for OpalInitialise()
+#define OPAL_PREFIX_H323S  "h323s"  ///< Secure H.323 Protocol supported string for OpalInitialise()
 #define OPAL_PREFIX_SIP    "sip"    ///< SIP Protocol supported string for OpalInitialise()
+#define OPAL_PREFIX_SIPS   "sips"   ///< Secure SIP Protocol supported string for OpalInitialise()
 #define OPAL_PREFIX_SDP    "sdp"    ///< SDP over HTTP (e.g. for WebRTC) supported string for OpalInitialise()
 #define OPAL_PREFIX_IAX2   "iax2"   ///< IAX2 Protocol supported string for OpalInitialise()
 #define OPAL_PREFIX_PCSS   "pc"     ///< PC sound system supported string for OpalInitialise()
@@ -361,7 +363,9 @@ typedef void (OPAL_EXPORT *OpalFreeMessageFunction)(OpalMessage * message);
 #define OPAL_PREFIX_LYNC   "lync"   ///< Microsoft Lync (UCMA) supported string for OpalInitialise()
 
 #define OPAL_PREFIX_ALL OPAL_PREFIX_SIP    " " \
+                        OPAL_PREFIX_SIPS   " " \
                         OPAL_PREFIX_H323   " " \
+                        OPAL_PREFIX_H323S  " " \
                         OPAL_PREFIX_IAX2   " " \
                         OPAL_PREFIX_SDP    " " \
                         OPAL_PREFIX_SKINNY " " \
@@ -799,6 +803,17 @@ typedef struct OpalParamGeneral {
                                            OpalMediaDataFunction for more information. */
   unsigned m_noMediaTimeout;          /**< Time in milliseconds for which, if no media is received, the
                                            call is cleared. */
+  const char * m_caFiles;             /**< File or directory containing Certificate Authority root certificates
+                                           to validate remotes in TLS connections, e.g. sips or h323s. */
+  const char * m_certificate;         /**< Certificate to use to identify this endpoint in TLS connections,
+                                           e.g. sips or h323s. This can either be a filename or a PEM format
+                                           certificate as a string. */
+  const char * m_privateKey;          /**< Private key to use with the above certificate file. This can either
+                                           be a filename or a PEM format certificate as a string. */
+  unsigned m_autoCreateCertificate;   /**< Indicate a self signed certificate should be generated automatically
+                                           if the certicalte and private key files are not found at the locations
+                                           indicated (value=1), or that only the file/value indicated in above
+                                           fields is used exclusively (value=2). */
 } OpalParamGeneral;
 
 
@@ -899,6 +914,9 @@ typedef struct OpalParamProtocol {
                                            for more information. */
   const char * m_defaultOptions;      /**< Default options for new calls using the specified protocol. This
                                            string is of the form key=value\nkey=value */
+  const char * m_mediaCryptoSuites;   /**< A list of \n separated strings indicated enabled media
+                                           crypto suites for this endpoint. Note, order of entries
+                                           indicates priority. */
 } OpalParamProtocol;
 
 
