@@ -162,7 +162,7 @@ void MySIPEndPoint::AutoRegisterCisco(const PString & server, const PString & wi
     if (registering) {
       SIPRegister::Params registrar;
       registrar.m_addressOfRecord = addressOfRecord;
-      registrar.m_compatibility = SIPRegister::CompatibilityModes::e_Cisco;
+      registrar.m_compatibility = SIPRegister::e_Cisco;
       if (deviceType.IsEmpty())
         registrar.m_ciscoDeviceType = PString(m_ciscoDeviceType);
       else
