@@ -383,7 +383,7 @@ static const char * const DefaultRoutes[] = {
 };
 
 
-static PConstString DefaultAttributeValue("<<default>>");
+static PConstString DefaultAttributeValue("-default-");
 
 
 // Menu and command identifiers
@@ -6719,6 +6719,7 @@ NetOptionsDialog::NetOptionsDialog(MyManager * manager, OpalRTPEndPoint * ep)
   m_stringOptions->SetColSize(0, wxGRID_AUTOSIZE);
   m_stringOptions->SetSize(m_stringOptions->GetRowLabelSize()+m_stringOptions->GetColSize(0)+4,
                            m_stringOptions->GetSize().GetHeight());
+  Fit();
 }
 
 
