@@ -10,6 +10,7 @@ lib*
 bin
 html
 ipch/
+*obj_*
 *.sdf
 *.suo
 *.opensdf
@@ -79,4 +80,5 @@ src/rtp/libsrtp/crypto/include/config.h
 samples/openphone/version.wxs
 samples/openphone/resource.cpp
 samples/openphone/openphone.cxx
-samples/openphone/obj_*/
+samples/c_api/obj/
+
