@@ -387,7 +387,7 @@
 									</object>
 									<object class="sizeritem">
 										<option>1</option>
-										<flag>wxALIGN_CENTER_HORIZONTAL</flag>
+										<flag>wxEXPAND</flag>
 										<border>0</border>
 										<object class="wxBoxSizer">
 											<orient>wxHORIZONTAL</orient>
@@ -433,7 +433,7 @@
 									</object>
 									<object class="sizeritem">
 										<option>1</option>
-										<flag>wxEXPAND|wxALIGN_CENTER_HORIZONTAL</flag>
+										<flag>wxEXPAND</flag>
 										<border>0</border>
 										<object class="wxBoxSizer">
 											<orient>wxHORIZONTAL</orient>
@@ -1563,7 +1563,7 @@
 														<orient>wxHORIZONTAL</orient>
 														<object class="sizeritem">
 															<option>0</option>
-															<flag>wxALL|wxALIGN_CENTER_HORIZONTAL</flag>
+															<flag>wxALL</flag>
 															<border>4</border>
 															<object class="wxFlexGridSizer">
 																<rows>6</rows>
@@ -1745,7 +1745,7 @@
 											<orient>wxHORIZONTAL</orient>
 											<object class="sizeritem">
 												<option>1</option>
-												<flag>wxRIGHT|wxTOP|wxBOTTOM|wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL</flag>
+												<flag>wxALIGN_CENTER_VERTICAL|wxBOTTOM|wxRIGHT|wxTOP</flag>
 												<border>4</border>
 												<object class="wxStaticText" name="CallTimeLabel">
 													<style>wxALIGN_RIGHT</style>
@@ -2247,7 +2247,7 @@
 									</object>
 								</object>
 								<object class="sizeritem">
-									<option>1</option>
+									<option>0</option>
 									<flag>wxEXPAND</flag>
 									<border>0</border>
 									<object class="wxFlexGridSizer">
@@ -2268,7 +2268,7 @@
 										</object>
 										<object class="sizeritem">
 											<option>0</option>
-											<flag>wxRIGHT|wxTOP|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL</flag>
+											<flag>wxALIGN_CENTER_VERTICAL|wxRIGHT|wxTOP</flag>
 											<border>12</border>
 											<object class="wxButton" name="PlaySoundFile">
 												<label>Play</label>
@@ -2286,7 +2286,7 @@
 										</object>
 										<object class="sizeritem">
 											<option>0</option>
-											<flag>wxRIGHT|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL</flag>
+											<flag>wxALIGN_CENTER_VERTICAL|wxRIGHT</flag>
 											<border>12</border>
 											<object class="wxButton" name="BrowseSoundFile">
 												<label>Browse</label>
@@ -2427,7 +2427,7 @@
 												<orient>wxVERTICAL</orient>
 												<object class="sizeritem">
 													<option>1</option>
-													<flag>wxRIGHT|wxTOP|wxEXPAND</flag>
+													<flag>wxRIGHT|wxTOP</flag>
 													<border>6</border>
 													<object class="wxStaticBoxSizer">
 														<orient>wxHORIZONTAL</orient>
@@ -2521,7 +2521,7 @@
 												</object>
 												<object class="sizeritem">
 													<option>0</option>
-													<flag>wxTOP|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL</flag>
+													<flag>wxTOP</flag>
 													<border>6</border>
 													<object class="wxFlexGridSizer">
 														<rows>2</rows>
@@ -2614,7 +2614,7 @@
 														<growablerows></growablerows>
 														<object class="sizeritem">
 															<option>0</option>
-															<flag>wxLEFT|wxBOTTOM|wxEXPAND</flag>
+															<flag>wxBOTTOM|wxEXPAND|wxLEFT</flag>
 															<border>6</border>
 															<object class="wxButton" name="FindCertificateAuthority">
 																<style>wxBU_RIGHT</style>
@@ -2633,7 +2633,7 @@
 														</object>
 														<object class="sizeritem">
 															<option>0</option>
-															<flag>wxLEFT|wxTOP|wxBOTTOM|wxEXPAND</flag>
+															<flag>wxBOTTOM|wxEXPAND|wxLEFT|wxTOP</flag>
 															<border>6</border>
 															<object class="wxButton" name="FindLocalCertificate">
 																<style>wxBU_RIGHT</style>
@@ -2698,7 +2698,7 @@
 												</object>
 												<object class="sizeritem">
 													<option>0</option>
-													<flag></flag>
+													<flag>wxALIGN_CENTER_VERTICAL</flag>
 													<border>0</border>
 													<object class="wxFlexGridSizer">
 														<rows>3</rows>
@@ -2766,7 +2766,7 @@
 										</object>
 										<object class="sizeritem">
 											<option>3</option>
-											<flag>wxLEFT|wxEXPAND|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL</flag>
+											<flag>wxALIGN_CENTER_VERTICAL|wxLEFT</flag>
 											<border>24</border>
 											<object class="wxFlexGridSizer">
 												<rows>3</rows>
@@ -2908,7 +2908,7 @@
 										<label>Local Interfaces</label>
 										<object class="sizeritem">
 											<option>1</option>
-											<flag>wxALL|wxEXPAND|wxALIGN_CENTER_HORIZONTAL</flag>
+											<flag>wxALL|wxEXPAND</flag>
 											<border>8</border>
 											<object class="wxBoxSizer">
 												<orient>wxHORIZONTAL</orient>
@@ -2970,7 +2970,7 @@
 												</object>
 												<object class="sizeritem">
 													<option>0</option>
-													<flag>wxRIGHT|wxTOP</flag>
+													<flag>wxALIGN_CENTER_VERTICAL|wxRIGHT|wxTOP</flag>
 													<border>6</border>
 													<object class="wxChoice" name="InterfaceProtocol">
 														<selection>0</selection>
@@ -2998,7 +2998,7 @@
 												</object>
 												<object class="sizeritem">
 													<option>0</option>
-													<flag>wxRIGHT|wxTOP|wxBOTTOM|wxEXPAND</flag>
+													<flag>wxALIGN_CENTER_VERTICAL|wxBOTTOM|wxEXPAND|wxRIGHT|wxTOP</flag>
 													<border>6</border>
 													<object class="wxComboBox" name="InterfaceAddress">
 														<style>wxCB_DROPDOWN</style>
@@ -3018,7 +3018,7 @@
 												</object>
 												<object class="sizeritem">
 													<option>0</option>
-													<flag>wxRIGHT|wxBOTTOM</flag>
+													<flag>wxALIGN_CENTER_VERTICAL|wxBOTTOM|wxRIGHT</flag>
 													<border>6</border>
 													<object class="wxTextCtrl" name="InterfacePort">
 														<enabled>0</enabled>
@@ -3069,7 +3069,7 @@
 												</object>
 												<object class="sizeritem">
 													<option>0</option>
-													<flag>wxRIGHT|wxTOP|wxEXPAND|wxALIGN_CENTER_VERTICAL</flag>
+													<flag>wxALIGN_CENTER_VERTICAL|wxEXPAND|wxRIGHT|wxTOP</flag>
 													<border>8</border>
 													<object class="wxComboBox" name="SoundPlayer">
 														<style>wxCB_DROPDOWN</style>
@@ -3079,7 +3079,7 @@
 												</object>
 												<object class="sizeritem">
 													<option>0</option>
-													<flag>wxTOP|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL</flag>
+													<flag>wxALIGN_CENTER_VERTICAL|wxTOP</flag>
 													<border>8</border>
 													<object class="wxButton" name="TestPlayer">
 														<label>Test</label>
@@ -3107,7 +3107,7 @@
 												</object>
 												<object class="sizeritem">
 													<option>0</option>
-													<flag>wxTOP|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL</flag>
+													<flag>wxALIGN_CENTER_VERTICAL|wxTOP</flag>
 													<border>8</border>
 													<object class="wxButton" name="TestRecorder">
 														<label>Test</label>
@@ -3160,13 +3160,13 @@
 														</object>
 														<object class="spacer">
 															<option>1</option>
-															<flag>wxEXPAND</flag>
+															<flag></flag>
 															<border>0</border>
 															<size>8,8</size>
 														</object>
 														<object class="sizeritem">
 															<option>0</option>
-															<flag>wxTOP|wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL</flag>
+															<flag>wxALIGN_CENTER_VERTICAL|wxTOP</flag>
 															<border>8</border>
 															<object class="wxStaticText" name="label_117">
 																<label>Local Ring Back Tone:</label>
@@ -3303,7 +3303,7 @@
 														<growablerows></growablerows>
 														<object class="sizeritem">
 															<option>0</option>
-															<flag>wxLEFT|wxTOP|wxALIGN_BOTTOM|wxALIGN_CENTER_VERTICAL</flag>
+															<flag>wxALIGN_CENTER_VERTICAL|wxLEFT|wxTOP</flag>
 															<border>8</border>
 															<object class="wxStaticText" name="label_24">
 																<label>Min:</label>
@@ -3541,7 +3541,7 @@
 										</object>
 										<object class="sizeritem">
 											<option>0</option>
-											<flag>wxLEFT|wxRIGHT|wxTOP|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL</flag>
+											<flag>wxALIGN_CENTER_VERTICAL|wxLEFT|wxRIGHT|wxTOP</flag>
 											<border>12</border>
 											<object class="wxCheckBox" name="DisableDetectInBandDTMF">
 												<label>Disable In-Band\nDTMF Detection</label>
@@ -3657,7 +3657,7 @@
 														</object>
 														<object class="sizeritem">
 															<option>0</option>
-															<flag>wxRIGHT|wxTOP|wxALIGN_RIGHT</flag>
+															<flag>wxRIGHT|wxTOP</flag>
 															<border>12</border>
 															<object class="wxButton" name="TestVideoCapture">
 																<label>Test Video</label>
@@ -3687,7 +3687,7 @@
 												</object>
 												<object class="sizeritem">
 													<option>0</option>
-													<flag>wxLEFT|wxTOP|wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL</flag>
+													<flag>wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxLEFT|wxTOP</flag>
 													<border>12</border>
 													<object class="wxStaticText" name="label_39">
 														<label>Frame Rate:</label>
@@ -3727,7 +3727,7 @@
 												</object>
 												<object class="spacer">
 													<option>0</option>
-													<flag>wxLEFT|wxTOP|wxEXPAND|wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL</flag>
+													<flag>wxLEFT|wxTOP</flag>
 													<border>12</border>
 													<size>12,12</size>
 												</object>
@@ -3815,7 +3815,7 @@
 														<growablerows></growablerows>
 														<object class="spacer">
 															<option>0</option>
-															<flag>wxLEFT|wxTOP|wxEXPAND|wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL</flag>
+															<flag>wxLEFT|wxTOP</flag>
 															<border>12</border>
 															<size>72,12</size>
 														</object>
@@ -3830,7 +3830,7 @@
 														</object>
 														<object class="spacer">
 															<option>0</option>
-															<flag>wxLEFT|wxTOP|wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL</flag>
+															<flag>wxLEFT|wxTOP</flag>
 															<border>12</border>
 															<size>72,12</size>
 														</object>
@@ -3987,7 +3987,7 @@
 								</object>
 								<object class="sizeritem">
 									<option>1</option>
-									<flag>wxRIGHT|wxTOP|wxEXPAND|wxALIGN_CENTER_VERTICAL</flag>
+									<flag>wxEXPAND|wxRIGHT|wxTOP</flag>
 									<border>12</border>
 									<object class="wxBoxSizer">
 										<orient>wxHORIZONTAL</orient>
@@ -4013,7 +4013,7 @@
 								</object>
 								<object class="spacer">
 									<option>1</option>
-									<flag>wxEXPAND</flag>
+									<flag></flag>
 									<border>0</border>
 									<size>8,8</size>
 								</object>
@@ -4051,7 +4051,7 @@
 										<orient>wxHORIZONTAL</orient>
 										<object class="sizeritem">
 											<option>0</option>
-											<flag>wxLEFT|wxTOP|wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL</flag>
+											<flag>wxALIGN_CENTER_VERTICAL|wxLEFT|wxTOP</flag>
 											<border>12</border>
 											<object class="wxStaticText" name="label_4">
 												<label>IVR Script:</label>
@@ -4060,7 +4060,7 @@
 										</object>
 										<object class="sizeritem">
 											<option>1</option>
-											<flag>wxRIGHT|wxTOP|wxBOTTOM|wxEXPAND|wxALIGN_CENTER_VERTICAL</flag>
+											<flag>wxBOTTOM|wxEXPAND|wxRIGHT|wxTOP</flag>
 											<border>12</border>
 											<object class="wxTextCtrl" name="IVRScript">
 												<style>wxTE_MULTILINE|wxHSCROLL</style>
@@ -4196,7 +4196,7 @@
 												<orient>wxHORIZONTAL</orient>
 												<object class="spacer">
 													<option>3</option>
-													<flag>wxEXPAND</flag>
+													<flag></flag>
 													<border>0</border>
 													<size>8,8</size>
 												</object>
@@ -4211,7 +4211,7 @@
 												</object>
 												<object class="spacer">
 													<option>2</option>
-													<flag>wxEXPAND</flag>
+													<flag></flag>
 													<border>0</border>
 													<size>8,8</size>
 												</object>
@@ -4227,7 +4227,7 @@
 												</object>
 												<object class="spacer">
 													<option>3</option>
-													<flag>wxEXPAND</flag>
+													<flag></flag>
 													<border>0</border>
 													<size>8,8</size>
 												</object>
@@ -4377,7 +4377,7 @@
 												</object>
 												<object class="sizeritem">
 													<option>1</option>
-													<flag>wxLEFT|wxRIGHT|wxBOTTOM|wxEXPAND|wxALIGN_CENTER_VERTICAL</flag>
+													<flag>wxBOTTOM|wxEXPAND|wxLEFT|wxRIGHT</flag>
 													<border>20</border>
 													<object class="wxListCtrl" name="CodecOptionsList">
 														<style>wxLC_REPORT|wxLC_SINGLE_SEL|wxLC_SORT_ASCENDING|wxSUNKEN_BORDER</style>
@@ -4393,7 +4393,7 @@
 												<orient>wxVERTICAL</orient>
 												<object class="sizeritem">
 													<option>0</option>
-													<flag>wxALIGN_CENTER_VERTICAL</flag>
+													<flag></flag>
 													<border>0</border>
 													<object class="wxFlexGridSizer">
 														<rows>3</rows>
@@ -4428,7 +4428,7 @@
 														</object>
 														<object class="sizeritem">
 															<option>0</option>
-															<flag>wxRIGHT|wxBOTTOM|wxALIGN_CENTER_VERTICAL</flag>
+															<flag>wxBOTTOM|wxRIGHT</flag>
 															<border>12</border>
 															<object class="wxButton" name="SetDefaultCodecOption">
 																<label>Set Default</label>
@@ -4445,7 +4445,7 @@
 												</object>
 												<object class="sizeritem">
 													<option>0</option>
-													<flag>wxEXPAND|wxALIGN_CENTER_HORIZONTAL</flag>
+													<flag>wxEXPAND</flag>
 													<border>0</border>
 													<object class="wxStaticText" name="CodecOptionValueError">
 														<style>wxALIGN_CENTRE</style>
@@ -4535,7 +4535,7 @@
 										</object>
 										<object class="sizeritem">
 											<option>0</option>
-											<flag>wxALL|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL</flag>
+											<flag>wxALIGN_CENTER_VERTICAL|wxALL</flag>
 											<border>24</border>
 											<object class="wxButton" name="MoreOptionsH323">
 												<label>More Options ...</label>
@@ -4600,8 +4600,8 @@
 															</object>
 														</object>
 														<object class="sizeritem">
-															<option>1</option>
-															<flag>wxTOP|wxEXPAND</flag>
+															<option>0</option>
+															<flag>wxALIGN_CENTER_VERTICAL|wxEXPAND|wxTOP</flag>
 															<border>8</border>
 															<object class="wxTextCtrl" name="GatekeeperAddress">
 																<value></value>
@@ -4618,8 +4618,8 @@
 															</object>
 														</object>
 														<object class="sizeritem">
-															<option>1</option>
-															<flag>wxTOP|wxEXPAND</flag>
+															<option>0</option>
+															<flag>wxALIGN_CENTER_VERTICAL|wxEXPAND|wxTOP</flag>
 															<border>8</border>
 															<object class="wxTextCtrl" name="GatekeeperInterface">
 																<value></value>
@@ -4636,8 +4636,8 @@
 															</object>
 														</object>
 														<object class="sizeritem">
-															<option>1</option>
-															<flag>wxTOP|wxEXPAND</flag>
+															<option>0</option>
+															<flag>wxALIGN_CENTER_VERTICAL|wxEXPAND|wxTOP</flag>
 															<border>8</border>
 															<object class="wxTextCtrl" name="GatekeeperIdentifier">
 																<value></value>
@@ -4655,13 +4655,13 @@
 														</object>
 														<object class="sizeritem">
 															<option>0</option>
-															<flag>wxTOP|wxALIGN_CENTER_VERTICAL</flag>
+															<flag>wxEXPAND|wxTOP</flag>
 															<border>8</border>
 															<object class="wxBoxSizer">
 																<orient>wxHORIZONTAL</orient>
 																<object class="sizeritem">
 																	<option>0</option>
-																	<flag></flag>
+																	<flag>wxALIGN_CENTER_VERTICAL</flag>
 																	<border>8</border>
 																	<object class="wxSpinCtrl" name="GatekeeperTTL">
 																		<style>wxSP_ARROW_KEYS</style>
@@ -4672,7 +4672,7 @@
 																</object>
 																<object class="sizeritem">
 																	<option>0</option>
-																	<flag>wxLEFT|wxALIGN_CENTER_VERTICAL</flag>
+																	<flag>wxALIGN_CENTER_VERTICAL|wxLEFT</flag>
 																	<border>4</border>
 																	<object class="wxStaticText" name="label_47">
 																		<label>Seconds</label>
@@ -4681,8 +4681,8 @@
 																</object>
 																<object class="sizeritem">
 																	<option>0</option>
-																	<flag>wxLEFT|wxALIGN_CENTER_VERTICAL</flag>
-																	<border>32</border>
+																	<flag>wxALIGN_CENTER_VERTICAL|wxLEFT</flag>
+																	<border>24</border>
 																	<object class="wxCheckBox" name="GatekeeperSuppressGRQ">
 																		<label>Suppress GRQ</label>
 																		<checked>0</checked>
@@ -4701,7 +4701,7 @@
 														</object>
 														<object class="sizeritem">
 															<option>0</option>
-															<flag>wxTOP</flag>
+															<flag>wxALIGN_CENTER_VERTICAL|wxEXPAND|wxTOP</flag>
 															<border>8</border>
 															<object class="wxTextCtrl" name="GatekeeperLogin">
 																<value></value>
@@ -4719,7 +4719,7 @@
 														</object>
 														<object class="sizeritem">
 															<option>0</option>
-															<flag>wxTOP</flag>
+															<flag>wxALIGN_CENTER_VERTICAL|wxEXPAND|wxTOP</flag>
 															<border>8</border>
 															<object class="wxTextCtrl" name="GatekeeperPassword">
 																<style>wxTE_PASSWORD</style>
@@ -4754,7 +4754,7 @@
 														</object>
 														<object class="sizeritem">
 															<option>0</option>
-															<flag>wxALL</flag>
+															<flag>wxALIGN_CENTER_VERTICAL|wxALL</flag>
 															<border>8</border>
 															<object class="wxComboBox" name="H323TerminalType">
 																<value></value>
@@ -4933,7 +4933,7 @@
 														<growablerows>0,1</growablerows>
 														<object class="spacer">
 															<option>0</option>
-															<flag>wxTOP|wxEXPAND|wxALIGN_CENTER_VERTICAL</flag>
+															<flag>wxTOP</flag>
 															<border>8</border>
 															<size>20,20</size>
 														</object>
@@ -4975,7 +4975,7 @@
 														</object>
 														<object class="sizeritem">
 															<option>4</option>
-															<flag>wxRIGHT|wxTOP|wxBOTTOM|wxEXPAND</flag>
+															<flag>wxALIGN_CENTER_VERTICAL|wxBOTTOM|wxEXPAND|wxRIGHT|wxTOP</flag>
 															<border>8</border>
 															<object class="wxTextCtrl" name="SIPProxy">
 																<value></value>
@@ -5007,7 +5007,7 @@
 										</object>
 										<object class="sizeritem">
 											<option>0</option>
-											<flag>wxALL|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL</flag>
+											<flag>wxALIGN_CENTER_VERTICAL|wxALL</flag>
 											<border>24</border>
 											<object class="wxButton" name="MoreOptionsSIP">
 												<label>More Options ...</label>
@@ -5045,7 +5045,7 @@
 												</object>
 												<object class="sizeritem">
 													<option>5</option>
-													<flag>wxEXPAND</flag>
+													<flag></flag>
 													<border>0</border>
 													<object class="wxButton" name="AddRegistrar">
 														<label>Add</label>
@@ -5060,7 +5060,7 @@
 												</object>
 												<object class="sizeritem">
 													<option>5</option>
-													<flag>wxEXPAND</flag>
+													<flag></flag>
 													<border>0</border>
 													<object class="wxButton" name="ChangeRegistrar">
 														<enabled>0</enabled>
@@ -5076,7 +5076,7 @@
 												</object>
 												<object class="sizeritem">
 													<option>5</option>
-													<flag>wxEXPAND</flag>
+													<flag></flag>
 													<border>0</border>
 													<object class="wxButton" name="RemoveRegistrar">
 														<enabled>0</enabled>
@@ -5092,7 +5092,7 @@
 												</object>
 												<object class="sizeritem">
 													<option>5</option>
-													<flag>wxEXPAND</flag>
+													<flag></flag>
 													<border>0</border>
 													<object class="wxButton" name="MoveUpRegistrar">
 														<enabled>0</enabled>
@@ -5108,7 +5108,7 @@
 												</object>
 												<object class="sizeritem">
 													<option>5</option>
-													<flag>wxEXPAND</flag>
+													<flag></flag>
 													<border>0</border>
 													<object class="wxButton" name="MoveDownRegistrar">
 														<enabled>0</enabled>
@@ -5159,7 +5159,7 @@
 										</object>
 										<object class="sizeritem">
 											<option>0</option>
-											<flag>wxLEFT|wxBOTTOM|wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL</flag>
+											<flag>wxALIGN_CENTER_VERTICAL|wxBOTTOM|wxLEFT</flag>
 											<border>8</border>
 											<object class="wxStaticText" name="label_103">
 												<label>User Input Mode:</label>
@@ -5182,7 +5182,7 @@
 										</object>
 										<object class="sizeritem">
 											<option>0</option>
-											<flag>wxLEFT|wxBOTTOM|wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL</flag>
+											<flag>wxALIGN_CENTER_VERTICAL|wxBOTTOM|wxLEFT</flag>
 											<border>8</border>
 											<object class="wxStaticText" name="label_109">
 												<label>Reliable Provisional Response:</label>
@@ -5191,7 +5191,7 @@
 										</object>
 										<object class="sizeritem">
 											<option>0</option>
-											<flag>wxRIGHT|wxBOTTOM</flag>
+											<flag>wxALIGN_CENTER_VERTICAL|wxBOTTOM|wxRIGHT</flag>
 											<border>8</border>
 											<object class="wxChoice" name="SIPPRACKMode">
 												<selection>1</selection>
@@ -5282,7 +5282,7 @@
 										</object>
 										<object class="sizeritem">
 											<option>0</option>
-											<flag>wxALL</flag>
+											<flag>wxALIGN_CENTER_VERTICAL|wxALL</flag>
 											<border>16</border>
 											<object class="wxFlexGridSizer">
 												<rows>1</rows>
@@ -5302,7 +5302,7 @@
 												</object>
 												<object class="sizeritem">
 													<option>0</option>
-													<flag></flag>
+													<flag>wxALIGN_CENTER_VERTICAL</flag>
 													<border>0</border>
 													<object class="wxComboBox" name="telURI">
 														<style>wxCB_READONLY</style>
@@ -5415,7 +5415,7 @@
 												</object>
 												<object class="sizeritem">
 													<option>0</option>
-													<flag>wxALL|wxEXPAND|wxALIGN_CENTER_VERTICAL</flag>
+													<flag>wxALIGN_CENTER_VERTICAL|wxALL</flag>
 													<border>8</border>
 													<object class="wxBoxSizer">
 														<orient>wxVERTICAL</orient>
@@ -5541,7 +5541,7 @@
 										</object>
 										<object class="sizeritem">
 											<option>0</option>
-											<flag>wxLEFT|wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL</flag>
+											<flag>wxALIGN_CENTER_VERTICAL|wxLEFT</flag>
 											<border>40</border>
 											<object class="wxStaticText" name="label_34">
 												<label>Level Threshold:</label>
@@ -5669,7 +5669,7 @@
 										<orient>wxHORIZONTAL</orient>
 										<object class="sizeritem">
 											<option>0</option>
-											<flag>wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL</flag>
+											<flag>wxALIGN_CENTER_VERTICAL</flag>
 											<border>12</border>
 											<object class="wxStaticText" name="label_33">
 												<label>Filename:</label>
@@ -5703,10 +5703,16 @@
 			</object>
 			<object class="sizeritem">
 				<option>0</option>
-				<flag>wxALIGN_RIGHT</flag>
+				<flag>wxEXPAND</flag>
 				<border>0</border>
 				<object class="wxBoxSizer">
 					<orient>wxHORIZONTAL</orient>
+					<object class="spacer">
+						<option>1</option>
+						<flag>wxEXPAND</flag>
+						<border>5</border>
+						<size>0,0</size>
+					</object>
 					<object class="sizeritem">
 						<option>0</option>
 						<flag>wxALL|wxALIGN_BOTTOM</flag>
@@ -5739,9 +5745,8 @@
 		</object>
 	</object>
 	<object class="wxDialog" name="NetOptionsDialog">
-		<style>wxDEFAULT_DIALOG_STYLE</style>
-		<size>710,306</size>
-		<title>Options</title>
+		<style>wxDEFAULT_DIALOG_STYLE|wxRESIZE_BORDER</style>
+		<title>Advanced Options</title>
 		<object class="wxBoxSizer">
 			<orient>wxVERTICAL</orient>
 			<object class="sizeritem">
@@ -5751,15 +5756,15 @@
 				<object class="wxBoxSizer">
 					<orient>wxHORIZONTAL</orient>
 					<object class="sizeritem">
-						<option>2</option>
-						<flag>wxRIGHT|wxTOP|wxBOTTOM|wxEXPAND</flag>
+						<option>0</option>
+						<flag>wxBOTTOM|wxRIGHT|wxTOP</flag>
 						<border>8</border>
 						<object class="wxStaticBoxSizer">
 							<orient>wxHORIZONTAL</orient>
 							<label>Security</label>
 							<object class="sizeritem">
-								<option>1</option>
-								<flag>wxEXPAND</flag>
+								<option>0</option>
+								<flag></flag>
 								<border>0</border>
 								<object class="wxBoxSizer">
 									<orient>wxVERTICAL</orient>
@@ -5807,7 +5812,7 @@
 											</object>
 											<object class="sizeritem">
 												<option>0</option>
-												<flag>wxALL|wxEXPAND</flag>
+												<flag>wxALL</flag>
 												<border>8</border>
 												<object class="wxBoxSizer">
 													<orient>wxVERTICAL</orient>
@@ -5840,10 +5845,12 @@
 						</object>
 					</object>
 					<object class="sizeritem">
-						<option>3</option>
+						<option>1</option>
 						<flag>wxALL|wxEXPAND</flag>
 						<border>12</border>
-						<object class="wxGrid" name="StringOptions" />
+						<object class="wxGrid" name="StringOptions">
+							<size>350,50</size>
+						</object>
 					</object>
 				</object>
 			</object>
@@ -5970,7 +5977,7 @@
 		</object>
 	</object>
 	<object class="wxDialog" name="RegistrationDialog">
-		<style>wxDEFAULT_DIALOG_STYLE</style>
+		<style>wxDEFAULT_DIALOG_STYLE|wxRESIZE_BORDER</style>
 		<title>Registration/Subscriptions Configuration</title>
 		<object class="wxBoxSizer">
 			<orient>wxVERTICAL</orient>
@@ -5983,11 +5990,11 @@
 					<cols>4</cols>
 					<vgap>0</vgap>
 					<hgap>0</hgap>
-					<growablecols></growablecols>
+					<growablecols>1,3</growablecols>
 					<growablerows></growablerows>
 					<object class="spacer">
 						<option>0</option>
-						<flag>wxEXPAND</flag>
+						<flag></flag>
 						<border>0</border>
 						<size>5,5</size>
 					</object>
@@ -6002,7 +6009,7 @@
 					</object>
 					<object class="spacer">
 						<option>0</option>
-						<flag>wxEXPAND</flag>
+						<flag></flag>
 						<border>0</border>
 						<size>5,5</size>
 					</object>
@@ -6026,7 +6033,7 @@
 					</object>
 					<object class="sizeritem">
 						<option>0</option>
-						<flag>wxRIGHT|wxTOP|wxBOTTOM|wxALIGN_CENTER_VERTICAL</flag>
+						<flag>wxALIGN_CENTER_VERTICAL|wxBOTTOM|wxEXPAND|wxRIGHT|wxTOP</flag>
 						<border>8</border>
 						<object class="wxTextCtrl" name="RegistrarUsername">
 							<value></value>
@@ -6044,7 +6051,7 @@
 					</object>
 					<object class="sizeritem">
 						<option>0</option>
-						<flag>wxRIGHT|wxTOP|wxBOTTOM|wxALIGN_CENTER_VERTICAL</flag>
+						<flag>wxALIGN_CENTER_VERTICAL|wxBOTTOM|wxEXPAND|wxRIGHT|wxTOP</flag>
 						<border>8</border>
 						<object class="wxTextCtrl" name="RegistrarAuthID">
 							<value></value>
@@ -6062,7 +6069,7 @@
 					</object>
 					<object class="sizeritem">
 						<option>0</option>
-						<flag>wxRIGHT|wxBOTTOM|wxALIGN_CENTER_VERTICAL</flag>
+						<flag>wxALIGN_CENTER_VERTICAL|wxBOTTOM|wxEXPAND|wxRIGHT</flag>
 						<border>8</border>
 						<object class="wxTextCtrl" name="RegistrarDomain">
 							<value></value>
@@ -6080,7 +6087,7 @@
 					</object>
 					<object class="sizeritem">
 						<option>0</option>
-						<flag>wxRIGHT|wxBOTTOM|wxALIGN_CENTER_VERTICAL</flag>
+						<flag>wxALIGN_CENTER_VERTICAL|wxBOTTOM|wxEXPAND|wxRIGHT</flag>
 						<border>8</border>
 						<object class="wxTextCtrl" name="RegistrarPassword">
 							<style>wxTE_PASSWORD</style>
@@ -6099,7 +6106,7 @@
 					</object>
 					<object class="sizeritem">
 						<option>0</option>
-						<flag>wxRIGHT|wxBOTTOM|wxALIGN_CENTER_VERTICAL</flag>
+						<flag>wxALIGN_CENTER_VERTICAL|wxBOTTOM|wxEXPAND|wxRIGHT</flag>
 						<border>8</border>
 						<object class="wxTextCtrl" name="RegistrarContact">
 							<value></value>
@@ -6117,7 +6124,7 @@
 					</object>
 					<object class="sizeritem">
 						<option>0</option>
-						<flag>wxRIGHT|wxBOTTOM|wxALIGN_CENTER_VERTICAL</flag>
+						<flag>wxALIGN_CENTER_VERTICAL|wxBOTTOM|wxEXPAND|wxRIGHT</flag>
 						<border>8</border>
 						<object class="wxTextCtrl" name="RegistrarProxy">
 							<value></value>
@@ -6189,7 +6196,7 @@
 			</object>
 			<object class="sizeritem">
 				<option>0</option>
-				<flag>wxTOP|wxBOTTOM|wxEXPAND|wxALIGN_BOTTOM</flag>
+				<flag>wxBOTTOM|wxEXPAND|wxTOP</flag>
 				<border>16</border>
 				<object class="wxBoxSizer">
 					<orient>wxHORIZONTAL</orient>
@@ -6201,7 +6208,7 @@
 					</object>
 					<object class="sizeritem">
 						<option>0</option>
-						<flag>wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL</flag>
+						<flag>wxALIGN_CENTER_VERTICAL</flag>
 						<border>0</border>
 						<object class="wxButton" name="wxID_OK">
 							<label>OK</label>
@@ -6216,7 +6223,7 @@
 					</object>
 					<object class="sizeritem">
 						<option>0</option>
-						<flag>wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL</flag>
+						<flag>wxALIGN_CENTER_VERTICAL</flag>
 						<border>0</border>
 						<object class="wxButton" name="wxID_CANCEL">
 							<label>Cancel</label>
@@ -6543,7 +6550,7 @@
 			</object>
 			<object class="sizeritem">
 				<option>0</option>
-				<flag>wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL</flag>
+				<flag>wxALIGN_CENTER_HORIZONTAL</flag>
 				<border>12</border>
 				<object class="wxCheckBox" name="UseHandset">
 					<label>Use Handset</label>
@@ -6552,7 +6559,7 @@
 			</object>
 			<object class="sizeritem">
 				<option>0</option>
-				<flag>wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL|wxTOP</flag>
+				<flag>wxALIGN_CENTER_HORIZONTAL|wxTOP</flag>
 				<border>12</border>
 				<object class="wxRadioBox" name="FaxMode">
 					<style>wxRA_SPECIFY_ROWS</style>
@@ -6567,13 +6574,13 @@
 			</object>
 			<object class="sizeritem">
 				<option>0</option>
-				<flag>wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL</flag>
+				<flag>wxALIGN_CENTER_HORIZONTAL</flag>
 				<border>0</border>
 				<object class="wxBoxSizer">
 					<orient>wxHORIZONTAL</orient>
 					<object class="sizeritem">
 						<option>0</option>
-						<flag>wxALL|wxALIGN_BOTTOM|wxALIGN_CENTER_HORIZONTAL</flag>
+						<flag>wxALIGN_CENTER_VERTICAL|wxALL</flag>
 						<border>16</border>
 						<object class="wxButton" name="wxID_OK">
 							<label>OK</label>
@@ -6582,7 +6589,7 @@
 					</object>
 					<object class="sizeritem">
 						<option>0</option>
-						<flag>wxALL|wxALIGN_BOTTOM|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL</flag>
+						<flag>wxALIGN_CENTER_VERTICAL|wxALL</flag>
 						<border>16</border>
 						<object class="wxButton" name="wxID_CANCEL">
 							<label>Cancel</label>
@@ -6599,51 +6606,48 @@
 		<object class="wxBoxSizer">
 			<orient>wxVERTICAL</orient>
 			<object class="sizeritem">
-				<option>0</option>
-				<flag>wxEXPAND</flag>
-				<border>0</border>
-				<object class="wxBoxSizer">
-					<orient>wxHORIZONTAL</orient>
+				<option>1</option>
+				<flag>wxALL|wxEXPAND</flag>
+				<border>16</border>
+				<object class="wxFlexGridSizer">
+					<rows>0</rows>
+					<cols>2</cols>
+					<vgap>0</vgap>
+					<hgap>0</hgap>
+					<growablecols></growablecols>
+					<growablerows></growablerows>
 					<object class="sizeritem">
 						<option>0</option>
-						<flag>wxLEFT|wxTOP|wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL</flag>
-						<border>16</border>
+						<flag>wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL</flag>
+						<border>5</border>
 						<object class="wxStaticText" name="label_106">
 							<label>Identity:</label>
 							<wrap>-1</wrap>
 						</object>
 					</object>
 					<object class="sizeritem">
-						<option>1</option>
-						<flag>wxRIGHT|wxTOP|wxALIGN_CENTER_VERTICAL</flag>
-						<border>16</border>
+						<option>0</option>
+						<flag>wxALIGN_CENTER_VERTICAL|wxALL</flag>
+						<border>5</border>
 						<object class="wxChoice" name="Presentity">
 							<size>300,-1</size>
 							<selection>0</selection>
 							<content />
 						</object>
 					</object>
-				</object>
-			</object>
-			<object class="sizeritem">
-				<option>0</option>
-				<flag>wxEXPAND</flag>
-				<border>0</border>
-				<object class="wxBoxSizer">
-					<orient>wxHORIZONTAL</orient>
 					<object class="sizeritem">
 						<option>0</option>
-						<flag>wxLEFT|wxTOP|wxBOTTOM|wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL</flag>
-						<border>16</border>
+						<flag>wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL</flag>
+						<border>5</border>
 						<object class="wxStaticText" name="label_91">
 							<label>Address: </label>
 							<wrap>-1</wrap>
 						</object>
 					</object>
 					<object class="sizeritem">
-						<option>1</option>
-						<flag>wxRIGHT|wxTOP|wxBOTTOM|wxALIGN_CENTER_VERTICAL</flag>
-						<border>16</border>
+						<option>0</option>
+						<flag>wxALIGN_CENTER_VERTICAL|wxALL</flag>
+						<border>5</border>
 						<object class="wxComboBox" name="Address">
 							<size>300,-1</size>
 							<value></value>
@@ -6814,12 +6818,12 @@
 					<orient>wxHORIZONTAL</orient>
 					<object class="sizeritem">
 						<option>1</option>
-						<flag>wxALL|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL</flag>
+						<flag>wxALIGN_CENTER_VERTICAL|wxALL</flag>
 						<border>12</border>
 						<object class="wxRadioBox" name="AnswerAs">
 							<style>wxRA_SPECIFY_ROWS</style>
 							<label>Answer As</label>
-							<selection>0</selection>
+							<selection>1</selection>
 							<content>
 								<item>Voice</item>
 								<item>Fax</item>
@@ -6830,7 +6834,7 @@
 					</object>
 					<object class="sizeritem">
 						<option>2</option>
-						<flag>wxALL|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL</flag>
+						<flag>wxALIGN_CENTER_VERTICAL</flag>
 						<border>12</border>
 						<object class="wxFlexGridSizer">
 							<rows>2</rows>
@@ -6922,7 +6926,7 @@
 					<orient>wxVERTICAL</orient>
 					<object class="sizeritem">
 						<option>0</option>
-						<flag>wxLEFT|wxRIGHT|wxTOP|wxEXPAND|wxALIGN_CENTER_VERTICAL</flag>
+						<flag>wxEXPAND|wxLEFT|wxRIGHT|wxTOP</flag>
 						<border>16</border>
 						<object class="wxComboBox" name="VideoGrabDevice">
 							<size>300,-1</size>
@@ -6944,7 +6948,7 @@
 							<orient>wxHORIZONTAL</orient>
 							<object class="sizeritem">
 								<option>0</option>
-								<flag>wxLEFT|wxRIGHT|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL</flag>
+								<flag>wxALIGN_CENTER_VERTICAL|wxLEFT|wxRIGHT</flag>
 								<border>16</border>
 								<object class="wxCheckBox" name="VideoPreview">
 									<label>Preview</label>
