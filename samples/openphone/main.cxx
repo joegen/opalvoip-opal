@@ -6682,7 +6682,7 @@ NetOptionsDialog::NetOptionsDialog(MyManager * manager, OpalRTPEndPoint * ep)
   --m_SignalingSecurity;
 
   FindWindowByNameAs(m_SignalingSecurityButtons, this, wxT("SignalingSecurity"))->SetValidator(wxGenericValidator(&m_SignalingSecurity));
-  for (size_t i = 0; i < m_SignalingSecurityButtons->GetColumnCount(); ++i) {
+  for (size_t i = 0; i < m_SignalingSecurityButtons->GetRowCount(); ++i) {
     wxString str = m_SignalingSecurityButtons->GetString(i);
     str.Replace(wxT("XXX"), PwxString(ep->GetPrefixName()));
     m_SignalingSecurityButtons->SetString(i, str);
@@ -6699,16 +6699,16 @@ NetOptionsDialog::NetOptionsDialog(MyManager * manager, OpalRTPEndPoint * ep)
   FindWindowByName(wxT("MediaCryptoSuiteDown"))->Disable();
 #endif // OPAL_PTLIB_SSL
 
+  const PStringToString & defaultOptions = m_endpoint->GetDefaultStringOptions();
+  PStringList optionNames = m_endpoint->GetAvailableStringOptions();
+
   FindWindowByNameAs(m_stringOptions, this, wxT("StringOptions"));
-  m_stringOptions->CreateGrid(0, 1);
+  m_stringOptions->CreateGrid(optionNames.GetSize(), 1);
   m_stringOptions->SetColLabelValue(0, wxT("Option Value"));
   m_stringOptions->SetColLabelSize(wxGRID_AUTOSIZE);
   m_stringOptions->AutoSizeColLabelSize(0);
   m_stringOptions->SetRowLabelAlignment(wxALIGN_LEFT, wxALIGN_TOP);
 
-  const PStringToString & defaultOptions = m_endpoint->GetDefaultStringOptions();
-  PStringList optionNames = m_endpoint->GetAvailableStringOptions();
-  m_stringOptions->AppendRows(optionNames.GetSize());
   int row = 0;
   for (PStringList::iterator it = optionNames.begin(); it != optionNames.end(); ++it, ++row) {
     m_stringOptions->SetRowLabelValue(row, PwxString(*it));
@@ -6716,8 +6716,9 @@ NetOptionsDialog::NetOptionsDialog(MyManager * manager, OpalRTPEndPoint * ep)
   }
 
   m_stringOptions->SetRowLabelSize(wxGRID_AUTOSIZE);
-  m_stringOptions->SetColSize(0, m_stringOptions->GetSize().GetWidth() -
-                              m_stringOptions->GetRowLabelSize() - 8);
+  m_stringOptions->SetColSize(0, wxGRID_AUTOSIZE);
+  m_stringOptions->SetSize(m_stringOptions->GetRowLabelSize()+m_stringOptions->GetColSize(0)+4,
+                           m_stringOptions->GetSize().GetHeight());
 }
 
 

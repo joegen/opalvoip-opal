@@ -5703,10 +5703,16 @@
 			</object>
 			<object class="sizeritem">
 				<option>0</option>
-				<flag>wxALIGN_RIGHT</flag>
+				<flag>wxEXPAND</flag>
 				<border>0</border>
 				<object class="wxBoxSizer">
 					<orient>wxHORIZONTAL</orient>
+					<object class="spacer">
+						<option>1</option>
+						<flag>wxEXPAND</flag>
+						<border>5</border>
+						<size>0,0</size>
+					</object>
 					<object class="sizeritem">
 						<option>0</option>
 						<flag>wxALL|wxALIGN_BOTTOM</flag>
@@ -5739,26 +5745,26 @@
 		</object>
 	</object>
 	<object class="wxDialog" name="NetOptionsDialog">
-		<style>wxDEFAULT_DIALOG_STYLE</style>
-		<size>710,306</size>
+		<style>wxDEFAULT_DIALOG_STYLE|wxRESIZE_BORDER</style>
+		<size>700,300</size>
 		<title>Options</title>
 		<object class="wxBoxSizer">
 			<orient>wxVERTICAL</orient>
 			<object class="sizeritem">
-				<option>1</option>
+				<option>0</option>
 				<flag>wxEXPAND</flag>
 				<border>0</border>
 				<object class="wxBoxSizer">
 					<orient>wxHORIZONTAL</orient>
 					<object class="sizeritem">
-						<option>2</option>
+						<option>0</option>
 						<flag>wxRIGHT|wxTOP|wxBOTTOM|wxEXPAND</flag>
 						<border>8</border>
 						<object class="wxStaticBoxSizer">
 							<orient>wxHORIZONTAL</orient>
 							<label>Security</label>
 							<object class="sizeritem">
-								<option>1</option>
+								<option>0</option>
 								<flag>wxEXPAND</flag>
 								<border>0</border>
 								<object class="wxBoxSizer">
@@ -5840,10 +5846,12 @@
 						</object>
 					</object>
 					<object class="sizeritem">
-						<option>3</option>
+						<option>0</option>
 						<flag>wxALL|wxEXPAND</flag>
 						<border>12</border>
-						<object class="wxGrid" name="StringOptions" />
+						<object class="wxGrid" name="StringOptions">
+							<size>300,50</size>
+						</object>
 					</object>
 				</object>
 			</object>
@@ -6814,12 +6822,12 @@
 					<orient>wxHORIZONTAL</orient>
 					<object class="sizeritem">
 						<option>1</option>
-						<flag>wxALL|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL</flag>
+						<flag>wxALIGN_CENTER_VERTICAL|wxALL</flag>
 						<border>12</border>
 						<object class="wxRadioBox" name="AnswerAs">
 							<style>wxRA_SPECIFY_ROWS</style>
 							<label>Answer As</label>
-							<selection>0</selection>
+							<selection>1</selection>
 							<content>
 								<item>Voice</item>
 								<item>Fax</item>
@@ -6830,7 +6838,7 @@
 					</object>
 					<object class="sizeritem">
 						<option>2</option>
-						<flag>wxALL|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL</flag>
+						<flag>wxALIGN_CENTER_VERTICAL</flag>
 						<border>12</border>
 						<object class="wxFlexGridSizer">
 							<rows>2</rows>
