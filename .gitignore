@@ -80,5 +80,6 @@ src/rtp/libsrtp/crypto/include/config.h
 samples/openphone/version.wxs
 samples/openphone/resource.cpp
 samples/openphone/openphone.cxx
+samples/opalshark/opalshark.cxx
 samples/c_api/obj/
 
