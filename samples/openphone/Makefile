@@ -47,6 +47,8 @@ ifneq (,$(DEBUG_BUILD))
   endif
 endif
 
+clean ::
+	rm openphone.cxx
 
 CPPFLAGS += $(shell $(WX_CONFIG) --cppflags)
 CXXFLAGS += $(shell $(WX_CONFIG) --cxxflags)
