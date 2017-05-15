@@ -2203,6 +2203,11 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   // update the dialog context
   m_dialog.SetLocalTag(GetToken());
   m_dialog.Update(request);
+  if (!m_dialog.IsEstablished()) {
+    PTRACE(2, "Illegal fields in INVITE, cannot establish dialog, aborting call.");
+    Release(EndedByIllegalAddress);
+    return;
+  }
 
   // We received a Re-INVITE for a current connection
   if (isReinvite) {

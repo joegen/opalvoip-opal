@@ -797,7 +797,9 @@ class SIPDialogContext
     {
       return !m_callId.IsEmpty() &&
              !m_requestURI.IsEmpty() &&
+             !m_localURI.IsEmpty() &&
              !m_localTag.IsEmpty() &&
+             !m_remoteURI.IsEmpty() &&
              !m_remoteTag.IsEmpty();
     }
 
