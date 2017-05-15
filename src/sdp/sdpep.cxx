@@ -756,23 +756,29 @@ bool OpalSDPConnection::OnSendAnswerSDP(const SDPSessionDescription & sdpOffer, 
 
   BundleMergeInfo bundleMergeInfo(sessionCount);
 #if OPAL_SRTP
-  for (sessionId = 1; sessionId <= sessionCount; ++sessionId) {
-    SDPMediaDescription * incomingMedia = sdpOffer.GetMediaDescriptionByIndex(sessionId);
-    if (PAssert(incomingMedia != NULL, PLogicError) && incomingMedia->IsSecure())
-      sdpMediaDescriptions[sessionId] = OnSendAnswerSDPSession(incomingMedia,
-                                                               sessionId,
-                                                               transfer,
-                                                               sdpOffer.GetDirection(sessionId),
-                                                               bundleMergeInfo);
+  PStringArray cryptoSuites = GetMediaCryptoSuites();
+  bool hasClearText = cryptoSuites.GetValuesIndex(OpalMediaCryptoSuite::ClearText()) != P_MAX_INDEX;
+  if (cryptoSuites.GetSize() > (hasClearText ? 1 : 0)) {
+    for (sessionId = 1; sessionId <= sessionCount; ++sessionId) {
+      SDPMediaDescription * incomingMedia = sdpOffer.GetMediaDescriptionByIndex(sessionId);
+      if (PAssert(incomingMedia != NULL, PLogicError) && incomingMedia->IsSecure())
+        sdpMediaDescriptions[sessionId] = OnSendAnswerSDPSession(incomingMedia,
+                                                                 sessionId,
+                                                                 transfer,
+                                                                 sdpOffer.GetDirection(sessionId),
+                                                                 bundleMergeInfo);
+    }
   }
-  for (sessionId = 1; sessionId <= sessionCount; ++sessionId) {
-    SDPMediaDescription * incomingMedia = sdpOffer.GetMediaDescriptionByIndex(sessionId);
-    if (PAssert(incomingMedia != NULL, PLogicError) && !incomingMedia->IsSecure())
-      sdpMediaDescriptions[sessionId] = OnSendAnswerSDPSession(incomingMedia,
-                                                               sessionId,
-                                                               transfer,
-                                                               sdpOffer.GetDirection(sessionId),
-                                                               bundleMergeInfo);
+  if (hasClearText) {
+    for (sessionId = 1; sessionId <= sessionCount; ++sessionId) {
+      SDPMediaDescription * incomingMedia = sdpOffer.GetMediaDescriptionByIndex(sessionId);
+      if (PAssert(incomingMedia != NULL, PLogicError) && !incomingMedia->IsSecure())
+        sdpMediaDescriptions[sessionId] = OnSendAnswerSDPSession(incomingMedia,
+                                                                 sessionId,
+                                                                 transfer,
+                                                                 sdpOffer.GetDirection(sessionId),
+                                                                 bundleMergeInfo);
+    }
   }
 #else
   for (sessionId = 1; sessionId <= sessionCount; ++sessionId) {
