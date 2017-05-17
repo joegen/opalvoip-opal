@@ -40,6 +40,7 @@
 #include <opal/transcoders.h>
 #include <opal/patch.h>
 #include <ptclib/random.h>
+#include <sdp/ice.h>
 
 
 #define PTraceModule() "SDP-EP"
@@ -71,9 +72,16 @@ PStringList OpalSDPEndPoint::GetAvailableStringOptions() const
     OPAL_OPT_FORCE_RTCP_FB,
     OPAL_OPT_SUPPRESS_UDP_TLS,
     OPAL_OPT_RTCP_MUX,
+    OPAL_OPT_OFFER_REDUCED_SIZE_RTCP,
+    OPAL_OPT_SUPPRESS_UDP_TLS,
+    #ifdef OPAL_ICE
+      OPAL_OPT_OFFER_ICE,
+      OPAL_OPT_ICE_LITE,
+      OPAL_OPT_ICE_TIMEOUT,
+      OPAL_OPT_ICE_PROMISCUOUS,
+    #endif
     OPAL_OPT_AV_BUNDLE,
-    OPAL_OPT_OFFER_ICE,
-    OPAL_OPT_ICE_LITE
+    OPAL_OPT_MULTI_SSRC
   };
 
   PStringList list = OpalRTPEndPoint::GetAvailableStringOptions();

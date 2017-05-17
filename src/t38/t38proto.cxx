@@ -637,6 +637,22 @@ OpalMediaFormatList OpalFaxEndPoint::GetMediaFormats() const
 }
 
 
+PStringList OpalFaxEndPoint::GetAvailableStringOptions() const
+{
+  static char const * const StringOpts[] = {
+    OPAL_OPT_STATION_ID,
+    OPAL_OPT_HEADER_INFO,
+    OPAL_NO_G111_FAX,
+    OPAL_SWITCH_ON_CED,
+    OPAL_T38_SWITCH_TIME
+  };
+
+  PStringList list = OpalLocalEndPoint::GetAvailableStringOptions();
+  list += PStringList(PARRAYSIZE(StringOpts), StringOpts, true);
+  return list;
+}
+
+
 void OpalFaxEndPoint::OnFaxCompleted(OpalFaxConnection & connection, bool failed)
 {
   PTRACE(3, "FAX\tFax " << (failed ? "failed" : "completed") << " on connection: " << connection);

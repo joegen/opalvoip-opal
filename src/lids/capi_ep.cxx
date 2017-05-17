@@ -607,6 +607,18 @@ OpalMediaFormatList OpalCapiEndPoint::GetMediaFormats() const
 }
 
 
+PStringList OpalCapiEndPoint::GetAvailableStringOptions() const
+{
+  static char const * const StringOpts[] = {
+    OPAL_OPT_CAPI_B_PROTO
+  };
+
+  PStringList list = OpalEndPoint::GetAvailableStringOptions();
+  list += PStringList(PARRAYSIZE(StringOpts), StringOpts, true);
+  return list;
+}
+
+
 OpalCapiConnection * OpalCapiEndPoint::CreateConnection(OpalCall & call,
                                                             void * /*userData*/,
                                                         unsigned   options,

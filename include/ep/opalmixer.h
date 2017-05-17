@@ -623,6 +623,10 @@ class OpalMixerEndPoint : public OpalLocalEndPoint, public OpalMixerNodeManager
       */
     virtual OpalMediaFormatList GetMediaFormats() const;
 
+    /** Get available string option names.
+      */
+    virtual PStringList GetAvailableStringOptions() const;
+
     /**Set up a connection to a remote party.
        This is called from the OpalManager::MakeConnection() function once
        it has determined that this is the endpoint for the protocol.

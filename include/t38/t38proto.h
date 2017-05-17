@@ -130,6 +130,10 @@ class OpalFaxEndPoint : public OpalLocalEndPoint
        media formats returned here, but should return no more.
       */
     virtual OpalMediaFormatList GetMediaFormats() const;
+
+    /** Get available string option names.
+      */
+    virtual PStringList GetAvailableStringOptions() const;
   //@}
 
   /**@name Fax specific operations */

@@ -109,6 +109,10 @@ class OpalCapiEndPoint : public OpalEndPoint
        The default behaviour is pure.
       */
     virtual OpalMediaFormatList GetMediaFormats() const;
+
+    /** Get available string option names.
+      */
+    virtual PStringList GetAvailableStringOptions() const;
   //@}
 
   /**@name Connection management */

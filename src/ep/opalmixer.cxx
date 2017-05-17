@@ -804,6 +804,19 @@ OpalMediaFormatList OpalMixerEndPoint::GetMediaFormats() const
 }
 
 
+PStringList OpalMixerEndPoint::GetAvailableStringOptions() const
+{
+  static char const * const StringOpts[] = {
+    OPAL_OPT_LISTEN_ONLY,
+    OPAL_OPT_CONF_OWNER
+  };
+
+  PStringList list = OpalLocalEndPoint::GetAvailableStringOptions();
+  list += PStringList(PARRAYSIZE(StringOpts), StringOpts, true);
+  return list;
+}
+
+
 PSafePtr<OpalConnection> OpalMixerEndPoint::MakeConnection(OpalCall & call,
                                                       const PString & party,
                                                                void * userData,

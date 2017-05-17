@@ -34,6 +34,7 @@
 #include <rtp/rtpep.h>
 #include <rtp/rtpconn.h>
 #include <rtp/rtp_stream.h>
+#include <rtp/dtls_srtp_session.h>
 
 
 #if OPAL_RTP_FEC
@@ -159,6 +160,12 @@ PStringList OpalRTPEndPoint::GetAvailableStringOptions() const
 {
   static char const * const StringOpts[] = {
     OPAL_OPT_DISABLE_NAT,
+    #ifdef OPAL_OPT_SRTP_RTCP_ANY_SSRC
+      OPAL_OPT_SRTP_RTCP_ANY_SSRC,
+    #endif
+    #ifdef OPAL_OPT_DTLS_TIMEOUT
+      OPAL_OPT_DTLS_TIMEOUT,
+    #endif
     OPAL_OPT_RTP_ABS_SEND_TIME,
     OPAL_OPT_TRANSPORT_WIDE_CONGESTION_CONTROL
   };

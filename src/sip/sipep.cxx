@@ -615,11 +615,12 @@ PStringList SIPEndPoint::GetAvailableStringOptions() const
   static char const * const StringOpts[] = {
     OPAL_OPT_FORWARD_REFER,
     OPAL_OPT_REFER_SUB,
+    OPAL_OPT_NO_REFER_SUB,
+    OPAL_OPT_PRACK_MODE,
     OPAL_OPT_INITIAL_OFFER,
     OPAL_OPT_ALLOW_EARLY_REPLACE,
     OPAL_OPT_EXTERNAL_SDP,
-    OPAL_OPT_UNSECURE_SRTP,
-    OPAL_SIP_REFERRED_CONNECTION
+    OPAL_OPT_UNSECURE_SRTP
   };
 
   PStringList list = OpalSDPEndPoint::GetAvailableStringOptions();

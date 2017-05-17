@@ -833,7 +833,9 @@ PStringList OpalEndPoint::GetAvailableStringOptions() const
     OPAL_OPT_ALERTING_TYPE,
     OPAL_OPT_REMOVE_CODEC,
     OPAL_OPT_SILENCE_DETECT_MODE,
-    OPAL_OPT_VIDUP_METHODS
+    OPAL_OPT_VIDUP_METHODS,
+    OPAL_OPT_MEDIA_RX_TIMEOUT,
+    OPAL_OPT_MEDIA_TX_TIMEOUT
   };
 
   return PStringList(PARRAYSIZE(StringOpts), StringOpts, true);
