@@ -1053,12 +1053,7 @@ bool OpalRTPSession::SyncSource::OnSendReceiverReport(RTP_ControlFrame::Receiver
     return true;
 
   report->ssrc = m_sourceIdentifier;
-
-  unsigned lost = m_session.GetPacketsLost();
-  OpalJitterBuffer * jb = GetJitterBuffer();
-  if (jb != NULL)
-    lost += jb->GetPacketsTooLate();
-  report->SetLostPackets(lost);
+  report->SetLostPackets(m_packetsLost);
 
   if (m_extendedSequenceNumber >= m_lastRRSequenceNumber)
     report->fraction = (BYTE)((m_packetsLostSinceLastRR<<8)/(m_extendedSequenceNumber - m_lastRRSequenceNumber + 1));
