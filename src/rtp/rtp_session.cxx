@@ -2035,14 +2035,13 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
             RTP_SyncSourceArray targetSSRCs;
             unsigned maxBitRate;
             if (frame.ParseREMB(senderSSRC, targetSSRCs, maxBitRate)) {
-              SyncSource * ssrc;
-              if (CheckControlSSRC(senderSSRC, targetSSRCs[0], ssrc PTRACE_PARAM(,"REMB"))) {
-                PTRACE(4, *this << "received REMB:"
-                       " maxBitRate=" << maxBitRate << ","
-                       " first receiver SSRC=" << RTP_TRACE_SRC(targetSSRCs[0]) << ","
-                       " sender SSRC=" << RTP_TRACE_SRC(senderSSRC));
-                m_connection.ExecuteMediaCommand(OpalMediaFlowControl(maxBitRate, m_mediaType, m_sessionId, targetSSRCs), true);
-              }
+              // Chrome 60 swaps the REMB from the video to the audio RTP session, but the target
+              // SSRCs are still only video; hence we don't police the target SSRCs here.
+              PTRACE(4, *this << "received REMB:"
+                     " maxBitRate=" << maxBitRate << ","
+                     " first receiver SSRC=" << RTP_TRACE_SRC(targetSSRCs[0]) << ","
+                     " sender SSRC=" << RTP_TRACE_SRC(senderSSRC));
+              m_connection.ExecuteMediaCommand(OpalMediaFlowControl(maxBitRate, m_mediaType, m_sessionId, targetSSRCs), true);
               break;
             }
           }
