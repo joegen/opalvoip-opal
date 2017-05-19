@@ -120,6 +120,16 @@ public class OpalParamProtocol : global::System.IDisposable {
     } 
   }
 
+  public string allMediaCryptoSuites {
+    set {
+      OPALPINVOKE.OpalParamProtocol_allMediaCryptoSuites_set(swigCPtr, value);
+    } 
+    get {
+      string ret = OPALPINVOKE.OpalParamProtocol_allMediaCryptoSuites_get(swigCPtr);
+      return ret;
+    } 
+  }
+
   public OpalParamProtocol() : this(OPALPINVOKE.new_OpalParamProtocol(), true) {
   }
 

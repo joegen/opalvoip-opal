@@ -100,6 +100,14 @@ public class OpalParamProtocol {
     return OPALJNI.OpalParamProtocol_mediaCryptoSuites_get(swigCPtr, this);
   }
 
+  public void setAllMediaCryptoSuites(String value) {
+    OPALJNI.OpalParamProtocol_allMediaCryptoSuites_set(swigCPtr, this, value);
+  }
+
+  public String getAllMediaCryptoSuites() {
+    return OPALJNI.OpalParamProtocol_allMediaCryptoSuites_get(swigCPtr, this);
+  }
+
   public OpalParamProtocol() {
     this(OPALJNI.new_OpalParamProtocol(), true);
   }

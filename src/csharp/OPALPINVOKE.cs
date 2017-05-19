@@ -634,6 +634,12 @@ class OPALPINVOKE {
   [global::System.Runtime.InteropServices.DllImport("OPAL", EntryPoint="CSharp_OpalParamProtocol_mediaCryptoSuites_get")]
   public static extern string OpalParamProtocol_mediaCryptoSuites_get(global::System.Runtime.InteropServices.HandleRef jarg1);
 
+  [global::System.Runtime.InteropServices.DllImport("OPAL", EntryPoint="CSharp_OpalParamProtocol_allMediaCryptoSuites_set")]
+  public static extern void OpalParamProtocol_allMediaCryptoSuites_set(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2);
+
+  [global::System.Runtime.InteropServices.DllImport("OPAL", EntryPoint="CSharp_OpalParamProtocol_allMediaCryptoSuites_get")]
+  public static extern string OpalParamProtocol_allMediaCryptoSuites_get(global::System.Runtime.InteropServices.HandleRef jarg1);
+
   [global::System.Runtime.InteropServices.DllImport("OPAL", EntryPoint="CSharp_new_OpalParamProtocol")]
   public static extern global::System.IntPtr new_OpalParamProtocol();
 

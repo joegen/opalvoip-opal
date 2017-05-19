@@ -2573,6 +2573,46 @@ SWIGEXPORT jstring JNICALL Java_org_opalvoip_opal_OPALJNI_OpalParamProtocol_1med
 }
 
 
+SWIGEXPORT void JNICALL Java_org_opalvoip_opal_OPALJNI_OpalParamProtocol_1allMediaCryptoSuites_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+  OpalParamProtocol *arg1 = (OpalParamProtocol *) 0 ;
+  char *arg2 = (char *) 0 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(OpalParamProtocol **)&jarg1; 
+  arg2 = 0;
+  if (jarg2) {
+    arg2 = (char *)jenv->GetStringUTFChars(jarg2, 0);
+    if (!arg2) return ;
+  }
+  {
+    if (arg2) {
+      arg1->m_allMediaCryptoSuites = (char const *) (new char[strlen((const char *)arg2)+1]);
+      strcpy((char *)arg1->m_allMediaCryptoSuites, (const char *)arg2);
+    } else {
+      arg1->m_allMediaCryptoSuites = 0;
+    }
+  }
+  if (arg2) jenv->ReleaseStringUTFChars(jarg2, (const char *)arg2);
+}
+
+
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_opal_OPALJNI_OpalParamProtocol_1allMediaCryptoSuites_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+  jstring jresult = 0 ;
+  OpalParamProtocol *arg1 = (OpalParamProtocol *) 0 ;
+  char *result = 0 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(OpalParamProtocol **)&jarg1; 
+  result = (char *) ((arg1)->m_allMediaCryptoSuites);
+  if (result) jresult = jenv->NewStringUTF((const char *)result);
+  return jresult;
+}
+
+
 SWIGEXPORT jlong JNICALL Java_org_opalvoip_opal_OPALJNI_new_1OpalParamProtocol(JNIEnv *jenv, jclass jcls) {
   jlong jresult = 0 ;
   OpalParamProtocol *result = 0 ;

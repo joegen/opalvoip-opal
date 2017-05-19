@@ -917,6 +917,9 @@ typedef struct OpalParamProtocol {
   const char * m_mediaCryptoSuites;   /**< A list of \n separated strings indicated enabled media
                                            crypto suites for this endpoint. Note, order of entries
                                            indicates priority. */
+  const char * m_allMediaCryptoSuites;/**< This is only provided as a return value, and lists all of the
+                                           crypto suites supported by this protocol in the form:
+                                              "name1=description1\nname2=description2\n" */
 } OpalParamProtocol;
 
 

@@ -158,6 +158,8 @@ public class OPALJNI {
   public final static native String OpalParamProtocol_defaultOptions_get(long jarg1, OpalParamProtocol jarg1_);
   public final static native void OpalParamProtocol_mediaCryptoSuites_set(long jarg1, OpalParamProtocol jarg1_, String jarg2);
   public final static native String OpalParamProtocol_mediaCryptoSuites_get(long jarg1, OpalParamProtocol jarg1_);
+  public final static native void OpalParamProtocol_allMediaCryptoSuites_set(long jarg1, OpalParamProtocol jarg1_, String jarg2);
+  public final static native String OpalParamProtocol_allMediaCryptoSuites_get(long jarg1, OpalParamProtocol jarg1_);
   public final static native long new_OpalParamProtocol();
   public final static native void delete_OpalParamProtocol(long jarg1);
   public final static native String OPAL_MWI_EVENT_PACKAGE_get();

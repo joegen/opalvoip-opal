@@ -2085,6 +2085,35 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_OpalParamProtocol_mediaCryptoSuites_get(voi
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_OpalParamProtocol_allMediaCryptoSuites_set(void * jarg1, char * jarg2) {
+  OpalParamProtocol *arg1 = (OpalParamProtocol *) 0 ;
+  char *arg2 = (char *) 0 ;
+  
+  arg1 = (OpalParamProtocol *)jarg1; 
+  arg2 = (char *)jarg2; 
+  {
+    if (arg2) {
+      arg1->m_allMediaCryptoSuites = (char const *) (new char[strlen((const char *)arg2)+1]);
+      strcpy((char *)arg1->m_allMediaCryptoSuites, (const char *)arg2);
+    } else {
+      arg1->m_allMediaCryptoSuites = 0;
+    }
+  }
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_OpalParamProtocol_allMediaCryptoSuites_get(void * jarg1) {
+  char * jresult ;
+  OpalParamProtocol *arg1 = (OpalParamProtocol *) 0 ;
+  char *result = 0 ;
+  
+  arg1 = (OpalParamProtocol *)jarg1; 
+  result = (char *) ((arg1)->m_allMediaCryptoSuites);
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
 SWIGEXPORT void * SWIGSTDCALL CSharp_new_OpalParamProtocol() {
   void * jresult ;
   OpalParamProtocol *result = 0 ;
