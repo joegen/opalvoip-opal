@@ -1731,11 +1731,11 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
   SET_MESSAGE_STRING(response, m_param.m_general.m_privateKey, GetSSLPrivateKeyFile());
   response->m_param.m_general.m_autoCreateCertificate = m_autoCreateCertificate ? 1 : 2;
 
-  if (!IsNullString(command.m_param.m_general.m_caFiles))
+  if (command.m_param.m_general.m_caFiles != NULL)
     SetSSLCertificateAuthorityFiles(command.m_param.m_general.m_caFiles);
-  if (!IsNullString(command.m_param.m_general.m_certificate))
+  if (command.m_param.m_general.m_certificate != NULL)
     SetSSLCertificateFile(command.m_param.m_general.m_certificate);
-  if (!IsNullString(command.m_param.m_general.m_privateKey))
+  if (command.m_param.m_general.m_privateKey != NULL)
     SetSSLPrivateKeyFile(command.m_param.m_general.m_privateKey);
   if (command.m_param.m_general.m_autoCreateCertificate > 0)
     SetSSLAutoCreateCertificate(command.m_param.m_general.m_autoCreateCertificate == 1);
