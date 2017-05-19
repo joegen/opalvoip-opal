@@ -1956,6 +1956,13 @@ void OpalManager_C::HandleSetProtocol(const OpalMessage & command, OpalMessageBu
   SET_MESSAGE_STRING(response, m_param.m_protocol.m_mediaCryptoSuites, strm);
   if (!IsNullString(command.m_param.m_protocol.m_mediaCryptoSuites))
     ep->SetMediaCryptoSuites(PString(command.m_param.m_protocol.m_mediaCryptoSuites).Lines());
+
+  PStringArray allMediaCryptoSutes = ep->GetAllMediaCryptoSuites();
+  strm.MakeEmpty();
+  for (PINDEX i = 0; i < allMediaCryptoSutes.GetSize(); ++i) {
+    OpalMediaCryptoSuite * cryptoSuite = OpalMediaCryptoSuiteFactory::CreateInstance(allMediaCryptoSutes[i]);
+    strm << cryptoSuite->GetFactoryName() << '=' << cryptoSuite->GetDescription() << 'n';
+  }
 }
 
 
