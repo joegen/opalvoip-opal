@@ -1750,6 +1750,9 @@ static void MergeIdentityURL(SIPURL & out, const SIPURL & in)
   if (in.GetHostName().Find(".invalid") == P_MAX_INDEX && PIPSocket::Address(out.GetHostName()).IsValid())
     out.SetHostName(in.GetHostName());
 
+  if (!out.GetPortSupplied() && in.GetPortSupplied())
+    out.SetPort(in.GetPort());
+
   out.SetParamVars(in.GetParamVars(), true);
 }
 
