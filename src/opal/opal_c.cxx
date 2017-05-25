@@ -616,11 +616,15 @@ bool OpalMediaDataCallbacks::OnReadMediaFrame(const OpalLocalConnection & connec
                                               const OpalMediaStream & mediaStream,
                                               RTP_DataFrame & frame)
 {
-  if (m_mediaDataHeader != OpalMediaDataWithHeader)
+  if (m_mediaDataHeader != OpalMediaDataWithHeader) {
+    PTRACE(2, "OnReadMediaFrame failed due to illegal OpalMediaDataType.");
     return false;
+  }
 
-  if (m_mediaReadData == NULL)
+  if (m_mediaReadData == NULL) {
+    PTRACE(2, "OnReadMediaFrame failed due to no call back set.");
     return false;
+  }
 
   int result = m_mediaReadData(connection.GetCall().GetToken(),
                                mediaStream.GetID(),
@@ -640,11 +644,15 @@ bool OpalMediaDataCallbacks::OnWriteMediaFrame(const OpalLocalConnection & conne
                                                const OpalMediaStream & mediaStream,
                                             RTP_DataFrame & frame)
 {
-  if (m_mediaDataHeader != OpalMediaDataWithHeader)
+  if (m_mediaDataHeader != OpalMediaDataWithHeader) {
+    PTRACE(2, "OnWriteMediaFrame failed due to illegal OpalMediaDataType.");
     return false;
+  }
 
-  if (m_mediaWriteData == NULL)
+  if (m_mediaWriteData == NULL) {
+    PTRACE(2, "OnWriteMediaFrame failed due to no call back set.");
     return false;
+  }
 
   int result = m_mediaWriteData(connection.GetCall().GetToken(),
                                 mediaStream.GetID(),
@@ -662,11 +670,15 @@ bool OpalMediaDataCallbacks::OnReadMediaData(const OpalLocalConnection & connect
                                           PINDEX size,
                                           PINDEX & length)
 {
-  if (m_mediaDataHeader != OpalMediaDataPayloadOnly)
+  if (m_mediaDataHeader != OpalMediaDataPayloadOnly) {
+    PTRACE(2, "OnReadMediaData failed due to illegal OpalMediaDataType.");
     return false;
+  }
 
-  if (m_mediaReadData == NULL)
+  if (m_mediaReadData == NULL) {
+    PTRACE(2, "OnReadMediaData failed due to no call back set.");
     return false;
+  }
 
   int result = m_mediaReadData(connection.GetCall().GetToken(),
                                mediaStream.GetID(),
@@ -688,11 +700,15 @@ bool OpalMediaDataCallbacks::OnWriteMediaData(const OpalLocalConnection & connec
                                            PINDEX length,
                                            PINDEX & written)
 {
-  if (m_mediaDataHeader != OpalMediaDataPayloadOnly)
+  if (m_mediaDataHeader != OpalMediaDataPayloadOnly) {
+    PTRACE(2, "OnWriteMediaData failed due to illegal OpalMediaDataType.");
     return false;
+  }
 
-  if (m_mediaWriteData == NULL)
+  if (m_mediaWriteData == NULL) {
+    PTRACE(2, "OnWriteMediaData failed due to no call back set.");
     return false;
+  }
 
   int result = m_mediaWriteData(connection.GetCall().GetToken(),
                                 mediaStream.GetID(),
