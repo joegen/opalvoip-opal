@@ -43,6 +43,7 @@
 #endif
 
 #include <ptlib/sound.h>
+#include <ptclib/pwavfile.h>
 #include <opal/call.h>
 #include <opal/manager.h>
 #include <opal/patch.h>
@@ -57,7 +58,7 @@
 
 OpalPCSSEndPoint::OpalPCSSEndPoint(OpalManager & mgr, const char * prefix)
   : OpalLocalEndPoint(mgr, prefix, false)
-  , m_localRingbackTone("")
+  , m_localRingbackTone("440+480:2.0-4.0") // US ringback tone
   , m_soundChannelPlayDevice(PSoundChannel::GetDefaultDevice(PSoundChannel::Player))
   , m_soundChannelRecordDevice(PSoundChannel::GetDefaultDevice(PSoundChannel::Recorder))
   , m_soundChannelOnHoldDevice(P_NULL_AUDIO_DEVICE)
@@ -323,36 +324,42 @@ PBoolean OpalPCSSEndPoint::OnShowUserInput(const OpalPCSSConnection &, const PSt
 
 bool OpalPCSSEndPoint::SetLocalRingbackTone(const PString & tone)
 {
-  if (PFile::Exists(tone))
+  if (tone.IsEmpty())
+    return false;
+
+#if P_WAVFILE
+  PWAVFile wavFile(tone, PFile::ReadOnly);
+  if (wavFile.IsOpen()) {
     m_localRingbackTone = tone;
-  else {
+    return true;
+  }
+#endif
+
 #if OPAL_LID
-    OpalLineInterfaceDevice::T35CountryCodes code = OpalLineInterfaceDevice::GetCountryCode(tone);
-    PString toneSpec = tone;
-    if (code != OpalLineInterfaceDevice::UnknownCountry) {
-      toneSpec = OpalLineInterfaceDevice::GetCountryInfo(code).m_tone[OpalLineInterfaceDevice::RingTone];
-      if (toneSpec.IsEmpty()) {
-        PTRACE(2, "Country code \"" << tone << "\" does not have a ringback tone specified");
-        return false;
-      }
+  OpalLineInterfaceDevice::T35CountryCodes code = OpalLineInterfaceDevice::GetCountryCode(tone);
+  if (code != OpalLineInterfaceDevice::UnknownCountry) {
+    PString toneSpec = OpalLineInterfaceDevice::GetCountryInfo(code).m_tone[OpalLineInterfaceDevice::RingTone];
+    if (toneSpec.IsEmpty()) {
+      PTRACE(2, "Country code \"" << tone << "\" does not have a ringback tone specified");
+      return false;
     }
 
     if (!PTones().Generate(toneSpec)) {
-      PTRACE(2, "Illegal country code or tone specification \"" << tone << '"');
+      PTRACE(2, "Country code \"" << tone << "\" had illegal tone specification \"" << toneSpec << '"');
       return false;
     }
 
     m_localRingbackTone = toneSpec;
-#else
-    if (!PTones().Generate(tone)) {
-      PTRACE(2, "Illegal tone specification \"" << tone << '"');
-      return false;
-    }
-
-    m_localRingbackTone = tone;
+    return true;
+  }
 #endif // OPAL_LID
+
+  if (!PTones().Generate(tone)) {
+    PTRACE(2, "Illegal tone specification \"" << tone << '"');
+    return false;
   }
 
+  m_localRingbackTone = tone;
   return true;
 }
 
