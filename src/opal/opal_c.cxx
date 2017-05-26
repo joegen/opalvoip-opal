@@ -58,7 +58,7 @@ class OpalManager_C;
 
 #define PTraceModule() "Opal C"
 
-static const char * const LocalPrefixes[] = {
+static PConstString const LocalPrefixes[] = {
   OPAL_PREFIX_PCSS,
   OPAL_PREFIX_GST,
   OPAL_PREFIX_POTS,
@@ -642,7 +642,7 @@ bool OpalMediaDataCallbacks::OnReadMediaFrame(const OpalLocalConnection & connec
 
 bool OpalMediaDataCallbacks::OnWriteMediaFrame(const OpalLocalConnection & connection,
                                                const OpalMediaStream & mediaStream,
-                                            RTP_DataFrame & frame)
+                                               RTP_DataFrame & frame)
 {
   if (m_mediaDataHeader != OpalMediaDataWithHeader) {
     PTRACE(2, "OnWriteMediaFrame failed due to illegal OpalMediaDataType.");
@@ -2221,10 +2221,15 @@ void OpalManager_C::HandleSetUpCall(const OpalMessage & command, OpalMessageBuff
   if (partyA.IsEmpty()) {
     for (PINDEX i = 0; i < PARRAYSIZE(LocalPrefixes); ++i) {
       OpalLocalEndPoint * ep = FindEndPointAs<OpalLocalEndPoint>(LocalPrefixes[i]);
-      if (ep != NULL)
-        partyA = LocalPrefixes[i];
+      if (ep != NULL) {
+        partyA = LocalPrefixes[i] + ':';
+        break;
+      }
     }
-    partyA += ':';
+    if (partyA.IsEmpty()) {
+        response.SetError("No local endpoint available");
+        return;
+    }
   }
 
   OpalConnection::StringOptions options;
