@@ -1742,6 +1742,7 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
   if (m_apiVersion < 34)
     return;
 
+#if P_SSL
   SET_MESSAGE_STRING(response, m_param.m_general.m_caFiles, GetSSLCertificateAuthorityFiles());
   SET_MESSAGE_STRING(response, m_param.m_general.m_certificate, GetSSLCertificateFile());
   SET_MESSAGE_STRING(response, m_param.m_general.m_privateKey, GetSSLPrivateKeyFile());
@@ -1755,6 +1756,7 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
     SetSSLPrivateKeyFile(command.m_param.m_general.m_privateKey);
   if (command.m_param.m_general.m_autoCreateCertificate > 0)
     SetSSLAutoCreateCertificate(command.m_param.m_general.m_autoCreateCertificate == 1);
+#endif
 }
 
 
