@@ -26,11 +26,6 @@
  *
  */
 
-//#ifdef __GNUG__
-//#pragma implementation
-//#pragma interface
-//#endif
-
 #include "main.h"
 
 #include "version.h"
@@ -92,17 +87,16 @@
 #include "present48.xpm"
 #include "busy16.xpm"
 #include "busy48.xpm"
-
-#define VIDEO_WINDOW_DRIVER P_SDL_VIDEO_DRIVER
-#define VIDEO_WINDOW_DEVICE P_SDL_VIDEO_PREFIX
-
-#else
-
-#define VIDEO_WINDOW_DRIVER P_MSWIN_VIDEO_DRIVER
-#define VIDEO_WINDOW_DEVICE P_MSWIN_VIDEO_PREFIX" STYLE=0x80C80000"  // WS_POPUP|WS_BORDER|WS_SYSMENU|WS_CAPTION
-
 #endif
 
+#if defined(_WIN32) && 0
+  #define VIDEO_WINDOW_DRIVER P_MSWIN_VIDEO_DRIVER
+  #define VIDEO_WINDOW_DEVICE P_MSWIN_VIDEO_PREFIX" STYLE=0x80C80000"  // WS_POPUP|WS_BORDER|WS_SYSMENU|WS_CAPTION
+#else
+  #include <ptclib/wxWinVidDev.h>
+  #define VIDEO_WINDOW_DRIVER P_WXWINDOWS_DEVICE_NAME
+  #define VIDEO_WINDOW_DEVICE P_WXWINDOWS_DEVICE_NAME
+#endif
 
 extern void InitXmlResource(); // From resource.cpp whichis compiled openphone.xrc
 
