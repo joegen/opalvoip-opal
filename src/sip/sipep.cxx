@@ -2271,10 +2271,11 @@ void SIPEndPoint::AdjustToRegistration(SIP_PDU & pdu, SIPConnection * connection
 
       if (contact.IsEmpty()) {
         SIPURLList listenerAddresses;
-        for (OpalListenerList::iterator it = m_listeners.begin(); it != m_listeners.end(); ++it)
-          listenerAddresses.push_back(SIPURL(user, it->GetLocalAddress(remoteAddress)));
+        OpalTransportAddressArray interfaces = GetInterfaceAddresses(transport);
+        for (PINDEX i = 0; i < interfaces.GetSize(); ++i)
+          listenerAddresses.push_back(SIPURL(user, interfaces[i]));
         contact = listenerAddresses.FindCompatible(localAddress PTRACE_PARAM(, "listening"));
-        PTRACE_IF(4, !contact.IsEmpty(), "Adjusted Contact to " << contact << " from listeners.");
+        PTRACE_IF(4, !contact.IsEmpty(), "Adjusted Contact to " << contact << " from listeners and local address " << localAddress);
       }
     }
 
