@@ -671,7 +671,7 @@ void OpalMediaTransport::RemoveReadNotifier(PObject * target, SubChannels subcha
       m_subchannels[subchannel].m_notifiers.RemoveTarget(target);
   }
   else {
-    for (vector<Transport>::iterator it = m_subchannels.begin(); it != m_subchannels.end(); ++it)
+    for (vector<ChannelInfo>::iterator it = m_subchannels.begin(); it != m_subchannels.end(); ++it)
       it->m_notifiers.RemoveTarget(target);
   }
 }
@@ -689,7 +689,7 @@ void OpalMediaTransport::SetRemoteBehindNAT()
 }
 
 
-OpalMediaTransport::Transport::Transport(OpalMediaTransport * owner, SubChannels subchannel, PChannel * chan)
+OpalMediaTransport::ChannelInfo::ChannelInfo(OpalMediaTransport * owner, SubChannels subchannel, PChannel * chan)
   : m_owner(owner)
   , m_subchannel(subchannel)
   , m_channel(chan)
@@ -699,7 +699,26 @@ OpalMediaTransport::Transport::Transport(OpalMediaTransport * owner, SubChannels
 }
 
 
-void OpalMediaTransport::Transport::ThreadMain()
+OpalMediaTransport::ChannelInfo::ChannelInfo(const ChannelInfo & other)
+  : m_owner(other.m_owner)
+  , m_subchannel(other.m_subchannel)
+  , m_channel(other.m_channel)
+  , m_thread(NULL)
+  , m_consecutiveUnavailableErrors(0)
+{
+}
+
+
+OpalMediaTransport::ChannelInfo & OpalMediaTransport::ChannelInfo::operator=(const ChannelInfo & other)
+{
+  m_owner = other.m_owner;
+  m_subchannel = other.m_subchannel;
+  m_channel = other.m_channel;
+  return *this;
+}
+
+
+void OpalMediaTransport::ChannelInfo::ThreadMain()
 {
   PTRACE(4, m_owner, *m_owner << m_subchannel << " media transport read thread starting");
 
@@ -761,7 +780,7 @@ void OpalMediaTransport::Transport::ThreadMain()
 }
 
 
-bool OpalMediaTransport::Transport::HandleUnavailableError()
+bool OpalMediaTransport::ChannelInfo::HandleUnavailableError()
 {
   if (m_timeForUnavailableErrors.HasExpired() && m_consecutiveUnavailableErrors < 10)
     m_consecutiveUnavailableErrors = 0;
@@ -786,7 +805,7 @@ void OpalMediaTransport::InternalClose()
 {
   P_INSTRUMENTED_LOCK_READ_ONLY(return);
 
-  for (vector<Transport>::iterator it = m_subchannels.begin(); it != m_subchannels.end(); ++it) {
+  for (vector<ChannelInfo>::iterator it = m_subchannels.begin(); it != m_subchannels.end(); ++it) {
     if (it->m_channel != NULL) {
       PChannel * base = it->m_channel->GetBaseReadChannel();
       if (base != NULL) {
@@ -814,7 +833,7 @@ void OpalMediaTransport::InternalRxData(SubChannels subchannel, const PBYTEArray
   if (!LockReadOnly(P_DEBUG_LOCATION))
     return;
 
-  Transport::NotifierList notifiers = m_subchannels[subchannel].m_notifiers;
+  ChannelInfo::NotifierList notifiers = m_subchannels[subchannel].m_notifiers;
   UnlockReadOnly(P_DEBUG_LOCATION);
 
   notifiers(*this, data);
@@ -841,8 +860,8 @@ void OpalMediaTransport::Start()
         threadName << '-' << (SubChannels)subchannel;
       threadName.Replace(" Session ", "-");
       threadName.Replace(" bundle", "-B");
-      m_subchannels[subchannel].m_thread = new PThreadObj<OpalMediaTransport::Transport>
-              (m_subchannels[subchannel], &OpalMediaTransport::Transport::ThreadMain, false, threadName, PThread::HighPriority);
+      m_subchannels[subchannel].m_thread = new PThreadObj<OpalMediaTransport::ChannelInfo>
+              (m_subchannels[subchannel], &OpalMediaTransport::ChannelInfo::ThreadMain, false, threadName, PThread::HighPriority);
       PTRACE_CONTEXT_ID_TO(m_subchannels[subchannel].m_thread);
     }
   }
@@ -857,12 +876,12 @@ void OpalMediaTransport::InternalStop()
   PTRACE(4, *this << "stopping " << m_subchannels.size() << " subchannels.");
   InternalClose();
 
-  for (vector<Transport>::iterator it = m_subchannels.begin(); it != m_subchannels.end(); ++it)
+  for (vector<ChannelInfo>::iterator it = m_subchannels.begin(); it != m_subchannels.end(); ++it)
     PThread::WaitAndDelete(it->m_thread);
 
   P_INSTRUMENTED_LOCK_READ_WRITE();
 
-  for (vector<Transport>::iterator it = m_subchannels.begin(); it != m_subchannels.end(); ++it)
+  for (vector<ChannelInfo>::iterator it = m_subchannels.begin(); it != m_subchannels.end(); ++it)
     delete it->m_channel;
   m_subchannels.clear();
 
@@ -1120,8 +1139,8 @@ bool OpalUDPMediaTransport::Open(OpalMediaSession & session,
             PUDPSocket * dataSocket = NULL;
             PUDPSocket * controlSocket = NULL;
             if (natMethod->CreateSocketPair(dataSocket, controlSocket, bindingIP, &session)) {
-              m_subchannels.push_back(Transport(this, e_Data, dataSocket));
-              m_subchannels.push_back(Transport(this, e_Control, controlSocket));
+              m_subchannels.push_back(ChannelInfo(this, e_Data, dataSocket));
+              m_subchannels.push_back(ChannelInfo(this, e_Control, controlSocket));
               PTRACE(4, session << natMethod->GetMethodName() << " created NAT RTP/RTCP socket pair.");
               break;
             }
@@ -1133,7 +1152,7 @@ bool OpalUDPMediaTransport::Open(OpalMediaSession & session,
           for (PINDEX i = 0; i < subchannelCount; ++i) {
             PUDPSocket * socket = NULL;
             if (natMethod->CreateSocket(socket, bindingIP))
-              m_subchannels.push_back(Transport(this, (SubChannels)i, socket));
+              m_subchannels.push_back(ChannelInfo(this, (SubChannels)i, socket));
             else {
               delete socket;
               PTRACE(2, session << natMethod->GetMethodName()
@@ -1169,7 +1188,7 @@ bool OpalUDPMediaTransport::Open(OpalMediaSession & session,
       return false; // Used up all the available ports!
     }
     for (PINDEX i = 0; i < extraSockets; ++i)
-      m_subchannels.push_back(Transport(this, (SubChannels)m_subchannels.size(), sockets[i]));
+      m_subchannels.push_back(ChannelInfo(this, (SubChannels)m_subchannels.size(), sockets[i]));
   }
 
   m_socketInfo.resize(m_subchannels.size());

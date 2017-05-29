@@ -226,7 +226,7 @@ bool OpalDTLSMediaTransport::SetRemoteFingerprint(const PSSLCertificateFingerpri
     return false;
 
   PTRACE(2, "Remote fingerprint changed, renegotiating DTLS");
-  for (vector<Transport>::iterator it = m_subchannels.begin(); it != m_subchannels.end(); ++it)
+  for (vector<ChannelInfo>::iterator it = m_subchannels.begin(); it != m_subchannels.end(); ++it)
     PerformHandshake(it->m_channel);
   return true;
 }

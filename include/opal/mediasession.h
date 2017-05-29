@@ -499,13 +499,16 @@ class OpalMediaTransport : public PSafeObject, public OpalMediaTransportChannelT
     PTimer m_ccTimer;
     PDECLARE_NOTIFIER(PTimer, OpalMediaTransport, ProcessCongestionControl);
 
-    struct Transport
+    struct ChannelInfo
     {
-      Transport(
+      ChannelInfo(
         OpalMediaTransport * owner = NULL,
         SubChannels subchannel = e_AllSubChannels,
         PChannel * channel = NULL
       );
+      ChannelInfo(const ChannelInfo & other);
+      ChannelInfo & operator=(const ChannelInfo & other);
+
       void ThreadMain();
       bool HandleUnavailableError();
 
@@ -521,8 +524,8 @@ class OpalMediaTransport : public PSafeObject, public OpalMediaTransportChannelT
 
       PTRACE_THROTTLE(m_throttleReadPacket,4,60000);
     };
-    friend struct Transport;
-    vector<Transport> m_subchannels;
+    friend struct ChannelInfo;
+    vector<ChannelInfo> m_subchannels;
     virtual void InternalOnStart(SubChannels subchannel);
     virtual void InternalRxData(SubChannels subchannel, const PBYTEArray & data);
 };
