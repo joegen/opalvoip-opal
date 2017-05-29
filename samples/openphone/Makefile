@@ -23,7 +23,8 @@
 #
 
 PROG		:= openphone
-SOURCES		:= main.cxx openphone.cxx
+RESOURCES       := openphone.cxx
+SOURCES		:= main.cxx $(RESOURCES)
 VERSION_FILE    := version.h
 USING_WX_WIDGETS:=yes
 
@@ -47,16 +48,16 @@ ifneq (,$(DEBUG_BUILD))
   endif
 endif
 
-clean ::
-	rm openphone.cxx
-
 CPPFLAGS += $(shell $(WX_CONFIG) --cppflags)
 CXXFLAGS += $(shell $(WX_CONFIG) --cxxflags)
 CFLAGS   += $(shell $(WX_CONFIG) --cflags)
 LIBS     += $(shell $(WX_CONFIG) --libs)
 
 
-openphone.cxx : openphone.xrc
-	$(WXRC) openphone.xrc -c -o openphone.cxx
+$(RESOURCES) : openphone.xrc
+	$(WXRC) openphone.xrc -c -o $(RESOURCES)
+
+clean ::
+	if [ -e $(RESOURCES) ]; then rm $(RESOURCES); fi
 
 

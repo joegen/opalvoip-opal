@@ -23,7 +23,8 @@
 #
 
 PROG		:= opalshark
-SOURCES		:= main.cxx opalshark.cxx
+RESOURCES       := opalshark.cxx
+SOURCES		:= main.cxx $(RESOURCES)
 VERSION_FILE    := version.h
 USING_WX_WIDGETS:=yes
 
@@ -39,7 +40,9 @@ else
 endif
 
 
-opalshark.cxx : opalshark.xrc
-	$(WXRC) opalshark.xrc -c -o opalshark.cxx
+$(RESOURCES) : opalshark.xrc
+	$(WXRC) opalshark.xrc -c -o $(RESOURCES)
 
+clean ::
+	if [ -e $(RESOURCES) ]; then rm $(RESOURCES); fi
 
