@@ -70,7 +70,7 @@ VPATH = ./ \
 LIB_NAME = SKP_SILK_SDK
 TARGET = $(OBJDIR)$(LIBPREFIX)$(LIB_NAME)$(LIBSUFFIX)
 
-SRCS_C = $(wildcard src/*.c)
+SRCS_C = $(sort $(wildcard src/*.c))
 
 OBJS := $(patsubst src/%,$(OBJDIR)%,$(patsubst %.c,%$(OBJSUFFIX),$(SRCS_C)))
 
