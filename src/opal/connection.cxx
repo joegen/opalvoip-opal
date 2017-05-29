@@ -1116,7 +1116,7 @@ void OpalConnection::DisableRecording()
 void OpalConnection::OnRecordAudio(RTP_DataFrame & frame, P_INT_PTR param)
 {
   const OpalMediaPatch * patch = (const OpalMediaPatch *)param;
-  std::auto_ptr<RTP_DataFrame> copyFrame(new RTP_DataFrame(frame.GetPointer(), frame.GetSize()));
+  std::auto_ptr<RTP_DataFrame> copyFrame(new RTP_DataFrame(frame.GetPointer(), frame.GetPacketSize()));
   GetEndPoint().GetManager().QueueDecoupledEvent(new PSafeWorkArg2<OpalConnection, PString, std::auto_ptr<RTP_DataFrame> >(
                                        this, MakeRecordingKey(*patch), copyFrame, &OpalConnection::InternalOnRecordAudio));
 }
@@ -1133,7 +1133,7 @@ void OpalConnection::InternalOnRecordAudio(PString key, std::auto_ptr<RTP_DataFr
 void OpalConnection::OnRecordVideo(RTP_DataFrame & frame, P_INT_PTR param)
 {
   const OpalMediaPatch * patch = (const OpalMediaPatch *)param;
-  std::auto_ptr<RTP_DataFrame> copyFrame(new RTP_DataFrame(frame.GetPointer(), frame.GetSize()));
+  std::auto_ptr<RTP_DataFrame> copyFrame(new RTP_DataFrame(frame.GetPointer(), frame.GetPacketSize()));
   GetEndPoint().GetManager().QueueDecoupledEvent(new PSafeWorkArg2<OpalConnection, PString, std::auto_ptr<RTP_DataFrame> >(
                                        this, MakeRecordingKey(*patch), copyFrame, &OpalConnection::InternalOnRecordVideo));
 }
