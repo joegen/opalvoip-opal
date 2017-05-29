@@ -208,8 +208,8 @@ int InitialiseOPAL()
   //command.m_param.m_general.m_audioRecordDevice = "Camera Microphone (2- Logitech";
   command.m_param.m_general.m_autoRxMedia = command.m_param.m_general.m_autoTxMedia = "audio";
 #ifdef STUN_SERVER
-  command.m_param.m_general.m_natMethod = "H46019\nSTUN";
-  command.m_param.m_general.m_natServer = "\n"STUN_SERVER;
+  command.m_param.m_general.m_natMethod = "STUN";
+  command.m_param.m_general.m_natServer = STUN_SERVER;
 #endif
   command.m_param.m_general.m_mediaMask = "RFC4175*";
 
