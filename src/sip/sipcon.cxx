@@ -2208,6 +2208,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   m_dialog.Update(request);
   if (!m_dialog.IsEstablished()) {
     PTRACE(2, "Illegal fields in INVITE, cannot establish dialog, aborting call.");
+    m_releaseMethod = ReleaseWithResponse;
     Release(EndedByIllegalAddress);
     return;
   }
