@@ -573,7 +573,7 @@ class OpalCall : public PSafeObject
     /** Stop a recording.
         Returns true if the call does exists, an active call is not indicated.
       */
-    void StopRecording();
+    bool StopRecording();
 
     /** Call back on recording started.
       */

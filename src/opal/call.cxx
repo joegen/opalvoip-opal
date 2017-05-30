@@ -865,11 +865,11 @@ bool OpalCall::IsRecording() const
 }
 
 
-void OpalCall::StopRecording()
+bool OpalCall::StopRecording()
 {
   PSafeLockReadWrite lock(*this);
   if (!lock.IsLocked() || m_recordManager == NULL)
-    return;
+    return false;
 
   // tell each connection to stop sending data
   PSafePtr<OpalConnection> connection;
@@ -879,6 +879,7 @@ void OpalCall::StopRecording()
   m_recordManager->Close();
   delete m_recordManager;
   m_recordManager = NULL;
+  return true;
 }
 
 

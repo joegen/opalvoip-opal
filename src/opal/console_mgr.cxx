@@ -2863,7 +2863,7 @@ bool OpalManagerCLI::Initialise(PArgList & args, bool verbose, const PString & d
 #if PTRACING
   m_cli->SetCommand("trace", PCREATE_NOTIFIER(CmdTrace),
                     "Set trace level (1..6) and filename",
-                    "[ --options ] <n> [ <filename> ]",
+                    "[ --option <opt> ] <n> [ <filename> ]",
                     "O-option: Specify trace option(s),\r" PTRACE_ARGLIST_OPT_HELP);
 #endif
 
@@ -2887,7 +2887,7 @@ bool OpalManagerCLI::Initialise(PArgList & args, bool verbose, const PString & d
                     "Set video codec for active call", "[ --call ] <codec>", "c-call: Token for call to change");
   m_cli->SetCommand("video default", PCREATE_NOTIFIER(CmdVideoDefault),
                     "Set default video parameters for active call",
-                    "[ --size ] [ --frame-rate ] [ --bit-rate ] [ --tsto ] [ <codec> ... ]",
+                    "[ <options> ] [ <codec> ... ]",
                     "s-size:         Desired transmit resolution\n"
                     "m-max-size:     Maximum receive resolution\n"
                     "f-frame-rate:   Desired transmit frame rate (fps)\n"
@@ -2896,7 +2896,7 @@ bool OpalManagerCLI::Initialise(PArgList & args, bool verbose, const PString & d
                     "t-tsto:         Desired transmit temporal/spatial trade off (1=quality 31=speed)\n");
   m_cli->SetCommand("video transmit", PCREATE_NOTIFIER(CmdVideoTransmit),
                     "Set video transmit parameters for active call",
-                    "[ --call ] [ --size ] [ --frame-rate ] [ --bit-rate ] [ --tsto ]",
+                    "[ <options> ]",
                     "c-call:       Token for call to change\n"
                     "s-size:       Transmit resolution\n"
                     "f-frame-rate: Transmit frame rate (fps)\n"
@@ -2904,16 +2904,32 @@ bool OpalManagerCLI::Initialise(PArgList & args, bool verbose, const PString & d
                     "t-tsto:       Transmit temporal/spatial trade off (1=quality 31=speed)\n");
   m_cli->SetCommand("video receive", PCREATE_NOTIFIER(CmdVideoReceive),
                     "Request video receive parameters for active call",
-                    "[ --call ] [ --bit-rate ] [ --tsto ]",
+                    "[ <options> ]",
                     "c-call:       Token for call to change\n"
                     "b-bit-rate:   Requested receive target bit rate (kbps)\n"
                     "t-tsto:       Requested receive temporal/spatial trade off (1=quality 31=speed)\n"
                     "i-intra.      Request Intra-Frame (key frame)\n");
   m_cli->SetCommand("video presentation", PCREATE_NOTIFIER(CmdPresentationToken),
-                    "Request/release presentation token for active call", "[ --call ] [ request | release ]",
+                    "Request/release presentation token for active call",
+                    "[ --call ] [ request | release ]",
                     "c-call: Token for call to change");
 #endif // OPAL_VIDEO
 
+
+  m_cli->SetCommand("record", PCREATE_NOTIFIER(CmdRecord), "Record call to file or cease recording",
+                    " [ <options> ] { <file> | \"off\" }",
+                    "c-call:       Token for call to record.\n"
+                    "S-stereo.     Record receved audio in left channel and transmitted audio in right channel\n"
+#if OPAL_VIDEO
+                    "m-mode: Video composition mode, one of\r"
+                      "Letterbox  - Side by side with black bars top and bottom.\r"
+                      "SideBySide - Side by side, scaled to fit resolution.\r"
+                      "Pillarbox  - One on top of the other, with black bars down the sides.\r"
+                      "Stacked    - One on top of the other, scaled to fit resolution.\n"
+                    "s-size:       Video composition resolution\n"
+                    "f-frame-rate: Video composition frame rate (fps)\n"
+#endif
+  );
 
   m_cli->SetCommand("audio vad", PCREATE_NOTIFIER(CmdSilenceDetect),
                     "Voice Activity Detection (aka Silence Detection)", "\"on\" | \"adaptive\" | <level>");
@@ -3505,6 +3521,55 @@ void OpalManagerCLI::CmdPresentationToken(PCLI::Arguments & args, P_INT_PTR)
   }
 }
 #endif // OPAL_VIDEO
+
+
+void OpalManagerCLI::CmdRecord(PCLI::Arguments & args, P_INT_PTR)
+{
+  if (args.GetCount() == 0) {
+    args.WriteUsage();
+    return;
+  }
+
+  PSafePtr<OpalCall> call;
+  if (!GetCallFromArgs(args, call))
+    return;
+
+  if (args[0] *= "off") {
+    if (call->StopRecording())
+      args.WriteError() << "Recording stopped." << endl;
+    else
+      args.WriteError() << "Not recording." << endl;
+    return;
+  }
+
+  OpalRecordManager::Options options;
+  options.m_stereo = args.HasOption("stereo");
+#if OPAL_VIDEO
+  PCaselessString mode = args.GetOptionString("mode");
+  if (mode == "Letterbox")
+    options.m_videoMixing = OpalRecordManager::eSideBySideLetterbox;
+  else if (mode == "SideBySide")
+    options.m_videoMixing = OpalRecordManager::eSideBySideScaled;
+  else if (mode == "Pillarbox")
+    options.m_videoMixing = OpalRecordManager::eStackedPillarbox;
+  else if (mode == "Stacked")
+    options.m_videoMixing = OpalRecordManager::eStackedScaled;
+  else if (!mode.IsEmpty()) {
+    args.WriteError() << "Unknown video mode, \"" << mode << '"' << endl;
+    return;
+  }
+
+  if (GetResolutionFromArgs(args, "size", options.m_videoWidth, options.m_videoHeight, " for recording") < 0)
+    return;
+  if (GetValueFromArgs(args, "rate", options.m_videoRate, 1U, 30U, " for recording") < 0)
+    return;
+#endif
+
+  if (call->StartRecording(args[0], options))
+    args.GetContext() << "Recording call to " << args[0] << endl;
+  else
+    args.WriteError() << "Could not start recording to \"" << args[0] << '"' << endl;
+}
 
 
 void OpalManagerCLI::CmdSilenceDetect(PCLI::Arguments & args, P_INT_PTR)
