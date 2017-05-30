@@ -2916,6 +2916,7 @@ bool OpalManagerCLI::Initialise(PArgList & args, bool verbose, const PString & d
 #endif // OPAL_VIDEO
 
 
+#if OPAL_HAS_MIXER
   m_cli->SetCommand("record", PCREATE_NOTIFIER(CmdRecord), "Record call to file or cease recording",
                     " [ <options> ] { <file> | \"off\" }",
                     "c-call:       Token for call to record.\n"
@@ -2930,6 +2931,7 @@ bool OpalManagerCLI::Initialise(PArgList & args, bool verbose, const PString & d
                     "f-frame-rate: Video composition frame rate (fps)\n"
 #endif
   );
+#endif // OPAL_HAS_MIXER
 
   m_cli->SetCommand("audio vad", PCREATE_NOTIFIER(CmdSilenceDetect),
                     "Voice Activity Detection (aka Silence Detection)", "\"on\" | \"adaptive\" | <level>");
@@ -3523,6 +3525,7 @@ void OpalManagerCLI::CmdPresentationToken(PCLI::Arguments & args, P_INT_PTR)
 #endif // OPAL_VIDEO
 
 
+#if OPAL_HAS_MIXER
 void OpalManagerCLI::CmdRecord(PCLI::Arguments & args, P_INT_PTR)
 {
   if (args.GetCount() == 0) {
@@ -3570,6 +3573,7 @@ void OpalManagerCLI::CmdRecord(PCLI::Arguments & args, P_INT_PTR)
   else
     args.WriteError() << "Could not start recording to \"" << args[0] << '"' << endl;
 }
+#endif // OPAL_HAS_MIXER
 
 
 void OpalManagerCLI::CmdSilenceDetect(PCLI::Arguments & args, P_INT_PTR)
