@@ -2808,6 +2808,9 @@ PString OpalManagerCLI::GetArgumentSpec() const
 #if P_CURSES
               "-tui. Enable text user interface.\n"
 #endif
+              "-page: Enable text output page every N lines,\r"
+              "-1 (default) indicates automatic determine terminal size.\r"
+              "0 indicates disable paging and output all text.\n"
               , spec.Find("V-version"));
   return spec;
 }
@@ -2834,19 +2837,24 @@ bool OpalManagerCLI::Initialise(PArgList & args, bool verbose, const PString & d
     if (m_cli == NULL && args.HasOption("tui")) {
       PCLICurses * cli = CreateCLICurses();
       if (cli != NULL) {
-        PCLICurses::Window * mainWindow = cli->GetWindow(0);
-        if (mainWindow == NULL) {
-          *LockedOutput() << "Could not create text user interface, probably redirected I/O" << endl;
-          return false;
-        }
-        m_outputStream = mainWindow;
-        m_cli = cli;
+        if (cli->GetWindowCount() > 0)
+          m_cli = cli;
+        else
+          *LockedOutput() << "Could not create text user interface, probably redirected I/O, using normal CLI" << endl;
       }
     }
 #endif // P_CURSES
 
     if (m_cli == NULL && (m_cli = CreateCLIStandard()) == NULL)
       return false;
+  }
+
+  m_cli->SetPagerLines(args.GetOptionAs("page", -1));
+
+  {
+    PCLI::Context * context = m_cli->StartForeground();
+    if (context != NULL)
+      m_outputStream = context;
   }
 
   m_cli->SetPrompt(args.GetCommandName() + "> ");
