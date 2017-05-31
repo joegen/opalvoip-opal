@@ -693,7 +693,7 @@ void MyPlayer::Discover()
   m_play->Enable(enab);
   m_step->Enable(enab);
   m_analyse->Enable(enab);
-  m_playToPacket->SetMax(m_packetCount);
+  m_playToPacket->SetRange(1, m_packetCount);
   m_playToPacket->SetValue(m_packetCount);
 }
 
