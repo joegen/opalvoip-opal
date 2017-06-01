@@ -715,7 +715,6 @@ void OpalMediaPatch::Main()
   bool asynchronous = OnStartMediaPatch();
   PAdaptiveDelay asynchPacing;
   PThread::Times lastThreadTimes;
-  PSimpleTimer cpuCheck;
   const unsigned CheckCPUTimeMS =
 #if P_CONFIG_FILE
                                   PConfig(PConfig::Environment).GetInteger("OPAL_MEDIA_PATCH_CPU_CHECK",
@@ -723,10 +722,8 @@ void OpalMediaPatch::Main()
                                   (
 #endif
                                    2000);
-  static const unsigned ThresholdPercent = 90;
-#if PTRACING
-  unsigned cpuCheckCount = 0;
-#endif
+  static const int ThresholdPercent = 90;
+  PTRACE_THROTTLE(ThrottleCPU, 3, 30000, 5);
 
 
   /* Note the RTP frame is outside loop so that a) it is more efficient
@@ -767,20 +764,13 @@ void OpalMediaPatch::Main()
        us, want to clear them as quickly as possible out of the UDP OS buffers
        or we overflow and lose some. Best compromise is to every X ms, sleep
        for X/10 ms so can not use more than about 90% of CPU. */
-    if (cpuCheck.HasExpired()) {
-      cpuCheck = CheckCPUTimeMS;
-
-      PThread::Times threadTimes;
-      if (PThread::Current()->GetTimes(threadTimes)) {
-        PThread::Times delta = threadTimes - lastThreadTimes;
-        lastThreadTimes = threadTimes;
-        PTRACE(cpuCheckCount++ % 30 == 0 ? 3 : 5, "CPU for " << *this << " since start is " << threadTimes
-               << " last " << CheckCPUTimeMS << "ms is " << delta);
-        if ((delta.m_user + delta.m_kernel) > delta.m_real*ThresholdPercent/100) {
-          PTRACE(2, "Greater than 90% CPU usage for " << *this);
-          PThread::Sleep(CheckCPUTimeMS*(100-ThresholdPercent)/100);
-        }
-        lastThreadTimes = threadTimes;
+    int percentage = PThread::GetPercentageCPU(lastThreadTimes, CheckCPUTimeMS);
+    if (percentage >= 0) {
+      if (percentage < ThresholdPercent)
+        PTRACE(ThrottleCPU, "CPU for " << *this << " since start is " << lastThreadTimes);
+      else {
+        PTRACE(2, "Greater than " << ThresholdPercent << "% CPU usage for " << *this);
+        PThread::Sleep(CheckCPUTimeMS*(100-ThresholdPercent)/100);
       }
     }
   }
