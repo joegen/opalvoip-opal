@@ -1062,7 +1062,7 @@ void SIPConnection::WriteINVITE(OpalTransport & transport, bool & succeeded)
   SIPURL myAddress = m_stringOptions(OPAL_OPT_CALLING_PARTY_URL);
   if (myAddress.IsEmpty()) {
     if (GetLocalPartyName() == GetEndPoint().GetDefaultLocalPartyName())
-      myAddress = GetEndPoint().GetDefaultLocalURL(transport);
+      myAddress = GetEndPoint().GetDefaultLocalURL(transport, m_dialog.GetRequestURI());
     else {
       myAddress = GetLocalPartyName();
       myAddress.SetDisplayName(GetDisplayName());

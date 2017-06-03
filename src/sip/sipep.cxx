@@ -2127,7 +2127,7 @@ bool SIPEndPoint::GetAuthentication(const PString & realm, PString & authId, PSt
 }
 
 
-SIPURL SIPEndPoint::GetDefaultLocalURL(const OpalTransport & transport)
+SIPURL SIPEndPoint::GetDefaultLocalURL(const OpalTransport & transport, const SIPURL & remoteAddress)
 {
   OpalTransportAddress localAddress;
 
@@ -2143,14 +2143,18 @@ SIPURL SIPEndPoint::GetDefaultLocalURL(const OpalTransport & transport)
     localAddress = OpalTransportAddress(myAddress, GetDefaultSignalPort(), transport.GetProtoPrefix());
   }
 
+  PString scheme = remoteAddress.GetScheme();
+  if (scheme == "tel")
+    scheme.MakeEmpty();
+
   SIPURL localURL;
 
   PString defPartyName(GetDefaultLocalPartyName());
   PString user, host;
   if (!defPartyName.Split('@', user, host)) 
-    localURL = SIPURL(defPartyName, localAddress);
+    localURL = SIPURL(defPartyName, localAddress, 0, scheme);
   else {
-    localURL = SIPURL(user, localAddress);   // set transport from address
+    localURL = SIPURL(user, localAddress, 0, scheme);   // set transport from address
     localURL.SetHostName(host);
   }
 
@@ -2180,20 +2184,26 @@ void SIPEndPoint::AdjustToRegistration(SIP_PDU & pdu, SIPConnection * connection
   SIPURL from(mime.GetFrom());
   SIPURL to(mime.GetTo());
 
-  PString user, domain;
+  PString user, domain, scheme;
   if (isMethod) {
     user   = from.GetUserName();
     domain = to.GetHostName();
+    scheme = to.GetScheme();
   }
   else {
     user   = to.GetUserName();
     domain = from.GetHostName();
+    scheme = from.GetScheme();
     if (connection != NULL && to.GetDisplayName() != connection->GetDisplayName()) {
       to.SetDisplayName(connection->GetDisplayName());
       to.Sanitise(SIPURL::ToURI);
       mime.SetTo(to);
     }
   }
+
+  // A "tel" scheme just uses default for transport type
+  if (scheme == "tel")
+    scheme.MakeEmpty();
 
   const SIPRegisterHandler * registrar = NULL;
   PSafePtr<SIPHandler> handler;
@@ -2273,14 +2283,14 @@ void SIPEndPoint::AdjustToRegistration(SIP_PDU & pdu, SIPConnection * connection
         SIPURLList listenerAddresses;
         OpalTransportAddressArray interfaces = GetInterfaceAddresses(transport);
         for (PINDEX i = 0; i < interfaces.GetSize(); ++i)
-          listenerAddresses.push_back(SIPURL(user, interfaces[i]));
+          listenerAddresses.push_back(SIPURL(user, interfaces[i], 0, scheme));
         contact = listenerAddresses.FindCompatible(localAddress PTRACE_PARAM(, "listening"));
         PTRACE_IF(4, !contact.IsEmpty(), "Adjusted Contact to " << contact << " from listeners and local address " << localAddress);
       }
     }
 
     if (contact.IsEmpty()) {
-      contact = SIPURL(user, m_listeners[0].GetLocalAddress(remoteAddress));
+      contact = SIPURL(user, m_listeners[0].GetLocalAddress(remoteAddress), 0, scheme);
       PTRACE(4, "Adjusted Contact to " << contact << " from first listener.");
     }
 

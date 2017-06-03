@@ -947,7 +947,7 @@ class SIPEndPoint : public OpalSDPEndPoint
     
     /**Return the default Contact URL.
      */
-    virtual SIPURL GetDefaultLocalURL(const OpalTransport & transport);
+    virtual SIPURL GetDefaultLocalURL(const OpalTransport & transport, const SIPURL & remoteAddress);
     
     /**Adjust the outgoing PDU to registered information.
        Various header fields of the PDU must be adjusted to agree with values
