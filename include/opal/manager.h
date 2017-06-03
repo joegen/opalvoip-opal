@@ -1514,6 +1514,10 @@ class OpalManager : public PObject
     /**Set flag to auto-create a self signed root certificate and private key.
      */
     void SetSSLAutoCreateCertificate(bool yes) { m_autoCreateCertificate = yes; }
+
+    /**Get flag to auto-create a self signed root certificate and private key.
+     */
+    bool GetSSLAutoCreateCertificate() const { return m_autoCreateCertificate; }
 #endif
 
     /**Determine if the address is "local", ie does not need any address

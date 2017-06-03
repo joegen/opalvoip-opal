@@ -537,6 +537,9 @@ class OpalManagerCLI : public OpalConsoleManager
     PCLICurses * CreateCLICurses();
 #endif
 
+#if OPAL_PTLIB_SSL
+    PDECLARE_NOTIFIER(PCLI::Arguments, OpalManagerCLI, CmdSSL);
+#endif
 #if P_NAT
     PDECLARE_NOTIFIER(PCLI::Arguments, OpalManagerCLI, CmdNatList);
     PDECLARE_NOTIFIER(PCLI::Arguments, OpalManagerCLI, CmdNatAddress);
