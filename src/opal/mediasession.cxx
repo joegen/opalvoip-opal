@@ -775,7 +775,13 @@ void OpalMediaTransport::ChannelInfo::ThreadMain()
     }
   }
 
-  m_owner->InternalRxData(m_subchannel, PBYTEArray());
+  // Send and empty packet to consumer to indicate transport has closed.
+  if (m_owner->LockReadOnly(P_DEBUG_LOCATION)) {
+    ChannelInfo::NotifierList notifiers = m_notifiers;
+    m_owner->UnlockReadOnly(P_DEBUG_LOCATION);
+    notifiers(*m_owner, PBYTEArray());
+  }
+
   PTRACE(4, m_owner, *m_owner << m_subchannel << " media transport read thread ended");
 }
 
@@ -830,6 +836,10 @@ void OpalMediaTransport::InternalOnStart(SubChannels)
 
 void OpalMediaTransport::InternalRxData(SubChannels subchannel, const PBYTEArray & data)
 {
+  // An empty packet indicates transport was closed, so don't send it here.
+  if (data.IsEmpty())
+    return;
+
   if (!LockReadOnly(P_DEBUG_LOCATION))
     return;
 
