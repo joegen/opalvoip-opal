@@ -106,6 +106,14 @@ use RFC4488 ("Refer-Sub" header) at all, in the REFER request. Default false.
 */
 #define OPAL_OPT_UNSECURE_SRTP "Unsecure-SRTP"
 
+/**Offer/accept DTLS.
+   Unlike SDES, this is more "modern" and is independent of requiring a secure
+   signalling channel. However, it is not as widely supported.
+
+   Defaults to false.
+*/
+#define OPAL_OPT_ENABLE_DTLS "Enable-DTLS"
+
 
 #define SIP_HEADER_PREFIX      "SIP-Header:"
 #define SIP_HEADER_REPLACES    SIP_HEADER_PREFIX"Replaces"

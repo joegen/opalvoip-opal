@@ -1795,6 +1795,8 @@ OpalMediaCryptoSuite::KeyExchangeModes SIPConnection::GetMediaCryptoKeyExchangeM
   if (m_stringOptions.GetBoolean(OPAL_OPT_UNSECURE_SRTP) ||
               m_dialog.GetRemoteTransportAddress(m_dnsEntry).GetProtoPrefix() == OpalTransportAddress::TlsPrefix())
     modes |= OpalMediaCryptoSuite::e_SecureSignalling;
+  if (m_stringOptions.GetBoolean(OPAL_OPT_ENABLE_DTLS))
+    modes |= OpalMediaCryptoSuite::e_InBandKeyEchange;
   return modes;
 #else
   return OpalMediaCryptoSuite::e_AllowClear;

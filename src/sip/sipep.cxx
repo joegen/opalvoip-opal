@@ -620,6 +620,7 @@ PStringList SIPEndPoint::GetAvailableStringOptions() const
     OPAL_OPT_INITIAL_OFFER,
     OPAL_OPT_ALLOW_EARLY_REPLACE,
     OPAL_OPT_EXTERNAL_SDP,
+    OPAL_OPT_ENABLE_DTLS,
     OPAL_OPT_UNSECURE_SRTP
   };
 
