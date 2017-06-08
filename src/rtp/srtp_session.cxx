@@ -257,8 +257,6 @@ class OpalSRTPCryptoSuite_AES_CM_128_HMAC_SHA1_80 : public OpalSRTPCryptoSuite
 #if OPAL_H235_6 || OPAL_H235_8
     virtual const char * GetOID() const { return "0.0.8.235.0.4.91"; }
 #endif
-    virtual PINDEX GetCipherKeyBits() const { return 128; }
-    virtual PINDEX GetAuthSaltBits() const { return 112; }
 
     virtual void SetCryptoPolicy(struct crypto_policy_t & policy) const { crypto_policy_set_aes_cm_128_hmac_sha1_80(&policy); }
 };
@@ -277,8 +275,6 @@ class OpalSRTPCryptoSuite_AES_CM_128_HMAC_SHA1_32 : public OpalSRTPCryptoSuite
 #if OPAL_H235_6 || OPAL_H235_8
     virtual const char * GetOID() const { return "0.0.8.235.0.4.92"; }
 #endif
-    virtual PINDEX GetCipherKeyBits() const { return 128; }
-    virtual PINDEX GetAuthSaltBits() const { return 32; }
 
     virtual void SetCryptoPolicy(struct crypto_policy_t & policy) const { crypto_policy_set_aes_cm_128_hmac_sha1_32(&policy); }
 };
@@ -329,6 +325,18 @@ bool OpalSRTPCryptoSuite::ChangeSessionType(PCaselessString & mediaSession, KeyE
   }
 
   return false;
+}
+
+
+PINDEX OpalSRTPCryptoSuite::GetCipherKeyBits() const
+{
+  return 128;
+}
+
+
+PINDEX OpalSRTPCryptoSuite::GetAuthSaltBits() const
+{
+  return 112;
 }
 
 
