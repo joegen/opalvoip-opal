@@ -250,9 +250,8 @@ class OpalVideoTranscoder : public OpalTranscoder
     bool   m_frozenTillIFrame;
     bool   m_lastFrameWasIFrame;
 
-    RTP_Timestamp m_frameDropPeriod;
     unsigned      m_frameDropRate;
-    unsigned      m_frameDropBits;
+    int           m_frameDropBits;
     RTP_Timestamp m_lastTimestamp;
     unsigned      m_framesDropped;
 

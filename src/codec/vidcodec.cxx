@@ -125,7 +125,6 @@ OpalVideoTranscoder::OpalVideoTranscoder(const OpalMediaFormat & inputMediaForma
   , m_freezeTillIFrame(false)
   , m_frozenTillIFrame(false)
   , m_lastFrameWasIFrame(false)
-  , m_frameDropPeriod(0)
   , m_frameDropRate(0)
   , m_frameDropBits(0)
   , m_lastTimestamp(UINT_MAX)
@@ -154,10 +153,8 @@ bool OpalVideoTranscoder::UpdateMediaFormats(const OpalMediaFormat & input, cons
   SetFrameBytes(inputMediaFormat,  OpalVideoFormat::MaxRxFrameWidthOption(), OpalVideoFormat::MaxRxFrameHeightOption(), m_inDataSize);
   SetFrameBytes(outputMediaFormat, OpalVideoFormat::FrameWidthOption(),      OpalVideoFormat::FrameHeightOption(),      m_outDataSize);
 
-  int periodMilliseconds = outputMediaFormat.GetOptionInteger(OpalVideoFormat::RateControlPeriodOption());
-  m_frameDropPeriod = periodMilliseconds*outputMediaFormat.GetTimeUnits();
-  m_frameDropRate = periodMilliseconds > 0 && outputMediaFormat.GetOptionBoolean(OpalVideoFormat::FrameDropOption(), true)
-                  ? (unsigned)((uint64_t)outputMediaFormat.GetOptionInteger(OpalMediaFormat::TargetBitRateOption())*periodMilliseconds/1000) : 0;
+  m_frameDropRate = outputMediaFormat.GetOptionBoolean(OpalVideoFormat::FrameDropOption(), true)
+                            ? outputMediaFormat.GetOptionInteger(OpalMediaFormat::TargetBitRateOption()) : 0;
 
   m_freezeTillIFrame = inputMediaFormat.GetOptionBoolean(OpalVideoFormat::FreezeUntilIntraFrameOption()) ||
                       outputMediaFormat.GetOptionBoolean(OpalVideoFormat::FreezeUntilIntraFrameOption());
@@ -216,7 +213,7 @@ void OpalVideoTranscoder::GetStatistics(OpalMediaStatistics & statistics) const
     
 bool OpalVideoTranscoder::ShouldDropFrame(RTP_Timestamp ts)
 {
-  if (m_frameDropRate == 0 || m_frameDropPeriod == 0)
+  if (m_frameDropRate == 0)
     return false;
 
   if (m_lastTimestamp == UINT_MAX) {
@@ -230,23 +227,37 @@ bool OpalVideoTranscoder::ShouldDropFrame(RTP_Timestamp ts)
   if (delta == 0)
     delta = outputMediaFormat.GetFrameTime();
 
-  /* Add in extra bits we can send for this frame, but don't keep adding
-      beyond a headroom level or prolonged under utilisation of bits builds
-      up a huge amount we can then over utilise. */
-  unsigned bitsForOneFrame = (unsigned)((uint64_t)m_frameDropRate*delta/m_frameDropPeriod);
-  if (m_frameDropBits > bitsForOneFrame)
-    m_frameDropBits -= bitsForOneFrame;
-  else
-    m_frameDropBits = 0;
+  /* This is a modified variable duty cycle algorithm. That algorithm works with the two
+     parameters being constant. But neither the time nor the bits are constant in this case.
+     So, we need to allow some "slop" in both directions. Effectively allowing an overspend
+     of up to a frames worth of bits, so we can work with the actual bit rate being
+     consistently smaller than the target bit rate at the other end. */
+  int bitsForOneFrame = (int)((uint64_t)m_frameDropRate*delta/OpalMediaFormat::VideoClockRate);
 
-  if (m_frameDropBits < m_frameDropRate)
+  /* If encoder consistently generates slightly more bits than bitsForOneFrame then
+     this subtraction will allow that frame to go out, but it will eventually build
+     up in m_frameDropBits and cause a frame drop eventually.
+
+     If the encoder generated a large I-Frame with many many bits, then m_frameDropBits
+     is large for a while as the subtraction whittles away at it bitsForOneFrame at a
+     time until it eventually lets a frame through. */
+  m_frameDropBits -= bitsForOneFrame;
+
+  if (m_frameDropBits < bitsForOneFrame) {
+    /* If raw encoder is consistently providing fewer bits than the bit rate for every
+       frame, we go negative, so we clamp to zero as everything can flow freely and 
+       we don't need, or want, any "history" to remember in this mode. */
+    if (m_frameDropBits < 0)
+        m_frameDropBits = 0;
+
+    // Allow frame
     return false;
+  }
 
   // Sent too many bits, drop frame
   PTRACE(4, "Frame dropped:"
             " overrun=" << PString(PString::ScaleSI, m_frameDropBits, 3) << "bits,"
-            " rate=" << m_frameDropRate << ","
-            " period=" << m_frameDropPeriod);
+            " rate=" << PString(PString::ScaleSI, m_frameDropRate, 3) << "bps");
   ++m_framesDropped;
   return true;
 }
