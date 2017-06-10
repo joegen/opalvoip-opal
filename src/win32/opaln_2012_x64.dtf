@@ -1,7 +1,0 @@
-LIBRARY opal64n
-EXPORTS
-    OpalFreeMessage @5
-    OpalGetMessage @3
-    OpalInitialise @1
-    OpalSendMessage @4
-    OpalShutDown @2

@@ -1,7 +1,0 @@
-LIBRARY opald
-EXPORTS
-    _OpalInitialise@8 @1
-    _OpalShutDown@4 @2
-    _OpalGetMessage@8 @3
-    _OpalSendMessage@8 @4
-    _OpalFreeMessage@4 @5
