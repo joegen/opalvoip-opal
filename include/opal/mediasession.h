@@ -756,8 +756,9 @@ class OpalMediaSession : public PSafeObject, public OpalMediaTransportChannelTyp
     );
 
     /**Indicate the media session is secured.
+       @ retruns the active crypto key for that media
       */
-    virtual bool IsCryptoSecured(bool rx) const;
+    virtual OpalMediaCryptoKeyInfo * IsCryptoSecured(bool rx) const;
 
     /**Get the conenction that owns this media session.
       */

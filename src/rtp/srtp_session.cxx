@@ -364,6 +364,16 @@ PObject * OpalSRTPKeyInfo::Clone() const
 }
 
 
+PObject::Comparison OpalSRTPKeyInfo::Compare(const PObject & obj) const
+{
+  const OpalSRTPKeyInfo& other = dynamic_cast<const OpalSRTPKeyInfo&>(obj);
+  Comparison c = m_key.Compare(other.m_key);
+  if (c == EqualTo)
+    c = m_salt.Compare(other.m_salt);
+  return c;
+}
+
+
 bool OpalSRTPKeyInfo::IsValid() const
 {
   return m_key.GetSize() == m_cryptoSuite.GetCipherKeyBytes() &&
@@ -546,9 +556,9 @@ bool OpalSRTPSession::ApplyKeyToSRTP(const OpalMediaCryptoKeyInfo & keyInfo, Dir
 }
 
 
-bool OpalSRTPSession::IsCryptoSecured(Direction dir) const
+OpalMediaCryptoKeyInfo * OpalSRTPSession::IsCryptoSecured(bool rx) const
 {
-  return m_keyInfo[dir] != NULL;
+  return m_keyInfo[rx ? e_Receiver : e_Sender];
 }
 
 

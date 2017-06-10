@@ -820,8 +820,10 @@ bool OpalSDPConnection::OnSendAnswerSDP(const SDPSessionDescription & sdpOffer, 
     }
   }
 
-  if (gotNothing)
+  if (gotNothing) {
+    PTRACE(3, "Could not match any SDP media descriptions on " << *this);
     return false;
+  }
 
   m_activeFormatList = OpalMediaFormatList(); // Don't do RemoveAll() in case of references
 
@@ -848,10 +850,10 @@ bool OpalSDPConnection::OnSendAnswerSDP(const SDPSessionDescription & sdpOffer, 
 
 
 SDPMediaDescription * OpalSDPConnection::OnSendAnswerSDPSession(SDPMediaDescription * incomingMedia,
-                                                                           unsigned   sessionId,
-                                                                               bool   transfer,
-                                                     SDPMediaDescription::Direction   otherSidesDir,
-                                                                    BundleMergeInfo & bundleMergeInfo)
+                                                                unsigned   sessionId,
+                                                                bool   transfer,
+                                                                SDPMediaDescription::Direction   otherSidesDir,
+                                                                BundleMergeInfo & bundleMergeInfo)
 {
   OpalMediaType mediaType = incomingMedia->GetMediaType();
 
@@ -864,7 +866,7 @@ SDPMediaDescription * OpalSDPConnection::OnSendAnswerSDPSession(SDPMediaDescript
   if (!PAssert(mediaType.GetDefinition() != NULL, PString("Unusable media type \"") + mediaType + '"'))
     return NULL;
 
-#if OPAL_SRTP
+  #if OPAL_SRTP
   OpalMediaCryptoKeyList keys = incomingMedia->GetCryptoKeys();
   if (!keys.IsEmpty() && !(GetMediaCryptoKeyExchangeModes()&OpalMediaCryptoSuite::e_SecureSignalling)) {
     PTRACE(2, "No secure signaling, cannot use SDES crypto for " << mediaType << " session " << sessionId);
@@ -872,17 +874,20 @@ SDPMediaDescription * OpalSDPConnection::OnSendAnswerSDPSession(SDPMediaDescript
     incomingMedia->SetCryptoKeys(keys);
   }
 
-  // See if we already have a secure version of the media session
-  for (SessionMap::const_iterator it = m_sessions.begin(); it != m_sessions.end(); ++it) {
-    if (it->second->GetSessionID() != sessionId &&
-        it->second->GetMediaType() == mediaType &&
-        (
-          it->second->GetSessionType() == OpalSRTPSession::RTP_SAVP() ||
-          it->second->GetSessionType() == OpalDTLSSRTPSession::RTP_DTLS_SAVPF()
-        ) &&
-        it->second->IsOpen()) {
-      PTRACE(3, "Not creating " << mediaType << " media session, already secure.");
-      return NULL;
+  // If not a match already, or if we already have another, secure version, of the media session
+  if (GetMediaSession(sessionId) == NULL) {
+    for (SessionMap::const_iterator it = m_sessions.begin(); it != m_sessions.end(); ++it) {
+      if (it->second->GetSessionID() != sessionId &&
+          it->second->GetMediaType() == mediaType &&
+          (
+            it->second->GetSessionType() == OpalSRTPSession::RTP_SAVP() ||
+            it->second->GetSessionType() == OpalDTLSSRTPSession::RTP_DTLS_SAVPF()
+          ) &&
+          it->second->IsOpen())
+      {
+        PTRACE(3, "Not creating " << mediaType << " media session, already secure.");
+        return NULL;
+      }
     }
   }
 #endif // OPAL_SRTP
@@ -943,27 +948,34 @@ SDPMediaDescription * OpalSDPConnection::OnSendAnswerSDPSession(SDPMediaDescript
 
 #if OPAL_SRTP
   if (!keys.IsEmpty()) {// SDES
-    // Set rx key from the other side SDP, which it's tx key
-    if (!mediaSession->ApplyCryptoKey(keys, true)) {
-      PTRACE(2, "Incompatible crypto suite(s) for " << mediaType << " session " << sessionId);
-      return NULL;
+    OpalMediaCryptoKeyInfo * rxKey = mediaSession->IsCryptoSecured(true);
+    OpalMediaCryptoKeyInfo * txKey = mediaSession->IsCryptoSecured(false);
+    if (txKey != NULL && rxKey != NULL && keys.GetValuesIndex(*rxKey) != P_MAX_INDEX) {
+      keys.RemoveAll();
+      keys.Append(txKey->CloneAs<OpalMediaCryptoKeyInfo>());
     }
+    else {
+      // Set rx key from the other side SDP, which it's tx key
+      if (!mediaSession->ApplyCryptoKey(keys, true)) {
+        PTRACE(2, "Incompatible crypto suite(s) for " << mediaType << " session " << sessionId);
+        return NULL;
+      }
 
-    // Use symmetric keys, generate a cloneof the remotes tx key for out yx key
-    OpalMediaCryptoKeyInfo * txKey = keys.front().CloneAs<OpalMediaCryptoKeyInfo>();
-    if (PAssertNULL(txKey) == NULL)
-      return NULL;
+      // Use symmetric keys, generate a cloneof the remotes tx key for out yx key
+      txKey = keys.front().CloneAs<OpalMediaCryptoKeyInfo>();
+      if (PAssertNULL(txKey) == NULL)
+        return NULL;
 
-    // But with a different value
-    txKey->Randomise();
+      // But with a different value
+      txKey->Randomise();
 
-    keys.RemoveAll();
-    keys.Append(txKey);
-    if (!mediaSession->ApplyCryptoKey(keys, false)) {
-      PTRACE(2, "Unexpected error with crypto suite(s) for " << mediaType << " session " << sessionId);
-      return NULL;
+      keys.RemoveAll();
+      keys.Append(txKey);
+      if (!mediaSession->ApplyCryptoKey(keys, false)) {
+        PTRACE(2, "Unexpected error with crypto suite(s) for " << mediaType << " session " << sessionId);
+        return NULL;
+      }
     }
-
     localMedia->SetCryptoKeys(keys);
   }
 #endif // OPAL_SRTP

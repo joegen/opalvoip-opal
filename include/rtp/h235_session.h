@@ -64,7 +64,8 @@ struct H2356_KeyInfo : public OpalMediaCryptoKeyInfo {
   public:
     H2356_KeyInfo(const H2356_CryptoSuite & cryptoSuite);
 
-    PObject * Clone() const;
+    virtual PObject * Clone() const;
+    virtual Comparison Compare(const PObject & other) const;
 
     virtual bool IsValid() const;
     virtual void Randomise();
@@ -116,7 +117,7 @@ class H2356_Session : public OpalRTPSession
     virtual bool Close();
     virtual OpalMediaCryptoKeyList & GetOfferedCryptoKeys();
     virtual bool ApplyCryptoKey(OpalMediaCryptoKeyList & keys, bool rx);
-    virtual bool IsCryptoSecured(bool rx) const;
+    virtual OpalMediaCryptoKeyInfo * IsCryptoSecured(bool rx) const;
 
     virtual SendReceiveStatus OnSendData(RTP_DataFrame & frame, RewriteMode rewrite);
 #if !H235_6_CODED_TO_CORRECT_SPECIFICATION

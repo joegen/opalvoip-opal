@@ -1470,9 +1470,9 @@ bool OpalMediaSession::ApplyCryptoKey(OpalMediaCryptoKeyList &, bool)
 }
 
 
-bool OpalMediaSession::IsCryptoSecured(bool) const
+OpalMediaCryptoKeyInfo * OpalMediaSession::IsCryptoSecured(bool) const
 {
-  return false;
+  return NULL;
 }
 
 

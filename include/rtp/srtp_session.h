@@ -76,6 +76,7 @@ class OpalSRTPKeyInfo : public OpalMediaCryptoKeyInfo
     OpalSRTPKeyInfo(const OpalSRTPCryptoSuite & cryptoSuite);
 
     PObject * Clone() const;
+    virtual Comparison Compare(const PObject & other) const;
 
     virtual bool IsValid() const;
     virtual void Randomise();
@@ -134,7 +135,7 @@ class OpalSRTPSession : public OpalRTPSession
     virtual const PCaselessString & GetSessionType() const { return RTP_SAVP(); }
     virtual OpalMediaCryptoKeyList & GetOfferedCryptoKeys();
     virtual bool ApplyCryptoKey(OpalMediaCryptoKeyList & keys, bool rx);
-    virtual bool IsCryptoSecured(Direction dir) const;
+    virtual OpalMediaCryptoKeyInfo * IsCryptoSecured(bool rx) const;
 
     virtual bool Open(const PString & localInterface, const OpalTransportAddress & remoteAddress);
     virtual RTP_SyncSourceId AddSyncSource(RTP_SyncSourceId id, Direction dir, const char * cname = NULL);

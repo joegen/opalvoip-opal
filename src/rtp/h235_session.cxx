@@ -146,6 +146,12 @@ PObject * H2356_KeyInfo::Clone() const
 }
 
 
+PObject::Comparison H2356_KeyInfo::Compare(const PObject & other) const
+{
+  return m_key.Compare(dynamic_cast<const H2356_KeyInfo&>(other).m_key);
+}
+
+
 bool H2356_KeyInfo::IsValid() const
 {
   return m_key.GetSize() == m_cryptoSuite.GetCipherKeyBytes();
@@ -269,9 +275,9 @@ bool H2356_Session::ApplyCryptoKey(OpalMediaCryptoKeyList & keys, bool rx)
 }
 
 
-bool H2356_Session::IsCryptoSecured(bool rx) const
+OpalMediaCryptoKeyInfo * H2356_Session::IsCryptoSecured(bool rx) const
 {
-  return (rx ? m_rx : m_tx).m_keyInfo != NULL;
+  return (rx ? m_rx : m_tx).m_keyInfo;
 }
 
 
