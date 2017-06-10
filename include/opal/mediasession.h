@@ -817,6 +817,9 @@ class OpalDummySession : public OpalMediaSession
     PCLASSINFO(OpalDummySession, OpalMediaSession)
   public:
     OpalDummySession(const Init & init);
+#if OPAL_SDP
+    OpalDummySession(const Init & init, const PStringArray & sdpTokens);
+#endif
     OpalDummySession(const Init & init, const OpalTransportAddressArray & transports);
     static const PCaselessString & SessionType();
     virtual const PCaselessString & GetSessionType() const;
@@ -833,6 +836,9 @@ class OpalDummySession : public OpalMediaSession
     virtual OpalMediaStream * CreateMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, bool isSource);
 
   private:
+#if OPAL_SDP
+    PStringArray         m_sdpTokens;
+#endif
     OpalTransportAddress m_localTransportAddress[2];
     OpalTransportAddress m_remoteTransportAddress[2];
 };

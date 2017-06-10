@@ -1284,6 +1284,10 @@ void SDPMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat)
     return;
   }
 
+  SDPMediaFormat * sdpFormat = CreateSDPMediaFormat();
+  if (sdpFormat == NULL)
+    return; // Probably dummy, no formats
+
   RTP_DataFrame::PayloadTypes payloadType = mediaFormat.GetPayloadType();
   const char * encodingName = mediaFormat.GetEncodingName();
   unsigned clockRate = mediaFormat.GetClockRate();
@@ -1308,7 +1312,6 @@ void SDPMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat)
     }
   }
 
-  SDPMediaFormat * sdpFormat = CreateSDPMediaFormat();
   sdpFormat->FromMediaFormat(mediaFormat);
   AddSDPMediaFormat(sdpFormat);
 }
@@ -1357,16 +1360,6 @@ SDPDummyMediaDescription::SDPDummyMediaDescription(const OpalTransportAddress & 
     case 3 :
       m_tokens.AppendString("127");
   }
-}
-
-
-SDPDummyMediaDescription::SDPDummyMediaDescription(const SDPMediaDescription & from)
-  : m_tokens(4)
-{
-  m_tokens[0] = from.GetSDPMediaType();
-  m_tokens[1] = '0';
-  m_tokens[2] = from.GetSDPTransportType();
-  m_tokens[3] = from.GetSDPPortList();
 }
 
 

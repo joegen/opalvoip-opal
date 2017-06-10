@@ -479,8 +479,10 @@ static bool SetNxECapabilities(OpalRFC2833Proto * handler,
     // Set the receive handler to what we are sending to remote in our SDP
     handler->SetRxMediaFormat(adjustedFormat);
     SDPMediaFormat * fmt = localMedia->CreateSDPMediaFormat();
-    fmt->FromMediaFormat(adjustedFormat);
-    localMedia->AddSDPMediaFormat(fmt);
+    if (fmt != NULL) {
+      fmt->FromMediaFormat(adjustedFormat);
+      localMedia->AddSDPMediaFormat(fmt);
+    }
   }
 
   return true;
@@ -810,14 +812,27 @@ bool OpalSDPConnection::OnSendAnswerSDP(const SDPSessionDescription & sdpOffer, 
     if (!PAssert(incomingMedia != NULL, PLogicError))
       return false;
 
-    SDPMediaDescription * md = sdpMediaDescriptions[sessionId];
-    if (md == NULL)
-      sdpOut.AddMediaDescription(new SDPDummyMediaDescription(*incomingMedia));
-    else {
-      md->FromSession(GetMediaSession(sessionId), incomingMedia, 0);
-      sdpOut.AddMediaDescription(md);
+    SDPMediaDescription * mediaDescription = sdpMediaDescriptions[sessionId];
+    OpalMediaSession * mediaSession = GetMediaSession(sessionId);
+    if (mediaDescription != NULL && mediaSession != NULL)
       gotNothing = false;
+    else {
+      if (mediaSession == NULL) {
+        OpalMediaSession::Init init(*this, sessionId, incomingMedia->GetMediaType(), m_remoteBehindNAT);
+        PStringArray tokens(4);
+        tokens[0] = incomingMedia->GetSDPMediaType();
+        tokens[1] = '0';
+        tokens[2] = incomingMedia->GetSDPTransportType();
+        tokens[3] = incomingMedia->GetSDPPortList();
+        mediaSession = new OpalDummySession(init, tokens);
+        m_sessions.SetAt(sessionId, mediaSession);
+      }
+      if (mediaDescription == NULL)
+        mediaDescription = mediaSession->CreateSDPMediaDescription();
     }
+
+    mediaDescription->FromSession(mediaSession, incomingMedia, 0);
+    sdpOut.AddMediaDescription(mediaDescription);
   }
 
   if (gotNothing) {

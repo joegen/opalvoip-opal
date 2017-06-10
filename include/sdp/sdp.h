@@ -398,7 +398,6 @@ class SDPDummyMediaDescription : public SDPMediaDescription
   public:
     SDPDummyMediaDescription() { }
     SDPDummyMediaDescription(const OpalTransportAddress & address, const PStringArray & tokens);
-    SDPDummyMediaDescription(const SDPMediaDescription & mediaDescription);
 
     virtual PString GetSDPMediaType() const;
     virtual PCaselessString GetSDPTransportType() const;
