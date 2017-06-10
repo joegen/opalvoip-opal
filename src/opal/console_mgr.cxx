@@ -2571,7 +2571,7 @@ void OpalConsoleManager::OnHold(OpalConnection & connection, bool fromRemote, bo
   if (fromRemote)
     output << (onHold ? "put you on" : "released you from");
   else
-    output << " been " << (onHold ? "put on" : "released from");
+    output << "been " << (onHold ? "put on" : "released from");
   output << " hold.";
   Broadcast(output);
 }
