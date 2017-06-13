@@ -268,6 +268,8 @@ static PString InternalGetRate(const PTime & lastUpdate,
       double value = (lastValue - previousValue)*1000.0/milliseconds;
       if (value == 0)
         str = '0';
+      else if (value <= 1.0)
+        str = PSTRSTRM(fixed << setprecision(significantFigures) << value);
       else
         str = PString(PString::ScaleSI, value, significantFigures);
     }
