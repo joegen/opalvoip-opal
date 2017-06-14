@@ -720,8 +720,15 @@ bool OpalSDPConnection::OnSendOfferSDPSession(OpalMediaSession * mediaSession,
   }
 
 #if OPAL_SRTP
-  if (GetMediaCryptoKeyExchangeModes()&OpalMediaCryptoSuite::e_SecureSignalling)
-    localMedia->SetCryptoKeys(mediaSession->GetOfferedCryptoKeys());
+  if (GetMediaCryptoKeyExchangeModes()&OpalMediaCryptoSuite::e_SecureSignalling) {
+    OpalMediaCryptoKeyList keys;
+    OpalMediaCryptoKeyInfo * txKey = mediaSession->IsCryptoSecured(false);
+    if (txKey != NULL && offerOpenMediaStreamOnly)
+      keys.Append(txKey->CloneAs<OpalMediaCryptoKeyInfo>());
+    else
+      keys = mediaSession->GetOfferedCryptoKeys();
+    localMedia->SetCryptoKeys(keys);
+  }
 #endif
 
 #if OPAL_RTP_FEC
