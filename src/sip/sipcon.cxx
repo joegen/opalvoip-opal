@@ -307,6 +307,8 @@ void SIPConnection::OnApplyStringOptions()
 {
   m_prackMode = (PRACKMode)m_stringOptions.GetInteger(OPAL_OPT_PRACK_MODE, m_prackMode);
   m_dialog.SetInterface(m_stringOptions(OPAL_OPT_INTERFACE, GetInterface()));
+  SetDisplayName(m_stringOptions(IsOriginating() ? OPAL_OPT_CALLING_DISPLAY_NAME : OPAL_OPT_CALLED_DISPLAY_NAME, GetDisplayName()));
+
   OpalRTPConnection::OnApplyStringOptions();
 }
 
