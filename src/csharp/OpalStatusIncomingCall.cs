@@ -191,6 +191,16 @@ public class OpalStatusIncomingCall : global::System.IDisposable {
     } 
   }
 
+  public string supportedFeatures {
+    set {
+      OPALPINVOKE.OpalStatusIncomingCall_supportedFeatures_set(swigCPtr, value);
+    } 
+    get {
+      string ret = OPALPINVOKE.OpalStatusIncomingCall_supportedFeatures_get(swigCPtr);
+      return ret;
+    } 
+  }
+
   public OpalStatusIncomingCall() : this(OPALPINVOKE.new_OpalStatusIncomingCall(), true) {
   }
 

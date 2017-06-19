@@ -273,6 +273,16 @@ class H323Connection : public OpalRTPConnection
       */
     virtual bool SetAlertingType(const PString & info);
 
+    /**Get supported features for an incoming call.
+       A '\n' separated list of protocol dependent names about the supported
+       features of the remote endpoint. The details are outside the scope of
+       this help.
+
+       For SIP this corresponds to the contents of the "Supported" header field
+       of the INVITE.
+      */
+    virtual PString GetSupportedFeatures() const;
+
     /** Get Q.931 Progress Indicator IE description from received PROGRESS or ALERTING pdus.
       */
     unsigned GetProgressIndicator() const { return m_progressIndicator; }

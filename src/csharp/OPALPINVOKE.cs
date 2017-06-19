@@ -922,6 +922,12 @@ class OPALPINVOKE {
   [global::System.Runtime.InteropServices.DllImport("OPAL", EntryPoint="CSharp_OpalStatusIncomingCall_remoteIdentity_get")]
   public static extern string OpalStatusIncomingCall_remoteIdentity_get(global::System.Runtime.InteropServices.HandleRef jarg1);
 
+  [global::System.Runtime.InteropServices.DllImport("OPAL", EntryPoint="CSharp_OpalStatusIncomingCall_supportedFeatures_set")]
+  public static extern void OpalStatusIncomingCall_supportedFeatures_set(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2);
+
+  [global::System.Runtime.InteropServices.DllImport("OPAL", EntryPoint="CSharp_OpalStatusIncomingCall_supportedFeatures_get")]
+  public static extern string OpalStatusIncomingCall_supportedFeatures_get(global::System.Runtime.InteropServices.HandleRef jarg1);
+
   [global::System.Runtime.InteropServices.DllImport("OPAL", EntryPoint="CSharp_new_OpalStatusIncomingCall")]
   public static extern global::System.IntPtr new_OpalStatusIncomingCall();
 

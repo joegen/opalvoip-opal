@@ -262,6 +262,16 @@ class SIPConnection : public OpalSDPConnection, public SIPTransactionOwner
       */
     virtual PString GetCallInfo() const;
 
+    /**Get supported features for an incoming call.
+       A '\n' separated list of protocol dependent names about the supported
+       features of the remote endpoint. The details are outside the scope of
+       this help.
+
+       For SIP this corresponds to the contents of the "Supported" header field
+       of the INVITE.
+      */
+    virtual PString GetSupportedFeatures() const;
+
     /**Initiate the transfer of an existing call (connection) to a new remote 
        party.
 

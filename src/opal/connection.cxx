@@ -1586,6 +1586,12 @@ PString OpalConnection::GetCallInfo() const
 }
 
 
+PString OpalConnection::GetSupportedFeatures() const
+{
+  return PString::Empty();
+}
+
+
 bool OpalConnection::GetConferenceState(OpalConferenceState *) const
 {
   return false;

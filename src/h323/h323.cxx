@@ -397,6 +397,23 @@ bool H323Connection::SetAlertingType(const PString & info)
 }
 
 
+PString H323Connection::GetSupportedFeatures() const
+{
+  PStringStream strm;
+  if (m_features != NULL) {
+    bool outputNewline = false;
+    for (H460_FeatureSet::const_iterator it = m_features->begin(); it != m_features->end(); ++it) {
+      if (outputNewline)
+        strm << '\n';
+      else
+        outputNewline = true;
+      strm << it->first;
+    }
+  }
+  return strm;
+}
+
+
 void H323Connection::AttachSignalChannel(const PString & token,
                                          H323Transport * channel,
                                          PBoolean answeringCall)

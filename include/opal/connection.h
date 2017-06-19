@@ -1845,6 +1845,16 @@ class OpalConnection : public PSafeObject
       */
     virtual PString GetCallInfo() const;
 
+    /**Get supported features for an incoming call.
+       A '\n' separated list of protocol dependent names about the supported
+       features of the remote endpoint. The details are outside the scope of
+       this help.
+
+       For SIP this corresponds to the contents of the "Supported" header field
+       of the INVITE.
+      */
+    virtual PString GetSupportedFeatures() const;
+
     /**Get the default maximum audio jitter delay parameter.
        Defaults to 50ms
      */

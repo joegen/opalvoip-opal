@@ -157,6 +157,14 @@ public class OpalStatusIncomingCall {
     return OPALJNI.OpalStatusIncomingCall_remoteIdentity_get(swigCPtr, this);
   }
 
+  public void setSupportedFeatures(String value) {
+    OPALJNI.OpalStatusIncomingCall_supportedFeatures_set(swigCPtr, this, value);
+  }
+
+  public String getSupportedFeatures() {
+    return OPALJNI.OpalStatusIncomingCall_supportedFeatures_get(swigCPtr, this);
+  }
+
   public OpalStatusIncomingCall() {
     this(OPALJNI.new_OpalStatusIncomingCall(), true);
   }

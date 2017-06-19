@@ -76,7 +76,7 @@ typedef struct OpalHandleStruct * OpalHandle;
 typedef struct OpalMessage OpalMessage;
 
 /// Current API version
-#define OPAL_C_API_VERSION 34
+#define OPAL_C_API_VERSION 35
 
 
 ///////////////////////////////////////
@@ -1230,6 +1230,12 @@ typedef struct OpalStatusIncomingCall {
                                       and system configuration, it may be different. A simple
                                       example is where the identity is "fred@nurk.com" but the
                                       address is "sip:fred@10.11.12.13:1415" */
+  const char * m_supportedFeatures; /** A list of supported features by name, separated by '\n'.
+                                        This is protocol dependent, for example, it corresponds to
+                                        the values of the "Supported" header in an incoming INVITE.
+                                        For H.323 it would be things like "H.460.18" etc. Note:
+                                        NULL indicagtes not supported by C API version, while empty
+                                        string indicates supported but no features indicated. */
 } OpalStatusIncomingCall;
 
 

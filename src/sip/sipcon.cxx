@@ -1317,6 +1317,15 @@ PString SIPConnection::GetCallInfo() const
 }
 
 
+PString SIPConnection::GetSupportedFeatures() const
+{
+  PStringStream strm;
+  if (m_lastReceivedINVITE != NULL)
+    strm << setfill('\n') << m_lastReceivedINVITE->GetMIME().GetSupported();
+  return strm;
+}
+
+
 bool SIPConnection::OnHoldStateChanged(bool PTRACE_PARAM(placeOnHold))
 {
   return SendReINVITE(PTRACE_PARAM(placeOnHold ? "put connection on hold" : "retrieve connection from hold"));

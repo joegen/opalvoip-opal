@@ -1259,6 +1259,8 @@ void OpalManager_C::SendIncomingCallInfo(const OpalConnection & connection)
   message->m_param.m_incomingCall.m_product.m_manufacturerCode = info.manufacturerCode;
 
   SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_alertingType,   network->GetAlertingType());
+  if (m_apiVersion >= 35)
+    SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_supportedFeatures, network->GetSupportedFeatures());
   SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_protocolCallId, connection.GetIdentifier());
 
   if (m_apiVersion >= 32)
