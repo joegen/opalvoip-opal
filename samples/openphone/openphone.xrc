@@ -3592,7 +3592,7 @@
 													<flag>wxRIGHT|wxTOP|wxEXPAND|wxALIGN_CENTER_VERTICAL</flag>
 													<border>12</border>
 													<object class="wxComboBox" name="VideoGrabDevice">
-														<style>wxCB_DROPDOWN</style>
+														<style>wxCB_DROPDOWN|wxCB_SORT</style>
 														<value></value>
 														<content />
 													</object>
