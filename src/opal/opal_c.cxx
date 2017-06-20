@@ -2184,6 +2184,9 @@ static void SetOptionOverrides(bool originating,
   if (!IsNullString(params.m_displayName))
     options.Set(originating ? OPAL_OPT_CALLING_DISPLAY_NAME : OPAL_OPT_CALLED_DISPLAY_NAME, params.m_displayName);
 
+  if (!IsNullString(params.m_mediaCryptoSuites))
+    options.Set(OPAL_OPT_CRYPTO_SUITES, params.m_mediaCryptoSuites);
+
   if (params.m_userInputMode > OpalUserInputDefault && params.m_userInputMode <= OpalUserInputInBand) {
     static char const * const ModeNames[] = { "Q.931", "String", "Tone", "RFC2833", "InBand" };
     options.Set(OPAL_OPT_USER_INPUT_MODE, ModeNames[params.m_userInputMode-1]);

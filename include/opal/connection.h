@@ -102,6 +102,11 @@ class PURL;
   */
 #define OPAL_OPT_SILENCE_DETECT_MODE  "Silence-Detect"
 
+/**OpalConnection::StringOption key to a '\n' separated list of crypto suite
+   names to use for this call.
+   Default to empty string which uses OpalEndPoint::GetMediaCryptoSuites().
+  */
+#define OPAL_OPT_CRYPTO_SUITES  "Crypto-Suites"
 
 /**OpalConnection::StringOption key to a bit mask indicating the the video
    update picture request method.
