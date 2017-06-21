@@ -46,6 +46,21 @@
 
 static const unsigned MaxConsecutiveErrors = 100;
 
+#if PTRACING
+  #define OPAL_SRTP_TRACE(level, dir, subchan, ssrc, item, arg) PTRACE(GetThrottle(level, dir, subchan, ssrc, item), \
+                *this << "SSRC=" << RTP_TRACE_SRC(ssrc) << ", " << arg << GetThrottle(level, dir, subchan, ssrc, item))
+
+  PTrace::ThrottleBase & OpalSRTPSession::GetThrottle(unsigned level, Direction dir, SubChannels subchannel, RTP_SyncSourceId ssrc, int item)
+  {
+    uint64_t index = item|(dir<<3)|(subchannel<<5)|((uint64_t)ssrc<<8);
+    map<uint64_t, PTrace::ThrottleBase>::iterator it = m_throttle.find(index);
+    if (it == m_throttle.end())
+      it = m_throttle.insert(make_pair(index, PTrace::ThrottleBase(level))).first;
+    return it->second;
+  }
+#else
+  #define OPAL_SRTP_TRACE(level, dir, subchan, ssrc, item, arg)
+#endif
 
 /////////////////////////////////////////////////////////////////////////////////////
 //
@@ -81,7 +96,11 @@ static bool CheckError(err_status_t err,
   if (err == err_status_ok)
     return true;
 
-  ostream & trace = PTrace::Begin(2, file, line, NULL, PTraceModule());
+  static unsigned const Level = 2;
+  if (!PTrace::CanTrace(Level))
+    return false;
+
+  ostream & trace = PTrace::Begin(Level, file, line, NULL, PTraceModule());
   if (session != NULL)
       trace << *session;
   trace << "Library error " << err << " from " << fn << "() - ";
@@ -680,10 +699,9 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnSendData(RTP_DataFrame & fr
   if (rewrite == e_RewriteNothing)
     return e_ProcessPacket;
 
+  RTP_SyncSourceId ssrc = frame.GetSyncSource();
   if (!IsCryptoSecured(e_Sender)) {
-    PTRACE(GetThrottle(e_Sender, e_Data, frame.GetSyncSource()),
-           *this << "keys not set, cannot protect data"
-           << GetThrottle(e_Sender, e_Data, frame.GetSyncSource()));
+    OPAL_SRTP_TRACE(2, e_Sender, e_Data, ssrc, 1, "keys not set, cannot protect data");
     return e_IgnorePacket;
   }
 
@@ -695,16 +713,13 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnSendData(RTP_DataFrame & fr
   status = CheckConsecutiveErrors(
               CHECK_ERROR(
                   srtp_protect, (m_context, frame.GetPointer(), &len),
-                  this, frame.GetSyncSource(), frame.GetSequenceNumber()
+                  this, ssrc, frame.GetSequenceNumber()
               ),
               e_Sender, e_Data);
   if (status != e_ProcessPacket)
     return status;
 
-  PTRACE(GetThrottle(e_Sender, e_Data, frame.GetSyncSource()),
-         *this << "protected RTP packet: " << frame.GetPacketSize()
-         << "->" << len << " SSRC=" << frame.GetSyncSource()
-         << GetThrottle(e_Sender, e_Data, frame.GetSyncSource()));
+  OPAL_SRTP_TRACE(3, e_Sender, e_Data, ssrc, 2, "protected RTP packet: " << frame.GetPacketSize() << "->" << len);
 
   frame.SetPayloadSize(len - frame.GetHeaderSize());
 
@@ -720,11 +735,10 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnSendControl(RTP_ControlFram
   if (status != e_ProcessPacket)
     return status;
 
+  RTP_SyncSourceId ssrc = frame.GetSenderSyncSource();
   if (!IsCryptoSecured(e_Sender)) {
-    PTRACE(GetThrottle(e_Sender, e_Control, frame.GetSenderSyncSource()),
-           *this << "keys not set, cannot protect control"
-           << GetThrottle(e_Sender, e_Control, frame.GetSenderSyncSource()));
-    return OpalRTPSession::e_IgnorePacket;
+    OPAL_SRTP_TRACE(2, e_Sender, e_Control, ssrc, 1, "keys not set, cannot protect control");
+    return e_IgnorePacket;
   }
 
   int len = frame.GetPacketSize();
@@ -735,16 +749,13 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnSendControl(RTP_ControlFram
   status = CheckConsecutiveErrors(
               CHECK_ERROR(
                   srtp_protect_rtcp, (m_context, frame.GetPointer(), &len),
-                  this, frame.GetSenderSyncSource()
+                  this, ssrc
               ),
               e_Sender, e_Control);
   if (status != e_ProcessPacket)
     return status;
 
-  PTRACE(GetThrottle(e_Sender, e_Control, frame.GetSenderSyncSource()),
-         *this << "protected RTCP packet: " << frame.GetPacketSize()
-         << "->" << len << " SSRC=" << frame.GetSenderSyncSource()
-         << GetThrottle(e_Sender, e_Control, frame.GetSenderSyncSource()));
+  OPAL_SRTP_TRACE(3, e_Sender, e_Control, ssrc, 2, "protected RTCP packet: " << frame.GetPacketSize() << "->" << len);
 
   frame.SetPacketSize(len);
 
@@ -756,16 +767,14 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveData(RTP_DataFrame &
 {
   // Aleady locked on entry
 
+  RTP_SyncSourceId ssrc = frame.GetSyncSource();
   if (!IsCryptoSecured(e_Receiver)) {
-    PTRACE(GetThrottle(e_Receiver, e_Data, frame.GetSyncSource()),
-           *this << "keys not set, cannot protect data"
-           << GetThrottle(e_Receiver, e_Data, frame.GetSyncSource()));
-    return OpalRTPSession::e_IgnorePacket;
+    OPAL_SRTP_TRACE(2, e_Receiver, e_Data, ssrc, 1, "keys not set, cannot protect data");
+    return e_IgnorePacket;
   }
 
   /* Need to have a receiver SSRC (their sender) even if we have never been
       told about it, or we can't decrypt the RTCP packet. */
-  RTP_SyncSourceId ssrc = frame.GetSyncSource();
   if (UseSyncSource(ssrc, e_Receiver, false) == NULL)
     return e_IgnorePacket;
 
@@ -782,10 +791,7 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveData(RTP_DataFrame &
   if (status != e_ProcessPacket)
     return status;
 
-  PTRACE(GetThrottle(e_Receiver, e_Data, ssrc),
-         *this << "unprotected RTP packet: " << frame.GetPacketSize()
-         << "->" << len << " SSRC=" << ssrc
-         << GetThrottle(e_Receiver, e_Data, ssrc));
+  OPAL_SRTP_TRACE(3, e_Receiver, e_Data, ssrc, 2, "unprotected RTP packet: " << frame.GetPacketSize() << "->" << len);
 
   frame.SetPayloadSize(len - frame.GetHeaderSize());
 
@@ -797,14 +803,12 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveControl(RTP_ControlF
 {
   /* Aleady locked on entry */
 
+  RTP_SyncSourceId ssrc = encoded.GetSenderSyncSource();
   if (!IsCryptoSecured(e_Receiver)) {
-    PTRACE(GetThrottle(e_Receiver, e_Control, encoded.GetSenderSyncSource()),
-           *this << "keys not set, cannot protect control: "
-           << GetThrottle(e_Receiver, e_Control, encoded.GetSenderSyncSource()));
-    return OpalRTPSession::e_IgnorePacket;
+    OPAL_SRTP_TRACE(2, e_Receiver, e_Control, ssrc, 1, "keys not set, cannot protect control");
+    return e_IgnorePacket;
   }
 
-  RTP_SyncSourceId ssrc = encoded.GetSenderSyncSource();
 
 
   /* Need to have a receiver SSRC (their sender) or we can't decrypt the RTCP
@@ -813,8 +817,10 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveControl(RTP_ControlF
      However, for Chrome, we have a special cases of SSRC=1 for video and 0xfa17fa17
      for audio, neither of which they indicate in the SDP when in recvonly mode. So,
      we furce creation of those specifically. */
-  if (UseSyncSource(ssrc, e_Receiver, m_anyRTCP_SSRC || ssrc == 1 || ssrc == 0xfa17fa17) == NULL)
+  if (UseSyncSource(ssrc, e_Receiver, m_anyRTCP_SSRC || ssrc == 1 || ssrc == 0xfa17fa17) == NULL) {
+      OPAL_SRTP_TRACE(2, e_Receiver, e_Control, ssrc, 3, "not automatically added");
     return e_IgnorePacket;
+  }
 
   m_anyRTCP_SSRC = false;
 
@@ -833,10 +839,7 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveControl(RTP_ControlF
     return status;
 
 
-  PTRACE(GetThrottle(e_Receiver, e_Control, ssrc),
-         *this << "unprotected RTCP packet: " << decoded.GetPacketSize()
-         << "->" << len << " SSRC=" << ssrc
-         << GetThrottle(e_Receiver, e_Control, ssrc));
+  OPAL_SRTP_TRACE(3, e_Receiver, e_Control, ssrc, 2, "unprotected RTCP packet: " << decoded.GetPacketSize() << "->" << len);
 
   decoded.SetPacketSize(len);
 

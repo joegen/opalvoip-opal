@@ -163,11 +163,8 @@ class OpalSRTPSession : public OpalRTPSession
     SendReceiveStatus CheckConsecutiveErrors(bool ok, Direction dir, SubChannels subchannel);
 
 #if PTRACING
-    map< uint64_t, PTrace::Throttle<3> > m_throttle;
-    __inline PTrace::Throttle<3> & GetThrottle(Direction dir, SubChannels subchannel, RTP_SyncSourceId ssrc)
-    {
-      return m_throttle[dir|(subchannel<<2)|((uint64_t)ssrc<<4)];
-    }
+    map<uint64_t, PTrace::ThrottleBase> m_throttle;
+    PTrace::ThrottleBase & GetThrottle(unsigned level, Direction dir, SubChannels subchannel, RTP_SyncSourceId ssrc, int item);
 #endif
 };
 
