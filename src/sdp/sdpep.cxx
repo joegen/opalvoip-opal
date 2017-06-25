@@ -1261,29 +1261,31 @@ bool OpalSDPConnection::OnReceivedAnswerSDPSession(const SDPMediaDescription * m
       return false;
     }
 
-    // Now match up the tag number on our offered keys
-    OpalMediaCryptoKeyList & offeredKeys = mediaSession->GetOfferedCryptoKeys();
-    OpalMediaCryptoKeyList::iterator it;
-    for (it = offeredKeys.begin(); it != offeredKeys.end(); ++it) {
-      if (it->GetTag() == keys.front().GetTag())
-        break;
-    }
-    if (it == offeredKeys.end()) {
-      PTRACE(2, "Remote selected crypto suite(s) we did not offer for " << mediaType << " session " << sessionId);
-      return false;
-    }
+    if (!mediaSession->IsCryptoSecured(false)) {
+      // Now match up the tag number on our offered keys
+      OpalMediaCryptoKeyList & offeredKeys = mediaSession->GetOfferedCryptoKeys();
+      OpalMediaCryptoKeyList::iterator it;
+      for (it = offeredKeys.begin(); it != offeredKeys.end(); ++it) {
+        if (it->GetTag() == keys.front().GetTag())
+          break;
+      }
+      if (it == offeredKeys.end()) {
+        PTRACE(2, "Remote selected crypto suite(s) we did not offer for " << mediaType << " session " << sessionId);
+        return false;
+      }
 
-    keys.RemoveAll();
-    keys.Append(&*it);
+      keys.RemoveAll();
+      keys.Append(&*it);
 
-    offeredKeys.DisallowDeleteObjects(); // Can't have in two lists and both dispose of pointer
-    offeredKeys.erase(it);
-    offeredKeys.AllowDeleteObjects();
-    offeredKeys.RemoveAll();
+      offeredKeys.DisallowDeleteObjects(); // Can't have in two lists and both dispose of pointer
+      offeredKeys.erase(it);
+      offeredKeys.AllowDeleteObjects();
+      offeredKeys.RemoveAll();
 
-    if (!mediaSession->ApplyCryptoKey(keys, false)) {
-      PTRACE(2, "Incompatible crypto suite(s) for " << mediaType << " session " << sessionId);
-      return false;
+      if (!mediaSession->ApplyCryptoKey(keys, false)) {
+        PTRACE(2, "Incompatible crypto suite(s) for " << mediaType << " session " << sessionId);
+        return false;
+      }
     }
   }
 #endif // OPAL_SRTP
