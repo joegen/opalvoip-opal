@@ -554,11 +554,11 @@ MyPlayer::MyPlayer(MyManager * manager, const PFilePath & filename)
   FindWindowByNameAs(m_analysisList, this, wxT("Analysis"));
   m_analysisList->AppendColumn("#");
   m_analysisList->AppendColumn("Time");
-  m_analysisList->AppendColumn("Delta (ms)");
-  m_analysisList->AppendColumn("Sequence");
-  m_analysisList->AppendColumn("Timestamp");
-  m_analysisList->AppendColumn("Delta");
-  m_analysisList->AppendColumn("Jitter (ms)");
+  m_analysisList->AppendColumn("Delta (ms)", wxLIST_FORMAT_RIGHT);
+  m_analysisList->AppendColumn("Sequence", wxLIST_FORMAT_RIGHT);
+  m_analysisList->AppendColumn("Timestamp", wxLIST_FORMAT_RIGHT);
+  m_analysisList->AppendColumn("Delta", wxLIST_FORMAT_RIGHT);
+  m_analysisList->AppendColumn("Jitter (ms)", wxLIST_FORMAT_RIGHT);
   m_analysisList->AppendColumn("Notes");
 
   FindWindowByNameAs(m_play,         this, wxT("Play"));
@@ -571,7 +571,7 @@ MyPlayer::MyPlayer(MyManager * manager, const PFilePath & filename)
 
   wxSplitterWindow * splitter = 0;
   FindWindowByNameAs(splitter, this, wxT("BottomSplitter"));
-  splitter->SetSashPosition(GetClientSize().GetX()/2);
+  splitter->SetSashPosition(GetClientSize().GetX()*3/4);
 
   if (m_pcapFile.Open(filename, PFile::ReadOnly)) {
     m_pcapFile.SetPayloadMap(m_manager.GetOptions().m_mappings);
@@ -840,7 +840,7 @@ struct Analyser
 {
   MyPlayer & m_player;
   bool       m_asyncUpdate;
-  bool       m_isVideo;
+  unsigned   m_clockRate;
   bool       m_isDecoded;
   bool       m_firstPacket;
   PTime      m_firstTime;
@@ -851,11 +851,13 @@ struct Analyser
   unsigned   m_packetNumber;
   OpalAudioFormat m_audioFormat;
   OpalAudioFormat::FrameDetectorPtr m_audioFrameDetector;
+  OpalVideoFormat m_videoFormat;
+  OpalVideoFormat::FrameDetectorPtr m_videoFrameDetector;
 
   Analyser(MyPlayer & player, bool async, const OpalMediaFormat & mediaFormat, bool decoded = false)
     : m_player(player)
     , m_asyncUpdate(async)
-    , m_isVideo(mediaFormat.GetMediaType() == OpalMediaType::Video())
+    , m_clockRate(mediaFormat.GetClockRate())
     , m_isDecoded(decoded)
     , m_firstPacket(true)
     , m_firstTime(0)
@@ -866,6 +868,7 @@ struct Analyser
     , m_packetNumber(0)
   {
     m_audioFormat = mediaFormat;
+    m_videoFormat = mediaFormat;
   }
 
 
@@ -875,40 +878,59 @@ struct Analyser
     RTP_Timestamp thisTimestamp = data.GetTimestamp();
     wxString deltaMS, deltaTS, jitter, notes;
 
+    bool frameEnd = data.GetMarker() || m_audioFormat.IsValid();
+
     if (m_firstPacket) {
       m_firstPacket = false;
       m_firstTime = thisTime;
       m_firstTimestamp = thisTimestamp;
+      deltaMS = deltaTS = jitter = "--";
+      notes << "Clock: " << m_clockRate << "Hz";
     }
     else {
-      if (!m_isVideo || data.GetMarker()) {
+      if (frameEnd) {
         deltaMS << (thisTime - m_lastTime).GetMilliSeconds();
         deltaTS << (thisTimestamp - m_lastTimestamp);
-        int usJit = (thisTime - (m_firstTime + (thisTimestamp - m_firstTimestamp) / 48)).GetMicroSeconds();
+        int64_t usJit = (thisTime - (m_firstTime + (thisTimestamp - m_firstTimestamp)*1000LL/m_clockRate)).GetMicroSeconds();
         if (usJit < -100) {
           usJit = -usJit;
           jitter << '-';
         }
         jitter << usJit/1000 << '.' << (usJit%1000)/100;
       }
+
+      if (m_lastSequenceNumber != UINT_MAX && thisSequenceNumber != (m_lastSequenceNumber + 1))
+        notes << "Out of sequence";
+
       if (m_isDecoded) {
-        if (intra)
-          notes << "Key frame ";
+        if (intra) {
+          if (!notes.empty())
+            notes << ", ";
+          notes << "Key frame";
+        }
       }
-      else {
-        if (m_lastSequenceNumber != UINT_MAX && thisSequenceNumber != (m_lastSequenceNumber + 1))
-          notes << "Out of sequence ";
+      else if (m_videoFormat.GetFrameType(data.GetPayloadPtr(),
+                                          data.GetPayloadSize(),
+                                          m_videoFrameDetector) == OpalVideoFormat::e_IntraFrame)
+      {
+          if (!notes.empty())
+            notes << ", ";
+          notes << "Key frame";
       }
 
-      if (m_audioFormat.IsValid() && (m_audioFormat.GetFrameType(data.GetPayloadPtr(),
-                                                                 data.GetPayloadSize(),
-                                                                 m_audioFrameDetector) & OpalAudioFormat::e_SilenceFrame))
+      if (m_audioFormat.GetFrameType(data.GetPayloadPtr(),
+                                     data.GetPayloadSize(),
+                                     m_audioFrameDetector) & OpalAudioFormat::e_SilenceFrame)
+      {
+        if (!notes.empty())
+          notes << ", ";
         notes << "Silent ";
+      }
     }
 
     m_lastTime = thisTime;
     m_lastSequenceNumber = thisSequenceNumber;
-    if (!m_isVideo || data.GetMarker())
+    if (frameEnd)
       m_lastTimestamp = thisTimestamp;
 
     wxString info;
@@ -920,6 +942,7 @@ struct Analyser
          << deltaTS << '\n'
          << jitter << '\n'
          << notes;
+
     if (m_asyncUpdate)
       m_player.CallAfter<MyPlayer, wxString, bool, wxString, bool>(&MyPlayer::OnAnalysisUpdate, info, true);
     else
@@ -1010,6 +1033,8 @@ void MyPlayer::PlayAudio()
 {
   PTRACE(3, "Started audio player thread.");
 
+  Analyser analysis(*this, true, m_discoveredRTP[m_selectedRTP].m_mediaFormat, true);
+
   PSoundChannel * soundChannel = NULL;
   OpalPCAPFile::DecodeContext decodeContext;
   while (m_playThreadCtrl != CtlStop && !m_pcapFile.IsEndOfFile()) {
@@ -1021,13 +1046,15 @@ void MyPlayer::PlayAudio()
     if (m_pcapFile.GetDecodedRTP(data, decodeContext) <= 0)
       continue;
 
+    analysis.Analyse(data, m_pcapFile.GetPacketTime());
+
     if (soundChannel == NULL) {
       OpalMediaFormat format = decodeContext.m_transcoder->GetOutputFormat();
       soundChannel = new PSoundChannel(m_manager.GetOptions().m_AudioDevice,
                                        PSoundChannel::Player,
                                        format.GetOptionInteger(OpalAudioFormat::ChannelsOption(), 1),
                                        format.GetClockRate());
-      soundChannel->SetBuffers(data.GetPayloadSize());
+      soundChannel->SetBuffers(data.GetPayloadSize(), 8);
     }
 
     if (!soundChannel->Write(data.GetPayloadPtr(), data.GetPayloadSize()))
