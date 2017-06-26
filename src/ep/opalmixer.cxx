@@ -148,7 +148,6 @@ bool OpalBaseMixer::AddStream(const Key_T & key)
   PTRACE_CONTEXT_ID_SET(*stream, key);
   PTRACE(4, "Added input stream " << stream << " at key " << key);
 
-  StartPushThread();
   return true;
 }
 
@@ -171,6 +170,7 @@ bool OpalBaseMixer::WriteStream(const Key_T & key, const RTP_DataFrame & rtp)
 
   m_mutex.Signal();
 
+  StartPushThread();
   return true;
 }
 
