@@ -45,8 +45,9 @@ class RTP_DataFrame;
     A factory is used to created concrete classes based on the file extension
     supported by the individual record manager.
   */
-class OpalRecordManager
+class OpalRecordManager : public PObject
 {
+    PCLASSINFO(OpalRecordManager, PObject);
   public:
     /** Factory for creating new recording managers. Selection is made based on the
         file extension of the file supplied to OpalManager::StartRecording().

@@ -838,6 +838,8 @@ bool OpalCall::StartRecording(const PFilePath & fn, const OpalRecordManager::Opt
     return false;
   }
 
+  PTRACE_CONTEXT_ID_TO(*newManager);
+
   // create the mixer entry
   if (!newManager->Open(fn, options)) {
     delete newManager;
