@@ -1116,6 +1116,9 @@ void OpalConnection::DisableRecording()
 
 void OpalConnection::OnRecordAudio(RTP_DataFrame & frame, P_INT_PTR param)
 {
+  if (frame.GetPayloadSize() == 0)
+    return;
+
   const OpalMediaPatch * patch = (const OpalMediaPatch *)param;
   std::auto_ptr<RTP_DataFrame> copyFrame(new RTP_DataFrame(frame.GetPointer(), frame.GetPacketSize()));
   GetEndPoint().GetManager().QueueDecoupledEvent(new PSafeWorkArg2<OpalConnection, PString, std::auto_ptr<RTP_DataFrame> >(
