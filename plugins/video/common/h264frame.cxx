@@ -130,11 +130,9 @@ bool H264Frame::GetPacket(PluginCodec_RTP & frame, unsigned int & flags)
     return EncapsulateFU(frame, flags);
 
   // it is the last NAL of that frame or doesnt fit into an STAP packet with next nal ?
-#ifdef SEND_STAP_PACKETS
   if (((m_currentNAL + 1) < m_numberOfNALsInFrame) &&
       ((curNALLen + m_NALs[m_currentNAL + 1].length + 5) <= m_maxPayloadSize))
     return EncapsulateSTAP(frame, flags); 
-#endif
 
   // single nal unit packet
   frame.SetPayloadSize(curNALLen);

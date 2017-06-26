@@ -33,9 +33,6 @@
 #ifndef __H264FRAME_H__
 #define __H264FRAME_H__ 1
 
-// GVX 3000 does not like STAP packets... So we waste 40 bytes per connection...
-//#define SEND_STAP_PACKETS 1
-
 #include "encframe.h"
 
 #include <vector>
