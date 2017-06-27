@@ -65,7 +65,7 @@ class OpalWAVRecordManager : public OpalRecordManager
 
   protected:
     struct Mixer : public OpalAudioMixer {
-      Mixer() { }
+      Mixer(bool stereo) : OpalAudioMixer(stereo, OpalMediaFormat::AudioClockRate, true, 50) { }
       ~Mixer() { StopPushThread(); }
 
       bool Open(const PFilePath & fn, const Options & options);
@@ -104,7 +104,7 @@ bool OpalWAVRecordManager::OpenFile(const PFilePath & fn)
     return false;
   }
 
-  m_mixer = new Mixer();
+  m_mixer = new Mixer(m_options.m_stereo);
   PTRACE_CONTEXT_ID_TO(m_mixer);
   if (m_mixer->Open(fn, m_options))
     return true;
