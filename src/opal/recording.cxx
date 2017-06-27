@@ -188,6 +188,7 @@ unsigned OpalWAVRecordManager::GetPushVideoPeriodMS() const
 
 bool OpalWAVRecordManager::WriteAudio(const PString & strm, const RTP_DataFrame & rtp)
 {
+  PTRACE(5, "Writing raw audio (" << rtp.GetPayloadSize() << " bytes) to " << strm);
   PWaitAndSignal mutex(m_mutex);
   return m_mixer != NULL && m_mixer->WriteStream(strm, rtp);
 }
@@ -227,6 +228,7 @@ bool OpalWAVRecordManager::Mixer::OnMixed(RTP_DataFrame * & output)
   if (!m_file.IsOpen())
     return false;
 
+  PTRACE(5, "Writing mixed audio (" << output->GetPayloadSize() << " bytes) to " << m_file.GetFilePath());
   if (m_file.Write(output->GetPayloadPtr(), output->GetPayloadSize()))
     return true;
 
