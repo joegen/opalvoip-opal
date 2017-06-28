@@ -54,7 +54,7 @@
 #include "../../common/dyna.cxx"
 
 
-static const char Version[] = "1";
+static const unsigned Version = 1; // API version
 
 
 #ifdef WIN32
@@ -218,8 +218,7 @@ int main(int argc, char *argv[])
 
     switch (msg) {
       case H264ENCODERCONTEXT_CREATE:
-          msg = atoi(&Version[11]);
-          WritePipe(&msg, sizeof(msg)); 
+          WritePipe(&Version, sizeof(Version)); 
         break;
       case H264ENCODERCONTEXT_DELETE:
           WritePipe(&msg, sizeof(msg)); 
