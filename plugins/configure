@@ -697,15 +697,21 @@ OPAL_BUILD
 OPAL_MINOR
 OPAL_MAJOR
 makedir
-SHARED_LDFLAGS
-SHARED_CPPFLAGS
 DLFCN_LIBS
 LDD
 NM
-DEBUGINFOEXT
-SHAREDLIBEXT
-STATICLIBEXT
+P_PROFILING
+OPT_CFLAGS
+OPT_CPPFLAGS
+DEBUG_CFLAGS
+DEBUG_CPPFLAGS
+CPLUSPLUS_STD
 ARFLAGS
+DEBUGINFOEXT
+STATICLIBEXT
+SHAREDLIBEXT
+SHARED_LDFLAGS
+SHARED_CPPFLAGS
 LD
 EGREP
 GREP
@@ -720,6 +726,7 @@ INSTALL_PROGRAM
 GIT
 SVN
 MKDIR_P
+RANLIB
 LN_S
 ac_ct_CXX
 CXXFLAGS
@@ -731,7 +738,6 @@ CPPFLAGS
 LDFLAGS
 CFLAGS
 CC
-RANLIB
 target_os
 target_vendor
 target_cpu
@@ -789,7 +795,10 @@ ac_subst_files=''
 ac_user_opts='
 enable_option_checking
 enable_ios
+enable_cpp11
+enable_cpp14
 enable_force32
+with_profiling
 with_plugin_installdir
 enable_silk
 enable_gsmamr
@@ -1501,6 +1510,8 @@ Optional Features:
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
   --enable-ios=iphone|simulator
                           enable iOS support
+  --enable-cpp11          Enable C++11 build
+  --enable-cpp14          Enable C++14 build
   --enable-force32        Force 32-bit x86 build
   --disable-silk          disable Skype SILK audio codec
   --disable-gsmamr        disable GSM-AMR audio codec
@@ -1541,6 +1552,7 @@ Optional Features:
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
+  --with-profiling        Enable profiling: gprof, eccam, raw or manual
   --with-plugin-installdir=DIR
                           Location where plugins are installed
   --with-gsm-dir=<dir>    location for GSM 06.10 audio codec
@@ -2993,160 +3005,6 @@ case $enable_ios in #(
           as_fn_error $? "Unknown iOS variant \"${enable_ios}\" - use either iphone or simulator" "$LINENO" 5
  ;;
 esac
-
-case $target_os in #(
-  iPhone*) :
-
-      if ${target_release+:} false; then :
-
-else
-  as_fn_error $? "Unable to determine iOS release number" "$LINENO" 5
-fi
-    ;; #(
-  darwin*) :
-
-      target_os=Darwin
-      target_release=`xcodebuild -showsdks | sed -n 's/.*macosx\(.*\)/\1/p' | sort | tail -n 1`
-    ;; #(
-  linux* | Linux* | uclibc*) :
-
-      target_os=linux
-    ;; #(
-  freebsd* | kfreebsd*) :
-
-      target_os=FreeBSD
-      target_release="`sysctl -n kern.osreldate`"
-      if test -n "$ac_tool_prefix"; then
-  # Extract the first word of "${ac_tool_prefix}ranlib", so it can be a program name with args.
-set dummy ${ac_tool_prefix}ranlib; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_prog_RANLIB+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test -n "$RANLIB"; then
-  ac_cv_prog_RANLIB="$RANLIB" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_RANLIB="${ac_tool_prefix}ranlib"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-fi
-fi
-RANLIB=$ac_cv_prog_RANLIB
-if test -n "$RANLIB"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $RANLIB" >&5
-$as_echo "$RANLIB" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-fi
-if test -z "$ac_cv_prog_RANLIB"; then
-  ac_ct_RANLIB=$RANLIB
-  # Extract the first word of "ranlib", so it can be a program name with args.
-set dummy ranlib; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_prog_ac_ct_RANLIB+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test -n "$ac_ct_RANLIB"; then
-  ac_cv_prog_ac_ct_RANLIB="$ac_ct_RANLIB" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_ac_ct_RANLIB="ranlib"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-fi
-fi
-ac_ct_RANLIB=$ac_cv_prog_ac_ct_RANLIB
-if test -n "$ac_ct_RANLIB"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_ct_RANLIB" >&5
-$as_echo "$ac_ct_RANLIB" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-  if test "x$ac_ct_RANLIB" = x; then
-    RANLIB=""
-  else
-    case $cross_compiling:$ac_tool_warned in
-yes:)
-{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
-$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
-ac_tool_warned=yes ;;
-esac
-    RANLIB=$ac_ct_RANLIB
-  fi
-else
-  RANLIB="$ac_cv_prog_RANLIB"
-fi
-
-    ;; #(
-  openbsd*) :
-
-      target_os=OpenBSD
-      target_release="`sysctl -n kern.osrevision`"
-    ;; #(
-  netbsd*) :
-
-      target_os=NetBSD
-      target_release="`/sbin/sysctl -n kern.osrevision`"
-    ;; #(
-  solaris* | sunos*) :
-
-      target_os=solaris
-      target_release=`uname -r | sed "s/5\.//g"`
-    ;; #(
-  beos*) :
-
-      target_os=beos
-    ;; #(
-  cygwin*) :
-
-      target_os=cygwin
-    ;; #(
-  mingw*) :
-
-      target_os=mingw
-    ;; #(
-  *) :
-          { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Operating system \"$target_os\" not recognized - proceed with caution!" >&5
-$as_echo "$as_me: WARNING: Operating system \"$target_os\" not recognized - proceed with caution!" >&2;}
- ;;
-esac
-
-if ${target_release+:} false; then :
-
-else
-  target_release="`uname -r`"
-fi
 
 
 oldCFLAGS="$CFLAGS"
@@ -5692,27 +5550,224 @@ $as_echo "#define HAVE_LONG_DOUBLE 1" >>confdefs.h
 
 LD=$CXX
 
-ARFLAGS="rc"
+SHARED_CPPFLAGS="-fPIC"
+
+SHARED_LDFLAGS='-shared -Wl,--build-id,-soname,$(LIB_SONAME)'
+
+SHAREDLIBEXT="so"
 
 STATICLIBEXT="a"
 
+DEBUGINFOEXT="debug"
 
-case $target_os in #(
-  iPhone* | Darwin) :
+ARFLAGS="rc"
 
+
+
+# Check whether --enable-cpp11 was given.
+if test "${enable_cpp11+set}" = set; then :
+  enableval=$enable_cpp11; CPLUSPLUS_STD="-std=c++11"
+
+fi
+
+# Check whether --enable-cpp14 was given.
+if test "${enable_cpp14+set}" = set; then :
+  enableval=$enable_cpp14; CPLUSPLUS_STD="-std=c++14"
+
+fi
+
+
+
+case "$target_os" in
+   darwin* | iPhone* )
+      SHARED_LDFLAGS='-dynamiclib -Wl,-install_name,@executable_path/$(LIB_SONAME)'
       SHAREDLIBEXT="dylib"
-
       DEBUGINFOEXT="dSYM"
+      AR="libtool"
+      ARFLAGS="-static -o"
+      RANLIB=
+      CPPFLAGS="-stdlib=libc++ $CPPFLAGS"
+      LDFLAGS="${LDFLAGS} -stdlib=libc++"
+      LIBS="-framework AudioToolbox -framework CoreAudio -framework SystemConfiguration -framework Foundation -lobjc $LIBS"
+   ;;
 
-    ;; #(
-  *) :
-    SHAREDLIBEXT="so"
-
-   DEBUGINFOEXT="debug"
-
- ;;
+   cygwin* | mingw* )
+      SHARED_CPPFLAGS=""
+      SHARED_LDFLAGS="-shared -Wl,--kill-at"
+      SHAREDLIBEXT="dll"
+      STATICLIBEXT="lib"
+   ;;
 esac
 
+case "$target_os" in
+   iPhone* )
+      if ${target_release+:} false; then :
+
+else
+  as_fn_error $? "Unable to determine iOS release number" "$LINENO" 5
+fi
+
+      IOS_DEVROOT="`xcode-select -print-path`/Platforms/${target_os}.platform/Developer"
+      IOS_SDKROOT=${IOS_DEVROOT}/SDKs/${target_os}${target_release}.sdk
+      IOS_FLAGS="-arch $target_cpu -miphoneos-version-min=6.0 -isysroot ${IOS_SDKROOT}"
+      CPPFLAGS="${IOS_FLAGS} $CPPFLAGS"
+      LDFLAGS="${IOS_FLAGS} -L${IOS_SDKROOT}/usr/lib $LDFLAGS"
+   ;;
+
+   darwin* )
+      target_os=Darwin
+      target_release=`xcodebuild -showsdks | sed -n 's/.*macosx\(.*\)/\1/p' | sort | tail -n 1`
+
+      CPPFLAGS="-mmacosx-version-min=$target_release $CPPFLAGS"
+      LDFLAGS="-mmacosx-version-min=$target_release $LDFLAGS"
+      LIBS="-framework AVFoundation -framework CoreVideo -framework CoreMedia -framework AudioUnit $LIBS"
+   ;;
+
+   linux* | Linux* | uclibc* )
+      target_os=linux
+   ;;
+
+   freebsd* | kfreebsd* )
+      target_os=FreeBSD
+      target_release="`sysctl -n kern.osreldate`"
+      if test -n "$ac_tool_prefix"; then
+  # Extract the first word of "${ac_tool_prefix}ranlib", so it can be a program name with args.
+set dummy ${ac_tool_prefix}ranlib; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_prog_RANLIB+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$RANLIB"; then
+  ac_cv_prog_RANLIB="$RANLIB" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_prog_RANLIB="${ac_tool_prefix}ranlib"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+fi
+fi
+RANLIB=$ac_cv_prog_RANLIB
+if test -n "$RANLIB"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $RANLIB" >&5
+$as_echo "$RANLIB" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+fi
+if test -z "$ac_cv_prog_RANLIB"; then
+  ac_ct_RANLIB=$RANLIB
+  # Extract the first word of "ranlib", so it can be a program name with args.
+set dummy ranlib; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_prog_ac_ct_RANLIB+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$ac_ct_RANLIB"; then
+  ac_cv_prog_ac_ct_RANLIB="$ac_ct_RANLIB" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_prog_ac_ct_RANLIB="ranlib"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+fi
+fi
+ac_ct_RANLIB=$ac_cv_prog_ac_ct_RANLIB
+if test -n "$ac_ct_RANLIB"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_ct_RANLIB" >&5
+$as_echo "$ac_ct_RANLIB" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+  if test "x$ac_ct_RANLIB" = x; then
+    RANLIB=""
+  else
+    case $cross_compiling:$ac_tool_warned in
+yes:)
+{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
+$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
+ac_tool_warned=yes ;;
+esac
+    RANLIB=$ac_ct_RANLIB
+  fi
+else
+  RANLIB="$ac_cv_prog_RANLIB"
+fi
+
+   ;;
+
+   openbsd* )
+      target_os=OpenBSD
+      target_release="`sysctl -n kern.osrevision`"
+   ;;
+
+   netbsd* )
+      target_os=NetBSD
+      target_release="`/sbin/sysctl -n kern.osrevision`"
+   ;;
+
+   solaris* | sunos* )
+      target_os=solaris
+      target_release=`uname -r | sed "s/5\.//g"`
+      CPPFLAGS="-D__inline=inline -DSOLARIS $CPPFLAGS"
+      SHARED_LDFLAGS='-Bdynamic -G -h $(LIB_SONAME)'
+   ;;
+
+   beos* )
+      target_os=beos
+      CPPFLAGS="-D__BEOS__ -DBE_THREADS -Wno-multichar -Wno-format $CPPFLAGS"
+      LIBS="-lstdc++.r4 -lbe -lmedia -lgame -lroot -lsocket -lbind -ldl $LIBS"
+      SHARED_LDFLAGS="-shared -nostdlib -nostart"
+   ;;
+
+   cygwin* )
+      target_os=cygwin
+   ;;
+
+   mingw* )
+      target_os=mingw
+      LIBS="-lwinmm -lwsock32 -lws2_32 -lsnmpapi -lmpr -lcomdlg32 -lgdi32 -lavicap32 -liphlpapi -lole32 -lquartz $LIBS"
+   ;;
+
+   * )
+      { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Operating system \"$target_os\" not recognized - proceed with caution!" >&5
+$as_echo "$as_me: WARNING: Operating system \"$target_os\" not recognized - proceed with caution!" >&2;}
+   ;;
+esac
+
+if ${target_release+:} false; then :
+
+else
+  target_release="`uname -r`"
+fi
 
 case $target_cpu in #(
   x86 | i686 | i586 | i486 | i386) :
@@ -5807,6 +5862,18 @@ fi
    target_cpu=x86
    target_64bit=0
 
+   if test "x$target_os" = xDarwin; then :
+
+      CPPFLAGS="-arch i386 $CPPFLAGS"
+      LDFLAGS="$LDFLAGS -arch i386"
+
+else
+
+      CPPFLAGS="-m32 $CPPFLAGS"
+      LDFLAGS="$LDFLAGS -m32"
+
+fi
+
    { $as_echo "$as_me:${as_lineno-$LINENO}: Forcing 32 bit x86 compile" >&5
 $as_echo "$as_me: Forcing 32 bit x86 compile" >&6;}
 
@@ -5817,6 +5884,530 @@ target=${target_os}_${target_cpu}
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: Platform: \"$target_os\" release \"$target_release\" on \"$target_cpu\"" >&5
 $as_echo "$as_me: Platform: \"$target_os\" release \"$target_release\" on \"$target_cpu\"" >&6;}
+
+
+
+DEBUG_CPPFLAGS="-D_DEBUG $DEBUG_CPPFLAGS"
+
+if ${DEBUG_FLAG+:} false; then :
+
+else
+
+   oldCPPFLAGS="$CPPFLAGS"
+   CPPFLAGS="$CPPFLAGS -gdwarf-4"
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking debug build (-gdwarf-4)" >&5
+$as_echo_n "checking debug build (-gdwarf-4)... " >&6; }
+   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  usable=yes
+else
+  usable=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
+$as_echo "$usable" >&6; }
+   CPPFLAGS="$oldCPPFLAGS"
+
+   if test "x$usable" = "xyes"; then :
+  DEBUG_FLAG="-gdwarf-4"
+else
+
+   oldCPPFLAGS="$CPPFLAGS"
+   CPPFLAGS="$CPPFLAGS -g3"
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking debug build (-g3)" >&5
+$as_echo_n "checking debug build (-g3)... " >&6; }
+   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  usable=yes
+else
+  usable=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
+$as_echo "$usable" >&6; }
+   CPPFLAGS="$oldCPPFLAGS"
+
+   if test "x$usable" = "xyes"; then :
+  DEBUG_FLAG="-g3"
+else
+  DEBUG_FLAG="-g"
+
+fi
+
+
+
+fi
+
+
+
+fi
+DEBUG_CFLAGS="$DEBUG_FLAG $DEBUG_CFLAGS"
+
+
+OPT_CPPFLAGS="-DNDEBUG $OPT_CPPFLAGS"
+
+
+   oldCPPFLAGS="$CPPFLAGS"
+   CPPFLAGS="$CPPFLAGS -O3"
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking optimised build (-O3)" >&5
+$as_echo_n "checking optimised build (-O3)... " >&6; }
+   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  usable=yes
+else
+  usable=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
+$as_echo "$usable" >&6; }
+   CPPFLAGS="$oldCPPFLAGS"
+
+   if test "x$usable" = "xyes"; then :
+  OPT_CFLAGS="-O3 $OPT_CFLAGS"
+else
+  OPT_CFLAGS="-O $OPT_CFLAGS"
+
+fi
+
+
+
+
+
+
+
+   oldCPPFLAGS="$CPPFLAGS"
+   CPPFLAGS="$CPPFLAGS -Werror -Wno-unknown-pragmas"
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking Disable unknown-pragmas warning (-Wno-unknown-pragmas)" >&5
+$as_echo_n "checking Disable unknown-pragmas warning (-Wno-unknown-pragmas)... " >&6; }
+   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  usable=yes
+else
+  usable=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
+$as_echo "$usable" >&6; }
+   CPPFLAGS="$oldCPPFLAGS"
+
+   if test "x$usable" = "xyes"; then :
+  CPPFLAGS="-Wno-unknown-pragmas $CPPFLAGS"
+
+fi
+
+
+
+ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+
+
+
+   oldCPPFLAGS="$CPPFLAGS"
+   CPPFLAGS="$CPPFLAGS -Werror -Wno-unused-private-field"
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking Disable unused-private-field warning (-Wno-unused-private-field)" >&5
+$as_echo_n "checking Disable unused-private-field warning (-Wno-unused-private-field)... " >&6; }
+   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"; then :
+  usable=yes
+else
+  usable=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
+$as_echo "$usable" >&6; }
+   CPPFLAGS="$oldCPPFLAGS"
+
+   if test "x$usable" = "xyes"; then :
+  CXXFLAGS="-Wno-unused-private-field $CXXFLAGS"
+
+fi
+
+
+
+
+   oldCPPFLAGS="$CPPFLAGS"
+   CPPFLAGS="$CPPFLAGS -Werror -Wno-overloaded-virtual"
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking Disable overloaded-virtual warning (-Wno-overloaded-virtual)" >&5
+$as_echo_n "checking Disable overloaded-virtual warning (-Wno-overloaded-virtual)... " >&6; }
+   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"; then :
+  usable=yes
+else
+  usable=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
+$as_echo "$usable" >&6; }
+   CPPFLAGS="$oldCPPFLAGS"
+
+   if test "x$usable" = "xyes"; then :
+  CXXFLAGS="-Wno-overloaded-virtual $CXXFLAGS"
+
+fi
+
+
+
+
+   oldCPPFLAGS="$CPPFLAGS"
+   CPPFLAGS="$CPPFLAGS -Werror -Wno-deprecated-declarations"
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking Disable deprecated-declarations warning (-Wno-deprecated-declarations)" >&5
+$as_echo_n "checking Disable deprecated-declarations warning (-Wno-deprecated-declarations)... " >&6; }
+   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"; then :
+  usable=yes
+else
+  usable=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
+$as_echo "$usable" >&6; }
+   CPPFLAGS="$oldCPPFLAGS"
+
+   if test "x$usable" = "xyes"; then :
+  CXXFLAGS="$CXXFLAGS -Wno-deprecated-declarations"
+
+fi
+
+
+
+
+   oldCPPFLAGS="$CPPFLAGS"
+   CPPFLAGS="$CPPFLAGS -Werror -Wno-potentially-evaluated-expression"
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking Disable potentially evaluated expression warning (-Wno-potentially-evaluated-expression)" >&5
+$as_echo_n "checking Disable potentially evaluated expression warning (-Wno-potentially-evaluated-expression)... " >&6; }
+   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"; then :
+  usable=yes
+else
+  usable=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
+$as_echo "$usable" >&6; }
+   CPPFLAGS="$oldCPPFLAGS"
+
+   if test "x$usable" = "xyes"; then :
+  CXXFLAGS="$CXXFLAGS -Wno-potentially-evaluated-expression"
+
+fi
+
+
+
+ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+
+
+   oldCPPFLAGS="$CPPFLAGS"
+   CPPFLAGS="$CPPFLAGS -Wall"
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking warnings (-Wall)" >&5
+$as_echo_n "checking warnings (-Wall)... " >&6; }
+   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  usable=yes
+else
+  usable=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
+$as_echo "$usable" >&6; }
+   CPPFLAGS="$oldCPPFLAGS"
+
+   if test "x$usable" = "xyes"; then :
+  CPPFLAGS="-Wall $CPPFLAGS"
+
+fi
+
+
+
+
+
+
+# Check whether --with-profiling was given.
+if test "${with_profiling+set}" = set; then :
+  withval=$with_profiling;
+      case $with_profiling in #(
+  gprof) :
+
+
+   oldCPPFLAGS="$CPPFLAGS"
+   CPPFLAGS="$CPPFLAGS -pg"
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking has compiler supported profiling (-pg)" >&5
+$as_echo_n "checking has compiler supported profiling (-pg)... " >&6; }
+   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  usable=yes
+else
+  usable=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
+$as_echo "$usable" >&6; }
+   CPPFLAGS="$oldCPPFLAGS"
+
+   if test "x$usable" = "xyes"; then :
+
+
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Adding CFLAGS: -pg" >&5
+$as_echo "$as_me: Adding CFLAGS: -pg" >&6;}
+      CFLAGS="-pg $CFLAGS"
+
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Adding CXXFLAGS: -pg" >&5
+$as_echo "$as_me: Adding CXXFLAGS: -pg" >&6;}
+      CXXFLAGS="-pg $CXXFLAGS"
+
+
+
+else
+  as_fn_error $? "Compiler does not support gprof profiling" "$LINENO" 5
+
+fi
+
+
+          ;; #(
+  eccam|raw) :
+
+
+   oldCPPFLAGS="$CPPFLAGS"
+   CPPFLAGS="$CPPFLAGS -finstrument-functions"
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking has compiler supported instrumentation (-finstrument-functions)" >&5
+$as_echo_n "checking has compiler supported instrumentation (-finstrument-functions)... " >&6; }
+   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  usable=yes
+else
+  usable=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
+$as_echo "$usable" >&6; }
+   CPPFLAGS="$oldCPPFLAGS"
+
+   if test "x$usable" = "xyes"; then :
+
+                  if test "x$with_profiling" = xraw; then :
+
+                     $as_echo "#define P_PROFILING 1" >>confdefs.h
+,
+
+else
+
+
+   oldCPPFLAGS="$CPPFLAGS"
+   CPPFLAGS="$CPPFLAGS "
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking has Eccam embedded profile libraries (-lEProfiler)" >&5
+$as_echo_n "checking has Eccam embedded profile libraries (-lEProfiler)... " >&6; }
+   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+-lEProfiler
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  usable=yes
+else
+  usable=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
+$as_echo "$usable" >&6; }
+   CPPFLAGS="$oldCPPFLAGS"
+
+   if test "x$usable" = "xyes"; then :
+
+
+
+
+
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Adding LIBS: -lEProfiler" >&5
+$as_echo "$as_me: Adding LIBS: -lEProfiler" >&6;}
+      LIBS="-lEProfiler $LIBS"
+
+
+
+else
+  as_fn_error $? "Eccam profiling not installed" "$LINENO" 5
+
+fi
+
+
+
+fi
+
+
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Adding CFLAGS: -finstrument-functions" >&5
+$as_echo "$as_me: Adding CFLAGS: -finstrument-functions" >&6;}
+      CFLAGS="-finstrument-functions $CFLAGS"
+
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Adding CXXFLAGS: -finstrument-functions" >&5
+$as_echo "$as_me: Adding CXXFLAGS: -finstrument-functions" >&6;}
+      CXXFLAGS="-finstrument-functions $CXXFLAGS"
+
+
+
+
+else
+  as_fn_error $? "Compiler does not support gprof profiling" "$LINENO" 5
+
+fi
+
+
+          ;; #(
+  manual) :
+
+            $as_echo "#define P_PROFILING 2" >>confdefs.h
+
+          ;; #(
+  *) :
+    as_fn_error $? "Unknown profile method \"$with_profiling\"" "$LINENO" 5
+       ;;
+esac
+
+      P_PROFILING=$with_profiling
+
+
+
+fi
+
 
 
 
@@ -6252,16 +6843,6 @@ esac
 
 
 
-
-
-CPPFLAGS="`pkg-config ptlib --variable=CPPFLAGS` $CPPFLAGS"
-CFLAGS="`pkg-config ptlib --cflags` $CFLAGS"
-CXXFLAGS="`pkg-config ptlib --variable=CXXFLAGS` $CXXFLAGS"
-LDFLAGS="`pkg-config ptlib --variable=LDFLAGS` $LDFLAGS"
-LIBS="`pkg-config ptlib --libs` $LIBS"
-SHARED_CPPFLAGS=`pkg-config ptlib --variable=SHARED_CPPFLAGS`
-
-SHARED_LDFLAGS=`pkg-config ptlib --variable=SHARED_LDFLAGS`
 
 
 
@@ -12887,52 +13468,6 @@ fi
   $as_echo "         Voicetronics VPB support : ${HAVE_VPB}"
 else
   $as_echo "         Voicetronics VPB support : no"
-
-fi
-
-
-   $as_echo ""
-
-   if ${CPPFLAGS+:} false; then :
-  $as_echo "                         CPPFLAGS : ${CPPFLAGS}"
-else
-  $as_echo "                         CPPFLAGS : no"
-
-fi
-
-
-
-   if ${CFLAGS+:} false; then :
-  $as_echo "                           CFLAGS : ${CFLAGS}"
-else
-  $as_echo "                           CFLAGS : no"
-
-fi
-
-
-
-   if ${CXXFLAGS+:} false; then :
-  $as_echo "                         CXXFLAGS : ${CXXFLAGS}"
-else
-  $as_echo "                         CXXFLAGS : no"
-
-fi
-
-
-
-   if ${LDFLAGS+:} false; then :
-  $as_echo "                          LDFLAGS : ${LDFLAGS}"
-else
-  $as_echo "                          LDFLAGS : no"
-
-fi
-
-
-
-   if ${LIBS+:} false; then :
-  $as_echo "                             LIBS : ${LIBS}"
-else
-  $as_echo "                             LIBS : no"
 
 fi
 

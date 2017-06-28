@@ -130,7 +130,7 @@ AC_ARG_WITH(
 
 PKG_CHECK_MODULES(
    [PTLIB],
-   [ptlib >= 2.17.4],
+   [ptlib >= 2.14.1],
    [],
    [AC_MSG_ERROR([
       Cannot continue without PTLib!
@@ -147,13 +147,6 @@ if test "x`pkg-config ptlib --variable=target`" != "x$target" ; then
    ])
 fi
 
-CPPFLAGS="`pkg-config ptlib --variable=CPPFLAGS` $CPPFLAGS"
-CFLAGS="`pkg-config ptlib --cflags` $CFLAGS"
-CXXFLAGS="`pkg-config ptlib --variable=CXXFLAGS` $CXXFLAGS"
-LDFLAGS="`pkg-config ptlib --variable=LDFLAGS` $LDFLAGS"
-LIBS="`pkg-config ptlib --libs` $LIBS"
-AC_SUBST(SHARED_CPPFLAGS, `pkg-config ptlib --variable=SHARED_CPPFLAGS`)
-AC_SUBST(SHARED_LDFLAGS, `pkg-config ptlib --variable=SHARED_LDFLAGS`)
 AC_SUBST(PTLIB_MAKE_DIR, `pkg-config ptlib --variable=makedir`)
 AC_SUBST(PTLIB_LIB_DIR,  `pkg-config ptlib --variable=libdir`)
 

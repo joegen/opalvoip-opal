@@ -54,10 +54,10 @@ endif
 
 # The -I option allows to build the simple application in the same time as opal
 # (as used by distribution packagers)
-CPPFLAGS += $(shell pkg-config $(PKG_FLAGS) --variable CPPFLAGS opal) \
-            $(shell pkg-config $(PKG_FLAGS) --variable CPPFLAGS ptlib)
-CXXFLAGS += $(shell pkg-config $(PKG_FLAGS) --variable CXXFLAGS opal) \
-            $(shell pkg-config $(PKG_FLAGS) --variable CXXFLAGS ptlib)
+CPPFLAGS += $(shell pkg-config $(PKG_FLAGS) --variable cppflags opal) \
+            $(shell pkg-config $(PKG_FLAGS) --variable cppflags ptlib)
+CXXFLAGS += $(shell pkg-config $(PKG_FLAGS) --variable cxxflags opal) \
+            $(shell pkg-config $(PKG_FLAGS) --variable cxxflags ptlib)
 LDFLAGS  += $(shell pkg-config $(PKG_FLAGS) --cflags opal)
 LDFLAGS  := $(shell pkg-config $(PKG_FLAGS) --libs opal) $(LDFLAGS)
 
