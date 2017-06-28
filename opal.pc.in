@@ -16,10 +16,16 @@ target=@target@
 suffix=
 objdir=obj/@target@${suffix}
 
-cppflags=@CPPFLAGS@
-cxxflags=@CPPFLAGS@ @CXXFLAGS@
 Cflags: @CPPFLAGS@ @CFLAGS@
+ldflags=@LDFLAGS@
 Libs: @LDFLAGS@ -L${libdir} -lopal${suffix} @LIBS@
+
+CPPFLAGS=@CPPFLAGS@
+CXXFLAGS=@CPPFLAGS@ @CXXFLAGS@
+LDFLAGS=@LDFLAGS@
+
+SHARED_CPPFLAGS=@SHARED_CPPFLAGS@
+SHARED_LDFLAGS=@SHARED_LDFLAGS@
 
 #Optional OPAL features
 OPAL_H323=@OPAL_H323@
