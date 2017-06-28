@@ -717,6 +717,8 @@ OPAL_PTLIB_HTTP
 OPAL_PTLIB_URL
 PTLIB_LIB_DIR
 PTLIB_MAKE_DIR
+SHARED_LDFLAGS
+SHARED_CPPFLAGS
 PTLIB_LIBS
 PTLIB_CFLAGS
 OPAL_VERSION
@@ -6137,6 +6139,15 @@ if test "x`pkg-config ptlib --variable=target`" != "x$target" ; then
       PKG_CONFIG_PATH=$PKG_CONFIG_PATH
    " "$LINENO" 5
 fi
+
+CPPFLAGS="`pkg-config ptlib --variable=CPPFLAGS` $CPPFLAGS"
+CFLAGS="`pkg-config ptlib --cflags` $CFLAGS"
+CXXFLAGS="`pkg-config ptlib --variable=CXXFLAGS` $CXXFLAGS"
+LDFLAGS="`pkg-config ptlib --variable=LDFLAGS` $LDFLAGS"
+LIBS="`pkg-config ptlib --libs` $LIBS"
+SHARED_CPPFLAGS=`pkg-config ptlib --variable=SHARED_CPPFLAGS`
+
+SHARED_LDFLAGS=`pkg-config ptlib --variable=SHARED_LDFLAGS`
 
 PTLIB_MAKE_DIR=`pkg-config ptlib --variable=makedir`
 
