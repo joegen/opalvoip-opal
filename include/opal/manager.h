@@ -2069,7 +2069,7 @@ class OpalManager : public PObject
     void GarbageCollection();
 
     // Decoupled event to avoid deadlocks, especially from patch threads
-    void QueueDecoupledEvent(PSafeWork * work) { m_decoupledEventPool.AddWork(work); }
+    void QueueDecoupledEvent(PSafeWork * work, const char * group = NULL) { m_decoupledEventPool.AddWork(work, group); }
 
   protected:
     // Configuration variables
