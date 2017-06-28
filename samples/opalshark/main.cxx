@@ -407,7 +407,7 @@ OptionsDialog::OptionsDialog(MyManager *manager, const MyOptions & options)
   m_screenAudioDevice = m_options.m_AudioDevice;
   m_screenAudioDevice.Replace(wxT("\t"), wxT(": "));
 
-  wxComboBox * combo;
+  wxComboBox * combo = NULL;
   FindWindowByNameAs(combo, this, AudioDeviceKey)->SetValidator(wxGenericValidator(&m_screenAudioDevice));
 
   PStringArray devices = PSoundChannel::GetDeviceNames(PSoundChannel::Player);
