@@ -741,15 +741,16 @@ class H264_Encoder : public PluginVideoEncoder<MY_CODEC>
 
       unsigned h241MBPS = (m_h241MBPS%MAX_MBPS_H241)*500;
       unsigned sdpMBPS = m_sdpMBPS%MAX_MBPS_SDP;
+      unsigned actualMBPS = std::max(LevelInfo[levelIndex].m_MaxMBPS, std::max(h241MBPS, sdpMBPS));
 
-      unsigned minFrameTime = PLUGINCODEC_VIDEO_CLOCK*GetMacroBlocks(m_width, m_height) /
-                        std::max(LevelInfo[levelIndex].m_MaxMBPS, std::max(h241MBPS, sdpMBPS));
+      unsigned minFrameTime = PLUGINCODEC_VIDEO_CLOCK*GetMacroBlocks(m_width, m_height)/actualMBPS;
 
-      PTRACE(3, MY_CODEC_LOG, "For level " << LevelInfo[levelIndex].m_Name << ", "
-                              "H.241 MBPS=" << h241MBPS << ", "
-                              "SDP MBPS=" << h241MBPS << ", "
+      PTRACE(4, MY_CODEC_LOG, "For level " << LevelInfo[levelIndex].m_Name << ", "
+                              "H.241-MBPS=" << h241MBPS << ", "
+                              "SDP-MBPS=" << h241MBPS << ", "
+                              "MBPS=" << actualMBPS << ", "
                               " and " << m_width << 'x' << m_height
-               << ", max frame rate is " << (PLUGINCODEC_VIDEO_CLOCK/minFrameTime) << ", "
+               << ", max frame rate is " << (PLUGINCODEC_VIDEO_CLOCK/minFrameTime) << ", will be "
                << (m_frameTime < minFrameTime ? "lowered" : "unchanged") << " from "
                << (PLUGINCODEC_VIDEO_CLOCK/m_frameTime));
 
