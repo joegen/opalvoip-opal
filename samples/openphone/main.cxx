@@ -1171,13 +1171,21 @@ bool MyManager::Initialise(bool startMinimised)
     config->SetPath(NetworkingGroup);
   }
 
-  for (PNatMethods::iterator it = GetNatMethods().begin(); it != GetNatMethods().end(); ++it) {
-    PwxString method(it->GetMethodName());
-    config->SetPath(NatMethodsGroup);
-    config->SetPath(method);
-    config->Read(NATActiveKey, &onoff, it->IsActive());
-    config->Read(NATPriorityKey, &value1, it->GetPriority());
-    SetNAT(method, onoff, config->Read(NATServerKey), value1);
+  {
+    PNatMethods & methods = GetNatMethods();
+    std::list<PwxString> methodNames;
+    for (PNatMethods::iterator it = methods.begin(); it != methods.end(); ++it)
+      methodNames.push_back(it->GetMethodName());
+    for (std::list<PwxString>::iterator method = methodNames.begin(); method != methodNames.end(); ++method) {
+      PNatMethod * it = methods.GetMethodByName(method->p_str());
+      if (PAssertNULL(it)) {
+        config->SetPath(NatMethodsGroup);
+        config->SetPath(*method);
+        config->Read(NATActiveKey, &onoff, it->IsActive());
+        config->Read(NATPriorityKey, &value1, it->GetPriority());
+        SetNAT(*method, onoff, config->Read(NATServerKey), value1);
+      }
+    }
   }
 
 
