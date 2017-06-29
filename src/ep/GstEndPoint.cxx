@@ -611,14 +611,16 @@ bool GstEndPoint::BuildAudioSourcePipeline(ostream & description, const GstMedia
   description << " ! ";
   OutputRawAudioCaps(description, mediaFormat);
 
+  if (!BuildVolume(description, GetPipelineVolumeName()))
+      return false;
+
   if (mediaFormat != OpalPCM16) {
     description << " ! ";
     if (!BuildEncoder(description, stream))
       return false;
   }
 
-  return BuildVolume(description, GetPipelineVolumeName()) &&
-         BuildAppSink(description, GetPipelineAudioSinkName(), rtpIndex);
+  return BuildAppSink(description, GetPipelineAudioSinkName(), rtpIndex);
 }
 
 
@@ -643,11 +645,11 @@ bool GstEndPoint::BuildAudioSinkPipeline(ostream & description, const GstMediaSt
     if (!BuildAppSource(description, GetPipelineAudioSourceName()))
       return false;
 
-    if (!BuildVolume(description, GetPipelineVolumeName()))
-      return false;
-
     OpalMediaFormat mediaFormat = stream.GetMediaFormat();
     if (mediaFormat == OpalPCM16) {
+      if (!BuildVolume(description, GetPipelineVolumeName()))
+        return false;
+
       OutputRawAudioCaps(description, mediaFormat);
       description << " ! ";
       return BuildAudioSinkDevice(description, stream);
@@ -661,6 +663,9 @@ bool GstEndPoint::BuildAudioSinkPipeline(ostream & description, const GstMediaSt
     return false;
 
   if (!BuildDecoder(description, stream))
+    return false;
+
+  if (!BuildVolume(description, GetPipelineVolumeName()))
     return false;
 
   description << " ! ";
