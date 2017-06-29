@@ -322,7 +322,7 @@ void SIPHandler::SetExpire(int e)
 
 void SIPHandler::WriteTransaction(OpalTransport & transport, bool & succeeded)
 {
-  SIPTransaction * transaction = CreateTransaction(transport);
+  PSafePtr<SIPTransaction> transaction = CreateTransaction(transport);
   if (transaction == NULL) {
     PTRACE(2, "Could not create transaction on " << transport);
     return;
@@ -576,6 +576,8 @@ PString SIPRegisterHandler::CreateRegisterContact(const OpalTransportAddress & a
   if (q >= 0)
     contact.GetFieldParameters().Set("q", q < 1000 ? psprintf("0.%03u", q) : "1");
 
+  contact.GetFieldParameters().Set("expires", GetExpire());
+
   return contact.AsQuotedString();
 }
 
@@ -592,7 +594,7 @@ SIPTransaction * SIPRegisterHandler::CreateTransaction(OpalTransport & transport
         params.m_contactAddress = "*";
       else {
         for (SIPURLList::iterator contact = m_contactAddresses.begin(); contact != m_contactAddresses.end(); ++contact)
-          contact->GetFieldParameters().Remove("expires");
+          contact->GetFieldParameters().Set("expires", 0);
         params.m_contactAddress = m_contactAddresses.ToString();
       }
     }
@@ -788,7 +790,7 @@ void SIPRegisterHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & re
     /* If we got here then we have done a successful register, but registrar indicated
        that we are behind firewall. Unregister what we just registered */
     for (SIPURLList::iterator contact = replyContacts.begin(); contact != replyContacts.end(); ++contact)
-      contact->GetFieldParameters().Remove("expires");
+      contact->GetFieldParameters().Set("expires", 0);
     PTRACE(2, "Remote indicated change of REGISTER Contact address(s) (" << replyContacts
            << ") required due to NAT address " << externalAddress << ", previous=" << m_externalAddress);
     m_contactAddresses = replyContacts;
