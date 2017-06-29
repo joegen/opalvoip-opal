@@ -2057,7 +2057,7 @@ bool OpalManager::SetNATServer(const PString & method, const PString & server, b
   natMethod->SetPortRanges(GetUDPPortRange().GetBase(), GetUDPPortRange().GetMax(),
                            GetRtpIpPortRange().GetBase(), GetRtpIpPortRange().GetMax());
   if (!natMethod->SetServer(server)) {
-    PTRACE(2, "Invalid server \"" << server << " for " << method << " NAT method");
+    PTRACE(2, "Invalid server \"" << server << "\" for " << method << " NAT method");
     return false;
   }
 
