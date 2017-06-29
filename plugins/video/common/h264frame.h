@@ -69,6 +69,11 @@ public:
   void Allocate(uint32_t numberOfNALs);
   bool AddNALU(uint8_t type, size_t length, const uint8_t * payload);
 
+  void SetPacketisationMode(unsigned mode)
+  {
+    m_packetisationMode = mode;
+  }
+
   void SetTimestamp (uint32_t timestamp) 
   {
     m_timestamp = timestamp;
@@ -102,6 +107,7 @@ private:
   bool     m_constraint_set1;
   bool     m_constraint_set2;
   bool     m_constraint_set3;
+  unsigned m_packetisationMode;
   uint32_t m_timestamp;
 
   struct NALU

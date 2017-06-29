@@ -768,12 +768,15 @@ class H264_Encoder : public PluginVideoEncoder<MY_CODEC>
       unsigned mode = m_isH323 ? m_packetisationModeH323 : m_packetisationModeSDP;
       if (mode == 0) {
         unsigned size = std::min(m_maxRTPSize-PluginCodec_RTP_MinHeaderSize, m_maxNALUSize);
+        // RTP payload size and NALU size equal indicates mode zero use to encoder
         m_encoder.SetMaxRTPPayloadSize(size);
         m_encoder.SetMaxNALUSize(size);
       }
       else {
+        // RTP payload size and NALU size equal indicates mode zero use to encoder
+        // So, make sure never the case here as we are mode one
         m_encoder.SetMaxRTPPayloadSize(m_maxRTPSize);
-        m_encoder.SetMaxNALUSize(m_maxNALUSize);
+        m_encoder.SetMaxNALUSize(std::min(m_maxNALUSize, m_maxRTPSize-1));
       }
 
       m_encoder.ApplyOptions();
@@ -938,7 +941,7 @@ class H264_FlashEncoder : public H264_Encoder, protected H264FlashPacketizer
 
     virtual bool OnChangedOptions()
     {
-      m_maxNALUSize = m_maxRTPSize - PluginCodec_RTP_MinHeaderSize - H264FlashPacketizer::HeaderSize;
+      m_maxNALUSize = m_maxRTPSize; // Make sure the same so mode zero used
       m_packetisationModeSDP = m_packetisationModeH323 = 0;
       return H264_Encoder::OnChangedOptions();
     }

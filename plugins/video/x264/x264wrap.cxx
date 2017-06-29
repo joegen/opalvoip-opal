@@ -239,12 +239,14 @@ bool H264Encoder::SetRateControlPeriod(unsigned period)
 bool H264Encoder::SetMaxRTPPayloadSize(unsigned size)
 {
   m_encapsulation.SetMaxPayloadSize(size);
+  m_encapsulation.SetPacketisationMode(size == (unsigned)m_context.i_slice_max_size ? 0 : 1);
   return true;
 }
 
 
 bool H264Encoder::SetMaxNALUSize(unsigned size)
 {
+  m_encapsulation.SetPacketisationMode(size == m_encapsulation.GetMaxPayloadSize() ? 0 : 1);
   m_context.i_slice_max_size = size;
   return true;
 }

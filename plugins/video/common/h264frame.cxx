@@ -42,6 +42,7 @@ H264Frame::H264Frame()
   , m_constraint_set1(false)
   , m_constraint_set2(false)
   , m_constraint_set3(false)
+  , m_packetisationMode(0)
   , m_timestamp(0)
 {
   m_maxPayloadSize = 1400;
@@ -116,6 +117,7 @@ bool H264Frame::GetPacket(PluginCodec_RTP & frame, unsigned int & flags)
 
   uint32_t curNALLen = m_NALs[m_currentNAL].length;
   const uint8_t *curNALPtr = m_buffer + m_NALs[m_currentNAL].offset;
+
   /*
     * We have 3 types of packets we can send:
     * fragmentation units - if the NAL is > max_payload_size
@@ -125,14 +127,22 @@ bool H264Frame::GetPacket(PluginCodec_RTP & frame, unsigned int & flags)
     * We don't send multiple time aggregation units
     */
 
-  // fragmentation unit - break up into max_payload_size size chunks
-  if (curNALLen > m_maxPayloadSize)
-    return EncapsulateFU(frame, flags);
+  if (m_packetisationMode > 0) {
+    // fragmentation unit - break up into max_payload_size size chunks
+    if (curNALLen > m_maxPayloadSize)
+      return EncapsulateFU(frame, flags);
 
-  // it is the last NAL of that frame or doesnt fit into an STAP packet with next nal ?
-  if (((m_currentNAL + 1) < m_numberOfNALsInFrame) &&
+    // it is the last NAL of that frame or doesnt fit into an STAP packet with next nal ?
+    if (((m_currentNAL + 1) < m_numberOfNALsInFrame) &&
       ((curNALLen + m_NALs[m_currentNAL + 1].length + 5) <= m_maxPayloadSize))
-    return EncapsulateSTAP(frame, flags); 
+      return EncapsulateSTAP(frame, flags);
+  }
+  else {
+    if (curNALLen > m_maxPayloadSize) {
+      PTRACE(2, GetName(), "Cannot use mode zero for " << curNALLen << " byte NALU with " << m_maxPayloadSize << " byte packet");
+      return false;
+    }
+  }
 
   // single nal unit packet
   frame.SetPayloadSize(curNALLen);
