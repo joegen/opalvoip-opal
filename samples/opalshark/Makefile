@@ -23,10 +23,39 @@
 #
 
 PROG		:= opalshark
-RESOURCES       := $(PROG).cxx
-SOURCES		:= main.cxx $(RESOURCES)
+SOURCES		:= main.cxx opalshark.cxx
+
 VERSION_FILE    := version.h
-USING_WX_WIDGETS:=yes
+
+WX_CONFIG := $(firstword $(wildcard $(addsuffix /wx-config,$(subst :, ,$(PATH):/opt/local/Library/Frameworks/wxWidgets.framework/Versions/wxWidgets/3.0/bin))))
+ifneq (,$(WX_CONFIG))
+  WXRC := $(dir $(WX_CONFIG))/wxrc
+else
+  WX_CONFIG := $(firstword $(wildcard $(addsuffix /wxgtk2u-2.8-config,$(subst :, ,$(PATH)))))
+  ifneq (,$(WX_CONFIG))
+    WXRC := $(dir $(WX_CONFIG))/wxrc-gtk2u-2.8
+  else
+    WX_CONFIG := wx-config-3.0
+    ifneq (,$(shell which $(WX_CONFIG) 2>&1))
+      WXRC := wxrc-3.0
+    else
+      WX_CONFIG := wx-config
+      ifneq (,$(shell which $(WX_CONFIG) 2>&1))
+        WXRC := wxrc
+      else
+        $(error Could not find wx-config)
+      endif
+    endif
+  endif
+endif
+
+ifneq (,$(DEBUG_BUILD))
+  ifneq (,$(shell $(WX_CONFIG) --list | grep debug))
+    WX_CONFIG += --debug=$(DEBUG_BUILD)
+  else
+    CPPFLAGS += -DOPAL_WX_DEBUG_HACK
+  endif
+endif
 
 
 # Need this before the include of opal.mak
@@ -40,9 +69,13 @@ else
 endif
 
 
-$(RESOURCES) : $(RESOURCES:.cxx=.xrc)
-	$(WXRC) $< -c -o $@
+CPPFLAGS += $(shell $(WX_CONFIG) --cppflags)
+CXXFLAGS += $(shell $(WX_CONFIG) --cxxflags)
+CFLAGS   += $(shell $(WX_CONFIG) --cflags)
+LIBS     += $(shell $(WX_CONFIG) --libs)
 
-clean ::
-	if [ -e $(RESOURCES) ]; then rm $(RESOURCES); fi
+
+opalshark.cxx : opalshark.xrc
+	$(WXRC) opalshark.xrc -c -o opalshark.cxx
+
 
