@@ -213,9 +213,6 @@ bool H264Encoder::SetFrameRate(unsigned rate)
 
 bool H264Encoder::SetTargetBitrate(unsigned rate)
 {
-  if (rate < 32) // Anything below 32kbps is stupid
-    return false;
-
   unsigned period = m_context.rc.i_vbv_buffer_size*1000/m_context.rc.i_bitrate;
 
   /* That's how CBR should looks like. Much more stable bitrate output
