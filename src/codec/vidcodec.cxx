@@ -224,7 +224,8 @@ bool OpalVideoTranscoder::ShouldDropFrame(RTP_Timestamp ts)
   RTP_Timestamp delta = ts - m_lastTimestamp;
   m_lastTimestamp = ts;
 
-  if (delta == 0)
+  // Use the expected frame time if the provided timestamps look suspicious
+  if (delta == 0 || delta > OpalMediaFormat::VideoClockRate)
     delta = outputMediaFormat.GetFrameTime();
 
   /* This is a modified variable duty cycle algorithm. That algorithm works with the two
