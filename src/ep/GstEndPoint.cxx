@@ -1142,16 +1142,13 @@ PBoolean GstMediaStream::Open()
   if (IsOpen())
     return true;
 
+  PTRACE(4, "Opening " << *this);
+
   if (!m_connection.OpenPipeline(m_pipeline, *this))
     return false;
 
   PGstBin rtpbin;
-  if (m_pipeline.GetByName(GstEndPoint::GetPipelineRTPName(), rtpbin)) {
-    PGstElement::States state;
-    if (!StartPlaying(state))
-      return false;
-  }
-  else {
+  if (!m_pipeline.GetByName(GstEndPoint::GetPipelineRTPName(), rtpbin)) {
     // Our source, their sink, and vice versa
     PString name = mediaFormat.GetMediaType();
     if (IsSource()) {
@@ -1175,6 +1172,16 @@ PBoolean GstMediaStream::Open()
   }
 
   return OpalMediaStream::Open();
+}
+
+
+bool GstMediaStream::Start()
+{
+  PGstElement::States state;
+  if (!StartPlaying(state))
+    return false;
+
+  return OpalMediaStream::Start();
 }
 
 
@@ -1301,13 +1308,14 @@ bool GstMediaStream::StartPlaying(PGstElement::States & state)
   if (state != PGstElement::Null)
     return true;
 
-  PTRACE(3, "Starting pipeline for " << *this);
+  PTRACE(4, "Setting Playing state on pipeline for " << *this);
   if (m_pipeline.SetState(PGstElement::Playing) == PGstElement::Failed) {
     PTRACE(2, "Pipeline could not be started on " << *this);
     return false;
   }
 
   m_pipeline.GetState(state);
+  PTRACE(3, "Starting pipeline (state " << state << ") for " << *this);
   return true;
 }
 

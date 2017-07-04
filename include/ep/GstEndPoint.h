@@ -371,6 +371,13 @@ class GstMediaStream : public OpalMediaStream
       */
     virtual PBoolean Open();
 
+    /**Start the media stream.
+
+       The default behaviour calls Resume() on the associated OpalMediaPatch
+       thread if it was suspended.
+      */
+    virtual PBoolean Start();
+
     /**Read an RTP frame of data from the source media stream.
        The default behaviour simply calls ReadData() on the data portion of the
        RTP_DataFrame and sets the frames timestamp and marker from the internal
