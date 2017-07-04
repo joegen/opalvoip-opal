@@ -413,11 +413,21 @@ class GstMediaStream : public OpalMediaStream
        conditionally require the patch thread to execute a thread reading and
        writing data, or prevent  it from doing so as it can do so in hardware
        in some way.
-
-       The default behaviour returns true if a sink stream. If source stream
-       then threading is from the mixer class.
       */
-    virtual PBoolean RequiresPatchThread() const;
+    virtual PBoolean RequiresPatchThread(
+      OpalMediaStream * stream  ///< Other stream in patch
+    ) const;
+
+    /**Indicate media transport is required.
+       One of the two streams in the patch can indicate that media transport is
+       not required as it is somehow being bypassed.
+
+       In this case we are bypassing the media transport read thread as the
+       gstreamer piipeline is reading the socket directly itself.
+      */
+    virtual bool RequireMediaTransportThread(
+      OpalMediaStream & stream  ///< Other stream in patch
+    ) const;
 
     /**Set the volume (gain) for the audio media channel.
        The volume range is 0 == muted, 100 == LOUDEST.

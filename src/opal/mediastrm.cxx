@@ -421,13 +421,19 @@ PBoolean OpalMediaStream::SetDataSize(PINDEX dataSize, PINDEX /*frameTime*/)
 }
 
 
-PBoolean OpalMediaStream::RequiresPatchThread(OpalMediaStream * /*sinkStream*/) const
+PBoolean OpalMediaStream::RequiresPatchThread(OpalMediaStream * /*stream*/) const
 {
   return RequiresPatchThread();
 }
 
 
 PBoolean OpalMediaStream::RequiresPatchThread() const
+{
+  return true;
+}
+
+
+bool OpalMediaStream::RequireMediaTransportThread(OpalMediaStream & /*stream*/) const
 {
   return true;
 }

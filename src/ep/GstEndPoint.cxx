@@ -1223,9 +1223,15 @@ PBoolean GstMediaStream::IsSynchronous() const
 }
 
 
-PBoolean GstMediaStream::RequiresPatchThread() const
+PBoolean GstMediaStream::RequiresPatchThread(OpalMediaStream * /*stream*/) const
 {
-  return m_pipeSink.IsValid() || m_pipeSource.IsValid();
+  return false;
+}
+
+
+bool GstMediaStream::RequireMediaTransportThread(OpalMediaStream & /*stream*/) const
+{
+  return false;
 }
 
 

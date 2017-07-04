@@ -135,7 +135,24 @@ bool OpalRTPMediaStream::IsEstablished() const
 
 PBoolean OpalRTPMediaStream::Start()
 {
-  m_rtpSession.Start();
+  // We make referenced copy of pointer so can't be deleted out from under us
+  OpalMediaPatchPtr mediaPatch = m_mediaPatch;
+
+  if (mediaPatch == NULL)
+    return false; // Not yet
+
+  OpalMediaStreamPtr other;
+  if (IsSink())
+    other = &mediaPatch->GetSource();
+  else {
+    other = mediaPatch->GetSink();
+    if (other == NULL)
+      return false; // Not yet
+  }
+
+  if (other->RequireMediaTransportThread(*this))
+    m_rtpSession.Start();
+
   return OpalMediaStream::Start();
 }
 
