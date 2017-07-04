@@ -977,7 +977,7 @@ bool GstEndPoint::ConfigurePipeline(PGstPipeline & pipeline, const GstMediaStrea
   PString media(stream.GetMediaFormat().GetMediaType());
   const char *rtp_suffixes[] = { "TxRTP", "RxRTP", };
   for (i = 0; i < PARRAYSIZE(rtp_suffixes); i++) {
-    PString name media + rtp_suffixes[i];
+    PString name = media + rtp_suffixes[i];
     if (pipeline.GetByName(name, el)) {
       el.SetSockFd(rtpHandle);
       PTRACE(4, "Set pipeline udpsrc name=" << name << " socket=" << rtpHandle);
@@ -988,7 +988,7 @@ bool GstEndPoint::ConfigurePipeline(PGstPipeline & pipeline, const GstMediaStrea
                               ? session->GetDataSocket().GetHandle() : session->GetControlSocket().GetHandle();
   const char *rtcp_suffixes[] = { "TxRTCP", "RxRTCP", };
   for (i = 0; i < PARRAYSIZE(rtcp_suffixes); i++) {
-    PString name media + rtcp_suffixes[i];
+    PString name = media + rtcp_suffixes[i];
     if (pipeline.GetByName(name, el)) {
       el.SetSockFd(rtcpHandle);
       PTRACE(4, "Set pipeline udpsrc name=" << name << " socket=" << rtcpHandle);
