@@ -508,7 +508,7 @@ bool GstEndPoint::BuildRTPPipeline(ostream & description, const GstMediaStream &
     PTRACE(4, "No remote address for rtpbin.");
     return false;
   }
-  if (!session->GetRemoteAddress().GetIpAndPort(dummy, controlPort))
+  if (!session->GetRemoteAddress(false).GetIpAndPort(dummy, controlPort))
     controlPort = dataPort;
 
   if (index == 0)
@@ -533,8 +533,9 @@ bool GstEndPoint::BuildRTPPipeline(ostream & description, const GstMediaStream &
                            "sync=false "
                            "async=false "
                            "host=" << host << " "
-                           "port=" << controlPort << " "
-                   "udpsrc name=" << mediaType << "RxRTCP "
+                           "port=" << controlPort
+                << " "
+                   "udpsrc name=" << mediaType << "RxRTCP"
                    " ! "
                    "rtpbin.recv_rtcp_sink_" << index;
   } else {
