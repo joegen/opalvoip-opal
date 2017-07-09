@@ -952,10 +952,10 @@ OpalTransport * OpalListenerUDP::Accept(const PTimeInterval & timeout)
 
   pdu.SetSize(param.m_lastCount);
 
-  OpalTransportUDP * transport = new OpalTransportUDP(m_endpoint, m_listenerBundle, param.m_iface);
+  OpalTransportUDP * transport = new OpalTransportUDP(m_endpoint, m_listenerBundle, param.m_iface,
+                                                      OpalTransportAddress(param.m_addr, param.m_port, OpalTransportAddress::UdpPrefix()));
   transport->m_preReadPacket = pdu;
   transport->m_preReadOK = param.m_errorCode == PChannel::NoError;
-  transport->SetRemoteAddress(OpalTransportAddress(param.m_addr, param.m_port, OpalTransportAddress::UdpPrefix()));
   transport->GetChannel()->SetBufferSize(m_bufferSize);
   return transport;
 }
@@ -977,7 +977,7 @@ OpalTransport * OpalListenerUDP::CreateTransport(const OpalTransportAddress & lo
       iface = addr.AsString(true);
   }
 
-  return new OpalTransportUDP(m_endpoint, m_listenerBundle, iface);
+  return new OpalTransportUDP(m_endpoint, m_listenerBundle, iface, remoteAddress);
 }
 
 
@@ -988,7 +988,7 @@ const PCaselessString & OpalListenerUDP::GetProtoPrefix() const
 
 
 OpalTransportAddress OpalListenerUDP::GetLocalAddress(const OpalTransportAddress & remoteAddress,
-                                                     const OpalTransportAddress & defaultAddress) const
+                                                      const OpalTransportAddress & defaultAddress) const
 {
   if (IsOpen()) {
     PIPSocket::Address remoteIP;
@@ -1508,12 +1508,15 @@ OpalTransportUDP::OpalTransportUDP(OpalEndPoint & ep,
 
 OpalTransportUDP::OpalTransportUDP(OpalEndPoint & ep,
                                    const PMonitoredSocketsPtr & listener,
-                                   const PString & iface)
+                                   const PString & iface,
+                                   const OpalTransportAddress & remoteAddress)
   : OpalTransportIP(ep, NULL, PIPSocket::GetDefaultIpAny(), 0)
   , m_manager(ep.GetManager())
   , m_bufferSize(8192)
   , m_preReadOK(true)
 {
+  remoteAddress.GetIpAndPort(m_remoteAP);
+
   PMonitoredSocketChannel * socket = new PMonitoredSocketChannel(listener, true);
   socket->SetInterface(iface);
   socket->GetLocal(m_localAP, !m_manager.IsLocalAddress(m_remoteAP.GetAddress()));

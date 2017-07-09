@@ -1196,7 +1196,8 @@ class OpalTransportUDP : public OpalTransportIP
     OpalTransportUDP(
       OpalEndPoint & endpoint,              ///<  Endpoint object
       const PMonitoredSocketsPtr & sockets, ///<  Bundle of sockets from OpalListenerUDP
-      const PString & iface                 ///<  Local interface to use
+      const PString & iface,                ///<  Local interface to use
+      const OpalTransportAddress & remoteAddress ///< Remote address for NAT binding
     );
 
     /// Destroy the UDP channel
