@@ -1743,12 +1743,16 @@ static void StartStopListeners(OpalEndPoint * ep, const PString & interfaces, Op
     return;
 
   ep->RemoveListener(NULL);
-  if (interfaces.IsEmpty())
+  if (interfaces.IsEmpty()) {
+    PTRACE(4, "Stopped all listeners for " << *ep);
     return;
+  }
 
   PStringArray interfaceArray;
   if (interfaces != "*")
     interfaceArray = interfaces.Lines();
+
+  PTRACE(4, "Starting listeners " << setfill(',') << interfaceArray << " for " << *ep);
   if (!ep->StartListeners(interfaceArray))
     response.SetError(PSTRSTRM("Could not start " << ep->GetPrefixName() << " listener(s) " << interfaces));
 }
@@ -1757,6 +1761,7 @@ static void StartStopListeners(OpalEndPoint * ep, const PString & interfaces, Op
 void OpalManager_C::HandleSetProtocol(const OpalMessage & command, OpalMessageBuffer & response)
 {
   if (IsNullString(command.m_param.m_protocol.m_prefix)) {
+    PTRACE(4, "Setting protocol parameters for all protocols");
     SET_MESSAGE_STRING(response, m_param.m_protocol.m_userName, GetDefaultUserName());
     if (command.m_param.m_protocol.m_userName != NULL)
       SetDefaultUserName(command.m_param.m_protocol.m_userName);
@@ -1790,6 +1795,7 @@ void OpalManager_C::HandleSetProtocol(const OpalMessage & command, OpalMessageBu
     return;
   }
 
+  PTRACE(4, "Setting protocol parameters for " << *ep);
   SET_MESSAGE_STRING(response, m_param.m_protocol.m_userName, ep->GetDefaultLocalPartyName());
   if (command.m_param.m_protocol.m_userName != NULL)
     ep->SetDefaultLocalPartyName(command.m_param.m_protocol.m_userName);
