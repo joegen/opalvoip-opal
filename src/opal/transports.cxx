@@ -1034,12 +1034,12 @@ void OpalTransport::PrintOn(ostream & strm) const
   PString iface(GetInterface());
   OpalTransportAddress local(GetLocalAddress());
 
-  if (local.IsEmpty() || iface.IsEmpty())
+  if (local.IsEmpty() && iface.IsEmpty())
     strm << "not-bound";
   else if (local.Find(iface.Left(iface.Find('%'))) != P_MAX_INDEX)
     strm << "if=" << local;
   else
-    strm << ", rfx=" << local << ", if=" << iface;
+    strm << "rfx=" << local << ", if=" << iface;
 }
 
 
@@ -1515,14 +1515,37 @@ OpalTransportUDP::OpalTransportUDP(OpalEndPoint & ep,
   , m_bufferSize(8192)
   , m_preReadOK(true)
 {
-  remoteAddress.GetIpAndPort(m_remoteAP);
-
   PMonitoredSocketChannel * socket = new PMonitoredSocketChannel(listener, true);
-  socket->SetInterface(iface);
-  socket->GetLocal(m_localAP, !m_manager.IsLocalAddress(m_remoteAP.GetAddress()));
   m_channel = socket;
 
-  PTRACE(3, "Binding to interface: " << m_localAP);
+  if (!remoteAddress.GetIpAndPort(m_remoteAP)) {
+    PTRACE(3, "Could not use remote address for UDP transport");
+  }
+
+  PIPAddress remoteIP = m_remoteAP.GetAddress();
+  bool remoteNotLocal = !m_manager.IsLocalAddress(remoteIP);
+
+  PString adjustedInterface = iface;
+  if (iface.IsEmpty()) {
+    PIPAddress ifIP = PIPSocket::GetRouteInterfaceAddress(remoteIP);
+    if (ifIP.IsValid()) {
+      adjustedInterface = ifIP.AsString();
+      PTRACE(4, "Created UDP transport using router: " << adjustedInterface);
+    }
+    else if (remoteNotLocal) {
+      adjustedInterface = '%' + PIPSocket::GetGatewayInterface(remoteIP.GetVersion());
+      PTRACE(4, "Created UDP transport using default gateway " << adjustedInterface);
+    }
+    else {
+      PTRACE(4, "Cannot determine interface to use for " << remoteIP);
+    }
+  }
+  else {
+    PTRACE(4, "Created UDP transport using interface " << iface);
+  }
+
+  socket->SetInterface(adjustedInterface);
+  socket->GetLocal(m_localAP, remoteNotLocal);
 }
 
 
