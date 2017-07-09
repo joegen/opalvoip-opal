@@ -34,7 +34,7 @@
 
 
 #define LOCAL_MEDIA 0
-//#define STUN_SERVER "stun.voxgratia.org"
+#define STUN_SERVER "stun.l.google.com:19302"
 
 
 #if defined(_WIN32)
