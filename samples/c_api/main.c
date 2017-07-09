@@ -169,7 +169,7 @@ int InitialiseOPAL()
   OpalMessage * response;
   unsigned      version;
 
-  static const char OPALOptions[] = OPAL_PREFIX_ALL " TraceLevel=4 TraceFile=" TRACE_FILE " TraceAppend";
+  static const char OPALOptions[] = OPAL_PREFIX_ALL " --trace-option +append+file --trace-level 4 --output " TRACE_FILE;
 
 
   if ((hDLL = OPEN_LIBRARY(OPAL_DLL)) == NULL) {
