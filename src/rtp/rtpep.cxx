@@ -160,6 +160,12 @@ PStringList OpalRTPEndPoint::GetAvailableStringOptions() const
 {
   static char const * const StringOpts[] = {
     OPAL_OPT_DISABLE_NAT,
+    #ifdef OPAL_ICE
+      OPAL_OPT_ICE_LITE,
+      OPAL_OPT_ICE_TIMEOUT,
+      OPAL_OPT_ICE_PROMISCUOUS,
+      OPAL_OPT_TRICKLE_ICE,
+    #endif
     #ifdef OPAL_OPT_SRTP_RTCP_ANY_SSRC
       OPAL_OPT_SRTP_RTCP_ANY_SSRC,
     #endif
