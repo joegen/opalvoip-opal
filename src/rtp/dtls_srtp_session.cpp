@@ -174,12 +174,12 @@ bool OpalDTLSMediaTransport::Open(OpalMediaSession & session,
     return false;
 
   PStringStream subject;
-  subject << "/O=" + PProcess::Current().GetManufacturer() << "/CN=" << GetLocalAddress();
+  subject << "/O=" + PProcess::Current().GetManufacturer() << "/CN=" << GetLocalAddress().Mid(4);
   if (m_certificate.CreateRoot(subject, m_privateKey))
-  return true;
-  
+    return true;
+
   PTRACE(1, "Could not create certificate for DTLS.");
-  return true;
+  return false;
 }
 
 
