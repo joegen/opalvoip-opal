@@ -342,35 +342,41 @@ typedef void (OPAL_EXPORT *OpalFreeMessageFunction)(OpalMessage * message);
 
 ///////////////////////////////////////
 
-#define OPAL_PREFIX_H323  "h323"    ///< H.323 Protocol supported string for OpalInitialise()
-#define OPAL_PREFIX_SIP   "sip"     ///< SIP Protocol supported string for OpalInitialise()
-#define OPAL_PREFIX_SDP   "sdp"     ///< SDP over HTTP (e.g. for WebRTC) supported string for OpalInitialise()
-#define OPAL_PREFIX_IAX2  "iax2"    ///< IAX2 Protocol supported string for OpalInitialise()
-#define OPAL_PREFIX_PCSS  "pc"      ///< PC sound system supported string for OpalInitialise()
-#define OPAL_PREFIX_LOCAL "local"   ///< Local endpoint supported string for OpalInitialise()
-#define OPAL_PREFIX_POTS  "pots"    ///< Plain Old Telephone System supported string for OpalInitialise()
-#define OPAL_PREFIX_PSTN  "pstn"    ///< Public Switched Network supported string for OpalInitialise()
-#define OPAL_PREFIX_CAPI  "isdn"    ///< ISDN (via CAPI) string for OpalInitialise()
-#define OPAL_PREFIX_FAX   "fax"     ///< G.711 fax supported string for OpalInitialise()
-#define OPAL_PREFIX_T38   "t38"     ///< G.711 fax supported string for OpalInitialise()
-#define OPAL_PREFIX_IVR   "ivr"     ///< Interactive Voice Response supported string for OpalInitialise()
-#define OPAL_PREFIX_MIXER "mcu"     ///< Mixer for conferencing
-#define OPAL_PREFIX_IM    "im"      ///< Interactive Voice Response supported string for OpalInitialise()
-#define OPAL_PREFIX_GST   "gst"     ///< GStreamer supported string for OpalInitialise()
-#define OPAL_PREFIX_SKINNY "sccp"   ///< Skinny Client Control Protocol supported string for OpalInitialise()
+#define OPAL_PREFIX_H323   "h323"   ///< H.323 Protocol supported string for OpalInitialise()
+#define OPAL_PREFIX_H323S  "h323s"  ///< Secure H.323 Protocol supported string for OpalInitialise()
+#define OPAL_PREFIX_SIP    "sip"    ///< SIP Protocol supported string for OpalInitialise()
+#define OPAL_PREFIX_SIPS   "sips"   ///< Secure SIP Protocol supported string for OpalInitialise()
+#define OPAL_PREFIX_SDP    "sdp"    ///< SDP over HTTP (e.g. for WebRTC) supported string for OpalInitialise()
+#define OPAL_PREFIX_IAX2   "iax2"   ///< IAX2 Protocol supported string for OpalInitialise()
+#define OPAL_PREFIX_PCSS   "pc"     ///< PC sound system supported string for OpalInitialise()
+#define OPAL_PREFIX_LOCAL  "local"  ///< Local endpoint supported string for OpalInitialise()
+#define OPAL_PREFIX_POTS   "pots"   ///< Plain Old Telephone System supported string for OpalInitialise()
+#define OPAL_PREFIX_PSTN   "pstn"   ///< Public Switched Network supported string for OpalInitialise()
+#define OPAL_PREFIX_CAPI   "isdn"   ///< ISDN (via CAPI) string for OpalInitialise()
+#define OPAL_PREFIX_FAX    "fax"    ///< G.711 fax supported string for OpalInitialise()
+#define OPAL_PREFIX_T38    "t38"    ///< G.711 fax supported string for OpalInitialise()
+#define OPAL_PREFIX_IVR    "ivr"    ///< Interactive Voice Response supported string for OpalInitialise()
+#define OPAL_PREFIX_MIXER  "mcu"    ///< Mixer for conferencing
+#define OPAL_PREFIX_IM     "im"     ///< Interactive Voice Response supported string for OpalInitialise()
+#define OPAL_PREFIX_GST    "gst"    ///< GStreamer supported string for OpalInitialise()
+#define OPAL_PREFIX_SKINNY "sccp"   ///< Cisco Skinny Client Control Protocol supported string for OpalInitialise()
 
-#define OPAL_PREFIX_ALL OPAL_PREFIX_SIP   " " \
-                        OPAL_PREFIX_H323  " " \
-                        OPAL_PREFIX_IAX2  " " \
-                        OPAL_PREFIX_SDP   " " \
-                        OPAL_PREFIX_PCSS  " " \
-                        OPAL_PREFIX_LOCAL " " \
-                        OPAL_PREFIX_POTS  " " \
-                        OPAL_PREFIX_PSTN  " " \
-                        OPAL_PREFIX_FAX   " " \
-                        OPAL_PREFIX_T38   " " \
-                        OPAL_PREFIX_IVR   " " \
-                        OPAL_PREFIX_MIXER " " \
+#define OPAL_PREFIX_ALL OPAL_PREFIX_SIP    " " \
+                        OPAL_PREFIX_SIPS   " " \
+                        OPAL_PREFIX_H323   " " \
+                        OPAL_PREFIX_H323S  " " \
+                        OPAL_PREFIX_IAX2   " " \
+                        OPAL_PREFIX_SDP    " " \
+                        OPAL_PREFIX_SKINNY " " \
+                        OPAL_PREFIX_PCSS   " " \
+                        OPAL_PREFIX_GST    " " \
+                        OPAL_PREFIX_LOCAL  " " \
+                        OPAL_PREFIX_POTS   " " \
+                        OPAL_PREFIX_PSTN   " " \
+                        OPAL_PREFIX_FAX    " " \
+                        OPAL_PREFIX_T38    " " \
+                        OPAL_PREFIX_IVR    " " \
+                        OPAL_PREFIX_MIXER  " " \
                         OPAL_PREFIX_IM
 
 
