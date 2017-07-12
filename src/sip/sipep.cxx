@@ -2095,14 +2095,18 @@ SIPURL SIPEndPoint::GetDefaultLocalURL(const OpalTransport & transport)
     localAddress = OpalTransportAddress(myAddress, GetDefaultSignalPort(), transport.GetProtoPrefix());
   }
 
+  PString scheme = remoteAddress.GetScheme();
+  if (scheme == "tel")
+    scheme.MakeEmpty();
+
   SIPURL localURL;
 
   PString defPartyName(GetDefaultLocalPartyName());
   PString user, host;
   if (!defPartyName.Split('@', user, host)) 
-    localURL = SIPURL(defPartyName, localAddress);
+    localURL = SIPURL(defPartyName, localAddress, 0, scheme);
   else {
-    localURL = SIPURL(user, localAddress);   // set transport from address
+    localURL = SIPURL(user, localAddress, 0, scheme);   // set transport from address
     localURL.SetHostName(host);
   }
 
@@ -2132,14 +2136,16 @@ void SIPEndPoint::AdjustToRegistration(SIP_PDU & pdu, SIPConnection * connection
   SIPURL from(mime.GetFrom());
   SIPURL to(mime.GetTo());
 
-  PString user, domain;
+  PString user, domain, scheme;
   if (isMethod) {
     user   = from.GetUserName();
     domain = to.GetHostName();
+    scheme = to.GetScheme();
   }
   else {
     user   = to.GetUserName();
     domain = from.GetHostName();
+    scheme = from.GetScheme();
     if (connection != NULL && to.GetDisplayName() != connection->GetDisplayName()) {
       to.SetDisplayName(connection->GetDisplayName());
       to.Sanitise(SIPURL::ToURI);
@@ -2156,21 +2162,26 @@ void SIPEndPoint::AdjustToRegistration(SIP_PDU & pdu, SIPConnection * connection
     handler = activeSIPHandlers.FindSIPHandlerByUrl(url, SIP_PDU::Method_REGISTER, PSafeReadOnly);
     PTRACE_IF(4, handler != NULL, "Found registrar on aor sip:" << user << '@' << domain);
   }
-  else if (domain.IsEmpty() || OpalIsE164(domain)) {
-    // No context, just get first registration
-    handler = activeSIPHandlers.FindFirstHandler(SIP_PDU::Method_REGISTER);
-    if (handler != NULL) {
-      PTRACE(4, "Using first registrar " << handler->GetAddressOfRecord() << " for tel URI");
-      if (connection != NULL)
-        connection->GetDialog().SetProxy(handler->GetAddressOfRecord(), false);
-    }
-    else {
-      PTRACE(2, "No registrars available for tel URI");
-      if (connection != NULL) {
-        connection->Release(OpalConnection::EndedByIllegalAddress);
-        return;
+  else {
+    if (domain.IsEmpty() || OpalIsE164(domain)) {
+      // No context, just get first registration
+      handler = activeSIPHandlers.FindFirstHandler(SIP_PDU::Method_REGISTER);
+      if (handler != NULL) {
+        PTRACE(4, "Using first registrar " << handler->GetAddressOfRecord() << " for tel URI");
+        if (connection != NULL)
+          connection->GetDialog().SetProxy(handler->GetAddressOfRecord(), false);
+      }
+      else {
+        PTRACE(2, "No registrars available for tel URI");
+        if (connection != NULL) {
+          connection->Release(OpalConnection::EndedByIllegalAddress);
+          return;
+        }
       }
     }
+
+    // A "tel" scheme just uses default for transport type
+    scheme.MakeEmpty();
   }
 
   // If precise AOR not found, locate the name used for the domain.
@@ -2223,15 +2234,16 @@ void SIPEndPoint::AdjustToRegistration(SIP_PDU & pdu, SIPConnection * connection
 
       if (contact.IsEmpty()) {
         SIPURLList listenerAddresses;
-        for (OpalListenerList::iterator it = listeners.begin(); it != listeners.end(); ++it)
-          listenerAddresses.push_back(SIPURL(user, it->GetLocalAddress(remoteAddress)));
+        OpalTransportAddressArray interfaces = GetInterfaceAddresses(transport);
+        for (PINDEX i = 0; i < interfaces.GetSize(); ++i)
+          listenerAddresses.push_back(SIPURL(user, interfaces[i], 0, scheme));
         contact = listenerAddresses.FindCompatible(localAddress PTRACE_PARAM(, "listening"));
-        PTRACE_IF(4, !contact.IsEmpty(), "Adjusted Contact to " << contact << " from listeners.");
+        PTRACE_IF(4, !contact.IsEmpty(), "Adjusted Contact to " << contact << " from listeners and local address " << localAddress);
       }
     }
 
     if (contact.IsEmpty()) {
-      contact = SIPURL(user, listeners[0].GetLocalAddress(remoteAddress));
+      contact = SIPURL(user, m_listeners[0].GetLocalAddress(remoteAddress), 0, scheme);
       PTRACE(4, "Adjusted Contact to " << contact << " from first listener.");
     }
 
