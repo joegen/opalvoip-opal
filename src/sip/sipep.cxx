@@ -2079,7 +2079,7 @@ bool SIPEndPoint::GetAuthentication(const PString & realm, PString & authId, PSt
 }
 
 
-SIPURL SIPEndPoint::GetDefaultLocalURL(const OpalTransport & transport)
+SIPURL SIPEndPoint::GetDefaultLocalURL(const OpalTransport & transport, const SIPURL & remoteAddress)
 {
   OpalTransportAddress localAddress;
 
@@ -2243,7 +2243,7 @@ void SIPEndPoint::AdjustToRegistration(SIP_PDU & pdu, SIPConnection * connection
     }
 
     if (contact.IsEmpty()) {
-      contact = SIPURL(user, m_listeners[0].GetLocalAddress(remoteAddress), 0, scheme);
+      contact = SIPURL(user, listeners[0].GetLocalAddress(remoteAddress), 0, scheme);
       PTRACE(4, "Adjusted Contact to " << contact << " from first listener.");
     }
 

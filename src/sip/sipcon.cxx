@@ -1051,7 +1051,7 @@ void SIPConnection::WriteINVITE(OpalTransport & transport, bool & succeeded)
 
   SIPURL myAddress = m_stringOptions(OPAL_OPT_CALLING_PARTY_URL);
   if (myAddress.IsEmpty())
-    myAddress = GetEndPoint().GetDefaultLocalURL(transport);
+    myAddress = GetEndPoint().GetDefaultLocalURL(transport, m_dialog.GetRequestURI());
 
   PString transportProtocol = m_dialog.GetRequestURI().GetTransportProto();
   if (!transportProtocol.IsEmpty())

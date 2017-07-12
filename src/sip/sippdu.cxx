@@ -4276,19 +4276,19 @@ SIPMessage::SIPMessage(SIPTransactionOwner & owner,
   : SIPTransaction(Method_MESSAGE, &owner, &transport)
   , m_parameters(params)
 {
-  SIPURL addr(params.m_remoteAddress);
+  SIPURL remoteAddress(params.m_remoteAddress);
 
   m_localAddress = params.m_localAddress;
   if (m_localAddress.IsEmpty()) {
     m_localAddress = params.m_addressOfRecord;
     if (m_localAddress.IsEmpty())
-      m_localAddress = GetEndPoint().GetDefaultLocalURL(*GetTransport());
+      m_localAddress = GetEndPoint().GetDefaultLocalURL(*GetTransport(), remoteAddress);
   }
   m_localAddress.SetTag();
 
-  InitialiseHeaders(addr, addr, m_localAddress, params.m_id, GetEndPoint().GetNextCSeq());
+  InitialiseHeaders(remoteAddress, remoteAddress, m_localAddress, params.m_id, GetEndPoint().GetNextCSeq());
 
-  Construct(params);
+  SetParameters(m_parameters);
 
   GetEndPoint().AdjustToRegistration(*this);
 }
@@ -4328,7 +4328,7 @@ SIPOptions::SIPOptions(SIPEndPoint & endpoint, const Params & params)
   SIPURL remoteAddress = params.m_remoteAddress;
   SIPURL localAddress = params.m_localAddress;
   if (localAddress.IsEmpty())
-    localAddress = GetEndPoint().GetDefaultLocalURL(*GetTransport());
+    localAddress = GetEndPoint().GetDefaultLocalURL(*GetTransport(), remoteAddress);
   localAddress.SetTag();
 
   InitialiseHeaders(remoteAddress,
