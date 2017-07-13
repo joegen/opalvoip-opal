@@ -614,7 +614,7 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_OPAL_PREFIX_ALL_get() {
   char * jresult ;
   char *result = 0 ;
   
-  result = (char *)("sip sips h323 h323s iax2 sdp sccp lync pc local pots pstn fax t38 ivr mcu im");
+  result = (char *)("sip sips h323 h323s iax2 sdp sccp lync pc local gst pots pstn fax t38 ivr mcu im");
   jresult = SWIG_csharp_string_callback((const char *)result); 
   return jresult;
 }

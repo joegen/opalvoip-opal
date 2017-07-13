@@ -372,6 +372,7 @@ typedef void (OPAL_EXPORT *OpalFreeMessageFunction)(OpalMessage * message);
                         OPAL_PREFIX_LYNC   " " \
                         OPAL_PREFIX_PCSS   " " \
                         OPAL_PREFIX_LOCAL  " " \
+                        OPAL_PREFIX_GST    " " \
                         OPAL_PREFIX_POTS   " " \
                         OPAL_PREFIX_PSTN   " " \
                         OPAL_PREFIX_FAX    " " \
