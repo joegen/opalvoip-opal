@@ -2202,34 +2202,35 @@ void SIPEndPoint::AdjustToRegistration(SIP_PDU & pdu, SIPConnection * connection
     }
   }
 
-  // A "tel" scheme just uses default for transport type
-  if (scheme == "tel")
-    scheme.MakeEmpty();
-
   const SIPRegisterHandler * registrar = NULL;
   PSafePtr<SIPHandler> handler;
 
-  if (to.GetScheme() != "tel") {
+  if (scheme != "tel") {
     SIPURL url(domain);
     url.SetUserName(user);
     handler = activeSIPHandlers.FindSIPHandlerByUrl(url, SIP_PDU::Method_REGISTER, PSafeReadOnly);
     PTRACE_IF(4, handler != NULL, "Found registrar on aor sip:" << user << '@' << domain);
   }
-  else if (domain.IsEmpty() || OpalIsE164(domain)) {
-    // No context, just get first registration
-    handler = activeSIPHandlers.FindFirstHandler(SIP_PDU::Method_REGISTER);
-    if (handler != NULL) {
-      PTRACE(4, "Using first registrar " << handler->GetAddressOfRecord() << " for tel URI");
-      if (connection != NULL)
-        connection->GetDialog().SetProxy(handler->GetAddressOfRecord(), false);
-    }
-    else {
-      PTRACE(2, "No registrars available for tel URI");
-      if (connection != NULL) {
-        connection->Release(OpalConnection::EndedByIllegalAddress);
-        return;
+  else {
+    if (domain.IsEmpty() || OpalIsE164(domain)) {
+      // No context, just get first registration
+      handler = activeSIPHandlers.FindFirstHandler(SIP_PDU::Method_REGISTER);
+      if (handler != NULL) {
+        PTRACE(4, "Using first registrar " << handler->GetAddressOfRecord() << " for tel URI");
+        if (connection != NULL)
+          connection->GetDialog().SetProxy(handler->GetAddressOfRecord(), false);
+      }
+      else {
+        PTRACE(2, "No registrars available for tel URI");
+        if (connection != NULL) {
+          connection->Release(OpalConnection::EndedByIllegalAddress);
+          return;
+        }
       }
     }
+
+    // A "tel" scheme just uses default for transport type
+    scheme.MakeEmpty();
   }
 
   // If precise AOR not found, locate the name used for the domain.
