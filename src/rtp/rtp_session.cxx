@@ -1025,19 +1025,36 @@ void OpalRTPSession::SetHeaderExtensions(const RTPHeaderExtensions & ext)
 {
   P_INSTRUMENTED_LOCK_READ_WRITE(return);
 
-  for (RTPHeaderExtensions::const_iterator it = ext.begin(); it != ext.end(); ++it) {
-    PCaselessString uri = it->m_uri.AsString();
-    if (uri == GetAbsSendTimeHdrExtURI() && m_stringOptions.GetBoolean(OPAL_OPT_RTP_ABS_SEND_TIME))
-      m_absSendTimeHdrExtId = it->m_id;
-    else if (uri == GetTransportWideSeqNumHdrExtURI() && m_stringOptions.GetBoolean(OPAL_OPT_TRANSPORT_WIDE_CONGESTION_CONTROL))
-      m_transportWideSeqNumHdrExtId = it->m_id;
-    else {
-      PTRACE(3, "Unsupported header extension: id=" << it->m_id << ", uri=" << it->m_uri);
-      continue;
-    }
+  for (RTPHeaderExtensions::const_iterator it = ext.begin(); it != ext.end(); ++it)
+    AddHeaderExtension(*it);
+}
 
-    m_headerExtensions.insert(*it);
+
+bool OpalRTPSession::AddHeaderExtension(const RTPHeaderExtensionInfo & ext)
+{
+  P_INSTRUMENTED_LOCK_READ_WRITE(return false);
+
+  if (m_headerExtensions.Contains(ext)) {
+    PTRACE(4, "Header extension already present: " << ext);
+    return true;
   }
+
+  RTPHeaderExtensionInfo adjustedExt(ext);
+  PCaselessString uri = ext.m_uri.AsString();
+  if (uri == GetAbsSendTimeHdrExtURI() && m_stringOptions.GetBoolean(OPAL_OPT_RTP_ABS_SEND_TIME)) {
+    if (m_headerExtensions.AddUniqueID(adjustedExt))
+      m_absSendTimeHdrExtId = adjustedExt.m_id;
+    return true;
+  }
+
+  if (uri == GetTransportWideSeqNumHdrExtURI() && m_stringOptions.GetBoolean(OPAL_OPT_TRANSPORT_WIDE_CONGESTION_CONTROL)) {
+    if (m_headerExtensions.AddUniqueID(adjustedExt))
+      m_transportWideSeqNumHdrExtId = adjustedExt.m_id;
+    return true;
+  }
+
+  PTRACE(3, "Unsupported header extension: " << ext);
+  return false;
 }
 
 

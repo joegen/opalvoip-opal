@@ -801,7 +801,15 @@ class RTPHeaderExtensionInfo : public PObject
       const PURL & uri,
       const PString & attributes = PString::Empty()
     );
+    RTPHeaderExtensionInfo(
+      unsigned id,
+      const PURL & uri,
+      const PString & attributes = PString::Empty()
+    );
 
+#if PTRACING
+    virtual void PrintOn(ostream & strm) const;
+#endif
     virtual Comparison Compare(const PObject & other) const;
 
 #if OPAL_SDP
@@ -813,7 +821,8 @@ class RTPHeaderExtensionInfo : public PObject
 class RTPHeaderExtensions : public std::set<RTPHeaderExtensionInfo>
 {
 public:
-  void AddUniqueID(RTPHeaderExtensionInfo & info);
+  bool AddUniqueID(RTPHeaderExtensionInfo & info);
+  bool Contains(const RTPHeaderExtensionInfo & info) const;
 };
 
 

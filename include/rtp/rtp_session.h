@@ -384,6 +384,11 @@ class OpalRTPSession : public OpalMediaSession
       */
     void SetHeaderExtensions(const RTPHeaderExtensions & ext);
 
+    /**Add the RTP header extension code to the session.
+       @return false if unsupported, or ID already present.
+      */
+    bool AddHeaderExtension(const RTPHeaderExtensionInfo & ext);
+
     static const PString & GetAbsSendTimeHdrExtURI();
     static const PString & GetTransportWideSeqNumHdrExtURI();
 

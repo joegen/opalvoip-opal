@@ -1645,14 +1645,59 @@ RTPHeaderExtensionInfo::RTPHeaderExtensionInfo(const PURL & uri, const PString &
 }
 
 
-void RTPHeaderExtensions::AddUniqueID(RTPHeaderExtensionInfo & info)
+RTPHeaderExtensionInfo::RTPHeaderExtensionInfo(unsigned id, const PURL & uri, const PString & attributes)
+  : m_id(id)
+  , m_direction(Undefined)
+  , m_uri(uri)
+  , m_attributes(attributes)
 {
-  if (info.m_id == 0)
-    ++info.m_id;
-  while (find(info) != end())
-    ++info.m_id;
-  insert(info);
 }
+
+
+bool RTPHeaderExtensions::AddUniqueID(RTPHeaderExtensionInfo & info)
+{
+  // Check URI not already present
+  for (iterator it = begin(); it != end(); ++it) {
+    if (it->m_uri == info.m_uri) {
+      if (info.m_id == 0)
+	info.m_id = it->m_id;
+      return false;
+    }
+  }
+
+  if (info.m_id == 0)
+    info.m_id = 1; // Start here
+
+  while (!insert(info).second)
+    ++info.m_id;
+
+  return true;
+}
+
+
+bool RTPHeaderExtensions::Contains(const RTPHeaderExtensionInfo & info) const
+{
+  if (info.m_id != 0) {
+    const_iterator it = find(info);
+    return it != end() && it->m_uri == info.m_uri;
+  }
+
+  for (const_iterator it = begin(); it != end(); ++it) {
+    if (it->m_uri == info.m_uri)
+      return true;
+  }
+
+  return false;
+}
+
+#if PTRACING
+void RTPHeaderExtensionInfo::PrintOn(ostream & strm) const
+{
+  strm << "id=" << m_id << ", uri=" << m_uri;
+  if (!m_attributes.IsEmpty())
+    strm << ", attr=" << m_attributes;
+}
+#endif
 
 
 PObject::Comparison RTPHeaderExtensionInfo::Compare(const PObject & obj) const
