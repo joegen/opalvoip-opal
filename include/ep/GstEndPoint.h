@@ -337,6 +337,8 @@ class GstConnection : public OpalLocalConnection
       PGstPipeline & pipeline,
       const GstMediaStream & stream
     );
+
+    virtual bool ConfigurePipeline(PGstPipeline & pipeline, const GstMediaStream & stream);
   //@}
 
   protected:
