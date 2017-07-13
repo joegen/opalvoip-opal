@@ -170,6 +170,7 @@
       <IgnoreSpecificDefaultLibraries>libcmt</IgnoreSpecificDefaultLibraries>
       <AdditionalOptions>/ignore:4099 /ignore:4199 %(AdditionalOptions)</AdditionalOptions>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">
@@ -213,6 +214,7 @@
       <DelayLoadDLLs>LIBGSTREAMER-0.10-0.DLL;LIBGSTAPP-0.10-0.DLL;LIBGOBJECT-2.0-0.DLL;LIBGLIB-2.0-0.DLL;JPEG62.DLL;SDL.DLL;LUA5.1.DLL;OPENLDAP.DLL;LIBEAY32.DLL;SSLEAY32.DLL;LIBSASL.DLL;QWAVE.DLL;%(DelayLoadDLLs)</DelayLoadDLLs>
       <IgnoreSpecificDefaultLibraries>libcmt</IgnoreSpecificDefaultLibraries>
       <AdditionalOptions>/ignore:4099 /ignore:4199 %(AdditionalOptions)</AdditionalOptions>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
