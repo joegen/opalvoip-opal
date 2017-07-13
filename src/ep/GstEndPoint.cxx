@@ -964,11 +964,13 @@ bool GstEndPoint::ConfigurePipeline(PGstPipeline & pipeline, const GstMediaStrea
 {
   OpalRTPConnection * rtpConnection = stream.GetConnection().GetOtherPartyConnectionAs<OpalRTPConnection>();
   if (!rtpConnection)
-    return false;
+    return true;
 
   OpalRTPSession * session = dynamic_cast<OpalRTPSession *>(rtpConnection->GetMediaSession(stream.GetSessionID()));
-  if (!session)
+  if (!session) {
+    PTRACE(2, "Cannot configure pipeline, no RTP session id=" << stream.GetSessionID());
     return false;
+  }
 
   PGstElement el;
   PINDEX i;
@@ -1096,9 +1098,6 @@ bool GstConnection::OpenPipeline(PGstPipeline & pipeline, const GstMediaStream &
     return false;
   }
 
-  if (!m_endpoint.ConfigurePipeline(pipeline, stream))
-    return false;
-
   pipeline.SetName(isSource ? "SourcePipeline" : "SinkPipeline");
 
 #if PTRACING
@@ -1116,6 +1115,12 @@ bool GstConnection::OpenPipeline(PGstPipeline & pipeline, const GstMediaStream &
 #endif // PTRACING
 
   return true;
+}
+
+
+bool GstConnection::ConfigurePipeline(PGstPipeline & pipeline, const GstMediaStream & stream)
+{
+  return m_endpoint.ConfigurePipeline(pipeline, stream);
 }
 
 
@@ -1178,10 +1183,21 @@ PBoolean GstMediaStream::Open()
 bool GstMediaStream::Start()
 {
   PGstElement::States state;
-  if (!StartPlaying(state))
+  if (m_pipeline.GetState(state) == PGstElement::Failed) {
+    PTRACE(2, "Pipeline error getting state for " << *this);
+    return false;
+  }
+
+  if (state != PGstElement::Null)
+    return true;
+
+  if (!OpalMediaStream::Start())
     return false;
 
-  return OpalMediaStream::Start();
+  if (!m_connection.ConfigurePipeline(m_pipeline, *this))
+    return false;
+
+  return StartPlaying(state);
 }
 
 
