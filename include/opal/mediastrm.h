@@ -327,6 +327,14 @@ class OpalMediaStream : public PSafeObject
     ) const;
     virtual PBoolean RequiresPatchThread() const; // For backward compatibility
 
+    /**Indicate media transport is required.
+       One of the two streams in the patch can indicate that media transport is
+       not required as it is somehow being bypassed.
+      */
+    virtual bool RequireMediaTransportThread(
+      OpalMediaStream & stream  ///< Other stream in patch
+    ) const;
+
     /**Enable jitter buffer for the media stream.
        Returns true if a jitter buffer is enabled. Returns false if the jitter
        buffer is disabled or no jitter buffer can be used on the media stream.

@@ -352,7 +352,7 @@ OpalTransportPtr SIPEndPoint::GetTransport(const SIPTransactionOwner & transacto
 
         transport->GetChannel()->SetBufferSize(m_maxSizeUDP);
 
-        PTRACE(4, "Created transport " << *transport << " keepAlive=" << keepAliveType);
+        PTRACE(4, "Created transport " << *transport << ", keepAlive=" << keepAliveType);
         AddTransport(transport, keepAliveType);
       }
     }

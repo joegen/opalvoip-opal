@@ -381,7 +381,7 @@ OpalTransportAddressArray OpalEndPoint::GetInterfaceAddresses(const OpalTranspor
       trace << "no ";
     trace << "associated transport";
     if (associatedTransport != NULL)
-      trace << *associatedTransport;
+      trace << ' ' << *associatedTransport;
     trace << "\n    " << setfill(',') << interfaceAddresses
           << PTrace::End;
   }

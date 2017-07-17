@@ -34,7 +34,7 @@
 
 
 #define LOCAL_MEDIA 0
-//#define STUN_SERVER "stun.voxgratia.org"
+#define STUN_SERVER "stun.l.google.com:19302"
 
 
 #if defined(_WIN32)
@@ -169,7 +169,7 @@ int InitialiseOPAL()
   OpalMessage * response;
   unsigned      version;
 
-  static const char OPALOptions[] = OPAL_PREFIX_ALL " TraceLevel=4 TraceFile=" TRACE_FILE " TraceAppend";
+  static const char OPALOptions[] = OPAL_PREFIX_ALL " --trace-option +append+file --trace-level 4 --output " TRACE_FILE;
 
 
   if ((hDLL = OPEN_LIBRARY(OPAL_DLL)) == NULL) {
@@ -208,8 +208,8 @@ int InitialiseOPAL()
   //command.m_param.m_general.m_audioRecordDevice = "Camera Microphone (2- Logitech";
   command.m_param.m_general.m_autoRxMedia = command.m_param.m_general.m_autoTxMedia = "audio";
 #ifdef STUN_SERVER
-  command.m_param.m_general.m_natMethod = "H46019\nSTUN";
-  command.m_param.m_general.m_natServer = "\n"STUN_SERVER;
+  command.m_param.m_general.m_natMethod = "STUN";
+  command.m_param.m_general.m_natServer = STUN_SERVER;
 #endif
   command.m_param.m_general.m_mediaMask = "RFC4175*";
 
