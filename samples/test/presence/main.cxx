@@ -28,17 +28,14 @@
 #include <opal/console_mgr.h>
 #include <sip/sippres.h>
 
-#if !OPAL_SIP_PRESENCE
-  #error Cannot compile Presentity test program without XML and SIP support!
-#endif
 
-
-//////////////////////////////////////////////////////////////
+ //////////////////////////////////////////////////////////////
 
 class MyManager : public OpalManagerCLI
 {
   PCLASSINFO(MyManager, OpalManagerCLI)
   public:
+#if OPAL_SIP_PRESENCE
     MyManager();
     ~MyManager();
 
@@ -69,6 +66,7 @@ class MyManager : public OpalManagerCLI
     PString     m_xcapAuthID;
     PString     m_xcapPassword;
     PDictionary<PString, OpalPresentity> m_presentities;
+#endif
 };
 
 
@@ -77,6 +75,8 @@ extern const char Application[] = "OPAL Test Presentity";
 typedef OpalConsoleProcess<MyManager, Manufacturer, Application> MyApp;
 PCREATE_PROCESS(MyApp);
 
+
+#if OPAL_SIP_PRESENCE
 
 #define URL_OPTIONS "[Available URL options are:]" \
                     "a-auth-id: Authorisation ID, default to URL username.\n" \
@@ -406,6 +406,11 @@ void MyManager::PresenceChange(OpalPresentity & presentity, std::auto_ptr<OpalPr
   output << " to " << info->AsString() << endl;
 }
 
+#else
+
+  #pragma message("Cannot compile Presentity test program without XML and SIP support!")
+
+#endif
 
 
 // End of File ///////////////////////////////////////////////////////////////

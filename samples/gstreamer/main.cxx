@@ -65,6 +65,8 @@ bool MyManager::Initialise(PArgList & args, bool verbose, const PString &)
   if (!OpalManagerConsole::Initialise(args, verbose, "gst:"))
     return false;
 
+#if OPAL_GSTREAMER
+
   LockedStream lockedOutput(*this);
   ostream & output = lockedOutput;
 
@@ -147,6 +149,12 @@ bool MyManager::Initialise(PArgList & args, bool verbose, const PString &)
     output << "Could not start call to \"" << args[0] << '"' << endl;
     return false;
   }
+
+#else
+
+  #pragma message("GStreamer application will not work without gstreamer!")
+
+#endif
 
   return true;
 }

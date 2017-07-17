@@ -26,20 +26,11 @@
 #ifndef _OPAL_MCU_MAIN_H
 #define _OPAL_MCU_MAIN_H
 
-#if OPAL_HAS_MIXER
-#else
-#error Cannot compile MCU test program without OPAL_HAS_MIXER set!
-#endif
-
-#if OPAL_IVR
-#else
-#error Cannot compile MCU test program without OPAL_IVR set!
-#endif
-
 
 class MyManager;
 class MyMixerEndPoint;
 
+#if OPAL_HAS_MIXER && OPAL_IVR
 
 struct MyMixerNodeInfo : public OpalMixerNodeInfo
 {
@@ -128,6 +119,8 @@ class MyPCSSEndPoint : public OpalPCSSEndPoint
 
 #endif // OPAL_PCSS
 
+#endif // OPAL_HAS_MIXER && OPAL_IVR
+
 
 class MyManager : public OpalManagerCLI
 {
@@ -136,6 +129,8 @@ class MyManager : public OpalManagerCLI
   public:
     MyManager();
 
+#if OPAL_HAS_MIXER && OPAL_IVR
+
     PString GetArgumentSpec() const;
     bool Initialise(PArgList & args, bool verbose);
 
@@ -143,6 +138,7 @@ class MyManager : public OpalManagerCLI
     virtual void OnClearedCall(OpalCall & call);
 
     void Broadcast(const PString & str) { m_cli->Broadcast(str); }
+#endif
 
     MyMixerEndPoint * m_mixer;
 };

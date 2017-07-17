@@ -26,12 +26,6 @@
 #ifndef _GstOPAL_MAIN_H
 #define _GstOPAL_MAIN_H
 
-#if OPAL_GSTREAMER
-#else
-#error Cannot compile GStreamer test program without OPAL_GSTREAMER set!
-#endif
-
-
 class MyManager : public OpalManagerConsole
 {
     PCLASSINFO(MyManager, OpalManagerConsole)

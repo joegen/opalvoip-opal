@@ -27,10 +27,6 @@
 #define _IvrOPAL_MAIN_H
 
 #if OPAL_IVR
-#else
-#error Cannot compile IVR test program without OPAL_IVR set!
-#endif
-
 
 class MyIVREndPoint : public OpalIVREndPoint
 {
@@ -42,6 +38,7 @@ class MyIVREndPoint : public OpalIVREndPoint
     virtual void OnEndDialog(OpalIVRConnection & connection);
 };
 
+#endif
 
 class MyManager : public OpalManagerConsole
 {
@@ -49,10 +46,13 @@ class MyManager : public OpalManagerConsole
 
   public:
     MyManager() : OpalManagerConsole(OPAL_CONSOLE_PREFIXES OPAL_PCSS_PREFIX) { }
+
+#if OPAL_IVR
     virtual bool Initialise(PArgList & args, bool verbose, const PString & defaultRoute = PString::Empty());
     virtual void Usage(ostream & strm, const PArgList & args);
     virtual void OnEstablishedCall(OpalCall & call); // Callback override
     virtual void OnClearedCall(OpalCall & call); // Callback override
+#endif
 };
 
 

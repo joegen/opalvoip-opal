@@ -37,6 +37,7 @@ extern const char Application[] = "OPAL IVR";
 typedef OpalConsoleProcess<MyManager, Manufacturer, Application> MyApp;
 PCREATE_PROCESS(MyApp);
 
+#if OPAL_IVR
 
 bool MyManager::Initialise(PArgList & args, bool verbose, const PString &)
 {
@@ -136,5 +137,10 @@ void MyIVREndPoint::OnEndDialog(OpalIVRConnection & connection)
   OpalIVREndPoint::OnEndDialog(connection);
 }
 
+#else
+
+  #pragma message("Cannot compile IVR test program without OPAL_IVR set!")
+
+#endif
 
 // End of File ///////////////////////////////////////////////////////////////

@@ -40,6 +40,7 @@ MyManager::MyManager()
 {
 }
 
+#if OPAL_HAS_MIXER && OPAL_IVR
 
 PString MyManager::GetArgumentSpec() const
 {
@@ -468,6 +469,12 @@ bool MyMixerConnection::SendUserInputString(const PString & value)
 
   return OpalMixerConnection::SendUserInputString(value);
 }
+
+#else
+
+  #pragma message("Cannot compile MCU test program without OPAL_HAS_MIXER and OPAL_IVR set!")
+
+#endif
 
 
 // End of File ///////////////////////////////////////////////////////////////

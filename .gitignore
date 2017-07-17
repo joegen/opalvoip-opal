@@ -111,10 +111,8 @@ plugins/audio/Opus/opus/*/*.o
 plugins/audio/Opus/opus/*/*/*.o
 plugins/audio/Opus/opus/*/*.lo
 plugins/audio/Opus/opus/*/*/*.lo
-plugins/audio/Opus/opus/win32/VS2013/Win32/
-plugins/audio/Opus/opus/win32/VS2015/Win32/
-plugins/audio/Opus/opus/win32/VS2013/x64/
-plugins/audio/Opus/opus/win32/VS2015/x64/
+plugins/audio/Opus/opus/win32/*/Win32/
+plugins/audio/Opus/opus/win32/*/x64/
 plugins/audio/Opus/opus/win32/version.h
 plugins/audio/Opus/opus/.libs
 plugins/audio/Opus/opus/tests/.libs
@@ -134,3 +132,4 @@ samples/opalshark/opalshark.app/
 samples/opalshark/resource.cpp
 samples/opalshark/opalshark.cxx
 samples/opalshark/config.wxs
+rpmbuild/
