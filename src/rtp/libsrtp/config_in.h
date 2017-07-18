@@ -1,5 +1,9 @@
 /* config_in.h.  Generated from configure.in by autoheader.  */
 
+#ifdef _WIN32
+  #include "../../Win32/config.h"
+#else
+
 /* Define if building for a CISC machine (e.g. Intel). */
 #undef CPU_CISC
 
@@ -168,3 +172,6 @@
 
 /* Define to `unsigned' if <sys/types.h> does not define. */
 #undef size_t
+
+#endif // _WIN32
+
