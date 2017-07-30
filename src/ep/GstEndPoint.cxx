@@ -32,6 +32,7 @@
 #include <ep/GstEndPoint.h>
 #include <codec/vidcodec.h>
 #include <rtp/rtpconn.h>
+#include <sdp/sdp.h>
 
 
 #if OPAL_GSTREAMER
@@ -1017,6 +1018,7 @@ GstConnection::GstConnection(OpalCall & call,
   : OpalLocalConnection(call, ep, userData, options, stringOptions, tokenPrefix)
   , m_endpoint(ep)
 {
+  m_stringOptions.SetBoolean(OPAL_OPT_SDP_SSRC_INFO, false);
 }
 
 

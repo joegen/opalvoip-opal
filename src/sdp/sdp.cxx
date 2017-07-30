@@ -1981,18 +1981,20 @@ bool SDPRTPAVPMediaDescription::FromSession(OpalMediaSession * session,
     else
       ssrcs = rtpSession->GetSyncSources(OpalRTPSession::e_Sender);
 
-    PTRACE(4, "Adding " << ssrcs.size() << " sender SSRC entries.");
-    for (RTP_SyncSourceArray::iterator it = ssrcs.begin(); it != ssrcs.end(); ++it) {
-      PStringOptions & info = m_ssrcInfo[*it];
-      PString cname = rtpSession->GetCanonicalName(*it);
-      if (!cname.IsEmpty())
-        info.SetAt("cname", cname);
-      PString mslabel = rtpSession->GetMediaStreamId(*it, OpalRTPSession::e_Sender);
-      if (!mslabel.IsEmpty()) {
-        PString label = mslabel + '+' + session->GetMediaType();
-        info.SetAt("mslabel", mslabel);
-        info.SetAt("label", label);
-        info.SetAt("msid", mslabel & label);
+    if (m_stringOptions.GetBoolean(OPAL_OPT_SDP_SSRC_INFO, true)) {
+      PTRACE(4, "Adding " << ssrcs.size() << " sender SSRC entries.");
+      for (RTP_SyncSourceArray::iterator it = ssrcs.begin(); it != ssrcs.end(); ++it) {
+        PStringOptions & info = m_ssrcInfo[*it];
+        PString cname = rtpSession->GetCanonicalName(*it);
+        if (!cname.IsEmpty())
+          info.SetAt("cname", cname);
+        PString mslabel = rtpSession->GetMediaStreamId(*it, OpalRTPSession::e_Sender);
+        if (!mslabel.IsEmpty()) {
+          PString label = mslabel + '+' + session->GetMediaType();
+          info.SetAt("mslabel", mslabel);
+          info.SetAt("label", label);
+          info.SetAt("msid", mslabel & label);
+        }
       }
     }
 
