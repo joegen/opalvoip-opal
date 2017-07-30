@@ -475,10 +475,10 @@ bool GstEndPoint::BuildPipeline(ostream & description, const GstMediaStream * au
 
 static void OutputRTPCaps(ostream & description, const OpalMediaFormat & mediaFormat)
 {
-  description << "application/x-rtp, "
-                 "media=" << mediaFormat.GetMediaType() << ", "
-                 "payload=" << (unsigned)mediaFormat.GetPayloadType() << ", "
-                 "clock-rate=" << (mediaFormat == OpalG722 ? 16000 : mediaFormat.GetClockRate()) << ", "
+  description << "application/x-rtp,"
+                 "media=" << mediaFormat.GetMediaType() << ","
+                 "payload=" << (unsigned)mediaFormat.GetPayloadType() << ","
+                 "clock-rate=" << (mediaFormat == OpalG722 ? 16000 : mediaFormat.GetClockRate()) << ","
                  "encoding-name=" << mediaFormat.GetEncodingName();
 }
 
@@ -521,43 +521,48 @@ bool GstEndPoint::BuildRTPPipeline(ostream & description, const GstMediaStream &
     if (!OutputRTPSource(description, stream, index))
       return false;
 
-    description << " "
-                << GstEndPoint::GetPipelineRTPName() << ".send_rtp_src_" << index
-                << " ! "
-                   "udpsink name=" << mediaType << "TxRTP "
-                           "host=" << host << " "
-                           "port=" << dataPort << ' '
-                << GstEndPoint::GetPipelineRTPName() << ".send_rtcp_src_" << index
-                << " ! "
-                   "udpsink name=" << mediaType << "TxRTCP "
-                           "sync=false "
-                           "async=false "
-                           "host=" << host << " "
-                           "port=" << controlPort
-                << " "
-                   "udpsrc name=" << mediaType << "RxRTCP"
-                   " ! "
-                   "rtpbin.recv_rtcp_sink_" << index;
+    description << ' ' << GstEndPoint::GetPipelineRTPName() << ".send_rtp_src_" << index <<
+                   " !"
+                   " udpsink name=" << mediaType << "TxRTP"
+                           " host=" << host <<
+                           " port=" << dataPort <<
+                   ' ' << GstEndPoint::GetPipelineRTPName() << ".send_rtcp_src_" << index <<
+                   " !"
+                   " udpsink name=" << mediaType << "TxRTCP"
+                           " sync=false"
+                           " async=false"
+                           " host=" << host <<
+                           " port=" << controlPort <<
+                   " udpsrc name=" << mediaType << "RxRTCP"
+                          " port=0"
+                   " !"
+                   " " << GstEndPoint::GetPipelineRTPName() << ".recv_rtcp_sink_" << index;
   } else {
-    description << "udpsrc name=" << mediaType << "RxRTP "
-                          "caps=\"";
+    description << " udpsrc name=" << mediaType << "RxRTP"
+                          " port=0"
+                          " caps=\"";
     OutputRTPCaps(description, mediaFormat);
-    description << "\" ! "
-                << GstEndPoint::GetPipelineRTPName() << ".recv_rtp_sink_" << index << " "
-                << GstEndPoint::GetPipelineRTPName() + ". ! ";
+    description << "\""
+                   " !"
+                   " " << GstEndPoint::GetPipelineRTPName() << ".recv_rtp_sink_" << index <<
+                   ' ' << GstEndPoint::GetPipelineRTPName() + "."
+                   " !"
+                   " queue"
+                   " !"
+                   " ";
     if (!OutputRTPSink(description, stream, index))
       return false;
-    description << " "
-                   "udpsrc name=" << mediaType << "RxRTCP "
-                   " ! "
-                << GstEndPoint::GetPipelineRTPName() << ".recv_rtcp_sink_" << index << ' '
-                << GstEndPoint::GetPipelineRTPName() << ".send_rtcp_src_" << index
-                << " ! "
-                   "udpsink name=" << mediaType << "TxRTCP "
-                           "sync=false "
-                           "async=false "
-                           "host=" << host << " "
-                           "port=" << controlPort;
+    description << " udpsrc name=" << mediaType << "RxRTCP"
+                          " port=0"
+                   " !"
+                   " " << GstEndPoint::GetPipelineRTPName() << ".recv_rtcp_sink_" << index <<
+                   ' ' << GstEndPoint::GetPipelineRTPName() << ".send_rtcp_src_" << index <<
+                   " !"
+                   " udpsink name=" << mediaType << "TxRTCP"
+                           " sync=false"
+                           " async=false"
+                           " host=" << host <<
+                           " port=" << controlPort;
 
   }
 
