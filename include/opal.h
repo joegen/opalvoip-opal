@@ -76,7 +76,7 @@ typedef struct OpalHandleStruct * OpalHandle;
 typedef struct OpalMessage OpalMessage;
 
 /// Current API version
-#define OPAL_C_API_VERSION 35
+#define OPAL_C_API_VERSION 36
 
 
 ///////////////////////////////////////
@@ -1526,6 +1526,8 @@ typedef struct OpalParamRecording {
   unsigned     m_videoHeight; /**< Height of image for recording video. */
   unsigned     m_videoRate;   /**< Frame rate for recording video. */
   OpalVideoRecordMixMode m_videoMixing; /**< How the two images are saved in video recording. */
+  unsigned     m_audioBufferSize; /**< Size of buffer before writing to output. Note, this
+                                       will always be rounded up to whole packet sizes. */
 } OpalParamRecording;
 
 

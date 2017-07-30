@@ -326,7 +326,7 @@ SWIGEXPORT jint JNICALL Java_org_opalvoip_opal_OPALJNI_OPAL_1C_1API_1VERSION_1ge
   
   (void)jenv;
   (void)jcls;
-  result = (int)(35);
+  result = (int)(36);
   jresult = (jint)result; 
   return jresult;
 }
@@ -6464,6 +6464,34 @@ SWIGEXPORT jint JNICALL Java_org_opalvoip_opal_OPALJNI_OpalParamRecording_1video
   arg1 = *(OpalParamRecording **)&jarg1; 
   result = (OpalVideoRecordMixMode) ((arg1)->m_videoMixing);
   jresult = (jint)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void JNICALL Java_org_opalvoip_opal_OPALJNI_OpalParamRecording_1audioBufferSize_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
+  OpalParamRecording *arg1 = (OpalParamRecording *) 0 ;
+  unsigned int arg2 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(OpalParamRecording **)&jarg1; 
+  arg2 = (unsigned int)jarg2; 
+  if (arg1) (arg1)->m_audioBufferSize = arg2;
+}
+
+
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_opal_OPALJNI_OpalParamRecording_1audioBufferSize_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+  jlong jresult = 0 ;
+  OpalParamRecording *arg1 = (OpalParamRecording *) 0 ;
+  unsigned int result;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(OpalParamRecording **)&jarg1; 
+  result = (unsigned int) ((arg1)->m_audioBufferSize);
+  jresult = (jlong)result; 
   return jresult;
 }
 

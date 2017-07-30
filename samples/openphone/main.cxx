@@ -3615,7 +3615,11 @@ PBoolean MyManager::CreateVideoOutputDevice(const OpalConnection & connection,
 
   mediaFormat.AdjustVideoArgs(videoArgs);
 
+#ifdef P_WXWINDOWS_DEVICE_NAME
+  autoDelete = false;
+#else
   autoDelete = true;
+#endif
   device = PVideoOutputDevice::CreateOpenedDevice(videoArgs, false);
   return device != NULL;
 }

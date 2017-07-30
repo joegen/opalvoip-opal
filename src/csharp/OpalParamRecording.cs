@@ -129,6 +129,16 @@ public class OpalParamRecording : global::System.IDisposable {
     } 
   }
 
+  public uint audioBufferSize {
+    set {
+      OPALPINVOKE.OpalParamRecording_audioBufferSize_set(swigCPtr, value);
+    } 
+    get {
+      uint ret = OPALPINVOKE.OpalParamRecording_audioBufferSize_get(swigCPtr);
+      return ret;
+    } 
+  }
+
   public OpalParamRecording() : this(OPALPINVOKE.new_OpalParamRecording(), true) {
   }
 

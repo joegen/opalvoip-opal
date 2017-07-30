@@ -385,6 +385,8 @@ public class OPALJNI {
   public final static native long OpalParamRecording_videoRate_get(long jarg1, OpalParamRecording jarg1_);
   public final static native void OpalParamRecording_videoMixing_set(long jarg1, OpalParamRecording jarg1_, int jarg2);
   public final static native int OpalParamRecording_videoMixing_get(long jarg1, OpalParamRecording jarg1_);
+  public final static native void OpalParamRecording_audioBufferSize_set(long jarg1, OpalParamRecording jarg1_, long jarg2);
+  public final static native long OpalParamRecording_audioBufferSize_get(long jarg1, OpalParamRecording jarg1_);
   public final static native long new_OpalParamRecording();
   public final static native void delete_OpalParamRecording(long jarg1);
   public final static native void OpalStatusTransferCall_callToken_set(long jarg1, OpalStatusTransferCall jarg1_, String jarg2);

@@ -88,6 +88,8 @@ class OpalRecordManager : public PObject
                                      OpalRecordManager class. For example, for WAV files
                                      "PCM-16", "G.723.1", "G.728", "G.729" or "MS-GSM"
                                      is supported. */
+      PINDEX    m_audioBufferSize; /**< Size of buffer before writing to output. Note, this
+                                        will always be rounded up to whole packet sizes. */
 
 #if OPAL_VIDEO
       VideoMode m_videoMixing;  ///< Mode for how incoming video is mixed.
@@ -118,6 +120,7 @@ class OpalRecordManager : public PObject
         bool pushThreads = true
       ) : m_stereo(stereo)
         , m_audioFormat(audioFormat)
+        , m_audioBufferSize(0)
 #if OPAL_VIDEO
         , m_videoMixing(videoMixing)
         , m_videoFormat(videoFormat)

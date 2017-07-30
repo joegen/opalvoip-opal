@@ -1306,6 +1306,12 @@ class OPALPINVOKE {
   [global::System.Runtime.InteropServices.DllImport("OPAL", EntryPoint="CSharp_OpalParamRecording_videoMixing_get")]
   public static extern int OpalParamRecording_videoMixing_get(global::System.Runtime.InteropServices.HandleRef jarg1);
 
+  [global::System.Runtime.InteropServices.DllImport("OPAL", EntryPoint="CSharp_OpalParamRecording_audioBufferSize_set")]
+  public static extern void OpalParamRecording_audioBufferSize_set(global::System.Runtime.InteropServices.HandleRef jarg1, uint jarg2);
+
+  [global::System.Runtime.InteropServices.DllImport("OPAL", EntryPoint="CSharp_OpalParamRecording_audioBufferSize_get")]
+  public static extern uint OpalParamRecording_audioBufferSize_get(global::System.Runtime.InteropServices.HandleRef jarg1);
+
   [global::System.Runtime.InteropServices.DllImport("OPAL", EntryPoint="CSharp_new_OpalParamRecording")]
   public static extern global::System.IntPtr new_OpalParamRecording();
 

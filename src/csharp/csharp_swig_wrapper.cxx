@@ -306,7 +306,7 @@ SWIGEXPORT int SWIGSTDCALL CSharp_OPAL_C_API_VERSION_get() {
   int jresult ;
   int result;
   
-  result = (int)(35);
+  result = (int)(36);
   jresult = result; 
   return jresult;
 }
@@ -4956,6 +4956,28 @@ SWIGEXPORT int SWIGSTDCALL CSharp_OpalParamRecording_videoMixing_get(void * jarg
   arg1 = (OpalParamRecording *)jarg1; 
   result = (OpalVideoRecordMixMode) ((arg1)->m_videoMixing);
   jresult = (int)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_OpalParamRecording_audioBufferSize_set(void * jarg1, unsigned int jarg2) {
+  OpalParamRecording *arg1 = (OpalParamRecording *) 0 ;
+  unsigned int arg2 ;
+  
+  arg1 = (OpalParamRecording *)jarg1; 
+  arg2 = (unsigned int)jarg2; 
+  if (arg1) (arg1)->m_audioBufferSize = arg2;
+}
+
+
+SWIGEXPORT unsigned int SWIGSTDCALL CSharp_OpalParamRecording_audioBufferSize_get(void * jarg1) {
+  unsigned int jresult ;
+  OpalParamRecording *arg1 = (OpalParamRecording *) 0 ;
+  unsigned int result;
+  
+  arg1 = (OpalParamRecording *)jarg1; 
+  result = (unsigned int) ((arg1)->m_audioBufferSize);
+  jresult = result; 
   return jresult;
 }
 

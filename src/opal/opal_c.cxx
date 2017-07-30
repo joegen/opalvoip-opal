@@ -2574,6 +2574,8 @@ void OpalManager_C::HandleStartRecording(const OpalMessage & command, OpalMessag
     options.m_videoRate   = command.m_param.m_recording.m_videoRate;
     options.m_videoMixing = (OpalRecordManager::VideoMode)command.m_param.m_recording.m_videoMixing;
 #endif // OPAL_VIDEO
+    if (m_apiVersion >= 36 && command.m_param.m_recording.m_audioBufferSize > 0)
+      options.m_audioBufferSize = command.m_param.m_recording.m_audioBufferSize;
   }
 
   if (!call->StartRecording(command.m_param.m_recording.m_file, options))

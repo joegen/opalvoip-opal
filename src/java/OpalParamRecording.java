@@ -107,6 +107,14 @@ public class OpalParamRecording {
     return OpalVideoRecordMixMode.swigToEnum(OPALJNI.OpalParamRecording_videoMixing_get(swigCPtr, this));
   }
 
+  public void setAudioBufferSize(long value) {
+    OPALJNI.OpalParamRecording_audioBufferSize_set(swigCPtr, this, value);
+  }
+
+  public long getAudioBufferSize() {
+    return OPALJNI.OpalParamRecording_audioBufferSize_get(swigCPtr, this);
+  }
+
   public OpalParamRecording() {
     this(OPALJNI.new_OpalParamRecording(), true);
   }

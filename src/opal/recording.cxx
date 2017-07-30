@@ -65,13 +65,15 @@ class OpalWAVRecordManager : public OpalRecordManager
 
   protected:
     struct Mixer : public OpalAudioMixer {
-      Mixer(bool stereo) : OpalAudioMixer(stereo, OpalMediaFormat::AudioClockRate, true, 50) { }
-      ~Mixer() { StopPushThread(); }
+      Mixer(bool stereo, PINDEX audioBufferSize);
+      ~Mixer();
 
       bool Open(const PFilePath & fn, const Options & options);
       virtual bool OnMixed(RTP_DataFrame * & output);
 
       OpalWAVFile m_file;
+      PINDEX      m_audioBufferSize;
+      PBYTEArray  m_buffer;
     } * m_mixer;
 
     PMutex m_mutex;
@@ -104,7 +106,7 @@ bool OpalWAVRecordManager::OpenFile(const PFilePath & fn)
     return false;
   }
 
-  m_mixer = new Mixer(m_options.m_stereo);
+  m_mixer = new Mixer(m_options.m_stereo, m_options.m_audioBufferSize);
   PTRACE_CONTEXT_ID_TO(m_mixer);
   if (m_mixer->Open(fn, m_options))
     return true;
@@ -201,6 +203,27 @@ bool OpalWAVRecordManager::WriteVideo(const PString &, const RTP_DataFrame &)
 }
 
 
+OpalWAVRecordManager::Mixer::Mixer(bool stereo, PINDEX audioBufferSize)
+  : OpalAudioMixer(stereo, OpalMediaFormat::AudioClockRate, true, 50)
+  , m_audioBufferSize(audioBufferSize)
+{
+}
+
+
+OpalWAVRecordManager::Mixer::~Mixer()
+{
+  StopPushThread();
+
+  if (m_buffer.IsEmpty())
+    return;
+
+  if (m_file.Write(m_buffer, m_buffer.GetSize()))
+    PTRACE(5, "Written last mixed audio (" << m_buffer.GetSize() << " bytes) to " << m_file.GetFilePath());
+  else
+    PTRACE(1, "Error writing last audio to WAV file " << m_file.GetFilePath() << "- " << m_file.GetErrorText());
+}
+
+
 bool OpalWAVRecordManager::Mixer::Open(const PFilePath & fn, const Options & options)
 {
   if (!m_file.SetFormat(options.m_audioFormat)) {
@@ -229,12 +252,20 @@ bool OpalWAVRecordManager::Mixer::OnMixed(RTP_DataFrame * & output)
   if (!m_file.IsOpen())
     return false;
 
-  PTRACE(5, "Writing mixed audio (" << output->GetPayloadSize() << " bytes) to " << m_file.GetFilePath());
-  if (m_file.Write(output->GetPayloadPtr(), output->GetPayloadSize()))
+  PTRACE(5, "Buffering mixed audio (" << output->GetPayloadSize() << " bytes) to " << m_file.GetFilePath());
+  m_buffer.Concatenate(PBYTEArray(output->GetPayloadPtr(), output->GetPayloadSize(), false));
+  if (m_buffer.GetSize() < m_audioBufferSize)
     return true;
 
-  PTRACE(1, "Error writing WAV file " << m_file.GetFilePath());
-  return false;
+  if (!m_file.Write(m_buffer, m_buffer.GetSize())) {
+    PTRACE(1, "Error writing WAV file " << m_file.GetFilePath() << "- " << m_file.GetErrorText());
+    return false;
+  }
+
+  m_buffer.SetSize(0);
+
+  PTRACE(5, "Written mixed audio (" << m_buffer.GetSize() << " bytes) to " << m_file.GetFilePath());
+  return true;
 }
 
 
