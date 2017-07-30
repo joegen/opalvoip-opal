@@ -977,6 +977,9 @@ bool GstEndPoint::ConfigurePipeline(PGstPipeline & pipeline, const GstMediaStrea
     return false;
   }
 
+  // Set this so cname, and ssrc, not used in SDP as what we have and what rtpbin
+  session->SetCanonicalName("-");
+
   PGstElement el;
   PINDEX i;
 

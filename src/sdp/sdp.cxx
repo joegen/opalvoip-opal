@@ -1985,7 +1985,7 @@ bool SDPRTPAVPMediaDescription::FromSession(OpalMediaSession * session,
     for (RTP_SyncSourceArray::iterator it = ssrcs.begin(); it != ssrcs.end(); ++it) {
       PStringOptions & info = m_ssrcInfo[*it];
       PString cname = rtpSession->GetCanonicalName(*it);
-      if (!cname.IsEmpty())
+      if (!cname.IsEmpty() && cname != "_")
         info.SetAt("cname", cname);
       PString mslabel = rtpSession->GetMediaStreamId(*it, OpalRTPSession::e_Sender);
       if (!mslabel.IsEmpty()) {
