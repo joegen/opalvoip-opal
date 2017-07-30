@@ -502,6 +502,9 @@ bool GstEndPoint::BuildRTPPipeline(ostream & description, const GstMediaStream &
     return false;
   }
 
+  // Set this so cname, and ssrc, not used in SDP as what we have and what rtpbin
+  session->SetCanonicalName("-");
+
   PIPSocket::Address host,dummy;
   WORD dataPort, controlPort;
   if (!session->GetRemoteAddress().GetIpAndPort(host, dataPort)) {
@@ -976,9 +979,6 @@ bool GstEndPoint::ConfigurePipeline(PGstPipeline & pipeline, const GstMediaStrea
     PTRACE(2, "Cannot configure pipeline, no RTP session id=" << stream.GetSessionID());
     return false;
   }
-
-  // Set this so cname, and ssrc, not used in SDP as what we have and what rtpbin
-  session->SetCanonicalName("-");
 
   PGstElement el;
   PINDEX i;
