@@ -32,6 +32,7 @@
 #include <ep/GstEndPoint.h>
 #include <codec/vidcodec.h>
 #include <rtp/rtpconn.h>
+#include <sdp/sdp.h>
 
 
 #if OPAL_GSTREAMER
@@ -475,10 +476,10 @@ bool GstEndPoint::BuildPipeline(ostream & description, const GstMediaStream * au
 
 static void OutputRTPCaps(ostream & description, const OpalMediaFormat & mediaFormat)
 {
-  description << "application/x-rtp, "
-                 "media=" << mediaFormat.GetMediaType() << ", "
-                 "payload=" << (unsigned)mediaFormat.GetPayloadType() << ", "
-                 "clock-rate=" << (mediaFormat == OpalG722 ? 16000 : mediaFormat.GetClockRate()) << ", "
+  description << "application/x-rtp,"
+                 "media=" << mediaFormat.GetMediaType() << ","
+                 "payload=" << (unsigned)mediaFormat.GetPayloadType() << ","
+                 "clock-rate=" << (mediaFormat == OpalG722 ? 16000 : mediaFormat.GetClockRate()) << ","
                  "encoding-name=" << mediaFormat.GetEncodingName();
 }
 
@@ -521,43 +522,48 @@ bool GstEndPoint::BuildRTPPipeline(ostream & description, const GstMediaStream &
     if (!OutputRTPSource(description, stream, index))
       return false;
 
-    description << " "
-                << GstEndPoint::GetPipelineRTPName() << ".send_rtp_src_" << index
-                << " ! "
-                   "udpsink name=" << mediaType << "TxRTP "
-                           "host=" << host << " "
-                           "port=" << dataPort << ' '
-                << GstEndPoint::GetPipelineRTPName() << ".send_rtcp_src_" << index
-                << " ! "
-                   "udpsink name=" << mediaType << "TxRTCP "
-                           "sync=false "
-                           "async=false "
-                           "host=" << host << " "
-                           "port=" << controlPort
-                << " "
-                   "udpsrc name=" << mediaType << "RxRTCP"
-                   " ! "
-                   "rtpbin.recv_rtcp_sink_" << index;
+    description << ' ' << GstEndPoint::GetPipelineRTPName() << ".send_rtp_src_" << index <<
+                   " !"
+                   " udpsink name=" << mediaType << "TxRTP"
+                           " host=" << host <<
+                           " port=" << dataPort <<
+                   ' ' << GstEndPoint::GetPipelineRTPName() << ".send_rtcp_src_" << index <<
+                   " !"
+                   " udpsink name=" << mediaType << "TxRTCP"
+                           " sync=false"
+                           " async=false"
+                           " host=" << host <<
+                           " port=" << controlPort <<
+                   " udpsrc name=" << mediaType << "RxRTCP"
+                          " port=0"
+                   " !"
+                   " " << GstEndPoint::GetPipelineRTPName() << ".recv_rtcp_sink_" << index;
   } else {
-    description << "udpsrc name=" << mediaType << "RxRTP "
-                          "caps=\"";
+    description << " udpsrc name=" << mediaType << "RxRTP"
+                          " port=0"
+                          " caps=\"";
     OutputRTPCaps(description, mediaFormat);
-    description << "\" ! "
-                << GstEndPoint::GetPipelineRTPName() << ".recv_rtp_sink_" << index << " "
-                << GstEndPoint::GetPipelineRTPName() + ". ! ";
+    description << "\""
+                   " !"
+                   " " << GstEndPoint::GetPipelineRTPName() << ".recv_rtp_sink_" << index <<
+                   ' ' << GstEndPoint::GetPipelineRTPName() + "."
+                   " !"
+                   " queue"
+                   " !"
+                   " ";
     if (!OutputRTPSink(description, stream, index))
       return false;
-    description << " "
-                   "udpsrc name=" << mediaType << "RxRTCP "
-                   " ! "
-                << GstEndPoint::GetPipelineRTPName() << ".recv_rtcp_sink_" << index << ' '
-                << GstEndPoint::GetPipelineRTPName() << ".send_rtcp_src_" << index
-                << " ! "
-                   "udpsink name=" << mediaType << "TxRTCP "
-                           "sync=false "
-                           "async=false "
-                           "host=" << host << " "
-                           "port=" << controlPort;
+    description << " udpsrc name=" << mediaType << "RxRTCP"
+                          " port=0"
+                   " !"
+                   " " << GstEndPoint::GetPipelineRTPName() << ".recv_rtcp_sink_" << index <<
+                   ' ' << GstEndPoint::GetPipelineRTPName() << ".send_rtcp_src_" << index <<
+                   " !"
+                   " udpsink name=" << mediaType << "TxRTCP"
+                           " sync=false"
+                           " async=false"
+                           " host=" << host <<
+                           " port=" << controlPort;
 
   }
 
@@ -964,11 +970,13 @@ bool GstEndPoint::ConfigurePipeline(PGstPipeline & pipeline, const GstMediaStrea
 {
   OpalRTPConnection * rtpConnection = stream.GetConnection().GetOtherPartyConnectionAs<OpalRTPConnection>();
   if (!rtpConnection)
-    return false;
+    return true;
 
   OpalRTPSession * session = dynamic_cast<OpalRTPSession *>(rtpConnection->GetMediaSession(stream.GetSessionID()));
-  if (!session)
+  if (!session) {
+    PTRACE(2, "Cannot configure pipeline, no RTP session id=" << stream.GetSessionID());
     return false;
+  }
 
   PGstElement el;
   PINDEX i;
@@ -1010,6 +1018,7 @@ GstConnection::GstConnection(OpalCall & call,
   : OpalLocalConnection(call, ep, userData, options, stringOptions, tokenPrefix)
   , m_endpoint(ep)
 {
+  m_stringOptions.SetBoolean(OPAL_OPT_SDP_SSRC_INFO, false);
 }
 
 
@@ -1096,9 +1105,6 @@ bool GstConnection::OpenPipeline(PGstPipeline & pipeline, const GstMediaStream &
     return false;
   }
 
-  if (!m_endpoint.ConfigurePipeline(pipeline, stream))
-    return false;
-
   pipeline.SetName(isSource ? "SourcePipeline" : "SinkPipeline");
 
 #if PTRACING
@@ -1116,6 +1122,12 @@ bool GstConnection::OpenPipeline(PGstPipeline & pipeline, const GstMediaStream &
 #endif // PTRACING
 
   return true;
+}
+
+
+bool GstConnection::ConfigurePipeline(PGstPipeline & pipeline, const GstMediaStream & stream)
+{
+  return m_endpoint.ConfigurePipeline(pipeline, stream);
 }
 
 
@@ -1167,7 +1179,8 @@ PBoolean GstMediaStream::Open()
     }
   }
 
-  if (!m_pipeline.GetByName(GstEndPoint::GetPipelineVolumeName(), m_pipeVolume)) {
+  if (GetMediaFormat().GetMediaType() == OpalMediaType::Audio() &&
+        !m_pipeline.GetByName(GstEndPoint::GetPipelineVolumeName(), m_pipeVolume)) {
     PTRACE(2, "Could not find Volume in pipeline for " << *this);
   }
 
@@ -1178,10 +1191,21 @@ PBoolean GstMediaStream::Open()
 bool GstMediaStream::Start()
 {
   PGstElement::States state;
-  if (!StartPlaying(state))
+  if (m_pipeline.GetState(state) == PGstElement::Failed) {
+    PTRACE(2, "Pipeline error getting state for " << *this);
+    return false;
+  }
+
+  if (state != PGstElement::Null)
+    return true;
+
+  if (!OpalMediaStream::Start())
     return false;
 
-  return OpalMediaStream::Start();
+  if (!m_connection.ConfigurePipeline(m_pipeline, *this))
+    return false;
+
+  return StartPlaying(state);
 }
 
 
