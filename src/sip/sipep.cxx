@@ -618,6 +618,7 @@ PStringList SIPEndPoint::GetAvailableStringOptions() const
     OPAL_OPT_OFFER_RTCP_FB,
     OPAL_OPT_FORCE_RTCP_FB,
     OPAL_OPT_SUPPRESS_UDP_TLS,
+    OPAL_OPT_SDP_SSRC_INFO,
     OPAL_OPT_OFFER_ICE,
     OPAL_OPT_ICE_LITE
   };

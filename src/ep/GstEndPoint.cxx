@@ -32,6 +32,7 @@
 #include <ep/GstEndPoint.h>
 #include <codec/vidcodec.h>
 #include <rtp/rtpconn.h>
+#include <sdp/sdp.h>
 
 
 #if OPAL_GSTREAMER
@@ -501,9 +502,6 @@ bool GstEndPoint::BuildRTPPipeline(ostream & description, const GstMediaStream &
     PTRACE(4, "No session for rtpbin.");
     return false;
   }
-
-  // Set this so cname, and ssrc, not used in SDP as what we have and what rtpbin
-  session->SetCanonicalName("-");
 
   PIPSocket::Address host,dummy;
   WORD dataPort, controlPort;
@@ -1020,6 +1018,7 @@ GstConnection::GstConnection(OpalCall & call,
   : OpalLocalConnection(call, ep, userData, options, stringOptions, tokenPrefix)
   , m_endpoint(ep)
 {
+  m_stringOptions.SetBoolean(OPAL_OPT_SDP_SSRC_INFO, false);
 }
 
 

@@ -82,6 +82,11 @@
 */
 #define OPAL_OPT_SUPPRESS_UDP_TLS "Suppress-UDP-TLS"
 
+/**Include SSRC information in SDP.
+   Defaults to true.
+*/
+#define OPAL_OPT_SDP_SSRC_INFO "SDP-SSRC-Info"
+
 /**Enable ICE offered in SDP.
    Defaults to false.
 */
