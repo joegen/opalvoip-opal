@@ -1177,7 +1177,8 @@ PBoolean GstMediaStream::Open()
     }
   }
 
-  if (!m_pipeline.GetByName(GstEndPoint::GetPipelineVolumeName(), m_pipeVolume)) {
+  if (GetMediaFormat().GetMediaType() == OpalMediaType::Audio() &&
+        !m_pipeline.GetByName(GstEndPoint::GetPipelineVolumeName(), m_pipeVolume)) {
     PTRACE(2, "Could not find Volume in pipeline for " << *this);
   }
 
