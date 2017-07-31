@@ -1546,6 +1546,7 @@ OpalTransportUDP::OpalTransportUDP(OpalEndPoint & ep,
 
   socket->SetInterface(adjustedInterface);
   socket->GetLocal(m_localAP, remoteNotLocal);
+  socket->SetRemote(m_remoteAP);
 }
 
 
