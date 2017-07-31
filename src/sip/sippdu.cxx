@@ -1838,15 +1838,14 @@ SIP_PDU::SIP_PDU(Methods meth, const OpalTransportPtr & transport, const PString
   , m_SDP(NULL)
 {
   PTRACE_CONTEXT_ID_TO(m_mime);
-  SetTransport(transport);
+  SetTransport(transport PTRACE_PARAM(, "SIP_PDU(meth)"));
 }
 
 
-SIP_PDU::SIP_PDU(const SIP_PDU & request, 
-                 StatusCodes code, 
-                 const SDPSessionDescription * sdp)
+SIP_PDU::SIP_PDU(const SIP_PDU & request,  StatusCodes code, const SDPSessionDescription * sdp)
   : m_method(NumMethods)
   , m_statusCode(code)
+  , m_transactionID(request.GetTransactionID())
   , m_SDP(sdp != NULL ? sdp->CloneAs<SDPSessionDescription>() : NULL)
 {
   PTRACE_CONTEXT_ID_TO(m_mime);
@@ -1868,7 +1867,7 @@ SIP_PDU::SIP_PDU(const SIP_PDU & pdu)
   , m_SDP(pdu.m_SDP != NULL ? pdu.m_SDP->CloneAs<SDPSessionDescription>() : NULL)
 {
   PTRACE_CONTEXT_ID_TO(m_mime);
-  SetTransport(pdu.GetTransport());
+  SetTransport(pdu.GetTransport() PTRACE_PARAM(, "SIP_PDU(pdu)"));
 }
 
 
@@ -1884,7 +1883,7 @@ SIP_PDU & SIP_PDU::operator=(const SIP_PDU & pdu)
   m_mime = pdu.m_mime;
   m_entityBody = pdu.m_entityBody;
   m_transactionID = pdu.m_transactionID;
-  SetTransport(pdu.GetTransport());
+  SetTransport(pdu.GetTransport() PTRACE_PARAM(, "operator="));
 
   delete m_SDP;
   m_SDP = pdu.m_SDP != NULL ? pdu.m_SDP->CloneAs<SDPSessionDescription>() : NULL;
@@ -1898,20 +1897,20 @@ SIP_PDU::~SIP_PDU()
   delete m_SDP;
 
   if (m_transport != NULL) {
-    PTRACE(5, "Final dereference transport 0x" << m_transport << " from 0x" << this << ' ' << *this);
+    PTRACE(5, "Dereferenced transport " << m_transport << " from destructor " << this << ' ' << *this);
     m_transport->Dereference();
   }
 }
 
 
-void SIP_PDU::SetTransport(const OpalTransportPtr & transport)
+void SIP_PDU::SetTransport(const OpalTransportPtr & transport PTRACE_PARAM(, const char * location))
 {
   if (!LockReadWrite())
     return;
 
   if (m_transport != NULL) {
-    PTRACE_IF(3, transport == NULL, "Setting PDU transport to NULL: 0x" << this << ' ' << *this);
-    PTRACE(5, "Dereferenced transport 0x" << m_transport << " from 0x" << this << ' ' << *this);
+    PTRACE_IF(3, transport == NULL, "Setting PDU transport to NULL: " << this << ' ' << *this);
+    PTRACE(5, "Dereferenced transport " << m_transport << " from " << location << ' ' << this << ' ' << *this);
     m_transport->Dereference();
   }
 
@@ -1919,7 +1918,7 @@ void SIP_PDU::SetTransport(const OpalTransportPtr & transport)
   const_cast<OpalTransportPtr &>(m_transport) = transport;
 
   if (m_transport != NULL) {
-    PTRACE(5, "Referenced transport 0x" << m_transport << " from 0x" << this << ' ' << *this);
+    PTRACE(5, "Referenced transport " << m_transport << " from " << location << ' ' << this << ' ' << *this);
     m_transport->Reference();
   }
 
@@ -2013,8 +2012,6 @@ void SIP_PDU::InitialiseHeaders(SIPConnection & connection, unsigned cseq)
 
 void SIP_PDU::InitialiseHeaders(const SIP_PDU & request)
 {
-  SetTransport(request.GetTransport());
-
   m_versionMajor = request.GetVersionMajor();
   m_versionMinor = request.GetVersionMinor();
   m_viaAddress = request.m_viaAddress;
@@ -2027,6 +2024,8 @@ void SIP_PDU::InitialiseHeaders(const SIP_PDU & request)
     if (!value.IsEmpty())
       m_mime.Set(FieldsToCopy[i], value);
   }
+
+  SetTransport(request.GetTransport() PTRACE_PARAM(, "InitialiseHeaders"));
 
   // Update the VIA field following RFC3261, 18.2.1 and RFC3581
   PStringList viaList;
@@ -2505,7 +2504,9 @@ SIP_PDU::StatusCodes SIP_PDU::InternalSend(bool canDoTCP)
   if (m_transport->Write((const char *)pduStr, pduLen))
     return Successful_OK;
 
-  PTRACE(1, "PDU Write failed: " << m_transport->GetErrorText(PChannel::LastWriteError));
+  PTRACE(1, "PDU (id=" << GetTransactionID() << ")"
+            " write to transport " << m_transport << ' ' << *m_transport <<
+            " failed: " << m_transport->GetErrorText(PChannel::LastWriteError));
   return Local_TransportError;
 }
 
@@ -2905,7 +2906,7 @@ SIP_PDU::StatusCodes SIPTransactionOwner::SwitchTransportProto(const char * prot
   PTRACE_CONTEXT_ID_SET(*newTransport, m_object);
 
   if (pdu != NULL)
-    pdu->SetTransport(newTransport);
+    pdu->SetTransport(newTransport PTRACE_PARAM(, "SwitchTransportProto"));
 
   return SIP_PDU::Successful_OK;
 }
@@ -3168,7 +3169,7 @@ SIPTransaction::SIPTransaction(Methods method,
 
   if (m_transport == NULL) {
     SIP_PDU::StatusCodes reason;
-    SetTransport(GetEndPoint().GetTransport(*m_owner, reason));
+    SetTransport(GetEndPoint().GetTransport(*m_owner, reason) PTRACE_PARAM(, "SIPTransaction"));
   }
 
   SIPConnection * conn = GetConnection();

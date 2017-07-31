@@ -714,7 +714,7 @@ class SIP_PDU : public PSafeObject
 
     const PString & GetExternalTransportAddress() const { return m_externalTransportAddress; }
     OpalTransportPtr GetTransport()  const    { return m_transport; }
-    void SetTransport(const OpalTransportPtr & transport);
+    void SetTransport(const OpalTransportPtr & transport PTRACE_PARAM(, const char * location));
 
   protected:
     void CalculateVia();

@@ -3126,6 +3126,7 @@ PBoolean SIPConnection::SendInviteResponse(SIP_PDU::StatusCodes code,
   if (m_lastReceivedINVITE == NULL)
     return true;
 
+  PTRACE(5, "Sending response to INVITE " << *m_lastReceivedINVITE);
   SIP_PDU response(*m_lastReceivedINVITE, code, sdp);
   AdjustInviteResponse(response);
 

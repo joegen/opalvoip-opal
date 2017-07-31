@@ -1015,7 +1015,7 @@ OpalTransport::OpalTransport(OpalEndPoint & end, PChannel * channel)
   , m_referenceCount(0)
 {
   m_keepAliveTimer.SetNotifier(PCREATE_NOTIFIER(KeepAlive), "OpalTransKeepAlive");
-  PTRACE(5, "Transport constructed: " << m_channel);
+  PTRACE(5, "Transport constructed: this=" << this << ", channel=" << m_channel << ", ep=" << m_endpoint);
 }
 
 
@@ -1055,7 +1055,7 @@ PBoolean OpalTransport::Close()
      member field crashing the background thread. Just close the base
      sub-channel so breaks the threads I/O block.
    */
-  PTRACE_IF (4, IsOpen(), "Transport Close of " << *this);
+  PTRACE_IF (4, IsOpen(), "Transport close of " << *this << ", this=" << this << ", channel=" << m_channel);
   return m_channel->Close();
 }
 
@@ -1515,14 +1515,11 @@ OpalTransportUDP::OpalTransportUDP(OpalEndPoint & ep,
                                    const PMonitoredSocketsPtr & listener,
                                    const PString & iface,
                                    const OpalTransportAddress & remoteAddress)
-  : OpalTransportIP(ep, NULL, PIPSocket::GetDefaultIpAny(), 0)
+  : OpalTransportIP(ep, new PMonitoredSocketChannel(listener, true), PIPSocket::GetDefaultIpAny(), 0)
   , m_manager(ep.GetManager())
   , m_bufferSize(8192)
   , m_preReadOK(true)
 {
-  PMonitoredSocketChannel * socket = new PMonitoredSocketChannel(listener, true);
-  m_channel = socket;
-
   if (!remoteAddress.GetIpAndPort(m_remoteAP)) {
     PTRACE(3, "Could not use remote address for UDP transport");
   }
@@ -1549,6 +1546,7 @@ OpalTransportUDP::OpalTransportUDP(OpalEndPoint & ep,
     PTRACE(4, "Created UDP transport using interface " << iface);
   }
 
+  PMonitoredSocketChannel * socket = dynamic_cast<PMonitoredSocketChannel *>(m_channel);
   socket->SetInterface(adjustedInterface);
   socket->GetLocal(m_localAP, remoteNotLocal);
 }
