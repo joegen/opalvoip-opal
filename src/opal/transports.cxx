@@ -1549,6 +1549,7 @@ OpalTransportUDP::OpalTransportUDP(OpalEndPoint & ep,
   PMonitoredSocketChannel * socket = dynamic_cast<PMonitoredSocketChannel *>(m_channel);
   socket->SetInterface(adjustedInterface);
   socket->GetLocal(m_localAP, remoteNotLocal);
+  socket->SetRemote(m_remoteAP);
 }
 
 
