@@ -3040,15 +3040,8 @@ void OpalManagerCLI::EndRun(bool interrupt)
 
 void OpalManagerCLI::Broadcast(const PString & msg)
 {
-  if (m_verbose) {
-    *LockedStream(*this) << msg << endl;
-
-#if P_TELNET
-    PCLITelnet * telnet = dynamic_cast<PCLITelnet *>(m_cli);
-    if (telnet != NULL)
-      telnet->Broadcast(msg);
-#endif // P_TELNET
-  }
+  if (m_verbose)
+      m_cli->Broadcast(msg);
 }
 
 
