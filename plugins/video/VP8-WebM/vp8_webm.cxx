@@ -563,7 +563,7 @@ class VP8Encoder : public PluginVideoEncoder<VP8_CODEC>
                              unsigned & toLen,
                              unsigned & flags)
     {
-      while (NeedEncode()) {
+      if (NeedEncode()) {
         PluginCodec_RTP srcRTP(fromPtr, fromLen);
         PluginCodec_Video_FrameHeader * video = srcRTP.GetVideoHeader();
 
@@ -579,13 +579,22 @@ class VP8Encoder : public PluginVideoEncoder<VP8_CODEC>
         vpx_image_t image;
         vpx_img_wrap(&image, VPX_IMG_FMT_I420, video->width, video->height, 2, srcRTP.GetVideoFrameData());
 
-        WaitAndSignal lock(m_mutex);
+        {
+          WaitAndSignal lock(m_mutex);
 
-        if (IS_ERROR(vpx_codec_encode, (&m_codec, &image,
-                                        srcRTP.GetTimestamp(), m_frameTime,
-                                        (flags&PluginCodec_CoderForceIFrame) != 0 ? VPX_EFLAG_FORCE_KF : 0,
-                                        VPX_DL_REALTIME)))
-          return false;
+          if (IS_ERROR(vpx_codec_encode, (&m_codec, &image,
+                                          srcRTP.GetTimestamp(), m_frameTime,
+                                          (flags&PluginCodec_CoderForceIFrame) != 0 ? VPX_EFLAG_FORCE_KF : 0,
+                                          VPX_DL_REALTIME)))
+            return false;
+        }
+
+        if (NeedDecode()) {
+          // Skipping frame completely.
+          flags = PluginCodec_ReturnCoderLastFrame;
+          toLen = 0;
+          return true;
+        }
       }
 
       flags = 0;
