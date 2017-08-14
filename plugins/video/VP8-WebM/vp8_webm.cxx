@@ -589,7 +589,7 @@ class VP8Encoder : public PluginVideoEncoder<VP8_CODEC>
             return false;
         }
 
-        if (NeedDecode()) {
+        if (NeedEncode()) {
           // Skipping frame completely.
           flags = PluginCodec_ReturnCoderLastFrame;
           toLen = 0;
