@@ -2357,7 +2357,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SendFlowControl(unsigned maxBi
     // Packet always starts with SR or RR, use empty RR as place holder
     InitialiseControlFrame(request, *sender);
 
-    if (m_feedback&OpalMediaFormat::e_TMMBR) {
+    if (m_feedback&OpalMediaFormat::e_REMB) {
       PTRACE(3, *this << "sending REMB (flow control) "
                          "rate=" << maxBitRate << ", SSRC=" << RTP_TRACE_SRC(receiver->m_sourceIdentifier));
 
