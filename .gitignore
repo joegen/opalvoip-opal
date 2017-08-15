@@ -134,3 +134,4 @@ samples/opalshark/resource.cpp
 samples/opalshark/opalshark.cxx
 samples/opalshark/config.wxs
 rpmbuild/
+nbproject/private/
