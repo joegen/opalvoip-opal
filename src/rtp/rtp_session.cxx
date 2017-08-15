@@ -2358,20 +2358,20 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SendFlowControl(unsigned maxBi
     InitialiseControlFrame(request, *sender);
 
     if (m_feedback&OpalMediaFormat::e_TMMBR) {
+      PTRACE(3, *this << "sending REMB (flow control) "
+                         "rate=" << maxBitRate << ", SSRC=" << RTP_TRACE_SRC(receiver->m_sourceIdentifier));
+
+      request.AddREMB(sender->m_sourceIdentifier, receiver->m_sourceIdentifier, maxBitRate);
+    }
+    else {
       if (overhead == 0)
         overhead = m_packetOverhead;
 
       PTRACE(3, *this << "sending TMMBR (flow control) "
-             "rate=" << maxBitRate << ", overhead=" << overhead << ", "
-             "SSRC=" << RTP_TRACE_SRC(receiver->m_sourceIdentifier));
+                         "rate=" << maxBitRate << ", overhead=" << overhead << ", "
+                         "SSRC=" << RTP_TRACE_SRC(receiver->m_sourceIdentifier));
 
       request.AddTMMB(sender->m_sourceIdentifier, receiver->m_sourceIdentifier, maxBitRate, overhead, notify);
-    }
-    else {
-      PTRACE(3, *this << "sending REMB (flow control) "
-             "rate=" << maxBitRate << ", SSRC=" << RTP_TRACE_SRC(receiver->m_sourceIdentifier));
-
-      request.AddREMB(sender->m_sourceIdentifier, receiver->m_sourceIdentifier, maxBitRate);
     }
   }
 
