@@ -299,6 +299,8 @@ void OpalLyncEndPoint::AdjustLyncURI(PString & uri)
     parsed.SetParameters(PString::Empty()); // Remove any extraneous parameters as Lync very fussy
     if (OpalIsE164(parsed.GetUserName()))
       parsed.SetParamVar("user", "phone"); // Very fussy indeed
+	else if (parsed.GetUserName().IsEmpty() && OpalIsE164(parsed.GetHostName()))
+      parsed.Parse(parsed.AsString().Splice("tel", 0, 3));
   }
   else if (parsed.GetScheme() == "tel") {
     if (parsed.GetHostName().IsEmpty())
