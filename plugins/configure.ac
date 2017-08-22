@@ -295,8 +295,10 @@ if test "x$HAVE_LIBAVCODEC" = "xyes" ; then
    AC_ARG_ENABLE([x264-licensed], [AC_HELP_STRING([--enable-x264-licensed],[enable commercially licensed x264])])
    if test "$enable_x264_licensed" = "yes" ;  then
       X264_CFLAGS="$X264_CFLAGS -DX264_LICENSED"
+      AC_SUBST(X264_LICENSED,"yes")
       HAVE_X264="Licensed $HAVE_X264"
    else
+      AC_SUBST(X264_LICENSED,"no")
       HAVE_X264="GPL $HAVE_X264"
    fi
 else
