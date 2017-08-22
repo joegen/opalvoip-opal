@@ -40,7 +40,9 @@
 
 #if defined(X264_LICENSED) || defined(GPL_HELPER_APP)
 
-#pragma message("Building with x264 license")
+#if defined(X264_LICENSED)
+  #pragma message("Building with x264 license")
+#endif
 
 #if PLUGINCODEC_TRACING
   static char const HelperTraceName[] = "x264-help";
