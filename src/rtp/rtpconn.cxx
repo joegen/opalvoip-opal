@@ -512,12 +512,12 @@ bool OpalRTPConnection::OnMediaCommand(OpalMediaStream & stream, const OpalMedia
 #if OPAL_VIDEO
 
   const OpalMediaFlowControl * flow = dynamic_cast<const OpalMediaFlowControl *>(&command);
-  if (flow != NULL)
-    return session->SendFlowControl(flow->GetMaxBitRate());
+  if (flow != NULL && session->SendFlowControl(flow->GetMaxBitRate(), 0, false, flow->GetSyncSource()) == OpalRTPSession::e_ProcessPacket)
+    return true;
 
   const OpalTemporalSpatialTradeOff * tsto = dynamic_cast<const OpalTemporalSpatialTradeOff *>(&command);
-  if (tsto != NULL)
-    return session->SendTemporalSpatialTradeOff(tsto->GetTradeOff());
+  if (tsto != NULL && session->SendTemporalSpatialTradeOff(tsto->GetTradeOff(), tsto->GetSyncSource()) == OpalRTPSession::e_ProcessPacket)
+    return true;
 
   const OpalVideoUpdatePicture * vup = dynamic_cast<const OpalVideoUpdatePicture *>(&command);
   if (vup != NULL) {
@@ -525,7 +525,8 @@ bool OpalRTPConnection::OnMediaCommand(OpalMediaStream & stream, const OpalMedia
     if ((options&(OPAL_OPT_VIDUP_METHOD_RTCP | OPAL_OPT_VIDUP_METHOD_PLI | OPAL_OPT_VIDUP_METHOD_FIR)) != 0) {
       if (PIsDescendant(&command, OpalVideoPictureLoss))
         options |= OPAL_OPT_VIDUP_METHOD_PREFER_PLI;
-      return session->SendIntraFrameRequest(options, vup->GetSyncSource());
+      if (session->SendIntraFrameRequest(options, vup->GetSyncSource()) == OpalRTPSession::e_ProcessPacket)
+        return true;
     }
 
     PTRACE(4, "RTCP Intra-Frame Request disabled in string options");

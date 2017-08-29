@@ -1140,7 +1140,7 @@ void OpalRTPSession::SyncSource::OnRxSenderReport(const RTP_SenderReport & repor
 
 void OpalRTPSession::SyncSource::OnRxReceiverReport(const RTP_ReceiverReport & report)
 {
-  PTRACE(m_throttleRxRR, &m_session, m_session << "OnReceiverReport: " << report << m_throttleRxRR);
+  PTRACE(m_throttleRxRR, &m_session, m_session << "OnRxReceiverReport: " << report << m_throttleRxRR);
 
   m_packetsLost = report.totalLost;
   PTRACE_IF(m_throttleInvalidLost, (unsigned)m_packetsLost > m_packets, &m_session,
@@ -2343,16 +2343,16 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SendFlowControl(unsigned maxBi
 
     if (!(m_feedback&(OpalMediaFormat::e_TMMBR | OpalMediaFormat::e_REMB))) {
       PTRACE(3, *this << "remote not capable of flow control (TMMBR or REMB)");
-      return e_ProcessPacket;
+      return e_IgnorePacket;
     }
 
     SyncSource * sender;
     if (!GetSyncSource(0, e_Sender, sender))
-      return e_ProcessPacket;
+      return e_IgnorePacket;
 
     SyncSource * receiver;
     if (!GetSyncSource(syncSourceIn, e_Receiver, receiver))
-      return e_ProcessPacket;
+      return e_IgnorePacket;
 
     // Packet always starts with SR or RR, use empty RR as place holder
     InitialiseControlFrame(request, *sender);
@@ -2392,11 +2392,11 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SendIntraFrameRequest(unsigned
 
     SyncSource * sender;
     if (!GetSyncSource(0, e_Sender, sender))
-      return e_ProcessPacket;
+      return e_IgnorePacket;
 
     SyncSource * receiver;
     if (!GetSyncSource(syncSourceIn, e_Receiver, receiver))
-      return e_ProcessPacket;
+      return e_IgnorePacket;
 
     // Packet always starts with SR or RR, use empty RR as place holder
     InitialiseControlFrame(request, *sender);
@@ -2437,16 +2437,16 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SendTemporalSpatialTradeOff(un
 
     if (!(m_feedback&OpalMediaFormat::e_TSTR)) {
       PTRACE(3, *this << "remote not capable of Temporal/Spatial Tradeoff (TSTR)");
-      return e_ProcessPacket;
+      return e_IgnorePacket;
     }
 
     SyncSource * sender;
     if (!GetSyncSource(0, e_Sender, sender))
-      return e_ProcessPacket;
+      return e_IgnorePacket;
 
     SyncSource * receiver;
     if (!GetSyncSource(syncSourceIn, e_Receiver, receiver))
-      return e_ProcessPacket;
+      return e_IgnorePacket;
 
     // Packet always starts with SR or RR, use empty RR as place holder
     InitialiseControlFrame(request, *sender);
