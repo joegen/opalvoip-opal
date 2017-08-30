@@ -131,6 +131,8 @@ OpalRTPSession::OpalRTPSession(const Init & init)
   , m_dataNotifier(PCREATE_NOTIFIER(OnRxDataPacket))
   , m_controlNotifier(PCREATE_NOTIFIER(OnRxControlPacket))
 {
+  m_defaultSSRC[e_Receiver] = m_defaultSSRC[e_Sender] = 0;
+
   PTRACE_CONTEXT_ID_TO(m_reportTimer);
   m_reportTimer.SetNotifier(PCREATE_NOTIFIER(TimedSendReport), "RTP-Report");
   m_reportTimer.Stop();
@@ -174,6 +176,11 @@ RTP_SyncSourceId OpalRTPSession::AddSyncSource(RTP_SyncSourceId id, Direction di
                 " cname=" << it->second->m_canonicalName);
       return 0;
     }
+  }
+
+  if (m_defaultSSRC[dir] == 0) {
+    PTRACE(3, *this << "setting default " << dir << " (added) SSRC=" << RTP_TRACE_SRC(id));
+    m_defaultSSRC[dir] = id;
   }
 
   m_SSRC[id] = CreateSyncSource(id, dir, cname);
@@ -251,38 +258,79 @@ RTP_SyncSourceArray OpalRTPSession::GetSyncSources(Direction dir) const
 const OpalRTPSession::SyncSource & OpalRTPSession::GetSyncSource(RTP_SyncSourceId ssrc, Direction dir) const
 {
   P_INSTRUMENTED_LOCK_READ_ONLY();
+
+  if (ssrc != 0) {
+    SyncSourceMap::const_iterator it = m_SSRC.find(ssrc);
+    return it != m_SSRC.end() ? *it->second : m_dummySyncSource;
+  }
+
+  // Zero is default, we need one, so the below const breaking is to make sure we have one.
   SyncSource * info;
-  return GetSyncSource(ssrc, dir, info) ? *info : m_dummySyncSource;
+  return const_cast<OpalRTPSession *>(this)->GetSyncSource(0, dir, info) ? *info : m_dummySyncSource;
 }
 
 
-bool OpalRTPSession::GetSyncSource(RTP_SyncSourceId ssrc, Direction dir, SyncSource * & info) const
+bool OpalRTPSession::GetSyncSource(RTP_SyncSourceId ssrc, Direction dir, SyncSource * & info)
 {
-  SyncSourceMap::const_iterator it;
+  // Should always be already locked by caller
+
+  SyncSourceMap::iterator it;
   if (ssrc != 0) {
-    if ((it = m_SSRC.find(ssrc)) == m_SSRC.end()) {
-      PTRACE(3, *this << "cannot find info for " << dir << " SSRC=" << RTP_TRACE_SRC(ssrc));
-      return false;
+    it = m_SSRC.find(ssrc);
+    if (it != m_SSRC.end()) {
+      info = it->second;
+      return true;
     }
-  }
-  else {
-    for (it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
-      if (it->second->m_direction == dir && it->second->m_packets > 0)
-        break;
-    }
-    if (it == m_SSRC.end()) {
-      for (it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
-        if (it->second->m_direction == dir)
-          break;
-      }
-      if (it == m_SSRC.end()) {
-        PTRACE(3, *this << "cannot find info for any " << dir);
-        return false;
-      }
-    }
+
+    PTRACE(3, *this << "cannot find info for " << dir << " SSRC=" << RTP_TRACE_SRC(ssrc));
+    return false;
   }
 
-  info = const_cast<SyncSource *>(it->second);
+  // Used ssrc==0 so find last used default, if have one
+  ssrc = m_defaultSSRC[dir];
+  if (ssrc != 0) {
+    it = m_SSRC.find(ssrc);
+    if (it != m_SSRC.end()) {
+      info = it->second;
+      return true;
+    }
+
+    PTRACE(3, *this << "cannot find info for previous " << dir << " default SSRC=" << RTP_TRACE_SRC(ssrc));
+  }
+
+  // No default, find one, prefereably one in use
+  RTP_SyncSourceId firstInDirection = 0;
+  RTP_SyncSourceId firstWithPackets = 0;
+  for (it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
+    if (it->second->m_direction != dir)
+      continue;
+
+    if (it->second->m_packets > 0) {
+      firstWithPackets = it->second->m_sourceIdentifier;
+      break; // Need look no further
+    }
+
+    if (firstInDirection == 0)
+      firstInDirection = it->second->m_sourceIdentifier;
+  }
+
+  if (firstWithPackets != 0) {
+    ssrc = firstWithPackets;
+    PTRACE(3, *this << "setting default " << dir << " (first with data) SSRC=" << RTP_TRACE_SRC(ssrc));
+  }
+  else if (firstInDirection != 0) {
+    ssrc = firstInDirection;
+    PTRACE(3, *this << "setting default " << dir << " (first in direction) SSRC=" << RTP_TRACE_SRC(ssrc));
+  }
+  else {
+    if ((ssrc = AddSyncSource(0, dir)) == 0)
+      return false;
+  }
+
+  m_defaultSSRC[dir] = ssrc; // Remember default
+
+  it = m_SSRC.find(ssrc);
+  info = it->second;
   return true;
 }
 
@@ -913,14 +961,7 @@ OpalJitterBuffer * OpalRTPSession::SyncSource::GetJitterBuffer() const
 PString OpalRTPSession::GetCanonicalName(RTP_SyncSourceId ssrc, Direction dir) const
 {
   P_INSTRUMENTED_LOCK_READ_ONLY(return PString::Empty());
-
-  SyncSource * info;
-  if (!GetSyncSource(ssrc, dir, info))
-    return PString::Empty();
-
-  PString s = info->m_canonicalName;
-  s.MakeUnique();
-  return s;
+  return GetSyncSource(ssrc, dir).m_canonicalName.GetPointer();
 }
 
 
@@ -938,15 +979,8 @@ void OpalRTPSession::SetCanonicalName(const PString & name, RTP_SyncSourceId ssr
 
 PString OpalRTPSession::GetMediaStreamId(RTP_SyncSourceId ssrc, Direction dir) const
 {
-  PString s;
-  P_INSTRUMENTED_LOCK_READ_ONLY(return s);
-
-  SyncSource * info;
-  if (GetSyncSource(ssrc, dir, info)) {
-    s = info->m_mediaStreamId;
-    s.MakeUnique();
-  }
-  return s;
+  P_INSTRUMENTED_LOCK_READ_ONLY(return PString::Empty());
+  return GetSyncSource(ssrc, dir).m_mediaStreamId.GetPointer();
 }
 
 
@@ -967,15 +1001,8 @@ void OpalRTPSession::SetMediaStreamId(const PString & id, RTP_SyncSourceId ssrc,
 
 PString OpalRTPSession::GetMediaTrackId(RTP_SyncSourceId ssrc, Direction dir) const
 {
-  PString s;
-  P_INSTRUMENTED_LOCK_READ_ONLY(return s);
-
-  SyncSource * info;
-  if (GetSyncSource(ssrc, dir, info)) {
-    s = info->m_mediaTrackId;
-    s.MakeUnique();
-  }
-  return s;
+  P_INSTRUMENTED_LOCK_READ_ONLY(return PString::Empty());
+  return GetSyncSource(ssrc, dir).m_mediaTrackId.GetPointer();
 }
 
 
@@ -1703,9 +1730,7 @@ void OpalRTPSession::GetStatistics(OpalMediaStatistics & statistics, Direction d
   statistics.m_lastReportTime    = 0;
 
   if (statistics.m_SSRC != 0) {
-    SyncSource * info;
-    if (GetSyncSource(statistics.m_SSRC, dir, info))
-      info->GetStatistics(statistics);
+    GetSyncSource(statistics.m_SSRC, dir).GetStatistics(statistics);
     return;
   }
 
@@ -1811,7 +1836,7 @@ void OpalRTPSession::SyncSource::GetStatistics(OpalMediaStatistics & statistics)
 bool OpalRTPSession::CheckControlSSRC(RTP_SyncSourceId PTRACE_PARAM(senderSSRC),
                                       RTP_SyncSourceId targetSSRC,
                                       SyncSource * & info
-                                      PTRACE_PARAM(, const char * pduName)) const
+                                      PTRACE_PARAM(, const char * pduName))
 {
 #if PTRACING
   unsigned level = IsGroupMember(GetBundleGroupId()) ? 6 : 2;
@@ -1822,7 +1847,7 @@ bool OpalRTPSession::CheckControlSSRC(RTP_SyncSourceId PTRACE_PARAM(senderSSRC),
   }
 #endif
 
-  return GetSyncSource(targetSSRC, e_Sender, info);
+  return targetSSRC != 0 && GetSyncSource(targetSSRC, e_Sender, info);
 }
 
 
@@ -2358,8 +2383,10 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SendFlowControl(unsigned maxBi
     InitialiseControlFrame(request, *sender);
 
     if (m_feedback&OpalMediaFormat::e_REMB) {
-      PTRACE(3, *this << "sending REMB (flow control) "
-                         "rate=" << maxBitRate << ", SSRC=" << RTP_TRACE_SRC(receiver->m_sourceIdentifier));
+      PTRACE(3, *this << "sending REMB (flow control):"
+                         " rate=" << maxBitRate << ","
+                         " rx-SSRC=" << RTP_TRACE_SRC(receiver->m_sourceIdentifier) << ","
+                         " tx-SSRC=" << RTP_TRACE_SRC(sender->m_sourceIdentifier));
 
       request.AddREMB(sender->m_sourceIdentifier, receiver->m_sourceIdentifier, maxBitRate);
     }
@@ -2367,9 +2394,10 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SendFlowControl(unsigned maxBi
       if (overhead == 0)
         overhead = m_packetOverhead;
 
-      PTRACE(3, *this << "sending TMMBR (flow control) "
-                         "rate=" << maxBitRate << ", overhead=" << overhead << ", "
-                         "SSRC=" << RTP_TRACE_SRC(receiver->m_sourceIdentifier));
+      PTRACE(3, *this << "sending TMMBR (flow control):"
+                         " rate=" << maxBitRate << ", overhead=" << overhead << ","
+                         " rx-SSRC=" << RTP_TRACE_SRC(receiver->m_sourceIdentifier) << ","
+                         " tx-SSRC=" << RTP_TRACE_SRC(sender->m_sourceIdentifier));
 
       request.AddTMMB(sender->m_sourceIdentifier, receiver->m_sourceIdentifier, maxBitRate, overhead, notify);
     }
@@ -2406,18 +2434,22 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SendIntraFrameRequest(unsigned
 
     if ((has_AVPF_PLI && !has_AVPF_FIR) || (has_AVPF_PLI && (options & OPAL_OPT_VIDUP_METHOD_PREFER_PLI))) {
       PTRACE(3, *this << "sending RFC4585 PLI"
-             << ((options & OPAL_OPT_VIDUP_METHOD_PLI) ? " (forced)" : "")
-             << ", SSRC=" << RTP_TRACE_SRC(receiver->m_sourceIdentifier));
+             << ((options & OPAL_OPT_VIDUP_METHOD_PLI) ? " (forced)" : "") << ":"
+                " rx-SSRC=" << RTP_TRACE_SRC(receiver->m_sourceIdentifier) << ","
+                " tx-SSRC=" << RTP_TRACE_SRC(sender->m_sourceIdentifier));
       request.AddPLI(sender->m_sourceIdentifier, receiver->m_sourceIdentifier);
     }
     else if (has_AVPF_FIR) {
       PTRACE(3, *this << "sending RFC5104 FIR"
-             << ((options & OPAL_OPT_VIDUP_METHOD_FIR) ? " (forced)" : "")
-             << ", SSRC=" << RTP_TRACE_SRC(receiver->m_sourceIdentifier));
+             << ((options & OPAL_OPT_VIDUP_METHOD_FIR) ? " (forced)" : "") << ":"
+                " rx-SSRC=" << RTP_TRACE_SRC(receiver->m_sourceIdentifier) << ","
+                " tx-SSRC=" << RTP_TRACE_SRC(sender->m_sourceIdentifier));
       request.AddFIR(sender->m_sourceIdentifier, receiver->m_sourceIdentifier, receiver->m_lastFIRSequenceNumber++);
     }
     else {
-      PTRACE(3, *this << "sending RFC2032, SSRC=" << RTP_TRACE_SRC(syncSourceIn));
+      PTRACE(3, *this << "sending RFC2032:"
+                         " rx-SSRC=" << RTP_TRACE_SRC(receiver->m_sourceIdentifier) << ","
+                         " tx-SSRC=" << RTP_TRACE_SRC(sender->m_sourceIdentifier));
       request.AddIFR(receiver->m_sourceIdentifier);
     }
   }

@@ -392,11 +392,11 @@ class OpalRTPSession : public OpalMediaSession
     static const PString & GetAbsSendTimeHdrExtURI();
     static const PString & GetTransportWideSeqNumHdrExtURI();
 
-    /**Get the source output identifier.
+    /**Get the source identifier for remote data to us.
       */
     RTP_SyncSourceId GetSyncSourceIn() const { return GetSyncSource(0, e_Receiver).m_sourceIdentifier; }
 
-    /**Get the source output identifier.
+    /**Get the source identifier for our data to the remote.
       */
     RTP_SyncSourceId GetSyncSourceOut() const { return GetSyncSource(0, e_Sender).m_sourceIdentifier; }
 
@@ -804,13 +804,15 @@ class OpalRTPSession : public OpalMediaSession
     };
 
     typedef std::map<RTP_SyncSourceId, SyncSource *> SyncSourceMap;
-    SyncSourceMap m_SSRC;
-    SyncSource    m_dummySyncSource;
+    SyncSourceMap    m_SSRC;
+    SyncSource       m_dummySyncSource;
+    RTP_SyncSourceId m_defaultSSRC[2];
+
     const SyncSource & GetSyncSource(RTP_SyncSourceId ssrc, Direction dir) const;
-    virtual bool GetSyncSource(RTP_SyncSourceId ssrc, Direction dir, SyncSource * & info) const;
+    virtual bool GetSyncSource(RTP_SyncSourceId ssrc, Direction dir, SyncSource * & info);
     virtual SyncSource * UseSyncSource(RTP_SyncSourceId ssrc, Direction dir, bool force);
     virtual SyncSource * CreateSyncSource(RTP_SyncSourceId id, Direction dir, const char * cname);
-    virtual bool CheckControlSSRC(RTP_SyncSourceId senderSSRC, RTP_SyncSourceId targetSSRC, SyncSource * & info PTRACE_PARAM(, const char * pduName)) const;
+    virtual bool CheckControlSSRC(RTP_SyncSourceId senderSSRC, RTP_SyncSourceId targetSSRC, SyncSource * & info PTRACE_PARAM(, const char * pduName));
     virtual bool ResequenceOutOfOrderPackets(SyncSource & ssrc) const;
 
     /// Set up RTCP as per RFC rules
