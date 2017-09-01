@@ -845,6 +845,9 @@ class OpalRTPSession : public OpalMediaSession
     PTRACE_THROTTLE(m_throttleTxReport,3,60000,5);
     PTRACE_THROTTLE(m_throttleRxEmptyRR,3,60000);
     PTRACE_THROTTLE(m_throttleRxSDES,4,60000);
+#if PTRACING
+    std::set<RTP_SyncSourceId> m_loggedBadSSRC;
+#endif
 
   private:
     OpalRTPSession(const OpalRTPSession &);
