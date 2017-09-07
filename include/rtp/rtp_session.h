@@ -148,6 +148,16 @@ class OpalRTPSession : public OpalMediaSession
       */
     RTP_SyncSourceArray GetSyncSources(Direction dir) const;
 
+    /**Set the "rtx" SSRC to use for the given SSRC.
+       @return rtxSSRC or a newly allocated SSRC used for "rtx" packets. Zero on error.
+      */
+    RTP_SyncSourceId EnableSyncSourceRtx(
+      RTP_SyncSourceId primarySSRC,      ///< Primary SSRC of data that can be retransmitted
+      RTP_DataFrame::PayloadTypes rtxPT, ///< Payload type of retramitted packet
+      RTP_SyncSourceId rtxSSRC           ///< SSRC of re-transmitted data, 0 indicates allocate new one
+    );
+
+
     enum SendReceiveStatus {
       e_IgnorePacket = -1,
       e_AbortTransport, // Abort is zero so equvalent to false
@@ -158,7 +168,14 @@ class OpalRTPSession : public OpalMediaSession
     {
       e_RewriteHeader,
       e_RewriteSSRC,
-      e_RewriteNothing
+      e_RewriteNothing,
+      e_Retransmit
+    };
+
+    enum ReceiveType {
+      e_RxFromNetwork,
+      e_RxOutOfOrder,
+      e_RxRetransmission
     };
 
     /**Write a data frame from the RTP channel.
@@ -225,7 +242,7 @@ class OpalRTPSession : public OpalMediaSession
     virtual SendReceiveStatus OnSendData(RTP_DataFrame & frame, RewriteMode rewrite);
     virtual SendReceiveStatus OnSendControl(RTP_ControlFrame & frame);
     virtual SendReceiveStatus OnPreReceiveData(RTP_DataFrame & frame);
-    virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame);
+    virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame, ReceiveType rxType);
     virtual SendReceiveStatus OnReceiveControl(RTP_ControlFrame & frame);
     virtual SendReceiveStatus OnOutOfOrderPacket(RTP_DataFrame & frame);
 
@@ -236,7 +253,7 @@ class OpalRTPSession : public OpalMediaSession
     virtual void OnRxReceiverReport(RTP_SyncSourceId src, const RTP_ReceiverReport & report);
     virtual void OnRxSourceDescription(const RTP_SourceDescriptionArray & descriptions);
     virtual void OnRxGoodbye(const RTP_SyncSourceArray & sources, const PString & reason);
-    virtual void OnRxNACK(RTP_SyncSourceId ssrc, const RTP_ControlFrame::LostPacketMask lostPackets);
+    virtual void OnRxNACK(RTP_SyncSourceId ssrc, const RTP_ControlFrame::LostPacketMask & lostPackets);
     virtual void OnRxTWCC(const RTP_TransportWideCongestionControl & twcc);
     virtual void OnRxApplDefined(const RTP_ControlFrame::ApplDefinedInfo & info);
     virtual bool OnReceiveExtendedReports(const RTP_ControlFrame & frame);
@@ -367,6 +384,19 @@ class OpalRTPSession : public OpalMediaSession
        See http://tools.ietf.org/html/draft-ietf-mmusic-msid-12
     */
     void SetMediaTrackId(const PString & id, RTP_SyncSourceId ssrc, Direction dir);
+
+    /**Get the SSRC for the secondary rtx packets.
+       If \p primary is true then \p ssrc is a primary SSRC and the function
+       returns the SSRC that is being used for "rtx" packets. When false,
+       \p ssrc is expected to be an "rtx" SSRC and the function returns the
+       SSRC used for primary data.
+       @return zero if \p ssrc does not exist or is not the expected type.
+      */
+    RTP_SyncSourceId GetRtxSyncSource(
+      RTP_SyncSourceId ssrc,    ///< SSRC to get value for
+      Direction dir,            ///< Direction of media, if ssrc == 0
+      bool isPrimary            ///< The \p ssrc is a primary and we are getting "rtx" SSRC
+  ) const;
 
     /**Get the tool name for the RTP session.
       */
@@ -683,8 +713,11 @@ class OpalRTPSession : public OpalMediaSession
 #endif
 
       virtual SendReceiveStatus OnSendData(RTP_DataFrame & frame, RewriteMode rewrite);
-      virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame, bool newData);
+      virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame, ReceiveType rxType);
       virtual void SetLastSequenceNumber(RTP_SequenceNumber sequenceNumber);
+      virtual void SaveSentData(const RTP_DataFrame & frame);
+      virtual void OnRxNACK(const RTP_ControlFrame::LostPacketMask & lostPackets);
+      virtual bool IsExpectingRetransmit(RTP_SequenceNumber sequenceNumber);
       virtual SendReceiveStatus OnOutOfOrderPacket(RTP_DataFrame & frame);
       virtual bool HandlePendingFrames();
 #if OPAL_RTP_FEC
@@ -711,6 +744,7 @@ class OpalRTPSession : public OpalMediaSession
       virtual SendReceiveStatus SendBYE();
 
       bool IsStaleReceiver() const;
+      bool IsRtx() const { return m_rtxPT != RTP_DataFrame::IllegalPayloadType; }
 
       OpalRTPSession  & m_session;
       Direction         m_direction;
@@ -719,6 +753,9 @@ class OpalRTPSession : public OpalMediaSession
       PString           m_canonicalName;
       PString           m_mediaStreamId;
       PString           m_mediaTrackId;
+
+      RTP_SyncSourceId            m_rtxSSRC; // Bidirectional link between primary and secondary
+      RTP_DataFrame::PayloadTypes m_rtxPT;   // Sending rtx payload type, or receiving rtx primary paylaod type, only set in seconday SSRC
 
       NotifierMap m_notifiers;
 
@@ -863,6 +900,7 @@ class OpalRTPSession : public OpalMediaSession
     P_REMOVE_VIRTUAL(SendReceiveStatus,InternalReadData(RTP_DataFrame &),e_AbortTransport);
     P_REMOVE_VIRTUAL(SendReceiveStatus,SendReport(bool),e_AbortTransport);
     P_REMOVE_VIRTUAL(SendReceiveStatus,OnReceiveData(RTP_DataFrame&, PINDEX),e_AbortTransport);
+    P_REMOVE_VIRTUAL(SendReceiveStatus,OnReceiveData(RTP_DataFrame&),e_AbortTransport);
 
   friend class RTCP_XR_Metrics;
 };

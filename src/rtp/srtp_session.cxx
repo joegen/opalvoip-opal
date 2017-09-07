@@ -763,9 +763,12 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnSendControl(RTP_ControlFram
 }
 
 
-OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveData(RTP_DataFrame & frame)
+OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveData(RTP_DataFrame & frame, ReceiveType rxType)
 {
   // Aleady locked on entry
+
+  if (rxType == e_RxRetransmission)
+    return OpalRTPSession::OnReceiveData(frame, rxType);
 
   RTP_SyncSourceId ssrc = frame.GetSyncSource();
   if (!IsCryptoSecured(e_Receiver)) {
@@ -793,7 +796,7 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveData(RTP_DataFrame &
 
   frame.SetPayloadSize(len - frame.GetHeaderSize());
 
-  return OpalRTPSession::OnReceiveData(frame);
+  return OpalRTPSession::OnReceiveData(frame, rxType);
 }
 
 

@@ -1294,11 +1294,6 @@ void SDPMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat)
 
   for (SDPMediaFormatList::iterator format = m_formats.begin(); format != m_formats.end(); ++format) {
     const OpalMediaFormat & sdpMediaFormat = format->GetMediaFormat();
-    if (mediaFormat == sdpMediaFormat) {
-      PTRACE(3, "Not including " << mediaFormat << " as already included");
-      return;
-    }
-
     if (format->GetPayloadType() == payloadType) {
       PTRACE(2, "Not including " << mediaFormat << " as it is has duplicate payload type " << payloadType);
       return;
@@ -1782,9 +1777,32 @@ void SDPRTPAVPMediaDescription::OutputAttributes(ostream & strm) const
   if (m_reducedSizeRTCP)
     strm << "a=rtcp-rsize\r\n";
 
+  /* Specification does not seem to say to do this, but all the RFC examples group
+     the FID ssrc parameters together, so we do the same to maximise interoperability */
+  std::set<RTP_SyncSourceId> ssrcInfoDone;
+
+  for (vector<RTP_SyncSourceArray>::const_iterator it1 = m_flowSSRC.begin(); it1 != m_flowSSRC.end(); ++it1) {
+    strm << "a=ssrc-group:FID";
+    for (RTP_SyncSourceArray::const_iterator it2 = it1->begin(); it2 != it1->end(); ++it2)
+      strm << ' ' << *it2;
+    strm << CRLF;
+
+    for (RTP_SyncSourceArray::const_iterator it2 = it1->begin(); it2 != it1->end(); ++it2) {
+      SsrcInfo::const_iterator it3 = m_ssrcInfo.find(*it2);
+      if (it3 != m_ssrcInfo.end()) {
+        for (PStringOptions::const_iterator it4 = it3->second.begin(); it4 != it3->second.end(); ++it4)
+          strm << "a=ssrc:" << *it2 << ' ' << it4->first << ':' << it4->second << CRLF;
+        ssrcInfoDone.insert(*it2);
+      }
+    }
+  }
+
+  // Output any SSRC parameters not in an FID
   for (SsrcInfo::const_iterator it1 = m_ssrcInfo.begin(); it1 != m_ssrcInfo.end(); ++it1) {
-    for (PStringOptions::const_iterator it2 = it1->second.begin(); it2 != it1->second.end(); ++it2)
-      strm << "a=ssrc:" << it1->first << ' ' << it2->first << ':' << it2->second << CRLF;
+    if (ssrcInfoDone.find(it1->first) == ssrcInfoDone.end()) {
+      for (PStringOptions::const_iterator it2 = it1->second.begin(); it2 != it1->second.end(); ++it2)
+        strm << "a=ssrc:" << it1->first << ' ' << it2->first << ':' << it2->second << CRLF;
+    }
   }
 
   // m_rtcp_fb is set via SDPRTPAVPMediaDescription::PreEncode according to various options
@@ -1949,9 +1967,7 @@ void SDPRTPAVPMediaDescription::SetAttribute(const PString & attr, const PString
       PString val = value.Mid(endToken + 1);
       m_ssrcInfo[ssrc].SetAt(key, val);
       PTRACE_IF(4, key == "cname", "SSRC: " << RTP_TRACE_SRC(ssrc) << " CNAME: " << val);
-      if (key == "mslabel" && !m_temporaryFlowSSRC.empty())
-        m_mediaStreams[val][0] = m_temporaryFlowSSRC;
-      else if (key == "msid" && m_ssrcInfo[ssrc].GetString("mslabel").IsEmpty())
+      if (key == "msid" && m_ssrcInfo[ssrc].GetString("mslabel").IsEmpty())
         SetMediaStreamAndTrackIds(val, m_ssrcInfo[ssrc]);
     }
     return;
@@ -1960,15 +1976,10 @@ void SDPRTPAVPMediaDescription::SetAttribute(const PString & attr, const PString
   if (attr *= "ssrc-group") {
     PStringArray tokens = value.Tokenise(' ', false);
     if (tokens.GetSize() > 1 && (tokens[0] *= "FID")) {
-      m_temporaryFlowSSRC.resize(tokens.GetSize() - 1);
+      RTP_SyncSourceArray ssrcs(tokens.GetSize() - 1);
       for (PINDEX i = 1; i < tokens.GetSize(); ++i)
-        m_temporaryFlowSSRC[i - 1] = tokens[i].AsUnsigned();
-
-      SsrcInfo::iterator it = m_ssrcInfo.find(m_temporaryFlowSSRC[0]);
-      if (it != m_ssrcInfo.end() && it->second.Has("mslabel")) {
-        m_mediaStreams[it->second.Get("mslabel")][0] = m_temporaryFlowSSRC;
-        m_temporaryFlowSSRC.clear();
-      }
+        ssrcs[i - 1] = tokens[i].AsUnsigned();
+      m_flowSSRC.push_back(ssrcs);
       return;
     }
   }
@@ -1979,10 +1990,11 @@ void SDPRTPAVPMediaDescription::SetAttribute(const PString & attr, const PString
 
 bool SDPRTPAVPMediaDescription::FromSession(OpalMediaSession * session,
                                             const SDPMediaDescription * offer,
-                                            RTP_SyncSourceId ssrc)
+                                            RTP_SyncSourceId singleSSRC)
 {
-  const OpalRTPSession * rtpSession = dynamic_cast<const OpalRTPSession *>(session);
+  OpalRTPSession * rtpSession = dynamic_cast<OpalRTPSession *>(session);
   if (rtpSession != NULL) {
+    PTRACE(4, "Setting SDP from RTP session " << *rtpSession);
     if (offer != NULL) {
       m_headerExtensions = rtpSession->GetHeaderExtensions();
       m_reducedSizeRTCP = rtpSession->UseReducedSizeRTCP();
@@ -2003,32 +2015,66 @@ bool SDPRTPAVPMediaDescription::FromSession(OpalMediaSession * session,
     }
 
     RTP_SyncSourceArray ssrcs;
-    if (ssrc != 0)
-      ssrcs.push_back(ssrc);
+    if (singleSSRC != 0)
+      ssrcs.push_back(singleSSRC);
     else
       ssrcs = rtpSession->GetSyncSources(OpalRTPSession::e_Sender);
 
     if (m_stringOptions.GetBoolean(OPAL_OPT_SDP_SSRC_INFO, true)) {
+      if (offer == NULL) {
+        /* If we are offerring, then make sure we linked up SSRC's for primary and "rtx"
+           packets so the later flow (FID) setting works. */
+        OpalMediaFormatList formats = GetMediaFormats();
+        OpalMediaFormatList::const_iterator rtx = formats.FindFormat(OpalRtx::GetName(GetMediaType()));
+        if (rtx != formats.end()) {
+          RTP_DataFrame::PayloadTypes pt = rtx->GetOptionPayloadType(OpalRtx::AssociatedPayloadTypeOption());
+          if (pt != RTP_DataFrame::IllegalPayloadType) {
+            PTRACE(4, "Making sure RTX links in place before offer.");
+            RTP_SyncSourceArray ssrcs2 = ssrcs;
+            for (RTP_SyncSourceArray::iterator itSSRC = ssrcs2.begin(); itSSRC != ssrcs2.end(); ++itSSRC) {
+              RTP_SyncSourceId ssrc = *itSSRC;
+              if (rtpSession->GetRtxSyncSource(ssrc, OpalRTPSession::e_Sender, true) == 0 &&
+                  rtpSession->GetRtxSyncSource(ssrc, OpalRTPSession::e_Sender, false) == 0) {
+                RTP_SyncSourceId rtxSSRC = rtpSession->EnableSyncSourceRtx(ssrc, rtx->GetPayloadType(), 0);
+                if (rtxSSRC != 0)
+                  ssrcs.push_back(rtxSSRC);
+              }
+            }
+          }
+        }
+      }
+
       PTRACE(4, "Adding " << ssrcs.size() << " sender SSRC entries.");
-      for (RTP_SyncSourceArray::iterator it = ssrcs.begin(); it != ssrcs.end(); ++it) {
-        PStringOptions & info = m_ssrcInfo[*it];
-        PString cname = rtpSession->GetCanonicalName(*it);
+      for (RTP_SyncSourceArray::iterator itSSRC = ssrcs.begin(); itSSRC != ssrcs.end(); ++itSSRC) {
+        RTP_SyncSourceId ssrc = *itSSRC;
+        PStringOptions & info = m_ssrcInfo[ssrc];
+        PString cname = rtpSession->GetCanonicalName(ssrc);
         if (!cname.IsEmpty())
           info.SetAt("cname", cname);
-        PString mslabel = rtpSession->GetMediaStreamId(*it, OpalRTPSession::e_Sender);
+        PString mslabel = rtpSession->GetMediaStreamId(ssrc, OpalRTPSession::e_Sender);
         if (!mslabel.IsEmpty()) {
-          PString label = rtpSession->GetMediaTrackId(*it, OpalRTPSession::e_Sender);
+          PString label = rtpSession->GetMediaTrackId(ssrc, OpalRTPSession::e_Sender);
           info.SetAt("mslabel", mslabel);
           info.SetAt("label", label);
           info.SetAt("msid", mslabel & label);
+        }
+
+        RTP_SyncSourceId rtxSSRC = rtpSession->GetRtxSyncSource(ssrc, OpalRTPSession::e_Sender, true);
+        if (rtxSSRC != 0) {
+          PTRACE(4, "Adding flow (FID) for " << RTP_TRACE_SRC(ssrc) << ", " << RTP_TRACE_SRC(rtxSSRC));
+          RTP_SyncSourceArray fid(2);
+          fid[0] = ssrc;
+          fid[1] = rtxSSRC;
+          m_flowSSRC.push_back(fid);
         }
       }
     }
 
     PStringList groups = rtpSession->GetGroups();
+    PTRACE(4, "Adding groups: " << setfill(',') << groups);
     for (PStringList::iterator it = groups.begin(); it != groups.end(); ++it) {
-      if (ssrc != 0)
-        m_groups.SetAt(*it, PSTRSTRM(rtpSession->GetGroupMediaId(*it) << '_' << ssrc));
+      if (singleSSRC != 0)
+        m_groups.SetAt(*it, PSTRSTRM(rtpSession->GetGroupMediaId(*it) << '_' << singleSSRC));
       else
         m_groups.SetAt(*it, rtpSession->GetGroupMediaId(*it));
     }
@@ -2049,7 +2095,7 @@ bool SDPRTPAVPMediaDescription::FromSession(OpalMediaSession * session,
   }
 #endif
 
-  return SDPMediaDescription::FromSession(session, offer, ssrc);
+  return SDPMediaDescription::FromSession(session, offer, singleSSRC);
 }
 
 
@@ -2057,6 +2103,8 @@ bool SDPRTPAVPMediaDescription::ToSession(OpalMediaSession * session, RTP_SyncSo
 {
   OpalRTPSession * rtpSession = dynamic_cast<OpalRTPSession *>(session);
   if (rtpSession != NULL) {
+    PTRACE(4, "Setting SDP to RTP session " << *rtpSession);
+
     /* Set single port or disjoint RTCP port, must be done before Open()
        and before SDPMediaDescription::ToSession() */
     rtpSession->SetSinglePortTx(m_controlAddress == m_mediaAddress);
@@ -2082,6 +2130,42 @@ bool SDPRTPAVPMediaDescription::ToSession(OpalMediaSession * session, RTP_SyncSo
         rtpSession->SetMediaTrackId(it->second.GetString("label"), ssrc, OpalRTPSession::e_Receiver);
         rtpSession->SetMediaStreamId(it->second.GetString("mslabel"), ssrc, OpalRTPSession::e_Receiver);
       }
+    }
+
+    // Connect up the SSRC's used for "rtx" packets
+    RTP_SyncSourceArray rtxConfirmed;
+    for (vector<RTP_SyncSourceArray>::const_iterator it = m_flowSSRC.begin(); it != m_flowSSRC.end(); ++it) {
+      if (it->size() == 2) {
+        RTP_SyncSourceId primarySSRC = it->at(0);
+        RTP_SyncSourceId rtxSSRC = it->at(1);
+        PString primaryCNAME = rtpSession->GetCanonicalName(primarySSRC, OpalRTPSession::e_Receiver);
+        PString rtxCNAME = rtpSession->GetCanonicalName(rtxSSRC, OpalRTPSession::e_Receiver);
+        if (primaryCNAME != rtxCNAME)
+          PTRACE(3, "Flow grouping not using same CNAME:"
+                    " SSRC1=" << RTP_TRACE_SRC(primarySSRC) << " CNAME1=\"" << primaryCNAME << "\""
+                    " SSRC2=" << RTP_TRACE_SRC(rtxSSRC) << " CNAME2=\"" << rtxCNAME << '"');
+        else {
+          for (SDPMediaFormatList::const_iterator format = m_formats.begin(); format != m_formats.end(); ++format) {
+            const OpalMediaFormat & mediaFormat = format->GetMediaFormat();
+            if (OpalRtx::EncodingName() == mediaFormat.GetEncodingName()) {
+              RTP_DataFrame::PayloadTypes pt = mediaFormat.GetOptionPayloadType(OpalRtx::AssociatedPayloadTypeOption());
+              if (pt != RTP_DataFrame::IllegalPayloadType) {
+                rtpSession->EnableSyncSourceRtx(primarySSRC, pt, rtxSSRC);
+                rtxConfirmed.push_back(rtxSSRC);
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // Go through and remove those rtx SSRC's that didn't get confirmed
+    RTP_SyncSourceArray senderSSRCs = rtpSession->GetSyncSources(OpalRTPSession::e_Sender);
+    for (RTP_SyncSourceArray::iterator it = senderSSRCs.begin(); it != senderSSRCs.end(); ++it) {
+      RTP_SyncSourceId ssrc = *it;
+      if (rtpSession->GetRtxSyncSource(ssrc, OpalRTPSession::e_Sender, false) != 0 &&
+          std::find(rtxConfirmed.begin(), rtxConfirmed.end(), ssrc) == rtxConfirmed.end())
+        rtpSession->RemoveSyncSource(ssrc);
     }
   }
 
@@ -2892,7 +2976,7 @@ bool SDPSessionDescription::Decode(const PStringArray & lines, const OpalMediaFo
       }
     }
   }
-  PTRACE(4, "Media stream identifiers: " << setfill(',') << m_mediaStreamIds);
+  PTRACE_IF(4, !m_mediaStreamIds.empty(), "Media stream identifiers: " << setfill(',') << m_mediaStreamIds);
 
 #if OPAL_SRTP
   // Reset setup flag for session...
@@ -3098,42 +3182,6 @@ void SDPSessionDescription::SetUserName(const PString & v)
   ownerUsername.Replace(' ', '_', true);
   if (ownerUsername.IsEmpty())
     ownerUsername = '-';
-}
-
-
-bool SDPSessionDescription::GetMediaStreams(MediaStreamMap & info) const
-{
-  info.clear();
-
-  for (PINDEX msIdx = 0; msIdx < m_mediaStreamIds.GetSize(); ++msIdx) {
-    PString msid = m_mediaStreamIds[msIdx];
-    for (PINDEX mdIdx = 1; mdIdx <= mediaDescriptions.GetSize(); ++mdIdx) {
-      const SDPRTPAVPMediaDescription * avp = dynamic_cast<const SDPRTPAVPMediaDescription *>(GetMediaDescriptionByIndex(mdIdx));
-      if (avp != NULL) {
-        SDPRTPAVPMediaDescription::MediaStreamMap::const_iterator itms = avp->GetMediaStreams().find(msid);
-        if (itms != avp->GetMediaStreams().end() && !itms->second.empty()) {
-          const SyncSourceArray & from = itms->second.begin()->second;
-          SyncSourceArray & to = info[msid][mdIdx];
-          for (SyncSourceArray::const_iterator itFrom = from.begin(); itFrom != from.end(); ++itFrom) {
-            if (std::find(to.begin(), to.end(), *itFrom) == to.end())
-              to.push_back(*itFrom);
-          }
-        }
-        else {
-          for (SDPRTPAVPMediaDescription::SsrcInfo::const_iterator ssrc = avp->GetSsrcInfo().begin();
-                                                                  ssrc != avp->GetSsrcInfo().end(); ++ssrc) {
-            if (ssrc->second.GetString("mslabel") == msid) {
-              SyncSourceArray & sa = info[msid][mdIdx];
-              if (find(sa.begin(), sa.end(), ssrc->first) == sa.end())
-                sa.push_back(ssrc->first);
-            }
-          }
-        }
-      }
-    }
-  }
-
-  return !info.empty();
 }
 
 

@@ -142,7 +142,7 @@ class OpalSRTPSession : public OpalRTPSession
 
     virtual SendReceiveStatus OnSendData(RTP_DataFrame & frame, RewriteMode rewrite);
     virtual SendReceiveStatus OnSendControl(RTP_ControlFrame & frame);
-    virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame);
+    virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame, ReceiveType rxType);
     virtual SendReceiveStatus OnReceiveControl(RTP_ControlFrame & frame);
 
     virtual SendReceiveStatus OnReceiveDecodedControl(RTP_ControlFrame & frame);
