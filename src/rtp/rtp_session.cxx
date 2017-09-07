@@ -1094,6 +1094,11 @@ bool OpalRTPSession::SyncSource::OnSendReceiverReport(RTP_ControlFrame::Receiver
   if (m_packets == 0 && !m_lastSenderReportTime.IsValid())
     return false;
 
+  // https://tools.ietf.org/html/rfc3550#section-6.4
+  // Do not include a reception block if no RTP packets have been received since the last report
+  if (m_extendedSequenceNumber == m_lastRRSequenceNumber)
+      return false;
+
   if (report == NULL)
     return true;
 
@@ -1101,13 +1106,12 @@ bool OpalRTPSession::SyncSource::OnSendReceiverReport(RTP_ControlFrame::Receiver
   report->SetLostPackets(m_packetsLost);
 
   if (m_extendedSequenceNumber >= m_lastRRSequenceNumber)
-    report->fraction = (BYTE)((m_packetsLostSinceLastRR<<8)/(m_extendedSequenceNumber - m_lastRRSequenceNumber + 1));
+    report->fraction = (BYTE)((m_packetsLostSinceLastRR<<8)/(m_extendedSequenceNumber - m_lastRRSequenceNumber));
   else
     report->fraction = 0;
   m_packetsLostSinceLastRR = 0;
 
-  report->last_seq = m_lastRRSequenceNumber;
-  m_lastRRSequenceNumber = m_extendedSequenceNumber;
+  report->last_seq = m_lastRRSequenceNumber = m_extendedSequenceNumber;
 
   report->jitter = m_jitterAccum >> JitterRoundingGuardBits; // Allow for rounding protection bits
 
