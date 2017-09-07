@@ -267,9 +267,9 @@ void PlayRTP::Main()
         if (driverName.IsEmpty() && deviceName.IsEmpty())
           cerr << "default ";
         cerr << "audio player";
-        if (!driverName)
+        if (!driverName.IsEmpty())
           cerr << ", driver \"" << driverName << '"';
-        if (!deviceName)
+        if (!deviceName.IsEmpty())
           cerr << ", device \"" << deviceName << '"';
         cerr << ", must be one of:\n";
         for (PINDEX i = 0; i < devices.GetSize(); i++)
@@ -303,9 +303,9 @@ void PlayRTP::Main()
     if (driverName.IsEmpty() && deviceName.IsEmpty())
       cerr << "default ";
     cerr << "video display";
-    if (!driverName)
+    if (!driverName.IsEmpty())
       cerr << ", driver \"" << driverName << '"';
-    if (!deviceName)
+    if (!deviceName.IsEmpty())
       cerr << ", device \"" << deviceName << '"';
     cerr << ", must be one of:\n";
     PStringList devices = PVideoOutputDevice::GetDriversDeviceNames("*");

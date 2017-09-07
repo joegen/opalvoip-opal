@@ -423,9 +423,9 @@ bool AudioThread::Initialise(PArgList & args)
     if (driverName.IsEmpty() && deviceName.IsEmpty())
       cerr << "default ";
     cerr << "audio recorder";
-    if (!driverName)
+    if (!driverName.IsEmpty())
       cerr << ", driver \"" << driverName << '"';
-    if (!deviceName)
+    if (!deviceName.IsEmpty())
       cerr << ", device \"" << deviceName << '"';
     cerr << ", must be one of:\n";
     PStringList devices = PSoundChannel::GetDriversDeviceNames("*", PSoundChannel::Recorder);
@@ -460,9 +460,9 @@ bool AudioThread::Initialise(PArgList & args)
     if (driverName.IsEmpty() && deviceName.IsEmpty())
       cerr << "default ";
     cerr << "audio player";
-    if (!driverName)
+    if (!driverName.IsEmpty())
       cerr << ", driver \"" << driverName << '"';
-    if (!deviceName)
+    if (!deviceName.IsEmpty())
       cerr << ", device \"" << deviceName << '"';
     cerr << ", must be one of:\n";
     PStringList devices = PSoundChannel::GetDriversDeviceNames("*", PSoundChannel::Player);
@@ -516,9 +516,9 @@ bool VideoThread::Initialise(PArgList & args)
     if (driverName.IsEmpty() && deviceName.IsEmpty())
       cerr << "default ";
     cerr << "video grab";
-    if (!driverName)
+    if (!driverName.IsEmpty())
       cerr << ", driver \"" << driverName << '"';
-    if (!deviceName)
+    if (!deviceName.IsEmpty())
       cerr << ", device \"" << deviceName << '"';
     cerr << ", must be one of:\n";
     PStringList devices = PVideoInputDevice::GetDriversDeviceNames("*");
@@ -638,9 +638,9 @@ bool VideoThread::Initialise(PArgList & args)
     if (driverName.IsEmpty() && deviceName.IsEmpty())
       cerr << "default ";
     cerr << "video display";
-    if (!driverName)
+    if (!driverName.IsEmpty())
       cerr << ", driver \"" << driverName << '"';
-    if (!deviceName)
+    if (!deviceName.IsEmpty())
       cerr << ", device \"" << deviceName << '"';
     cerr << ", must be one of:\n";
     PStringList devices = PVideoOutputDevice::GetDriversDeviceNames("*");

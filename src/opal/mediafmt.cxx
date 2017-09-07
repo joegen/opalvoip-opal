@@ -2258,13 +2258,13 @@ static bool WildcardMatch(const PCaselessString & str, const PStringArray & wild
     }
 
     // Check for having * at beginning of search string
-    if (i == 0 && next != 0 && !wildcard)
+    if (i == 0 && next != 0 && !wildcard.IsEmpty())
       return false;
 
     last = next + wildcard.GetLength();
 
     // Check for having * at end of search string
-    if (i == wildcards.GetSize()-1 && !wildcard && last != str.GetLength())
+    if (i == wildcards.GetSize()-1 && !wildcard.IsEmpty() && last != str.GetLength())
       return false;
   }
 

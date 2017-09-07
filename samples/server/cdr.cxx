@@ -548,11 +548,11 @@ void CallDetailRecord::OutputSQL(PODBC::Row & row, PString const map[NumFieldCod
             field = OpalConnection::GetCallEndReasonText(m_CallResult);
           break;
         case OriginatorID:
-          if (!m_OriginatorID)
+          if (!m_OriginatorID.IsEmpty())
             field = m_OriginatorID;
           break;
         case OriginatorURI:
-          if (!m_OriginatorURI)
+          if (!m_OriginatorURI.IsEmpty())
             field = m_OriginatorURI;
           break;
         case OriginatorSignalAddress:
@@ -560,15 +560,15 @@ void CallDetailRecord::OutputSQL(PODBC::Row & row, PString const map[NumFieldCod
             field = m_OriginatorSignalAddress.AsString();
           break;
         case DialedNumber:
-          if (!m_DialedNumber)
+          if (!m_DialedNumber.IsEmpty())
             field = m_DialedNumber;
           break;
         case DestinationID:
-          if (!m_DestinationID)
+          if (!m_DestinationID.IsEmpty())
             field = m_DestinationID;
           break;
         case DestinationURI:
-          if (!m_DestinationURI)
+          if (!m_DestinationURI.IsEmpty())
             field = m_DestinationURI;
           break;
         case DestinationSignalAddress:
@@ -576,7 +576,7 @@ void CallDetailRecord::OutputSQL(PODBC::Row & row, PString const map[NumFieldCod
             field = m_DestinationSignalAddress.AsString();
           break;
         case AudioCodec:
-          if (!GetAudio().m_Codec.GetName())
+          if (!GetAudio().m_Codec.GetName().IsEmpty())
             field = GetAudio().m_Codec.GetName();
           break;
         case AudioOriginatorMediaAddress:
@@ -589,7 +589,7 @@ void CallDetailRecord::OutputSQL(PODBC::Row & row, PString const map[NumFieldCod
           break;
 #if OPAL_VIDEO
         case VideoCodec:
-          if (!GetVideo().m_Codec.GetName())
+          if (!GetVideo().m_Codec.GetName().IsEmpty())
             field = GetVideo().m_Codec.GetName();
           break;
         case VideoOriginatorMediaAddress:

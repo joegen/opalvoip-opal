@@ -370,7 +370,7 @@ void H323Connection::OnReleased()
 
 PString H323Connection::GetDestinationAddress()
 {
-  if (!m_localDestinationAddress)
+  if (!m_localDestinationAddress.IsEmpty())
     return m_localDestinationAddress;
 
   return OpalRTPConnection::GetDestinationAddress();
@@ -669,7 +669,7 @@ PBoolean H323Connection::HandleSignalPDU(H323SignalPDU & pdu)
   m_h245TunnelRxPDU = NULL;
 
   PString digits = pdu.GetQ931().GetKeypad();
-  if (!digits)
+  if (!digits.IsEmpty())
     OnUserInputString(digits);
 
   H323Gatekeeper * gk = m_endpoint.GetGatekeeper(GetLocalPartyName());
@@ -1782,12 +1782,12 @@ PBoolean H323Connection::ForwardCall(const PString & forwardParty)
 
   fac->m_reason.SetTag(H225_FacilityReason::e_callForwarded);
 
-  if (!address) {
+  if (!address.IsEmpty()) {
     fac->IncludeOptionalField(H225_Facility_UUIE::e_alternativeAddress);
     address.SetPDU(fac->m_alternativeAddress, m_endpoint.GetDefaultSignalPort());
   }
 
-  if (!alias) {
+  if (!alias.IsEmpty()) {
     fac->IncludeOptionalField(H225_Facility_UUIE::e_alternativeAliasAddress);
     fac->m_alternativeAliasAddress.SetSize(1);
     H323SetAliasAddress(alias, fac->m_alternativeAliasAddress[0]);
@@ -1923,7 +1923,7 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
     H323Gatekeeper::AdmissionResponse response;
     response.transportAddress = &gatekeeperRoute;
     response.aliasAddresses = &newAliasAddresses;
-    if (!m_gkAccessTokenOID)
+    if (!m_gkAccessTokenOID.IsEmpty())
       response.accessTokenData = &m_gkAccessTokenData;
     for (;;) {
       safeLock.Unlock();
@@ -1986,11 +1986,11 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
 
     // Update the Q.931 Information Element (if is an E.164 address)
     PString e164 = H323GetAliasAddressE164(newAliasAddresses);
-    if (!e164)
+    if (!e164.IsEmpty())
       m_remotePartyNumber = e164;
   }
 
-  if (m_addAccessTokenToSetup && !m_gkAccessTokenOID && !m_gkAccessTokenData.IsEmpty()) {
+  if (m_addAccessTokenToSetup && !m_gkAccessTokenOID.IsEmpty() && !m_gkAccessTokenData.IsEmpty()) {
     PString oid1, oid2;
     m_gkAccessTokenOID.Split(',', oid1, oid2, PString::SplitTrim|PString::SplitDefaultToBefore|PString::SplitDefaultToAfter);
     setup.IncludeOptionalField(H225_Setup_UUIE::e_tokens);
@@ -5448,7 +5448,7 @@ PBoolean H323Connection::SendUserInputIndicationString(const PString & value)
 
   H323ControlPDU pdu;
   PASN_GeneralString & str = pdu.BuildUserInputIndication(value);
-  if (!str.GetValue())
+  if (!str.GetValue().IsEmpty())
     return WriteControlPDU(pdu);
 
   PTRACE(1, "H323\tInvalid characters for UserInputIndication");

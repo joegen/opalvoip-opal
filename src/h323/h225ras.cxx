@@ -424,7 +424,7 @@ static void ReceiveFeatureSet(const H225_RAS * ras, H460_MessageType pduType, co
 void H225_RAS::OnSendGatekeeperRequest(H323RasPDU &, H225_GatekeeperRequest & grq)
 {
   // This function is never called during sending GRQ
-  if (!gatekeeperIdentifier) {
+  if (!gatekeeperIdentifier.IsEmpty()) {
     grq.IncludeOptionalField(H225_GatekeeperRequest::e_gatekeeperIdentifier);
     grq.m_gatekeeperIdentifier = gatekeeperIdentifier;
   }
@@ -443,7 +443,7 @@ void H225_RAS::OnSendGatekeeperRequest(H225_GatekeeperRequest & grq)
 
 void H225_RAS::OnSendGatekeeperConfirm(H323RasPDU &, H225_GatekeeperConfirm & gcf)
 {
-  if (!gatekeeperIdentifier) {
+  if (!gatekeeperIdentifier.IsEmpty()) {
     gcf.IncludeOptionalField(H225_GatekeeperConfirm::e_gatekeeperIdentifier);
     gcf.m_gatekeeperIdentifier = gatekeeperIdentifier;
   }
@@ -463,7 +463,7 @@ void H225_RAS::OnSendGatekeeperConfirm(H225_GatekeeperConfirm & /*gcf*/)
 
 void H225_RAS::OnSendGatekeeperReject(H323RasPDU &, H225_GatekeeperReject & grj)
 {
-  if (!gatekeeperIdentifier) {
+  if (!gatekeeperIdentifier.IsEmpty()) {
     grj.IncludeOptionalField(H225_GatekeeperReject::e_gatekeeperIdentifier);
     grj.m_gatekeeperIdentifier = gatekeeperIdentifier;
   }
@@ -573,7 +573,7 @@ void H225_RAS::OnSendRegistrationRequest(H225_RegistrationRequest & /*rrq*/)
 
 void H225_RAS::OnSendRegistrationConfirm(H323RasPDU & pdu, H225_RegistrationConfirm & rcf)
 {
-  if (!gatekeeperIdentifier) {
+  if (!gatekeeperIdentifier.IsEmpty()) {
     rcf.IncludeOptionalField(H225_RegistrationConfirm::e_gatekeeperIdentifier);
     rcf.m_gatekeeperIdentifier = gatekeeperIdentifier;
   }
@@ -595,7 +595,7 @@ void H225_RAS::OnSendRegistrationConfirm(H225_RegistrationConfirm & /*rcf*/)
 
 void H225_RAS::OnSendRegistrationReject(H323RasPDU & pdu, H225_RegistrationReject & rrj)
 {
-  if (!gatekeeperIdentifier) {
+  if (!gatekeeperIdentifier.IsEmpty()) {
     rrj.IncludeOptionalField(H225_RegistrationReject::e_gatekeeperIdentifier);
     rrj.m_gatekeeperIdentifier = gatekeeperIdentifier;
   }

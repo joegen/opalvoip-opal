@@ -580,7 +580,7 @@ PBoolean H323NonStandardCapabilityInfo::OnSendingNonStandardPDU(PASN_Choice & pd
   pdu.SetTag(nonStandardTag);
   H245_NonStandardParameter & param = (H245_NonStandardParameter &)pdu.GetObject();
 
-  if (!oid) {
+  if (!oid.IsEmpty()) {
     param.m_nonStandardIdentifier.SetTag(H245_NonStandardIdentifier::e_object);
     PASN_ObjectId & nonStandardIdentifier = param.m_nonStandardIdentifier;
     nonStandardIdentifier = oid;
@@ -621,7 +621,7 @@ PBoolean H323NonStandardCapabilityInfo::IsMatch(const H245_NonStandardParameter 
 
 PObject::Comparison H323NonStandardCapabilityInfo::CompareParam(const H245_NonStandardParameter & param) const
 {
-  if (!oid) {
+  if (!oid.IsEmpty()) {
     if (param.m_nonStandardIdentifier.GetTag() != H245_NonStandardIdentifier::e_object)
       return PObject::LessThan;
 

@@ -184,7 +184,7 @@ void MyManager::AddPresentityCmd(PArgList & args)
   }
 
   presentity->GetAttributes().Set(SIP_Presentity::SubProtocolKey,
-            args.GetOptionString('s', !m_xcapRoot || !m_xcapAuthID || !m_xcapPassword ? "OMA" : "Agent"));
+            args.GetOptionString('s', !m_xcapRoot.IsEmpty() || !m_xcapAuthID.IsEmpty() || !m_xcapPassword.IsEmpty() ? "OMA" : "Agent"));
 
   presentity->SetAuthorisationRequestNotifier(PCREATE_AuthorisationRequestNotifier(AuthorisationRequest));
   presentity->SetPresenceChangeNotifier(PCREATE_PresenceChangeNotifier(PresenceChange));
@@ -197,9 +197,9 @@ void MyManager::AddPresentityCmd(PArgList & args)
   if (!m_presenceAgent.IsEmpty())
     presentity->GetAttributes().Set(SIP_Presentity::PresenceAgentKey, m_presenceAgent);
   presentity->GetAttributes().Set(SIP_Presentity::XcapRootKey,        m_xcapRoot);
-  if (!m_xcapAuthID)
+  if (!m_xcapAuthID.IsEmpty())
     presentity->GetAttributes().Set(SIP_Presentity::XcapAuthIdKey,    m_xcapAuthID);
-  if (!m_xcapPassword)
+  if (!m_xcapPassword.IsEmpty())
     presentity->GetAttributes().Set(SIP_Presentity::XcapPasswordKey,  m_xcapPassword);
 
   if (presentity->Open()) {

@@ -1769,11 +1769,11 @@ void SIPDialogNotification::PrintOn(ostream & strm) const
 
   // Start dialog XML tag
   strm << "  <dialog id=\"" << m_dialogId << '"';
-  if (!m_callId)
+  if (!m_callId.IsEmpty())
     strm << " call-id=\"" << m_callId << '"';
-  if (!m_local.m_dialogTag)
+  if (!m_local.m_dialogTag.IsEmpty())
     strm << " local-tag=\"" << m_local.m_dialogTag << '"';
-  if (!m_remote.m_dialogTag)
+  if (!m_remote.m_dialogTag.IsEmpty())
     strm << " remote-tag=\"" << m_remote.m_dialogTag << '"';
   strm << " direction=\"" << (m_initiator ? "initiator" : "receiver") << "\">\r\n";
 

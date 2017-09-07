@@ -304,7 +304,7 @@ PString H323GetAliasAddressE164(const H225_ArrayOf_AliasAddress & aliases)
 {
   for (PINDEX i = 0; i < aliases.GetSize(); i++) {
     PString alias = H323GetAliasAddressE164(aliases[i]);
-    if (!alias)
+    if (!alias.IsEmpty())
       return alias;
   }
 
@@ -670,14 +670,14 @@ H225_Setup_UUIE & H323SignalPDU::BuildSetup(const H323Connection & connection,
   setup.m_mediaWaitForConnect = false;
   setup.m_canOverlapSend = false;
 
-  if (!destAddr) {
+  if (!destAddr.IsEmpty()) {
     setup.IncludeOptionalField(H225_Setup_UUIE::e_destCallSignalAddress);
     destAddr.SetPDU(setup.m_destCallSignalAddress);
   }
 
   const OpalConnection::StringOptions & stringOptions = connection.GetStringOptions();
   PString destAlias = stringOptions(OPAL_OPT_CALLED_PARTY_NAME, connection.GetRemotePartyName());
-  if (!destAlias && destAlias != destAddr) {
+  if (!destAlias.IsEmpty() && destAlias != destAddr) {
     setup.IncludeOptionalField(H225_Setup_UUIE::e_destinationAddress);
     setup.m_destinationAddress.SetSize(1);
 
@@ -1398,15 +1398,15 @@ void H323SignalPDU::SetQ931Fields(const H323Connection & connection, bool insert
     int screening = presentation == -1 ? -1 : 0; // User-provided, not screened
 
     if (connection.HadAnsweredCall()) {
-      if (!number)
+      if (!number.IsEmpty())
         q931pdu.SetCalledPartyNumber(number, plan, type);
-      if (!otherNumber)
+      if (!otherNumber.IsEmpty())
         q931pdu.SetCallingPartyNumber(otherNumber, plan, type, presentation, screening);
     }
     else {
-      if (!number)
+      if (!number.IsEmpty())
         q931pdu.SetCallingPartyNumber(number, plan, type, presentation, screening);
-      if (!otherNumber)
+      if (!otherNumber.IsEmpty())
         q931pdu.SetCalledPartyNumber(otherNumber, plan, type);
     }
   }

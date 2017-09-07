@@ -592,7 +592,7 @@ PSafePtr<OpalIMContext> OpalIMEndPoint::FindContextForMessageWithLock(OpalIM & i
   if (context == NULL) {
     context = FindContextByNamesWithLock(im.m_to, im.m_from);
     if (context != NULL) {
-      PTRACE_IF(4, !im.m_conversationId, "OpalIM\tMatched to/from addresses but did not match ID");
+      PTRACE_IF(4, !im.m_conversationId.IsEmpty(), "OpalIM\tMatched to/from addresses but did not match ID");
       im.m_conversationId = context->GetID();
     }
   }

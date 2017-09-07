@@ -374,7 +374,7 @@ unsigned H323Gatekeeper::SetupGatekeeperRequest(H323RasPDU & request)
   H323SetAliasAddresses(m_aliases, grq.m_endpointAlias);
   m_aliasMutex.Signal();
 
-  if (!gatekeeperIdentifier) {
+  if (!gatekeeperIdentifier.IsEmpty()) {
     grq.IncludeOptionalField(H225_GatekeeperRequest::e_gatekeeperIdentifier);
     grq.m_gatekeeperIdentifier = gatekeeperIdentifier;
   }
@@ -559,7 +559,7 @@ bool H323Gatekeeper::RegistrationRequest(bool autoReg, bool didGkDiscovery, bool
   
   rasAddress.SetPDU(rrq.m_rasAddress[0]);
 
-  if (!gatekeeperIdentifier) {
+  if (!gatekeeperIdentifier.IsEmpty()) {
     rrq.IncludeOptionalField(H225_RegistrationRequest::e_gatekeeperIdentifier);
     rrq.m_gatekeeperIdentifier = gatekeeperIdentifier;
   }
@@ -775,7 +775,7 @@ PBoolean H323Gatekeeper::OnReceiveRegistrationConfirm(const H225_RegistrationCon
     PStringSet aliasesFromGk;
     for (PINDEX i = 0; i < rcf.m_terminalAlias.GetSize(); i++) {
       PString alias = H323GetAliasAddressString(rcf.m_terminalAlias[i]);
-      if (!alias)
+      if (!alias.IsEmpty())
         aliasesFromGk += alias;
     }
 
@@ -995,7 +995,7 @@ PBoolean H323Gatekeeper::UnregistrationRequest(int reason)
   H323SetAliasAddresses(m_aliases, urq.m_endpointAlias);
   m_aliasMutex.Signal();
 
-  if (!gatekeeperIdentifier) {
+  if (!gatekeeperIdentifier.IsEmpty()) {
     urq.IncludeOptionalField(H225_UnregistrationRequest::e_gatekeeperIdentifier);
     urq.m_gatekeeperIdentifier = gatekeeperIdentifier;
   }
@@ -1164,7 +1164,7 @@ PBoolean H323Gatekeeper::LocationRequest(const PStringList & aliases,
   H323SetAliasAddresses(m_aliases, lrq.m_sourceInfo);
   m_aliasMutex.Signal();
 
-  if (!gatekeeperIdentifier) {
+  if (!gatekeeperIdentifier.IsEmpty()) {
     lrq.IncludeOptionalField(H225_LocationRequest::e_gatekeeperIdentifier);
     lrq.m_gatekeeperIdentifier = gatekeeperIdentifier;
   }
@@ -1232,7 +1232,7 @@ PBoolean H323Gatekeeper::AdmissionRequest(H323Connection & connection,
                             // to the one sent in the ARQ
   arq.m_willSupplyUUIEs = true;
 
-  if (!gatekeeperIdentifier) {
+  if (!gatekeeperIdentifier.IsEmpty()) {
     arq.IncludeOptionalField(H225_AdmissionRequest::e_gatekeeperIdentifier);
     arq.m_gatekeeperIdentifier = gatekeeperIdentifier;
   }
@@ -1246,7 +1246,7 @@ PBoolean H323Gatekeeper::AdmissionRequest(H323Connection & connection,
     if (e164 || !destAddr.IsValid())
       H323SetAliasAddress(destInfo, arq.m_srcInfo[0]);
 
-    if (!connection.GetLocalPartyName()) {
+    if (!connection.GetLocalPartyName().IsEmpty()) {
       arq.IncludeOptionalField(H225_AdmissionRequest::e_destinationInfo);
       H323SetAliasAddresses(connection.GetLocalAliasNames(), arq.m_destinationInfo);
     }
@@ -1357,7 +1357,7 @@ PBoolean H323Gatekeeper::AdmissionRequest(H323Connection & connection,
 
     // Reset the gk info in ARQ
     arq.m_endpointIdentifier = m_endpointIdentifier;
-    if (!gatekeeperIdentifier) {
+    if (!gatekeeperIdentifier.IsEmpty()) {
       arq.IncludeOptionalField(H225_AdmissionRequest::e_gatekeeperIdentifier);
       arq.m_gatekeeperIdentifier = gatekeeperIdentifier;
     }
@@ -1431,7 +1431,7 @@ static void ExtractToken(const AdmissionRequestResponseInfo & info,
                          const H225_ArrayOf_ClearToken & tokens,
                          PBYTEArray & accessTokenData)
 {
-  if (!info.accessTokenOID1 && tokens.GetSize() > 0) {
+  if (!info.accessTokenOID1.IsEmpty() && tokens.GetSize() > 0) {
     PTRACE(4, "Looking for OID " << info.accessTokenOID1 << " in ACF to copy.");
     for (PINDEX i = 0; i < tokens.GetSize(); i++) {
       if (tokens[i].m_tokenOID == info.accessTokenOID1) {
@@ -1567,7 +1567,7 @@ PBoolean H323Gatekeeper::DisengageRequest(H323Connection & connection, unsigned 
     rcReason[1] = (BYTE)(0x80|cause);
   }
 
-  if (!gatekeeperIdentifier) {
+  if (!gatekeeperIdentifier.IsEmpty()) {
     drq.IncludeOptionalField(H225_DisengageRequest::e_gatekeeperIdentifier);
     drq.m_gatekeeperIdentifier = gatekeeperIdentifier;
   }
@@ -2346,7 +2346,7 @@ PObject::Comparison H323Gatekeeper::AlternateInfo::Compare(const PObject & obj) 
 
 void H323Gatekeeper::AlternateInfo::PrintOn(ostream & strm) const
 {
-  if (!gatekeeperIdentifier)
+  if (!gatekeeperIdentifier.IsEmpty())
     strm << gatekeeperIdentifier << '@';
 
   strm << rasAddress;

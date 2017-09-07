@@ -420,7 +420,7 @@ H235Authenticator::ValidationResult H235AuthSimpleMD5::ValidateCryptoToken(
   const H225_CryptoH323Token_cryptoEPPwdHash & cryptoEPPwdHash = cryptoToken;
 
   PString alias = H323GetAliasAddressString(cryptoEPPwdHash.m_alias);
-  if (!remoteId && alias != remoteId) {
+  if (!remoteId.IsEmpty() && alias != remoteId) {
     PTRACE(1, "H235RAS\tH235AuthSimpleMD5 alias is \"" << alias
            << "\", should be \"" << remoteId << '"');
     return e_Error;
@@ -609,7 +609,7 @@ H235Authenticator::ValidationResult H235AuthCAT::ValidateClearToken(const H235_C
   lastRandomSequenceNumber = clearToken.m_random;
   lastTimestamp = clearToken.m_timeStamp;
   
-  if (!remoteId && clearToken.m_generalID.GetValue() != remoteId) {
+  if (!remoteId.IsEmpty() && clearToken.m_generalID.GetValue() != remoteId) {
     PTRACE(1, "H235RAS\tGeneral ID is \"" << clearToken.m_generalID.GetValue()
            << "\", should be \"" << remoteId << '"');
     return e_Error;
