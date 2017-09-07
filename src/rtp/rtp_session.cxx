@@ -282,7 +282,8 @@ bool OpalRTPSession::GetSyncSource(RTP_SyncSourceId ssrc, Direction dir, SyncSou
       return true;
     }
 
-    PTRACE(3, *this << "cannot find info for " << dir << " SSRC=" << RTP_TRACE_SRC(ssrc));
+    PTRACE_IF(3, m_loggedBadSSRC.find(ssrc) == m_loggedBadSSRC.end(),
+              *this << "cannot find info for " << dir << " SSRC=" << RTP_TRACE_SRC(ssrc));
     return false;
   }
 
