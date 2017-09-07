@@ -3838,7 +3838,7 @@ PBoolean H323Connection::IsTransferredCall() const
 void H323Connection::HandleTransferCall(const PString & token,
                                         const PString & identity)
 {
-  if (!token.IsEmpty() || !identity)
+  if (!token.IsEmpty() || !identity.IsEmpty())
     m_h4502handler->AwaitSetupResponse(token, identity);
 }
 
@@ -3876,7 +3876,7 @@ void H323Connection::IntrudeCall(unsigned capabilityLevel)
 void H323Connection::HandleIntrudeCall(const PString & token,
                                        const PString & identity)
 {
-  if (!token.IsEmpty() || !identity)
+  if (!token.IsEmpty() || !identity.IsEmpty())
     m_h45011handler->AwaitSetupResponse(token, identity);
 }
 

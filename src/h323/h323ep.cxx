@@ -1032,7 +1032,7 @@ H323Connection * H323EndPoint::InternalMakeCall(OpalCall & call,
   connection->AttachSignalChannel(newToken, transport, false);
 
 #if OPAL_H450
-  if (!callIdentity) {
+  if (!callIdentity.IsEmpty()) {
     if (capabilityLevel == UINT_MAX)
       connection->HandleTransferCall(existingToken, callIdentity);
     else {
