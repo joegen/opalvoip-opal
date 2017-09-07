@@ -18,6 +18,7 @@
 
     <?define AVCODECVer = "57" ?>
     <?define AVUTILVer = "55" ?>
+    <?define SWSCALEVer = "4" ?>
     <?define SWRESAMPLEVer = "2" ?>
 
     <?define WxDir = "$(env.WXDIR)" ?>
