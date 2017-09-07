@@ -814,9 +814,9 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveControl(RTP_ControlF
      unless we are using later SDP where that is disabled (m_anyRTCP_SSRC==false).
      However, for Chrome, we have a special cases of SSRC=1 for video and 0xfa17fa17
      for audio, neither of which they indicate in the SDP when in recvonly mode. So,
-     we furce creation of those specifically. */
+     we force creation of those specifically. */
   if (UseSyncSource(ssrc, e_Receiver, m_anyRTCP_SSRC || ssrc == 1 || ssrc == 0xfa17fa17) == NULL) {
-      OPAL_SRTP_TRACE(2, e_Receiver, e_Control, ssrc, 3, "not automatically added");
+    OPAL_SRTP_TRACE(2, e_Receiver, e_Control, ssrc, 3, "not automatically added");
     return e_IgnorePacket;
   }
 
