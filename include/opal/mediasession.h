@@ -449,13 +449,15 @@ public:
     PChannel * GetChannel(SubChannels subchannel = e_Media) const { return (size_t)subchannel < m_subchannels.size() ? m_subchannels[subchannel].m_channel : NULL; }
 
     void SetRemoteBehindNAT();
-
+    void ResetHasSetNATAddress();
   protected:
     virtual void InternalClose();
     virtual void InternalStop();
 
     PString       m_name;
     bool          m_remoteBehindNAT;
+    bool          m_hasSetNATControlAddress;
+    bool          m_hasSetNATMediaAddress;
     bool          m_remoteAddressSet;
     PINDEX        m_packetSize;
     PTimeInterval m_mediaTimeout;
