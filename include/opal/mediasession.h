@@ -481,12 +481,16 @@ class OpalMediaTransport : public PSafeObject, public OpalMediaTransportChannelT
     CongestionControl * SetCongestionControl(CongestionControl * cc);
     CongestionControl * GetCongestionControl() const { return m_congestionControl; }
 
+    void ResetHasSetNATAddress();
+
   protected:
     virtual void InternalClose();
     virtual void InternalStop();
 
     PString       m_name;
     bool          m_remoteBehindNAT;
+    bool          m_hasSetNATControlAddress;
+    bool          m_hasSetNATMediaAddress;
     bool          m_remoteAddressSet;
     PINDEX        m_packetSize;
     PTimeInterval m_mediaTimeout;

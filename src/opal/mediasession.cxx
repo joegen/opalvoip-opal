@@ -526,6 +526,8 @@ OpalMediaTransport::OpalMediaTransport(const PString & name)
   : PSafeObject(m_instrumentedMutex)
   , m_name(name)
   , m_remoteBehindNAT(false)
+  , m_hasSetNATControlAddress(false)
+  , m_hasSetNATMediaAddress(false)
   , m_remoteAddressSet(false)
   , m_packetSize(2048)
   , m_mediaTimeout(0, 0, 5)       // Nothing received for 5 minutes
@@ -569,6 +571,10 @@ void OpalMediaTransport::ProcessCongestionControl(PTimer&, P_INT_PTR)
     m_ccTimer.Stop();
 }
 
+void OpalMediaTransport::ResetHasSetNATAddress()
+{
+  m_hasSetNATMediaAddress = m_hasSetNATControlAddress = false;
+}
 
 void OpalMediaTransport::PrintOn(ostream & strm) const
 {
@@ -957,10 +963,10 @@ OpalTransportAddress OpalUDPMediaTransport::GetRemoteAddress(SubChannels subchan
 bool OpalUDPMediaTransport::SetRemoteAddress(const OpalTransportAddress & remoteAddress, SubChannels subchannel)
 {
   // This bool is safe, and lock is in InternalSetRemoteAddress
-  if (m_remoteBehindNAT) {
-    PTRACE(3, *this << "ignoring remote address as is behind NAT");
-    return true;
-  }
+  //if (m_remoteBehindNAT) {
+  //  PTRACE(3, *this << "ignoring remote address as is behind NAT");
+  //  return true;
+  //}
 
   PIPAddressAndPort ap;
   if (!remoteAddress.GetIpAndPort(ap))
@@ -977,7 +983,19 @@ void OpalUDPMediaTransport::InternalRxData(SubChannels subchannel, const PBYTEAr
     // it out from the first packet received.
     PIPAddressAndPort ap;
     GetSubChannelAsSocket(subchannel)->GetLastReceiveAddress(ap);
-    InternalSetRemoteAddress(ap, subchannel, true PTRACE_PARAM(, "first PDU"));
+    if (subchannel == e_Control && !m_hasSetNATControlAddress) {
+      m_hasSetNATControlAddress = InternalSetRemoteAddress(ap, subchannel, false PTRACE_PARAM(, "first PDU"));
+      if (m_hasSetNATControlAddress && !m_hasSetNATMediaAddress) {
+        ap.SetPort(ap.GetPort() - 1);
+        InternalSetRemoteAddress(ap, e_Media, false PTRACE_PARAM(, "first PDU"));
+      }
+    } else if (subchannel == e_Media && !m_hasSetNATMediaAddress) {
+      m_hasSetNATMediaAddress = InternalSetRemoteAddress(ap, subchannel, false PTRACE_PARAM(, "first PDU"));
+      if (m_hasSetNATMediaAddress && !m_hasSetNATControlAddress) {
+        ap.SetPort(ap.GetPort() + 1);
+        InternalSetRemoteAddress(ap, e_Control, false PTRACE_PARAM(, "first PDU"));
+      }
+    }
   }
 
   OpalMediaTransport::InternalRxData(subchannel, data);
@@ -1039,7 +1057,7 @@ bool OpalUDPMediaTransport::InternalSetRemoteAddress(const PIPSocket::AddressAnd
     trace << PTrace::End;
   }
 #endif
-
+  
   return true;
 }
 
