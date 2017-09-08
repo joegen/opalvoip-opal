@@ -852,10 +852,13 @@ void SDPMediaDescription::MatchGroupInfo(const GroupDict & groups)
       }
     }
 
+    //
+    // If There is no group we must ignore mids!
+    //
     // Had a "mid" but no "group", assume a BUNDLE (naughty system!)
     if (it == groups.end()) {
-      m_groups.SetAt(OpalMediaSession::GetBundleGroupId(), *mid);
-      PTRACE(4, "No group attribute, assuming BUNDLE for session");
+      // m_groups.SetAt(OpalMediaSession::GetBundleGroupId(), *mid);
+      PTRACE(4, "No group attribute, ignoring mid attribute");
     }
   }
 }
@@ -1785,6 +1788,23 @@ void SDPRTPAVPMediaDescription::OutputAttributes(ostream & strm) const
   for (SsrcInfo::const_iterator it1 = m_ssrcInfo.begin(); it1 != m_ssrcInfo.end(); ++it1) {
     for (PStringOptions::const_iterator it2 = it1->second.begin(); it2 != it1->second.end(); ++it2)
       strm << "a=ssrc:" << it1->first << ' ' << it2->first << ':' << it2->second << CRLF;
+  if (m_stringOptions.GetBoolean(OPAL_OPT_OFFER_SDP_SSRC, true))
+  {
+    if (m_ssrcInfo.size() == 1) {
+      SsrcInfo::const_iterator it1 = m_ssrcInfo.begin();
+      for (PStringOptions::const_iterator it2 = it1->second.begin(); it2 != it1->second.end(); ++it2) {
+        strm << "a=";
+        if (it2->first == "cname")
+          strm << "ssrc:" << it1->first << ' ';
+        strm << it2->first << ':' << it2->second << CRLF;
+      }
+    }
+    else {
+      for (SsrcInfo::const_iterator it1 = m_ssrcInfo.begin(); it1 != m_ssrcInfo.end(); ++it1) {
+        for (PStringOptions::const_iterator it2 = it1->second.begin(); it2 != it1->second.end(); ++it2)
+          strm << "a=ssrc:" << it1->first << ' ' << it2->first << ':' << it2->second << CRLF;
+      }
+    }
   }
 
   // m_rtcp_fb is set via SDPRTPAVPMediaDescription::PreEncode according to various options
@@ -2182,8 +2202,12 @@ void SDPAudioMediaDescription::OutputAttributes(ostream & strm) const
   if (minptimeMax > 0)
     strm << "a=minptime:" << std::max(minptimeMax,largestFrameTime) << CRLF;
 
-  if (maxptimeMin < UINT_MAX)
-    strm << "a=maxptime:" << std::max(std::max(minptimeMax,maxptimeMin),largestFrameTime) << CRLF;
+  if (maxptime < UINT_MAX && maxptime > SDP_MIN_PTIME) {
+    if (maxptime < largestFrameTime)
+      maxptime = largestFrameTime;
+    sstrm << "a=maxptime:" << std::max(std::max(minptimeMax,maxptimeMin),largestFrameTime) << CRLF;
+  }
+
 }
 
 

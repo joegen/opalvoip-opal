@@ -43,6 +43,8 @@
 #include <ptclib/pssl.h>
 
 
+#define OPAL_OPT_OFFER_SDP_SSRC "Offer-SDP-SSRC"
+
 /**OpalConnection::StringOption key to a boolean indicating the SDP ptime
    parameter should be included in audio session streams. Default true.
   */
