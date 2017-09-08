@@ -144,6 +144,40 @@ static void Clamp(OpalMediaFormatInternal & fmt1, const OpalMediaFormatInternal 
 }
 
 
+static bool WildcardMatch(const PCaselessString & str, const PStringArray & wildcards)
+{
+  if (wildcards.GetSize() == 1)
+    return str == wildcards[0];
+
+  PINDEX i;
+  PINDEX last = 0;
+  for (i = 0; i < wildcards.GetSize(); i++) {
+    PString wildcard = wildcards[i];
+
+    PINDEX next;
+    if (wildcard.IsEmpty())
+      next = last;
+    else {
+      next = str.Find(wildcard, last);
+      if (next == P_MAX_INDEX)
+        return false;
+    }
+
+    // Check for having * at beginning of search string
+    if (i == 0 && next != 0 && !wildcard.IsEmpty())
+      return false;
+
+    last = next + wildcard.GetLength();
+
+    // Check for having * at end of search string
+    if (i == wildcards.GetSize()-1 && !wildcard.IsEmpty() && last != str.GetLength())
+      return false;
+  }
+
+  return true;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 
 OpalBandwidth::OpalBandwidth(const PString & str)
@@ -2147,38 +2181,44 @@ void OpalMediaFormatList::Remove(const PStringArray & maskList)
   PTRACE(4,"MediaFormat\tRemoving codecs " << setfill(',') << maskList);
 
   PINDEX i;
-  PStringList notMasks;
-  const_iterator fmt;
+  std::list<PStringArray> notMasks;
 
   for (i = 0; i < maskList.GetSize(); i++) {
     PString mask = maskList[i];
     if (mask[0] == '!')
-      notMasks.AppendString(mask);
+      notMasks.push_back(mask.Mid(1).Tokenise('*', true));
     else {
+      const_iterator fmt;
       while ((fmt = FindFormat(mask)) != end())
         erase(fmt);
     }
   }
 
-  switch (notMasks.GetSize()) {
-    case 0 :
+  if (notMasks.empty())
       return;
 
-    case 1 :
-      while ((fmt = FindFormat(notMasks[0])) != end())
+  PStringList formatsToRemove;
+  for (iterator fmt = begin(); fmt != end(); ++fmt) {
+    PCaselessString name = fmt->GetName();
+    bool remove = true;
+    for (std::list<PStringArray>::iterator notMask = notMasks.begin(); notMask != notMasks.end(); ++notMask) {
+      if (WildcardMatch(name, *notMask)) {
+        remove = false;
+        break;
+      }
+    }
+    if (remove)
+      formatsToRemove += name;
+  }
+
+  for (PStringList::iterator it = formatsToRemove.begin(); it != formatsToRemove.end(); ++it) {
+    for (iterator fmt = begin(); fmt != end(); ++fmt) {
+      if (*it == fmt->GetName()) {
         erase(fmt);
-      return;
+        break;
+      }
+    }
   }
-
-  OpalMediaFormatList formatsToKeep;
-  for (i = 0; i < notMasks.GetSize(); i++) {
-    PString keeper = notMasks[i].Mid(1);
-    fmt = const_iterator();
-    while ((fmt = FindFormat(keeper, fmt)) != end())
-      formatsToKeep += *fmt;
-  }
-
-  *this = formatsToKeep;
 }
 
 
@@ -2235,40 +2275,6 @@ OpalMediaFormatList::const_iterator OpalMediaFormatList::FindFormat(RTP_DataFram
   }
 
   return end();
-}
-
-
-static bool WildcardMatch(const PCaselessString & str, const PStringArray & wildcards)
-{
-  if (wildcards.GetSize() == 1)
-    return str == wildcards[0];
-
-  PINDEX i;
-  PINDEX last = 0;
-  for (i = 0; i < wildcards.GetSize(); i++) {
-    PString wildcard = wildcards[i];
-
-    PINDEX next;
-    if (wildcard.IsEmpty())
-      next = last;
-    else {
-      next = str.Find(wildcard, last);
-      if (next == P_MAX_INDEX)
-        return false;
-    }
-
-    // Check for having * at beginning of search string
-    if (i == 0 && next != 0 && !wildcard.IsEmpty())
-      return false;
-
-    last = next + wildcard.GetLength();
-
-    // Check for having * at end of search string
-    if (i == wildcards.GetSize()-1 && !wildcard.IsEmpty() && last != str.GetLength())
-      return false;
-  }
-
-  return true;
 }
 
 
