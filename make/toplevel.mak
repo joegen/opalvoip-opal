@@ -483,8 +483,8 @@ endif
 
 CPPFLAGS += $(SHARED_CPPFLAGS) -DOPAL_PLUGIN_DIR="\"$(OPAL_PLUGIN_DIR)\""
 
-include $(PTLIB_MAKE_DIR)/pre.mak
-include $(PTLIB_MAKE_DIR)/post.mak
+include $(DESTDIR)/$(PTLIB_MAKE_DIR)/pre.mak
+include $(DESTDIR)/$(PTLIB_MAKE_DIR)/post.mak
 
 
 ifdef SRTP_LIB
