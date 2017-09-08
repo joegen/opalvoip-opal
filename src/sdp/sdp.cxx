@@ -846,10 +846,13 @@ void SDPMediaDescription::MatchGroupInfo(const GroupDict & groups)
       }
     }
 
+    //
+    // If There is no group we must ignore mids!
+    //
     // Had a "mid" but no "group", assume a BUNDLE (naughty system!)
     if (it == groups.end()) {
-      m_groups.SetAt(OpalMediaSession::GetBundleGroupId(), *mid);
-      PTRACE(4, "No group attribute, assuming BUNDLE for session");
+      // m_groups.SetAt(OpalMediaSession::GetBundleGroupId(), *mid);
+      PTRACE(4, "No group attribute, ignoring mid attribute");
     }
   }
 }
@@ -1780,19 +1783,22 @@ void SDPRTPAVPMediaDescription::OutputAttributes(ostream & strm) const
       strm << "a=rtcp:" << port << ' ' << GetConnectAddressString(m_mediaAddress) << CRLF;
   }
 
-  if (m_ssrcInfo.size() == 1) {
-    SsrcInfo::const_iterator it1 = m_ssrcInfo.begin();
-    for (PStringOptions::const_iterator it2 = it1->second.begin(); it2 != it1->second.end(); ++it2) {
-      strm << "a=";
-      if (it2->first == "cname")
-        strm << "ssrc:" << it1->first << ' ';
-      strm << it2->first << ':' << it2->second << CRLF;
+  if (m_stringOptions.GetBoolean(OPAL_OPT_OFFER_SDP_SSRC, true))
+  {
+    if (m_ssrcInfo.size() == 1) {
+      SsrcInfo::const_iterator it1 = m_ssrcInfo.begin();
+      for (PStringOptions::const_iterator it2 = it1->second.begin(); it2 != it1->second.end(); ++it2) {
+        strm << "a=";
+        if (it2->first == "cname")
+          strm << "ssrc:" << it1->first << ' ';
+        strm << it2->first << ':' << it2->second << CRLF;
+      }
     }
-  }
-  else {
-    for (SsrcInfo::const_iterator it1 = m_ssrcInfo.begin(); it1 != m_ssrcInfo.end(); ++it1) {
-      for (PStringOptions::const_iterator it2 = it1->second.begin(); it2 != it1->second.end(); ++it2)
-        strm << "a=ssrc:" << it1->first << ' ' << it2->first << ':' << it2->second << CRLF;
+    else {
+      for (SsrcInfo::const_iterator it1 = m_ssrcInfo.begin(); it1 != m_ssrcInfo.end(); ++it1) {
+        for (PStringOptions::const_iterator it2 = it1->second.begin(); it2 != it1->second.end(); ++it2)
+          strm << "a=ssrc:" << it1->first << ' ' << it2->first << ':' << it2->second << CRLF;
+      }
     }
   }
 
@@ -2143,7 +2149,7 @@ void SDPAudioMediaDescription::OutputAttributes(ostream & strm) const
     }
   }
 
-  if (maxptime < UINT_MAX) {
+  if (maxptime < UINT_MAX && maxptime > SDP_MIN_PTIME) {
     if (maxptime < largestFrameTime)
       maxptime = largestFrameTime;
     strm << "a=maxptime:" << maxptime << CRLF;
