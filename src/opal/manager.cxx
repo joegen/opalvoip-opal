@@ -798,7 +798,7 @@ PBoolean OpalManager::ClearCallSynchronous(const PString & token,
     return false;
 
   wait.Wait();
-  return false;
+  return true;
 }
 
 
