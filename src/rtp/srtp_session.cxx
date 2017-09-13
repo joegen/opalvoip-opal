@@ -699,7 +699,7 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnSendData(RTP_DataFrame & fr
   if (rewrite == e_RewriteNothing)
     return e_ProcessPacket;
 
-  RTP_SyncSourceId ssrc = frame.GetSyncSource();
+  PTRACE_PARAM(RTP_SyncSourceId ssrc = frame.GetSyncSource());
   if (!IsCryptoSecured(e_Sender)) {
     OPAL_SRTP_TRACE(2, e_Sender, e_Data, ssrc, 1, "keys not set, cannot protect data");
     return e_IgnorePacket;
@@ -735,7 +735,7 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnSendControl(RTP_ControlFram
   if (status != e_ProcessPacket)
     return status;
 
-  RTP_SyncSourceId ssrc = frame.GetSenderSyncSource();
+  PTRACE_PARAM(RTP_SyncSourceId ssrc = frame.GetSenderSyncSource());
   if (!IsCryptoSecured(e_Sender)) {
     OPAL_SRTP_TRACE(2, e_Sender, e_Control, ssrc, 1, "keys not set, cannot protect control");
     return e_IgnorePacket;
