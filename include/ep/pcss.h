@@ -457,6 +457,9 @@ class OpalPCSSConnection : public OpalLocalConnection
       */
     virtual void OnReleased();
 
+    /// Call back for connection to act on changed string options
+    virtual void OnApplyStringOptions();
+
     /**Indicate to remote endpoint an alert is in progress.
        If this is an incoming connection and the AnswerCallResponse is in a
        AnswerCallDeferred or AnswerCallPending state, then this function is

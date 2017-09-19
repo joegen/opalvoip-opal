@@ -523,6 +523,24 @@ void OpalPCSSConnection::OnReleased()
 }
 
 
+void OpalPCSSConnection::OnApplyStringOptions()
+{
+  PString device = m_stringOptions("PCSS-Player", m_soundChannelPlayDevice);
+  if (m_soundChannelPlayDevice != device) {
+    m_soundChannelPlayDevice = device;
+    ChangeSoundChannel(m_soundChannelPlayDevice, false);
+  }
+
+  device = m_stringOptions("PCSS-Recorder", m_soundChannelRecordDevice);
+  if (m_soundChannelRecordDevice != device) {
+    m_soundChannelRecordDevice = device;
+    ChangeSoundChannel(m_soundChannelRecordDevice, true);
+  }
+
+  OpalLocalConnection::OnApplyStringOptions();
+}
+
+
 PBoolean OpalPCSSConnection::SetAlerting(const PString & calleeName, PBoolean withMedia)
 {
   if (!OpalLocalConnection::SetAlerting(calleeName, withMedia))
