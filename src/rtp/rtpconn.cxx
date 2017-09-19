@@ -593,24 +593,51 @@ void OpalRTPConnection::AdjustMediaFormats(bool   local,
 
   OpalConnection::AdjustMediaFormats(local, otherConnection, mediaFormats);
 
-  /* After we have adjusted/filtered/mutilated the media formats list, add in an
-     "rtx" capabilitiy for any media formats indicating they do NACK. */ 
-  if (otherConnection == NULL && local) {
-    OpalMediaFormatList rtxList;
-    for (OpalMediaFormatList::iterator fmt = mediaFormats.begin(); fmt != mediaFormats.end(); ++fmt) {
-      if (fmt->GetOptionEnum(OpalMediaFormat::RTCPFeedbackOption(), OpalMediaFormat::e_NoRTCPFb)&OpalMediaFormat::e_NACK) {
-        OpalMediaFormat rtx = OpalRtx::GetMediaFormat(fmt->GetMediaType());
-        rtx.SetOptionInteger(OpalMediaFormat::ClockRateOption(), fmt->GetClockRate());
-        rtx.SetOptionInteger(OpalRtx::AssociatedPayloadTypeOption(), fmt->GetPayloadType());
-        PTRACE(5, "Adding rtx media format for " << *fmt << ":\n" << setw(-1) << rtx);
-        rtxList += rtx;
+  /* After we have adjusted/filtered/mutilated the media formats list, add/remove
+     "rtx" capabilities for any media formats indicating they do NACK. */ 
+  if (otherConnection == NULL) {
+    if (local) {
+      OpalMediaFormatList rtxList;
+      for (OpalMediaFormatList::iterator fmt = mediaFormats.begin(); fmt != mediaFormats.end(); ++fmt) {
+        if (fmt->GetOptionEnum(OpalMediaFormat::RTCPFeedbackOption(), OpalMediaFormat::e_NoRTCPFb)&OpalMediaFormat::e_NACK) {
+          OpalMediaFormat rtx = OpalRtx::GetMediaFormat(fmt->GetMediaType());
+          rtx.SetOptionInteger(OpalMediaFormat::ClockRateOption(), fmt->GetClockRate());
+          rtx.SetOptionInteger(OpalRtx::AssociatedPayloadTypeOption(), fmt->GetPayloadType());
+          PTRACE(5, "Adding rtx media format for " << *fmt << ":\n" << setw(-1) << rtx);
+          rtxList += rtx;
+        }
+      }
+
+      // This may filter the just added "rtx" right back out again
+      rtxList.Remove(m_stringOptions(OPAL_OPT_REMOVE_CODEC).Lines());
+      rtxList.Remove(GetEndPoint().GetManager().GetMediaFormatMask());
+      mediaFormats += rtxList;
+    }
+    else {
+      OpalMediaFormatList::iterator fmt = mediaFormats.begin();
+      while (fmt != mediaFormats.end()) {
+        const OpalMediaFormat rtx = OpalRtx::GetMediaFormat(fmt->GetMediaType());
+        if (rtx == *fmt) {
+          RTP_DataFrame::PayloadTypes apt = fmt->GetOptionPayloadType(OpalRtx::AssociatedPayloadTypeOption());
+          if (apt != RTP_DataFrame::IllegalPayloadType) {
+            bool remove = true;
+            for (OpalMediaFormatList::iterator it = mediaFormats.begin(); it != mediaFormats.end(); ++it) {
+              if (it->GetPayloadType() == apt) {
+                remove = false;
+                break;
+              }
+            }
+            if (remove) {
+              PTRACE(5, "Removing format " << *fmt << ", apt=" << apt);
+              mediaFormats.erase(fmt++);
+              continue;
+            }
+          }
+        }
+
+        ++fmt;
       }
     }
-
-    // This may filter the just added "rtx" right back out again
-    rtxList.Remove(m_stringOptions(OPAL_OPT_REMOVE_CODEC).Lines());
-    rtxList.Remove(GetEndPoint().GetManager().GetMediaFormatMask());
-    mediaFormats += rtxList;
   }
 }
 

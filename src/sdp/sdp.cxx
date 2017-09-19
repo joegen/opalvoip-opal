@@ -435,15 +435,19 @@ bool SDPMediaFormat::PostDecode(const OpalMediaFormatList & mediaFormats, unsign
   if (m_encodingName.IsEmpty())
     m_encodingName = m_mediaFormat.GetEncodingName();
 
-  if (m_mediaFormat.IsEmpty()) {
+  if (m_mediaFormat.IsValid())
+    SetMediaFormatOptions(m_mediaFormat);
+  else {
     PTRACE(5, "Matching \"" << m_encodingName << "\", pt=" << m_payloadType << ", clock=" << m_clockRate);
     for (OpalMediaFormatList::const_iterator iterFormat = mediaFormats.FindFormat(m_payloadType, m_clockRate, m_encodingName, "sip");
          iterFormat != mediaFormats.end();
-         iterFormat = mediaFormats.FindFormat(m_payloadType, m_clockRate, m_encodingName, "sip", iterFormat)) {
+         iterFormat = mediaFormats.FindFormat(m_payloadType, m_clockRate, m_encodingName, "sip", iterFormat))
+    {
       OpalMediaFormat adjustedFormat = *iterFormat;
       SetMediaFormatOptions(adjustedFormat);
-      // skip formats whose fmtp don't match options
-      if (iterFormat->ValidateMerge(adjustedFormat)) {
+
+      // Only accept formats whose fmtp options match are compatible, or if "rtx" which is special
+      if (OpalRtx::GetName(adjustedFormat.GetMediaType()) == adjustedFormat || iterFormat->ValidateMerge(adjustedFormat)) {
         PTRACE(3, "Matched payload type " << m_payloadType << " to " << *iterFormat);
         m_mediaFormat = adjustedFormat;
         break;
@@ -459,8 +463,6 @@ bool SDPMediaFormat::PostDecode(const OpalMediaFormatList & mediaFormats, unsign
       return false;
     }
   }
-
-  SetMediaFormatOptions(m_mediaFormat);
 
   /* Set bandwidth limits, if present, e.g. "SDP-Bandwidth-AS" and "SDP-Bandwidth-TIAS".
 
