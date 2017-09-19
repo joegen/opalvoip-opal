@@ -2077,7 +2077,7 @@ PBoolean OpalTransportWS::Connect()
     return false;
   }
   m_channel = webSocket;
-  return webSocket->Connect(m_endpoint.GetPrefixName());
+  return webSocket->Connect("ws://" + GetRemoteAddress().GetHostName(), m_endpoint.GetPrefixName());
 }
 
 
@@ -2134,7 +2134,7 @@ PBoolean OpalTransportWSS::Connect()
     return false;
   }
   m_channel = webSocket;
-  return webSocket->Connect("sip");
+  return webSocket->Connect("wss://" + GetRemoteAddress().GetHostName(), m_endpoint.GetPrefixName());
 }
 
 
