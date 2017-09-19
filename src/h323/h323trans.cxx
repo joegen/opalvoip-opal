@@ -809,7 +809,7 @@ PBoolean H323TransactionServer::AddListeners(const H323TransportAddressArray & i
   m_mutex.Signal();
 
   for (i = 0; i < ifaces.GetSize(); i++) {
-    if (!ifaces[i])
+    if (!ifaces[i].IsEmpty())
       AddListener(ifaces[i]);
   }
 

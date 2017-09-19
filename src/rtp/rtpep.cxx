@@ -220,6 +220,13 @@ OpalMediaFormatList OpalRTPEndPoint::GetMediaFormats() const
  #endif
   }
 #endif
+
+  OpalMediaTypeList mediaTypes = OpalMediaType::GetList();
+  for (OpalMediaTypeList::const_iterator it = mediaTypes.begin(); it != mediaTypes.end(); ++it) {
+    if (it->GetDefinition()->GetMediaSessionType() == OpalRTPSession::RTP_AVP())
+      list += OpalRtx::GetMediaFormat(*it);
+  }
+
   return list;
 }
 

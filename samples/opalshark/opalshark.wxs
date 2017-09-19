@@ -239,6 +239,15 @@
                                       DiskId='1'
                                       KeyPath='yes' />
                             </Component>
+                            <Component Id='SWSCALE'
+                                       Win64="$(var.IsWin64)"
+                                       Guid='*'>
+                                <File Id='SWSCALE_DLL'
+                                      Name='SWSCALE-$(var.SWSCALEVer).DLL'
+                                      Source='$(var.FFMPEGDir)\SWSCALE-$(var.SWSCALEVer).DLL'
+                                      DiskId='1'
+                                      KeyPath='yes' />
+                            </Component>
                             <Component Id='SWRESAMPLE'
                                        Win64="$(var.IsWin64)"
                                        Guid='*'>
@@ -464,6 +473,7 @@
                 <ComponentRef Id='MPEG4' />
                 <ComponentRef Id='AVCODEC' />
                 <ComponentRef Id='AVUTIL' />
+                <ComponentRef Id='SWSCALE' />
                 <ComponentRef Id='SWRESAMPLE' />
             <?endif?>
             <ComponentRef Id='VP8' />

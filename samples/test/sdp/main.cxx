@@ -86,31 +86,6 @@ void Test::Main()
         }
       }
 
-      cout << "\n\n";
-      SDPSessionDescription::MediaStreamMap ms;
-      if (sdp.GetMediaStreams(ms)) {
-        cout << "Media streams:\n";
-        for (SDPSessionDescription::MediaStreamMap::iterator itms = ms.begin(); itms != ms.end(); ++itms) {
-          cout << "id=" << itms->first << '\n';
-          for (SDPSessionDescription::MediaStreamDescriptionMap::iterator itmsd = itms->second.begin(); itmsd != itms->second.end(); ++itmsd) {
-            SDPMediaDescription * md = sdp.GetMediaDescriptionByIndex(itmsd->first);
-            if (md == NULL)
-              cout << "  No description at index " << itmsd->first;
-            else {
-              cout << "  Media " << itmsd->first << ' ' << md->GetMediaType() << "  SSRC=";
-              for (size_t i = 0; i < itmsd->second.size(); ++i) {
-                if (i > 0)
-                  cout << ',';
-                cout << itmsd->second[i];
-              }
-            }
-            cout << '\n';
-          }
-        }
-      }
-      else
-        cout << "No media streams present.";
-
       cout << endl;
     }
   }

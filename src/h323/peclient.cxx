@@ -240,7 +240,7 @@ PString H323PeerElement::GetDomainName() const
 
 void H323PeerElement::PrintOn(ostream & strm) const
 {
-  if (!localIdentifier)
+  if (!localIdentifier.IsEmpty())
     strm << localIdentifier << '@';
   H323Transactor::PrintOn(strm);
 }

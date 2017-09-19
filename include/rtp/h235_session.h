@@ -123,7 +123,7 @@ class H2356_Session : public OpalRTPSession
 #if !H235_6_CODED_TO_CORRECT_SPECIFICATION
     virtual SendReceiveStatus OnPreReceiveData(RTP_DataFrame & frame);
 #endif
-    virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame);
+    virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame, ReceiveType rxType);
 
   protected:
     struct Context {

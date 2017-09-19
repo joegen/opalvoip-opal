@@ -218,7 +218,7 @@ void H323TransportAddressArray::AppendString(const PString & str)
 
 void H323TransportAddressArray::AppendAddress(const H323TransportAddress & addr)
 {
-  if (!addr)
+  if (!addr.IsEmpty())
     Append(new H323TransportAddress(addr));
 }
 

@@ -308,9 +308,9 @@ OpalRTPSession::SendReceiveStatus H2356_Session::OnPreReceiveData(RTP_DataFrame 
 #endif
 
 
-OpalRTPSession::SendReceiveStatus H2356_Session::OnReceiveData(RTP_DataFrame & frame)
+OpalRTPSession::SendReceiveStatus H2356_Session::OnReceiveData(RTP_DataFrame & frame, ReceiveType rxType)
 {
-  return m_rx.Decrypt(frame) ? OpalRTPSession::OnReceiveData(frame) : e_IgnorePacket;
+  return (rxType == e_RxRetransmission || m_rx.Decrypt(frame)) ? OpalRTPSession::OnReceiveData(frame, rxType) : e_IgnorePacket;
 }
 
 

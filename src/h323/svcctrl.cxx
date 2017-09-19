@@ -195,7 +195,7 @@ H323CallCreditServiceControl::H323CallCreditServiceControl(const H225_ServiceCon
 
 PBoolean H323CallCreditServiceControl::IsValid() const
 {
-  return !amount || durationLimit > 0;
+  return !amount.IsEmpty() || durationLimit > 0;
 }
 
 
@@ -228,7 +228,7 @@ PBoolean H323CallCreditServiceControl::OnSendingPDU(H225_ServiceControlDescripto
   contents.SetTag(H225_ServiceControlDescriptor::e_callCreditServiceControl);
   H225_CallCreditServiceControl & credit = contents;
 
-  if (!amount) {
+  if (!amount.IsEmpty()) {
     credit.IncludeOptionalField(H225_CallCreditServiceControl::e_amountString);
     credit.m_amountString = amount;
 
@@ -244,7 +244,7 @@ PBoolean H323CallCreditServiceControl::OnSendingPDU(H225_ServiceControlDescripto
     credit.m_enforceCallDurationLimit = true;
   }
 
-  return !amount || durationLimit > 0;
+  return !amount.IsEmpty() || durationLimit > 0;
 }
 
 

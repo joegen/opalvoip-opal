@@ -326,14 +326,14 @@ bool H323EndPoint::UseGatekeeper(const PString & address,
   if (gatekeeper != NULL) {
     bool same = true;
 
-    if (!address && address != "*")
+    if (!address.IsEmpty() && address != "*")
       same = gatekeeper->GetTransport().GetRemoteAddress().IsEquivalent(
                 OpalTransportAddress(address, H225_RAS::DefaultRasUdpPort, OpalTransportAddress::UdpPrefix()));
 
-    if (!same && !identifier)
+    if (!same && !identifier.IsEmpty())
       same = gatekeeper->GetIdentifier() == identifier;
 
-    if (!same && !localAddress)
+    if (!same && !localAddress.IsEmpty())
       same = gatekeeper->GetTransport().GetLocalAddress().IsEquivalent(
                 OpalTransportAddress(localAddress, H225_RAS::DefaultRasUdpPort, OpalTransportAddress::UdpPrefix()));
 
@@ -1032,7 +1032,7 @@ H323Connection * H323EndPoint::InternalMakeCall(OpalCall & call,
   connection->AttachSignalChannel(newToken, transport, false);
 
 #if OPAL_H450
-  if (!callIdentity) {
+  if (!callIdentity.IsEmpty()) {
     if (capabilityLevel == UINT_MAX)
       connection->HandleTransferCall(existingToken, callIdentity);
     else {
@@ -1231,7 +1231,7 @@ PBoolean H323EndPoint::ParsePartyName(const PString & remoteParty,
       gatewaySpecified = true;
     else if (type == "gk")
       gatekeeperSpecified = true;
-    else if (!type) {
+    else if (!type.IsEmpty()) {
       PTRACE(1, "H323\tUnsupported host type \"" << type << "\" in h323 URL");
       return false;
     }
@@ -1288,7 +1288,7 @@ PBoolean H323EndPoint::ParsePartyName(const PString & remoteParty,
   }
 
   // We have a gatekeeper and user provided a host
-  if (!address) {
+  if (!address.IsEmpty()) {
     // Most H.323 gatekeepers want RFC4282 Network Access Identifier as alias,
     // so we treat the host part of the URL as the "realm" of the NAI
     alias += '@' + url.GetHostName();
@@ -1539,8 +1539,7 @@ H323ServiceControlSession * H323EndPoint::CreateServiceControlSession(const H225
 
 void H323EndPoint::SetDefaultLocalPartyName(const PString & name)
 {
-  PAssert(!name, "Must have non-empty string in AliasAddress!");
-  if (name.IsEmpty())
+  if (!PAssert(!name.IsEmpty(), "Must have non-empty string in AliasAddress!"))
     return;
 
   OpalEndPoint::SetDefaultLocalPartyName(name);
@@ -1597,7 +1596,8 @@ bool H323EndPoint::RemoveAliasNames(const PStringList & names, bool updateGk)
 
 bool H323EndPoint::AddAliasName(const PString & name, const PString & gk, bool updateGk)
 {
-  PAssert(!name, "Must have non-empty string in alias name!");
+  if (!PAssert(!name.IsEmpty(), "Must have non-empty string in alias name!"))
+    return false;
 
   {
     PWaitAndSignal mutex(m_aliasMutex);
@@ -1618,7 +1618,8 @@ bool H323EndPoint::AddAliasName(const PString & name, const PString & gk, bool u
 
 bool H323EndPoint::RemoveAliasName(const PString & name, bool updateGk)
 {
-  PAssert(!name, "Must have non-empty string in alias name!");
+  if (!PAssert(!name.IsEmpty(), "Must have non-empty string in alias name!"))
+    return false;
 
   {
     PWaitAndSignal mutex(m_aliasMutex);
@@ -1759,7 +1760,8 @@ bool H323EndPoint::AddAliasNamePattern(const PString & pattern, const PString & 
 
 bool H323EndPoint::RemoveAliasNamePattern(const PString & pattern, bool updateGk)
 {
-  PAssert(!pattern, "Must have non-empty string in alias pattern !");
+  if (!PAssert(!pattern.IsEmpty(), "Must have non-empty string in alias pattern !"))
+    return false;
 
   {
     PWaitAndSignal mutex(m_aliasMutex);
@@ -1942,7 +1944,7 @@ bool H323EndPoint::SetCompatibility(H323Connection::CompatibilityIssues issue, c
 
 bool H323EndPoint::AddCompatibility(H323Connection::CompatibilityIssues issue, const PString & regex)
 {
-  if (!PAssert(!regex, PInvalidParameter))
+  if (!PAssert(!regex.IsEmpty(), PInvalidParameter))
     return false;
 
   PString pattern;

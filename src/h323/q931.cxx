@@ -983,7 +983,7 @@ static PBoolean GetNumberIE(const PBYTEArray & bytes,
   if (len > 0)
     memcpy(number.GetPointerAndSetLength(len), ((const BYTE *)bytes)+offset, len);
 
-  return !number;
+  return !number.IsEmpty();
 }
 
 

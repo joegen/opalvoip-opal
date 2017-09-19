@@ -655,7 +655,6 @@ bool OpalSDPConnection::OnSendOfferSDPSession(OpalMediaSession * mediaSession,
   }
 
   localMedia->SetStringOptions(m_stringOptions);
-  localMedia->FromSession(mediaSession, NULL, ssrc);
 
   if (offerOpenMediaStreamOnly) {
     unsigned sessionId = mediaSession->GetSessionID();
@@ -675,6 +674,18 @@ bool OpalSDPConnection::OnSendOfferSDPSession(OpalMediaSession * mediaSession,
       localMedia->AddMediaFormat(sendStream->GetMediaFormat());
     else
       localMedia->AddMediaFormats(m_localMediaFormats, mediaType);
+
+    if (sendStream != NULL) {
+      // Add in the "rtx" capabilities corressponding to the selected codec
+      RTP_DataFrame::PayloadTypes pt = sendStream->GetMediaFormat().GetPayloadType();
+      OpalMediaFormatList::const_iterator it;
+      while ((it = m_localMediaFormats.FindFormat(OpalRtx::GetName(mediaType), it)) != m_localMediaFormats.end()) {
+        if (it->GetOptionPayloadType(OpalRtx::AssociatedPayloadTypeOption()) == pt) {
+          localMedia->AddMediaFormat(*it);
+          break;
+        }
+      }
+    }
 
     bool sending = !m_holdFromRemote         && sendStream != NULL && sendStream->IsOpen();
     bool recving =  m_holdToRemote < eHoldOn && recvStream != NULL && recvStream->IsOpen();
@@ -705,6 +716,8 @@ bool OpalSDPConnection::OnSendOfferSDPSession(OpalMediaSession * mediaSession,
     localMedia->AddMediaFormats(m_localMediaFormats, mediaType);
     localMedia->SetDirection((SDPMediaDescription::Direction)(3&(unsigned)GetAutoStart(mediaType)));
   }
+
+  localMedia->FromSession(mediaSession, NULL, ssrc);
 
   if (mediaType == OpalMediaType::Audio()) {
     // Set format if we have an RTP payload type for RFC2833 and/or NSE
@@ -1336,6 +1349,35 @@ bool OpalSDPConnection::OnReceivedAnswerSDPSession(const SDPMediaDescription * m
       recvStream = GetMediaStream(sessionId, true);
     if (!recvDisabled && recvStream == NULL)
       OnMediaStreamOpenFailed(true);
+  }
+
+  // Make sure rtx has correct PT
+  OpalRTPSession * rtpSession = dynamic_cast<OpalRTPSession *>(mediaSession);
+  if (rtpSession != NULL) {
+    if (sendStream != NULL) {
+      // Find correct PT
+      RTP_DataFrame::PayloadTypes primaryPT = sendStream->GetMediaFormat().GetPayloadType();
+      RTP_DataFrame::PayloadTypes newPT = RTP_DataFrame::IllegalPayloadType;
+      PString rtxName = OpalRtx::GetName(mediaType);
+      OpalMediaFormatList remoteFormats = GetMediaFormats();
+      for (OpalMediaFormatList::iterator it = remoteFormats.begin(); it != remoteFormats.end(); ++it) {
+        if (it->GetName() == rtxName && it->GetOptionPayloadType(OpalRtx::AssociatedPayloadTypeOption()) == primaryPT) {
+          newPT = it->GetPayloadType();
+          break;
+        }
+      }
+
+      if (newPT != RTP_DataFrame::IllegalPayloadType) {
+        // Adjust the session SSRCs
+        RTP_SyncSourceArray ssrcs = rtpSession->GetSyncSources(OpalRTPSession::e_Sender);
+        for (RTP_SyncSourceArray::iterator it = ssrcs.begin(); it != ssrcs.end(); ++it) {
+          RTP_SyncSourceId primarySSRC = *it;
+          RTP_SyncSourceId rtxSSRC = rtpSession->GetRtxSyncSource(primarySSRC, OpalRTPSession::e_Sender, true);
+          if (rtxSSRC != 0)
+            rtpSession->EnableSyncSourceRtx(primarySSRC, newPT, rtxSSRC);
+        }
+      }
+    }
   }
 
   PINDEX maxFormats = 1;

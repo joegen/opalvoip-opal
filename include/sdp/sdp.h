@@ -206,9 +206,6 @@ class SDPCommonAttributes
     };
 #endif
 
-    typedef std::vector<RTP_SyncSourceId> SyncSourceArray;
-    typedef std::map<PINDEX, SyncSourceArray> MediaStreamDescriptionMap;
-    typedef std::map<PString, MediaStreamDescriptionMap> MediaStreamMap;
     typedef PDictionary<PString, PStringSet> GroupDict;
 
     SDPCommonAttributes()
@@ -488,8 +485,6 @@ class SDPRTPAVPMediaDescription : public SDPMediaDescription
     typedef std::map<RTP_SyncSourceId, PStringOptions> SsrcInfo;
     const SsrcInfo & GetSsrcInfo() const { return m_ssrcInfo; }
 
-    const MediaStreamMap & GetMediaStreams() const { return m_mediaStreams;  }
-
   protected:
     class Format : public SDPMediaFormat
     {
@@ -513,8 +508,7 @@ class SDPRTPAVPMediaDescription : public SDPMediaDescription
     PCaselessString               m_transportType;
     SsrcInfo                      m_ssrcInfo;
     PString                       m_msid;
-    SyncSourceArray               m_temporaryFlowSSRC;
-    MediaStreamMap                m_mediaStreams;
+    vector<RTP_SyncSourceArray>   m_flowSSRC;
     OpalMediaFormat::RTCPFeedback m_rtcp_fb;
 #if OPAL_SRTP
     PList<SDPCryptoSuite>         m_cryptoSuites;
@@ -668,8 +662,6 @@ class SDPSessionDescription : public PObject, public SDPCommonAttributes
     void SetOwnerAddress(OpalTransportAddress addr) { ownerAddress = addr; }
 
     GroupDict GetGroups() const { return m_groups; }
-
-    bool GetMediaStreams(MediaStreamMap & info) const;
 
 #if OPAL_ICE
     PStringSet GetICEOptions() const { return m_iceOptions; }

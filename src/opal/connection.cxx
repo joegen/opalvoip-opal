@@ -522,9 +522,9 @@ PString OpalConnection::GetDestinationAddress()
     return partyA->GetDestinationAddress();
 
   if (!IsOriginating()) {
-    if (!m_calledPartyNumber)
+    if (!m_calledPartyNumber.IsEmpty())
       return m_calledPartyNumber;
-    if (!m_calledPartyName)
+    if (!m_calledPartyName.IsEmpty())
       return m_calledPartyName;
   }
   return '*';

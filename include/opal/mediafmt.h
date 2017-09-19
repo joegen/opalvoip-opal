@@ -720,7 +720,8 @@ class OpalMediaFormatInternal : public PObject
       PINDEX        frameSize,
       unsigned      frameTime,
       unsigned      clockRate,
-      time_t        timeStamp
+      time_t        timeStamp = 0,
+      bool          allowMultiple = false
     );
 
     const PCaselessString & GetName() const { return formatName; }
@@ -758,6 +759,8 @@ class OpalMediaFormatInternal : public PObject
 
     virtual bool IsValidForProtocol(const PString & protocol) const;
 
+    void DeconflictPayloadTypes(OpalMediaFormatList & formats);
+
   protected:
     bool AdjustByOptionMaps(
       PTRACE_PARAM(const char * operation,)
@@ -772,6 +775,7 @@ class OpalMediaFormatInternal : public PObject
     PSortedList<OpalMediaOption> options;
     time_t                       codecVersionTime;
     bool                         forceIsTransportable;
+    bool                         m_allowMultiple;
 
   friend bool operator==(const char * other, const OpalMediaFormat & fmt);
   friend bool operator!=(const char * other, const OpalMediaFormat & fmt);
@@ -833,7 +837,8 @@ class OpalMediaFormat : public PContainer
       PINDEX   frameSize,                         ///<  Size of frame in bytes (if applicable)
       unsigned frameTime,                         ///<  Time for frame in RTP units (if applicable)
       unsigned clockRate,                         ///<  Clock rate for data (if applicable)
-      time_t timeStamp = 0                        ///<  timestamp (for versioning)
+      time_t timeStamp = 0,                       ///<  timestamp (for versioning)
+      bool allowMultiple = false                  ///<  allow multiple copies of media format in list
     );
 
     /**Construct a media format, searching database for information.
@@ -1152,6 +1157,14 @@ class OpalMediaFormat : public PContainer
       const PString & name,   ///<  Option name
       int value               ///<  New value for option
     ) { PWaitAndSignal m(m_mutex); MakeUnique(); return m_info != NULL && m_info->SetOptionInteger(name, value); }
+
+    /**Get the option value of the specified name as a payload type. The default
+       value is returned if the option is not present.
+      */
+    RTP_DataFrame::PayloadTypes GetOptionPayloadType(
+      const PString & name,   ///<  Option name
+      RTP_DataFrame::PayloadTypes dflt = RTP_DataFrame::IllegalPayloadType ///<  Default value if option not present
+    ) const { PWaitAndSignal m(m_mutex); return m_info == NULL ? dflt : (RTP_DataFrame::PayloadTypes)m_info->GetOptionInteger(name, dflt); }
 
     /**Get the option value of the specified name as a real. The default
        value is returned if the option is not present.
@@ -1559,6 +1572,22 @@ class OpalVideoFormatInternal : public OpalMediaFormatInternal
 
 #endif // OPAL_VIDEO
 
+
+///////////////////////////////////////////////////////////////////////////////
+
+// RFC 4588 "rtx" media format
+namespace OpalRtx {
+
+  const PString & AssociatedPayloadTypeOption();
+  const PString & RetransmitTimeOption();
+  const PCaselessString & EncodingName();
+
+  PString GetName(const OpalMediaType & mediaType);
+  OpalMediaFormat GetMediaFormat(const OpalMediaType & mediaType);
+};
+
+
+///////////////////////////////////////////////////////////////////////////////
 
 #include <codec/known.h>
 

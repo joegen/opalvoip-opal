@@ -1355,12 +1355,12 @@ static PString MakeAddress(const PString & number,
 {
   PStringStream addr;
 
-  if (!number)
+  if (!number.IsEmpty())
     addr << number;
   else if (!aliases.IsEmpty())
     addr << aliases[0];
 
-  if (!host) {
+  if (!host.IsEmpty()) {
     if (!addr.IsEmpty())
       addr << '@';
     addr << host;
@@ -1557,7 +1557,7 @@ static PStringArray GetAliasAddressArray(const H225_ArrayOf_AliasAddress & pdu)
 
   for (PINDEX i = 0; i < pdu.GetSize(); i++) {
     PString alias = H323GetAliasAddressString(pdu[i]);
-    if (!alias)
+    if (!alias.IsEmpty())
       aliases.AppendString(alias);
   }
 
@@ -1791,7 +1791,7 @@ H323GatekeeperRequest::Response H323RegisteredEndPoint::OnSecureRegistration(H32
     PString password;
     if (m_gatekeeper.GetUsersPassword(m_aliases[i], password, *this)) {
       PTRACE(3, "RAS\tFound user " << m_aliases[i] << " for H.235 security.");
-      if (!password)
+      if (!password.IsEmpty())
         SetPassword(password, m_aliases[i]);
       return H323GatekeeperRequest::Confirm;
     }
@@ -1816,7 +1816,7 @@ PBoolean H323RegisteredEndPoint::SetPassword(const PString & password,
   PTRACE(3, "RAS\tSetting password and enabling H.235 security for " << *this);
   for (H235Authenticators::iterator iterAuth = m_authenticators.begin(); iterAuth != m_authenticators.end(); ++iterAuth) {
     iterAuth->SetPassword(password);
-    if (!username && !iterAuth->UseGkAndEpIdentifiers())
+    if (!username.IsEmpty() && !iterAuth->UseGkAndEpIdentifiers())
       iterAuth->SetRemoteId(username);
   }
 

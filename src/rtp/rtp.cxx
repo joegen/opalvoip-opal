@@ -1771,7 +1771,7 @@ void RTPHeaderExtensionInfo::OutputSDP(ostream & strm) const
   }
 
   strm << ' ' << m_uri;
-  if (!m_attributes)
+  if (!m_attributes.IsEmpty())
     strm << ' ' << m_attributes;
 
   strm << "\r\n";

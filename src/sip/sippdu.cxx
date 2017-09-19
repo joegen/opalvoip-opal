@@ -470,7 +470,7 @@ PString SIPURL::AsQuotedString() const
 {
   PStringStream s;
 
-  if (!m_displayName)
+  if (!m_displayName.IsEmpty())
     s << '"' << m_displayName << "\" ";
   s << '<' << AsString() << '>';
 
@@ -4421,7 +4421,7 @@ SIPWorkItem::SIPWorkItem(SIPEndPoint & ep, const PString & token)
   : m_endpoint(ep)
   , m_token(token)
 {
-  PAssert(!token, PInvalidParameter);
+  PAssert(!token.IsEmpty(), PInvalidParameter);
 }
 
 

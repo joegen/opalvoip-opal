@@ -197,7 +197,7 @@ bool MyH323EndPoint::Configure(PConfig & cfg, PConfigPage * rsrc)
             "Local network interface to use to register with gatekeeper, if blank all are used", 1, 30);
 
   PString gkPassword = PHTTPPasswordField::Decrypt(cfg.GetString(GatekeeperPasswordKey));
-  if (!gkPassword)
+  if (!gkPassword.IsEmpty())
     SetGatekeeperPassword(gkPassword);
   rsrc->Add(new PHTTPPasswordField(GatekeeperPasswordKey, H323GatekeeperPasswordSize, gkPassword,
             "Password for gatekeeper authentication, user is the first alias"));
@@ -533,7 +533,7 @@ void MyGatekeeperServer::RouteMap::PrintOn(ostream & strm) const
 
 bool MyGatekeeperServer::RouteMap::IsValid() const
 {
-  return !m_alias && m_regex.GetErrorCode() == PRegularExpression::NoError && !m_host;
+  return !m_alias.IsEmpty() && m_regex.GetErrorCode() == PRegularExpression::NoError && !m_host.IsEmpty();
 }
 
 

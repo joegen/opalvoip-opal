@@ -2060,11 +2060,11 @@ void SIPEndPoint::SetProxy(const PString & hostname,
                            const PString & password)
 {
   PStringStream str;
-  if (!hostname) {
+  if (!hostname.IsEmpty()) {
     str << "sip:";
-    if (!username) {
+    if (!username.IsEmpty()) {
       str << username;
-      if (!password)
+      if (!password.IsEmpty())
         str << ':' << password;
       str << '@';
     }

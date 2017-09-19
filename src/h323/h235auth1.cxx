@@ -201,12 +201,12 @@ H225_CryptoH323Token * H235AuthProcedure1::CreateCryptoToken(bool digits)
   // tokenOID = "T"
   clearToken.m_tokenOID  = OID_T;
   
-  if (!remoteId) {
+  if (!remoteId.IsEmpty()) {
     clearToken.IncludeOptionalField(H235_ClearToken::e_generalID);
     clearToken.m_generalID = remoteId;
   }
 
-  if (!localId) {
+  if (!localId.IsEmpty()) {
     clearToken.IncludeOptionalField(H235_ClearToken::e_sendersID);
     clearToken.m_sendersID = localId;
   }
@@ -361,7 +361,7 @@ H235Authenticator::ValidationResult H235AuthProcedure1::ValidateCryptoToken(
   lastTimestamp = crHashed.m_hashedVals.m_timeStamp;
   
   //verify the username
-  if (!localId && crHashed.m_tokenOID[OID_VERSION_OFFSET] > 1) {
+  if (!localId.IsEmpty() && crHashed.m_tokenOID[OID_VERSION_OFFSET] > 1) {
     if (!crHashed.m_hashedVals.HasOptionalField(H235_ClearToken::e_generalID)) {
       PTRACE(1, "H235RAS\tH235AuthProcedure1 requires general ID.");
       return e_Error;
@@ -374,7 +374,7 @@ H235Authenticator::ValidationResult H235AuthProcedure1::ValidateCryptoToken(
     }
   }
 
-  if (!remoteId) {
+  if (!remoteId.IsEmpty()) {
     if (!crHashed.m_hashedVals.HasOptionalField(H235_ClearToken::e_sendersID)) {
       PTRACE(1, "H235RAS\tH235AuthProcedure1 requires senders ID.");
       return e_Error;
