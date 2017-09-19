@@ -1788,25 +1788,25 @@ void SDPRTPAVPMediaDescription::OutputAttributes(ostream & strm) const
   for (SsrcInfo::const_iterator it1 = m_ssrcInfo.begin(); it1 != m_ssrcInfo.end(); ++it1) {
     for (PStringOptions::const_iterator it2 = it1->second.begin(); it2 != it1->second.end(); ++it2)
       strm << "a=ssrc:" << it1->first << ' ' << it2->first << ':' << it2->second << CRLF;
-  if (m_stringOptions.GetBoolean(OPAL_OPT_OFFER_SDP_SSRC, true))
-  {
-    if (m_ssrcInfo.size() == 1) {
-      SsrcInfo::const_iterator it1 = m_ssrcInfo.begin();
-      for (PStringOptions::const_iterator it2 = it1->second.begin(); it2 != it1->second.end(); ++it2) {
-        strm << "a=";
-        if (it2->first == "cname")
-          strm << "ssrc:" << it1->first << ' ';
-        strm << it2->first << ':' << it2->second << CRLF;
+    if (m_stringOptions.GetBoolean(OPAL_OPT_OFFER_SDP_SSRC, true))
+    {
+      if (m_ssrcInfo.size() == 1) {
+        SsrcInfo::const_iterator it1 = m_ssrcInfo.begin();
+        for (PStringOptions::const_iterator it2 = it1->second.begin(); it2 != it1->second.end(); ++it2) {
+          strm << "a=";
+          if (it2->first == "cname")
+            strm << "ssrc:" << it1->first << ' ';
+          strm << it2->first << ':' << it2->second << CRLF;
+        }
       }
-    }
-    else {
-      for (SsrcInfo::const_iterator it1 = m_ssrcInfo.begin(); it1 != m_ssrcInfo.end(); ++it1) {
-        for (PStringOptions::const_iterator it2 = it1->second.begin(); it2 != it1->second.end(); ++it2)
-          strm << "a=ssrc:" << it1->first << ' ' << it2->first << ':' << it2->second << CRLF;
+      else {
+        for (SsrcInfo::const_iterator it1 = m_ssrcInfo.begin(); it1 != m_ssrcInfo.end(); ++it1) {
+          for (PStringOptions::const_iterator it2 = it1->second.begin(); it2 != it1->second.end(); ++it2)
+            strm << "a=ssrc:" << it1->first << ' ' << it2->first << ':' << it2->second << CRLF;
+        }
       }
     }
   }
-
   // m_rtcp_fb is set via SDPRTPAVPMediaDescription::PreEncode according to various options
   OuputRTCP_FB(strm, -1, m_rtcp_fb);
 }
@@ -2199,6 +2199,7 @@ void SDPAudioMediaDescription::OutputAttributes(ostream & strm) const
     }
   }
 
+#if 0
   if (minptimeMax > 0)
     strm << "a=minptime:" << std::max(minptimeMax,largestFrameTime) << CRLF;
 
@@ -2207,7 +2208,7 @@ void SDPAudioMediaDescription::OutputAttributes(ostream & strm) const
       maxptime = largestFrameTime;
     sstrm << "a=maxptime:" << std::max(std::max(minptimeMax,maxptimeMin),largestFrameTime) << CRLF;
   }
-
+#endif
 }
 
 
