@@ -41,7 +41,7 @@ static PINDEX NSECodeBase = 192;
 #define PTraceModule() "RFC2833"
 #define new PNEW
 
-
+#define ENABLE_END_NOTIFIER 0
 ///////////////////////////////////////////////////////////////////////////////
 
 const PCaselessString & OpalRFC288EventsName() { static PConstCaselessString s("Events"); return s; }
@@ -529,9 +529,12 @@ void OpalRFC2833Proto::OnEndReceive()
 {
   m_receiveIdle = true;
   m_receiveTimer.Stop(false);
-
+  PTRACE(4, "OpalRFC2833Proto::OnEndReceive - ending receipt for current timestamp " << m_receivedTimestamp);
+  
+#if ENABLE_END_NOTIFIER
   OpalRFC2833Info info(m_receivedTone, m_receivedDuration/m_baseMediaFormat.GetTimeUnits(), m_receivedTimestamp);
   m_receiveNotifier(info, 1);
+#endif
 }
 
 
@@ -575,15 +578,19 @@ void OpalRFC2833Proto::ReceivedPacket(OpalRTPSession &, OpalRTPSession::Data & d
          << "', dur=" << m_receivedDuration << ", vol=" << volume << ", ts=" << timestamp << ", mkr=" << data.m_frame.GetMarker()
          << " for " << m_baseMediaFormat);
 
-  if (m_receivedTimestamp == timestamp) {
-    if (m_receiveIdle)
+  if (endTone && m_receiveIdle) {
+      PTRACE(4, "Duplicate end IGNORED");
       return; // Ignore duplicate END tones
   }
-  else {
-    if (m_receiveIdle)
+  else if (!endTone){
+    if (m_receiveIdle) {
+      PTRACE(4, "Not endtone and we are idle.  We got a new input");
       OnStartReceive(tone, timestamp); // do callback for new tone
-    else
+    }
+    else if (timestamp != m_receivedTimestamp) {
+      PTRACE(4, "We are IDLE but timestamp changed.  Forcing end.");
       endTone = true; // As per RFC2833/RFC4733, if timestamp changes, it's the end of the tone too
+    }
   }
 
   if (endTone)
