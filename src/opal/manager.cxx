@@ -483,6 +483,8 @@ void OpalManager::ShutDownEndpoints()
   if (m_script != NULL)
     m_script->Call("OnShutdown");
 #endif
+
+  PTRACE(2, "Shut down completed.");
 }
 
 
