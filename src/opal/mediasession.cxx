@@ -1429,6 +1429,8 @@ bool OpalMediaSession::IsCryptoSecured(bool) const
 static const PConstCaselessString gDummySessionType("Dummy-Media-Session");
 PFACTORY_CREATE(OpalMediaSessionFactory, OpalDummySession, gDummySessionType);
 
+static const PConstCaselessString gDummySessionType("Dummy-Media-Session");
+
 OpalDummySession::OpalDummySession(const Init & init)
   : OpalMediaSession(init)
 {
