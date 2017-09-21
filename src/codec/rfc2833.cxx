@@ -43,7 +43,7 @@ static PINDEX NSECodeBase = 192;
 
 #define PTraceModule() "RFC2833"
 #define new PNEW
-
+#define ENABLE_END_NOTIFIER 0
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -526,14 +526,15 @@ void OpalRFC2833Proto::OnStartReceive(char tone, unsigned timestamp)
   m_receiveNotifier(info, 0);
 }
 
-
 void OpalRFC2833Proto::OnEndReceive()
 {
   m_receiveIdle = true;
   m_receiveTimer.Stop(false);
 
+#if ENABLE_END_NOTIFIER
   OpalRFC2833Info info(m_receivedTone, m_receivedDuration/m_baseMediaFormat.GetTimeUnits(), m_receivedTimestamp);
   m_receiveNotifier(info, 1);
+#endif
 }
 
 
