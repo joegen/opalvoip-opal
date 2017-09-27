@@ -313,6 +313,8 @@ class OpalMediaPatch : public PSafeObject
 
 
     bool m_transcoderChanged;
+    int m_ConsecutiveWriteFailures;
+    int m_ConsecutiveReadFailures;
 
   private:
     P_REMOVE_VIRTUAL(bool, OnPatchStart(), false);

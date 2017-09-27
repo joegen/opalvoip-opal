@@ -48,7 +48,8 @@
 #define PTraceModule() "Patch"
 
 #define new PNEW
-
+#define PATCH_MAX_WRITE_FAILURES 500
+#define PATCH_MAX_READ_FAILURES 500
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -62,6 +63,8 @@ OpalMediaPatch::OpalMediaPatch(OpalMediaStream & src)
   , m_patchThreadId(PNullThreadIdentifier)
 #endif
   , m_transcoderChanged(false)
+  , m_ConsecutiveWriteFailures(0)
+  , m_ConsecutiveReadFailures(0)
 {
   PTRACE_CONTEXT_ID_FROM(src);
 
@@ -734,7 +737,9 @@ void OpalMediaPatch::Main()
      each time and passed back in to source.Read() (and eventually the JB) so
      it knows where it is up to in extracting data from the JB. */
   RTP_DataFrame sourceFrame(0);
-
+  m_ConsecutiveReadFailures = 0;
+  m_ConsecutiveWriteFailures = 0;
+  
   while (m_source.IsOpen()) {
     if (m_source.IsPaused()) {
       PThread::Sleep(100);
@@ -744,14 +749,23 @@ void OpalMediaPatch::Main()
     }
 
     if (!m_source.ReadPacket(sourceFrame)) {
-      PTRACE(4, "Thread ended because source read failed on " << *this);
-      break;
+      if (++m_ConsecutiveReadFailures >= PATCH_MAX_READ_FAILURES) {
+        PTRACE(4, "Thread ended because source read failed on " << *this);
+        break;
+      }
+      continue;
     }
  
     if (!DispatchFrame(sourceFrame)) {
-      PTRACE(4, "Thread ended because all sink writes failed on " << *this);
-      break;
+      if (++m_ConsecutiveWriteFailures >= PATCH_MAX_WRITE_FAILURES) {
+        PTRACE(4, "Thread ended because all sink writes failed on " << *this);
+        break;
+      }
+      continue;
     }
+    
+    m_ConsecutiveReadFailures = 0;
+    m_ConsecutiveWriteFailures = 0;
  
     if (asynchronous)
       asynchPacing.Delay(10);
