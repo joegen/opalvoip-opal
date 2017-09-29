@@ -694,6 +694,8 @@ PChannel * OpalMediaTransport::GetChannel(SubChannels subchannel) const
 void OpalMediaTransport::SetRemoteBehindNAT()
 {
   m_remoteBehindNAT = true;
+  m_hasSetNATControlAddress = false;
+  m_hasSetNATMediaAddress = false;
 }
 
 
@@ -963,10 +965,10 @@ OpalTransportAddress OpalUDPMediaTransport::GetRemoteAddress(SubChannels subchan
 bool OpalUDPMediaTransport::SetRemoteAddress(const OpalTransportAddress & remoteAddress, SubChannels subchannel)
 {
   // This bool is safe, and lock is in InternalSetRemoteAddress
-  //if (m_remoteBehindNAT) {
-  //  PTRACE(3, *this << "ignoring remote address as is behind NAT");
-  //  return true;
-  //}
+  if (m_remoteBehindNAT) {
+    PTRACE(3, *this << "ignoring remote address as is behind NAT");
+    return true;
+  }
 
   PIPAddressAndPort ap;
   if (!remoteAddress.GetIpAndPort(ap))
@@ -985,16 +987,16 @@ void OpalUDPMediaTransport::InternalRxData(SubChannels subchannel, const PBYTEAr
     GetSubChannelAsSocket(subchannel)->GetLastReceiveAddress(ap);
     if (subchannel == e_Control && !m_hasSetNATControlAddress) {
       m_hasSetNATControlAddress = InternalSetRemoteAddress(ap, subchannel, false PTRACE_PARAM(, "first PDU"));
-      if (m_hasSetNATControlAddress && !m_hasSetNATMediaAddress) {
-        ap.SetPort(ap.GetPort() - 1);
-        InternalSetRemoteAddress(ap, e_Media, false PTRACE_PARAM(, "first PDU"));
-      }
+      //if (m_hasSetNATControlAddress && !m_hasSetNATMediaAddress) {
+      //  ap.SetPort(ap.GetPort() - 1);
+      //  InternalSetRemoteAddress(ap, e_Media, false PTRACE_PARAM(, "first PDU"));
+      //}
     } else if (subchannel == e_Media && !m_hasSetNATMediaAddress) {
       m_hasSetNATMediaAddress = InternalSetRemoteAddress(ap, subchannel, false PTRACE_PARAM(, "first PDU"));
-      if (m_hasSetNATMediaAddress && !m_hasSetNATControlAddress) {
-        ap.SetPort(ap.GetPort() + 1);
-        InternalSetRemoteAddress(ap, e_Control, false PTRACE_PARAM(, "first PDU"));
-      }
+      //if (m_hasSetNATMediaAddress && !m_hasSetNATControlAddress) {
+      //  ap.SetPort(ap.GetPort() + 1);
+      //  InternalSetRemoteAddress(ap, e_Control, false PTRACE_PARAM(, "first PDU"));
+      //}
     }
   }
 
