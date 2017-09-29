@@ -776,6 +776,10 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveData(RTP_DataFrame &
     return e_IgnorePacket;
   }
 
+  /* Need to have a receiver SSRC (their sender) or we can't decrypt the RTCP
+     packet. Applies only if remote did not tell us about SSRC's via signalling
+     (e.g. SDP) and we just acceting anything, if it did tell us valid SSRC's
+     the this fails and we don't use the RTP data as it may be some spoofing. */
   if (UseSyncSource(ssrc, e_Receiver, false) == NULL)
     return e_IgnorePacket;
 
@@ -809,8 +813,6 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveControl(RTP_ControlF
     OPAL_SRTP_TRACE(2, e_Receiver, e_Control, ssrc, 1, "keys not set, cannot protect control");
     return e_IgnorePacket;
   }
-
-
 
   /* Need to have a receiver SSRC (their sender) or we can't decrypt the RTCP
      packet. Generally, the SSRC info is created on the fly (m_anyRTCP_SSRC==true),
