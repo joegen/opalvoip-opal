@@ -351,10 +351,12 @@ bool OpalICEMediaTransport::InternalHandleICE(SubChannels subchannel, const void
 
   PSTUNMessage message((BYTE *)data, length, ap);
   if (!message.IsValid()) {
-    if (m_state == e_Completed)
-      return m_selectedCandidateAP == ap; // Only process non-STUN packets from the selected candidate
+    if (m_state == e_Completed && m_selectedCandidateAP == ap)
+      return true; // Only process non-STUN packets from the selected candidate
 
-    PTRACE(5, *this << subchannel << ", invalid STUN message or data before ICE completed: from=" << ap << " len=" << length);
+    PTRACE(5, *this << subchannel << ", ignoring data "
+           << (m_state == e_Completed ? "from un-selected ICE candidate" : "before ICE completed")
+           << ": from=" << ap << " len=" << length);
     return false;
   }
 
@@ -397,7 +399,7 @@ bool OpalICEMediaTransport::InternalHandleICE(SubChannels subchannel, const void
     }
 
     candidate->m_state = e_CandidateSucceeded;
-    PTRACE(3, *this << subchannel << ", ICE found USE-CANDIDATE");
+    PTRACE(3, *this << subchannel << ", ICE found USE-CANDIDATE from " << ap);
   }
   else if (message.IsSuccessResponse()) {
     if (m_state != e_Offering) {
