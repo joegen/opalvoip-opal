@@ -47,12 +47,6 @@ class PSTUNClient;
   */
 #define OPAL_OPT_ICE_TIMEOUT "ICE-Timeout"
 
-/**String option key to a boolean indicating that ICE will accept STUN
-   messages not in candidate list, provided has correct user/pass
-   credentials. Work around for non trickle ICE systems. Default false.
-  */
-#define OPAL_OPT_ICE_PROMISCUOUS "ICE-Promiscuous"
-
 /**Enable ICE-Lite.
    Defaults to true.
    NOTE!!! This is all that is supported at this time, do not set to false
@@ -103,7 +97,6 @@ class OpalICEMediaTransport : public OpalUDPMediaTransport
     PTimeInterval m_iceTimeout;
     bool          m_lite;
     bool          m_trickle;
-    bool          m_promiscuous;
 
     enum CandidateStates
     {
@@ -139,6 +132,8 @@ class OpalICEMediaTransport : public OpalUDPMediaTransport
 
     PSTUNServer * m_server;
     PSTUNClient * m_client;
+
+    PIPAddressAndPort m_selectedCandidateAP;
 };
 
 

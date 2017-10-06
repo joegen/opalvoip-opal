@@ -54,7 +54,6 @@ OpalICEMediaTransport::OpalICEMediaTransport(const PString & name)
   , m_localPassword(PBase64::Encode(PRandom::Octets(18)))
   , m_lite(false)
   , m_trickle(false)
-  , m_promiscuous(false)
   , m_state(e_Disabled)
   , m_server(NULL)
   , m_client(NULL)
@@ -83,7 +82,6 @@ bool OpalICEMediaTransport::Open(OpalMediaSession & session,
   }
 
   m_trickle = options.GetBoolean(OPAL_OPT_TRICKLE_ICE);
-  m_promiscuous = options.GetBoolean(OPAL_OPT_ICE_PROMISCUOUS);
   m_iceTimeout = options.GetVar(OPAL_OPT_ICE_TIMEOUT, session.GetConnection().GetEndPoint().GetManager().GetICETimeout());
 
   // As per RFC 5425
@@ -354,7 +352,7 @@ bool OpalICEMediaTransport::InternalHandleICE(SubChannels subchannel, const void
   PSTUNMessage message((BYTE *)data, length, ap);
   if (!message.IsValid()) {
     if (m_state == e_Completed)
-      return true;
+      return m_selectedCandidateAP == ap; // Only process non-STUN packets from the selected candidate
 
     PTRACE(5, *this << subchannel << ", invalid STUN message or data before ICE completed: from=" << ap << " len=" << length);
     return false;
@@ -373,11 +371,6 @@ bool OpalICEMediaTransport::InternalHandleICE(SubChannels subchannel, const void
       return false;
     }
 
-    if (!m_promiscuous) {
-      PTRACE(2, *this << subchannel << ", ignoring STUN message for unknown ICE candidate: " << ap);
-      return false;
-    }
-
     m_remoteCandidates[subchannel].push_back(PNatCandidate(PNatCandidate::HostType, (PNatMethod::Component)(subchannel+1)));
     candidate = &m_remoteCandidates[subchannel].back();
     candidate->m_baseTransportAddress = ap;
@@ -391,13 +384,15 @@ bool OpalICEMediaTransport::InternalHandleICE(SubChannels subchannel, const void
     }
 
     if (!PAssertNULL(m_server)->OnReceiveMessage(message, PSTUNServer::SocketInfo(socket)))
+      return false; // Probably a authentication error
+
+    /* Already got this candidate, so don't do any more processing, but still return
+       false as we don't want next layer in stack trying to use this STUN packet. */
+    if (m_selectedCandidateAP == ap)
       return false;
 
-    if (m_state == e_Completed)
-      return true;
-
     if (message.FindAttribute(PSTUNAttribute::USE_CANDIDATE) == NULL) {
-      PTRACE(4, *this << subchannel << ", ICE awaiting USE-CANDIDATE");
+      PTRACE_IF(4, m_state != e_Completed, *this << subchannel << ", ICE awaiting USE-CANDIDATE");
       return false;
     }
 
@@ -414,14 +409,16 @@ bool OpalICEMediaTransport::InternalHandleICE(SubChannels subchannel, const void
       return false;
   }
   else {
-      PTRACE(5, *this << subchannel << ", unexpected STUN message in ICE: " << message);
-      return false;
+    PTRACE(5, *this << subchannel << ", unexpected STUN message in ICE: " << message);
+    return false;
   }
 
   InternalSetRemoteAddress(ap, subchannel, false PTRACE_PARAM(, "ICE"));
+  m_selectedCandidateAP = ap;
   m_state = e_Completed;
 
-  return true;
+  // Don't pass this STUN packet up the protocol stack
+  return false;
 }
 
 
