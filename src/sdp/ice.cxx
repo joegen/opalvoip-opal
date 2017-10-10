@@ -400,6 +400,13 @@ bool OpalICEMediaTransport::InternalHandleICE(SubChannels subchannel, const void
 
     candidate->m_state = e_CandidateSucceeded;
     PTRACE(3, *this << subchannel << ", ICE found USE-CANDIDATE from " << ap);
+
+    /* With ICE-lite (which only supports regular nomination), only one candidate pair
+       should ever be selected. Allowing the candidate to change after initial selection
+       decreases Firefox connection reliability, as it only supports aggressive nomination.
+       See https://bugzilla.mozilla.org/show_bug.cgi?id=1034964 */
+    if (m_state == e_Completed)
+      return false;
   }
   else if (message.IsSuccessResponse()) {
     if (m_state != e_Offering) {
