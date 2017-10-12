@@ -304,6 +304,11 @@ OpalLyncShim::Platform * OpalLyncShim::CreatePlatform(const char * userAgent, co
           break;
         }
       }
+
+	  if (sps == nullptr) {
+		  m_lastError = "Unable to find a certificate with Friendly Name '" + params.m_certificateFriendlyName  + "' within Local Store";
+		  return nullptr;
+	  }
     }
 
     if (sps != nullptr) {

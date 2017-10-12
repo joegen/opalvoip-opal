@@ -182,7 +182,11 @@ bool OpalLyncEndPoint::RegisterApplication(const PlatformParams & platformParams
     return false;
   }
 
-  PTRACE(3, "Created Lync UCMA platform, manually provisioned.");
+  PTRACE(3, "Created Lync UCMA platform, manually provisioned."
+            " Creating ApplicationEndpoint:"
+            " ownerURI=" << appParams.m_ownerURI << ","
+            " proxyHost=" << appParams.m_proxyHost << ","
+            " proxyPort=" << appParams.m_proxyPort);
 
   m_applicationRegistration = CreateApplicationEndpoint(*m_platform, appParams);
   if (m_applicationRegistration == nullptr) {
