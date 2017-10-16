@@ -76,6 +76,10 @@ class OpalICEMediaTransport : public OpalUDPMediaTransport
     virtual void InternalRxData(SubChannels subchannel, const PBYTEArray & data);
     virtual void SetCandidates(const PString & user, const PString & pass, const PNatCandidateList & candidates);
     virtual bool GetCandidates(PString & user, PString & pass, PNatCandidateList & candidates, bool offering);
+#if OPAL_STATISTICS
+    virtual void GetStatistics(OpalMediaStatistics & statistics) const;
+#endif
+
 
   protected:
     class ICEChannel : public PIndirectChannel
@@ -133,7 +137,7 @@ class OpalICEMediaTransport : public OpalUDPMediaTransport
     PSTUNServer * m_server;
     PSTUNClient * m_client;
 
-    PIPAddressAndPort m_selectedCandidateAP;
+    CandidateState * m_selectedCandidate;
 };
 
 

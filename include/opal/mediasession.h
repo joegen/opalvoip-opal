@@ -80,6 +80,9 @@ struct OpalNetworkStatistics
 
   OpalTransportAddress m_localAddress;
   OpalTransportAddress m_remoteAddress;
+#if P_NAT
+  PNatCandidate m_selectedCandidate;
+#endif
 
   PTime    m_startTime;
   uint64_t m_totalBytes;
@@ -480,6 +483,12 @@ class OpalMediaTransport : public PSafeObject, public OpalMediaTransportChannelT
 
     CongestionControl * SetCongestionControl(CongestionControl * cc);
     CongestionControl * GetCongestionControl() const { return m_congestionControl; }
+
+#if OPAL_STATISTICS
+    /**Get statistics for this media session.
+      */
+    virtual void GetStatistics(OpalMediaStatistics & statistics) const;
+#endif
 
   protected:
     virtual void InternalClose();

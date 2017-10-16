@@ -57,6 +57,7 @@ OpalICEMediaTransport::OpalICEMediaTransport(const PString & name)
   , m_state(e_Disabled)
   , m_server(NULL)
   , m_client(NULL)
+  , m_selectedCandidate(NULL)
 {
 }
 
@@ -316,6 +317,16 @@ bool OpalICEMediaTransport::GetCandidates(PString & user, PString & pass, PNatCa
 }
 
 
+#if OPAL_STATISTICS
+void OpalICEMediaTransport::GetStatistics(OpalMediaStatistics & statistics) const
+{
+  OpalMediaTransport::GetStatistics(statistics);
+  if (m_selectedCandidate != NULL)
+    statistics.m_selectedCandidate = *m_selectedCandidate;
+}
+#endif
+
+
 OpalICEMediaTransport::ICEChannel::ICEChannel(OpalICEMediaTransport & owner, SubChannels subchannel, PChannel * channel)
   : m_owner(owner)
   , m_subchannel(subchannel)
@@ -351,7 +362,7 @@ bool OpalICEMediaTransport::InternalHandleICE(SubChannels subchannel, const void
 
   PSTUNMessage message((BYTE *)data, length, ap);
   if (!message.IsValid()) {
-    if (m_state == e_Completed && m_selectedCandidateAP == ap)
+    if (m_state == e_Completed && PAssertNULL(m_selectedCandidate)->m_baseTransportAddress == ap)
       return true; // Only process non-STUN packets from the selected candidate
 
     PTRACE(5, *this << subchannel << ", ignoring data "
@@ -390,7 +401,7 @@ bool OpalICEMediaTransport::InternalHandleICE(SubChannels subchannel, const void
 
     /* Already got this candidate, so don't do any more processing, but still return
        false as we don't want next layer in stack trying to use this STUN packet. */
-    if (m_selectedCandidateAP == ap)
+    if (m_state == e_Completed && PAssertNULL(m_selectedCandidate)->m_baseTransportAddress == ap)
       return false;
 
     if (message.FindAttribute(PSTUNAttribute::USE_CANDIDATE) == NULL) {
@@ -405,7 +416,7 @@ bool OpalICEMediaTransport::InternalHandleICE(SubChannels subchannel, const void
        should ever be selected. Allowing the candidate to change after initial selection
        decreases Firefox connection reliability, as it only supports aggressive nomination.
        See https://bugzilla.mozilla.org/show_bug.cgi?id=1034964 */
-    if (m_state == e_Completed)
+    if (m_lite && m_state == e_Completed)
       return false;
   }
   else if (message.IsSuccessResponse()) {
@@ -423,7 +434,7 @@ bool OpalICEMediaTransport::InternalHandleICE(SubChannels subchannel, const void
   }
 
   InternalSetRemoteAddress(ap, subchannel, false PTRACE_PARAM(, "ICE"));
-  m_selectedCandidateAP = ap;
+  m_selectedCandidate = candidate;
   m_state = e_Completed;
 
   // Don't pass this STUN packet up the protocol stack

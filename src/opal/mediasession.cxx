@@ -691,6 +691,15 @@ void OpalMediaTransport::SetRemoteBehindNAT()
 }
 
 
+#if OPAL_STATISTICS
+void OpalMediaTransport::GetStatistics(OpalMediaStatistics & statistics) const
+{
+  statistics.m_localAddress = GetLocalAddress(e_Media);
+  statistics.m_remoteAddress = GetRemoteAddress(e_Media);
+}
+#endif
+
+
 OpalMediaTransport::ChannelInfo::ChannelInfo(OpalMediaTransport * owner, SubChannels subchannel, PChannel * chan)
   : m_owner(owner)
   , m_subchannel(subchannel)
@@ -1431,9 +1440,11 @@ SDPMediaDescription * OpalMediaSession::CreateSDPMediaDescription()
 #if OPAL_STATISTICS
 void OpalMediaSession::GetStatistics(OpalMediaStatistics & statistics, bool) const
 {
-  statistics.m_mediaType     = GetMediaType();
-  statistics.m_localAddress  = GetLocalAddress();
-  statistics.m_remoteAddress = GetRemoteAddress();
+  statistics.m_mediaType = GetMediaType();
+
+  OpalMediaTransportPtr transport = m_transport; // This way avoids races
+  if (transport != NULL)
+    transport->GetStatistics(statistics);
 }
 #endif
 
