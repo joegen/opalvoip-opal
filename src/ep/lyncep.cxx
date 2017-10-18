@@ -191,9 +191,8 @@ bool OpalLyncEndPoint::RegisterApplication(const PlatformParams & platformParams
   m_applicationRegistration = CreateApplicationEndpoint(*m_platform, appParams);
   if (m_applicationRegistration == nullptr) {
     PTRACE(2, "Error initialising Lync UCMA application endpoint: " << GetLastError());
-	if (m_platform != NULL) {
+    if (m_platform != NULL)
 		DestroyPlatform(m_platform);
-	}
     return false;
   }
 
@@ -368,6 +367,7 @@ void OpalLyncConnection::SetUpIncomingLyncCall(const IncomingLyncCallInfo & info
     return;
   }
 
+  m_audioVideoCall = info.m_call;
   PTRACE(3, "Incoming Lync call:"
             " from=\"" << info.m_remoteUri << "\","
             " name=\"" << info.m_displayName << "\","
@@ -375,7 +375,6 @@ void OpalLyncConnection::SetUpIncomingLyncCall(const IncomingLyncCallInfo & info
             " by=\"" << info.m_transferredBy << "\","
             " conn=" << *this);
 
-  m_audioVideoCall = info.m_call;
 
   m_remotePartyURL = InternalConvertLyncURI(info.m_remoteUri);
   m_remotePartyNumber = m_remotePartyURL(m_remotePartyURL.Find(':')+1, m_remotePartyURL.Find('@')-1);

@@ -598,7 +598,8 @@ bool OpalLyncShim::TransferAudioVideoCall(AudioVideoCall & call, AudioVideoCall 
 		" call-id=" << marshal_as<std::string>(call->CallId) << ","
 		" target-id=" << marshal_as<std::string>(target->CallId) << ","
 		" mode=default ");
-    call->EndTransfer(call->BeginTransfer(target, nullptr, nullptr));
+
+    target->EndTransfer(target->BeginTransfer(call, nullptr, nullptr));
   }
   catch (System::Exception^ err) {
     m_lastError = marshal_as<std::string>(err->ToString());
@@ -696,7 +697,7 @@ OpalLyncShim::ToneController * OpalLyncShim::CreateToneController(AudioVideoFlow
   PTRACE(4, "CreateToneController:"
             " Tone=" << (flow->ToneEnabled ? "enabled" : "disabled") << ","
             " Policy=" << marshal_as<std::string>(flow->TonePolicy.ToString()) << ","
-            " call id=" << marshal_as<std::string>(flow->Call->CallId));
+            " call-id=" << marshal_as<std::string>(flow->Call->CallId));
 
   Collaboration::AudioVideo::ToneController^ toneController;
   try {
