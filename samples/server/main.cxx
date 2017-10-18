@@ -94,6 +94,7 @@ static const char LyncUriKey[] = "URI";
 static const char LyncAuthIDKey[] = "Auth ID";
 static const char LyncPasswordKey[] = "Password";
 static const char LyncDomainKey[] = "Domain";
+static const PConstString LyncCompleteTransferDelayKey("Lync Complete Transfer Delay");
 #endif
 
 #if OPAL_LID
@@ -1103,6 +1104,10 @@ bool MyLyncEndPoint::Configure(PConfig & cfg, PConfigPage * rsrc)
       }
       break;
   }
+
+  m_transferDelay = rsrc->AddIntegerField(LyncCompleteTransferDelayKey, 0, 65535, 500, "milliseconds",
+                                          "Optional delay before completing consultative transfer");
+  PTRACE(4, "Config: m_transferDelay=" << m_transferDelay);
 
   return true;
 }

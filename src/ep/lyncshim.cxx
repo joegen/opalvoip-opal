@@ -216,7 +216,7 @@ ref class OpalLyncShim_Notifications : public System::Object
       try {
         Collaboration::Call^ call = dynamic_cast<Collaboration::Call^>(ar->AsyncState);
         call->EndEstablish(ar);
-		m_shim.OnLyncCallEstablished();
+        m_shim.OnLyncCallEstablished();
       }
       catch (System::Exception^ err) {
         m_shim.OnLyncCallFailed(marshal_as<std::string>(err->ToString()));
@@ -305,10 +305,10 @@ OpalLyncShim::Platform * OpalLyncShim::CreatePlatform(const char * userAgent, co
         }
       }
 
-	  if (sps == nullptr) {
-		  m_lastError = "Unable to find a certificate with Friendly Name '" + params.m_certificateFriendlyName  + "' within Local Store";
-		  return nullptr;
-	  }
+      if (sps == nullptr) {
+        m_lastError = "Unable to find a certificate with Friendly Name '" + params.m_certificateFriendlyName  + "' within Local Store";
+        return nullptr;
+      }
     }
 
     if (sps != nullptr) {
@@ -591,13 +591,18 @@ bool OpalLyncShim::ForwardAudioVideoCall(AudioVideoCall & call, const char * tar
 }
 
 
-bool OpalLyncShim::TransferAudioVideoCall(AudioVideoCall & call, AudioVideoCall & target)
+bool OpalLyncShim::TransferAudioVideoCall(AudioVideoCall & call, AudioVideoCall & target, int delayMillis)
 {
   try {
-	PTRACE(4, "TransferAudioVideoCall:"
-		" call-id=" << marshal_as<std::string>(call->CallId) << ","
-		" target-id=" << marshal_as<std::string>(target->CallId) << ","
-		" mode=default ");
+    if (delayMillis > 0) {
+      PTRACE(4, "TransferAudioVideoCall: sleeping " << delayMillis << "ms before transfer");
+      System::Threading::Thread::Sleep(delayMillis);
+    }
+
+    PTRACE(4, "TransferAudioVideoCall:"
+              " call-id=" << marshal_as<std::string>(call->CallId) << ","
+              " target-id=" << marshal_as<std::string>(target->CallId) << ","
+              " mode=default ");
 
     target->EndTransfer(target->BeginTransfer(call, nullptr, nullptr));
   }

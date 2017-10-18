@@ -85,7 +85,7 @@ class OpalLyncShim
     bool AcceptAudioVideoCall(AudioVideoCall & call);
     bool ForwardAudioVideoCall(AudioVideoCall & call, const char * targetURI);
     bool TransferAudioVideoCall(AudioVideoCall & call, const char * targetURI);
-    bool TransferAudioVideoCall(AudioVideoCall & call, AudioVideoCall & target);
+    bool TransferAudioVideoCall(AudioVideoCall & call, AudioVideoCall & target, int delayMillis);
     void DestroyAudioVideoCall(AudioVideoCall * & call);
 
     struct AudioVideoFlow;
@@ -136,7 +136,7 @@ class OpalLyncShim
     };
     virtual void OnIncomingLyncCall(const IncomingLyncCallInfo & /*info*/) { }
     virtual void OnLyncCallStateChanged(int /*previousState*/, int /*newState*/) { }
-	virtual void OnLyncCallEstablished() { }
+    virtual void OnLyncCallEstablished() { }
     virtual void OnLyncCallFailed(const std::string & /*error*/) { }
     virtual void OnLyncCallTransferReceived(const std::string & /*TransferDestination*/, const std::string & /*TransferredBy*/) { }
     virtual void OnLyncCallTransferStateChanged(int /*previousState*/, int /*newState*/) { }
@@ -318,6 +318,9 @@ class OpalLyncEndPoint : public OpalEndPoint, public OpalLyncShimBase
 
     void AdjustLyncURI(PString & uri);
 
+    /// Get the (fudge) delay for transfers
+    const PTimeInterval & GetTransferDelay() const { return m_transferDelay; }
+
   protected:
     virtual bool OnApplicationProvisioning(ApplicationEndpoint * aep);
     virtual void OnIncomingLyncCall(const IncomingLyncCallInfo & info) override;
@@ -328,6 +331,8 @@ class OpalLyncEndPoint : public OpalEndPoint, public OpalLyncShimBase
     typedef std::map<PString, UserEndpoint *> RegistrationMap;
     RegistrationMap m_registrations;
     PMutex          m_registrationMutex;
+
+    PTimeInterval m_transferDelay;
 };
 
 
@@ -478,7 +483,7 @@ class OpalLyncConnection : public OpalConnection, public OpalLyncShimBase
     bool             m_mediaActive;
 
     virtual void OnLyncCallStateChanged(int previousState, int newState) override;
-	virtual void OnLyncCallEstablished() override;
+    virtual void OnLyncCallEstablished() override;
     virtual void OnLyncCallFailed(const std::string & error) override;
     virtual void OnLyncCallTransferReceived(const std::string & transferDestination, const std::string & tansferredBy) override;
     virtual void OnLyncCallTransferStateChanged(int previousState, int newState) override;

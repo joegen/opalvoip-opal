@@ -192,7 +192,7 @@ bool OpalLyncEndPoint::RegisterApplication(const PlatformParams & platformParams
   if (m_applicationRegistration == nullptr) {
     PTRACE(2, "Error initialising Lync UCMA application endpoint: " << GetLastError());
     if (m_platform != NULL)
-		DestroyPlatform(m_platform);
+      DestroyPlatform(m_platform);
     return false;
   }
 
@@ -302,7 +302,7 @@ void OpalLyncEndPoint::AdjustLyncURI(PString & uri)
     parsed.SetParameters(PString::Empty()); // Remove any extraneous parameters as Lync very fussy
     if (OpalIsE164(parsed.GetUserName()))
       parsed.SetParamVar("user", "phone"); // Very fussy indeed
-	else if (parsed.GetUserName().IsEmpty() && OpalIsE164(parsed.GetHostName()))
+    else if (parsed.GetUserName().IsEmpty() && OpalIsE164(parsed.GetHostName()))
       parsed.Parse(parsed.AsString().Splice("tel", 0, 3));
   }
   else if (parsed.GetScheme() == "tel") {
@@ -449,7 +449,7 @@ void OpalLyncConnection::OnLyncCallStateChanged(int PTRACE_PARAM(previousState),
   if (newState == CallStateEstablished) {
     m_flow = CreateAudioVideoFlow(*m_audioVideoCall);
     if (m_flow != NULL) {
-   	  PTRACE(2, "Created Lync UCMA A/V flow wrapper");
+      PTRACE(2, "Created Lync UCMA A/V flow wrapper");
       InternalOnConnected();
       if (m_mediaActive) {
         if (m_toneController == NULL) {
@@ -476,7 +476,7 @@ void OpalLyncConnection::OnLyncCallStateChanged(int PTRACE_PARAM(previousState),
 
 void OpalLyncConnection::OnLyncCallEstablished()
 {
-	PTRACE(4, "Lync UCMA call established " << *this);
+  PTRACE(4, "Lync UCMA call established " << *this);
 }
 
 void OpalLyncConnection::OnLyncCallFailed(const std::string & error)
@@ -573,7 +573,7 @@ bool OpalLyncConnection::TransferConnection(const PString & remoteParty)
 
   PSafePtr<OpalLyncConnection> otherConnection = m_endpoint.GetConnectionWithLockAs<OpalLyncConnection>(remoteParty, PSafeReadOnly);
   if (otherConnection != NULL) {
-    if (TransferAudioVideoCall(*m_audioVideoCall, *otherConnection->m_audioVideoCall)) {
+    if (TransferAudioVideoCall(*m_audioVideoCall, *otherConnection->m_audioVideoCall, (int)m_endpoint.GetTransferDelay().GetMilliSeconds())) {
       PTRACE(3, "Transferred Lync UCMA call on " << *this << " to " << *otherConnection);
       otherConnection->Release(EndedByCallForwarded);
       Release(EndedByCallForwarded);
