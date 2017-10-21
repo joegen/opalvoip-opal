@@ -2412,33 +2412,53 @@ void OpalManager_C::HandleRetrieveCall(const OpalMessage & command, OpalMessageB
 
 void OpalManager_C::HandleTransferCall(const OpalMessage & command, OpalMessageBuffer & response)
 {
-  if (IsNullString(command.m_param.m_callSetUp.m_partyB)) {
-    response.SetError("No destination address provided.");
+  PString partyB = command.m_param.m_callSetUp.m_partyB;
+  if (partyB.IsEmpty()) {
+    response.SetError("No transfer address provided.");
     return;
   }
+
+  PINDEX colon = partyB.Find(':');
+  if (colon == P_MAX_INDEX) {
+    response.SetError("Invalid transfer address provided, must have prefix.");
+    return;
+  }
+
+  PString prefixB = partyB.Left(colon);
 
   PSafePtr<OpalCall> call;
   if (!FindCall(command.m_param.m_callSetUp.m_callToken, response, call))
     return;
 
-  PString search = command.m_param.m_callSetUp.m_partyA;
-  if (search.IsEmpty()) {
-    search = command.m_param.m_callSetUp.m_partyB;
-    search.Delete(search.Find(':'), P_MAX_INDEX);
-  }
+  PSafePtr<OpalConnection> connection;
 
-  PSafePtr<OpalConnection> connection = call->GetConnection(0, PSafeReadOnly);
-  while (connection->GetLocalPartyURL().NumCompare(search) != EqualTo) {
-    if (++connection == NULL) {
-      response.SetError("Call does not have suitable connection to transfer from " + search);
-      return;
+  PString search = command.m_param.m_callSetUp.m_partyA;
+  if (search == "*") {
+    OpalEndPoint * ep = FindEndPoint(prefixB);
+    if (ep != NULL) {
+      PTRACE(4, "Searching for local/network connection the same as " << *ep);
+      bool isNetwork = ep->HasAttribute(OpalEndPoint::IsNetworkEndPoint);
+      connection = call->GetConnection(0);
+      while (connection != NULL && !connection->IsReleased() && isNetwork != connection->IsNetworkConnection())
+        ++connection;
     }
   }
+  else {
+    if (search.IsEmpty())
+      search = prefixB;
+    else
+      search.Delete(search.Find(':'), P_MAX_INDEX);
+    search += ':';
 
-  if (connection->GetPhase() < OpalConnection::ConnectedPhase)
-    connection->ForwardCall(command.m_param.m_callSetUp.m_partyB);
+    connection = call->GetConnection(0);
+    while (connection != NULL && !connection->IsReleased() && connection->GetLocalPartyURL().NumCompare(search) != EqualTo)
+      ++connection;
+  }
+
+  if (connection != NULL && connection->LockReadWrite())
+    call->Transfer(partyB, connection);
   else
-    call->Transfer(command.m_param.m_callSetUp.m_partyB, connection);
+    response.SetError("Call does not have suitable connection to transfer to " + partyB);
 }
 
 

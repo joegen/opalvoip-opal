@@ -1137,7 +1137,11 @@ typedef struct OpalParamSetUpCall {
                                    For OpalCmdTransferCall this indicates the party to be
                                    transferred, e.g. "sip:fred@nurk.com". If NULL then
                                    it is assumed that the party to be transferred is of the
-                                   same "protocol" as the m_partyB field, e.g. "pc" or "sip".
+                                   same "protocol" as the m_partyB field, e.g. "pc" or
+                                   "sip". If "*", then the party to be transferred will be
+                                   of the same network attribute, e.g. "pc" would match
+                                   "ivr" and "sip would match "h323" but "pc" would not
+                                   match "sip".
 
                                    For OpalIndAlerting and OpalIndEstablished this indicates
                                    the A-party of the call in progress. */
