@@ -1991,6 +1991,38 @@ PString OpalConsoleManager::GetArgumentSpec() const
          "V-version.         Display application version.\n"
          "h-help.            This help message.\n"
          ;
+
+  // Unavailable components due to compile time configuration
+#if !OPAL_H323 || !OPAL_SIP || !OPAL_SDP_HTTP || !OPAL_SKINNY || !OPAL_LYNC || !OPAL_LID || !OPAL_CAPI || !OPAL_IVR || !OPAL_HAS_MIXER
+  str << "[Unavailable subsystems:]";
+#endif
+#if !OPAL_H323
+  str << "-no-h323.";
+#endif
+#if !OPAL_SIP
+  str << "-no-sip.";
+#endif
+#if !OPAL_SDP_HTTP
+  str << "-no-sdp.";
+#endif
+#if !OPAL_SKINNY
+  str << "-no-sccp.";
+#endif
+#if !OPAL_LYNC
+  str << "-no-lync.";
+#endif
+#if !OPAL_LID
+  str << "-no-lid.";
+#endif
+#if !OPAL_CAPI
+  str << "-no-capi.";
+#endif
+#if !OPAL_IVR
+  str << "-no-ivr.";
+#endif
+#if !OPAL_HAS_MIXER
+  str << "-no-mcu.";
+#endif
   return str;
 }
 
