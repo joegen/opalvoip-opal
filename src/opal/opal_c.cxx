@@ -2455,7 +2455,7 @@ void OpalManager_C::HandleTransferCall(const OpalMessage & command, OpalMessageB
       ++connection;
   }
 
-  if (connection != NULL && connection->LockReadWrite())
+  if (connection != NULL)
     call->Transfer(partyB, connection);
   else
     response.SetError("Call does not have suitable connection to transfer to " + partyB);
