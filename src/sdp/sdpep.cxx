@@ -589,7 +589,7 @@ bool OpalSDPConnection::OnSendOfferSDPSession(unsigned   sessionId,
 
   OpalMediaType mediaType = mediaSession->GetMediaType();
   if (!m_localMediaFormats.HasType(mediaType)) {
-    PTRACE(2, "No formats of type " << mediaType << " for RTP session " << sessionId);
+    PTRACE(2, "No formats for RTP session " << sessionId << " of type " << mediaType << " in " << setfill(',') << m_localMediaFormats);
     return false;
   }
 
