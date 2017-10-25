@@ -277,8 +277,10 @@ void MyManager::OnClearedCall(OpalCall & call)
       *LockedOutput() << "Call error: " << OpalConnection::GetCallEndReasonText(call.GetCallEndReason());
   }
 
-  if (GetCallCount() == 1)
+  if (GetCallCount() == 1) {
+    PTRACE(3, "Fax", "Last call cleared, exiting application.");
     EndRun();
+  }
 }
 
 

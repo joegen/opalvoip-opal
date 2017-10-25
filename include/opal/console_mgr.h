@@ -525,7 +525,7 @@ class OpalManagerCLI : public OpalManagerConsole
       const PString & defaultRoute = PString::Empty()
     );
     virtual void Run();
-    virtual void EndRun(bool interrupt);
+    virtual void EndRun(bool interrupt = false);
     virtual void Broadcast(const PString & msg);
 
   protected:

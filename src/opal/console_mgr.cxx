@@ -2419,6 +2419,7 @@ void OpalManagerConsole::Run()
 
 void OpalManagerConsole::EndRun(bool interrupt)
 {
+  PTRACE(2, "Shutting down " << (interrupt ? " via interrupt" : " normally"));
   Broadcast(PSTRSTRM("\nShutting down " << PProcess::Current().GetName()
                      << (interrupt ? " via interrupt" : " normally") << " . . . "));
 
@@ -3795,7 +3796,7 @@ void OpalManagerCLI::CmdShutDown(PCLI::Arguments & args, P_INT_PTR)
   if (!args.HasOption("wait"))
     PProcess::Current().SetWaitOnExitConsoleWindow(false);
 #endif
-  EndRun(false);
+  EndRun();
 }
 
 
