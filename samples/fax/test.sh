@@ -36,7 +36,7 @@ function test_fax()
 
   TX_ARG="-o${RESULT_PREFIX}tx.log"
   RX_ARG="-o${RESULT_PREFIX}rx.log"
-  XX_ARG="-ttttt --trace-option +file+date-time --no-lid --no-capi --timeout 2:30"
+  XX_ARG="-ttttt --trace-option +file+date-time --no-lid --no-capi --no-sdp --timeout 2:30"
 
   if [ "$1" = "sip" ]; then
     TX_ARG+=" --sip $HOST:25060"

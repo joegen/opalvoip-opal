@@ -135,3 +135,4 @@ samples/opalshark/opalshark.cxx
 samples/opalshark/config.wxs
 rpmbuild/
 nbproject/private/
+samples/fax/results
