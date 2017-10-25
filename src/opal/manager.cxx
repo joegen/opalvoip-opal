@@ -1460,6 +1460,12 @@ void OpalManager::OnStopMediaPatch(OpalConnection & connection, OpalMediaPatch &
 #if OPAL_SCRIPT
   OnStartStopMediaPatch(m_script, "OnStopMedia", connection, patch);
 #endif
+
+  if (&patch.GetSource().GetConnection() == &connection) {
+    PSafePtr<OpalConnection> other = connection.GetOtherPartyConnection();
+    if (other != NULL)
+      other->OnStopMediaPatch(patch);
+  }
 }
 
 

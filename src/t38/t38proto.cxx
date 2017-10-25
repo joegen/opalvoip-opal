@@ -842,6 +842,16 @@ void OpalFaxConnection::OnClosedMediaStream(const OpalMediaStream & stream)
 }
 
 
+void OpalFaxConnection::OnStopMediaPatch(OpalMediaPatch & patch)
+{
+  OpalMediaStreamPtr src = &patch.GetSource();
+  if (&src->GetConnection() == this)
+    GetEndPoint().GetManager().QueueDecoupledEvent(
+              new PSafeWorkArg1<OpalConnection, OpalMediaStreamPtr, bool>(this, src, &OpalConnection::CloseMediaStream));
+  OpalLocalConnection::OnStopMediaPatch(patch);
+}
+
+
 PBoolean OpalFaxConnection::SendUserInputTone(char tone, unsigned duration)
 {
   OnUserInputTone(tone, duration);
