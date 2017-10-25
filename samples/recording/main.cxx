@@ -76,7 +76,7 @@ bool MyManager::Initialise(PArgList & args, bool verbose, const PString & defaul
 
 ///////////////////////////////////////////////////////////////////////////////
 
-MyLocalEndPoint::MyLocalEndPoint(OpalConsoleManager & manager)
+MyLocalEndPoint::MyLocalEndPoint(OpalManagerConsole & manager)
   : OpalLocalEndPoint(manager, EXTERNAL_SCHEME)
   , m_manager(manager)
 {

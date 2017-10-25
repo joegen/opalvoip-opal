@@ -47,7 +47,7 @@
 #include <ptclib/cli.h>
 
 
-class OpalConsoleManager;
+class OpalManagerConsole;
 class OpalH281Client;
 
 
@@ -66,7 +66,7 @@ class OpalH281Client;
 class OpalConsoleEndPoint
 {
 protected:
-  OpalConsoleEndPoint(OpalConsoleManager & console) : m_console(console) { }
+  OpalConsoleEndPoint(OpalManagerConsole & console) : m_console(console) { }
 
   void AddRoutesFor(const OpalEndPoint * endpoint, const PString & defaultRoute);
 
@@ -84,7 +84,7 @@ public:
 #endif
 
 protected:
-  OpalConsoleManager & m_console;
+  OpalManagerConsole & m_console;
 };
 
 
@@ -94,7 +94,7 @@ class OpalRTPEndPoint;
 class OpalRTPConsoleEndPoint : public OpalConsoleEndPoint
 {
 protected:
-  OpalRTPConsoleEndPoint(OpalConsoleManager & console, OpalRTPEndPoint * endpoint);
+  OpalRTPConsoleEndPoint(OpalManagerConsole & console, OpalRTPEndPoint * endpoint);
 
   void GetArgumentSpec(ostream & strm) const;
   bool Initialise(PArgList & args, ostream & output, bool verbose);
@@ -121,7 +121,7 @@ class SIPConsoleEndPoint : public SIPEndPoint, public OpalRTPConsoleEndPoint
 {
   PCLASSINFO(SIPConsoleEndPoint, SIPEndPoint)
 public:
-  SIPConsoleEndPoint(OpalConsoleManager & manager);
+  SIPConsoleEndPoint(OpalManagerConsole & manager);
 
   virtual void GetArgumentSpec(ostream & strm) const;
   virtual bool Initialise(PArgList & args, bool verbose, const PString & defaultRoute);
@@ -152,7 +152,7 @@ class OpalSDPHTTPConsoleEndPoint : public OpalSDPHTTPEndPoint, public OpalRTPCon
 {
   PCLASSINFO(OpalSDPHTTPConsoleEndPoint, OpalSDPHTTPEndPoint)
 public:
-  OpalSDPHTTPConsoleEndPoint(OpalConsoleManager & manager);
+  OpalSDPHTTPConsoleEndPoint(OpalManagerConsole & manager);
   virtual void GetArgumentSpec(ostream & strm) const;
   virtual bool Initialise(PArgList & args, bool verbose, const PString & defaultRoute);
 };
@@ -164,7 +164,7 @@ class H323ConsoleEndPoint : public H323EndPoint, public OpalRTPConsoleEndPoint
 {
   PCLASSINFO(H323ConsoleEndPoint, H323EndPoint)
 public:
-  H323ConsoleEndPoint(OpalConsoleManager & manager);
+  H323ConsoleEndPoint(OpalManagerConsole & manager);
   virtual void GetArgumentSpec(ostream & strm) const;
   virtual bool Initialise(PArgList & args, bool verbose, const PString & defaultRoute);
 
@@ -187,7 +187,7 @@ class OpalConsoleSkinnyEndPoint : public OpalSkinnyEndPoint, public OpalConsoleE
 {
   PCLASSINFO(OpalConsoleSkinnyEndPoint, OpalSkinnyEndPoint)
 public:
-  OpalConsoleSkinnyEndPoint(OpalConsoleManager & manager);
+  OpalConsoleSkinnyEndPoint(OpalManagerConsole & manager);
 
   virtual void GetArgumentSpec(ostream & strm) const;
   virtual bool Initialise(PArgList & args, bool verbose, const PString & defaultRoute);
@@ -206,7 +206,7 @@ class OpalConsoleLyncEndPoint : public OpalLyncEndPoint, public OpalConsoleEndPo
 {
   PCLASSINFO(OpalConsoleLyncEndPoint, OpalLyncEndPoint)
 public:
-  OpalConsoleLyncEndPoint(OpalConsoleManager & manager);
+  OpalConsoleLyncEndPoint(OpalManagerConsole & manager);
 
   virtual void GetArgumentSpec(ostream & strm) const;
   virtual bool Initialise(PArgList & args, bool verbose, const PString & defaultRoute);
@@ -224,7 +224,7 @@ class OpalConsoleLineEndPoint : public OpalLineEndPoint, public OpalConsoleEndPo
 {
   PCLASSINFO(OpalConsoleLineEndPoint, OpalLineEndPoint)
 public:
-  OpalConsoleLineEndPoint(OpalConsoleManager & manager);
+  OpalConsoleLineEndPoint(OpalManagerConsole & manager);
 
   virtual void GetArgumentSpec(ostream & strm) const;
   virtual bool Initialise(PArgList & args, bool verbose, const PString & defaultRoute);
@@ -242,7 +242,7 @@ class OpalConsoleCapiEndPoint : public OpalCapiEndPoint, public OpalConsoleEndPo
 {
   PCLASSINFO(OpalConsoleCapiEndPoint, OpalCapiEndPoint)
 public:
-  OpalConsoleCapiEndPoint(OpalConsoleManager & manager);
+  OpalConsoleCapiEndPoint(OpalManagerConsole & manager);
 
   virtual void GetArgumentSpec(ostream & strm) const;
   virtual bool Initialise(PArgList & args, bool verbose, const PString & defaultRoute);
@@ -259,7 +259,7 @@ class OpalConsolePCSSEndPoint : public OpalPCSSEndPoint, public OpalConsoleEndPo
 {
   PCLASSINFO(OpalConsolePCSSEndPoint, OpalPCSSEndPoint)
 public:
-  OpalConsolePCSSEndPoint(OpalConsoleManager & manager);
+  OpalConsolePCSSEndPoint(OpalManagerConsole & manager);
 
   virtual void GetArgumentSpec(ostream & strm) const;
   virtual bool Initialise(PArgList & args, bool verbose, const PString &);
@@ -333,7 +333,7 @@ class OpalConsoleIVREndPoint : public OpalIVREndPoint, public OpalConsoleEndPoin
 {
   PCLASSINFO(OpalConsoleIVREndPoint, OpalIVREndPoint)
 public:
-  OpalConsoleIVREndPoint(OpalConsoleManager & manager);
+  OpalConsoleIVREndPoint(OpalManagerConsole & manager);
 
   virtual void GetArgumentSpec(ostream & strm) const;
   virtual bool Initialise(PArgList & args, bool, const PString &);
@@ -350,7 +350,7 @@ class OpalConsoleMixerEndPoint : public OpalMixerEndPoint, public OpalConsoleEnd
 {
   PCLASSINFO(OpalConsoleMixerEndPoint, OpalMixerEndPoint)
 public:
-  OpalConsoleMixerEndPoint(OpalConsoleManager & manager);
+  OpalConsoleMixerEndPoint(OpalManagerConsole & manager);
 
   virtual void GetArgumentSpec(ostream & strm) const;
   virtual bool Initialise(PArgList & args, bool, const PString &);
@@ -367,15 +367,15 @@ public:
    a standard set of command line arguments for configuring many system
    parameters. Used by the sample applications such as faxopal, ovropal etc.
   */
-class OpalConsoleManager : public OpalManager
+class OpalManagerConsole : public OpalManager
 {
-    PCLASSINFO(OpalConsoleManager, OpalManager);
+    PCLASSINFO(OpalManagerConsole, OpalManager);
 
   public:
-    OpalConsoleManager(
+    OpalManagerConsole(
       const char * endpointPrefixes = OPAL_CONSOLE_PREFIXES
     );
-    ~OpalConsoleManager();
+    ~OpalManagerConsole();
 
     virtual PString GetArgumentSpec() const;
     virtual void Usage(ostream & strm, const PArgList & args);
@@ -406,7 +406,7 @@ class OpalConsoleManager : public OpalManager
       protected:
         ostream & m_stream;
       public:
-        LockedStream(const OpalConsoleManager & mgr)
+        LockedStream(const OpalManagerConsole & mgr)
           : PWaitAndSignal(mgr.m_outputMutex)
           , m_stream(*mgr.m_outputStream)
         {
@@ -497,7 +497,7 @@ class OpalConsoleManager : public OpalManager
 #endif
 };
 
-typedef class OpalConsoleManager OpalManagerConsole;
+typedef OpalManagerConsole OpalConsoleManager; // Backward compatibility
 
 #if P_CLI
 
@@ -507,9 +507,9 @@ typedef class OpalConsoleManager OpalManagerConsole;
    parameters,  and a standard command line interpreter for control of many
    functions. Used by the sample applications such as faxopal, ovropal etc.
   */
-class OpalManagerCLI : public OpalConsoleManager
+class OpalManagerCLI : public OpalManagerConsole
 {
-    PCLASSINFO(OpalManagerCLI, OpalConsoleManager);
+    PCLASSINFO(OpalManagerCLI, OpalManagerConsole);
 
   public:
     OpalManagerCLI(
@@ -517,7 +517,7 @@ class OpalManagerCLI : public OpalConsoleManager
     );
     ~OpalManagerCLI();
 
-    // Overrides from OpalConsoleManager
+    // Overrides from OpalManagerConsole
     virtual PString GetArgumentSpec() const;
     virtual bool Initialise(
       PArgList & args,
@@ -589,9 +589,9 @@ class OpalManagerCLI : public OpalConsoleManager
 #endif // P_CLI
 
 
-/**Create a process for OpalConsoleManager based applications.
+/**Create a process for OpalManagerConsole based applications.
   */
-template <class Manager,                   ///< Class of OpalConsoleManager derived class
+template <class Manager,                   ///< Class of OpalManagerConsole derived class
           const char Manuf[],              ///< Name of manufacturer
           const char Name[],               ///< Name of product
           unsigned MajorVersion = OPAL_MAJOR,  ///< Major version number of the product

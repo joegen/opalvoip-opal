@@ -58,7 +58,7 @@ static void PrintVersion(ostream & strm)
 }
 
 
-bool OpalConsoleManager::GetCallFromArgs(PCLI::Arguments & args, PSafePtr<OpalCall> & call) const
+bool OpalManagerConsole::GetCallFromArgs(PCLI::Arguments & args, PSafePtr<OpalCall> & call) const
 {
   if (GetCallCount() == 0) {
     args.WriteError("No calls active.");
@@ -83,7 +83,7 @@ bool OpalConsoleManager::GetCallFromArgs(PCLI::Arguments & args, PSafePtr<OpalCa
 }
 
 
-bool OpalConsoleManager::GetStreamFromArgs(PCLI::Arguments & args,
+bool OpalManagerConsole::GetStreamFromArgs(PCLI::Arguments & args,
                                            const OpalMediaType & mediaType,
                                            bool source,
                                            PSafePtr<OpalMediaStream> & stream) const
@@ -207,7 +207,7 @@ void OpalConsoleEndPoint::AddRoutesFor(const OpalEndPoint * endpoint, const PStr
 /////////////////////////////////////////////////////////////////////////////
 
 #if OPAL_H323 || OPAL_SIP || OPAL_SDP_HTTP
-OpalRTPConsoleEndPoint::OpalRTPConsoleEndPoint(OpalConsoleManager & console, OpalRTPEndPoint * endpoint)
+OpalRTPConsoleEndPoint::OpalRTPConsoleEndPoint(OpalManagerConsole & console, OpalRTPEndPoint * endpoint)
   : OpalConsoleEndPoint(console)
   , m_endpoint(*endpoint)
 {
@@ -402,7 +402,7 @@ void OpalRTPConsoleEndPoint::AddCommands(PCLI & cli)
 /////////////////////////////////////////////////////////////////////////////
 
 #if OPAL_H323
-H323ConsoleEndPoint::H323ConsoleEndPoint(OpalConsoleManager & manager)
+H323ConsoleEndPoint::H323ConsoleEndPoint(OpalManagerConsole & manager)
   : H323EndPoint(manager)
   , P_DISABLE_MSVC_WARNINGS(4355, OpalRTPConsoleEndPoint(manager, this))
 {
@@ -447,7 +447,7 @@ bool H323ConsoleEndPoint::UseGatekeeperFromArgs(const PArgList & args, const cha
 
 bool H323ConsoleEndPoint::Initialise(PArgList & args, bool verbose, const PString & defaultRoute)
 {
-  OpalConsoleManager::LockedStream lockedOutput(m_console);
+  OpalManagerConsole::LockedStream lockedOutput(m_console);
   ostream & output = lockedOutput;
 
   // Set up H.323
@@ -660,7 +660,7 @@ void H323ConsoleEndPoint::AddCommands(PCLI & cli)
 /////////////////////////////////////////////////////////////////////////////
 
 #if OPAL_SIP
-SIPConsoleEndPoint::SIPConsoleEndPoint(OpalConsoleManager & manager)
+SIPConsoleEndPoint::SIPConsoleEndPoint(OpalManagerConsole & manager)
   : SIPEndPoint(manager)
   , P_DISABLE_MSVC_WARNINGS(4355, OpalRTPConsoleEndPoint(manager, this))
 {
@@ -755,7 +755,7 @@ void SIPConsoleEndPoint::GetArgumentSpec(ostream & strm) const
 
 bool SIPConsoleEndPoint::Initialise(PArgList & args, bool verbose, const PString & defaultRoute)
 {
-  OpalConsoleManager::LockedStream lockedOutput(m_console);
+  OpalManagerConsole::LockedStream lockedOutput(m_console);
   ostream & output = lockedOutput;
 
   // Set up SIP
@@ -835,7 +835,7 @@ void SIPConsoleEndPoint::AddCommands(PCLI & cli)
 
 #if OPAL_SDP_HTTP
 
-OpalSDPHTTPConsoleEndPoint::OpalSDPHTTPConsoleEndPoint(OpalConsoleManager & manager)
+OpalSDPHTTPConsoleEndPoint::OpalSDPHTTPConsoleEndPoint(OpalManagerConsole & manager)
   : OpalSDPHTTPEndPoint(manager)
   , P_DISABLE_MSVC_WARNINGS(4355, OpalRTPConsoleEndPoint(manager, this))
 {
@@ -853,7 +853,7 @@ void OpalSDPHTTPConsoleEndPoint::GetArgumentSpec(ostream & strm) const
 
 bool OpalSDPHTTPConsoleEndPoint::Initialise(PArgList & args, bool verbose, const PString &)
 {
-  OpalConsoleManager::LockedStream lockedOutput(m_console);
+  OpalManagerConsole::LockedStream lockedOutput(m_console);
   ostream & output = lockedOutput;
 
   if (args.HasOption("no-sdp")) {
@@ -870,7 +870,7 @@ bool OpalSDPHTTPConsoleEndPoint::Initialise(PArgList & args, bool verbose, const
 /////////////////////////////////////////////////////////////////////////////
 
 #if OPAL_SKINNY
-OpalConsoleSkinnyEndPoint::OpalConsoleSkinnyEndPoint(OpalConsoleManager & manager)
+OpalConsoleSkinnyEndPoint::OpalConsoleSkinnyEndPoint(OpalManagerConsole & manager)
 : OpalSkinnyEndPoint(manager)
 , OpalConsoleEndPoint(manager)
 {
@@ -889,7 +889,7 @@ void OpalConsoleSkinnyEndPoint::GetArgumentSpec(ostream & strm) const
 
 bool OpalConsoleSkinnyEndPoint::Initialise(PArgList & args, bool verbose, const PString & defaultRoute)
 {
-  OpalConsoleManager::LockedStream lockedOutput(m_console);
+  OpalManagerConsole::LockedStream lockedOutput(m_console);
   ostream & output = lockedOutput;
 
   // If we have LIDs speficied in command line, load them
@@ -967,7 +967,7 @@ void OpalConsoleSkinnyEndPoint::AddCommands(PCLI & cli)
 /////////////////////////////////////////////////////////////////////////////
 
 #if OPAL_LYNC
-OpalConsoleLyncEndPoint::OpalConsoleLyncEndPoint(OpalConsoleManager & manager)
+OpalConsoleLyncEndPoint::OpalConsoleLyncEndPoint(OpalManagerConsole & manager)
 : OpalLyncEndPoint(manager)
 , OpalConsoleEndPoint(manager)
 {
@@ -987,7 +987,7 @@ void OpalConsoleLyncEndPoint::GetArgumentSpec(ostream & strm) const
 
 bool OpalConsoleLyncEndPoint::Initialise(PArgList & args, bool verbose, const PString & defaultRoute)
 {
-  OpalConsoleManager::LockedStream lockedOutput(m_console);
+  OpalManagerConsole::LockedStream lockedOutput(m_console);
   ostream & output = lockedOutput;
 
   // If we have LIDs speficied in command line, load them
@@ -1067,7 +1067,7 @@ void OpalConsoleLyncEndPoint::AddCommands(PCLI & cli)
 /////////////////////////////////////////////////////////////////////////////
 
 #if OPAL_LID
-OpalConsoleLineEndPoint::OpalConsoleLineEndPoint(OpalConsoleManager & manager)
+OpalConsoleLineEndPoint::OpalConsoleLineEndPoint(OpalManagerConsole & manager)
 : OpalLineEndPoint(manager)
 , OpalConsoleEndPoint(manager)
 {
@@ -1085,7 +1085,7 @@ void OpalConsoleLineEndPoint::GetArgumentSpec(ostream & strm) const
 
 bool OpalConsoleLineEndPoint::Initialise(PArgList & args, bool verbose, const PString & defaultRoute)
 {
-  OpalConsoleManager::LockedStream lockedOutput(m_console);
+  OpalManagerConsole::LockedStream lockedOutput(m_console);
   ostream & output = lockedOutput;
 
   // If we have LIDs speficied in command line, load them
@@ -1143,7 +1143,7 @@ void OpalConsoleLineEndPoint::AddCommands(PCLI & cli)
 /////////////////////////////////////////////////////////////////////////////
 
 #if OPAL_CAPI
-OpalConsoleCapiEndPoint::OpalConsoleCapiEndPoint(OpalConsoleManager & manager)
+OpalConsoleCapiEndPoint::OpalConsoleCapiEndPoint(OpalManagerConsole & manager)
   : OpalCapiEndPoint(manager)
   , OpalConsoleEndPoint(manager)
 {
@@ -1159,7 +1159,7 @@ void OpalConsoleCapiEndPoint::GetArgumentSpec(ostream & strm) const
 
 bool OpalConsoleCapiEndPoint::Initialise(PArgList & args, bool verbose, const PString & defaultRoute)
 {
-  OpalConsoleManager::LockedStream lockedOutput(m_console);
+  OpalManagerConsole::LockedStream lockedOutput(m_console);
   ostream & output = lockedOutput;
 
   if (args.HasOption("no-capi")) {
@@ -1323,7 +1323,7 @@ static struct {
 #endif // OPAL_VIDEO
 
 
-OpalConsolePCSSEndPoint::OpalConsolePCSSEndPoint(OpalConsoleManager & manager)
+OpalConsolePCSSEndPoint::OpalConsolePCSSEndPoint(OpalManagerConsole & manager)
   : OpalPCSSEndPoint(manager)
   , OpalConsoleEndPoint(manager)
   , m_ringChannelParams(PSoundChannel::Player, PSoundChannel::GetDefaultDevice(PSoundChannel::Player))
@@ -1364,7 +1364,7 @@ void OpalConsolePCSSEndPoint::GetArgumentSpec(ostream & strm) const
 
 bool OpalConsolePCSSEndPoint::Initialise(PArgList & args, bool verbose, const PString &)
 {
-  OpalConsoleManager::LockedStream lockedOutput(m_console);
+  OpalManagerConsole::LockedStream lockedOutput(m_console);
   ostream & output = lockedOutput;
 
   for (PINDEX i = 0; i < PARRAYSIZE(AudioDeviceVariables); ++i) {
@@ -1807,7 +1807,7 @@ void OpalConsolePCSSEndPoint::RingThreadMain()
 /////////////////////////////////////////////////////////////////////////////
 
 #if OPAL_IVR
-OpalConsoleIVREndPoint::OpalConsoleIVREndPoint(OpalConsoleManager & manager)
+OpalConsoleIVREndPoint::OpalConsoleIVREndPoint(OpalManagerConsole & manager)
   : OpalIVREndPoint(manager)
   , OpalConsoleEndPoint(manager)
 {
@@ -1824,7 +1824,7 @@ void OpalConsoleIVREndPoint::GetArgumentSpec(ostream & strm) const
 
 bool OpalConsoleIVREndPoint::Initialise(PArgList & args, bool verbose, const PString &)
 {
-  OpalConsoleManager::LockedStream lockedOutput(m_console);
+  OpalManagerConsole::LockedStream lockedOutput(m_console);
   ostream & output = lockedOutput;
 
   if (args.HasOption("no-ivr")) {
@@ -1855,7 +1855,7 @@ void OpalConsoleIVREndPoint::AddCommands(PCLI &)
 /////////////////////////////////////////////////////////////////////////////
 
 #if OPAL_HAS_MIXER
-OpalConsoleMixerEndPoint::OpalConsoleMixerEndPoint(OpalConsoleManager & manager)
+OpalConsoleMixerEndPoint::OpalConsoleMixerEndPoint(OpalManagerConsole & manager)
   : OpalMixerEndPoint(manager)
   , OpalConsoleEndPoint(manager)
 {
@@ -1875,7 +1875,7 @@ void OpalConsoleMixerEndPoint::GetArgumentSpec(ostream & strm) const
 
 bool OpalConsoleMixerEndPoint::Initialise(PArgList & args, bool verbose, const PString &)
 {
-  OpalConsoleManager::LockedStream lockedOutput(m_console);
+  OpalManagerConsole::LockedStream lockedOutput(m_console);
   ostream & output = lockedOutput;
 
   if (args.HasOption("no-mcu")) {
@@ -1904,7 +1904,7 @@ void OpalConsoleMixerEndPoint::AddCommands(PCLI &)
 
 /////////////////////////////////////////////////////////////////////////////
 
-OpalConsoleManager::OpalConsoleManager(const char * endpointPrefixes)
+OpalManagerConsole::OpalManagerConsole(const char * endpointPrefixes)
   : m_endpointPrefixes(PConstString(endpointPrefixes).Tokenise(" \t\n"))
   , m_interrupted(false)
   , m_verbose(false)
@@ -1913,14 +1913,14 @@ OpalConsoleManager::OpalConsoleManager(const char * endpointPrefixes)
 }
 
 
-OpalConsoleManager::~OpalConsoleManager()
+OpalManagerConsole::~OpalManagerConsole()
 {
   // Must do this before m_outputStream and m_outputMutex go out of scope
   ShutDownEndpoints();
 }
 
 
-PString OpalConsoleManager::GetArgumentSpec() const
+PString OpalManagerConsole::GetArgumentSpec() const
 {
   PStringStream str;
   str << "[Global options:]"
@@ -1946,7 +1946,7 @@ PString OpalConsoleManager::GetArgumentSpec() const
 #endif
 
   for (PINDEX i = 0; i < m_endpointPrefixes.GetSize(); ++i) {
-    OpalConsoleEndPoint * ep = const_cast<OpalConsoleManager *>(this)->GetConsoleEndPoint(m_endpointPrefixes[i]);
+    OpalConsoleEndPoint * ep = const_cast<OpalManagerConsole *>(this)->GetConsoleEndPoint(m_endpointPrefixes[i]);
     if (ep != NULL)
       ep->GetArgumentSpec(str);
   }
@@ -2027,13 +2027,13 @@ PString OpalConsoleManager::GetArgumentSpec() const
 }
 
 
-void OpalConsoleManager::Usage(ostream & strm, const PArgList & args)
+void OpalManagerConsole::Usage(ostream & strm, const PArgList & args)
 {
   args.Usage(strm, "[ <options> ... ]");
 }
 
 
-bool OpalConsoleManager::PreInitialise(PArgList & args, bool verbose)
+bool OpalManagerConsole::PreInitialise(PArgList & args, bool verbose)
 {
   m_verbose = verbose;
 
@@ -2105,7 +2105,7 @@ static bool SetMediaFormatOption(ostream & output, bool verbose, const PString &
 }
 
 
-bool OpalConsoleManager::Initialise(PArgList & args, bool verbose, const PString & defaultRoute)
+bool OpalManagerConsole::Initialise(PArgList & args, bool verbose, const PString & defaultRoute)
 {
   if (!PreInitialise(args, verbose))
     return false;
@@ -2404,7 +2404,7 @@ bool OpalConsoleManager::Initialise(PArgList & args, bool verbose, const PString
 }
 
 
-void OpalConsoleManager::Run()
+void OpalManagerConsole::Run()
 {
 #if OPAL_STATISTICS
   if (m_statsPeriod != 0) {
@@ -2417,7 +2417,7 @@ void OpalConsoleManager::Run()
 }
 
 
-void OpalConsoleManager::EndRun(bool interrupt)
+void OpalManagerConsole::EndRun(bool interrupt)
 {
   Broadcast(PSTRSTRM("\nShutting down " << PProcess::Current().GetName()
                      << (interrupt ? " via interrupt" : " normally") << " . . . "));
@@ -2427,14 +2427,14 @@ void OpalConsoleManager::EndRun(bool interrupt)
 }
 
 
-void OpalConsoleManager::Broadcast(const PString & msg)
+void OpalManagerConsole::Broadcast(const PString & msg)
 {
   if (m_verbose)
     *LockedOutput() << msg << endl;
 }
 
 
-OpalConsoleEndPoint * OpalConsoleManager::GetConsoleEndPoint(const PString & prefix)
+OpalConsoleEndPoint * OpalManagerConsole::GetConsoleEndPoint(const PString & prefix)
 {
   OpalEndPoint * ep = FindEndPoint(prefix);
   if (ep == NULL) {
@@ -2499,7 +2499,7 @@ OpalConsoleEndPoint * OpalConsoleManager::GetConsoleEndPoint(const PString & pre
 
 
 #if OPAL_H323
-H323ConsoleEndPoint * OpalConsoleManager::CreateH323EndPoint()
+H323ConsoleEndPoint * OpalManagerConsole::CreateH323EndPoint()
 {
   return new H323ConsoleEndPoint(*this);
 }
@@ -2507,7 +2507,7 @@ H323ConsoleEndPoint * OpalConsoleManager::CreateH323EndPoint()
 
 
 #if OPAL_SIP
-SIPConsoleEndPoint * OpalConsoleManager::CreateSIPEndPoint()
+SIPConsoleEndPoint * OpalManagerConsole::CreateSIPEndPoint()
 {
   return new SIPConsoleEndPoint(*this);
 }
@@ -2515,7 +2515,7 @@ SIPConsoleEndPoint * OpalConsoleManager::CreateSIPEndPoint()
 
 
 #if OPAL_SDP_HTTP
-OpalSDPHTTPConsoleEndPoint * OpalConsoleManager::CreateSDPHTTPEndPoint()
+OpalSDPHTTPConsoleEndPoint * OpalManagerConsole::CreateSDPHTTPEndPoint()
 {
   return new OpalSDPHTTPConsoleEndPoint(*this);
 }
@@ -2523,7 +2523,7 @@ OpalSDPHTTPConsoleEndPoint * OpalConsoleManager::CreateSDPHTTPEndPoint()
 
 
 #if OPAL_SKINNY
-OpalConsoleSkinnyEndPoint * OpalConsoleManager::CreateSkinnyEndPoint()
+OpalConsoleSkinnyEndPoint * OpalManagerConsole::CreateSkinnyEndPoint()
 {
   return new OpalConsoleSkinnyEndPoint(*this);
 }
@@ -2531,7 +2531,7 @@ OpalConsoleSkinnyEndPoint * OpalConsoleManager::CreateSkinnyEndPoint()
 
 
 #if OPAL_LYNC
-OpalConsoleLyncEndPoint * OpalConsoleManager::CreateLyncEndPoint()
+OpalConsoleLyncEndPoint * OpalManagerConsole::CreateLyncEndPoint()
 {
   return new OpalConsoleLyncEndPoint(*this);
 }
@@ -2539,7 +2539,7 @@ OpalConsoleLyncEndPoint * OpalConsoleManager::CreateLyncEndPoint()
 
 
 #if OPAL_LID
-OpalConsoleLineEndPoint * OpalConsoleManager::CreateLineEndPoint()
+OpalConsoleLineEndPoint * OpalManagerConsole::CreateLineEndPoint()
 {
   return new OpalConsoleLineEndPoint(*this);
 }
@@ -2547,7 +2547,7 @@ OpalConsoleLineEndPoint * OpalConsoleManager::CreateLineEndPoint()
 
 
 #if OPAL_CAPI
-OpalConsoleCapiEndPoint * OpalConsoleManager::CreateCapiEndPoint()
+OpalConsoleCapiEndPoint * OpalManagerConsole::CreateCapiEndPoint()
 {
   return new OpalConsoleCapiEndPoint(*this);
 }
@@ -2555,7 +2555,7 @@ OpalConsoleCapiEndPoint * OpalConsoleManager::CreateCapiEndPoint()
 
 
 #if OPAL_HAS_PCSS
-OpalConsolePCSSEndPoint * OpalConsoleManager::CreatePCSSEndPoint()
+OpalConsolePCSSEndPoint * OpalManagerConsole::CreatePCSSEndPoint()
 {
   return new OpalConsolePCSSEndPoint(*this);
 }
@@ -2563,7 +2563,7 @@ OpalConsolePCSSEndPoint * OpalConsoleManager::CreatePCSSEndPoint()
 
 
 #if OPAL_IVR
-OpalConsoleIVREndPoint * OpalConsoleManager::CreateIVREndPoint()
+OpalConsoleIVREndPoint * OpalManagerConsole::CreateIVREndPoint()
 {
   return new OpalConsoleIVREndPoint(*this);
 }
@@ -2571,14 +2571,14 @@ OpalConsoleIVREndPoint * OpalConsoleManager::CreateIVREndPoint()
 
 
 #if OPAL_HAS_MIXER
-OpalConsoleMixerEndPoint * OpalConsoleManager::CreateMixerEndPoint()
+OpalConsoleMixerEndPoint * OpalManagerConsole::CreateMixerEndPoint()
 {
   return new OpalConsoleMixerEndPoint(*this);
 }
 #endif
 
 
-bool OpalConsoleManager::OnLocalOutgoingCall(const OpalLocalConnection & connection)
+bool OpalManagerConsole::OnLocalOutgoingCall(const OpalLocalConnection & connection)
 {
   OpalCall & call = connection.GetCall();
   Broadcast(PSTRSTRM('\n' << call.GetToken() << ": Call at " << PTime().AsString("w h:mma")
@@ -2587,14 +2587,14 @@ bool OpalConsoleManager::OnLocalOutgoingCall(const OpalLocalConnection & connect
 }
 
 
-void OpalConsoleManager::OnEstablishedCall(OpalCall & call)
+void OpalManagerConsole::OnEstablishedCall(OpalCall & call)
 {
   Broadcast(PSTRSTRM('\n' << call.GetToken() << ": Established call from " << call.GetPartyA() << " to " << call.GetPartyB()));
   OpalManager::OnEstablishedCall(call);
 }
 
 
-void OpalConsoleManager::OnHold(OpalConnection & connection, bool fromRemote, bool onHold)
+void OpalManagerConsole::OnHold(OpalConnection & connection, bool fromRemote, bool onHold)
 {
   OpalManager::OnHold(connection, fromRemote, onHold);
 
@@ -2609,7 +2609,7 @@ void OpalConsoleManager::OnHold(OpalConnection & connection, bool fromRemote, bo
 }
 
 
-bool OpalConsoleManager::OnChangedPresentationRole(OpalConnection & connection, const PString & newChairURI, bool request)
+bool OpalManagerConsole::OnChangedPresentationRole(OpalConnection & connection, const PString & newChairURI, bool request)
 {
   PStringStream output;
   output << '\n' << connection.GetCall().GetToken() << ": presentation role token now owned by ";
@@ -2626,7 +2626,7 @@ bool OpalConsoleManager::OnChangedPresentationRole(OpalConnection & connection, 
 }
 
 
-void OpalConsoleManager::OnStartMediaPatch(OpalConnection & connection, OpalMediaPatch & patch)
+void OpalManagerConsole::OnStartMediaPatch(OpalConnection & connection, OpalMediaPatch & patch)
 {
   OpalManager::OnStartMediaPatch(connection, patch);
 
@@ -2647,7 +2647,7 @@ static PString MakeStatisticsKey(const OpalMediaStream & stream)
 #endif
 
 
-void OpalConsoleManager::OnClosedMediaStream(const OpalMediaStream & stream)
+void OpalManagerConsole::OnClosedMediaStream(const OpalMediaStream & stream)
 {
   OpalManager::OnClosedMediaStream(stream);
 
@@ -2664,7 +2664,7 @@ void OpalConsoleManager::OnClosedMediaStream(const OpalMediaStream & stream)
 }
 
 
-void OpalConsoleManager::OnFailedMediaStream(OpalConnection & connection, bool fromRemote, const PString & reason)
+void OpalManagerConsole::OnFailedMediaStream(OpalConnection & connection, bool fromRemote, const PString & reason)
 {
   OpalManager::OnFailedMediaStream(connection, fromRemote, reason);
 
@@ -2673,7 +2673,7 @@ void OpalConsoleManager::OnFailedMediaStream(OpalConnection & connection, bool f
 }
 
 
-void OpalConsoleManager::OnUserInputString(OpalConnection & connection, const PString & value)
+void OpalManagerConsole::OnUserInputString(OpalConnection & connection, const PString & value)
 {
   if (connection.IsNetworkConnection())
     Broadcast(PSTRSTRM('\n' << connection.GetCall().GetToken() << ": received user input \"" << value << '"'));
@@ -2681,7 +2681,7 @@ void OpalConsoleManager::OnUserInputString(OpalConnection & connection, const PS
 }
 
 
-void OpalConsoleManager::OnClearedCall(OpalCall & call)
+void OpalManagerConsole::OnClearedCall(OpalCall & call)
 {
   OpalManager::OnClearedCall(call);
 
@@ -2733,7 +2733,7 @@ void OpalConsoleManager::OnClearedCall(OpalCall & call)
 
 
 #if OPAL_STATISTICS
-bool OpalConsoleManager::OutputStatistics()
+bool OpalManagerConsole::OutputStatistics()
 {
   if (m_statsFile.IsEmpty())
     return OutputStatistics(LockedOutput());
@@ -2747,7 +2747,7 @@ bool OpalConsoleManager::OutputStatistics()
 }
 
 
-bool OpalConsoleManager::OutputStatistics(ostream & strm)
+bool OpalManagerConsole::OutputStatistics(ostream & strm)
 {
   bool ouputSomething = false;
 
@@ -2762,7 +2762,7 @@ bool OpalConsoleManager::OutputStatistics(ostream & strm)
 }
 
 
-bool OpalConsoleManager::OutputCallStatistics(ostream & strm, OpalCall & call)
+bool OpalManagerConsole::OutputCallStatistics(ostream & strm, OpalCall & call)
 {
   PSafePtr<OpalConnection> connection = call.GetConnection(0);
   if (connection == NULL)
@@ -2794,7 +2794,7 @@ bool OpalConsoleManager::OutputCallStatistics(ostream & strm, OpalCall & call)
 }
 
 
-bool OpalConsoleManager::OutputStreamStatistics(ostream & strm, const OpalMediaStream & stream)
+bool OpalManagerConsole::OutputStreamStatistics(ostream & strm, const OpalMediaStream & stream)
 {
   if (!stream.IsOpen())
     return false;
@@ -2816,7 +2816,7 @@ bool OpalConsoleManager::OutputStreamStatistics(ostream & strm, const OpalMediaS
 #if P_CLI
 
 OpalManagerCLI::OpalManagerCLI(  const char * endpointPrefixes)
-  : OpalConsoleManager(endpointPrefixes)
+  : OpalManagerConsole(endpointPrefixes)
   , m_cli(NULL)
 {
 }
@@ -2831,7 +2831,7 @@ OpalManagerCLI::~OpalManagerCLI()
 
 PString OpalManagerCLI::GetArgumentSpec() const
 {
-  PString spec = OpalConsoleManager::GetArgumentSpec();
+  PString spec = OpalManagerConsole::GetArgumentSpec();
   // Insert just before the version option
   spec.Splice("F-script-file: Execute script file in CLI\n"
 #if P_TELNET
@@ -3030,7 +3030,7 @@ bool OpalManagerCLI::Initialise(PArgList & args, bool verbose, const PString & d
       ep->AddCommands(*m_cli);
   }
 
-  return OpalConsoleManager::Initialise(args, verbose, defaultRoute);
+  return OpalManagerConsole::Initialise(args, verbose, defaultRoute);
 }
 
 
@@ -3066,7 +3066,7 @@ void OpalManagerCLI::EndRun(bool interrupt)
     m_cli->Stop();
   }
 
-  OpalConsoleManager::EndRun(interrupt);
+  OpalManagerConsole::EndRun(interrupt);
 }
 
 
