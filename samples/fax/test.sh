@@ -27,8 +27,6 @@ fi
 
 function test_fax()
 {
-  echo -n "Performing test $1 $2 -> $3 ... "
-
   RESULT_PREFIX="$RESULT_DIR/${1}_${2}_${3}_"
   if [ -n "$4" ]; then
     RESULT_PREFIX+="${4}_"
@@ -79,17 +77,27 @@ function test_fax()
   echo $FAXOPAL $XX_ARG $TX_ARG > $TX_OUT
   echo $FAXOPAL $XX_ARG $RX_ARG > $RX_OUT
 
+
   $FAXOPAL $XX_ARG $RX_ARG < /dev/null >> $RX_OUT 2>&1 &
+  rx_pid=$!
   sleep 2
   $FAXOPAL $XX_ARG $TX_ARG < /dev/null >> $TX_OUT 2>&1 &
-  wait
-  wait
+  tx_pid=$!
+
+  echo -n "Performing test: $1, $2 (pid=$tx_pid) -> $3 (pid=$rx_pid) ... "
+  wait $rx_pid $tx_pid
+
   if grep -q Success $TX_OUT && grep -q Success $RX_OUT ; then
     echo "successful."
   else
     echo "failed."
   fi
 }
+
+if [ -n "$PTLIBDIR" -a -n "$OPALDIR" ]; then
+  # The MacOSX "System Integrity Protection" kills this from the parent shell
+  export DYLD_LIBRARY_PATH=$PTLIBDIR/lib_Darwin_x86_64:$OPALDIR/lib_Darwin_x86_64
+fi
 
 if [ $# -ge 3 ]; then
   test_fax $*
