@@ -394,6 +394,10 @@ bool OpalCall::Transfer(const PString & newAddress, OpalConnection * connection)
 {
   PTRACE_CONTEXT_ID_PUSH_THREAD(this);
 
+  PSafeLockReadWrite lock(*this);
+  if (!lock.IsLocked())
+    return false;
+
   PCaselessString prefix;
   PINDEX colon = newAddress.Find(':');
   if (colon != P_MAX_INDEX)
