@@ -299,6 +299,7 @@ class OpalFaxSession : public OpalMediaSession
     ~OpalFaxSession();
 
     virtual const PCaselessString & GetSessionType() const { return UDPTL(); }
+    virtual void AttachTransport(const OpalMediaTransportPtr & transport);
     virtual bool Open(const PString & localInterface, const OpalTransportAddress & remoteAddress);
     virtual bool IsOpen() const;
     virtual bool Close();
@@ -364,6 +365,7 @@ class OpalFaxMediaStream : public OpalMediaStream
     virtual PBoolean Open();
     virtual PBoolean ReadPacket(RTP_DataFrame & packet);
     virtual PBoolean WritePacket(RTP_DataFrame & packet);
+    virtual PString GetPatchThreadName() const;
     virtual PBoolean IsSynchronous() const;
     virtual bool InternalUpdateMediaFormat(const OpalMediaFormat & mediaFormat);
     virtual void GetStatistics(OpalMediaStatistics & statistics, bool fromPatch) const;

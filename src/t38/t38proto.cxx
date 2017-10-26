@@ -105,6 +105,12 @@ PBoolean OpalFaxMediaStream::WritePacket(RTP_DataFrame & packet)
 }
 
 
+PString OpalFaxMediaStream::GetPatchThreadName() const
+{
+  return PSTRSTRM((IsSource() ? 'R' : 'T') << "x " << GetMediaFormat());
+}
+
+
 PBoolean OpalFaxMediaStream::IsSynchronous() const
 {
   return false;
@@ -226,6 +232,13 @@ void OpalFaxSession::ApplyMediaOptions(const OpalMediaFormat & mediaFormat)
 }
 
 
+void OpalFaxSession::AttachTransport(const OpalMediaTransportPtr & transport)
+{
+  m_transport = transport;
+  m_transport->AddReadNotifier(PCREATE_NOTIFIER(OnReadPacket));
+}
+
+
 bool OpalFaxSession::Open(const PString & localInterface, const OpalTransportAddress & remoteAddress)
 {
   if (IsOpen())
@@ -248,6 +261,8 @@ bool OpalFaxSession::Open(const PString & localInterface, const OpalTransportAdd
     PTRACE(2, "UDPTL\tCould conect to " << remoteAddress);
     return false;
   }
+
+  m_transport->AddReadNotifier(PCREATE_NOTIFIER(OnReadPacket));
 
   PTRACE(3, "UDPTL\tOpened transport to " << remoteAddress);
   return true;
