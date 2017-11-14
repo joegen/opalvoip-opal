@@ -2071,6 +2071,8 @@ class OpalManager : public PObject
     // Decoupled event to avoid deadlocks, especially from patch threads
     void QueueDecoupledEvent(PSafeWork * work, const char * group = NULL) { m_decoupledEventPool.AddWork(work, group); }
 
+    typedef std::map<OpalMediaType, PIPSocket::QoS> MediaQoSMap;
+
   protected:
     // Configuration variables
     OpalProductInfo m_productInfo;
@@ -2078,7 +2080,6 @@ class OpalManager : public PObject
     PString       m_defaultUserName;
     PString       m_defaultDisplayName;
 
-    typedef std::map<OpalMediaType, PIPSocket::QoS> MediaQoSMap;
     mutable MediaQoSMap m_mediaQoS;
 
     OpalConnection::StringOptions m_defaultConnectionOptions;

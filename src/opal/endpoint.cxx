@@ -842,6 +842,19 @@ PStringList OpalEndPoint::GetAvailableStringOptions() const
 }
 
 
+const PIPSocket::QoS & OpalEndPoint::GetMediaQoS(const OpalMediaType & type) const
+{
+  OpalManager::MediaQoSMap::const_iterator it = m_mediaQoS.find(type);
+  return it != m_mediaQoS.end() ? it->second : m_manager.GetMediaQoS(type);
+}
+
+
+void OpalEndPoint::SetMediaQoS(const OpalMediaType & type, const PIPSocket::QoS & qos)
+{
+  m_mediaQoS[type] = qos;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 
 bool OpalIsE164(const PString & number, bool strict)

@@ -124,7 +124,7 @@ OpalRTPSession::OpalRTPSession(const Init & init)
   , m_rtcpPacketsReceived(0)
   , m_roundTripTime(-1)
   , m_reportTimer(0, 4)  // Seconds
-  , m_qos(m_manager.GetMediaQoS(init.m_mediaType))
+  , m_qos(m_endpoint.GetMediaQoS(init.m_mediaType))
   , m_packetOverhead(0)
   , m_remoteControlPort(0)
   , m_sendEstablished(true)
