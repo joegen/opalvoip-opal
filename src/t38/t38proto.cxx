@@ -657,7 +657,7 @@ PStringList OpalFaxEndPoint::GetAvailableStringOptions() const
   static char const * const StringOpts[] = {
     OPAL_OPT_STATION_ID,
     OPAL_OPT_HEADER_INFO,
-    OPAL_NO_G111_FAX,
+    OPAL_NO_G711_FAX,
     OPAL_SWITCH_ON_CED,
     OPAL_T38_SWITCH_TIME
   };
@@ -956,7 +956,7 @@ void OpalFaxConnection::OnSwitchedFaxMediaStreams(bool toT38, bool success)
     m_finalStatistics.m_fax.m_result = OpalMediaStatistics::FaxNotStarted;
   }
   else {
-    if (toT38 && m_stringOptions.GetBoolean(OPAL_NO_G111_FAX)) {
+    if (toT38 && m_stringOptions.GetBoolean(OPAL_NO_G711_FAX)) {
       PTRACE(4, "FAX\tSwitch request to fax failed, checking for fall back to G.711");
       InternalOnFaxCompleted();
     }

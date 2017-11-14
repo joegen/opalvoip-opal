@@ -154,7 +154,7 @@ bool MyManager::Initialise(PArgList & args, bool, const PString &)
   }
 
   if (args.HasOption('F')) {
-    stringOptions.SetBoolean(OPAL_NO_G111_FAX, true);
+    stringOptions.SetBoolean(OPAL_NO_G711_FAX, true);
     output << "Disabled fallback to audio (G.711) mode on T.38 switch failure\n";
   }
 
