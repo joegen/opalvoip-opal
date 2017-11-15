@@ -1275,7 +1275,7 @@ bool OpalRTPSession::SyncSource::OnSendReceiverReport(RTP_ControlFrame::Receiver
   report->ssrc = m_sourceIdentifier;
   report->SetLostPackets(m_packetsLost);
 
-  if (m_extendedSequenceNumber >= m_lastRRSequenceNumber)
+  if (m_extendedSequenceNumber > m_lastRRSequenceNumber)
     report->fraction = (BYTE)((m_packetsLostSinceLastRR<<8)/(m_extendedSequenceNumber - m_lastRRSequenceNumber));
   else
     report->fraction = 0;
@@ -1804,48 +1804,48 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SendReport(RTP_SyncSourceId ss
 {
   std::list<RTP_ControlFrame> frames;
 
-  if (!LockReadOnly(P_DEBUG_LOCATION))
-    return e_AbortTransport;
+  {
+    // Write lock is needed for m_SSRC update and for state updated in InternalSendReport
+    P_INSTRUMENTED_LOCK_READ_WRITE(return e_AbortTransport);
 
-  // Clean out old stale SSRC's
-  for (SyncSourceMap::iterator it = m_SSRC.begin(); it != m_SSRC.end();) {
-    if (it->second->IsStaleReceiver())
-      m_SSRC.erase(it++);
-    else
-      ++it;
-  }
-
-  if (ssrc != 0) {
-    SyncSource * sender;
-    if (GetSyncSource(ssrc, e_Sender, sender)) {
-      RTP_ControlFrame frame;
-      if (InternalSendReport(frame, *sender, true, force))
-        frames.push_back(frame);
+    // Clean out old stale SSRC's
+    for (SyncSourceMap::iterator it = m_SSRC.begin(); it != m_SSRC.end();) {
+      if (it->second->IsStaleReceiver())
+        m_SSRC.erase(it++);
+      else
+        ++it;
     }
-  }
-  else {
-    bool includeReceivers = true;
-    for (SyncSourceMap::iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
-      RTP_ControlFrame frame;
-      if (InternalSendReport(frame, *it->second, includeReceivers, force)) {
-        frames.push_back(frame);
-        includeReceivers = false;
+
+    if (ssrc != 0) {
+      SyncSource * sender;
+      if (GetSyncSource(ssrc, e_Sender, sender)) {
+        RTP_ControlFrame frame;
+        if (InternalSendReport(frame, *sender, true, force))
+          frames.push_back(frame);
       }
     }
-    if (includeReceivers) {
-      RTP_ControlFrame frame;
-      SyncSource * sender = NULL;
-      if (!GetSyncSource(0, e_Sender, sender))
-        GetSyncSource(AddSyncSource(0, e_Sender), e_Sender, sender); // Must always have one sender
-      if (sender != NULL && InternalSendReport(frame, *sender, true, true))
-        frames.push_back(frame);
+    else {
+      bool includeReceivers = true;
+      for (SyncSourceMap::iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
+        RTP_ControlFrame frame;
+        if (InternalSendReport(frame, *it->second, includeReceivers, force)) {
+          frames.push_back(frame);
+          includeReceivers = false;
+        }
+      }
+      if (includeReceivers) {
+        RTP_ControlFrame frame;
+        SyncSource * sender = NULL;
+        if (!GetSyncSource(0, e_Sender, sender))
+          GetSyncSource(AddSyncSource(0, e_Sender), e_Sender, sender); // Must always have one sender
+        if (sender != NULL && InternalSendReport(frame, *sender, true, true))
+          frames.push_back(frame);
+      }
+
+      if (force && !frames.empty() && !m_reportTimer.IsRunning())
+        m_reportTimer.RunContinuous(m_reportTimer.GetResetTime());
     }
-
-    if (force && !frames.empty() && !m_reportTimer.IsRunning())
-      m_reportTimer.RunContinuous(m_reportTimer.GetResetTime());
   }
-
-  UnlockReadOnly(P_DEBUG_LOCATION);
 
   // Actual transmission has to be outside mutex
   SendReceiveStatus status = e_ProcessPacket;

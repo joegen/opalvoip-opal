@@ -193,6 +193,12 @@ void OpalICEMediaTransport::SetCandidates(const PString & user, const PString & 
   if (m_server == NULL) {
     m_server = new PSTUNServer();
     PTRACE_CONTEXT_ID_TO(m_server);
+    if (m_lite)
+      m_server->SetIceRole(PSTUN::IceLite);
+    else if (m_state == e_Answering)
+      m_server->SetIceRole(PSTUN::IceControlled);
+    else
+      m_server->SetIceRole(PSTUN::IceControlling);
   }
   m_server->Open(GetSubChannelAsSocket(e_Data), GetSubChannelAsSocket(e_Control));
   m_server->SetCredentials(m_localUsername + ':' + m_remoteUsername, m_localPassword, PString::Empty());
@@ -200,6 +206,12 @@ void OpalICEMediaTransport::SetCandidates(const PString & user, const PString & 
   if (m_client == NULL) {
     m_client = new PSTUNClient;
     PTRACE_CONTEXT_ID_TO(m_client);
+    if (m_lite)
+      m_client->SetIceRole(PSTUN::IceLite);
+    else if (m_state == e_Answering)
+      m_client->SetIceRole(PSTUN::IceControlled);
+    else
+      m_client->SetIceRole(PSTUN::IceControlling);
   }
   m_client->SetCredentials(m_remoteUsername + ':' + m_localUsername, m_remotePassword, PString::Empty());
 
