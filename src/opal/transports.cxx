@@ -1477,6 +1477,8 @@ bool OpalTransportTCP::OnConnectedSocket(PTCPSocket * socket)
     return false;
   }
 
+  socket->SetQoS(m_endpoint.GetSignalQoS());
+
   m_channel->clear();
 
   PTRACE(3, "Started connection: rem=" << m_remoteAP << " (if=" << m_localAP << ')');
@@ -1599,6 +1601,8 @@ PBoolean OpalTransportUDP::Connect()
     PTRACE(1, "Could not bind to port " << m_localAP.GetPort());
     return false;
   }
+
+  bundle->SetQoS(m_endpoint.GetSignalQoS());
 
   m_localAP.SetPort(bundle->GetPort());
   return true;
