@@ -1594,8 +1594,10 @@ PBoolean OpalTransportUDP::Connect()
     return false;
 
   PMonitoredSocketsPtr bundle = dynamic_cast<PMonitoredSocketChannel *>(m_channel)->GetMonitoredSockets();
-  if (bundle->IsOpen())
+  if (bundle->IsOpen()) {
+    bundle->SetQoS(m_endpoint.GetSignalQoS());
     return true;
+  }
 
   if (!bundle->Open(m_localAP.GetPort())) {
     PTRACE(1, "Could not bind to port " << m_localAP.GetPort());
