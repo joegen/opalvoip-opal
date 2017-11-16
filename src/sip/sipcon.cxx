@@ -128,12 +128,13 @@ static SIP_PDU::StatusCodes GetStatusCodeFromReason(OpalConnection::CallEndReaso
     { OpalConnection::EndedByCallerAbort       , SIP_PDU::Failure_RequestTerminated      },
     { OpalConnection::EndedByCallForwarded     , SIP_PDU::Redirection_MovedTemporarily   },
     { OpalConnection::EndedByAnswerDenied      , SIP_PDU::GlobalFailure_Decline          },
+    { OpalConnection::EndedByLocalUser         , SIP_PDU::GlobalFailure_Decline          }, // Really should only occur after answer, but if it does beforehand, treat like EndedByAnswerDenied
+    { OpalConnection::EndedByRefusal           , SIP_PDU::GlobalFailure_Decline          }, // Really shouldn't happen, how can remote refuse a call it made? Again treat as EndedByAnswerDenied
     { OpalConnection::EndedByOutOfService      , SIP_PDU::Failure_ServiceUnavailable     },
-    { OpalConnection::EndedByRefusal           , SIP_PDU::GlobalFailure_Decline          }, // TODO - SGW - add for call reject from H323 side.
-    { OpalConnection::EndedByHostOffline       , SIP_PDU::Failure_NotFound               }, // TODO - SGW - add for no ip from H323 side.
-    { OpalConnection::EndedByNoEndPoint        , SIP_PDU::Failure_NotFound               }, // TODO - SGW - add for endpoints not running on a ip from H323 side.
-    { OpalConnection::EndedByUnreachable       , SIP_PDU::Failure_Forbidden              }, // TODO - SGW - add for avoid sip calls to SGW IP.
-    { OpalConnection::EndedByNoBandwidth       , SIP_PDU::GlobalFailure_NotAcceptable    }, // TODO - SGW - added to reject call when no bandwidth 
+    { OpalConnection::EndedByHostOffline       , SIP_PDU::Failure_NotFound               },
+    { OpalConnection::EndedByNoEndPoint        , SIP_PDU::Failure_NotFound               },
+    { OpalConnection::EndedByUnreachable       , SIP_PDU::Failure_Forbidden              },
+    { OpalConnection::EndedByNoBandwidth       , SIP_PDU::GlobalFailure_NotAcceptable    },
     { OpalConnection::EndedByInvalidConferenceID,SIP_PDU::Failure_TransactionDoesNotExist}
   };
 
