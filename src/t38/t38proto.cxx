@@ -469,13 +469,25 @@ bool OpalFaxSession::ReadData(RTP_DataFrame & frame)
   }
 
   PPER_Stream per(rawData);
-  // Decode the PDU, but not if still receiving RTP
+  /* Decode the PDU, but not if still receiving RTP
+     Compatibility issue: Cisco CUBE bug of starting with UDPTL Sequence Number
+     of 32768. The T.38 Recommendation requires the first UDPTL packet to have
+     a Sequence Number of 0, and tis was how we decided if packet was a hangover
+     RTP packet or a UDPTL packet. But the bug makes that not possible any more
+     so we try to be smarter. The m_seq_number is the first two bytes of the RTP
+     packet, so we look for the values that represent G.711 data, as we only support
+     those codecs to start a call. This will be 10xx0000 x000x000 ignoring the
+     extension, padding and marker bits, and testing for payload types 0 and 8.
+     As the CUBE value of 32768 is indistinguishable from an RTP packet we still
+     ignore it, but once the CUBE moves to 32769 we will decode it, and we have
+     only missed the first UDPTL packet, which is good enough.
+  */
   if (  !m_receivedPacket->Decode(per) ||
          per.GetPosition() < per.GetSize() ||
         (m_awaitingGoodPacket &&
           (
             m_receivedPacket->m_primary_ifp_packet.GetSize() == 0 ||
-            m_receivedPacket->m_seq_number >= 32768
+           (m_receivedPacket->m_seq_number.GetValue()&0xcf7e) == 0x8000
           )
         )
      )
