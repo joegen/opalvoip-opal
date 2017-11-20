@@ -436,33 +436,36 @@ bool SDPMediaFormat::PostDecode(const OpalMediaFormatList & mediaFormats, unsign
     m_encodingName = m_mediaFormat.GetEncodingName();
 
   if (m_mediaFormat.IsValid())
-    SetMediaFormatOptions(m_mediaFormat);
-  else {
-    PTRACE(5, "Matching \"" << m_encodingName << "\", pt=" << m_payloadType << ", clock=" << m_clockRate);
-    for (OpalMediaFormatList::const_iterator iterFormat = mediaFormats.FindFormat(m_payloadType, m_clockRate, m_encodingName, "sip");
-         iterFormat != mediaFormats.end();
-         iterFormat = mediaFormats.FindFormat(m_payloadType, m_clockRate, m_encodingName, "sip", iterFormat))
+    return AdjustMediaFormat(m_mediaFormat, bandwidth);
+
+  PTRACE(5, "Matching \"" << m_encodingName << "\", pt=" << m_payloadType << ", clock=" << m_clockRate);
+  for (OpalMediaFormatList::const_iterator iterFormat = mediaFormats.FindFormat(m_payloadType, m_clockRate, m_encodingName, "sip");
+        iterFormat != mediaFormats.end();
+        iterFormat = mediaFormats.FindFormat(m_payloadType, m_clockRate, m_encodingName, "sip", iterFormat))
+  {
+    OpalMediaFormat adjustedFormat = *iterFormat;
+    // Only accept formats whose fmtp options match are compatible, or if "rtx" which is special
+    if (AdjustMediaFormat(adjustedFormat, bandwidth) &&
+              (OpalRtx::GetName(adjustedFormat.GetMediaType()) == adjustedFormat || iterFormat->ValidateMerge(adjustedFormat)))
     {
-      OpalMediaFormat adjustedFormat = *iterFormat;
-      SetMediaFormatOptions(adjustedFormat);
-
-      // Only accept formats whose fmtp options match are compatible, or if "rtx" which is special
-      if (OpalRtx::GetName(adjustedFormat.GetMediaType()) == adjustedFormat || iterFormat->ValidateMerge(adjustedFormat)) {
-        PTRACE(3, "Matched payload type " << m_payloadType << " to " << *iterFormat);
-        m_mediaFormat = adjustedFormat;
-        break;
-      }
-
-      PTRACE(4, "Did not match \"" << m_encodingName << "\", pt=" << m_payloadType
-             << ", clock=" << m_clockRate << " fmtp=\"" << m_fmtp << "\" to " << *iterFormat);
+      PTRACE(3, "Matched payload type " << m_payloadType << " to " << *iterFormat);
+      m_mediaFormat = adjustedFormat;
+      return true;
     }
 
-    if (m_mediaFormat.IsEmpty()) {
-      PTRACE(2, "Could not find media format for \"" << m_encodingName << "\", "
-                "pt=" << m_payloadType << ", clock=" << m_clockRate << " fmtp=\"" << m_fmtp << '"');
-      return false;
-    }
+    PTRACE(4, "Did not match \"" << m_encodingName << "\", pt=" << m_payloadType
+           << ", clock=" << m_clockRate << " fmtp=\"" << m_fmtp << "\" to " << *iterFormat);
   }
+
+  PTRACE(2, "Could not find media format for \"" << m_encodingName << "\", "
+            "pt=" << m_payloadType << ", clock=" << m_clockRate << " fmtp=\"" << m_fmtp << '"');
+  return false;
+}
+
+
+bool SDPMediaFormat::AdjustMediaFormat(OpalMediaFormat & mediaFormat, unsigned bandwidth) const
+{
+  SetMediaFormatOptions(mediaFormat);
 
   /* Set bandwidth limits, if present, e.g. "SDP-Bandwidth-AS" and "SDP-Bandwidth-TIAS".
 
@@ -474,17 +477,17 @@ bool SDPMediaFormat::PostDecode(const OpalMediaFormatList & mediaFormats, unsign
      levels to assure that a max bit rate is not exceeded. */
   for (SDPBandwidth::const_iterator r = m_parent.GetBandwidth().begin(); r != m_parent.GetBandwidth().end(); ++r) {
     if (r->second > 0)
-      m_mediaFormat.AddOption(new OpalMediaOptionValue<OpalBandwidth>(SDPBandwidthPrefix + r->first,
+      mediaFormat.AddOption(new OpalMediaOptionValue<OpalBandwidth>(SDPBandwidthPrefix + r->first,
                                                   false, OpalMediaOption::MinMerge, r->second), true);
   }
 
-  if (bandwidth > 1000 && bandwidth < (unsigned)m_mediaFormat.GetOptionInteger(OpalMediaFormat::MaxBitRateOption())) {
-    PTRACE(4, "Adjusting format \"" << m_mediaFormat << "\" bandwidth to " << bandwidth);
-    m_mediaFormat.SetOptionInteger(OpalMediaFormat::MaxBitRateOption(), bandwidth);
+  if (bandwidth > 1000 && bandwidth < (unsigned)mediaFormat.GetOptionInteger(OpalMediaFormat::MaxBitRateOption())) {
+    PTRACE(4, "Adjusting format \"" << mediaFormat << "\" bandwidth to " << bandwidth);
+    mediaFormat.SetOptionInteger(OpalMediaFormat::MaxBitRateOption(), bandwidth);
   }
 
-  m_mediaFormat.SetOptionString(OpalMediaFormat::ProtocolOption(), PLUGINCODEC_OPTION_PROTOCOL_SIP);
-  if (m_mediaFormat.ToNormalisedOptions())
+  mediaFormat.SetOptionString(OpalMediaFormat::ProtocolOption(), PLUGINCODEC_OPTION_PROTOCOL_SIP);
+  if (mediaFormat.ToNormalisedOptions())
     return true;
 
   PTRACE(2, "Could not normalise format \"" << m_encodingName << "\", pt=" << m_payloadType << ", removing.");

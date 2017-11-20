@@ -153,6 +153,7 @@ class SDPMediaFormat : public PObject
     virtual bool PostDecode(const OpalMediaFormatList & mediaFormats, unsigned bandwidth);
 
   protected:
+    virtual bool AdjustMediaFormat(OpalMediaFormat & mediaFormat, unsigned bandwidth) const;
     virtual void SetMediaFormatOptions(OpalMediaFormat & mediaFormat) const;
 
     SDPMediaDescription       & m_parent;
