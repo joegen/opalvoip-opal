@@ -84,7 +84,7 @@ function test_fax()
   $FAXOPAL $XX_ARG $TX_ARG < /dev/null >> $TX_OUT 2>&1 &
   tx_pid=$!
 
-  echo -n "Performing test: $1, $2 (pid=$tx_pid) -> $3 (pid=$rx_pid) ... "
+  echo -n "Performing test:$4 $1, $2 (pid=$tx_pid) -> $3 (pid=$rx_pid) ... "
   wait $rx_pid $tx_pid
 
   if grep -q Success $TX_OUT && grep -q Success $RX_OUT ; then
