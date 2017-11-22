@@ -953,13 +953,29 @@ OpalUDPMediaTransport::OpalUDPMediaTransport(const PString & name)
 
 OpalTransportAddress OpalUDPMediaTransport::GetLocalAddress(SubChannels subchannel) const
 {
-  return GetChannel(subchannel) ? m_socketInfo[subchannel].m_localAddress : OpalTransportAddress();
+  OpalTransportAddress addr;
+
+  P_INSTRUMENTED_LOCK_READ_ONLY();
+  if (lock.IsLocked() && (size_t)subchannel < m_subchannels.size()) {
+    addr = m_socketInfo[subchannel].m_localAddress;
+    addr.MakeUnique();
+  }
+
+  return addr;
 }
 
 
 OpalTransportAddress OpalUDPMediaTransport::GetRemoteAddress(SubChannels subchannel) const
 {
-  return GetChannel(subchannel) ? m_socketInfo[subchannel].m_remoteAddress : OpalTransportAddress();
+  OpalTransportAddress addr;
+
+  P_INSTRUMENTED_LOCK_READ_ONLY();
+  if (lock.IsLocked() && (size_t)subchannel < m_subchannels.size()) {
+    addr = m_socketInfo[subchannel].m_remoteAddress;
+    addr.MakeUnique();
+  }
+
+  return addr;
 }
 
 
