@@ -780,9 +780,17 @@ bool SIPConnection::SwitchFaxMediaStreams(bool toT38)
 
   PTRACE(3, "Switching to " << (toT38 ? "T.38" : "audio") << " on " << *this);
   OpalMediaFormat format = toT38 ? OpalT38 : OpalG711uLaw;
-  if (m_ownerCall.OpenSourceMediaStreams(*this, format.GetMediaType(), 1, format))
+  if (m_ownerCall.OpenSourceMediaStreams(*this,
+                                         format.GetMediaType(),
+                                         1,
+                                         format,
+#if OPAL_VIDEO
+                                         OpalVideoFormat::eNoRole,
+#endif
+                                         true))
     return true;
 
+  PTRACE(3, "Failed switch to " << (toT38 ? "T.38" : "audio") << " on " << *this);
   m_ownerCall.ResetSwitchingT38();
   return false;
 }
