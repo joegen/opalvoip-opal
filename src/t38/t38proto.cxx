@@ -942,6 +942,18 @@ void OpalFaxConnection::OnSwitchTimeout(PTimer &, P_INT_PTR)
   if (m_disableT38 || IsReleased())
     return;
 
+  PSafePtr<OpalConnection> other = GetOtherPartyConnection();
+  if (other == NULL)
+    return;
+
+  if (other->GetMediaStream(OpalMediaType::Fax(), false) != NULL &&
+             GetMediaStream(OpalMediaType::Fax(), false) != NULL &&
+      other->GetMediaStream(OpalMediaType::Fax(), true ) != NULL &&
+             GetMediaStream(OpalMediaType::Fax(), true ) != NULL) {
+    PTRACE(4, "FAX\tSwitch timer fired, but already switched.");
+    return;
+  }
+
   PTRACE(2, "FAX\tDid not switch to T.38 mode, forcing switch");
   GetEndPoint().GetManager().QueueDecoupledEvent(
           new PSafeWorkNoArg<OpalFaxConnection>(this, &OpalFaxConnection::InternalOpenFaxStreams));
