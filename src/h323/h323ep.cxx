@@ -123,9 +123,9 @@ H323EndPoint::H323EndPoint(OpalManager & manager)
   manager.AttachEndPoint(this, "h323s");
 
   SetCompatibility(H323Connection::e_NoMultipleTunnelledH245, "Cisco IOS");
-  SetCompatibility(H323Connection::e_BadMasterSlaveConflict,  "NetMeeting|HDX");
+  SetCompatibility(H323Connection::e_BadMasterSlaveConflict,  "NetMeeting|HDX|RealPresence");
   SetCompatibility(H323Connection::e_NoUserInputCapability,   "AltiServ-ITG");
-  SetCompatibility(H323Connection::e_H224MustBeSession3,      "HDX|Tandberg");
+  SetCompatibility(H323Connection::e_H224MustBeSession3,      "HDX|Tandberg|RealPresence");
   SetCompatibility(H323Connection::e_NeedMSDAfterNonEmptyTCS, "Avaya|Radvision");
   SetCompatibility(H323Connection::e_ForceMaintainConnection, "Multivantage");
 
