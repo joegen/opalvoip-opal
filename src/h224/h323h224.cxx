@@ -41,11 +41,15 @@
 
 #include <asn/h245.h>
 
+// Most H.323 clients want H.224 to be 100, so we force our side to be the same.
+static const RTP_DataFrame::PayloadTypes HardCodedPayloadType = (RTP_DataFrame::PayloadTypes)100;
+
 H323_H224_AnnexQCapability::H323_H224_AnnexQCapability(const OpalMediaFormat & mediaFormat)
   : H323GenericDataCapability("0.0.8.224.1.0", mediaFormat.GetMaxBandwidth())
 {
   m_mediaFormat = mediaFormat;
-  SetPayloadType((RTP_DataFrame::PayloadTypes)100);
+  m_mediaFormat.SetPayloadType(HardCodedPayloadType);
+  SetPayloadType(HardCodedPayloadType);
 }
 
 
@@ -70,7 +74,8 @@ H323_H224_HDLCTunnelingCapability::H323_H224_HDLCTunnelingCapability(const OpalM
   : H323DataCapability(mediaFormat.GetMaxBandwidth())
 {
   m_mediaFormat = mediaFormat;
-  SetPayloadType((RTP_DataFrame::PayloadTypes)100);
+  m_mediaFormat.SetPayloadType(HardCodedPayloadType);
+  SetPayloadType(HardCodedPayloadType);
 }
 
 
