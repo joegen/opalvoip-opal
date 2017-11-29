@@ -127,7 +127,7 @@ PBoolean H323_RTPChannel::OnSendingPDU(H245_H2250LogicalChannelParameters & para
 
   // Set dynamic payload type, if is one
   RTP_DataFrame::PayloadTypes rtpPayloadType = GetDynamicRTPPayloadType();
-  if (rtpPayloadType >= RTP_DataFrame::DynamicBase && rtpPayloadType < RTP_DataFrame::IllegalPayloadType) {
+  if (rtpPayloadType > RTP_DataFrame::LastKnownPayloadType && rtpPayloadType < RTP_DataFrame::IllegalPayloadType) {
     param.IncludeOptionalField(H245_H2250LogicalChannelParameters::e_dynamicRTPPayloadType);
     param.m_dynamicRTPPayloadType = (int)rtpPayloadType;
   }
@@ -168,7 +168,7 @@ void H323_RTPChannel::OnSendOpenAck(H245_H2250LogicalChannelAckParameters & para
 
   // Set dynamic payload type, if is one
   int rtpPayloadType = GetDynamicRTPPayloadType();
-  if (rtpPayloadType >= RTP_DataFrame::DynamicBase && rtpPayloadType < RTP_DataFrame::IllegalPayloadType) {
+  if (rtpPayloadType > RTP_DataFrame::LastKnownPayloadType && rtpPayloadType < RTP_DataFrame::IllegalPayloadType) {
     param.IncludeOptionalField(H245_H2250LogicalChannelAckParameters::e_dynamicRTPPayloadType);
     param.m_dynamicRTPPayloadType = rtpPayloadType;
   }
