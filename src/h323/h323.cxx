@@ -4955,7 +4955,7 @@ PBoolean H323Connection::OnConflictingLogicalChannel(H323Channel & conflictingCh
 
   bool fromRemote = conflictingChannel.GetNumber().IsFromRemote();
   H323Channel * otherChannel = FindChannel(sessionID, !fromRemote);
-  H323Capability * capability;
+  const H323Capability * conflictingCapability;
 
   if (fromRemote) {
     if (otherChannel != NULL) {
@@ -4974,7 +4974,7 @@ PBoolean H323Connection::OnConflictingLogicalChannel(H323Channel & conflictingCh
       }
     }
 
-    capability = m_remoteCapabilities.FindCapability(conflictingChannel.GetCapability());
+    conflictingCapability = &conflictingChannel.GetCapability();
   }
   else {
     // The only way for the following is if we had two OLC's running at the same
@@ -4992,13 +4992,21 @@ PBoolean H323Connection::OnConflictingLogicalChannel(H323Channel & conflictingCh
     }
 
     CloseLogicalChannelNumber(conflictingChannel.GetNumber());
-    capability = m_remoteCapabilities.FindCapability(otherChannel->GetCapability());
+
+    conflictingCapability = &otherChannel->GetCapability();
   }
 
+  H323Capability * capability = m_remoteCapabilities.FindCapability(*conflictingCapability);
   if (capability == NULL) {
     PTRACE(1, "H323\tCould not resolve conflict, capability not available on remote.");
     return true;
   }
+
+  /* Update the new capability we are about to use with same media format as conflicting
+      channel capability that is remaining behind. This assures any other random
+      incompatibilities, e.g. payload type used for FECC-RTP, are removed. */
+  if (capability)
+    capability->UpdateMediaFormat(conflictingCapability->GetMediaFormat());
 
   return m_logicalChannels->Open(*capability, sessionID, 0, mediaStream);
 }
