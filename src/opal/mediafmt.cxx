@@ -1073,15 +1073,18 @@ bool OpalMediaFormat::Update(const OpalMediaFormat & mediaFormat)
   PWaitAndSignal m(m_mutex);
 
   if (!IsValid()) {
+    PTRACE(4, "MediaFormat\tUpdate (initial) of " << *this);
     *this = mediaFormat;
     return true;
   }
 
   if (*this != mediaFormat) {
-    MakeUnique();
+    PTRACE(4, "MediaFormat\tUpdate (merge) of " << *this << " from " << mediaFormat);
+    SetPayloadType(mediaFormat.GetPayloadType()); // Does MakeUnique()
     return m_info->OpalMediaFormatInternal::Merge(*mediaFormat.m_info);
   }
 
+  PTRACE(4, "MediaFormat\tUpdate (overwrite) of " << *this);
   *this = mediaFormat;
   return true;
 }
