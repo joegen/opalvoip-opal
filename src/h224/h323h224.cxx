@@ -48,8 +48,6 @@ H323_H224_AnnexQCapability::H323_H224_AnnexQCapability(const OpalMediaFormat & m
   : H323GenericDataCapability("0.0.8.224.1.0", mediaFormat.GetMaxBandwidth())
 {
   m_mediaFormat = mediaFormat;
-  m_mediaFormat.SetPayloadType(HardCodedPayloadType);
-  SetPayloadType(HardCodedPayloadType);
 }
 
 
@@ -74,8 +72,6 @@ H323_H224_HDLCTunnelingCapability::H323_H224_HDLCTunnelingCapability(const OpalM
   : H323DataCapability(mediaFormat.GetMaxBandwidth())
 {
   m_mediaFormat = mediaFormat;
-  m_mediaFormat.SetPayloadType(HardCodedPayloadType);
-  SetPayloadType(HardCodedPayloadType);
 }
 
 
