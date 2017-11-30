@@ -90,6 +90,7 @@ SIPHandler::SIPHandler(SIP_PDU::Methods method,
   , m_state(Unavailable)
   , m_receivedResponse(false)
   , m_expireTimer(ep.GetThreadPool(), ep, m_callID, &SIPHandler::OnExpireTimeout)
+  , m_retryForbidden(params.m_retryForbidden)
 {
   PTRACE_CONTEXT_ID_NEW();
 
@@ -381,6 +382,10 @@ void SIPHandler::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & resp
       OnReceivedTemporarilyUnavailable(transaction, response);
       break;
 
+    case SIP_PDU::Failure_Forbidden:
+      OnReceivedForbidden(transaction, response);
+      break;
+
     default :
       if (responseClass == 2)
         OnReceivedOK(transaction, response);
@@ -389,6 +394,14 @@ void SIPHandler::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & resp
   }
 }
 
+void SIPHandler::OnReceivedForbidden(SIPTransaction & transaction, SIP_PDU & response)
+{
+  OnFailed(SIP_PDU::Failure_Forbidden);
+  if (m_retryForbidden) {
+    PTRACE(2, "SIP\tRetrying on 403 Forbidden (in violation of RFC 3261) on " << transaction);
+    RetryLater(response.GetMIME().GetInteger("Retry-After", m_offlineExpireTime));
+  }
+}
 
 void SIPHandler::OnReceivedIntervalTooBrief(SIPTransaction & /*transaction*/, SIP_PDU & response)
 {
@@ -489,7 +502,7 @@ void SIPHandler::OnFailed(SIP_PDU::StatusCodes code)
 
   switch (code) {
     case SIP_PDU::Failure_TemporarilyUnavailable:
-      break;
+      return;
 
     case SIP_PDU::Local_TransportError :
     case SIP_PDU::Local_Timeout :
@@ -498,18 +511,24 @@ void SIPHandler::OnFailed(SIP_PDU::StatusCodes code)
     case SIP_PDU::Failure_ServerTimeout:
       if (GetState() != Unsubscribing) {
         SetState(Unavailable);
-        break;
+        return;
       }
-      // Do next case to finalise Unsubscribe even though there was an error
+      break;
 
-    default :
-      PTRACE(4, "Not retrying " << GetMethod() << " due to error response " << code);
-      m_currentExpireTime = 0; // OK, stop trying
-      m_expireTimer.Stop(false);
-      if (GetState() != Unsubscribing)
-        SendStatus(SIP_PDU::Successful_OK, Unsubscribing);
-      SetState(Unsubscribed); // Allow garbage collection thread to clean up
+    case SIP_PDU::Failure_Forbidden:
+      if (m_retryForbidden && GetState() != Unsubscribing) {
+        SetState(Unavailable);
+        return;
+      }
+      break;
   }
+
+  PTRACE(4, "Not retrying " << GetMethod() << " due to error response " << code);
+  m_currentExpireTime = 0; // OK, stop trying
+  m_expireTimer.Stop(false);
+  if (GetState() != Unsubscribing)
+    SendStatus(SIP_PDU::Successful_OK, Unsubscribing);
+  SetState(Unsubscribed); // Allow garbage collection thread to clean up
 }
 
 

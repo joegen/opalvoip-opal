@@ -130,6 +130,7 @@ public:
   virtual void OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & response);
   virtual void OnReceivedIntervalTooBrief(SIPTransaction & transaction, SIP_PDU & response);
   virtual void OnReceivedTemporarilyUnavailable(SIPTransaction & transaction, SIP_PDU & response);
+  virtual void OnReceivedForbidden(SIPTransaction & transaction, SIP_PDU & response);
   virtual void OnReceivedAuthenticationRequired(SIPTransaction & transaction, SIP_PDU & response);
   virtual void OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response);
   virtual void OnTransactionFailed(SIPTransaction & transaction);
@@ -173,6 +174,7 @@ protected:
   bool                        m_receivedResponse;
   SIPPoolTimer<SIPHandler>    m_expireTimer; 
   OpalProductInfo             m_productInfo;
+  bool                        m_retryForbidden;
 };
 
 #if PTRACING

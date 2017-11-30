@@ -3612,6 +3612,7 @@ SIPParameters::SIPParameters(const PString & aor, const PString & remote)
   , m_restoreTime(30)
   , m_minRetryTime(PMaxTimeInterval)
   , m_maxRetryTime(PMaxTimeInterval)
+  , m_retryForbidden(false)
   , m_userData(NULL)
 {
 }
