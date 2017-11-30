@@ -1018,7 +1018,9 @@ GstConnection::GstConnection(OpalCall & call,
   : OpalLocalConnection(call, ep, userData, options, stringOptions, tokenPrefix)
   , m_endpoint(ep)
 {
+#if OPAL_SDP
   m_stringOptions.SetBoolean(OPAL_OPT_SDP_SSRC_INFO, false);
+#endif
 }
 
 

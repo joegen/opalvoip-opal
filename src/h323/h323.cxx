@@ -400,6 +400,7 @@ bool H323Connection::SetAlertingType(const PString & info)
 PString H323Connection::GetSupportedFeatures() const
 {
   PStringStream strm;
+#if OPAL_H460
   if (m_features != NULL) {
     bool outputNewline = false;
     for (H460_FeatureSet::const_iterator it = m_features->begin(); it != m_features->end(); ++it) {
@@ -410,6 +411,7 @@ PString H323Connection::GetSupportedFeatures() const
       strm << it->first;
     }
   }
+#endif // OPAL_H460
   return strm;
 }
 

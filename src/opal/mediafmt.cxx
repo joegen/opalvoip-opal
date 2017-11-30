@@ -2451,7 +2451,11 @@ namespace OpalRtx
                         RTP_DataFrame::DynamicBase,
                         EncodingName(),
                         false, 0, 0, 0,
-                        mediaType == OpalMediaType::Video() ? VideoClockRate : AudioClockRate,
+#if OPAL_VIDEO
+                        mediaType == OpalMediaType::Video() ? VideoClockRate :
+#else
+                        AudioClockRate,
+#endif
                         0, true)
     {
       OpalMediaOptionUnsigned * opt = new OpalMediaOptionUnsigned(AssociatedPayloadTypeOption(),
