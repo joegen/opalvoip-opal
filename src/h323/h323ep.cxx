@@ -823,7 +823,8 @@ PSafePtr<OpalConnection> H323EndPoint::MakeConnection(OpalCall & call,
 PStringList H323EndPoint::GetAvailableStringOptions() const
 {
   static char const * const StringOpts[] = {
-    OPAL_OPT_Q931_BEARER_CAPS
+    OPAL_OPT_Q931_BEARER_CAPS,
+    OPAL_OPT_Q931_BEARER_BANDWIDTH
   };
 
   PStringList list = OpalRTPEndPoint::GetAvailableStringOptions();

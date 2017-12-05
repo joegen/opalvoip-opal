@@ -115,9 +115,15 @@ class OpalCall;
 class H460_FeatureSet;
 
 
-/**OpalConnection::StringOption key to an . Default true.
+/**String option key to override the Q.931 bearer capabilities sent.
+   Default empty string.
   */
 #define OPAL_OPT_Q931_BEARER_CAPS "Q931-Bearer-Caps"
+
+/**String option key to obey the remote Q.931 bearer capabilities indication
+   of available bandwidth. Default true.
+  */
+#define OPAL_OPT_Q931_BEARER_BANDWIDTH "Q931-Bearer-Bandwidth"
 
 
 ///////////////////////////////////////////////////////////////////////////////

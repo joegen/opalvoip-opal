@@ -2214,6 +2214,9 @@ void H323Connection::SetOutgoingBearerCapabilities(H323SignalPDU & pdu) const
 
 void H323Connection::SetIncomingBearerCapabilities(const H323SignalPDU & pdu)
 {
+  if (!m_stringOptions.GetBoolean(OPAL_OPT_Q931_BEARER_BANDWIDTH, true))
+    return;
+
   // Make sure we clamp our bandwidth to whatever they said
   Q931::InformationTransferCapability bearerCap;
   unsigned transferRate;
