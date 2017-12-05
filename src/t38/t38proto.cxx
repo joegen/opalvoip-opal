@@ -92,7 +92,7 @@ OpalFaxSession::~OpalFaxSession()
 
 void OpalFaxSession::ApplyMediaOptions(const OpalMediaFormat & mediaFormat)
 {
-  PString option = mediaFormat.GetOptionString("UDPTL-Redundancy");
+  PString option = mediaFormat.GetOptionString(OPAL_UDPTLRedundancy);
   if (!option.IsEmpty()) {
     PStringArray value = option.Tokenise(",", FALSE);
     PWaitAndSignal mutex(m_writeMutex);
@@ -119,35 +119,35 @@ void OpalFaxSession::ApplyMediaOptions(const OpalMediaFormat & mediaFormat)
 #endif
   }
 
-  int optint = mediaFormat.GetOptionInteger("UDPTL-Redundancy-Interval", m_redundancyInterval.GetSeconds());
+  int optint = mediaFormat.GetOptionInteger(OPAL_UDPTLRedundancyInterval, m_redundancyInterval.GetSeconds());
   if (optint != m_redundancyInterval.GetSeconds()) {
     PWaitAndSignal mutex(m_writeMutex);
     m_redundancyInterval.SetInterval(0, optint);
     PTRACE(3, "Use redundancy interval " << m_redundancyInterval);
   }
 
-  optint = mediaFormat.GetOptionInteger("UDPTL-Keep-Alive-Interval", m_keepAliveInterval.GetInterval());
+  optint = mediaFormat.GetOptionInteger(OPAL_UDPTLKeepAliveInterval, m_keepAliveInterval.GetInterval());
   if (optint != m_keepAliveInterval.GetSeconds()) {
     PWaitAndSignal mutex(m_writeMutex);
     m_keepAliveInterval.SetInterval(0, optint);
     PTRACE(3, "Use keep-alive interval " << m_keepAliveInterval);
   }
 
-  bool optbool = mediaFormat.GetOptionBoolean("UDPTL-Optimise-On-Retransmit", m_optimiseOnRetransmit);
+  bool optbool = mediaFormat.GetOptionBoolean(OPAL_UDPTLOptimiseRetransmit, m_optimiseOnRetransmit);
   if (optbool != m_optimiseOnRetransmit) {
     PWaitAndSignal mutex(m_writeMutex);
     m_optimiseOnRetransmit = optbool;
     PTRACE(3, "Use optimise on retransmit - " << (m_optimiseOnRetransmit ? "true" : "false"));
   }
 
-  optbool = mediaFormat.GetOptionBoolean("UDPTL-Raw-Mode", m_rawUDPTL);
+  optbool = mediaFormat.GetOptionBoolean(OPAL_UDPTLRawMode, m_rawUDPTL);
   if (optbool != m_rawUDPTL) {
     PWaitAndSignal mutex(m_writeMutex);
     m_rawUDPTL = optbool;
     PTRACE(3, "Setting raw UDPTL mode to " << m_rawUDPTL);
   }
 
-  optint = mediaFormat.GetOptionInteger("T38FaxMaxDatagram", m_datagramSize);
+  optint = mediaFormat.GetOptionInteger(OPAL_T38FaxMaxDatagram, m_datagramSize);
   if (optint != (int)m_datagramSize) {
     PWaitAndSignal mutex(m_writeMutex);
     m_datagramSize = optint;

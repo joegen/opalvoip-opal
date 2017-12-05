@@ -57,23 +57,28 @@ class PASN_OctetString;
 
 #define OPAL_FAX_TIFF_FILE "TIFF-File"
 
-#define OPAL_T38FaxRateManagement   "T38FaxRateManagement"
-#define OPAL_T38localTCF            "localTCF"
-#define OPAL_T38transferredTCF      "transferredTCF"
-#define OPAL_T38FaxVersion          "T38FaxVersion"
-#define OPAL_T38MaxBitRate          "T38MaxBitRate"
-#define OPAL_T38FaxMaxBuffer        "T38FaxMaxBuffer"
-#define OPAL_T38FaxMaxDatagram      "T38FaxMaxDatagram"
-#define OPAL_T38FaxUdpEC            "T38FaxUdpEC"
-#define OPAL_T38UDPFEC              "t38UDPFEC"
-#define OPAL_T38UDPRedundancy       "t38UDPRedundancy"
-#define OPAL_T38FaxFillBitRemoval   "T38FaxFillBitRemoval"
-#define OPAL_T38FaxTranscodingMMR   "T38FaxTranscodingMMR"
-#define OPAL_T38FaxTranscodingJBIG  "T38FaxTranscodingJBIG"
-#define OPAL_T38UseECM              "Use-ECM"
-#define OPAL_FaxStationIdentifier   "Station-Identifier"
-#define OPAL_FaxHeaderInfo          "Header-Info"
-#define OPAL_UDPTLRawMode           "UDPTL-Raw-Mode"
+#define OPAL_T38FaxRateManagement    "T38FaxRateManagement"       ///< ITU-T T.38 parameter
+#define OPAL_T38localTCF             "localTCF"                   ///< Enum value for T38FaxRateManagement
+#define OPAL_T38transferredTCF       "transferredTCF"             ///< Enum value for T38FaxRateManagement
+#define OPAL_T38FaxVersion           "T38FaxVersion"              ///< ITU-T T.38 parameter
+#define OPAL_T38MaxBitRate           "T38MaxBitRate"              ///< ITU-T T.38 parameter
+#define OPAL_T38FaxMaxBuffer         "T38FaxMaxBuffer"            ///< ITU-T T.38 parameter
+#define OPAL_T38FaxMaxDatagram       "T38FaxMaxDatagram"          ///< ITU-T T.38 parameter
+#define OPAL_T38FaxUdpEC             "T38FaxUdpEC"                ///< ITU-T T.38 parameter
+#define OPAL_T38UDPFEC               "t38UDPFEC"                  ///< Enum value for T38FaxUdpEC
+#define OPAL_T38UDPRedundancy        "t38UDPRedundancy"           ///< Enum value for T38FaxUdpEC
+#define OPAL_T38FaxFillBitRemoval    "T38FaxFillBitRemoval"       ///< ITU-T T.38 parameter
+#define OPAL_T38FaxTranscodingMMR    "T38FaxTranscodingMMR"       ///< ITU-T T.38 parameter
+#define OPAL_T38FaxTranscodingJBIG   "T38FaxTranscodingJBIG"      ///< ITU-T T.38 parameter
+#define OPAL_T38UseECM               "Use-ECM"                    ///< T.30 Error Correction Mode (boolean)
+#define OPAL_FaxStationIdentifier    "Station-Identifier"         ///< T.30 fax station identifier string.
+#define OPAL_FaxHeaderInfo           "Header-Info"                ///< T.30 fax header info string.
+#define OPAL_UDPTLRawMode            "UDPTL-Raw-Mode"             ///< Boolean indicating the "other" media stream is providing UDPTL rather than IFP
+#define OPAL_UDPTLRedundancy         "UDPTL-Redundancy"           ///< String to set redundancy pattern
+#define OPAL_UDPTLRedundancyInterval "UDPTL-Redundancy-Interval"  ///< Seconds between sending redundant packets.
+#define OPAL_UDPTLOptimiseRetransmit "UDPTL-Optimise-On-Retransmit" ///< Do not including redundant IFP in retransmitted UDPTL.
+#define OPAL_UDPTLKeepAliveInterval  "UDPTL-Keep-Alive-Interval"  ///< Seconds between sending "keep-alive" packets.
+
 
 
 #if OPAL_FAX
