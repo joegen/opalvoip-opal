@@ -4173,6 +4173,36 @@ void H323Connection::OnSetLocalCapabilities()
   else if (rfc2833Capability != NULL)
     m_localCapabilities.SetCapability(0, P_MAX_INDEX, rfc2833Capability);
 
+  // Make sure all the payload types are between 96 and 127, first get all pt's in use
+  std::map<RTP_DataFrame::PayloadTypes, PINDEX> ptMap;
+  for (PINDEX i = 0; i < m_localCapabilities.GetSize(); ++i)
+    ptMap[m_localCapabilities[i].GetMediaFormat().GetPayloadType()] = i;
+
+  // Remove "known" ones
+  std::map<RTP_DataFrame::PayloadTypes, PINDEX>::iterator it;
+  while ((it = ptMap.begin()) != ptMap.end() && it->first <= RTP_DataFrame::LastKnownPayloadType)
+    ptMap.erase(it);
+
+  // Adjust those below 96
+  while ((it = ptMap.begin()) != ptMap.end() && it->first < RTP_DataFrame::DynamicBase) {
+    H323Capability & capability = m_localCapabilities[it->second];
+
+    RTP_DataFrame::PayloadTypes pt = RTP_DataFrame::DynamicBase;
+    while (ptMap.find(pt) != ptMap.end())
+      pt = (RTP_DataFrame::PayloadTypes)(pt + 1);
+    if (pt == RTP_DataFrame::IllegalPayloadType)
+      PTRACE(2, "Cannot reallocate payload type " << it->first << " for " << capability);
+    else {
+      PTRACE(3, "Reallocating payload type " << it->first << " to " << pt << " for " << capability);
+      OpalMediaFormat mediaFormat = capability.GetMediaFormat();
+      mediaFormat.SetPayloadType(pt);
+      capability.UpdateMediaFormat(mediaFormat);
+      ptMap[pt] = it->second;
+    }
+
+    ptMap.erase(it);
+  }
+
   m_localMediaFormats = m_localCapabilities.GetMediaFormats();
   PTRACE(3, "H323\tSetLocalCapabilities: "
          << setfill(',') << m_localMediaFormats << '\n'
