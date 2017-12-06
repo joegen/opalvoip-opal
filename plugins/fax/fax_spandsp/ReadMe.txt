@@ -6,7 +6,7 @@ This plugin requires an external source code project, SpanDSP.
 Spandsp is a LGPL library and suite of programs that implement a faxmodem. A
 known version, compatible with OPAL, is available from the following URL:
 
-    http://www.soft-switch.org/downloads/spandsp/spandsp-0.0.6pre21.tgz
+    http://www.soft-switch.org/downloads/spandsp/spandsp-0.0.6.tgz
 
 
 
@@ -18,31 +18,33 @@ the same directory is the plug in, e.g.
 
 	opal\plugins\fax\fax_spandsp\spandsp-0.0.6
 
-After installing SpanDSP, simply then use the spandsp_fax_2005.sln or
-spandsp_fax_2008.sln file to build the plug in. Note Visual Studio 2003 is
-not supported.
+After installing SpanDSP, open ...\spandsp-0.0.6\src\libspandsp.2008.sln and
+allow it up upgrade to whatever compiler you are using. Depending on which
+version of Visual Studio you upgraded to, you may need to edit the
+spandsp-0.0.6\src\msvc\config.h file and remove the #define for snprintf. You
+may also want to remove the INFINITY from spandsp-0.0.6\src\msvc\inttypes.h.
 
-Note, this will automatically try and download libtiff, another open source
-library for TIFF file operations. Thus the first time you build it you should
-be connected to the Internet so the download can proceed.
+Right click on "Download TIFF" and build it. This will automatically try and
+download libtiff, another open source library for TIFF file operations. Thus
+the first time you build it you should be connected to the Internet so the
+download can proceed. Then you will need to edit tiff-3.8.2\libtiff\tiffconf.h
+and comment out the entries for JPEG_SUPPORT, LZW_SUPPORT, PIXARLOG_SUPPORT
+ and ZIP_SUPPORT.
 
-Then copy the following two files from:
+Then build the Debug and Release versions of libspandsp.
+
+After building SpanDSP you can load opal\plugins\plugins_XXXX.sln, enter the
+Configuration Manager and enable the SpanDSP Codec. You can then build the
+plug in.
+
+Finally, copy the following two files from:
+
 	opal\bin\plugins\Release\SpanDSPFax_ptplugin.dll
 	opal\plugins\fax\fax_spandsp\Release\libspandsp.dll
 
-to C:\PTLib_Plugins, or wherever you have set the PTPLUGINDIR environment
-variable. It should work in the same directory as your application as well.
-
-Additional note: If you get errors building libtiff, you may need to edit
-tiff-3.8.2\libtiff\tiffconf.h and comment out the entries for JPEG_SUPPORT,
-LZW_SUPPORT, PIXARLOG_SUPPORT and ZIP_SUPPORT.
-
-Another note: if using Visual Studio 2010 or 2012, the spandsp_fax_2008.sln
-file will upgrade. Normally we would provide the later solution/project
-files, but in this case the spandsp tar ball only has 2008 versions, and
-they cannot be converted if already in a 2010/2012 solution. It is
-recommended that you rename spandsp_fax_2008.sln to spandsp_fax_2010.sln
-after conversion to avoid SVN always reporting a modified file.
+to C:\Program Files\PTLib Plugins, or wherever you have set the PTLIBPLUGINDIR
+environment variable. It should work in the same directory as your application
+as well.
 
 
 Building on Linux

@@ -2620,9 +2620,8 @@ PBoolean H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_Octe
 
     PTRACE(4, "H225\tFast start open:\n  " << setprecision(2) << open);
     bool transmitter = open.HasOptionalField(H245_OpenLogicalChannel::e_reverseLogicalChannelParameters);
-    const H245_DataType & dataType =
-          transmitter ? open.m_reverseLogicalChannelParameters.m_dataType
-                   : open.m_forwardLogicalChannelParameters.m_dataType;
+    const H245_DataType & dataType = transmitter ? open.m_reverseLogicalChannelParameters.m_dataType
+                                                 : open.m_forwardLogicalChannelParameters.m_dataType;
 
     const H245_H2250LogicalChannelParameters * param = NULL;
     if (transmitter && open.m_reverseLogicalChannelParameters.m_multiplexParameters.GetTag() ==
@@ -2637,31 +2636,32 @@ PBoolean H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_Octe
       if (channel != NULL) {
         OpalMediaStreamPtr mediaStream = channel->GetMediaStream();
         if (mediaStream == NULL) {
-          PTRACE(2, "H225\tFast restart has logical channel but no media stream!");
+          PTRACE(2, "H225\tFast start has logical channel but no media stream!");
           continue;
         }
 
         if (dataType.GetTag() == H245_DataType::e_nullData) {
-          PTRACE(3, "H225\tFast restart pausing " << *mediaStream);
+          PTRACE(3, "H225\tFast start pausing " << *mediaStream);
           channel->GetMediaStream()->SetPaused(true);
           continue;
         }
 
         unsigned error = 1000;
         if (!channel->OnReceivedPDU(open, error)) {
-          PTRACE(2, "H225\tFast restart capability error: " << error);
+          PTRACE(2, "H225\tFast start capability error: " << error);
           continue;
         }
 
-        PTRACE(3, "H225\tFast restart resuming " << *mediaStream);
+        PTRACE(3, "H225\tFast start resuming " << *mediaStream);
         channel->GetMediaStream()->SetPaused(false);
         pauseChannels = false;
         continue;
       }
-      PTRACE(4, "H225\tFast restart could not find session " << (unsigned)param->m_sessionID << (transmitter ? " from" : " to") << " remote");
+      PTRACE(4, "H225\tFast start could not find existing channel using session "
+             << (unsigned)param->m_sessionID << (transmitter ? " to" : " from") << " remote");
     }
     else
-      PTRACE(4, "H225\tFast restart cannot be performed without multiplexParameters");
+      PTRACE(4, "H225\tFast start cannot be performed without multiplexParameters");
 
     if (dataType.GetTag() == H245_DataType::e_nullData)
       continue;
@@ -2721,7 +2721,7 @@ PBoolean H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_Octe
     if (m_mediaStreams.IsEmpty())
       PTRACE(3, "H225\tAll fast start OLC's nullData, deferring open");
     else if (pauseChannels) {
-      PTRACE(3, "H225\tFast restart, pausing media streams");
+      PTRACE(3, "H225\tFast start, pausing media streams");
       for (OpalMediaStreamPtr stream(m_mediaStreams); stream != NULL; ++stream) {
         stream->SetPaused(true);
         OpalRTPSession * session = dynamic_cast<OpalRTPSession *>(GetMediaSession(stream->GetSessionID()));

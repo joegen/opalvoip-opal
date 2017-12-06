@@ -83,6 +83,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Video", "Video", "{9DF65381
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "LID", "LID", "{81EE9ADA-BC66-4F45-B667-1288DAFB1C0A}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SpanDSP Fax Codec", "fax\fax_spandsp\spandsp_fax_2015.vcxproj", "{D875EC01-6BBF-48EE-93F8-800BD6D76443}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug (licensed)|Win32 = Debug (licensed)|Win32
@@ -634,6 +636,22 @@ Global
 		{E513A4F2-5341-4CAE-A643-D47975AE291C}.Release|Win32.Build.0 = Release|Win32
 		{E513A4F2-5341-4CAE-A643-D47975AE291C}.Release|x64.ActiveCfg = Release|x64
 		{E513A4F2-5341-4CAE-A643-D47975AE291C}.Release|x64.Build.0 = Release|x64
+		{D875EC01-6BBF-48EE-93F8-800BD6D76443}.Debug (licensed)|Win32.ActiveCfg = Debug|Win32
+		{D875EC01-6BBF-48EE-93F8-800BD6D76443}.Debug (licensed)|Win32.Build.0 = Debug|Win32
+		{D875EC01-6BBF-48EE-93F8-800BD6D76443}.Debug (licensed)|x64.ActiveCfg = Debug|x64
+		{D875EC01-6BBF-48EE-93F8-800BD6D76443}.Debug (licensed)|x64.Build.0 = Debug|x64
+		{D875EC01-6BBF-48EE-93F8-800BD6D76443}.Debug|Win32.ActiveCfg = Debug|Win32
+		{D875EC01-6BBF-48EE-93F8-800BD6D76443}.Debug|Win32.Build.0 = Debug|Win32
+		{D875EC01-6BBF-48EE-93F8-800BD6D76443}.Debug|x64.ActiveCfg = Debug|x64
+		{D875EC01-6BBF-48EE-93F8-800BD6D76443}.Debug|x64.Build.0 = Debug|x64
+		{D875EC01-6BBF-48EE-93F8-800BD6D76443}.Release (licensed)|Win32.ActiveCfg = Release|Win32
+		{D875EC01-6BBF-48EE-93F8-800BD6D76443}.Release (licensed)|Win32.Build.0 = Release|Win32
+		{D875EC01-6BBF-48EE-93F8-800BD6D76443}.Release (licensed)|x64.ActiveCfg = Release|x64
+		{D875EC01-6BBF-48EE-93F8-800BD6D76443}.Release (licensed)|x64.Build.0 = Release|x64
+		{D875EC01-6BBF-48EE-93F8-800BD6D76443}.Release|Win32.ActiveCfg = Release|Win32
+		{D875EC01-6BBF-48EE-93F8-800BD6D76443}.Release|Win32.Build.0 = Release|Win32
+		{D875EC01-6BBF-48EE-93F8-800BD6D76443}.Release|x64.ActiveCfg = Release|x64
+		{D875EC01-6BBF-48EE-93F8-800BD6D76443}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
