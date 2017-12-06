@@ -1511,11 +1511,6 @@ PBoolean H323Connection::OnReceivedSignalConnect(const H323SignalPDU & pdu)
                                                 : MonitorCallStatusTime)
                                         : PMaxTimeInterval);
 
-  // Set connected phase now so logic for not sending media before connected is not triggered
-  PSafePtr<OpalConnection> otherParty = GetOtherPartyConnection();
-  if (otherParty != NULL && !otherParty->IsNetworkConnection())
-    InternalOnConnected();
-
   // Check for fastStart data and start fast
   if (connect.HasOptionalField(H225_Connect_UUIE::e_fastStart))
     HandleFastStartAcknowledge(connect.m_fastStart);
@@ -1525,6 +1520,11 @@ PBoolean H323Connection::OnReceivedSignalConnect(const H323SignalPDU & pdu)
     m_fastStartState = FastStartDisabled;
     m_fastStartChannels.RemoveAll();
   }
+
+  // Set connected phase now so logic for not sending media before connected is not triggered
+  PSafePtr<OpalConnection> otherParty = GetOtherPartyConnection();
+  if (otherParty != NULL && !otherParty->IsNetworkConnection())
+    InternalOnConnected();
 
   // Check that it has the H.245 channel connection info
   if (!CreateOutgoingControlChannel(connect,
