@@ -685,6 +685,13 @@ PChannel * OpalMediaTransport::GetChannel(SubChannels subchannel) const
 }
 
 
+void OpalMediaTransport::SetMediaTimeout(const PTimeInterval & t)
+{
+  m_mediaTimeout = t;
+  m_mediaTimer = t;
+}
+
+
 void OpalMediaTransport::SetRemoteBehindNAT()
 {
   m_remoteBehindNAT = true;

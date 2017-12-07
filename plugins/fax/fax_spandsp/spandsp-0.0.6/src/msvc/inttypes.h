@@ -33,6 +33,10 @@ typedef __int16		        int16_t;
 typedef __int32		        int32_t;
 typedef __int64		        int64_t;
 
+#if !defined(INFINITY)
+#define INFINITY 0x7FFFFFFF
+#endif
+
 #if !defined(UINT8_MAX)
 #define UINT8_MAX   0xFF
 #endif

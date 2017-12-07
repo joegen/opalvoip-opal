@@ -2771,6 +2771,16 @@ bool OpalRTPSession::UpdateMediaFormat(const OpalMediaFormat & mediaFormat)
   m_timeUnits = mediaFormat.GetTimeUnits();
   m_feedback = mediaFormat.GetOptionEnum(OpalMediaFormat::RTCPFeedbackOption(), OpalMediaFormat::e_NoRTCPFb);
 
+  if (mediaFormat == OPAL_FECC_RTP) {
+    // Some endpoints do not send RTCP on transmit only sessions, so set our timeout to quite a while
+    static PTimeInterval const VeryLongTime(0, 0, 0, 0, 7); // One week
+    OpalMediaTransportPtr transport = m_transport; // This way avoids races
+    if (transport != NULL && transport->IsOpen())
+      transport->SetMediaTimeout(VeryLongTime);
+    else
+      m_stringOptions.SetVar(OPAL_OPT_MEDIA_RX_TIMEOUT, VeryLongTime); // Used when Open() eventually gets called.
+  }
+
   unsigned maxBitRate = mediaFormat.GetMaxBandwidth();
   if (maxBitRate != 0) {
     unsigned overheadBits = m_packetOverhead*8;

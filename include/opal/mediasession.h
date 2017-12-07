@@ -468,6 +468,7 @@ class OpalMediaTransport : public PSafeObject, public OpalMediaTransportChannelT
       */
     PChannel * GetChannel(SubChannels subchannel = e_Media) const;
 
+    void SetMediaTimeout(const PTimeInterval & t);
     void SetRemoteBehindNAT();
 
     /// Congestion control handling

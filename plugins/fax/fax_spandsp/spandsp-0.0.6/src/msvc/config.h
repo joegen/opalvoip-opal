@@ -68,6 +68,7 @@
 
   #define strncasecmp _strnicmp
   #define strcasecmp _stricmp
+  #define snprintf _snprintf
   #define inline __inline
   #define __inline__ __inline
 
