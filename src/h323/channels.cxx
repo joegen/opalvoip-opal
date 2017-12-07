@@ -367,21 +367,18 @@ H323Channel::Directions H323UnidirectionalChannel::GetDirection() const
 
 PBoolean H323UnidirectionalChannel::SetInitialBandwidth()
 {
-  OpalBandwidth bandwidth;
-  if (GetDirection() == IsTransmitter) {
-    OpalMediaFormat mediaFormat = GetMediaFormat();
-    bandwidth = mediaFormat.GetOptionInteger(OpalMediaFormat::TargetBitRateOption());
-    OpalBandwidth available = connection.GetBandwidthAvailable(OpalBandwidth::Tx);
-    if (bandwidth > available) {
-      PTRACE(3, "LogChan", "Adjusting " << GetNumber() << ' ' << capability->GetMediaFormat()
-             << " target bandwidth from " << bandwidth << " to " << available);
-      bandwidth = available;
-      mediaFormat.SetOptionInteger(OpalMediaFormat::TargetBitRateOption(), bandwidth);
-      UpdateMediaFormat(mediaFormat);
-    }
+  OpalMediaFormat mediaFormat = GetMediaFormat();
+  const PString option = GetDirection() == IsTransmitter ? OpalMediaFormat::TargetBitRateOption() : OpalMediaFormat::MaxBitRateOption();
+  OpalBandwidth bandwidth = mediaFormat.GetOptionInteger(option);
+  OpalBandwidth available = connection.GetBandwidthAvailable(OpalBandwidth::Tx);
+  if (bandwidth > available) {
+    PTRACE(3, "LogChan", "Adjusting " << GetNumber() << ' ' << capability->GetMediaFormat()
+           << " target bandwidth from " << bandwidth << " to " << available);
+    bandwidth = available;
+    mediaFormat.SetOptionInteger(option, bandwidth);
+    UpdateMediaFormat(mediaFormat);
   }
-  if (bandwidth == 0)
-    bandwidth = capability->GetMediaFormat().GetOptionInteger(OpalMediaFormat::MaxBitRateOption());
+
   return SetBandwidthUsed(bandwidth);
 }
 
