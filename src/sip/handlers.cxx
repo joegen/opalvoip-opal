@@ -521,6 +521,9 @@ void SIPHandler::OnFailed(SIP_PDU::StatusCodes code)
         return;
       }
       break;
+
+    default :
+      break;
   }
 
   PTRACE(4, "Not retrying " << GetMethod() << " due to error response " << code);
