@@ -88,20 +88,20 @@
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">SpanDSPFax_ptplugin</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>..\..\..\include;.\spandsp-0.0.6\src;.\tiff-3.8.2\libtiff;..\..\..\..\external\spandsp-0.0.6\src;..\..\..\..\external\tiff-3.8.2\libtiff;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
-    <LibraryPath>.\spandsp-0.0.6\src\Debug;..\..\..\..\external\spandsp-0.0.6\src\Debug;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(UniversalCRT_LibraryPath_x86)</LibraryPath>
+    <IncludePath>..\..\..\include;.\compat_headers;.\spandsp-0.0.6\src;.\tiff-3.8.2\libtiff;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
+    <LibraryPath>..\..\..\bin\plugins\$(Platform)\$(Configuration)\libspandsp;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(UniversalCRT_LibraryPath_x86)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>..\..\..\include;.\spandsp-0.0.6\src;.\tiff-3.8.2\libtiff;..\..\..\..\external\spandsp-0.0.6\src;..\..\..\..\external\tiff-3.8.2\libtiff;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
-    <LibraryPath>.\spandsp-0.0.6\src\x64\Debug;..\..\..\..\external\spandsp-0.0.6\src\x64\Debug;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);</LibraryPath>
+    <IncludePath>..\..\..\include;.\compat_headers;.\spandsp-0.0.6\src;.\tiff-3.8.2\libtiff;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
+    <LibraryPath>..\..\..\bin\plugins\$(Platform)\$(Configuration)\libspandsp;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>..\..\..\include;.\spandsp-0.0.6\src;.\tiff-3.8.2\libtiff;..\..\..\..\external\spandsp-0.0.6\src;..\..\..\..\external\tiff-3.8.2\libtiff;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
-    <LibraryPath>.\spandsp-0.0.6\src\Release;..\..\..\..\external\spandsp-0.0.6\src\Release;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(UniversalCRT_LibraryPath_x86)</LibraryPath>
+    <IncludePath>..\..\..\include;.\compat_headers;.\spandsp-0.0.6\src;.\tiff-3.8.2\libtiff;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
+    <LibraryPath>..\..\..\bin\plugins\$(Platform)\$(Configuration)\libspandsp;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(UniversalCRT_LibraryPath_x86)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>..\..\..\include;.\spandsp-0.0.6\src;.\tiff-3.8.2\libtiff;..\..\..\..\external\spandsp-0.0.6\src;..\..\..\..\external\tiff-3.8.2\libtiff;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
-    <LibraryPath>.\spandsp-0.0.6\src\x64\Release;..\..\..\..\external\spandsp-0.0.6\src\x64\Release;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);</LibraryPath>
+    <IncludePath>..\..\..\include;.\compat_headers;.\spandsp-0.0.6\src;.\tiff-3.8.2\libtiff;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
+    <LibraryPath>..\..\..\bin\plugins\$(Platform)\$(Configuration)\libspandsp;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Midl>
@@ -267,6 +267,11 @@ copy $(ProjectDir)$(Configuration)\libspandsp.pdb c:\ptlib_plugins
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">WIN32;NDEBUG;_WINDOWS;_MBCS;_USRDLL;PLUGIN_CODEC_DLL_EXPORTS</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">WIN32;NDEBUG;_WINDOWS;_MBCS;_USRDLL;PLUGIN_CODEC_DLL_EXPORTS</PreprocessorDefinitions>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="libspandsp_2015.vcxproj">
+      <Project>{1cbb0077-18c5-455f-801c-0a0ce7b0bbf5}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
