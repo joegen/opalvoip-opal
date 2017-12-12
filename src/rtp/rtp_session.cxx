@@ -435,6 +435,7 @@ OpalRTPSession::SyncSource::SyncSource(OpalRTPSession & session, RTP_SyncSourceI
   , m_senderReports(0)
   , m_NACKs(0)
   , m_packetsLost(dir == e_Sender ? -1 : 0)
+  , m_maxConsecutiveLost(m_packetsLost)
   , m_packetsOutOfOrder(0)
   , m_lateOutOfOrder(dir == e_Sender ? -1 : 0)
   , m_averagePacketTime(-1)
@@ -779,6 +780,8 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveData(RTP_
     frame.SetDiscontinuity(sequenceDelta);
     m_packetsLost += sequenceDelta;
     m_packetsLostSinceLastRR += sequenceDelta;
+    if (m_maxConsecutiveLost < (int)(unsigned)sequenceDelta)
+      m_maxConsecutiveLost = sequenceDelta;
     PTRACE(3, &m_session, *this << sequenceDelta << " packet(s) missing at " << expectedSequenceNumber << ", processing from " << sequenceNumber);
     SetLastSequenceNumber(sequenceNumber);
     m_consecutiveOutOfOrderPackets = 0;
@@ -1918,6 +1921,8 @@ void OpalRTPSession::GetStatistics(OpalMediaStatistics & statistics, Direction d
 
         AddSpecial(statistics.m_NACKs, ssrcStats.m_NACKs);
         AddSpecial(statistics.m_packetsLost, ssrcStats.m_packetsLost);
+        if (statistics.m_maxConsecutiveLost < ssrcStats.m_maxConsecutiveLost)
+          statistics.m_maxConsecutiveLost = ssrcStats.m_maxConsecutiveLost;
         AddSpecial(statistics.m_packetsOutOfOrder, ssrcStats.m_packetsOutOfOrder);
         AddSpecial(statistics.m_lateOutOfOrder, ssrcStats.m_lateOutOfOrder);
         AddSpecial(statistics.m_packetsTooLate, ssrcStats.m_packetsTooLate);
@@ -1976,6 +1981,11 @@ void OpalRTPSession::SyncSource::GetStatistics(OpalMediaStatistics & statistics)
   if (m_session.m_feedback&OpalMediaFormat::e_NACK)
     statistics.m_NACKs           = m_NACKs;
   statistics.m_packetsLost       = m_packetsLost;
+  if (m_maxConsecutiveLost > 0) {
+    if (statistics.m_maxConsecutiveLost < m_maxConsecutiveLost)
+      statistics.m_maxConsecutiveLost = m_maxConsecutiveLost;
+    const_cast<SyncSource*>(this)->m_maxConsecutiveLost = 0;
+  }
   statistics.m_minimumPacketTime = m_minimumPacketTime;
   statistics.m_averagePacketTime = m_averagePacketTime;
   statistics.m_maximumPacketTime = m_maximumPacketTime;

@@ -790,6 +790,7 @@ class OpalRTPSession : public OpalMediaSession
       unsigned m_senderReports;
       atomic<unsigned> m_NACKs;
       int      m_packetsLost;
+      int      m_maxConsecutiveLost;
       unsigned m_packetsOutOfOrder;
       int      m_lateOutOfOrder;
 

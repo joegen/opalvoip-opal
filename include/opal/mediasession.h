@@ -92,6 +92,7 @@ struct OpalNetworkStatistics
   int      m_NACKs;             // (-1 is N/A)
   int      m_FEC;               // (-1 is N/A, for tx is number of FEC frame sent, for rx is number of frames recovered via FEC)
   int      m_packetsLost;       // (-1 is N/A)
+  int      m_maxConsecutiveLost;// (-1 is N/A)
   int      m_packetsOutOfOrder; // (-1 is N/A)
   int      m_lateOutOfOrder;    // (-1 is N/A)
   int      m_packetsTooLate;    // (-1 is N/A)

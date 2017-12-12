@@ -70,6 +70,7 @@ OpalNetworkStatistics::OpalNetworkStatistics()
   , m_NACKs(-1)
   , m_FEC(-1)
   , m_packetsLost(-1)
+  , m_maxConsecutiveLost(-1)
   , m_packetsOutOfOrder(-1)
   , m_lateOutOfOrder(-1)
   , m_packetsTooLate(-1)
@@ -220,6 +221,8 @@ void OpalMediaStatistics::PreUpdate()
   m_updateInfo.m_previousBytes = m_totalBytes;
   m_updateInfo.m_previousPackets = m_totalPackets;
   m_updateInfo.m_previousLost = m_packetsLost;
+  if (m_maxConsecutiveLost > 0)
+    m_maxConsecutiveLost = 0;
 #if OPAL_VIDEO
   m_updateInfo.m_previousFrames = m_totalFrames;
 #endif
