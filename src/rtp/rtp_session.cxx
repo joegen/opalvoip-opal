@@ -576,6 +576,9 @@ void OpalRTPSession::SyncSource::CalculateStatistics(const RTP_DataFrame & frame
   m_maximumTimeAccum = 0;
   m_minimumTimeAccum = 0xffffffff;
 
+  if (m_maxConsecutiveLost > 0)
+    m_maxConsecutiveLost = 0;
+
 #if PTRACING
   unsigned Level = 4;
   if (PTrace::CanTrace(Level)) {
@@ -1981,11 +1984,8 @@ void OpalRTPSession::SyncSource::GetStatistics(OpalMediaStatistics & statistics)
   if (m_session.m_feedback&OpalMediaFormat::e_NACK)
     statistics.m_NACKs           = m_NACKs;
   statistics.m_packetsLost       = m_packetsLost;
-  if (m_maxConsecutiveLost > 0) {
-    if (statistics.m_maxConsecutiveLost < m_maxConsecutiveLost)
-      statistics.m_maxConsecutiveLost = m_maxConsecutiveLost;
-    const_cast<SyncSource*>(this)->m_maxConsecutiveLost = 0;
-  }
+  if (statistics.m_maxConsecutiveLost < m_maxConsecutiveLost)
+    statistics.m_maxConsecutiveLost = m_maxConsecutiveLost;
   statistics.m_minimumPacketTime = m_minimumPacketTime;
   statistics.m_averagePacketTime = m_averagePacketTime;
   statistics.m_maximumPacketTime = m_maximumPacketTime;
