@@ -7069,7 +7069,7 @@ if test "${with_srtp_dir+set}" = set; then :
                   { $as_echo "$as_me:${as_lineno-$LINENO}: Using directory $withval for SRTP protocol support" >&5
 $as_echo "$as_me: Using directory $withval for SRTP protocol support" >&6;}
                   SRTP_CFLAGS="-I$withval/include "
-                  SRTP_LIBS="-L$withval/lib -lsrtp"
+                  SRTP_LIBS="-L$withval/lib -lsrtp2"
 
 else
 
@@ -7081,12 +7081,12 @@ if test -n "$SRTP_CFLAGS"; then
     pkg_cv_SRTP_CFLAGS="$SRTP_CFLAGS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libsrtp \""; } >&5
-  ($PKG_CONFIG --exists --print-errors "libsrtp ") 2>&5
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libsrtp2 \""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libsrtp2 ") 2>&5
   ac_status=$?
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_SRTP_CFLAGS=`$PKG_CONFIG --cflags "libsrtp " 2>/dev/null`
+  pkg_cv_SRTP_CFLAGS=`$PKG_CONFIG --cflags "libsrtp2 " 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -7098,12 +7098,12 @@ if test -n "$SRTP_LIBS"; then
     pkg_cv_SRTP_LIBS="$SRTP_LIBS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libsrtp \""; } >&5
-  ($PKG_CONFIG --exists --print-errors "libsrtp ") 2>&5
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libsrtp2 \""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libsrtp2 ") 2>&5
   ac_status=$?
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_SRTP_LIBS=`$PKG_CONFIG --libs "libsrtp " 2>/dev/null`
+  pkg_cv_SRTP_LIBS=`$PKG_CONFIG --libs "libsrtp2 " 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -7124,16 +7124,16 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        SRTP_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "libsrtp " 2>&1`
+	        SRTP_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "libsrtp2 " 2>&1`
         else
-	        SRTP_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "libsrtp " 2>&1`
+	        SRTP_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "libsrtp2 " 2>&1`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$SRTP_PKG_ERRORS" >&5
 
 
                      SRTP_CFLAGS=""
-                     SRTP_LIBS="-lsrtp"
+                     SRTP_LIBS="-lsrtp2"
 
 
 elif test $pkg_failed = untried; then
@@ -7141,7 +7141,7 @@ elif test $pkg_failed = untried; then
 $as_echo "no" >&6; }
 
                      SRTP_CFLAGS=""
-                     SRTP_LIBS="-lsrtp"
+                     SRTP_LIBS="-lsrtp2"
 
 
 else
@@ -7165,12 +7165,12 @@ fi
 $as_echo_n "checking for SRTP protocol support usability... " >&6; }
    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-#include <srtp/srtp.h>
+#include <srtp2/srtp.h>
 int
 main ()
 {
 
-      crypto_policy_t p;
+      srtp_crypto_policy_t p;
       p.cipher_key_len = SRTP_MASTER_KEY_LEN;
 
   ;
@@ -7243,40 +7243,6 @@ fi
       $as_echo "#define HAS_SRTP_SRTP_H 1" >>confdefs.h
 
       SRTP_MSG="yes (system)"
-
-   oldCPPFLAGS="$CPPFLAGS"
-   CPPFLAGS="$CPPFLAGS "
-   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for SRTP const in error functions" >&5
-$as_echo_n "checking for SRTP const in error functions... " >&6; }
-   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <srtp/srtp.h>
-int
-main ()
-{
-err_status_t err_reporting_init(const char *ident)
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  usable=yes
-else
-  usable=no
-
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
-$as_echo "$usable" >&6; }
-   CPPFLAGS="$oldCPPFLAGS"
-
-   if test "x$usable" = "xyes"; then :
-  $as_echo "#define OPAL_SRTP_ERROR_CONST const" >>confdefs.h
-
-
-fi
-
-
 
 else
 

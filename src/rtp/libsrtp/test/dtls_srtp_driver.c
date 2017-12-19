@@ -8,7 +8,7 @@
  */
 /*
  *	
- * Copyright (c) 2001-2006 Cisco Systems, Inc.
+ * Copyright (c) 2001-2017 Cisco Systems, Inc.
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -46,8 +46,8 @@
 #include "getopt_s.h" /* for local getopt()    */
 #include "srtp_priv.h"
 
-err_status_t 
-test_dtls_srtp();
+srtp_err_status_t 
+test_dtls_srtp(void);
 
 srtp_hdr_t *
 srtp_create_test_packet(int pkt_octet_len, uint32_t ssrc);
@@ -63,8 +63,8 @@ usage(char *prog_name) {
 int
 main(int argc, char *argv[]) {
   unsigned do_list_mods      = 0;
-  char q;
-  err_status_t err;
+  int q;
+  srtp_err_status_t err;
 
   printf("dtls_srtp_driver\n");
 
@@ -85,7 +85,7 @@ main(int argc, char *argv[]) {
       do_list_mods = 1;
       break;
     case 'd':
-      err = crypto_kernel_set_debug_module(optarg_s, 1);
+      err = srtp_crypto_kernel_set_debug_module(optarg_s, 1);
       if (err) {
         printf("error: set debug module (%s) failed\n", optarg_s);
         exit(1);
@@ -97,7 +97,7 @@ main(int argc, char *argv[]) {
   }
 
   if (do_list_mods) {
-    err = crypto_kernel_list_debug_modules();
+    err = srtp_crypto_kernel_list_debug_modules();
     if (err) {
       printf("error: list of debug modules failed\n");
       exit(1);
@@ -112,12 +112,19 @@ main(int argc, char *argv[]) {
   }
   printf("passed\n");
   
+  /* shut down srtp library */
+  err = srtp_shutdown();
+  if (err) {
+    printf("error: srtp shutdown failed with error code %d\n", err);
+    exit(1);
+  }
+
   return 0;
 }
 
 
-err_status_t
-test_dtls_srtp() {
+srtp_err_status_t
+test_dtls_srtp(void) {
   srtp_hdr_t *test_packet;
   int test_packet_len = 80;
   srtp_t s;
@@ -126,7 +133,9 @@ test_dtls_srtp() {
   uint8_t salt[SRTP_MAX_KEY_LEN];
   unsigned int key_len, salt_len;
   srtp_profile_t profile;
-  err_status_t err;
+  srtp_err_status_t err;
+
+  memset(&policy, 0x0, sizeof(srtp_policy_t));
 
   /* create a 'null' SRTP session */
   err = srtp_create(&s, NULL);
@@ -135,34 +144,34 @@ test_dtls_srtp() {
 
   /* 
    * verify that packet-processing functions behave properly - we
-   * expect that these functions will return err_status_no_ctx
+   * expect that these functions will return srtp_err_status_no_ctx
    */
   test_packet = srtp_create_test_packet(80, 0xa5a5a5a5);
   if (test_packet == NULL) 
-    return err_status_alloc_fail;
+    return srtp_err_status_alloc_fail;
   err = srtp_protect(s, test_packet, &test_packet_len);
-  if (err != err_status_no_ctx) {
+  if (err != srtp_err_status_no_ctx) {
     printf("wrong return value from srtp_protect() (got code %d)\n", 
 	   err);
-    return err_status_fail;
+    return srtp_err_status_fail;
   }
   err = srtp_unprotect(s, test_packet, &test_packet_len);
-  if (err != err_status_no_ctx) {
+  if (err != srtp_err_status_no_ctx) {
     printf("wrong return value from srtp_unprotect() (got code %d)\n", 
 	   err);
-    return err_status_fail;
+    return srtp_err_status_fail;
   }
   err = srtp_protect_rtcp(s, test_packet, &test_packet_len);
-  if (err != err_status_no_ctx) {
+  if (err != srtp_err_status_no_ctx) {
     printf("wrong return value from srtp_protect_rtcp() (got code %d)\n", 
 	   err);
-    return err_status_fail;
+    return srtp_err_status_fail;
   }
   err = srtp_unprotect_rtcp(s, test_packet, &test_packet_len);
-  if (err != err_status_no_ctx) {
+  if (err != srtp_err_status_no_ctx) {
     printf("wrong return value from srtp_unprotect_rtcp() (got code %d)\n", 
 	   err);
-    return err_status_fail;
+    return srtp_err_status_fail;
   }
 
 
@@ -174,22 +183,31 @@ test_dtls_srtp() {
   salt_len = srtp_profile_get_master_salt_length(profile);
   memset(key, 0xff, key_len);
   memset(salt, 0xee, salt_len);
-  append_salt_to_key(key, key_len, salt, salt_len);
-  policy.key  = key;
+  srtp_append_salt_to_key(key, key_len, salt, salt_len);
+  policy.key = key;
 
   /* initialize SRTP policy from profile  */
-  err = crypto_policy_set_from_profile_for_rtp(&policy.rtp, profile);
+  err = srtp_crypto_policy_set_from_profile_for_rtp(&policy.rtp, profile);
   if (err) return err;
-  err = crypto_policy_set_from_profile_for_rtcp(&policy.rtcp, profile);
+  err = srtp_crypto_policy_set_from_profile_for_rtcp(&policy.rtcp, profile);
   if (err) return err;
   policy.ssrc.type  = ssrc_any_inbound;
+  policy.ekt = NULL;
+  policy.window_size = 128;
+  policy.allow_repeat_tx = 0;
   policy.next = NULL;
     
   err = srtp_add_stream(s, &policy);
   if (err)
     return err;
   
-  return err_status_ok;
+  err = srtp_dealloc(s);
+  if (err)
+    return err;
+
+  free(test_packet);
+
+  return srtp_err_status_ok;
 }
 
 

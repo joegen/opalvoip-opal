@@ -43,7 +43,7 @@
 #if OPAL_SRTP
 
 class OpalSRTPCryptoSuite;
-struct srtp_ctx_t;
+typedef struct srtp_ctx_t_ srtp_ctx_t;
 
 
 /**String option key to a boolean indicating that we should accept
@@ -116,7 +116,7 @@ class OpalSRTPCryptoSuite : public OpalMediaCryptoSuite
     virtual PINDEX GetAuthSaltBits() const;
     virtual OpalMediaCryptoKeyInfo * CreateKeyInfo() const;
 
-    virtual void SetCryptoPolicy(struct crypto_policy_t & policy) const = 0;
+    virtual void SetCryptoPolicy(struct srtp_crypto_policy_t & policy) const = 0;
 };
 
 
@@ -156,7 +156,7 @@ class OpalSRTPSession : public OpalRTPSession
     virtual void OnRxControlPacket(OpalMediaTransport & transport, PBYTEArray data);
 
     bool                       m_anyRTCP_SSRC;
-    struct srtp_ctx_t        * m_context;
+    srtp_ctx_t               * m_context;
     std::set<RTP_SyncSourceId> m_addedStream;
     OpalSRTPKeyInfo          * m_keyInfo[2]; // rx & tx
     unsigned                   m_consecutiveErrors[2][2];

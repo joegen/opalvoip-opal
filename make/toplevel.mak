@@ -357,8 +357,8 @@ ifeq ($(OPAL_SRTP), yes)
   ifneq ($(SRTP_SYSTEM),yes)
     SRTP_DIR := $(OPAL_TOP_LEVEL_DIR)/src/rtp/libsrtp
     CPPFLAGS += -I$(SRTP_DIR)/include -I$(SRTP_DIR)/crypto/include
-    LIBS     := -L$(SRTP_DIR) -lsrtp $(LIBS)
-    SRTP_LIB := $(SRTP_DIR)/libsrtp.a
+    LIBS     := -L$(SRTP_DIR) -lsrtp2 $(LIBS)
+    SRTP_LIB := $(SRTP_DIR)/libsrtp2.a
   endif
 endif
 

@@ -186,24 +186,17 @@ OPAL_MODULE_OPTION(
    [SRTP],
    [srtp],
    [SRTP protocol support],
-   [libsrtp local-source],
+   [libsrtp2 local-source],
    [],
-   [-lsrtp],
-   [#include <srtp/srtp.h>],
+   [-lsrtp2],
+   [#include <srtp2/srtp.h>],
    [
-      crypto_policy_t p;
+      srtp_crypto_policy_t p;
       p.cipher_key_len = SRTP_MASTER_KEY_LEN;
    ],
    AS_VAR_IF([SRTP_SYSTEM],[yes],[
       AC_DEFINE(HAS_SRTP_SRTP_H,1)
       SRTP_MSG="yes (system)"
-      MY_COMPILE_IFELSE(
-         [for SRTP const in error functions],
-         [],
-         [#include <srtp/srtp.h>],
-         [err_status_t err_reporting_init(const char *ident)],
-         [AC_DEFINE(OPAL_SRTP_ERROR_CONST, const)]
-      )
    ],[
       AC_CONFIG_SUBDIRS(src/rtp/libsrtp)
       AC_DEFINE(HAS_SRTP_SRTP_H,0)

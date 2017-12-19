@@ -1145,17 +1145,22 @@
       </toolsSet>
       <flagsDictionary>
         <element flagsID="0" commonFlags="-fPIC"/>
-        <element flagsID="1" commonFlags="-fPIC -O3 -O3"/>
-        <element flagsID="2" commonFlags="-fPIC -O3 -fPIC"/>
-        <element flagsID="3" commonFlags="-fPIC -std=c++14 -O3 -O3"/>
+        <element flagsID="1" commonFlags="-fPIC -O3 -fPIC"/>
+        <element flagsID="2"
+                 commonFlags="-fPIC -std=c++14 -fstack-protector -m64 -mtune=generic -std=c++14 -fstack-protector -m64 -mtune=generic"/>
+        <element flagsID="3"
+                 commonFlags="-fPIC -std=c++14 -fstack-protector -m64 -mtune=generic -std=c++14 -fstack-protector -m64 -mtune=generic -std=c++14 -fstack-protector -m64 -mtune=generic"/>
+        <element flagsID="4" commonFlags="-fopenmp -fPIC -O3 -O3"/>
+        <element flagsID="5"
+                 commonFlags="-fopenmp -fPIC -std=c++14 -std=c++14 -fstack-protector -m64 -mtune=generic -std=c++14 -fstack-protector -m64 -mtune=generic -O3 -O3"/>
       </flagsDictionary>
       <codeAssistance>
       </codeAssistance>
       <makefileType>
         <makeTool>
           <buildCommandWorkingDir>.</buildCommandWorkingDir>
-          <buildCommand>${MAKE} -f Makefile -j4</buildCommand>
-          <cleanCommand>${MAKE} -f Makefile clean</cleanCommand>
+          <buildCommand>${MAKE} -f Makefile -j4 PTLIBDIR=../zsdk-ptlib</buildCommand>
+          <cleanCommand>${MAKE} -f Makefile clean PTLIBDIR=../zsdk-ptlib</cleanCommand>
           <executablePath></executablePath>
           <cTool>
             <standard>10</standard>
@@ -1166,7 +1171,7 @@
         </makeTool>
         <preBuild>
           <preBuildCommandWorkingDir>.</preBuildCommandWorkingDir>
-          <preBuildCommand>./configure CC=${IDE_CC} CXX=${IDE_CXX} CFLAGS="-g3 -gdwarf-2" CXXFLAGS="-g3 -gdwarf-2" --enable-localspeexdsp --enable-rtpfec --disable-h323 --disable-iax2 --disable-skinny --disable-lid --disable-t38 --disable-sipim --disable-script --disable-mixer --disable-presence --disable-g.722.1 --enable-cpp14</preBuildCommand>
+          <preBuildCommand></preBuildCommand>
         </preBuild>
         <requiredProjects>
           <makeArtifact PL="../zsdk-ptlib"
@@ -1548,7 +1553,7 @@
             <pElem>plugins/video/common</pElem>
           </incDir>
           <preprocessorList>
-            <Elem>VID_PLUGIN_DIR="/opt/zenon/src/zsdk-opal/lib_linux_x86_64/plugins/codecs/video"</Elem>
+            <Elem>VID_PLUGIN_DIR="/opt/zenon/src/mcu-develop/zsdk-opal/lib_linux_x86_64/plugins/codecs/video"</Elem>
           </preprocessorList>
         </ccTool>
       </folder>
@@ -1577,21 +1582,13 @@
           </incDir>
         </ccTool>
       </folder>
-      <folder path="0/src/Ruby">
+      <folder path="0/src">
         <cTool>
           <incDir>
             <pElem>include</pElem>
             <pElem>../zsdk-ptlib/include</pElem>
           </incDir>
         </cTool>
-        <ccTool>
-          <incDir>
-            <pElem>include</pElem>
-            <pElem>../zsdk-ptlib/include</pElem>
-          </incDir>
-        </ccTool>
-      </folder>
-      <folder path="0/src/asn">
         <ccTool>
           <incDir>
             <pElem>include</pElem>
@@ -1602,101 +1599,30 @@
       <folder path="0/src/codec">
         <cTool>
           <incDir>
-            <pElem>../zsdk-ptlib/include</pElem>
             <pElem>/opt/bbcollab/include</pElem>
-            <pElem>/usr/include/srtp</pElem>
-            <pElem>include</pElem>
+            <pElem>/usr/include/ImageMagick</pElem>
             <pElem>.</pElem>
           </incDir>
           <preprocessorList>
             <Elem>NDEBUG</Elem>
-            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
+            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/mcu-develop/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
             <Elem>PTRACING=2</Elem>
             <Elem>P_64BIT</Elem>
             <Elem>_REENTRANT</Elem>
+            <Elem>__STDC_CONSTANT_MACROS</Elem>
           </preprocessorList>
-        </cTool>
-      </folder>
-      <folder path="0/src/csharp">
-        <cTool>
-          <incDir>
-            <pElem>include</pElem>
-            <pElem>../zsdk-ptlib/include</pElem>
-          </incDir>
-        </cTool>
-        <ccTool>
-          <incDir>
-            <pElem>include</pElem>
-            <pElem>../zsdk-ptlib/include</pElem>
-          </incDir>
-        </ccTool>
-      </folder>
-      <folder path="0/src/h323">
-        <ccTool>
-          <incDir>
-            <pElem>include</pElem>
-            <pElem>../zsdk-ptlib/include</pElem>
-          </incDir>
-        </ccTool>
-      </folder>
-      <folder path="0/src/h460">
-        <ccTool>
-          <incDir>
-            <pElem>include</pElem>
-            <pElem>../zsdk-ptlib/include</pElem>
-          </incDir>
-        </ccTool>
-      </folder>
-      <folder path="0/src/iax2">
-        <ccTool>
-          <incDir>
-            <pElem>include</pElem>
-            <pElem>../zsdk-ptlib/include</pElem>
-          </incDir>
-        </ccTool>
-      </folder>
-      <folder path="0/src/java">
-        <cTool>
-          <incDir>
-            <pElem>include</pElem>
-            <pElem>../zsdk-ptlib/include</pElem>
-          </incDir>
-        </cTool>
-        <ccTool>
-          <incDir>
-            <pElem>include</pElem>
-            <pElem>../zsdk-ptlib/include</pElem>
-          </incDir>
-        </ccTool>
-      </folder>
-      <folder path="0/src/lids">
-        <ccTool>
-          <incDir>
-            <pElem>include</pElem>
-            <pElem>../zsdk-ptlib/include</pElem>
-          </incDir>
-        </ccTool>
-      </folder>
-      <folder path="0/src/rtp">
-        <cTool>
-          <incDir>
-            <pElem>include</pElem>
-            <pElem>../zsdk-ptlib/include</pElem>
-          </incDir>
         </cTool>
       </folder>
       <folder path="0/src/sdp">
         <ccTool>
           <incDir>
-            <pElem>../zsdk-ptlib/include</pElem>
             <pElem>/opt/bbcollab/include</pElem>
-            <pElem>/usr/include/srtp</pElem>
-            <pElem>include</pElem>
+            <pElem>/usr/include/ImageMagick</pElem>
             <pElem>.</pElem>
           </incDir>
           <preprocessorList>
             <Elem>NDEBUG</Elem>
-            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
+            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/mcu-develop/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
             <Elem>PTRACING=2</Elem>
             <Elem>P_64BIT</Elem>
             <Elem>_REENTRANT</Elem>
@@ -1706,35 +1632,17 @@
       <folder path="0/src/sip">
         <ccTool>
           <incDir>
-            <pElem>../zsdk-ptlib/include</pElem>
             <pElem>/opt/bbcollab/include</pElem>
-            <pElem>/usr/include/srtp</pElem>
-            <pElem>include</pElem>
+            <pElem>/usr/include/ImageMagick</pElem>
             <pElem>.</pElem>
           </incDir>
           <preprocessorList>
             <Elem>NDEBUG</Elem>
-            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
+            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/mcu-develop/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
             <Elem>PTRACING=2</Elem>
             <Elem>P_64BIT</Elem>
             <Elem>_REENTRANT</Elem>
           </preprocessorList>
-        </ccTool>
-      </folder>
-      <folder path="0/src/t120">
-        <ccTool>
-          <incDir>
-            <pElem>include</pElem>
-            <pElem>../zsdk-ptlib/include</pElem>
-          </incDir>
-        </ccTool>
-      </folder>
-      <folder path="0/src/win32">
-        <ccTool>
-          <incDir>
-            <pElem>include</pElem>
-            <pElem>../zsdk-ptlib/include</pElem>
-          </incDir>
         </ccTool>
       </folder>
       <item path="plugins/LID/CM_HID/cm_hid_win.cpp" ex="false" tool="1" flavor2="4">
@@ -1991,8 +1899,8 @@
       <item path="plugins/audio/G.722.2/G7222Codec.cpp"
             ex="false"
             tool="1"
-            flavor2="0">
-        <ccTool flags="0">
+            flavor2="11">
+        <ccTool flags="2">
         </ccTool>
       </item>
       <item path="plugins/audio/G722/VoIPCodecs/bitstream.c"
@@ -2293,8 +2201,8 @@
         <cTool flags="0">
         </cTool>
       </item>
-      <item path="plugins/audio/Opus/OpusCodec.cpp" ex="false" tool="1" flavor2="0">
-        <ccTool flags="0">
+      <item path="plugins/audio/Opus/OpusCodec.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="2">
         </ccTool>
       </item>
       <item path="plugins/audio/Opus/opus/celt/arm/arm_celt_map.c"
@@ -3175,785 +3083,785 @@
       </item>
       <item path="plugins/audio/SBC/sbccodec.cxx" ex="false" tool="1" flavor2="4">
       </item>
-      <item path="plugins/audio/SILK/SILKCodec.cpp" ex="false" tool="1" flavor2="0">
-        <ccTool flags="0">
+      <item path="plugins/audio/SILK/SILKCodec.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="2">
         </ccTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_A2NLSF.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_CNG.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_HP_variable_cutoff_FIX.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_LBRR_reset.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_LPC_inv_pred_gain.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_LPC_stabilize.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_LPC_synthesis_filter.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_LPC_synthesis_order16.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_LP_variable_cutoff.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_LSF_cos_table.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_LTP_analysis_filter_FIX.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_LTP_scale_ctrl_FIX.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_MA.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_NLSF2A.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_NLSF2A_stable.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_NLSF_MSVQ_decode.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_NLSF_MSVQ_encode_FIX.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_NLSF_VQ_rate_distortion_FIX.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_NLSF_VQ_sum_error_FIX.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_NLSF_VQ_weights_laroia.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_NLSF_stabilize.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_NSQ.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_NSQ_del_dec.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_PLC.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_VAD.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_VQ_nearest_neighbor_FIX.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_allpass_int.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_ana_filt_bank_1.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_apply_sine_window.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_array_maxabs.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_autocorr.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_biquad.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_biquad_alt.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_burg_modified.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_bwexpander.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_bwexpander_32.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_code_signs.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_control_codec_FIX.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_corrMatrix_FIX.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_create_init_destroy.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_dec_API.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_decode_core.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_decode_frame.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_decode_parameters.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_decode_pitch.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_decode_pulses.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_decoder_set_fs.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_detect_SWB_input.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_enc_API.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_encode_frame_FIX.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_encode_parameters.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_encode_pulses.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_find_LPC_FIX.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_find_LTP_FIX.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_find_pitch_lags_FIX.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_find_pred_coefs_FIX.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_gain_quant.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_init_encoder_FIX.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_inner_prod_aligned.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_interpolate.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_k2a.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_k2a_Q16.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_lin2log.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_log2lin.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_lowpass_int.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_lowpass_short.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_noise_shape_analysis_FIX.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_pitch_analysis_core.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_pitch_est_tables.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_prefilter_FIX.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_process_NLSFs_FIX.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_process_gains_FIX.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_quant_LTP_gains_FIX.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_range_coder.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_regularize_correlations_FIX.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_resampler.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_resampler_down2.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_resampler_down2_3.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_resampler_down3.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_resampler_private_AR2.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_resampler_private_ARMA4.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_resampler_private_IIR_FIR.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_resampler_private_copy.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_resampler_private_down4.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_resampler_private_down_FIR.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_resampler_private_up2_HQ.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_resampler_private_up4.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_resampler_rom.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_resampler_up2.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_residual_energy16_FIX.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_residual_energy_FIX.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_scale_copy_vector16.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_scale_vector.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_schur.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_schur64.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_shell_coder.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_sigm_Q15.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_solve_LS_FIX.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_sort.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_sum_sqr_shift.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_tables_LTP.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_tables_NLSF_CB0_10.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_tables_NLSF_CB0_16.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_tables_NLSF_CB1_10.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_tables_NLSF_CB1_16.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_tables_gain.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_tables_other.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_tables_pitch_lag.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_tables_pulses_per_block.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_tables_sign.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/src/SKP_Silk_tables_type_offset.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="2">
+        <cTool flags="1">
         </cTool>
       </item>
       <item path="plugins/audio/SILK/SILK_SDK/test/Decoder.c"
@@ -4188,8 +4096,11 @@
       </item>
       <item path="plugins/audio/Speex/libspeex/vq.c" ex="false" tool="0" flavor2="2">
       </item>
-      <item path="plugins/audio/Speex/speexcodec.cxx" ex="false" tool="1" flavor2="0">
-        <ccTool flags="0">
+      <item path="plugins/audio/Speex/speexcodec.cxx"
+            ex="false"
+            tool="1"
+            flavor2="11">
+        <ccTool flags="2">
         </ccTool>
       </item>
       <item path="plugins/audio/VoiceAgeG729/g729codec.c"
@@ -4659,8 +4570,8 @@
       <item path="plugins/video/H.261-vic/h261vic.cxx"
             ex="false"
             tool="1"
-            flavor2="0">
-        <ccTool flags="0">
+            flavor2="11">
+        <ccTool flags="2">
         </ccTool>
       </item>
       <item path="plugins/video/H.261-vic/vic/bv.c" ex="false" tool="0" flavor2="0">
@@ -4670,15 +4581,15 @@
       <item path="plugins/video/H.261-vic/vic/dct.cxx"
             ex="false"
             tool="1"
-            flavor2="0">
-        <ccTool flags="0">
+            flavor2="11">
+        <ccTool flags="2">
         </ccTool>
       </item>
       <item path="plugins/video/H.261-vic/vic/encoder-h261.cxx"
             ex="false"
             tool="1"
-            flavor2="0">
-        <ccTool flags="0">
+            flavor2="11">
+        <ccTool flags="2">
         </ccTool>
       </item>
       <item path="plugins/video/H.261-vic/vic/huffcode.c"
@@ -4691,78 +4602,78 @@
       <item path="plugins/video/H.261-vic/vic/p64.cxx"
             ex="false"
             tool="1"
-            flavor2="0">
-        <ccTool flags="0">
+            flavor2="11">
+        <ccTool flags="2">
         </ccTool>
       </item>
       <item path="plugins/video/H.261-vic/vic/p64encoder.cxx"
             ex="false"
             tool="1"
-            flavor2="0">
-        <ccTool flags="0">
+            flavor2="11">
+        <ccTool flags="2">
         </ccTool>
       </item>
       <item path="plugins/video/H.261-vic/vic/transmitter.cxx"
             ex="false"
             tool="1"
-            flavor2="0">
-        <ccTool flags="0">
+            flavor2="11">
+        <ccTool flags="2">
         </ccTool>
       </item>
       <item path="plugins/video/H.261-vic/vic/vid_coder.cxx"
             ex="false"
             tool="1"
-            flavor2="0">
-        <ccTool flags="0">
+            flavor2="11">
+        <ccTool flags="2">
         </ccTool>
       </item>
       <item path="plugins/video/H.263-1998/h263-1998.cxx"
             ex="false"
             tool="1"
-            flavor2="0">
-        <ccTool flags="0">
+            flavor2="11">
+        <ccTool flags="2">
         </ccTool>
       </item>
       <item path="plugins/video/H.263-1998/rfc2190.cxx"
             ex="false"
             tool="1"
-            flavor2="0">
-        <ccTool flags="0">
+            flavor2="11">
+        <ccTool flags="2">
         </ccTool>
       </item>
       <item path="plugins/video/H.263-1998/rfc2429.cxx"
             ex="false"
             tool="1"
-            flavor2="0">
-        <ccTool flags="0">
+            flavor2="11">
+        <ccTool flags="2">
         </ccTool>
       </item>
       <item path="plugins/video/MPEG4-ffmpeg/mpeg4.cxx"
             ex="false"
             tool="1"
-            flavor2="0">
-        <ccTool flags="0">
+            flavor2="11">
+        <ccTool flags="2">
         </ccTool>
       </item>
       <item path="plugins/video/THEORA/theora_frame.cxx"
             ex="false"
             tool="1"
-            flavor2="0">
-        <ccTool flags="0">
+            flavor2="11">
+        <ccTool flags="2">
         </ccTool>
       </item>
       <item path="plugins/video/THEORA/theora_plugin.cxx"
             ex="false"
             tool="1"
-            flavor2="0">
-        <ccTool flags="0">
+            flavor2="11">
+        <ccTool flags="2">
         </ccTool>
       </item>
       <item path="plugins/video/VP8-WebM/vp8_webm.cxx"
             ex="false"
             tool="1"
-            flavor2="0">
-        <ccTool flags="0">
+            flavor2="11">
+        <ccTool flags="2">
         </ccTool>
       </item>
       <item path="plugins/video/common/dyna.cxx" ex="false" tool="1" flavor2="4">
@@ -4773,8 +4684,8 @@
           </incDir>
         </ccTool>
       </item>
-      <item path="plugins/video/common/encframe.cxx" ex="false" tool="1" flavor2="0">
-        <ccTool flags="0">
+      <item path="plugins/video/common/encframe.cxx" ex="false" tool="1" flavor2="11">
+        <ccTool flags="2">
           <incDir>
             <pElem>plugins</pElem>
             <pElem>/opt/bbcollab/include</pElem>
@@ -4788,8 +4699,8 @@
           </preprocessorList>
         </ccTool>
       </item>
-      <item path="plugins/video/common/ffmpeg.cxx" ex="false" tool="1" flavor2="0">
-        <ccTool flags="0">
+      <item path="plugins/video/common/ffmpeg.cxx" ex="false" tool="1" flavor2="11">
+        <ccTool flags="2">
           <incDir>
             <pElem>plugins</pElem>
             <pElem>/opt/bbcollab/include</pElem>
@@ -4803,8 +4714,11 @@
           </preprocessorList>
         </ccTool>
       </item>
-      <item path="plugins/video/common/h264frame.cxx" ex="false" tool="1" flavor2="0">
-        <ccTool flags="0">
+      <item path="plugins/video/common/h264frame.cxx"
+            ex="false"
+            tool="1"
+            flavor2="11">
+        <ccTool flags="2">
           <incDir>
             <pElem>plugins</pElem>
             <pElem>/opt/bbcollab/include</pElem>
@@ -4814,7 +4728,7 @@
             <pElem>plugins/video/x264</pElem>
           </incDir>
           <preprocessorList>
-            <Elem>VID_PLUGIN_DIR="/opt/zenon/src/zsdk-opal/lib_linux_x86_64/plugins/codecs/video"</Elem>
+            <Elem>VID_PLUGIN_DIR="/opt/zenon/src/mcu-develop/zsdk-opal/lib_linux_x86_64/plugins/codecs/video"</Elem>
           </preprocessorList>
         </ccTool>
       </item>
@@ -4826,16 +4740,16 @@
       <item path="plugins/video/x264/gpl/h264_helper.cxx"
             ex="false"
             tool="1"
-            flavor2="0">
-        <ccTool flags="0">
+            flavor2="11">
+        <ccTool flags="3">
         </ccTool>
       </item>
-      <item path="plugins/video/x264/h264-x264.cxx" ex="false" tool="1" flavor2="0">
-        <ccTool flags="0">
+      <item path="plugins/video/x264/h264-x264.cxx" ex="false" tool="1" flavor2="11">
+        <ccTool flags="2">
         </ccTool>
       </item>
-      <item path="plugins/video/x264/x264wrap.cxx" ex="false" tool="1" flavor2="0">
-        <ccTool flags="0">
+      <item path="plugins/video/x264/x264wrap.cxx" ex="false" tool="1" flavor2="11">
+        <ccTool flags="2">
         </ccTool>
       </item>
       <item path="samples/Android/src/opal-jni.cpp" ex="false" tool="1" flavor2="4">
@@ -5063,17 +4977,17 @@
       <item path="src/asn/x880.cxx" ex="false" tool="1" flavor2="4">
       </item>
       <item path="src/codec/echocancel.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
           <incDir>
             <pElem>../zsdk-ptlib/include</pElem>
             <pElem>/opt/bbcollab/include</pElem>
-            <pElem>/usr/include/srtp</pElem>
+            <pElem>/usr/include/ImageMagick</pElem>
             <pElem>include</pElem>
             <pElem>.</pElem>
           </incDir>
           <preprocessorList>
             <Elem>NDEBUG</Elem>
-            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
+            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/mcu-develop/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
             <Elem>PTRACING=2</Elem>
             <Elem>P_64BIT</Elem>
             <Elem>_REENTRANT</Elem>
@@ -5081,21 +4995,21 @@
         </ccTool>
       </item>
       <item path="src/codec/g711.c" ex="false" tool="0" flavor2="0">
-        <cTool flags="1">
+        <cTool flags="4">
         </cTool>
       </item>
       <item path="src/codec/g711a1_plc.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
           <incDir>
             <pElem>../zsdk-ptlib/include</pElem>
             <pElem>/opt/bbcollab/include</pElem>
-            <pElem>/usr/include/srtp</pElem>
+            <pElem>/usr/include/ImageMagick</pElem>
             <pElem>include</pElem>
             <pElem>.</pElem>
           </incDir>
           <preprocessorList>
             <Elem>NDEBUG</Elem>
-            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
+            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/mcu-develop/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
             <Elem>PTRACING=2</Elem>
             <Elem>P_64BIT</Elem>
             <Elem>_REENTRANT</Elem>
@@ -5103,17 +5017,17 @@
         </ccTool>
       </item>
       <item path="src/codec/g711codec.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
           <incDir>
             <pElem>../zsdk-ptlib/include</pElem>
             <pElem>/opt/bbcollab/include</pElem>
-            <pElem>/usr/include/srtp</pElem>
+            <pElem>/usr/include/ImageMagick</pElem>
             <pElem>include</pElem>
             <pElem>.</pElem>
           </incDir>
           <preprocessorList>
             <Elem>NDEBUG</Elem>
-            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
+            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/mcu-develop/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
             <Elem>PTRACING=2</Elem>
             <Elem>P_64BIT</Elem>
             <Elem>_REENTRANT</Elem>
@@ -5121,17 +5035,17 @@
         </ccTool>
       </item>
       <item path="src/codec/g7221mf.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
           <incDir>
             <pElem>../zsdk-ptlib/include</pElem>
             <pElem>/opt/bbcollab/include</pElem>
-            <pElem>/usr/include/srtp</pElem>
+            <pElem>/usr/include/ImageMagick</pElem>
             <pElem>include</pElem>
             <pElem>.</pElem>
           </incDir>
           <preprocessorList>
             <Elem>NDEBUG</Elem>
-            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
+            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/mcu-develop/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
             <Elem>PTRACING=2</Elem>
             <Elem>P_64BIT</Elem>
             <Elem>_REENTRANT</Elem>
@@ -5139,17 +5053,17 @@
         </ccTool>
       </item>
       <item path="src/codec/g7222mf.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
           <incDir>
             <pElem>../zsdk-ptlib/include</pElem>
             <pElem>/opt/bbcollab/include</pElem>
-            <pElem>/usr/include/srtp</pElem>
+            <pElem>/usr/include/ImageMagick</pElem>
             <pElem>include</pElem>
             <pElem>.</pElem>
           </incDir>
           <preprocessorList>
             <Elem>NDEBUG</Elem>
-            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
+            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/mcu-develop/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
             <Elem>PTRACING=2</Elem>
             <Elem>P_64BIT</Elem>
             <Elem>_REENTRANT</Elem>
@@ -5157,17 +5071,17 @@
         </ccTool>
       </item>
       <item path="src/codec/g722mf.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
           <incDir>
             <pElem>../zsdk-ptlib/include</pElem>
             <pElem>/opt/bbcollab/include</pElem>
-            <pElem>/usr/include/srtp</pElem>
+            <pElem>/usr/include/ImageMagick</pElem>
             <pElem>include</pElem>
             <pElem>.</pElem>
           </incDir>
           <preprocessorList>
             <Elem>NDEBUG</Elem>
-            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
+            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/mcu-develop/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
             <Elem>PTRACING=2</Elem>
             <Elem>P_64BIT</Elem>
             <Elem>_REENTRANT</Elem>
@@ -5175,17 +5089,17 @@
         </ccTool>
       </item>
       <item path="src/codec/g7231mf.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
           <incDir>
             <pElem>../zsdk-ptlib/include</pElem>
             <pElem>/opt/bbcollab/include</pElem>
-            <pElem>/usr/include/srtp</pElem>
+            <pElem>/usr/include/ImageMagick</pElem>
             <pElem>include</pElem>
             <pElem>.</pElem>
           </incDir>
           <preprocessorList>
             <Elem>NDEBUG</Elem>
-            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
+            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/mcu-develop/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
             <Elem>PTRACING=2</Elem>
             <Elem>P_64BIT</Elem>
             <Elem>_REENTRANT</Elem>
@@ -5193,17 +5107,17 @@
         </ccTool>
       </item>
       <item path="src/codec/g726mf.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
           <incDir>
             <pElem>../zsdk-ptlib/include</pElem>
             <pElem>/opt/bbcollab/include</pElem>
-            <pElem>/usr/include/srtp</pElem>
+            <pElem>/usr/include/ImageMagick</pElem>
             <pElem>include</pElem>
             <pElem>.</pElem>
           </incDir>
           <preprocessorList>
             <Elem>NDEBUG</Elem>
-            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
+            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/mcu-develop/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
             <Elem>PTRACING=2</Elem>
             <Elem>P_64BIT</Elem>
             <Elem>_REENTRANT</Elem>
@@ -5211,17 +5125,17 @@
         </ccTool>
       </item>
       <item path="src/codec/g728mf.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
           <incDir>
             <pElem>../zsdk-ptlib/include</pElem>
             <pElem>/opt/bbcollab/include</pElem>
-            <pElem>/usr/include/srtp</pElem>
+            <pElem>/usr/include/ImageMagick</pElem>
             <pElem>include</pElem>
             <pElem>.</pElem>
           </incDir>
           <preprocessorList>
             <Elem>NDEBUG</Elem>
-            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
+            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/mcu-develop/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
             <Elem>PTRACING=2</Elem>
             <Elem>P_64BIT</Elem>
             <Elem>_REENTRANT</Elem>
@@ -5229,17 +5143,17 @@
         </ccTool>
       </item>
       <item path="src/codec/g729mf.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
           <incDir>
             <pElem>../zsdk-ptlib/include</pElem>
             <pElem>/opt/bbcollab/include</pElem>
-            <pElem>/usr/include/srtp</pElem>
+            <pElem>/usr/include/ImageMagick</pElem>
             <pElem>include</pElem>
             <pElem>.</pElem>
           </incDir>
           <preprocessorList>
             <Elem>NDEBUG</Elem>
-            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
+            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/mcu-develop/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
             <Elem>PTRACING=2</Elem>
             <Elem>P_64BIT</Elem>
             <Elem>_REENTRANT</Elem>
@@ -5247,17 +5161,17 @@
         </ccTool>
       </item>
       <item path="src/codec/gsm0610mf.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
           <incDir>
             <pElem>../zsdk-ptlib/include</pElem>
             <pElem>/opt/bbcollab/include</pElem>
-            <pElem>/usr/include/srtp</pElem>
+            <pElem>/usr/include/ImageMagick</pElem>
             <pElem>include</pElem>
             <pElem>.</pElem>
           </incDir>
           <preprocessorList>
             <Elem>NDEBUG</Elem>
-            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
+            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/mcu-develop/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
             <Elem>PTRACING=2</Elem>
             <Elem>P_64BIT</Elem>
             <Elem>_REENTRANT</Elem>
@@ -5265,17 +5179,17 @@
         </ccTool>
       </item>
       <item path="src/codec/gsmamrmf.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
           <incDir>
             <pElem>../zsdk-ptlib/include</pElem>
             <pElem>/opt/bbcollab/include</pElem>
-            <pElem>/usr/include/srtp</pElem>
+            <pElem>/usr/include/ImageMagick</pElem>
             <pElem>include</pElem>
             <pElem>.</pElem>
           </incDir>
           <preprocessorList>
             <Elem>NDEBUG</Elem>
-            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
+            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/mcu-develop/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
             <Elem>PTRACING=2</Elem>
             <Elem>P_64BIT</Elem>
             <Elem>_REENTRANT</Elem>
@@ -5283,17 +5197,17 @@
         </ccTool>
       </item>
       <item path="src/codec/h261mf.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
           <incDir>
             <pElem>../zsdk-ptlib/include</pElem>
             <pElem>/opt/bbcollab/include</pElem>
-            <pElem>/usr/include/srtp</pElem>
+            <pElem>/usr/include/ImageMagick</pElem>
             <pElem>include</pElem>
             <pElem>.</pElem>
           </incDir>
           <preprocessorList>
             <Elem>NDEBUG</Elem>
-            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
+            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/mcu-develop/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
             <Elem>PTRACING=2</Elem>
             <Elem>P_64BIT</Elem>
             <Elem>_REENTRANT</Elem>
@@ -5301,17 +5215,17 @@
         </ccTool>
       </item>
       <item path="src/codec/h263mf.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
           <incDir>
             <pElem>../zsdk-ptlib/include</pElem>
             <pElem>/opt/bbcollab/include</pElem>
-            <pElem>/usr/include/srtp</pElem>
+            <pElem>/usr/include/ImageMagick</pElem>
             <pElem>include</pElem>
             <pElem>.</pElem>
           </incDir>
           <preprocessorList>
             <Elem>NDEBUG</Elem>
-            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
+            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/mcu-develop/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
             <Elem>PTRACING=2</Elem>
             <Elem>P_64BIT</Elem>
             <Elem>_REENTRANT</Elem>
@@ -5327,17 +5241,17 @@
         </ccTool>
       </item>
       <item path="src/codec/h264mf.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
           <incDir>
             <pElem>../zsdk-ptlib/include</pElem>
             <pElem>/opt/bbcollab/include</pElem>
-            <pElem>/usr/include/srtp</pElem>
+            <pElem>/usr/include/ImageMagick</pElem>
             <pElem>include</pElem>
             <pElem>.</pElem>
           </incDir>
           <preprocessorList>
             <Elem>NDEBUG</Elem>
-            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
+            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/mcu-develop/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
             <Elem>PTRACING=2</Elem>
             <Elem>P_64BIT</Elem>
             <Elem>_REENTRANT</Elem>
@@ -5353,17 +5267,17 @@
         </ccTool>
       </item>
       <item path="src/codec/iLBCmf.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
           <incDir>
             <pElem>../zsdk-ptlib/include</pElem>
             <pElem>/opt/bbcollab/include</pElem>
-            <pElem>/usr/include/srtp</pElem>
+            <pElem>/usr/include/ImageMagick</pElem>
             <pElem>include</pElem>
             <pElem>.</pElem>
           </incDir>
           <preprocessorList>
             <Elem>NDEBUG</Elem>
-            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
+            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/mcu-develop/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
             <Elem>PTRACING=2</Elem>
             <Elem>P_64BIT</Elem>
             <Elem>_REENTRANT</Elem>
@@ -5371,17 +5285,17 @@
         </ccTool>
       </item>
       <item path="src/codec/mpeg4mf.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
           <incDir>
             <pElem>../zsdk-ptlib/include</pElem>
             <pElem>/opt/bbcollab/include</pElem>
-            <pElem>/usr/include/srtp</pElem>
+            <pElem>/usr/include/ImageMagick</pElem>
             <pElem>include</pElem>
             <pElem>.</pElem>
           </incDir>
           <preprocessorList>
             <Elem>NDEBUG</Elem>
-            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
+            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/mcu-develop/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
             <Elem>PTRACING=2</Elem>
             <Elem>P_64BIT</Elem>
             <Elem>_REENTRANT</Elem>
@@ -5397,17 +5311,17 @@
         </ccTool>
       </item>
       <item path="src/codec/opalpluginmgr.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
           <incDir>
             <pElem>../zsdk-ptlib/include</pElem>
             <pElem>/opt/bbcollab/include</pElem>
-            <pElem>/usr/include/srtp</pElem>
+            <pElem>/usr/include/ImageMagick</pElem>
             <pElem>include</pElem>
             <pElem>.</pElem>
           </incDir>
           <preprocessorList>
             <Elem>NDEBUG</Elem>
-            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
+            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/mcu-develop/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
             <Elem>PTRACING=2</Elem>
             <Elem>P_64BIT</Elem>
             <Elem>_REENTRANT</Elem>
@@ -5415,17 +5329,17 @@
         </ccTool>
       </item>
       <item path="src/codec/opalwavfile.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
           <incDir>
             <pElem>../zsdk-ptlib/include</pElem>
             <pElem>/opt/bbcollab/include</pElem>
-            <pElem>/usr/include/srtp</pElem>
+            <pElem>/usr/include/ImageMagick</pElem>
             <pElem>include</pElem>
             <pElem>.</pElem>
           </incDir>
           <preprocessorList>
             <Elem>NDEBUG</Elem>
-            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
+            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/mcu-develop/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
             <Elem>PTRACING=2</Elem>
             <Elem>P_64BIT</Elem>
             <Elem>_REENTRANT</Elem>
@@ -5433,17 +5347,17 @@
         </ccTool>
       </item>
       <item path="src/codec/opusmf.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
           <incDir>
             <pElem>../zsdk-ptlib/include</pElem>
             <pElem>/opt/bbcollab/include</pElem>
-            <pElem>/usr/include/srtp</pElem>
+            <pElem>/usr/include/ImageMagick</pElem>
             <pElem>include</pElem>
             <pElem>.</pElem>
           </incDir>
           <preprocessorList>
             <Elem>NDEBUG</Elem>
-            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
+            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/mcu-develop/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
             <Elem>PTRACING=2</Elem>
             <Elem>P_64BIT</Elem>
             <Elem>_REENTRANT</Elem>
@@ -5459,17 +5373,17 @@
         </ccTool>
       </item>
       <item path="src/codec/rfc2833.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
           <incDir>
             <pElem>../zsdk-ptlib/include</pElem>
             <pElem>/opt/bbcollab/include</pElem>
-            <pElem>/usr/include/srtp</pElem>
+            <pElem>/usr/include/ImageMagick</pElem>
             <pElem>include</pElem>
             <pElem>.</pElem>
           </incDir>
           <preprocessorList>
             <Elem>NDEBUG</Elem>
-            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
+            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/mcu-develop/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
             <Elem>PTRACING=2</Elem>
             <Elem>P_64BIT</Elem>
             <Elem>_REENTRANT</Elem>
@@ -5477,17 +5391,17 @@
         </ccTool>
       </item>
       <item path="src/codec/rfc4175.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
           <incDir>
             <pElem>../zsdk-ptlib/include</pElem>
             <pElem>/opt/bbcollab/include</pElem>
-            <pElem>/usr/include/srtp</pElem>
+            <pElem>/usr/include/ImageMagick</pElem>
             <pElem>include</pElem>
             <pElem>.</pElem>
           </incDir>
           <preprocessorList>
             <Elem>NDEBUG</Elem>
-            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
+            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/mcu-develop/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
             <Elem>PTRACING=2</Elem>
             <Elem>P_64BIT</Elem>
             <Elem>_REENTRANT</Elem>
@@ -5495,17 +5409,17 @@
         </ccTool>
       </item>
       <item path="src/codec/silencedetect.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
           <incDir>
             <pElem>../zsdk-ptlib/include</pElem>
             <pElem>/opt/bbcollab/include</pElem>
-            <pElem>/usr/include/srtp</pElem>
+            <pElem>/usr/include/ImageMagick</pElem>
             <pElem>include</pElem>
             <pElem>.</pElem>
           </incDir>
           <preprocessorList>
             <Elem>NDEBUG</Elem>
-            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
+            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/mcu-develop/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
             <Elem>PTRACING=2</Elem>
             <Elem>P_64BIT</Elem>
             <Elem>_REENTRANT</Elem>
@@ -5513,61 +5427,61 @@
         </ccTool>
       </item>
       <item path="src/codec/speex/libspeex/fftwrap.c" ex="false" tool="0" flavor2="0">
-        <cTool flags="1">
+        <cTool flags="4">
         </cTool>
       </item>
       <item path="src/codec/speex/libspeex/kiss_fft.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="1">
+        <cTool flags="4">
         </cTool>
       </item>
       <item path="src/codec/speex/libspeex/kiss_fftr.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="1">
+        <cTool flags="4">
         </cTool>
       </item>
       <item path="src/codec/speex/libspeex/math_approx.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="1">
+        <cTool flags="4">
         </cTool>
       </item>
       <item path="src/codec/speex/libspeex/mdf.c" ex="false" tool="0" flavor2="0">
-        <cTool flags="1">
+        <cTool flags="4">
         </cTool>
       </item>
       <item path="src/codec/speex/libspeex/misc.c" ex="false" tool="0" flavor2="0">
-        <cTool flags="1">
+        <cTool flags="4">
         </cTool>
       </item>
       <item path="src/codec/speex/libspeex/smallft.c" ex="false" tool="0" flavor2="0">
-        <cTool flags="1">
+        <cTool flags="4">
         </cTool>
       </item>
       <item path="src/codec/speex/libspeex/speex_preprocess.c"
             ex="false"
             tool="0"
             flavor2="0">
-        <cTool flags="1">
+        <cTool flags="4">
         </cTool>
       </item>
       <item path="src/codec/speexmf.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
           <incDir>
             <pElem>../zsdk-ptlib/include</pElem>
             <pElem>/opt/bbcollab/include</pElem>
-            <pElem>/usr/include/srtp</pElem>
+            <pElem>/usr/include/ImageMagick</pElem>
             <pElem>include</pElem>
             <pElem>.</pElem>
           </incDir>
           <preprocessorList>
             <Elem>NDEBUG</Elem>
-            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
+            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/mcu-develop/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
             <Elem>PTRACING=2</Elem>
             <Elem>P_64BIT</Elem>
             <Elem>_REENTRANT</Elem>
@@ -5575,17 +5489,17 @@
         </ccTool>
       </item>
       <item path="src/codec/vidcodec.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
           <incDir>
             <pElem>../zsdk-ptlib/include</pElem>
             <pElem>/opt/bbcollab/include</pElem>
-            <pElem>/usr/include/srtp</pElem>
+            <pElem>/usr/include/ImageMagick</pElem>
             <pElem>include</pElem>
             <pElem>.</pElem>
           </incDir>
           <preprocessorList>
             <Elem>NDEBUG</Elem>
-            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
+            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/mcu-develop/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
             <Elem>PTRACING=2</Elem>
             <Elem>P_64BIT</Elem>
             <Elem>_REENTRANT</Elem>
@@ -5593,17 +5507,17 @@
         </ccTool>
       </item>
       <item path="src/codec/vp8mf.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
           <incDir>
             <pElem>../zsdk-ptlib/include</pElem>
             <pElem>/opt/bbcollab/include</pElem>
-            <pElem>/usr/include/srtp</pElem>
+            <pElem>/usr/include/ImageMagick</pElem>
             <pElem>include</pElem>
             <pElem>.</pElem>
           </incDir>
           <preprocessorList>
             <Elem>NDEBUG</Elem>
-            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
+            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/mcu-develop/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
             <Elem>PTRACING=2</Elem>
             <Elem>P_64BIT</Elem>
             <Elem>_REENTRANT</Elem>
@@ -5641,17 +5555,17 @@
         </ccTool>
       </item>
       <item path="src/ep/localep.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
           <incDir>
             <pElem>../zsdk-ptlib/include</pElem>
             <pElem>/opt/bbcollab/include</pElem>
-            <pElem>/usr/include/srtp</pElem>
+            <pElem>/usr/include/ImageMagick</pElem>
             <pElem>include</pElem>
             <pElem>.</pElem>
           </incDir>
           <preprocessorList>
             <Elem>NDEBUG</Elem>
-            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
+            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/mcu-develop/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
             <Elem>PTRACING=2</Elem>
             <Elem>P_64BIT</Elem>
             <Elem>_REENTRANT</Elem>
@@ -5691,17 +5605,17 @@
         </ccTool>
       </item>
       <item path="src/ep/pcss.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
           <incDir>
             <pElem>../zsdk-ptlib/include</pElem>
             <pElem>/opt/bbcollab/include</pElem>
-            <pElem>/usr/include/srtp</pElem>
+            <pElem>/usr/include/ImageMagick</pElem>
             <pElem>include</pElem>
             <pElem>.</pElem>
           </incDir>
           <preprocessorList>
             <Elem>NDEBUG</Elem>
-            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
+            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/mcu-develop/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
             <Elem>PTRACING=2</Elem>
             <Elem>P_64BIT</Elem>
             <Elem>_REENTRANT</Elem>
@@ -5717,17 +5631,17 @@
         </ccTool>
       </item>
       <item path="src/h224/h224.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
           <incDir>
             <pElem>../zsdk-ptlib/include</pElem>
             <pElem>/opt/bbcollab/include</pElem>
-            <pElem>/usr/include/srtp</pElem>
+            <pElem>/usr/include/ImageMagick</pElem>
             <pElem>include</pElem>
             <pElem>.</pElem>
           </incDir>
           <preprocessorList>
             <Elem>NDEBUG</Elem>
-            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
+            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/mcu-develop/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
             <Elem>PTRACING=2</Elem>
             <Elem>P_64BIT</Elem>
             <Elem>_REENTRANT</Elem>
@@ -5735,17 +5649,17 @@
         </ccTool>
       </item>
       <item path="src/h224/h281.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
           <incDir>
             <pElem>../zsdk-ptlib/include</pElem>
             <pElem>/opt/bbcollab/include</pElem>
-            <pElem>/usr/include/srtp</pElem>
+            <pElem>/usr/include/ImageMagick</pElem>
             <pElem>include</pElem>
             <pElem>.</pElem>
           </incDir>
           <preprocessorList>
             <Elem>NDEBUG</Elem>
-            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
+            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/mcu-develop/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
             <Elem>PTRACING=2</Elem>
             <Elem>P_64BIT</Elem>
             <Elem>_REENTRANT</Elem>
@@ -5761,17 +5675,17 @@
         </ccTool>
       </item>
       <item path="src/h224/q922.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
           <incDir>
             <pElem>../zsdk-ptlib/include</pElem>
             <pElem>/opt/bbcollab/include</pElem>
-            <pElem>/usr/include/srtp</pElem>
+            <pElem>/usr/include/ImageMagick</pElem>
             <pElem>include</pElem>
             <pElem>.</pElem>
           </incDir>
           <preprocessorList>
             <Elem>NDEBUG</Elem>
-            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
+            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/mcu-develop/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
             <Elem>PTRACING=2</Elem>
             <Elem>P_64BIT</Elem>
             <Elem>_REENTRANT</Elem>
@@ -5875,17 +5789,17 @@
       <item path="src/iax2/transmit.cxx" ex="false" tool="1" flavor2="4">
       </item>
       <item path="src/im/im_mf.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
           <incDir>
             <pElem>../zsdk-ptlib/include</pElem>
             <pElem>/opt/bbcollab/include</pElem>
-            <pElem>/usr/include/srtp</pElem>
+            <pElem>/usr/include/ImageMagick</pElem>
             <pElem>include</pElem>
             <pElem>.</pElem>
           </incDir>
           <preprocessorList>
             <Elem>NDEBUG</Elem>
-            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
+            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/mcu-develop/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
             <Elem>PTRACING=2</Elem>
             <Elem>P_64BIT</Elem>
             <Elem>_REENTRANT</Elem>
@@ -5901,17 +5815,17 @@
         </ccTool>
       </item>
       <item path="src/im/rfc4103.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
           <incDir>
             <pElem>../zsdk-ptlib/include</pElem>
             <pElem>/opt/bbcollab/include</pElem>
-            <pElem>/usr/include/srtp</pElem>
+            <pElem>/usr/include/ImageMagick</pElem>
             <pElem>include</pElem>
             <pElem>.</pElem>
           </incDir>
           <preprocessorList>
             <Elem>NDEBUG</Elem>
-            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
+            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/mcu-develop/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
             <Elem>PTRACING=2</Elem>
             <Elem>P_64BIT</Elem>
             <Elem>_REENTRANT</Elem>
@@ -5927,17 +5841,17 @@
         </ccTool>
       </item>
       <item path="src/im/t140.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
           <incDir>
             <pElem>../zsdk-ptlib/include</pElem>
             <pElem>/opt/bbcollab/include</pElem>
-            <pElem>/usr/include/srtp</pElem>
+            <pElem>/usr/include/ImageMagick</pElem>
             <pElem>include</pElem>
             <pElem>.</pElem>
           </incDir>
           <preprocessorList>
             <Elem>NDEBUG</Elem>
-            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
+            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/mcu-develop/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
             <Elem>PTRACING=2</Elem>
             <Elem>P_64BIT</Elem>
             <Elem>_REENTRANT</Elem>
@@ -5963,17 +5877,17 @@
       <item path="src/lids/lidpluginmgr.cxx" ex="false" tool="1" flavor2="4">
       </item>
       <item path="src/opal/call.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
           <incDir>
             <pElem>../zsdk-ptlib/include</pElem>
             <pElem>/opt/bbcollab/include</pElem>
-            <pElem>/usr/include/srtp</pElem>
+            <pElem>/usr/include/ImageMagick</pElem>
             <pElem>include</pElem>
             <pElem>.</pElem>
           </incDir>
           <preprocessorList>
             <Elem>NDEBUG</Elem>
-            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
+            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/mcu-develop/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
             <Elem>PTRACING=2</Elem>
             <Elem>P_64BIT</Elem>
             <Elem>_REENTRANT</Elem>
@@ -5981,17 +5895,17 @@
         </ccTool>
       </item>
       <item path="src/opal/connection.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
           <incDir>
             <pElem>../zsdk-ptlib/include</pElem>
             <pElem>/opt/bbcollab/include</pElem>
-            <pElem>/usr/include/srtp</pElem>
+            <pElem>/usr/include/ImageMagick</pElem>
             <pElem>include</pElem>
             <pElem>.</pElem>
           </incDir>
           <preprocessorList>
             <Elem>NDEBUG</Elem>
-            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
+            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/mcu-develop/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
             <Elem>PTRACING=2</Elem>
             <Elem>P_64BIT</Elem>
             <Elem>_REENTRANT</Elem>
@@ -5999,17 +5913,17 @@
         </ccTool>
       </item>
       <item path="src/opal/console_mgr.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
           <incDir>
             <pElem>../zsdk-ptlib/include</pElem>
             <pElem>/opt/bbcollab/include</pElem>
-            <pElem>/usr/include/srtp</pElem>
+            <pElem>/usr/include/ImageMagick</pElem>
             <pElem>include</pElem>
             <pElem>.</pElem>
           </incDir>
           <preprocessorList>
             <Elem>NDEBUG</Elem>
-            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
+            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/mcu-develop/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
             <Elem>PTRACING=2</Elem>
             <Elem>P_64BIT</Elem>
             <Elem>_REENTRANT</Elem>
@@ -6017,17 +5931,17 @@
         </ccTool>
       </item>
       <item path="src/opal/endpoint.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
           <incDir>
             <pElem>../zsdk-ptlib/include</pElem>
             <pElem>/opt/bbcollab/include</pElem>
-            <pElem>/usr/include/srtp</pElem>
+            <pElem>/usr/include/ImageMagick</pElem>
             <pElem>include</pElem>
             <pElem>.</pElem>
           </incDir>
           <preprocessorList>
             <Elem>NDEBUG</Elem>
-            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
+            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/mcu-develop/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
             <Elem>PTRACING=2</Elem>
             <Elem>P_64BIT</Elem>
             <Elem>_REENTRANT</Elem>
@@ -6035,17 +5949,17 @@
         </ccTool>
       </item>
       <item path="src/opal/guid.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
           <incDir>
             <pElem>../zsdk-ptlib/include</pElem>
             <pElem>/opt/bbcollab/include</pElem>
-            <pElem>/usr/include/srtp</pElem>
+            <pElem>/usr/include/ImageMagick</pElem>
             <pElem>include</pElem>
             <pElem>.</pElem>
           </incDir>
           <preprocessorList>
             <Elem>NDEBUG</Elem>
-            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
+            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/mcu-develop/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
             <Elem>PTRACING=2</Elem>
             <Elem>P_64BIT</Elem>
             <Elem>_REENTRANT</Elem>
@@ -6053,17 +5967,17 @@
         </ccTool>
       </item>
       <item path="src/opal/manager.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
           <incDir>
             <pElem>../zsdk-ptlib/include</pElem>
             <pElem>/opt/bbcollab/include</pElem>
-            <pElem>/usr/include/srtp</pElem>
+            <pElem>/usr/include/ImageMagick</pElem>
             <pElem>include</pElem>
             <pElem>.</pElem>
           </incDir>
           <preprocessorList>
             <Elem>NDEBUG</Elem>
-            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
+            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/mcu-develop/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
             <Elem>PTRACING=2</Elem>
             <Elem>P_64BIT</Elem>
             <Elem>_REENTRANT</Elem>
@@ -6071,17 +5985,17 @@
         </ccTool>
       </item>
       <item path="src/opal/mediafmt.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
           <incDir>
             <pElem>../zsdk-ptlib/include</pElem>
             <pElem>/opt/bbcollab/include</pElem>
-            <pElem>/usr/include/srtp</pElem>
+            <pElem>/usr/include/ImageMagick</pElem>
             <pElem>include</pElem>
             <pElem>.</pElem>
           </incDir>
           <preprocessorList>
             <Elem>NDEBUG</Elem>
-            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
+            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/mcu-develop/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
             <Elem>PTRACING=2</Elem>
             <Elem>P_64BIT</Elem>
             <Elem>_REENTRANT</Elem>
@@ -6089,17 +6003,17 @@
         </ccTool>
       </item>
       <item path="src/opal/mediasession.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
           <incDir>
             <pElem>../zsdk-ptlib/include</pElem>
             <pElem>/opt/bbcollab/include</pElem>
-            <pElem>/usr/include/srtp</pElem>
+            <pElem>/usr/include/ImageMagick</pElem>
             <pElem>include</pElem>
             <pElem>.</pElem>
           </incDir>
           <preprocessorList>
             <Elem>NDEBUG</Elem>
-            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
+            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/mcu-develop/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
             <Elem>PTRACING=2</Elem>
             <Elem>P_64BIT</Elem>
             <Elem>_REENTRANT</Elem>
@@ -6107,17 +6021,17 @@
         </ccTool>
       </item>
       <item path="src/opal/mediastrm.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
           <incDir>
             <pElem>../zsdk-ptlib/include</pElem>
             <pElem>/opt/bbcollab/include</pElem>
-            <pElem>/usr/include/srtp</pElem>
+            <pElem>/usr/include/ImageMagick</pElem>
             <pElem>include</pElem>
             <pElem>.</pElem>
           </incDir>
           <preprocessorList>
             <Elem>NDEBUG</Elem>
-            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
+            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/mcu-develop/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
             <Elem>PTRACING=2</Elem>
             <Elem>P_64BIT</Elem>
             <Elem>_REENTRANT</Elem>
@@ -6125,17 +6039,17 @@
         </ccTool>
       </item>
       <item path="src/opal/mediatype.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
           <incDir>
             <pElem>../zsdk-ptlib/include</pElem>
             <pElem>/opt/bbcollab/include</pElem>
-            <pElem>/usr/include/srtp</pElem>
+            <pElem>/usr/include/ImageMagick</pElem>
             <pElem>include</pElem>
             <pElem>.</pElem>
           </incDir>
           <preprocessorList>
             <Elem>NDEBUG</Elem>
-            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
+            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/mcu-develop/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
             <Elem>PTRACING=2</Elem>
             <Elem>P_64BIT</Elem>
             <Elem>_REENTRANT</Elem>
@@ -6143,17 +6057,17 @@
         </ccTool>
       </item>
       <item path="src/opal/opal_c.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
           <incDir>
             <pElem>../zsdk-ptlib/include</pElem>
             <pElem>/opt/bbcollab/include</pElem>
-            <pElem>/usr/include/srtp</pElem>
+            <pElem>/usr/include/ImageMagick</pElem>
             <pElem>include</pElem>
             <pElem>.</pElem>
           </incDir>
           <preprocessorList>
             <Elem>NDEBUG</Elem>
-            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
+            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/mcu-develop/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
             <Elem>PTRACING=2</Elem>
             <Elem>P_64BIT</Elem>
             <Elem>_REENTRANT</Elem>
@@ -6161,17 +6075,17 @@
         </ccTool>
       </item>
       <item path="src/opal/patch.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
           <incDir>
             <pElem>../zsdk-ptlib/include</pElem>
             <pElem>/opt/bbcollab/include</pElem>
-            <pElem>/usr/include/srtp</pElem>
+            <pElem>/usr/include/ImageMagick</pElem>
             <pElem>include</pElem>
             <pElem>.</pElem>
           </incDir>
           <preprocessorList>
             <Elem>NDEBUG</Elem>
-            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
+            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/mcu-develop/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
             <Elem>PTRACING=2</Elem>
             <Elem>P_64BIT</Elem>
             <Elem>_REENTRANT</Elem>
@@ -6179,17 +6093,17 @@
         </ccTool>
       </item>
       <item path="src/opal/pres_ent.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
           <incDir>
             <pElem>../zsdk-ptlib/include</pElem>
             <pElem>/opt/bbcollab/include</pElem>
-            <pElem>/usr/include/srtp</pElem>
+            <pElem>/usr/include/ImageMagick</pElem>
             <pElem>include</pElem>
             <pElem>.</pElem>
           </incDir>
           <preprocessorList>
             <Elem>NDEBUG</Elem>
-            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
+            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/mcu-develop/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
             <Elem>PTRACING=2</Elem>
             <Elem>P_64BIT</Elem>
             <Elem>_REENTRANT</Elem>
@@ -6205,17 +6119,17 @@
         </ccTool>
       </item>
       <item path="src/opal/transcoders.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
           <incDir>
             <pElem>../zsdk-ptlib/include</pElem>
             <pElem>/opt/bbcollab/include</pElem>
-            <pElem>/usr/include/srtp</pElem>
+            <pElem>/usr/include/ImageMagick</pElem>
             <pElem>include</pElem>
             <pElem>.</pElem>
           </incDir>
           <preprocessorList>
             <Elem>NDEBUG</Elem>
-            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
+            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/mcu-develop/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
             <Elem>PTRACING=2</Elem>
             <Elem>P_64BIT</Elem>
             <Elem>_REENTRANT</Elem>
@@ -6223,17 +6137,17 @@
         </ccTool>
       </item>
       <item path="src/opal/transports.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
           <incDir>
             <pElem>../zsdk-ptlib/include</pElem>
             <pElem>/opt/bbcollab/include</pElem>
-            <pElem>/usr/include/srtp</pElem>
+            <pElem>/usr/include/ImageMagick</pElem>
             <pElem>include</pElem>
             <pElem>.</pElem>
           </incDir>
           <preprocessorList>
             <Elem>NDEBUG</Elem>
-            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
+            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/mcu-develop/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
             <Elem>PTRACING=2</Elem>
             <Elem>P_64BIT</Elem>
             <Elem>_REENTRANT</Elem>
@@ -6241,17 +6155,17 @@
         </ccTool>
       </item>
       <item path="src/rtp/dtls_srtp_session.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
           <incDir>
             <pElem>../zsdk-ptlib/include</pElem>
             <pElem>/opt/bbcollab/include</pElem>
-            <pElem>/usr/include/srtp</pElem>
+            <pElem>/usr/include/ImageMagick</pElem>
             <pElem>include</pElem>
             <pElem>.</pElem>
           </incDir>
           <preprocessorList>
             <Elem>NDEBUG</Elem>
-            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
+            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/mcu-develop/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
             <Elem>PTRACING=2</Elem>
             <Elem>P_64BIT</Elem>
             <Elem>_REENTRANT</Elem>
@@ -6267,17 +6181,17 @@
         </ccTool>
       </item>
       <item path="src/rtp/jitter.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
           <incDir>
             <pElem>../zsdk-ptlib/include</pElem>
             <pElem>/opt/bbcollab/include</pElem>
-            <pElem>/usr/include/srtp</pElem>
+            <pElem>/usr/include/ImageMagick</pElem>
             <pElem>include</pElem>
             <pElem>.</pElem>
           </incDir>
           <preprocessorList>
             <Elem>NDEBUG</Elem>
-            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
+            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/mcu-develop/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
             <Elem>PTRACING=2</Elem>
             <Elem>P_64BIT</Elem>
             <Elem>_REENTRANT</Elem>
@@ -6465,17 +6379,17 @@
       <item path="src/rtp/libsrtp/test/srtp_driver.c" ex="false" tool="0" flavor2="2">
       </item>
       <item path="src/rtp/metrics.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
           <incDir>
             <pElem>../zsdk-ptlib/include</pElem>
             <pElem>/opt/bbcollab/include</pElem>
-            <pElem>/usr/include/srtp</pElem>
+            <pElem>/usr/include/ImageMagick</pElem>
             <pElem>include</pElem>
             <pElem>.</pElem>
           </incDir>
           <preprocessorList>
             <Elem>NDEBUG</Elem>
-            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
+            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/mcu-develop/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
             <Elem>PTRACING=2</Elem>
             <Elem>P_64BIT</Elem>
             <Elem>_REENTRANT</Elem>
@@ -6491,17 +6405,17 @@
         </ccTool>
       </item>
       <item path="src/rtp/pcapfile.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
           <incDir>
             <pElem>../zsdk-ptlib/include</pElem>
             <pElem>/opt/bbcollab/include</pElem>
-            <pElem>/usr/include/srtp</pElem>
+            <pElem>/usr/include/ImageMagick</pElem>
             <pElem>include</pElem>
             <pElem>.</pElem>
           </incDir>
           <preprocessorList>
             <Elem>NDEBUG</Elem>
-            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
+            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/mcu-develop/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
             <Elem>PTRACING=2</Elem>
             <Elem>P_64BIT</Elem>
             <Elem>_REENTRANT</Elem>
@@ -6509,17 +6423,17 @@
         </ccTool>
       </item>
       <item path="src/rtp/rtp.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
           <incDir>
             <pElem>../zsdk-ptlib/include</pElem>
             <pElem>/opt/bbcollab/include</pElem>
-            <pElem>/usr/include/srtp</pElem>
+            <pElem>/usr/include/ImageMagick</pElem>
             <pElem>include</pElem>
             <pElem>.</pElem>
           </incDir>
           <preprocessorList>
             <Elem>NDEBUG</Elem>
-            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
+            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/mcu-develop/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
             <Elem>PTRACING=2</Elem>
             <Elem>P_64BIT</Elem>
             <Elem>_REENTRANT</Elem>
@@ -6527,17 +6441,17 @@
         </ccTool>
       </item>
       <item path="src/rtp/rtp_fec.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
           <incDir>
             <pElem>../zsdk-ptlib/include</pElem>
             <pElem>/opt/bbcollab/include</pElem>
-            <pElem>/usr/include/srtp</pElem>
+            <pElem>/usr/include/ImageMagick</pElem>
             <pElem>include</pElem>
             <pElem>.</pElem>
           </incDir>
           <preprocessorList>
             <Elem>NDEBUG</Elem>
-            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
+            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/mcu-develop/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
             <Elem>PTRACING=2</Elem>
             <Elem>P_64BIT</Elem>
             <Elem>_REENTRANT</Elem>
@@ -6545,17 +6459,17 @@
         </ccTool>
       </item>
       <item path="src/rtp/rtp_session.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
           <incDir>
             <pElem>../zsdk-ptlib/include</pElem>
             <pElem>/opt/bbcollab/include</pElem>
-            <pElem>/usr/include/srtp</pElem>
+            <pElem>/usr/include/ImageMagick</pElem>
             <pElem>include</pElem>
             <pElem>.</pElem>
           </incDir>
           <preprocessorList>
             <Elem>NDEBUG</Elem>
-            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
+            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/mcu-develop/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
             <Elem>PTRACING=2</Elem>
             <Elem>P_64BIT</Elem>
             <Elem>_REENTRANT</Elem>
@@ -6563,17 +6477,17 @@
         </ccTool>
       </item>
       <item path="src/rtp/rtp_stream.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
           <incDir>
             <pElem>../zsdk-ptlib/include</pElem>
             <pElem>/opt/bbcollab/include</pElem>
-            <pElem>/usr/include/srtp</pElem>
+            <pElem>/usr/include/ImageMagick</pElem>
             <pElem>include</pElem>
             <pElem>.</pElem>
           </incDir>
           <preprocessorList>
             <Elem>NDEBUG</Elem>
-            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
+            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/mcu-develop/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
             <Elem>PTRACING=2</Elem>
             <Elem>P_64BIT</Elem>
             <Elem>_REENTRANT</Elem>
@@ -6581,17 +6495,17 @@
         </ccTool>
       </item>
       <item path="src/rtp/rtpconn.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
           <incDir>
             <pElem>../zsdk-ptlib/include</pElem>
             <pElem>/opt/bbcollab/include</pElem>
-            <pElem>/usr/include/srtp</pElem>
+            <pElem>/usr/include/ImageMagick</pElem>
             <pElem>include</pElem>
             <pElem>.</pElem>
           </incDir>
           <preprocessorList>
             <Elem>NDEBUG</Elem>
-            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
+            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/mcu-develop/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
             <Elem>PTRACING=2</Elem>
             <Elem>P_64BIT</Elem>
             <Elem>_REENTRANT</Elem>
@@ -6599,17 +6513,17 @@
         </ccTool>
       </item>
       <item path="src/rtp/rtpep.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
           <incDir>
             <pElem>../zsdk-ptlib/include</pElem>
             <pElem>/opt/bbcollab/include</pElem>
-            <pElem>/usr/include/srtp</pElem>
+            <pElem>/usr/include/ImageMagick</pElem>
             <pElem>include</pElem>
             <pElem>.</pElem>
           </incDir>
           <preprocessorList>
             <Elem>NDEBUG</Elem>
-            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
+            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/mcu-develop/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
             <Elem>PTRACING=2</Elem>
             <Elem>P_64BIT</Elem>
             <Elem>_REENTRANT</Elem>
@@ -6617,17 +6531,17 @@
         </ccTool>
       </item>
       <item path="src/rtp/srtp_session.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
           <incDir>
             <pElem>../zsdk-ptlib/include</pElem>
             <pElem>/opt/bbcollab/include</pElem>
-            <pElem>/usr/include/srtp</pElem>
+            <pElem>/usr/include/ImageMagick</pElem>
             <pElem>include</pElem>
             <pElem>.</pElem>
           </incDir>
           <preprocessorList>
             <Elem>NDEBUG</Elem>
-            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
+            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/mcu-develop/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
             <Elem>PTRACING=2</Elem>
             <Elem>P_64BIT</Elem>
             <Elem>_REENTRANT</Elem>
@@ -6643,39 +6557,39 @@
         </ccTool>
       </item>
       <item path="src/sdp/ice.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
         </ccTool>
       </item>
       <item path="src/sdp/sdp.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
         </ccTool>
       </item>
       <item path="src/sdp/sdpep.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
         </ccTool>
       </item>
       <item path="src/sdp/sdphttpep.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
         </ccTool>
       </item>
       <item path="src/sip/handlers.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
         </ccTool>
       </item>
       <item path="src/sip/sipcon.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
         </ccTool>
       </item>
       <item path="src/sip/sipep.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
         </ccTool>
       </item>
       <item path="src/sip/sippdu.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
         </ccTool>
       </item>
       <item path="src/sip/sippres.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
         </ccTool>
       </item>
       <item path="src/t120/h323t120.cxx" ex="false" tool="1" flavor2="4">
@@ -6701,17 +6615,17 @@
         </ccTool>
       </item>
       <item path="src/t38/t38mf.cxx" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="5">
           <incDir>
             <pElem>../zsdk-ptlib/include</pElem>
             <pElem>/opt/bbcollab/include</pElem>
-            <pElem>/usr/include/srtp</pElem>
+            <pElem>/usr/include/ImageMagick</pElem>
             <pElem>include</pElem>
             <pElem>.</pElem>
           </incDir>
           <preprocessorList>
             <Elem>NDEBUG</Elem>
-            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
+            <Elem>OPAL_PLUGIN_DIR="/opt/zenon/src/mcu-develop/zsdk-opal/lib_linux_x86_64/plugins"</Elem>
             <Elem>PTRACING=2</Elem>
             <Elem>P_64BIT</Elem>
             <Elem>_REENTRANT</Elem>
