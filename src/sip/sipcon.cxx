@@ -2893,6 +2893,8 @@ void SIPConnection::OnReceivedRedirection(SIP_PDU & response)
 
   for (PStringOptions::iterator it = m_stringOptions.begin(); it != m_stringOptions.end(); ++it)
     whereTo.SetParamVar(OPAL_URL_PARAM_PREFIX + it->first, it->second);
+  if (!m_dialog.GetProxy().IsEmpty())
+    whereTo.SetParamVar(OPAL_PROXY_PARAM, m_dialog.GetProxy());
   PTRACE(3, "Received redirect to " << whereTo);
 
   PStringToString info = m_dialog.GetRequestURI().GetParamVars();
