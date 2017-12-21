@@ -213,9 +213,10 @@ bool FFMPEGCodec::InitEncoder(AVCodecID codecId)
 
   m_context->rtp_callback = &StaticRTPCallBack;
 
-  m_context->flags = CODEC_FLAG_EMU_EDGE   // don't draw edges
-                    | CODEC_FLAG_TRUNCATED  // Possible missing packets
-                    ;
+#ifdef CODEC_FLAG_EMU_EDGE
+  m_context->flags |= CODEC_FLAG_EMU_EDGE;   // don't draw edges
+#endif
+  m_context->flags |= AV_CODEC_FLAG_TRUNCATED;  // Possible missing packets
 
   m_context->mb_decision = FF_MB_DECISION_SIMPLE;    // high quality off
 
@@ -305,8 +306,10 @@ bool FFMPEGCodec::SetResolution(unsigned width, unsigned height)
   }
 
   if (m_context != NULL) {
+#ifdef CODEC_FLAG_EMU_EDGE
     if (width > 352)
       m_context->flags &= ~CODEC_FLAG_EMU_EDGE; // Totally bizarre! FFMPEG crashes if on for CIF4
+#endif
 
     m_context->width = width;
     m_context->height = height;
