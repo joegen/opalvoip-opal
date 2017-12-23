@@ -868,7 +868,9 @@ class H264_Encoder : public PluginVideoEncoder<MY_CODEC>
 
       // create RTP frame from destination buffer
       PluginCodec_RTP to(toPtr, toLen);
-      m_encapsulation.GetPacket(to, flags);
+      if (!m_encapsulation.GetPacket(to, flags))
+        return false;
+
       toLen = (unsigned)to.GetPacketSize();
       return true;
     }
