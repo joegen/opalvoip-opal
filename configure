@@ -5619,8 +5619,8 @@ fi
       target_os=Darwin
       target_release=`xcodebuild -showsdks | sed -n 's/.*macosx\(.*\)/\1/p' | sort | tail -n 1`
 
-      CPPFLAGS="-mmacosx-version-min=$target_release $CPPFLAGS"
-      LDFLAGS="-mmacosx-version-min=$target_release $LDFLAGS"
+      CPPFLAGS="-mmacosx-version-min=10.12 $CPPFLAGS"
+      LDFLAGS="-mmacosx-version-min=10.12 $LDFLAGS"
       LIBS="-framework AVFoundation -framework CoreVideo -framework CoreMedia -framework AudioUnit $LIBS"
    ;;
 
@@ -6003,6 +6003,43 @@ else
 
 fi
 
+
+
+
+
+   oldCPPFLAGS="$CPPFLAGS"
+   CPPFLAGS="$CPPFLAGS -fno-omit-frame-pointer"
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking Don't omit frame pointers for stack walking (-fno-omit-frame-pointer)" >&5
+$as_echo_n "checking Don't omit frame pointers for stack walking (-fno-omit-frame-pointer)... " >&6; }
+   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  usable=yes
+else
+  usable=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
+$as_echo "$usable" >&6; }
+   CPPFLAGS="$oldCPPFLAGS"
+
+   if test "x$usable" = "xyes"; then :
+
+      CFLAGS="-fno-omit-frame-pointer $CFLAGS"
+      CXXFLAGS="-fno-omit-frame-pointer $CXXFLAGS"
+
+
+fi
 
 
 
@@ -13269,6 +13306,52 @@ fi
   $as_echo "                     Ruby support : ${OPAL_RUBY}"
 else
   $as_echo "                     Ruby support : no"
+
+fi
+
+
+   $as_echo ""
+
+   if ${CPPFLAGS+:} false; then :
+  $as_echo "                         CPPFLAGS : ${CPPFLAGS}"
+else
+  $as_echo "                         CPPFLAGS : no"
+
+fi
+
+
+
+   if ${CFLAGS+:} false; then :
+  $as_echo "                           CFLAGS : ${CFLAGS}"
+else
+  $as_echo "                           CFLAGS : no"
+
+fi
+
+
+
+   if ${CXXFLAGS+:} false; then :
+  $as_echo "                         CXXFLAGS : ${CXXFLAGS}"
+else
+  $as_echo "                         CXXFLAGS : no"
+
+fi
+
+
+
+   if ${CXXFLAGS+:} false; then :
+  $as_echo "                          LDFLAGS : ${CXXFLAGS}"
+else
+  $as_echo "                          LDFLAGS : no"
+
+fi
+
+
+
+   if ${LIBS+:} false; then :
+  $as_echo "                             LIBS : ${LIBS}"
+else
+  $as_echo "                             LIBS : no"
 
 fi
 
