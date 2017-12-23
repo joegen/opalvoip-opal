@@ -905,3 +905,4 @@ EXPORTS
 	__vfprintf_l
 	__vsnprintf_l
 	__vsprintf_l
+    _wmemcpy
