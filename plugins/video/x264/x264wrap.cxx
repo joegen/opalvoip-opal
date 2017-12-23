@@ -755,31 +755,42 @@ bool H264Encoder::Load(void * instance)
       pluginDirs = DefaultPluginDirs;
   }
 
-  static const char ExecutableName[] = EXECUTABLE_NAME;
+  static const char * const ExecutableNames[] = {
+    EXECUTABLE_NAME,
+#if WIN32
+    "\\Work\\opal\\bin\\plugins\\Win32\\Release\\EXECUTABLE_NAME
+#else
+    "x264_gpl_helper/" EXECUTABLE_NAME,
+    "plugins/x264_gpl_helper/" EXECUTABLE_NAME
+#endif
+  };
 
   char executablePath[500];
 #if WIN32
   if (GetModuleFileName(GetModuleHandle("h264_x264_ptplugin.dll"), executablePath, sizeof(executablePath)))
-    strcpy(strrchr(executablePath, '\\') + 1, ExecutableName);
+    strcpy(strrchr(executablePath, '\\') + 1, ExecutableNames[0]);
   else
     executablePath[0] = '\0';
 
   if (!IsExecutable(executablePath))
 #endif
   {
+    bool stillLooking = true;
     char * tempDirs = strdup(pluginDirs);
-    const char * token = strtok(tempDirs, DIR_TOKENISER);
-    while (token != NULL) {
-      snprintf(executablePath, sizeof(executablePath), "%s" DIR_SEPARATOR "%s", token, ExecutableName);
-      if (IsExecutable(executablePath))
-        break;
-
-      token = strtok(NULL, DIR_TOKENISER);
+    for (const char * token = strtok(tempDirs, DIR_TOKENISER); stillLooking && token != NULL; token = strtok(NULL, DIR_TOKENISER)) {
+      for (size_t i = 0; stillLooking && i < sizeof(ExecutableNames)/sizeof(ExecutableNames[0]); ++i) {
+        snprintf(executablePath, sizeof(executablePath), "%s" DIR_SEPARATOR "%s", token, ExecutableNames[i]);
+        if (IsExecutable(executablePath)) {
+          stillLooking = false;
+          break;
+        }
+        PTRACE(4, PipeTraceName, "Could not find \"" << executablePath << '"');
+      }
     }
     free(tempDirs);
 
-    if (token == NULL) {
-      PTRACE(1, PipeTraceName, "Could not find GPL process executable " << ExecutableName << " in " << pluginDirs);
+    if (stillLooking) {
+      PTRACE(1, PipeTraceName, "Could not find GPL process executable " << ExecutableNames[0] << " in " << pluginDirs);
       return false;
     }
   }
