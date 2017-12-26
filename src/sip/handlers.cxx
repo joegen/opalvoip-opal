@@ -394,7 +394,7 @@ void SIPHandler::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & resp
   }
 }
 
-void SIPHandler::OnReceivedForbidden(SIPTransaction & transaction, SIP_PDU & response)
+void SIPHandler::OnReceivedForbidden(SIPTransaction & PTRACE_PARAM(transaction), SIP_PDU & response)
 {
   OnFailed(SIP_PDU::Failure_Forbidden);
   if (m_retryForbidden) {

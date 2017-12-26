@@ -144,9 +144,9 @@ class OpalMediaFileRecordManager : public OpalRecordManager
 
 
 OpalMediaFileRecordManager::OpalMediaFileRecordManager()
-  :	m_audioMixer(NULL)
-  ,	m_file(NULL)
-  , m_audioTrack(numeric_limits<unsigned>::max())
+  : m_file(NULL)
+  , m_audioMixer(NULL)
+  ,	m_audioTrack(numeric_limits<unsigned>::max())
 #if OPAL_VIDEO
   ,	m_videoMixer(NULL)
   , m_videoTrack(numeric_limits<unsigned>::max())
@@ -471,7 +471,7 @@ OpalMediaFileRecordManager::FactoryInitialiser::FactoryInitialiser()
 }
 
 
-OpalRecordManager * OpalMediaFileRecordManager::FactoryInitialiser::Create(PMediaFile::Factory::Param_T) const
+OpalRecordManager * OpalMediaFileRecordManager::FactoryInitialiser::Create(OpalRecordManager::Factory::Param_T) const
 {
   return new OpalMediaFileRecordManager();
 }

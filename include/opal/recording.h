@@ -54,7 +54,7 @@ class OpalRecordManager : public PObject
 
         Currently only WAV files, and for WIndows only, AVI files, are supported.
         Howeer this factory allows an application to add their own file formats. */
-    typedef PFactory<OpalRecordManager, PCaselessString> Factory;
+    typedef PFactory<OpalRecordManager, PFilePathString> Factory;
 
 #if OPAL_VIDEO
     enum VideoMode {
