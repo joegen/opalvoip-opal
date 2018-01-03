@@ -1,6 +1,17 @@
 LIBRARY OPAL
 EXPORTS
 ;Must tell MergeSym that these symbols are not to be exported
+    ___local_stdio_printf_options @50255 NONAME
+    ___local_stdio_scanf_options @50256 NONAME
+    ___isa_available_default @35266 NONAME
+    __speex_putc @50212 NONAME
+    __vfprintf_l @50248 NONAME
+    __vsnprintf_l @50249 NONAME
+    __vsprintf_l @50250 NONAME
+    __vsscanf_l @50251 NONAME
+    __local_stdio_printf_options @49754 NONAME
+    __local_stdio_scanf_options @49755 NONAME
+    _CTA2?AVbad_cast@std@@ @47922 NONAME
     _a2u @49750 NONAME
     _aes_decrypt_with_raw_key @49751 NONAME
     _alaw2linear @49752 NONAME
@@ -63,6 +74,7 @@ EXPORTS
     _speex_preprocess_estimate_update @49804 NONAME
     _speex_preprocess_state_destroy @49805 NONAME
     _speex_preprocess_state_init @49806 NONAME
+    _speex_putc @49747 NONAME
     _speex_rand @49807 NONAME
     _speex_rand_vec @49808 NONAME
     _speex_realloc @49809 NONAME
@@ -243,21 +255,10 @@ EXPORTS
     _vfprintf @49984 NONAME
     _vsnprintf @49985 NONAME
     _wmemcpy @49986 NONAME
-    __speex_putc @50212 NONAME
-    __vfprintf_l @50248 NONAME
-    __vsnprintf_l @50249 NONAME
-    __vsprintf_l @50250 NONAME
-    __vsscanf_l @50251 NONAME
-    ___local_stdio_printf_options @50255 NONAME
-    ___local_stdio_scanf_options @50256 NONAME
-    _CTA2?AVbad_cast@std@@ @47922 NONAME
-    _speex_putc @49747 NONAME
     _vfprintf_l @49749 NONAME
     _vsnprintf_l @49750 NONAME
     _vsprintf_l @49751 NONAME
     _vsscanf_l @49752 NONAME
-    __local_stdio_printf_options @49754 NONAME
-    __local_stdio_scanf_options @49755 NONAME
 	a2u @49512 NONAME
     aes_decrypt_with_raw_key @49513 NONAME
     alaw2linear @49514 NONAME
