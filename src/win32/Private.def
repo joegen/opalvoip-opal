@@ -1,908 +1,498 @@
-LIBRARY Opal
+LIBRARY OPAL
 EXPORTS
 ;Must tell MergeSym that these symbols are not to be exported
-    _alaw2linear @12522 NONAME ;_alaw2linear
-    _alaw2ulaw @12523 NONAME ;_alaw2ulaw
-    _dct_basis @12524 NONAME ;_dct_basis
-    _gsm_A @12525 NONAME ;_gsm_A
-    _gsm_abs @12526 NONAME ;_gsm_abs
-    _gsm_add @12527 NONAME ;_gsm_add
-    _gsm_asl @12528 NONAME ;_gsm_asl
-    _gsm_asr @12529 NONAME ;_gsm_asr
-    _gsm_B @12530 NONAME ;_gsm_B
-    _Gsm_Coder @12531 NONAME ;_Gsm_Coder
-    _gsm_create @12532 NONAME ;_gsm_create
-    _gsm_decode @12533 NONAME ;_gsm_decode
-    _Gsm_Decoder @12534 NONAME ;_Gsm_Decoder
-    _gsm_destroy @12535 NONAME ;_gsm_destroy
-    _gsm_div @12536 NONAME ;_gsm_div
-    _gsm_DLB @12537 NONAME ;_gsm_DLB
-    _gsm_encode @12538 NONAME ;_gsm_encode
-    _gsm_FAC @12539 NONAME ;_gsm_FAC
-    _gsm_H @12540 NONAME ;_gsm_H
-    _gsm_INVA @12541 NONAME ;_gsm_INVA
-    _Gsm_Long_Term_Predictor @12542 NONAME ;_Gsm_Long_Term_Predictor
-    _Gsm_Long_Term_Synthesis_Filtering @12543 NONAME ;_Gsm_Long_Term_Synthesis_Filtering
-    _Gsm_LPC_Analysis @12544 NONAME ;_Gsm_LPC_Analysis
-    _gsm_L_add @12545 NONAME ;_gsm_L_add
-    _gsm_L_asl @12546 NONAME ;_gsm_L_asl
-    _gsm_L_asr @12547 NONAME ;_gsm_L_asr
-    _gsm_L_mult @12548 NONAME ;_gsm_L_mult
-    _gsm_L_sub @12549 NONAME ;_gsm_L_sub
-    _gsm_MAC @12550 NONAME ;_gsm_MAC
-    _gsm_MIC @12551 NONAME ;_gsm_MIC
-    _gsm_mult @12552 NONAME ;_gsm_mult
-    _gsm_mult_r @12553 NONAME ;_gsm_mult_r
-    _gsm_norm @12554 NONAME ;_gsm_norm
-    _gsm_NRFAC @12555 NONAME ;_gsm_NRFAC
-    _Gsm_Preprocess @12556 NONAME ;_Gsm_Preprocess
-    _gsm_QLB @12557 NONAME ;_gsm_QLB
-    _Gsm_RPE_Decoding @12558 NONAME ;_Gsm_RPE_Decoding
-    _Gsm_RPE_Encoding @12559 NONAME ;_Gsm_RPE_Encoding
-    _Gsm_Short_Term_Analysis_Filter @12560 NONAME ;_Gsm_Short_Term_Analysis_Filter
-    _Gsm_Short_Term_Synthesis_Filter @12561 NONAME ;_Gsm_Short_Term_Synthesis_Filter
-    _gsm_sub @12562 NONAME ;_gsm_sub
-    _gsm_option @9999 NONAME ;_gsm_option
-    _htd_cbp @12563 NONAME ;_htd_cbp
-    _htd_cbp_width @12564 NONAME ;_htd_cbp_width
-    _htd_dvm @12565 NONAME ;_htd_dvm
-    _htd_dvm_width @12566 NONAME ;_htd_dvm_width
-    _htd_mba @12567 NONAME ;_htd_mba
-    _htd_mba_width @12568 NONAME ;_htd_mba_width
-    _htd_mtype @12569 NONAME ;_htd_mtype
-    _htd_mtype_width @12570 NONAME ;_htd_mtype_width
-    _htd_tcoeff @12571 NONAME ;_htd_tcoeff
-    _htd_tcoeff_width @12572 NONAME ;_htd_tcoeff_width
-    _hte_mba @12573 NONAME ;_hte_mba
-    _hte_tc @12574 NONAME ;_hte_tc
-    _linear2alaw @12575 NONAME ;_linear2alaw
-    _linear2ulaw @12576 NONAME ;_linear2ulaw
-    _multab @12577 NONAME ;_multab
-    _ulaw2alaw @12578 NONAME ;_ulaw2alaw
-    _ulaw2linear @12579 NONAME ;_ulaw2linear
-    _analys_ @17289 NONAME ;_analys_
-    _bsynz_ @17290 NONAME ;_bsynz_
-    _chanrd_ @17291 NONAME ;_chanrd_
-    _chanwr_ @17292 NONAME ;_chanwr_
-    _chanwr_0_ @17293 NONAME ;_chanwr_0_
-    _create_lpc10_decoder_state @17294 NONAME ;_create_lpc10_decoder_state
-    _create_lpc10_encoder_state @17295 NONAME ;_create_lpc10_encoder_state
-    _dcbias_ @17296 NONAME ;_dcbias_
-    _decode_ @17297 NONAME ;_decode_
-    _deemp_ @17298 NONAME ;_deemp_
-    _difmag_ @17299 NONAME ;_difmag_
-    _dyptrk_ @17300 NONAME ;_dyptrk_
-    _encode_ @17301 NONAME ;_encode_
-    _energy_ @17302 NONAME ;_energy_
-    _ham84_ @17303 NONAME ;_ham84_
-    _hp100_ @17304 NONAME ;_hp100_
-    _init_lpc10_decoder_state @17305 NONAME ;_init_lpc10_decoder_state
-    _init_lpc10_encoder_state @17306 NONAME ;_init_lpc10_encoder_state
-    _invert_ @17307 NONAME ;_invert_
-    _irc2pc_ @17308 NONAME ;_irc2pc_
-    _ivfilt_ @17309 NONAME ;_ivfilt_
-    _i_nint @17310 NONAME ;_i_nint
-    _lpc10_decode @17311 NONAME ;_lpc10_decode
-    _lpc10_encode @17312 NONAME ;_lpc10_encode
-    _lpcini_ @17313 NONAME ;_lpcini_
-    _lpfilt_ @17314 NONAME ;_lpfilt_
-    _median_ @17315 NONAME ;_median_
-    _mload_ @17316 NONAME ;_mload_
-    _onset_ @17317 NONAME ;_onset_
-    _pitsyn_ @17318 NONAME ;_pitsyn_
-    _placea_ @17319 NONAME ;_placea_
-    _placev_ @17320 NONAME ;_placev_
-    _pow_ii @17321 NONAME ;_pow_ii
-    _preemp_ @17322 NONAME ;_preemp_
-    _prepro_ @17323 NONAME ;_prepro_
-    _random_ @17324 NONAME ;_random_
-    _rcchk_ @17325 NONAME ;_rcchk_
-    _r_sign @17326 NONAME ;_r_sign
-    _synths_ @17327 NONAME ;_synths_
-    _tbdm_ @17328 NONAME ;_tbdm_
-    _voicin_ @17329 NONAME ;_voicin_
-    _vparms_ @17330 NONAME ;_vparms_
-    __a2u @17332 NONAME ;__a2u
-    __u2a @17342 NONAME ;__u2a
-    _GUID_CLASS_VOIP_BLASTER @29775 NONAME ;_GUID_CLASS_VOIP_BLASTER
-    _g726_16_decoder @30161 NONAME ;_g726_16_decoder
-    _g726_16_encoder @30162 NONAME ;_g726_16_encoder
-    _g726_24_decoder @30163 NONAME ;_g726_24_decoder
-    _g726_24_encoder @30164 NONAME ;_g726_24_encoder
-    _g726_32_decoder @30165 NONAME ;_g726_32_decoder
-    _g726_32_encoder @30166 NONAME ;_g726_32_encoder
-    _g726_40_decoder @30167 NONAME ;_g726_40_decoder
-    _g726_40_encoder @30168 NONAME ;_g726_40_encoder
-    _g726_init_state @30169 NONAME ;_g726_init_state
-    _predictor_pole @30170 NONAME ;_predictor_pole
-    _predictor_zero @30171 NONAME ;_predictor_zero
-    _quantize @30172 NONAME ;_quantize
-    _reconstruct @30173 NONAME ;_reconstruct
-    _step_size @30174 NONAME ;_step_size
-    _tandem_adjust_alaw @30175 NONAME ;_tandem_adjust_alaw
-    _tandem_adjust_ulaw @30176 NONAME ;_tandem_adjust_ulaw
-    _update @30177 NONAME ;_update
-    _speex_autocorr @21290 NONAME ;_autocorr
-    _be_int @21291 NONAME ;_be_int
-    _be_short @21292 NONAME ;_be_short
-    _bw_lpc @21293 NONAME ;_bw_lpc
-    _cdbk_nb @21294 NONAME ;_cdbk_nb
-    _cdbk_nb_high1 @21295 NONAME ;_cdbk_nb_high1
-    _cdbk_nb_high2 @21296 NONAME ;_cdbk_nb_high2
-    _cdbk_nb_low1 @21297 NONAME ;_cdbk_nb_low1
-    _cdbk_nb_low2 @21298 NONAME ;_cdbk_nb_low2
-    _cheb_poly_eva @21299 NONAME ;_cheb_poly_eva
-    _comb_filter @21300 NONAME ;_comb_filter
-    _enh_lpc @21301 NONAME ;_enh_lpc
-    _exc_10_16_table @21302 NONAME ;_exc_10_16_table
-    _exc_10_32_table @21303 NONAME ;_exc_10_32_table
-    _exc_5_256_table @21304 NONAME ;_exc_5_256_table
-    _exc_5_64_table @21305 NONAME ;_exc_5_64_table
-    _exc_8_128_table @21306 NONAME ;_exc_8_128_table
-    _exc_gain_quant_scal1 @21307 NONAME ;_exc_gain_quant_scal1
-    _exc_gain_quant_scal3 @21308 NONAME ;_exc_gain_quant_scal3
-    _filter_mem2 @21309 NONAME ;_filter_mem2
-    _fir_mem @21310 NONAME ;_fir_mem
-    _fir_mem2 @21311 NONAME ;_fir_mem2
-    _forced_pitch_quant @21312 NONAME ;_forced_pitch_quant
-    _forced_pitch_unquant @21313 NONAME ;_forced_pitch_unquant
-    _gain_cdbk_lbr @21314 NONAME ;_gain_cdbk_lbr
-    _gain_cdbk_nb @21315 NONAME ;_gain_cdbk_nb
-    _hexc_10_32_table @21316 NONAME ;_hexc_10_32_table
-    _hexc_table @21317 NONAME ;_hexc_table
-    _high_lsp_cdbk @21318 NONAME ;_high_lsp_cdbk
-    _high_lsp_cdbk2 @21319 NONAME ;_high_lsp_cdbk2
-    _iir_mem2 @21320 NONAME ;_iir_mem2
-    _le_int @21321 NONAME ;_le_int
-    _le_short @21322 NONAME ;_le_short
-    _lpc_to_lsp @21323 NONAME ;_lpc_to_lsp
-    _lsp_enforce_margin @21324 NONAME ;_lsp_enforce_margin
-    _lsp_quant_high @21325 NONAME ;_lsp_quant_high
-    _lsp_quant_lbr @21326 NONAME ;_lsp_quant_lbr
-    _lsp_quant_nb @21327 NONAME ;_lsp_quant_nb
-    _lsp_to_lpc @21328 NONAME ;_lsp_to_lpc
-    _lsp_unquant_high @21329 NONAME ;_lsp_unquant_high
-    _lsp_unquant_lbr @21330 NONAME ;_lsp_unquant_lbr
-    _lsp_unquant_nb @21331 NONAME ;_lsp_unquant_nb
-    _nb_decode @21332 NONAME ;_nb_decode
-    _nb_decoder_ctl @21333 NONAME ;_nb_decoder_ctl
-    _nb_decoder_destroy @21334 NONAME ;_nb_decoder_destroy
-    _nb_decoder_init @21335 NONAME ;_nb_decoder_init
-    _nb_encode @21336 NONAME ;_nb_encode
-    _nb_encoder_ctl @21337 NONAME ;_nb_encoder_ctl
-    _nb_encoder_destroy @21338 NONAME ;_nb_encoder_destroy
-    _nb_encoder_init @21339 NONAME ;_nb_encoder_init
-    _noise_codebook_quant @21340 NONAME ;_noise_codebook_quant
-    _noise_codebook_unquant @21341 NONAME ;_noise_codebook_unquant
-    _open_loop_nbest_pitch @21342 NONAME ;_open_loop_nbest_pitch
-    _pitch_gain_search_3tap @21343 NONAME ;_pitch_gain_search_3tap
-    _pitch_search_3tap @21344 NONAME ;_pitch_search_3tap
-    _pitch_unquant_3tap @21345 NONAME ;_pitch_unquant_3tap
-    _pole_zero_mem @21346 NONAME ;_pole_zero_mem
-    _print_vec @21347 NONAME ;_print_vec
-    _residue @21348 NONAME ;_residue
-    _residue_mem @21349 NONAME ;_residue_mem
-    _residue_zero @21350 NONAME ;_residue_zero
-    _sb_decode @21351 NONAME ;_sb_decode
-    _sb_decoder_ctl @21352 NONAME ;_sb_decoder_ctl
-    _sb_decoder_destroy @21353 NONAME ;_sb_decoder_destroy
-    _sb_decoder_init @21354 NONAME ;_sb_decoder_init
-    _sb_encode @21355 NONAME ;_sb_encode
-    _sb_encoder_ctl @21356 NONAME ;_sb_encoder_ctl
-    _sb_encoder_destroy @21357 NONAME ;_sb_encoder_destroy
-    _sb_encoder_init @21358 NONAME ;_sb_encoder_init
-    _speex_alloc @21359 NONAME ;_speex_alloc
-    _speex_bits_advance @21360 NONAME ;_speex_bits_advance
-    _speex_bits_destroy @21361 NONAME ;_speex_bits_destroy
-    _speex_bits_flush @21362 NONAME ;_speex_bits_flush
-    _speex_bits_init @21363 NONAME ;_speex_bits_init
-    _speex_bits_init_buffer @21364 NONAME ;_speex_bits_init_buffer
-    _speex_bits_nbytes @21365 NONAME ;_speex_bits_nbytes
-    _speex_bits_pack @21366 NONAME ;_speex_bits_pack
-    _speex_bits_peek @21367 NONAME ;_speex_bits_peek
-    _speex_bits_peek_unsigned @21368 NONAME ;_speex_bits_peek_unsigned
-    _speex_bits_read_from @21369 NONAME ;_speex_bits_read_from
-    _speex_bits_read_whole_bytes @21370 NONAME ;_speex_bits_read_whole_bytes
-    _speex_bits_reset @21371 NONAME ;_speex_bits_reset
-    _speex_bits_rewind @21372 NONAME ;_speex_bits_rewind
-    _speex_bits_unpack_signed @21373 NONAME ;_speex_bits_unpack_signed
-    _speex_bits_unpack_unsigned @21374 NONAME ;_speex_bits_unpack_unsigned
-    _speex_bits_write @21375 NONAME ;_speex_bits_write
-    _speex_bits_write_whole_bytes @21376 NONAME ;_speex_bits_write_whole_bytes
-    _speex_decode @21377 NONAME ;_speex_decode
-    _speex_decoder_ctl @21378 NONAME ;_speex_decoder_ctl
-    _speex_decoder_destroy @21379 NONAME ;_speex_decoder_destroy
-    _speex_decoder_init @21380 NONAME ;_speex_decoder_init
-    _speex_default_user_handler @21381 NONAME ;_speex_default_user_handler
-    _speex_encode @21382 NONAME ;_speex_encode
-    _speex_encoder_ctl @21383 NONAME ;_speex_encoder_ctl
-    _speex_encoder_destroy @21384 NONAME ;_speex_encoder_destroy
-    _speex_encoder_init @21385 NONAME ;_speex_encoder_init
-    _speex_free @21386 NONAME ;_speex_free
-    _speex_header_to_packet @21387 NONAME ;_speex_header_to_packet
-    _speex_inband_handler @21388 NONAME ;_speex_inband_handler
-    _speex_init_header @21389 NONAME ;_speex_init_header
-    _speex_mode_list @21390 NONAME ;_speex_mode_list
-    _speex_mode_query @21391 NONAME ;_speex_mode_query
-    _speex_move @21392 NONAME ;_speex_move
-    _speex_nb_mode @21393 NONAME ;_speex_nb_mode
-    _speex_packet_to_header @21394 NONAME ;_speex_packet_to_header
-    _speex_std_char_handler @21395 NONAME ;_speex_std_char_handler
-    _speex_std_enh_request_handler @21396 NONAME ;_speex_std_enh_request_handler
-    _speex_std_high_mode_request_handler @21397 NONAME ;_speex_std_high_mode_request_handler
-    _speex_std_low_mode_request_handler @21398 NONAME ;_speex_std_low_mode_request_handler
-    _speex_std_mode_request_handler @21399 NONAME ;_speex_std_mode_request_handler
-    _speex_std_vbr_quality_request_handler @21400 NONAME ;_speex_std_vbr_quality_request_handler
-    _speex_std_vbr_request_handler @21401 NONAME ;_speex_std_vbr_request_handler
-    _speex_wb_mode @21402 NONAME ;_speex_wb_mode
-    _split_cb_nogain_unquant @21403 NONAME ;_split_cb_nogain_unquant
-    _split_cb_search_nogain @21404 NONAME ;_split_cb_search_nogain
-    _split_cb_search_shape_sign @21405 NONAME ;_split_cb_search_shape_sign
-    _split_cb_shape_sign_unquant @21406 NONAME ;_split_cb_shape_sign_unquant
-    _speex_syn_filt @21407 NONAME ;_syn_filt
-    _syn_filt_mem @21408 NONAME ;_syn_filt_mem
-    _syn_filt_zero @21409 NONAME ;_syn_filt_zero
-    _syn_percep_zero @21410 NONAME ;_syn_percep_zero
-    _comp_filter_mem_init @23935 NONAME ;_comp_filter_mem_init
-    _vbr_analysis @21411 NONAME ;_vbr_analysis
-    _vbr_destroy @21412 NONAME ;_vbr_destroy
-    _vbr_init @21413 NONAME ;_vbr_init
-    _vbr_hb_thresh @23936 NONAME ;_vbr_hb_thresh
-    _vbr_nb_thresh @23937 NONAME ;_vbr_nb_thresh
-    _vbr_uhb_thresh @23938 NONAME ;_vbr_uhb_thresh
-    _vq_index @21414 NONAME ;_vq_index
-    _vq_nbest @21415 NONAME ;_vq_nbest
-    _wld @21416 NONAME ;_wld
-    _fir_mem_up @31694 NONAME ;_fir_mem_up
-    _qmf_decomp @31695 NONAME ;_qmf_decomp
-    _residue_percep_zero @31696 NONAME ;_residue_percep_zero
-    _speex_uwb_mode @31697 NONAME ;_speex_uwb_mode
-    _vq_nbest_sign @31698 NONAME ;_vq_nbest_sign
-    __spx_autocorr @31699 NONAME ;__spx_autocorr
-    _a2u @31767 NONAME ;_a2u
-    _u2a @31768 NONAME ;_u2a
-    _exc_20_32_table @25920 NONAME ;_exc_20_32_table
-    _speex_bits_remaining @25921 NONAME ;_speex_bits_remaining
-    _speex_error @25922 NONAME ;_speex_error
-    _speex_rand @25923 NONAME ;_speex_rand
-    _speex_rand_vec @25924 NONAME ;_speex_rand_vec
-    _speex_realloc @25925 NONAME ;_speex_realloc
-    _speex_warning @25926 NONAME ;_speex_warning
-    _speex_warning_int @25927 NONAME ;_speex_warning_int
-    __speex_putc @25928 NONAME ;__speex_putc
-    _a2lsf @38170 NONAME ;_a2lsf
-    _AbsQuantW @38171 NONAME ;_AbsQuantW
-    _AllPoleFilter @38172 NONAME ;_AllPoleFilter
-    _AllZeroFilter @38173 NONAME ;_AllZeroFilter
-    _anaFilter @38174 NONAME ;_anaFilter
-    _bwexpand @38175 NONAME ;_bwexpand
-    _cbfiltersTbl @38176 NONAME ;_cbfiltersTbl
-    _compCorr @38177 NONAME ;_compCorr
-    _createAugmentedVec @38178 NONAME ;_createAugmentedVec
-    _Decode @38179 NONAME ;_Decode
-    _DecoderInterpolateLSF @38180 NONAME ;_DecoderInterpolateLSF
-    _dim_lsfCbTbl @38181 NONAME ;_dim_lsfCbTbl
-    _dopack @38182 NONAME ;_dopack
-    _doThePLC @38183 NONAME ;_doThePLC
-    _DownSample @38184 NONAME ;_DownSample
-    _enhancer @38185 NONAME ;_enhancer
-    _enhancerInterface @38186 NONAME ;_enhancerInterface
-    _enh_plocsTbl @38187 NONAME ;_enh_plocsTbl
-    _enh_upsample @38188 NONAME ;_enh_upsample
-    _filteredCBvecs @38189 NONAME ;_filteredCBvecs
-    _FrameClassify @38190 NONAME ;_FrameClassify
-    _gaindequant @38191 NONAME ;_gaindequant
-    _gainquant @38192 NONAME ;_gainquant
-    _gain_sq3Tbl @38193 NONAME ;_gain_sq3Tbl
-    _gain_sq4Tbl @38194 NONAME ;_gain_sq4Tbl
-    _gain_sq5Tbl @38195 NONAME ;_gain_sq5Tbl
-    _getCBvec @38196 NONAME ;_getCBvec
-    _getsseq @38197 NONAME ;_getsseq
-    _hpInput @38198 NONAME ;_hpInput
-    _hpi_pole_coefsTbl @38199 NONAME ;_hpi_pole_coefsTbl
-    _hpi_zero_coefsTbl @38200 NONAME ;_hpi_zero_coefsTbl
-    _hpOutput @38201 NONAME ;_hpOutput
-    _hpo_pole_coefsTbl @38202 NONAME ;_hpo_pole_coefsTbl
-    _hpo_zero_coefsTbl @38203 NONAME ;_hpo_zero_coefsTbl
-    _iCBConstruct @38204 NONAME ;_iCBConstruct
-    _iCBSearch @38205 NONAME ;_iCBSearch
-    _iLBC_autocorr @38206 NONAME ;_iLBC_autocorr
-    _iLBC_decode @38207 NONAME ;_iLBC_decode
-    _iLBC_encode @38208 NONAME ;_iLBC_encode
-    _index_conv_dec @38209 NONAME ;_index_conv_dec
-    _index_conv_enc @38210 NONAME ;_index_conv_enc
-    _initDecode @38211 NONAME ;_initDecode
-    _initEncode @38212 NONAME ;_initEncode
-    _interpolate @38213 NONAME ;_interpolate
-    _levdurb @38214 NONAME ;_levdurb
-    _LPCencode @38215 NONAME ;_LPCencode
-    _lpc_asymwinTbl @38216 NONAME ;_lpc_asymwinTbl
-    _lpc_lagwinTbl @38217 NONAME ;_lpc_lagwinTbl
-    _lpc_winTbl @38218 NONAME ;_lpc_winTbl
-    _lpFilt_coefsTbl @38219 NONAME ;_lpFilt_coefsTbl
-    _lsf2a @38220 NONAME ;_lsf2a
-    _lsfCbTbl @38221 NONAME ;_lsfCbTbl
-    _LSFinterpolate2a_dec @38222 NONAME ;_LSFinterpolate2a_dec
-    _LSFinterpolate2a_enc @38223 NONAME ;_LSFinterpolate2a_enc
-    _lsfmeanTbl @38224 NONAME ;_lsfmeanTbl
-    _LSF_check @38225 NONAME ;_LSF_check
-    _lsf_weightTbl_20ms @38226 NONAME ;_lsf_weightTbl_20ms
-    _lsf_weightTbl_30ms @38227 NONAME ;_lsf_weightTbl_30ms
-    _memLfTbl @38228 NONAME ;_memLfTbl
-    _mycorr1 @38229 NONAME ;_mycorr1
-    _NearestNeighbor @38230 NONAME ;_NearestNeighbor
-    _packcombine @38231 NONAME ;_packcombine
-    _packsplit @38232 NONAME ;_packsplit
-    _polyphaserTbl @38233 NONAME ;_polyphaserTbl
-    _refiner @38234 NONAME ;_refiner
-    _searchAugmentedCB @38235 NONAME ;_searchAugmentedCB
-    _search_rangeTbl @38236 NONAME ;_search_rangeTbl
-    _SimpleAnalysis @38237 NONAME ;_SimpleAnalysis
-    _SimpleInterpolateLSF @38238 NONAME ;_SimpleInterpolateLSF
-    _SimplelsfDEQ @38239 NONAME ;_SimplelsfDEQ
-    _SimplelsfQ @38240 NONAME ;_SimplelsfQ
-    _size_lsfCbTbl @38241 NONAME ;_size_lsfCbTbl
-    _smath @38242 NONAME ;_smath
-    _sort_sq @38243 NONAME ;_sort_sq
-    _SplitVQ @38244 NONAME ;_SplitVQ
-    _StateConstructW @38245 NONAME ;_StateConstructW
-    _StateSearchW @38246 NONAME ;_StateSearchW
-    _state_frgqTbl @38247 NONAME ;_state_frgqTbl
-    _state_sq3Tbl @38248 NONAME ;_state_sq3Tbl
-    _stMemLTbl @38249 NONAME ;_stMemLTbl
-    _syntFilter @38250 NONAME ;_syntFilter
-    _ULP_20msTbl @38251 NONAME ;_ULP_20msTbl
-    _ULP_30msTbl @38252 NONAME ;_ULP_30msTbl
-    _unpack @38253 NONAME ;_unpack
-    _vq @38254 NONAME ;_vq
-    _window @38255 NONAME ;_window
-    _xCorrCoef @38256 NONAME ;_xCorrCoef
-    _ZeroPoleFilter @38257 NONAME ;_ZeroPoleFilter
-    _attenuation @33502 NONAME
-    _comb_filter_mem_init @33503 NONAME
-    _compute_impulse_response @33504 NONAME
-    _compute_rms @33505 NONAME
-    _exc_gain_quant_scal1_bound @33506 NONAME
-    _exc_gain_quant_scal3_bound @33507 NONAME
-    _lsp_interpolate @33508 NONAME
-    _nb_mode_query @33509 NONAME
-    _scal_quant @33510 NONAME
-    _scal_quant32 @33511 NONAME
-    _signal_div @33512 NONAME
-    _signal_mul @33513 NONAME
-    _speex_alloc_scratch @33514 NONAME
-    _speex_bits_insert_terminator @33515 NONAME
-    _speex_decode_int @33516 NONAME
-    _speex_decode_native @33517 NONAME
-    _speex_echo_cancel @33518 NONAME
-    _speex_echo_state_destroy @33519 NONAME
-    _speex_echo_state_init @33520 NONAME
-    _speex_echo_state_reset @33521 NONAME
-    _speex_encode_int @33522 NONAME
-    _speex_encode_native @33523 NONAME
-    _speex_free_scratch @33524 NONAME
-    _speex_lib_ctl @33525 NONAME
-    _speex_lib_get_mode @33526 NONAME
-    _speex_memcpy_bytes @33527 NONAME
-    _speex_memset_bytes @33528 NONAME
-    _speex_preprocess @33529 NONAME
-    _speex_preprocess_ctl @33530 NONAME
-    _speex_preprocess_estimate_update @33531 NONAME
-    _speex_preprocess_state_destroy @33532 NONAME
-    _speex_preprocess_state_init @33533 NONAME
-    _spx_drft_backward @33534 NONAME
-    _spx_drft_clear @33535 NONAME
-    _spx_drft_forward @33536 NONAME
-    _spx_drft_init @33537 NONAME
-    _wb_mode_query @33538 NONAME
-    __spx_lpc @33539 NONAME
-    _filter_dc_notch @33732 NONAME
-    _fixed_point @33733 NONAME
-    _kiss_fft @33734 NONAME
-    _kiss_fftr @33735 NONAME
-    _kiss_fftri @33736 NONAME
-    _kiss_fftr_alloc @33737 NONAME
-    _kiss_fft_alloc @33738 NONAME
-    _kiss_fft_cleanup @33739 NONAME
-    _kiss_fft_stride @33740 NONAME
-    _spx_cos @33741 NONAME
-    _spx_fft @33742 NONAME
-    _spx_fft_destroy @33743 NONAME
-    _spx_fft_float @33744 NONAME
-    _spx_fft_init @33745 NONAME
-    _spx_ifft @33746 NONAME
-    _spx_ifft_float @33747 NONAME
-    a2u @41127 NONAME
-    be_int @41130 NONAME
-    fixed_point @41131 NONAME
-    kiss_fft @41132 NONAME
-    kiss_fftr @41133 NONAME
-    kiss_fftri @41134 NONAME
-    kiss_fftr_alloc @41135 NONAME
-    kiss_fft_alloc @41136 NONAME
-    kiss_fft_cleanup @41137 NONAME
-    kiss_fft_stride @41138 NONAME
-    le_int @41139 NONAME
-    print_vec @41142 NONAME
-    speex_alloc @41143 NONAME
-    speex_alloc_scratch @41144 NONAME
-    speex_echo_cancel @41145 NONAME
-    speex_echo_state_destroy @41146 NONAME
-    speex_echo_state_init @41147 NONAME
-    speex_echo_state_reset @41148 NONAME
-    speex_error @41149 NONAME
-    speex_free @41150 NONAME
-    speex_free_scratch @41151 NONAME
-    speex_memcpy_bytes @41152 NONAME
-    speex_memset_bytes @41153 NONAME
-    speex_move @41154 NONAME
-    speex_preprocess @41155 NONAME
-    speex_preprocess_ctl @41156 NONAME
-    speex_preprocess_estimate_update @41157 NONAME
-    speex_preprocess_state_destroy @41158 NONAME
-    speex_preprocess_state_init @41159 NONAME
-    speex_rand @41160 NONAME
-    speex_rand_vec @41161 NONAME
-    speex_realloc @41162 NONAME
-    speex_warning @41163 NONAME
-    speex_warning_int @41164 NONAME
-    spx_drft_backward @41165 NONAME
-    spx_drft_clear @41166 NONAME
-    spx_drft_forward @41167 NONAME
-    spx_drft_init @41168 NONAME
-    spx_fft @41169 NONAME
-    spx_fft_destroy @41170 NONAME
-    spx_fft_float @41171 NONAME
-    spx_fft_init @41172 NONAME
-    spx_ifft @41173 NONAME
-    spx_ifft_float @41174 NONAME
-    u2a @41175 NONAME
-    _speex_putc @41178 NONAME
-    _Init_OPAL
-    _ceilf
-    _expf
-    _powf
-    _fabsf
-    _aes_128_cbc_hmac_sha1_96_dec @57908 NONAME
-    _aes_128_cbc_hmac_sha1_96_enc @57909 NONAME
-    _aes_128_cbc_hmac_sha1_96_func @57910 NONAME
-    _aes_128_cbc_hmac_sha1_96_inv @57911 NONAME
-    _aes_cbc @57912 NONAME
-    _aes_cbc_alloc @57913 NONAME
-    _aes_cbc_context_init @57914 NONAME
-    _aes_cbc_dealloc @57915 NONAME
-    _aes_cbc_decrypt @57916 NONAME
-    _aes_cbc_description @57917 NONAME
-    _aes_cbc_encrypt @57918 NONAME
-    _aes_cbc_nist_decrypt @57919 NONAME
-    _aes_cbc_nist_encrypt @57920 NONAME
-    _aes_cbc_set_iv @57921 NONAME
-    _aes_cbc_test_case_0 @57922 NONAME
-    _aes_cbc_test_case_0_ciphertext @57923 NONAME
-    _aes_cbc_test_case_0_iv @57924 NONAME
-    _aes_cbc_test_case_0_key @57925 NONAME
-    _aes_cbc_test_case_0_plaintext @57926 NONAME
-    _aes_cbc_test_case_1 @57927 NONAME
-    _aes_cbc_test_case_1_ciphertext @57928 NONAME
-    _aes_cbc_test_case_1_iv @57929 NONAME
-    _aes_cbc_test_case_1_key @57930 NONAME
-    _aes_cbc_test_case_1_plaintext @57931 NONAME
-    _aes_decrypt @57932 NONAME
-    _aes_encrypt @57933 NONAME
-    _aes_expand_decryption_key @57934 NONAME
-    _aes_expand_encryption_key @57935 NONAME
-    _aes_icm @57936 NONAME
-    _aes_icm_advance @57937 NONAME
-    _aes_icm_advance_ismacryp @57938 NONAME
-    _aes_icm_alloc @57939 NONAME
-    _aes_icm_alloc_ismacryp @57940 NONAME
-    _aes_icm_context_init @57941 NONAME
-    _aes_icm_dealloc @57942 NONAME
-    _aes_icm_description @57943 NONAME
-    _aes_icm_encrypt @57944 NONAME
-    _aes_icm_encrypt_ismacryp @57945 NONAME
-    _aes_icm_output @57946 NONAME
-    _aes_icm_set_iv @57947 NONAME
-    _aes_icm_set_octet @57948 NONAME
-    _aes_icm_test_case_0 @57949 NONAME
-    _aes_icm_test_case_0_ciphertext @57950 NONAME
-    _aes_icm_test_case_0_key @57951 NONAME
-    _aes_icm_test_case_0_nonce @57952 NONAME
-    _aes_icm_test_case_0_plaintext @57953 NONAME
-    _auth_get_key_length @57954 NONAME
-    _auth_get_prefix_length @57955 NONAME
-    _auth_get_tag_length @57956 NONAME
-    _auth_type_get_ref_count @57957 NONAME
-    _auth_type_self_test @57958 NONAME
-    _base64_char_to_sextet @57959 NONAME
-    _base64_string_to_octet_string @57960 NONAME
-    _cipher_bits_per_second @57961 NONAME
-    _cipher_get_key_length @57962 NONAME
-    _cipher_output @57963 NONAME
-    _cipher_type_self_test @57964 NONAME
-    _cryptoalg @57965 NONAME
-    _cryptoalg_ctx @57966 NONAME
-    _cryptoalg_find_by_id @57967 NONAME
-    _cryptoalg_get_id @57968 NONAME
-    _crypto_alloc @57969 NONAME
-    _crypto_free @57970 NONAME
-    _crypto_get_random @57971 NONAME
-    _crypto_kernel @57972 NONAME
-    _crypto_kernel_alloc_auth @57973 NONAME
-    _crypto_kernel_alloc_cipher @57974 NONAME
-    _crypto_kernel_get_auth_type @57975 NONAME
-    _crypto_kernel_get_cipher_type @57976 NONAME
-    _crypto_kernel_init @57977 NONAME
-    _crypto_kernel_list_debug_modules @57978 NONAME
-    _crypto_kernel_load_auth_type @57979 NONAME
-    _crypto_kernel_load_cipher_type @57980 NONAME
-    _crypto_kernel_load_debug_module @57981 NONAME
-    _crypto_kernel_set_debug_module @57982 NONAME
-    _crypto_kernel_shutdown @57983 NONAME
-    _crypto_kernel_status @57984 NONAME
-    _crypto_policy_set_aes_cm_128_hmac_sha1_32 @57985 NONAME
-    _crypto_policy_set_aes_cm_128_null_auth @57986 NONAME
-    _crypto_policy_set_null_cipher_hmac_sha1_80 @57987 NONAME
-    _crypto_policy_set_rtcp_default @57988 NONAME
-    _crypto_policy_set_rtp_default @57989 NONAME
-    _ctr_prng_deinit @57990 NONAME
-    _ctr_prng_get_octet_string @57991 NONAME
-    _ctr_prng_init @57992 NONAME
-    _err_level @57993 NONAME
-    _err_report @57994 NONAME
-    _err_reporting_init @57995 NONAME
-    _err_reporting_set_level @57996 NONAME
-    _hex_char_to_nibble @57997 NONAME
-    _hex_string_to_octet_string @57998 NONAME
-    _hmac @57999 NONAME
-    _hmac_alloc @58000 NONAME
-    _hmac_compute @58001 NONAME
-    _hmac_dealloc @58002 NONAME
-    _hmac_description @58003 NONAME
-    _hmac_init @58004 NONAME
-    _hmac_start @58005 NONAME
-    _hmac_test_case_0 @58006 NONAME
-    _hmac_test_case_0_data @58007 NONAME
-    _hmac_test_case_0_key @58008 NONAME
-    _hmac_test_case_0_tag @58009 NONAME
-    _hmac_update @58010 NONAME
-    _index_advance @58011 NONAME
-    _index_guess @58012 NONAME
-    _index_init @58013 NONAME
-    _is_hex_string @58014 NONAME
-    _key_limit_check @58015 NONAME
-    _key_limit_clone @58016 NONAME
-    _key_limit_set @58017 NONAME
-    _key_limit_update @58018 NONAME
-    _mod_aes_cbc @58019 NONAME
-    _mod_aes_icm @58020 NONAME
-    _mod_alloc @58021 NONAME
-    _mod_auth @58022 NONAME
-    _mod_cipher @58023 NONAME
-    _mod_crypto_kernel @58024 NONAME
-    _mod_hmac @58025 NONAME
-    _mod_sha1 @58026 NONAME
-    _mod_srtp @58027 NONAME
-    _mod_stat @58028 NONAME
-    _nibble_to_hex_char @58029 NONAME
-    _null_auth @58030 NONAME
-    _null_auth_alloc @58031 NONAME
-    _null_auth_compute @58032 NONAME
-    _null_auth_dealloc @58033 NONAME
-    _null_auth_description @58034 NONAME
-    _null_auth_init @58035 NONAME
-    _null_auth_start @58036 NONAME
-    _null_auth_test_case_0 @58037 NONAME
-    _null_auth_update @58038 NONAME
-    _null_cipher @58039 NONAME
-    _null_cipher_alloc @58040 NONAME
-    _null_cipher_dealloc @58041 NONAME
-    _null_cipher_description @58042 NONAME
-    _null_cipher_encrypt @58043 NONAME
-    _null_cipher_init @58044 NONAME
-    _null_cipher_set_iv @58045 NONAME
-    _null_cipher_test_0 @58046 NONAME
-    _null_cryptoalg @58047 NONAME
-    _null_cryptoalg_ctx @58048 NONAME
-    _null_dec @58049 NONAME
-    _null_enc @58050 NONAME
-    _octet_get_weight @58051 NONAME
-    _octet_string_hex_string @58052 NONAME
-    _octet_string_is_eq @58053 NONAME
-    _octet_string_set_to_zero @58054 NONAME
-    _octet_weight @58055 NONAME
-    _rand_source_deinit @58056 NONAME
-    _rand_source_get_octet_string @58057 NONAME
-    _rand_source_init @58058 NONAME
-    _rdbx_add_index @58059 NONAME
-    _rdbx_check @58060 NONAME
-    _rdbx_estimate_index @58061 NONAME
-    _rdbx_init @58062 NONAME
-    _rdb_add_index @58063 NONAME
-    _rdb_check @58064 NONAME
-    _rdb_get_value @58065 NONAME
-    _rdb_increment @58066 NONAME
-    _rdb_init @58067 NONAME
-    _sha1 @58068 NONAME
-    _sha1_core @58069 NONAME
-    _sha1_final @58070 NONAME
-    _sha1_init @58071 NONAME
-    _sha1_update @58072 NONAME
-    _SHA_K0 @58073 NONAME
-    _SHA_K1 @58074 NONAME
-    _SHA_K2 @58075 NONAME
-    _SHA_K3 @58076 NONAME
-    _srtp_add_stream @58077 NONAME
-    _srtp_create @58078 NONAME
-    _srtp_dealloc @58079 NONAME
-    _srtp_event_reporter @58080 NONAME
-    _srtp_get_stream @58081 NONAME
-    _srtp_init @58082 NONAME
-    _srtp_install_event_handler @58083 NONAME
-    _srtp_kdf_clear @58084 NONAME
-    _srtp_kdf_generate @58085 NONAME
-    _srtp_kdf_init @58086 NONAME
-    _srtp_protect @58087 NONAME
-    _srtp_protect_rtcp @58088 NONAME
-    _srtp_remove_stream @58089 NONAME
-    _srtp_stream_alloc @58090 NONAME
-    _srtp_stream_clone @58091 NONAME
-    _srtp_stream_dealloc @58092 NONAME
-    _srtp_stream_init @58093 NONAME
-    _srtp_unprotect @58094 NONAME
-    _srtp_unprotect_rtcp @58095 NONAME
-    _stat_test_monobit @58096 NONAME
-    _stat_test_poker @58097 NONAME
-    _stat_test_rand_source @58098 NONAME
-    _stat_test_rand_source_with_repetition @58099 NONAME
-    _stat_test_runs @58100 NONAME
-    _ut_compar @58101 NONAME
-    _ut_init @58102 NONAME
-    _ut_next_index @58103 NONAME
-    _v128_bit_string @58104 NONAME
-    _v128_copy_octet_string @58105 NONAME
-    _v128_hex_string @58106 NONAME
-    _v128_left_shift @58107 NONAME
-    _v128_right_shift @58108 NONAME
-    _x917_prng_deinit @58109 NONAME
-    _x917_prng_get_octet_string @58110 NONAME
-    _x917_prng_init @58111 NONAME
-    _append_salt_to_key @1 NONAME
-    _crypto_policy_set_from_profile_for_rtcp @1 NONAME
-    _crypto_policy_set_from_profile_for_rtp @1 NONAME
-    _srtp_profile_get_master_key_length @1 NONAME
-    _srtp_profile_get_master_salt_length @1 NONAME
-    _srtp_stream_init_keys @1 NONAME
-    aes_128_cbc_hmac_sha1_96_dec @59134 NONAME
-    aes_128_cbc_hmac_sha1_96_enc @59135 NONAME
-    aes_128_cbc_hmac_sha1_96_func @59136 NONAME
-    aes_128_cbc_hmac_sha1_96_inv @59137 NONAME
-    aes_cbc @59138 NONAME
-    aes_cbc_alloc @59139 NONAME
-    aes_cbc_context_init @59140 NONAME
-    aes_cbc_dealloc @59141 NONAME
-    aes_cbc_decrypt @59142 NONAME
-    aes_cbc_description @59143 NONAME
-    aes_cbc_encrypt @59144 NONAME
-    aes_cbc_nist_decrypt @59145 NONAME
-    aes_cbc_nist_encrypt @59146 NONAME
-    aes_cbc_set_iv @59147 NONAME
-    aes_cbc_test_case_0 @59148 NONAME
-    aes_cbc_test_case_0_ciphertext @59149 NONAME
-    aes_cbc_test_case_0_iv @59150 NONAME
-    aes_cbc_test_case_0_key @59151 NONAME
-    aes_cbc_test_case_0_plaintext @59152 NONAME
-    aes_cbc_test_case_1 @59153 NONAME
-    aes_cbc_test_case_1_ciphertext @59154 NONAME
-    aes_cbc_test_case_1_iv @59155 NONAME
-    aes_cbc_test_case_1_key @59156 NONAME
-    aes_cbc_test_case_1_plaintext @59157 NONAME
-    aes_decrypt @59158 NONAME
-    aes_encrypt @59159 NONAME
-    aes_expand_decryption_key @59160 NONAME
-    aes_expand_encryption_key @59161 NONAME
-    aes_icm @59162 NONAME
-    aes_icm_advance @59163 NONAME
-    aes_icm_advance_ismacryp @59164 NONAME
-    aes_icm_alloc @59165 NONAME
-    aes_icm_alloc_ismacryp @59166 NONAME
-    aes_icm_context_init @59167 NONAME
-    aes_icm_dealloc @59168 NONAME
-    aes_icm_description @59169 NONAME
-    aes_icm_encrypt @59170 NONAME
-    aes_icm_encrypt_ismacryp @59171 NONAME
-    aes_icm_output @59172 NONAME
-    aes_icm_set_iv @59173 NONAME
-    aes_icm_set_octet @59174 NONAME
-    aes_icm_test_case_0 @59175 NONAME
-    aes_icm_test_case_0_ciphertext @59176 NONAME
-    aes_icm_test_case_0_key @59177 NONAME
-    aes_icm_test_case_0_nonce @59178 NONAME
-    aes_icm_test_case_0_plaintext @59179 NONAME
-    alaw2linear @59180 NONAME
-    alaw2ulaw @59181 NONAME
-    append_salt_to_key @59182 NONAME
-    auth_get_key_length @59183 NONAME
-    auth_get_prefix_length @59184 NONAME
-    auth_get_tag_length @59185 NONAME
-    auth_type_get_ref_count @59186 NONAME
-    auth_type_self_test @59187 NONAME
-    base64_char_to_sextet @59188 NONAME
-    base64_string_to_octet_string @59189 NONAME
-    cipher_bits_per_second @59190 NONAME
-    cipher_get_key_length @59191 NONAME
-    cipher_output @59192 NONAME
-    cipher_type_self_test @59193 NONAME
-    cryptoalg @59194 NONAME
-    cryptoalg_ctx @59195 NONAME
-    cryptoalg_find_by_id @59196 NONAME
-    cryptoalg_get_id @59197 NONAME
-    crypto_alloc @59198 NONAME
-    crypto_free @59199 NONAME
-    crypto_get_random @59200 NONAME
-    crypto_kernel @59201 NONAME
-    crypto_kernel_alloc_auth @59202 NONAME
-    crypto_kernel_alloc_cipher @59203 NONAME
-    crypto_kernel_get_auth_type @59204 NONAME
-    crypto_kernel_get_cipher_type @59205 NONAME
-    crypto_kernel_init @59206 NONAME
-    crypto_kernel_list_debug_modules @59207 NONAME
-    crypto_kernel_load_auth_type @59208 NONAME
-    crypto_kernel_load_cipher_type @59209 NONAME
-    crypto_kernel_load_debug_module @59210 NONAME
-    crypto_kernel_set_debug_module @59211 NONAME
-    crypto_kernel_shutdown @59212 NONAME
-    crypto_kernel_status @59213 NONAME
-    crypto_policy_set_aes_cm_128_hmac_sha1_32 @59214 NONAME
-    crypto_policy_set_aes_cm_128_null_auth @59215 NONAME
-    crypto_policy_set_from_profile_for_rtcp @59216 NONAME
-    crypto_policy_set_from_profile_for_rtp @59217 NONAME
-    crypto_policy_set_null_cipher_hmac_sha1_80 @59218 NONAME
-    crypto_policy_set_rtcp_default @59219 NONAME
-    crypto_policy_set_rtp_default @59220 NONAME
-    ctr_prng_deinit @59221 NONAME
-    ctr_prng_get_octet_string @59222 NONAME
-    ctr_prng_init @59223 NONAME
-    err_level @59224 NONAME
-    err_report @59225 NONAME
-    err_reporting_init @59226 NONAME
-    fabsf @59227 NONAME
-    hex_char_to_nibble @59228 NONAME
-    hex_string_to_octet_string @59229 NONAME
-    hmac @59230 NONAME
-    hmac_alloc @59231 NONAME
-    hmac_compute @59232 NONAME
-    hmac_dealloc @59233 NONAME
-    hmac_description @59234 NONAME
-    hmac_init @59235 NONAME
-    hmac_start @59236 NONAME
-    hmac_test_case_0 @59237 NONAME
-    hmac_test_case_0_data @59238 NONAME
-    hmac_test_case_0_key @59239 NONAME
-    hmac_test_case_0_tag @59240 NONAME
-    hmac_update @59241 NONAME
-    index_advance @59242 NONAME
-    index_guess @59243 NONAME
-    index_init @59244 NONAME
-    is_hex_string @59245 NONAME
-    key_limit_check @59246 NONAME
-    key_limit_clone @59247 NONAME
-    key_limit_set @59248 NONAME
-    key_limit_update @59249 NONAME
-    linear2alaw @59250 NONAME
-    linear2ulaw @59251 NONAME
-    mod_aes_cbc @59252 NONAME
-    mod_aes_icm @59253 NONAME
-    mod_alloc @59254 NONAME
-    mod_auth @59255 NONAME
-    mod_cipher @59256 NONAME
-    mod_crypto_kernel @59257 NONAME
-    mod_hmac @59258 NONAME
-    mod_sha1 @59259 NONAME
-    mod_srtp @59260 NONAME
-    mod_stat @59261 NONAME
-    nibble_to_hex_char @59262 NONAME
-    null_auth @59263 NONAME
-    null_auth_alloc @59264 NONAME
-    null_auth_compute @59265 NONAME
-    null_auth_dealloc @59266 NONAME
-    null_auth_description @59267 NONAME
-    null_auth_init @59268 NONAME
-    null_auth_start @59269 NONAME
-    null_auth_test_case_0 @59270 NONAME
-    null_auth_update @59271 NONAME
-    null_cipher @59272 NONAME
-    null_cipher_alloc @59273 NONAME
-    null_cipher_dealloc @59274 NONAME
-    null_cipher_description @59275 NONAME
-    null_cipher_encrypt @59276 NONAME
-    null_cipher_init @59277 NONAME
-    null_cipher_set_iv @59278 NONAME
-    null_cipher_test_0 @59279 NONAME
-    null_cryptoalg @59280 NONAME
-    null_cryptoalg_ctx @59281 NONAME
-    null_dec @59282 NONAME
-    null_enc @59283 NONAME
-    octet_get_weight @59284 NONAME
-    octet_string_hex_string @59285 NONAME
-    octet_string_is_eq @59286 NONAME
-    octet_string_set_to_zero @59287 NONAME
-    octet_weight @59288 NONAME
-    rand_source_deinit @59289 NONAME
-    rand_source_get_octet_string @59290 NONAME
-    rand_source_init @59291 NONAME
-    rdbx_add_index @59292 NONAME
-    rdbx_check @59293 NONAME
-    rdbx_estimate_index @59294 NONAME
-    rdbx_init @59295 NONAME
-    rdb_add_index @59296 NONAME
-    rdb_check @59297 NONAME
-    rdb_get_value @59298 NONAME
-    rdb_increment @59299 NONAME
-    rdb_init @59300 NONAME
-    sha1 @59301 NONAME
-    sha1_core @59302 NONAME
-    sha1_final @59303 NONAME
-    sha1_init @59304 NONAME
-    sha1_update @59305 NONAME
-    SHA_K0 @59306 NONAME
-    SHA_K1 @59307 NONAME
-    SHA_K2 @59308 NONAME
-    SHA_K3 @59309 NONAME
-    spx_cos @59310 NONAME
-    srtp_add_stream @59311 NONAME
-    srtp_create @59312 NONAME
-    srtp_dealloc @59313 NONAME
-    srtp_event_reporter @59314 NONAME
-    srtp_get_stream @59315 NONAME
-    srtp_init @59316 NONAME
-    srtp_install_event_handler @59317 NONAME
-    srtp_kdf_clear @59318 NONAME
-    srtp_kdf_generate @59319 NONAME
-    srtp_kdf_init @59320 NONAME
-    srtp_profile_get_master_key_length @59321 NONAME
-    srtp_profile_get_master_salt_length @59322 NONAME
-    srtp_protect @59323 NONAME
-    srtp_protect_rtcp @59324 NONAME
-    srtp_remove_stream @59325 NONAME
-    srtp_stream_alloc @59326 NONAME
-    srtp_stream_clone @59327 NONAME
-    srtp_stream_dealloc @59328 NONAME
-    srtp_stream_init @59329 NONAME
-    srtp_stream_init_keys @59330 NONAME
-    srtp_unprotect @59331 NONAME
-    srtp_unprotect_rtcp @59332 NONAME
-    stat_test_monobit @59333 NONAME
-    stat_test_poker @59334 NONAME
-    stat_test_rand_source @59335 NONAME
-    stat_test_rand_source_with_repetition @59336 NONAME
-    stat_test_runs @59337 NONAME
-    ulaw2alaw @59338 NONAME
-    ulaw2linear @59339 NONAME
-    ut_compar @59340 NONAME
-    ut_init @59341 NONAME
-    ut_next_index @59342 NONAME
-    v128_bit_string @59343 NONAME
-    v128_copy_octet_string @59344 NONAME
-    v128_hex_string @59345 NONAME
-    v128_left_shift @59346 NONAME
-    v128_right_shift @59347 NONAME
-    x917_prng_deinit @59348 NONAME
-    x917_prng_get_octet_string @59349 NONAME
-    x917_prng_init @59350 NONAME
-	___isa_available_default
-	___local_stdio_printf_options
-    __local_stdio_printf_options
-    printf
-    fprintf
-    sprintf
-	_printf
-	_fprintf
-	_sprintf
-	_vfprintf_l
-     _vsnprintf_l
-     _vsprintf_l
-	__vfprintf_l
-	__vsnprintf_l
-	__vsprintf_l
-    _wmemcpy
+    _a2u @49750 NONAME
+    _aes_decrypt_with_raw_key @49751 NONAME
+    _alaw2linear @49752 NONAME
+    _alaw2ulaw @49753 NONAME
+    _be_int @49754 NONAME
+    _bitvector_alloc @49755 NONAME
+    _bitvector_bit_string @49756 NONAME
+    _bitvector_dealloc @49757 NONAME
+    _bitvector_left_shift @49758 NONAME
+    _bitvector_set_to_zero @49759 NONAME
+    _ceilf @49760 NONAME
+    _crypto_kernel @49761 NONAME
+    _expf @49762 NONAME
+    _fabsf @49763 NONAME
+    _fixed_point @49764 NONAME
+    _fprintf @49765 NONAME
+    _kiss_fft @49766 NONAME
+    _kiss_fftr @49767 NONAME
+    _kiss_fftri @49768 NONAME
+    _kiss_fftr_alloc @49769 NONAME
+    _kiss_fft_alloc @49770 NONAME
+    _kiss_fft_cleanup @49771 NONAME
+    _kiss_fft_stride @49772 NONAME
+    _le_int @49773 NONAME
+    _linear2alaw @49774 NONAME
+    _linear2ulaw @49775 NONAME
+    _mod_alloc @49776 NONAME
+    _mod_srtp @49777 NONAME
+    _mod_stat @49778 NONAME
+    _octet_get_weight @49779 NONAME
+    _octet_string_is_eq @49780 NONAME
+    _octet_string_set_to_zero @49781 NONAME
+    _octet_weight @49782 NONAME
+    _OpalFreeMessage@4 @48116 NONAME
+    _OpalGetMessage@8 @48117 NONAME
+    _OpalInitialise@8 @48118 NONAME
+    _OpalSendMessage@8 @48119 NONAME
+    _OpalShutDown@4 @48120 NONAME
+    _powf @49783 NONAME
+    _printf @49784 NONAME
+    _print_vec @49785 NONAME
+    _SHA_K0 @49786 NONAME
+    _SHA_K1 @49787 NONAME
+    _SHA_K2 @49788 NONAME
+    _SHA_K3 @49789 NONAME
+    _speex_alloc @49790 NONAME
+    _speex_alloc_scratch @49791 NONAME
+    _speex_echo_cancel @49792 NONAME
+    _speex_echo_state_destroy @49793 NONAME
+    _speex_echo_state_init @49794 NONAME
+    _speex_echo_state_reset @49795 NONAME
+    _speex_error @49796 NONAME
+    _speex_free @49797 NONAME
+    _speex_free_scratch @49798 NONAME
+    _speex_memcpy_bytes @49799 NONAME
+    _speex_memset_bytes @49800 NONAME
+    _speex_move @49801 NONAME
+    _speex_preprocess @49802 NONAME
+    _speex_preprocess_ctl @49803 NONAME
+    _speex_preprocess_estimate_update @49804 NONAME
+    _speex_preprocess_state_destroy @49805 NONAME
+    _speex_preprocess_state_init @49806 NONAME
+    _speex_rand @49807 NONAME
+    _speex_rand_vec @49808 NONAME
+    _speex_realloc @49809 NONAME
+    _speex_warning @49810 NONAME
+    _speex_warning_int @49811 NONAME
+    _sprintf @49812 NONAME
+    _spx_cos @49813 NONAME
+    _spx_drft_backward @49814 NONAME
+    _spx_drft_clear @49815 NONAME
+    _spx_drft_forward @49816 NONAME
+    _spx_drft_init @49817 NONAME
+    _spx_fft @49818 NONAME
+    _spx_fft_destroy @49819 NONAME
+    _spx_fft_float @49820 NONAME
+    _spx_fft_init @49821 NONAME
+    _spx_ifft @49822 NONAME
+    _spx_ifft_float @49823 NONAME
+    _srtcp_ekt_trailer @49824 NONAME
+    _srtp_add_stream @49825 NONAME
+    _srtp_aes_decrypt @49826 NONAME
+    _srtp_aes_encrypt @49827 NONAME
+    _srtp_aes_expand_decryption_key @49828 NONAME
+    _srtp_aes_expand_encryption_key @49829 NONAME
+    _srtp_aes_icm_128 @49830 NONAME
+    _srtp_aes_icm_256 @49831 NONAME
+    _srtp_append_salt_to_key @49832 NONAME
+    _srtp_auth_get_key_length @49833 NONAME
+    _srtp_auth_get_prefix_length @49834 NONAME
+    _srtp_auth_get_tag_length @49835 NONAME
+    _srtp_auth_type_self_test @49836 NONAME
+    _srtp_auth_type_test @49837 NONAME
+    _srtp_cipher_bits_per_second @49838 NONAME
+    _srtp_cipher_dealloc @49839 NONAME
+    _srtp_cipher_decrypt @49840 NONAME
+    _srtp_cipher_encrypt @49841 NONAME
+    _srtp_cipher_get_key_length @49842 NONAME
+    _srtp_cipher_get_tag @49843 NONAME
+    _srtp_cipher_init @49844 NONAME
+    _srtp_cipher_output @49845 NONAME
+    _srtp_cipher_set_aad @49846 NONAME
+    _srtp_cipher_set_iv @49847 NONAME
+    _srtp_cipher_type_alloc @49848 NONAME
+    _srtp_cipher_type_self_test @49849 NONAME
+    _srtp_cipher_type_test @49850 NONAME
+    _srtp_cleanse @49851 NONAME
+    _srtp_create @49852 NONAME
+    _srtp_crypto_alloc @49853 NONAME
+    _srtp_crypto_free @49854 NONAME
+    _srtp_crypto_kernel_alloc_auth @49855 NONAME
+    _srtp_crypto_kernel_alloc_cipher @49856 NONAME
+    _srtp_crypto_kernel_do_load_auth_type @49857 NONAME
+    _srtp_crypto_kernel_get_auth_type @49858 NONAME
+    _srtp_crypto_kernel_get_cipher_type @49859 NONAME
+    _srtp_crypto_kernel_init @49860 NONAME
+    _srtp_crypto_kernel_list_debug_modules @49861 NONAME
+    _srtp_crypto_kernel_load_auth_type @49862 NONAME
+    _srtp_crypto_kernel_load_cipher_type @49863 NONAME
+    _srtp_crypto_kernel_load_debug_module @49864 NONAME
+    _srtp_crypto_kernel_set_debug_module @49865 NONAME
+    _srtp_crypto_kernel_shutdown @49866 NONAME
+    _srtp_crypto_kernel_status @49867 NONAME
+    _srtp_crypto_policy_set_aes_cm_128_hmac_sha1_32 @49868 NONAME
+    _srtp_crypto_policy_set_aes_cm_128_null_auth @49869 NONAME
+    _srtp_crypto_policy_set_aes_cm_256_hmac_sha1_32 @49870 NONAME
+    _srtp_crypto_policy_set_aes_cm_256_hmac_sha1_80 @49871 NONAME
+    _srtp_crypto_policy_set_aes_cm_256_null_auth @49872 NONAME
+    _srtp_crypto_policy_set_from_profile_for_rtcp @49873 NONAME
+    _srtp_crypto_policy_set_from_profile_for_rtp @49874 NONAME
+    _srtp_crypto_policy_set_null_cipher_hmac_null @49875 NONAME
+    _srtp_crypto_policy_set_null_cipher_hmac_sha1_80 @49876 NONAME
+    _srtp_crypto_policy_set_rtcp_default @49877 NONAME
+    _srtp_crypto_policy_set_rtp_default @49878 NONAME
+    _srtp_dealloc @49879 NONAME
+    _srtp_ekt_alloc @49880 NONAME
+    _srtp_ekt_octets_after_base_tag @49881 NONAME
+    _srtp_ekt_stream_init_from_policy @49882 NONAME
+    _srtp_ekt_write_data @49883 NONAME
+    _srtp_err_handler @49884 NONAME
+    _srtp_err_report @49885 NONAME
+    _srtp_err_reporting_init @49886 NONAME
+    _srtp_event_reporter @49887 NONAME
+    _srtp_get_protect_rtcp_trailer_length @49888 NONAME
+    _srtp_get_protect_trailer_length @49889 NONAME
+    _srtp_get_session_keys @49890 NONAME
+    _srtp_get_session_keys_with_mki_index @49891 NONAME
+    _srtp_get_stream @49892 NONAME
+    _srtp_get_stream_roc @49893 NONAME
+    _srtp_get_user_data @49894 NONAME
+    _srtp_get_version @49895 NONAME
+    _srtp_get_version_string @49896 NONAME
+    _srtp_hmac @49897 NONAME
+    _srtp_index_advance @49898 NONAME
+    _srtp_index_guess @49899 NONAME
+    _srtp_index_init @49900 NONAME
+    _srtp_init @49901 NONAME
+    _srtp_inject_mki @49902 NONAME
+    _srtp_install_err_report_handler @49903 NONAME
+    _srtp_install_event_handler @49904 NONAME
+    _srtp_install_log_handler @49905 NONAME
+    _srtp_key_limit_check @49906 NONAME
+    _srtp_key_limit_clone @49907 NONAME
+    _srtp_key_limit_set @49908 NONAME
+    _srtp_key_limit_update @49909 NONAME
+    _srtp_list_debug_modules @49910 NONAME
+    _srtp_log_handler @49911 NONAME
+    _srtp_mod_aes_icm @49912 NONAME
+    _srtp_mod_auth @49913 NONAME
+    _srtp_mod_cipher @49914 NONAME
+    _srtp_mod_crypto_kernel @49915 NONAME
+    _srtp_mod_hmac @49916 NONAME
+    _srtp_mod_sha1 @49917 NONAME
+    _srtp_nibble_to_hex_char @49918 NONAME
+    _srtp_null_auth @49919 NONAME
+    _srtp_null_cipher @49920 NONAME
+    _srtp_octet_string_hex_string @49921 NONAME
+    _srtp_profile_get_master_key_length @49922 NONAME
+    _srtp_profile_get_master_salt_length @49923 NONAME
+    _srtp_protect @49924 NONAME
+    _srtp_protect_mki @49925 NONAME
+    _srtp_protect_rtcp @49926 NONAME
+    _srtp_protect_rtcp_mki @49927 NONAME
+    _srtp_rdbx_add_index @49928 NONAME
+    _srtp_rdbx_check @49929 NONAME
+    _srtp_rdbx_dealloc @49930 NONAME
+    _srtp_rdbx_estimate_index @49931 NONAME
+    _srtp_rdbx_get_packet_index @49932 NONAME
+    _srtp_rdbx_get_roc @49933 NONAME
+    _srtp_rdbx_get_window_size @49934 NONAME
+    _srtp_rdbx_init @49935 NONAME
+    _srtp_rdbx_set_roc @49936 NONAME
+    _srtp_rdbx_set_roc_seq @49937 NONAME
+    _srtp_rdb_add_index @49938 NONAME
+    _srtp_rdb_check @49939 NONAME
+    _srtp_rdb_get_value @49940 NONAME
+    _srtp_rdb_increment @49941 NONAME
+    _srtp_rdb_init @49942 NONAME
+    _srtp_remove_stream @49943 NONAME
+    _srtp_replace_auth_type @49944 NONAME
+    _srtp_replace_cipher_type @49945 NONAME
+    _srtp_set_debug_module @49946 NONAME
+    _srtp_set_stream_roc @49947 NONAME
+    _srtp_set_user_data @49948 NONAME
+    _srtp_sha1 @49949 NONAME
+    _srtp_sha1_core @49950 NONAME
+    _srtp_sha1_final @49951 NONAME
+    _srtp_sha1_init @49952 NONAME
+    _srtp_sha1_update @49953 NONAME
+    _srtp_shutdown @49954 NONAME
+    _srtp_stream_alloc @49955 NONAME
+    _srtp_stream_clone @49956 NONAME
+    _srtp_stream_dealloc @49957 NONAME
+    _srtp_stream_init @49958 NONAME
+    _srtp_stream_init_all_master_keys @49959 NONAME
+    _srtp_stream_init_from_ekt @49960 NONAME
+    _srtp_stream_init_keys @49961 NONAME
+    _srtp_unprotect @49962 NONAME
+    _srtp_unprotect_mki @49963 NONAME
+    _srtp_unprotect_rtcp @49964 NONAME
+    _srtp_unprotect_rtcp_mki @49965 NONAME
+    _srtp_update @49966 NONAME
+    _srtp_update_stream @49967 NONAME
+    _srtp_validate_policy_master_keys @49968 NONAME
+    _sscanf @49969 NONAME
+    _stat_test_monobit @49970 NONAME
+    _stat_test_poker @49971 NONAME
+    _stat_test_runs @49972 NONAME
+    _u2a @49973 NONAME
+    _ulaw2alaw @49974 NONAME
+    _ulaw2linear @49975 NONAME
+    _ut_compar @49976 NONAME
+    _ut_init @49977 NONAME
+    _ut_next_index @49978 NONAME
+    _v128_bit_string @49979 NONAME
+    _v128_copy_octet_string @49980 NONAME
+    _v128_hex_string @49981 NONAME
+    _v128_left_shift @49982 NONAME
+    _v128_right_shift @49983 NONAME
+    _vfprintf @49984 NONAME
+    _vsnprintf @49985 NONAME
+    _wmemcpy @49986 NONAME
+    __speex_putc @50212 NONAME
+    __vfprintf_l @50248 NONAME
+    __vsnprintf_l @50249 NONAME
+    __vsprintf_l @50250 NONAME
+    __vsscanf_l @50251 NONAME
+    ___local_stdio_printf_options @50255 NONAME
+    ___local_stdio_scanf_options @50256 NONAME
+    _CTA2?AVbad_cast@std@@ @47922 NONAME
+    _speex_putc @49747 NONAME
+    _vfprintf_l @49749 NONAME
+    _vsnprintf_l @49750 NONAME
+    _vsprintf_l @49751 NONAME
+    _vsscanf_l @49752 NONAME
+    __local_stdio_printf_options @49754 NONAME
+    __local_stdio_scanf_options @49755 NONAME
+	a2u @49512 NONAME
+    aes_decrypt_with_raw_key @49513 NONAME
+    alaw2linear @49514 NONAME
+    alaw2ulaw @49515 NONAME
+    be_int @49516 NONAME
+    bitvector_alloc @49517 NONAME
+    bitvector_bit_string @49518 NONAME
+    bitvector_dealloc @49519 NONAME
+    bitvector_left_shift @49520 NONAME
+    bitvector_set_to_zero @49521 NONAME
+    crypto_kernel @49522 NONAME
+    fabsf @49523 NONAME
+    fixed_point @49524 NONAME
+    fprintf @49525 NONAME
+    kiss_fft @49526 NONAME
+    kiss_fftr @49527 NONAME
+    kiss_fftri @49528 NONAME
+    kiss_fftr_alloc @49529 NONAME
+    kiss_fft_alloc @49530 NONAME
+    kiss_fft_cleanup @49531 NONAME
+    kiss_fft_stride @49532 NONAME
+    le_int @49533 NONAME
+    linear2alaw @49534 NONAME
+    linear2ulaw @49535 NONAME
+    mod_alloc @49536 NONAME
+    mod_srtp @49537 NONAME
+    mod_stat @49538 NONAME
+    octet_get_weight @49539 NONAME
+    octet_string_is_eq @49540 NONAME
+    octet_string_set_to_zero @49541 NONAME
+    octet_weight @49542 NONAME
+    OpalFreeMessage @47912 NONAME
+    OpalGetMessage @47913 NONAME
+    OpalInitialise @47914 NONAME
+    OpalSendMessage @47915 NONAME
+    OpalShutDown @47916 NONAME
+    printf @49543 NONAME
+    print_vec @49544 NONAME
+    SHA_K0 @49545 NONAME
+    SHA_K1 @49546 NONAME
+    SHA_K2 @49547 NONAME
+    SHA_K3 @49548 NONAME
+    speex_alloc @49549 NONAME
+    speex_alloc_scratch @49550 NONAME
+    speex_echo_cancel @49551 NONAME
+    speex_echo_state_destroy @49552 NONAME
+    speex_echo_state_init @49553 NONAME
+    speex_echo_state_reset @49554 NONAME
+    speex_error @49555 NONAME
+    speex_free @49556 NONAME
+    speex_free_scratch @49557 NONAME
+    speex_memcpy_bytes @49558 NONAME
+    speex_memset_bytes @49559 NONAME
+    speex_move @49560 NONAME
+    speex_preprocess @49561 NONAME
+    speex_preprocess_ctl @49562 NONAME
+    speex_preprocess_estimate_update @49563 NONAME
+    speex_preprocess_state_destroy @49564 NONAME
+    speex_preprocess_state_init @49565 NONAME
+    speex_rand @49566 NONAME
+    speex_rand_vec @49567 NONAME
+    speex_realloc @49568 NONAME
+    speex_warning @49569 NONAME
+    speex_warning_int @49570 NONAME
+    sprintf @49571 NONAME
+    spx_cos @49572 NONAME
+    spx_drft_backward @49573 NONAME
+    spx_drft_clear @49574 NONAME
+    spx_drft_forward @49575 NONAME
+    spx_drft_init @49576 NONAME
+    spx_fft @49577 NONAME
+    spx_fft_destroy @49578 NONAME
+    spx_fft_float @49579 NONAME
+    spx_fft_init @49580 NONAME
+    spx_ifft @49581 NONAME
+    spx_ifft_float @49582 NONAME
+    srtcp_ekt_trailer @49583 NONAME
+    srtp_add_stream @49584 NONAME
+    srtp_aes_decrypt @49585 NONAME
+    srtp_aes_encrypt @49586 NONAME
+    srtp_aes_expand_decryption_key @49587 NONAME
+    srtp_aes_expand_encryption_key @49588 NONAME
+    srtp_aes_icm_128 @49589 NONAME
+    srtp_aes_icm_256 @49590 NONAME
+    srtp_append_salt_to_key @49591 NONAME
+    srtp_auth_get_key_length @49592 NONAME
+    srtp_auth_get_prefix_length @49593 NONAME
+    srtp_auth_get_tag_length @49594 NONAME
+    srtp_auth_type_self_test @49595 NONAME
+    srtp_auth_type_test @49596 NONAME
+    srtp_cipher_bits_per_second @49597 NONAME
+    srtp_cipher_dealloc @49598 NONAME
+    srtp_cipher_decrypt @49599 NONAME
+    srtp_cipher_encrypt @49600 NONAME
+    srtp_cipher_get_key_length @49601 NONAME
+    srtp_cipher_get_tag @49602 NONAME
+    srtp_cipher_init @49603 NONAME
+    srtp_cipher_output @49604 NONAME
+    srtp_cipher_set_aad @49605 NONAME
+    srtp_cipher_set_iv @49606 NONAME
+    srtp_cipher_type_alloc @49607 NONAME
+    srtp_cipher_type_self_test @49608 NONAME
+    srtp_cipher_type_test @49609 NONAME
+    srtp_cleanse @49610 NONAME
+    srtp_create @49611 NONAME
+    srtp_crypto_alloc @49612 NONAME
+    srtp_crypto_free @49613 NONAME
+    srtp_crypto_kernel_alloc_auth @49614 NONAME
+    srtp_crypto_kernel_alloc_cipher @49615 NONAME
+    srtp_crypto_kernel_do_load_auth_type @49616 NONAME
+    srtp_crypto_kernel_get_auth_type @49617 NONAME
+    srtp_crypto_kernel_get_cipher_type @49618 NONAME
+    srtp_crypto_kernel_init @49619 NONAME
+    srtp_crypto_kernel_list_debug_modules @49620 NONAME
+    srtp_crypto_kernel_load_auth_type @49621 NONAME
+    srtp_crypto_kernel_load_cipher_type @49622 NONAME
+    srtp_crypto_kernel_load_debug_module @49623 NONAME
+    srtp_crypto_kernel_set_debug_module @49624 NONAME
+    srtp_crypto_kernel_shutdown @49625 NONAME
+    srtp_crypto_kernel_status @49626 NONAME
+    srtp_crypto_policy_set_aes_cm_128_hmac_sha1_32 @49627 NONAME
+    srtp_crypto_policy_set_aes_cm_128_null_auth @49628 NONAME
+    srtp_crypto_policy_set_aes_cm_256_hmac_sha1_32 @49629 NONAME
+    srtp_crypto_policy_set_aes_cm_256_hmac_sha1_80 @49630 NONAME
+    srtp_crypto_policy_set_aes_cm_256_null_auth @49631 NONAME
+    srtp_crypto_policy_set_from_profile_for_rtcp @49632 NONAME
+    srtp_crypto_policy_set_from_profile_for_rtp @49633 NONAME
+    srtp_crypto_policy_set_null_cipher_hmac_null @49634 NONAME
+    srtp_crypto_policy_set_null_cipher_hmac_sha1_80 @49635 NONAME
+    srtp_crypto_policy_set_rtcp_default @49636 NONAME
+    srtp_crypto_policy_set_rtp_default @49637 NONAME
+    srtp_dealloc @49638 NONAME
+    srtp_ekt_alloc @49639 NONAME
+    srtp_ekt_octets_after_base_tag @49640 NONAME
+    srtp_ekt_stream_init_from_policy @49641 NONAME
+    srtp_ekt_write_data @49642 NONAME
+    srtp_err_handler @49643 NONAME
+    srtp_err_report @49644 NONAME
+    srtp_err_reporting_init @49645 NONAME
+    srtp_event_reporter @49646 NONAME
+    srtp_get_protect_rtcp_trailer_length @49647 NONAME
+    srtp_get_protect_trailer_length @49648 NONAME
+    srtp_get_session_keys @49649 NONAME
+    srtp_get_session_keys_with_mki_index @49650 NONAME
+    srtp_get_stream @49651 NONAME
+    srtp_get_stream_roc @49652 NONAME
+    srtp_get_user_data @49653 NONAME
+    srtp_get_version @49654 NONAME
+    srtp_get_version_string @49655 NONAME
+    srtp_hmac @49656 NONAME
+    srtp_index_advance @49657 NONAME
+    srtp_index_guess @49658 NONAME
+    srtp_index_init @49659 NONAME
+    srtp_init @49660 NONAME
+    srtp_inject_mki @49661 NONAME
+    srtp_install_err_report_handler @49662 NONAME
+    srtp_install_event_handler @49663 NONAME
+    srtp_install_log_handler @49664 NONAME
+    srtp_key_limit_check @49665 NONAME
+    srtp_key_limit_clone @49666 NONAME
+    srtp_key_limit_set @49667 NONAME
+    srtp_key_limit_update @49668 NONAME
+    srtp_list_debug_modules @49669 NONAME
+    srtp_log_handler @49670 NONAME
+    srtp_mod_aes_icm @49671 NONAME
+    srtp_mod_auth @49672 NONAME
+    srtp_mod_cipher @49673 NONAME
+    srtp_mod_crypto_kernel @49674 NONAME
+    srtp_mod_hmac @49675 NONAME
+    srtp_mod_sha1 @49676 NONAME
+    srtp_nibble_to_hex_char @49677 NONAME
+    srtp_null_auth @49678 NONAME
+    srtp_null_cipher @49679 NONAME
+    srtp_octet_string_hex_string @49680 NONAME
+    srtp_profile_get_master_key_length @49681 NONAME
+    srtp_profile_get_master_salt_length @49682 NONAME
+    srtp_protect @49683 NONAME
+    srtp_protect_mki @49684 NONAME
+    srtp_protect_rtcp @49685 NONAME
+    srtp_protect_rtcp_mki @49686 NONAME
+    srtp_rdbx_add_index @49687 NONAME
+    srtp_rdbx_check @49688 NONAME
+    srtp_rdbx_dealloc @49689 NONAME
+    srtp_rdbx_estimate_index @49690 NONAME
+    srtp_rdbx_get_packet_index @49691 NONAME
+    srtp_rdbx_get_roc @49692 NONAME
+    srtp_rdbx_get_window_size @49693 NONAME
+    srtp_rdbx_init @49694 NONAME
+    srtp_rdbx_set_roc @49695 NONAME
+    srtp_rdbx_set_roc_seq @49696 NONAME
+    srtp_rdb_add_index @49697 NONAME
+    srtp_rdb_check @49698 NONAME
+    srtp_rdb_get_value @49699 NONAME
+    srtp_rdb_increment @49700 NONAME
+    srtp_rdb_init @49701 NONAME
+    srtp_remove_stream @49702 NONAME
+    srtp_replace_auth_type @49703 NONAME
+    srtp_replace_cipher_type @49704 NONAME
+    srtp_set_debug_module @49705 NONAME
+    srtp_set_stream_roc @49706 NONAME
+    srtp_set_user_data @49707 NONAME
+    srtp_sha1 @49708 NONAME
+    srtp_sha1_core @49709 NONAME
+    srtp_sha1_final @49710 NONAME
+    srtp_sha1_init @49711 NONAME
+    srtp_sha1_update @49712 NONAME
+    srtp_shutdown @49713 NONAME
+    srtp_stream_alloc @49714 NONAME
+    srtp_stream_clone @49715 NONAME
+    srtp_stream_dealloc @49716 NONAME
+    srtp_stream_init @49717 NONAME
+    srtp_stream_init_all_master_keys @49718 NONAME
+    srtp_stream_init_from_ekt @49719 NONAME
+    srtp_stream_init_keys @49720 NONAME
+    srtp_unprotect @49721 NONAME
+    srtp_unprotect_mki @49722 NONAME
+    srtp_unprotect_rtcp @49723 NONAME
+    srtp_unprotect_rtcp_mki @49724 NONAME
+    srtp_update @49725 NONAME
+    srtp_update_stream @49726 NONAME
+    srtp_validate_policy_master_keys @49727 NONAME
+    sscanf @49728 NONAME
+    stat_test_monobit @49729 NONAME
+    stat_test_poker @49730 NONAME
+    stat_test_runs @49731 NONAME
+    u2a @49732 NONAME
+    ulaw2alaw @49733 NONAME
+    ulaw2linear @49734 NONAME
+    ut_compar @49735 NONAME
+    ut_init @49736 NONAME
+    ut_next_index @49737 NONAME
+    v128_bit_string @49738 NONAME
+    v128_copy_octet_string @49739 NONAME
+    v128_hex_string @49740 NONAME
+    v128_left_shift @49741 NONAME
+    v128_right_shift @49742 NONAME
+    vfprintf @49743 NONAME
+    vsnprintf @49744 NONAME
