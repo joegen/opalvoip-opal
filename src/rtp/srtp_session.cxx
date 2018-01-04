@@ -237,7 +237,7 @@ class PSRTPInitialiser : public PProcessStartup
     virtual void OnStartup()
     {
       PTRACE(2, "Initialising SRTP: " << srtp_get_version_string());
-      CHECK_ERROR(srtp_install_log_handler,(srtp_log_handler, nullptr));
+      CHECK_ERROR(srtp_install_log_handler,(srtp_log_handler, NULL));
       CHECK_ERROR(srtp_init,());
     }
 };
