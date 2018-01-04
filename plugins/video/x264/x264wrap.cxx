@@ -758,7 +758,7 @@ bool H264Encoder::Load(void * instance)
   static const char * const ExecutableNames[] = {
     EXECUTABLE_NAME,
 #if WIN32
-    "\\Work\\opal\\bin\\plugins\\Win32\\Release\\EXECUTABLE_NAME
+    "\\Work\\opal\\bin\\plugins\\Win32\\Release\\" EXECUTABLE_NAME
 #else
     "x264_gpl_helper/" EXECUTABLE_NAME,
     "plugins/x264_gpl_helper/" EXECUTABLE_NAME
