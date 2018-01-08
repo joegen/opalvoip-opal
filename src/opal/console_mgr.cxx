@@ -741,7 +741,7 @@ void SIPConsoleEndPoint::GetArgumentSpec(ostream & strm) const
 {
   strm << "[SIP options:]"
           "-no-sip.           Disable SIP\n"
-          "S-sip:             Listen on interface(s), defaults to udp$*:5060.\n";
+          "S-sip:             Listen on interface(s), defaults to *:5060 (udp/tcp/tls, all interfaces).\n";
   OpalRTPConsoleEndPoint::GetArgumentSpec(strm);
   strm << "r-register:        Registration to server.\n"
           "-register-auth-id: Registration authorisation id, default is username.\n"
