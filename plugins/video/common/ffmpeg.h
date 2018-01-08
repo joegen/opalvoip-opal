@@ -79,7 +79,7 @@ extern "C" {
   #define PICTURE_HEIGHT     m_picture->height
 #endif
 
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(56, 26, 100)
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(56, 27, 0)
   #define AV_CODEC_FLAG_TRUNCATED              CODEC_FLAG_TRUNCATED
   #define AV_CODEC_FLAG_AC_PRED                CODEC_FLAG_AC_PRED
   #define AV_CODEC_FLAG_4MV                    CODEC_FLAG_4MV
