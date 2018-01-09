@@ -582,24 +582,41 @@ bool RTP_DataFrame::SetPaddingSize(PINDEX paddingSize)
 #if PTRACING
 void RTP_DataFrame::PrintOn(ostream & strm) const
 {
-  bool summary = strm.width() == 1;
+  bool summary = strm.width() == 1 || strm.width() == -1;
 
   int csrcCount = GetContribSrcCount();
 
   strm <<  "V="  << GetVersion()
-       << " X="  << GetExtension()
+       << " SSRC=" << RTP_TRACE_SRC(GetSyncSource())
        << " M="  << GetMarker()
        << " PT=" << GetPayloadType()
        << " SN=" << GetSequenceNumber()
        << " TS=" << GetTimestamp()
-       << " SSRC=" << RTP_TRACE_SRC(GetSyncSource())
-       << " CSRS=" << csrcCount
-       << " hdr-sz=" << m_headerSize
-       << " pay-sz=" << m_payloadSize
-       << " pad-sz=" << m_paddingSize;
+       << " absT=" << GetAbsoluteTime().AsString(PTime::TodayFormat);
+  if (csrcCount > 0)
+    strm  << " CSRS=" << csrcCount;
+  strm << " hdr-sz=" << m_headerSize
+       << " pay-sz=" << m_payloadSize;
+  if (m_paddingSize > 0)
+    strm << " pad-sz=" << m_paddingSize;
 
-  if (summary)
+  if (summary) {
+    if (GetExtension()) {
+      strm << "hdr-ext=";
+
+      unsigned id;
+      PINDEX len;
+      if (GetHeaderExtension(id, len, -1))
+        strm << "RFC3550";
+      else {
+        int count = 0;
+        while (GetHeaderExtension(id, len, count) != NULL)
+          ++count;
+        strm << count;
+      }
+    }
     return;
+  }
 
   strm << '\n';
 
