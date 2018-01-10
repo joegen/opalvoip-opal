@@ -2259,7 +2259,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
               // SSRCs are still only video; hence we don't police the target SSRCs here.
               PTRACE(4, *this << "received REMB:"
                      " maxBitRate=" << maxBitRate << ","
-                     " first receiver SSRC=" << RTP_TRACE_SRC(targetSSRCs[0]) << ","
+                     " first receiver (of " << targetSSRCs.size() <<") SSRC=" << RTP_TRACE_SRC(targetSSRCs[0]) << ","
                      " sender SSRC=" << RTP_TRACE_SRC(senderSSRC));
               m_connection.ExecuteMediaCommand(OpalMediaFlowControl(maxBitRate, m_mediaType, m_sessionId, targetSSRCs), true);
               break;
