@@ -188,7 +188,7 @@ RTP_SyncSourceId OpalRTPSession::AddSyncSource(RTP_SyncSourceId id, Direction di
 }
 
 
-bool OpalRTPSession::RemoveSyncSource(RTP_SyncSourceId ssrc)
+bool OpalRTPSession::RemoveSyncSource(RTP_SyncSourceId ssrc PTRACE_PARAM(, const char * reason))
 {
   P_INSTRUMENTED_LOCK_READ_WRITE(return false);
 
@@ -208,10 +208,10 @@ bool OpalRTPSession::RemoveSyncSource(RTP_SyncSourceId ssrc)
   else {
     // We are primary, so if has rtx secondary, remove that as well
     if (it->second->m_rtxSSRC != 0)
-      RemoveSyncSource(it->second->m_rtxSSRC);
+      RemoveSyncSource(it->second->m_rtxSSRC PTRACE_PARAM(, "primary for RTX removed"));
   }
 
-  PTRACE(3, *this << "removed " << it->second->m_direction << " SSRC=" << RTP_TRACE_SRC(ssrc));
+  PTRACE(3, *this << "removed " << it->second->m_direction << " SSRC=" << RTP_TRACE_SRC(ssrc) << ": " << reason);
   delete it->second;
   m_SSRC.erase(it);
   return true;
@@ -381,7 +381,7 @@ RTP_SyncSourceId OpalRTPSession::EnableSyncSourceRtx(RTP_SyncSourceId primarySSR
     }
 
     // Overwriting old secondary SSRC with new one
-    RemoveSyncSource(primary.m_rtxSSRC);
+    RemoveSyncSource(primary.m_rtxSSRC PTRACE_PARAM(, "overwriting RTX"));
   }
 
   rtxSSRC = AddSyncSource(rtxSSRC, primary.m_direction, primary.m_canonicalName);

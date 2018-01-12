@@ -2124,10 +2124,8 @@ bool SDPRTPAVPMediaDescription::ToSession(OpalMediaSession * session, RTP_SyncSo
       PString cname(it->second.GetString("cname"));
       if (!cname.IsEmpty()) {
         PString oldCname = rtpSession->GetCanonicalName(ssrc, OpalRTPSession::e_Receiver);
-        if (!oldCname.IsEmpty() && oldCname != cname) {
-          rtpSession->RemoveSyncSource(ssrc);
-          PTRACE(4, "Session " << session->GetSessionID() << ", removed receiver SSRC " << RTP_TRACE_SRC(ssrc));
-        }
+        if (!oldCname.IsEmpty() && oldCname != cname)
+          rtpSession->RemoveSyncSource(ssrc PTRACE_PARAM(, "cname changed"));
         if (rtpSession->AddSyncSource(ssrc, OpalRTPSession::e_Receiver, cname) == ssrc) {
           rtpSession->SetAnySyncSource(false);
           PTRACE(4, "Session " << session->GetSessionID() << ", added receiver SSRC " << RTP_TRACE_SRC(ssrc));
@@ -2170,7 +2168,7 @@ bool SDPRTPAVPMediaDescription::ToSession(OpalMediaSession * session, RTP_SyncSo
       RTP_SyncSourceId ssrc = *it;
       if (rtpSession->GetRtxSyncSource(ssrc, OpalRTPSession::e_Sender, false) != 0 &&
           std::find(rtxConfirmed.begin(), rtxConfirmed.end(), ssrc) == rtxConfirmed.end())
-        rtpSession->RemoveSyncSource(ssrc);
+        rtpSession->RemoveSyncSource(ssrc PTRACE_PARAM(, "RTX not confirmed"));
     }
   }
 

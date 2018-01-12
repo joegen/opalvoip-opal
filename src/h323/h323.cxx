@@ -2728,7 +2728,7 @@ PBoolean H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_Octe
         if (session != NULL) {
           const RTP_SyncSourceArray ssrcs = session->GetSyncSources(OpalRTPSession::e_Receiver);
           for (RTP_SyncSourceArray::const_iterator it = ssrcs.begin(); it != ssrcs.end(); ++it)
-            session->RemoveSyncSource(*it);
+            session->RemoveSyncSource(*it PTRACE_PARAM(, "H.323 fast start, nothing to open"));
         }
       }
     }

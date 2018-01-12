@@ -142,6 +142,7 @@ class OpalRTPSession : public OpalMediaSession
       */
     virtual bool RemoveSyncSource(
       RTP_SyncSourceId id
+      PTRACE_PARAM(, const char * reason)
     );
 
     /**Get the all source identifiers.
