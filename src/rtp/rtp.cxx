@@ -605,18 +605,19 @@ void RTP_DataFrame::PrintOn(ostream & strm) const
 
   if (summary) {
     if (GetExtension()) {
-      strm << "hdr-ext=";
+      strm << " hdr-ext=";
 
       unsigned id;
       PINDEX len;
-      if (GetHeaderExtension(id, len, -1))
-        strm << "RFC3550";
-      else {
-        int count = 0;
-        while (GetHeaderExtension(id, len, count) != NULL)
-          ++count;
+      int count = 0;
+      while (GetHeaderExtension(id, len, count) != NULL)
+        ++count;
+      if (count > 0)
         strm << count;
-      }
+      else if (GetHeaderExtension(id, len, -1) != NULL)
+        strm << "0x" << hex << id << dec;
+      else
+        strm << "None";
     }
     return;
   }
