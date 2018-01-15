@@ -67,14 +67,17 @@ class OpalPCAPFile : public PFile
       OpalTranscoder   * m_transcoder;
       RTP_SequenceNumber m_lastSequenceNumber;
       RTP_SyncSourceId   m_lastSSRC;
+      off_t              m_lastPacketsFilePosition;
       DecodeContext()
         : m_transcoder(NULL)
         , m_lastSequenceNumber(0)
         , m_lastSSRC(0)
+        , m_lastPacketsFilePosition(0)
       { }
       ~DecodeContext();
     };
     int GetDecodedRTP(RTP_DataFrame & decodedRTP, DecodeContext & context);
+    int DecodeRTP(RTP_DataFrame & encodedRTP, RTP_DataFrame & decodedRTP, DecodeContext & context);
 
 
     const PTime & GetPacketTime() const { return m_rawPacket.GetTimestamp(); }
@@ -165,6 +168,7 @@ class OpalPCAPFile : public PFile
 
   protected:
     bool InternalOpen(OpenMode mode, OpenOptions opt, PFileInfo::Permissions permissions);
+    int InternalDecodeRTP(RTP_DataFrame & encodedRTP, RTP_DataFrame & decodedRTP, DecodeContext & context);
 
     struct FileHeader { 
       DWORD magic_number;   /* magic number */
