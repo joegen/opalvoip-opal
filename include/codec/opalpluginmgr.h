@@ -332,11 +332,23 @@ class OpalPluginVideoTranscoder : public OpalVideoTranscoder, public OpalPluginT
     bool DecodeFrame(const RTP_DataFrame & src, RTP_DataFrameList & dstList);
 
     RTP_DataFrame * m_bufferRTP;
-    DWORD           m_lastDecodedTimestamp; // For missing marker bit detection
-    DWORD           m_lastMarkerTimestamp;  // For continuous marker bit detection
-    unsigned        m_consecutiveMarkers;
-    bool            m_badMarkers;
     unsigned        m_totalFrames;
+
+    // Check for bad markers, or abd timestamps, work arounds
+    enum {
+      e_MarkersInitial,
+      e_MarkersUnknown,
+      e_MarkersPossiblyGood,
+      e_MarkersGood,
+      e_MarkersPossiblyContinuous,
+      e_MarkersContinuous,
+      e_MarkersPossiblyMissing,
+      e_MarkersMissing
+    } m_markersState;
+    bool          m_lastPacketMarker;
+    RTP_Timestamp m_currentFrameTimestamp;
+    RTP_Timestamp m_lastPacketTimestamp;
+    RTP_Timestamp m_lastMarkerTimestamp;
 
 #if PTRACING
     unsigned m_consecutiveIntraFrames;

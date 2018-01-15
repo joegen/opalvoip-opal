@@ -861,11 +861,12 @@ OpalPluginVideoTranscoder::OpalPluginVideoTranscoder(const OpalTranscoderKey & k
   : OpalVideoTranscoder(key.first, key.second)
   , OpalPluginTranscoder(codecDefn, isEncoder)
   , m_bufferRTP(NULL)
-  , m_lastDecodedTimestamp(UINT_MAX)
-  , m_lastMarkerTimestamp(UINT_MAX)
-  , m_consecutiveMarkers(0)
-  , m_badMarkers(false)
   , m_totalFrames(0)
+  , m_markersState(e_MarkersInitial)
+  , m_lastPacketMarker(false)
+  , m_currentFrameTimestamp(UINT_MAX)
+  , m_lastPacketTimestamp(UINT_MAX)
+  , m_lastMarkerTimestamp(UINT_MAX)
 #if PTRACING
   , m_consecutiveIntraFrames(0)
 #endif
@@ -1058,50 +1059,114 @@ bool OpalPluginVideoTranscoder::DecodeFrames(const RTP_DataFrame & src, RTP_Data
   dstList.RemoveAll();
 
   // Check for brain dead hosts that do not send marker bits, or continuously send them!
-  DWORD newTimestamp = src.GetTimestamp();
+  RTP_Timestamp newTimestamp = src.GetTimestamp();
+  bool packetMarker = src.GetMarker();
+  bool fakeMarkerToDecoder = false;
 
-  if (!m_badMarkers) {
-    if (src.GetMarker()) {
-      // Got two consecutive packets with markers and same timestamp, wrong!
-      if (m_lastMarkerTimestamp != newTimestamp || m_lastDecodedTimestamp != newTimestamp) {
-        m_lastMarkerTimestamp = newTimestamp;
-        m_consecutiveMarkers = 0;
+  switch (m_markersState) {
+    case e_MarkersInitial:
+      m_currentFrameTimestamp = m_lastPacketTimestamp = newTimestamp;
+      m_markersState = e_MarkersUnknown;
+      // Do next case
+
+    case e_MarkersUnknown :
+    case e_MarkersPossiblyGood:
+      if (packetMarker) {
+        if (m_lastMarkerTimestamp == newTimestamp) {
+          PTRACE(2, "OpalPlugin\tPossibly continuous RTP marker bits seen: " << setw(1) << src);
+          m_markersState = e_MarkersPossiblyContinuous;
+        }
+        else if (m_markersState != e_MarkersPossiblyGood) {
+          PTRACE(3, "OpalPlugin\tPossibly good RTP marker bits: " << setw(1) << src);
+          m_markersState = e_MarkersPossiblyGood;
+        }
       }
-      else if (++m_consecutiveMarkers >= 3) {
-        PTRACE(2, "OpalPlugin\tContinuous RTP marker bits seen, ignoring from now on: sn=" << src.GetSequenceNumber());
-        m_badMarkers = true;
+      else {
+        if (!m_lastPacketMarker && m_lastPacketTimestamp != newTimestamp) {
+          PTRACE(2, "OpalPlugin\tPossibly missing RTP marker bits: " << setw(1) << src);
+          m_markersState = e_MarkersPossiblyMissing;
+        }
+        else if (m_markersState == e_MarkersPossiblyGood) {
+          PTRACE(4, "OpalPlugin\tGood RTP marker bits: " << setw(1) << src);
+          m_markersState = e_MarkersGood;
+        }
       }
-    }
-    else {
-      // If never got a marker and timestamp changes, we are not getting markers at all
-      if (m_lastMarkerTimestamp == UINT_MAX &&
-          m_lastDecodedTimestamp != UINT_MAX &&
-          m_lastDecodedTimestamp != newTimestamp) {
-        PTRACE(2, "OpalPlugin\tNo RTP marker bits seen, faking them to decoder: sn=" << src.GetSequenceNumber());
-        m_badMarkers = true;
+      break;
+
+    case e_MarkersGood:
+      break;
+
+    case e_MarkersPossiblyContinuous:
+      if (!packetMarker) {
+        PTRACE(2, "OpalPlugin\tPossibly continuous RTP marker bits NOT detected: " << setw(1) << src);
+        m_markersState = e_MarkersUnknown;
       }
-    }
+      else if (m_lastMarkerTimestamp != newTimestamp)
+        PTRACE(4, "OpalPlugin\tContinuous RTP marker bits still to be determined: " << setw(1) << src);
+      else {
+        PTRACE(2, "OpalPlugin\tContinuous RTP marker bits seen, ignoring from now on: " << setw(1) << src);
+        m_markersState = e_MarkersContinuous;
+      }
+      break;
+
+    case e_MarkersContinuous:
+      if (packetMarker)
+        fakeMarkerToDecoder = m_lastPacketTimestamp != newTimestamp; // Markers useless, use change of timestamp
+      else {
+        PTRACE(2, "OpalPlugin\tPreviously continuous RTP marker bits stopped: " << setw(1) << src);
+        m_markersState = e_MarkersUnknown;
+      }
+      break;
+
+    case e_MarkersPossiblyMissing:
+      if (packetMarker) {
+        PTRACE(2, "OpalPlugin\tPossibly missing RTP marker bits NOT detected: " << setw(1) << src);
+        m_markersState = e_MarkersUnknown;
+      }
+      else if (m_lastPacketTimestamp == newTimestamp)
+        PTRACE(4, "OpalPlugin\tMissing RTP marker bits still to be determined: " << setw(1) << src);
+      else if (m_currentFrameTimestamp == newTimestamp) {
+        PTRACE(2, "OpalPlugin\tTimestamp glitch, probably not missing markers: sn=" << setw(1) << src);
+        m_markersState = e_MarkersUnknown;
+      }
+      else {
+        PTRACE(2, "OpalPlugin\tNo RTP marker bits seen, faking them to decoder: sn=" << setw(1) << src);
+        m_markersState = e_MarkersContinuous;
+      }
+      break;
+
+    case e_MarkersMissing:
+      if (!packetMarker)
+        fakeMarkerToDecoder = m_lastPacketTimestamp != newTimestamp; // Markers useless, use change of timestamp
+      else {
+        PTRACE(2, "OpalPlugin\tPreviously missing RTP marker bits appeared: " << setw(1) << src);
+        m_markersState = e_MarkersUnknown;
+      }
+      break;
   }
 
-  // Markers useless, just use a change of timestamp
-  if (m_badMarkers) {
-    if (m_lastDecodedTimestamp != newTimestamp) {
-      // Send an empty payload frame that has a marker bit
-      RTP_DataFrame marker(src, src.GetHeaderSize());
-      marker.SetMarker(true);
-      if (!DecodeFrame(marker, dstList))
-        return false;
-      // As we are doing this packets SN twice, reset our out of sequence packet detection
-      if (m_bufferRTP == NULL) {
-        m_bufferRTP = new RTP_DataFrame((PINDEX)0, outputDataSize);
-        m_lastFrameWasIFrame = false;
-      }
-    }
-    if (m_lastMarkerTimestamp != UINT_MAX)
-      const_cast<RTP_DataFrame &>(src).SetMarker(false);
-  }
+  if (m_lastPacketMarker)
+    m_currentFrameTimestamp = newTimestamp;
+  m_lastPacketMarker = packetMarker;
+  if (packetMarker)
+    m_lastMarkerTimestamp = newTimestamp;
+  m_lastPacketTimestamp = newTimestamp;
 
-  m_lastDecodedTimestamp = newTimestamp;
+  // Send an empty payload frame that has a marker bit
+  if (fakeMarkerToDecoder) {
+    RTP_DataFrame marker(src, src.GetHeaderSize());
+    marker.SetMarker(true);
+    if (!DecodeFrame(marker, dstList))
+      return false;
+
+    // As we are doing this packets SN twice, reset our out of sequence packet detection
+    if (m_bufferRTP == NULL) {
+      m_bufferRTP = new RTP_DataFrame((PINDEX)0, outputDataSize);
+      m_lastFrameWasIFrame = false;
+    }
+
+    const_cast<RTP_DataFrame &>(src).SetMarker(false);
+  }
 
   return DecodeFrame(src, dstList);
 }
