@@ -757,6 +757,7 @@ class OpalRTPSession : public OpalMediaSession
 
       RTP_SyncSourceId            m_rtxSSRC; // Bidirectional link between primary and secondary
       RTP_DataFrame::PayloadTypes m_rtxPT;   // Sending rtx payload type, or receiving rtx primary paylaod type, only set in seconday SSRC
+      int                         m_rtxPackets;
 
       NotifierMap m_notifiers;
 
