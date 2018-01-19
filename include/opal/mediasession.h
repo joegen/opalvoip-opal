@@ -539,7 +539,6 @@ class OpalMediaTransport : public PSafeObject, public OpalMediaTransportChannelT
     };
     friend struct ChannelInfo;
     vector<ChannelInfo> m_subchannels;
-    virtual void InternalOnStart(SubChannels subchannel);
     virtual void InternalRxData(SubChannels subchannel, const PBYTEArray & data);
 };
 

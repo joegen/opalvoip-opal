@@ -104,7 +104,14 @@ bool OpalICEMediaTransport::Open(OpalMediaSession & session,
   if (m_mediaTimeout < MinTimeout)
     m_mediaTimeout = MinTimeout;
 
-  return OpalUDPMediaTransport::Open(session, count, localInterface, remoteAddress);
+  if (!OpalUDPMediaTransport::Open(session, count, localInterface, remoteAddress))
+      return false;
+
+  /* With ICE we start the thread straight away, as we need to respond to STUN
+     requests before we get an answer back from the remote, which is when we
+     would usually start the read thread. */
+  Start();
+  return true;
 }
 
 
@@ -446,13 +453,13 @@ bool OpalICEMediaTransport::InternalHandleICE(SubChannels subchannel, const void
   }
 
   if (message.IsRequest()) {
-    if (m_state == e_Offering) {
-      PTRACE_IF(3, m_state != e_Completed, *this << subchannel << ", unexpected STUN request in ICE: " << message);
-      return false; // Just eat the STUN packet
-    }
-
     if (!PAssertNULL(m_server)->OnReceiveMessage(message, PSTUNServer::SocketInfo(socket)))
       return false; // Probably a authentication error
+
+    if (m_state == e_Offering) {
+      PTRACE(4, *this << subchannel << ", early STUN request in ICE.");
+      return false; // Just eat the STUN packet until we get an an answer
+    }
 
     /* Already got this candidate, so don't do any more processing, but still return
        false as we don't want next layer in stack trying to use this STUN packet. */

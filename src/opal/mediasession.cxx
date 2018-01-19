@@ -745,8 +745,6 @@ void OpalMediaTransport::ChannelInfo::ThreadMain()
 {
   PTRACE(4, m_owner, *m_owner << m_subchannel << " media transport read thread starting");
 
-  m_owner->InternalOnStart(m_subchannel);
-
   while (m_channel->IsOpen()) {
     PBYTEArray data(m_owner->m_packetSize);
 
@@ -849,11 +847,6 @@ void OpalMediaTransport::InternalClose()
       PTRACE(3, *this << it->m_subchannel << " not created.");
     }
   }
-}
-
-
-void OpalMediaTransport::InternalOnStart(SubChannels)
-{
 }
 
 

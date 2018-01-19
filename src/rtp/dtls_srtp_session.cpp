@@ -238,10 +238,12 @@ OpalDTLSMediaTransport::DTLSChannel * OpalDTLSMediaTransport::CreateDTLSChannel(
 }
 
 
-void OpalDTLSMediaTransport::InternalOnStart(SubChannels subchannel)
+void OpalDTLSMediaTransport::InternalRxData(SubChannels subchannel, const PBYTEArray & data)
 {
-  OpalDTLSMediaTransportParent::InternalOnStart(subchannel);
-  PerformHandshake(GetChannel(subchannel));
+  if (IsEstablished())
+    OpalDTLSMediaTransportParent::InternalRxData(subchannel, data);
+  else if (m_remoteAddressSet)
+    PerformHandshake(GetChannel(subchannel));
 }
 
 
