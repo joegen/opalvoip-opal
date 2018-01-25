@@ -45,11 +45,6 @@ EXPORTS
     _octet_string_is_eq @49780 NONAME
     _octet_string_set_to_zero @49781 NONAME
     _octet_weight @49782 NONAME
-    _OpalFreeMessage@4 @48116 NONAME
-    _OpalGetMessage@8 @48117 NONAME
-    _OpalInitialise@8 @48118 NONAME
-    _OpalSendMessage@8 @48119 NONAME
-    _OpalShutDown@4 @48120 NONAME
     _powf @49783 NONAME
     _printf @49784 NONAME
     _print_vec @49785 NONAME
@@ -290,11 +285,6 @@ EXPORTS
     octet_string_is_eq @49540 NONAME
     octet_string_set_to_zero @49541 NONAME
     octet_weight @49542 NONAME
-    OpalFreeMessage @47912 NONAME
-    OpalGetMessage @47913 NONAME
-    OpalInitialise @47914 NONAME
-    OpalSendMessage @47915 NONAME
-    OpalShutDown @47916 NONAME
     printf @49543 NONAME
     print_vec @49544 NONAME
     SHA_K0 @49545 NONAME
