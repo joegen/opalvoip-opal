@@ -111,25 +111,35 @@
     <IntDir Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">$(OutDir)</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">$(OutDir)</IntDir>
     <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(WXDIR)\lib\vc$(PlatformToolsetVersion)_dll\mswud;$(WXDIR)\lib\vc_lib\mswud;$(WXDIR)\include;..\..\Lib\$(Platform)\include;..\..\include;..\..\..\ptlib\Lib\$(Platform)\include;..\..\..\ptlib\include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
-    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(WXDIR)\lib\vc$(PlatformToolsetVersion)_dll\mswud;$(WXDIR)\lib\vc_lib\mswud;$(WXDIR)\include;..\..\Lib\$(Platform)\include;..\..\include;..\..\..\ptlib\Lib\$(Platform)\include;..\..\..\ptlib\include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
-    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(WXDIR)\lib\vc$(PlatformToolsetVersion)_dll\mswud;$(WXDIR)\lib\vc_lib\mswud;$(WXDIR)\include;..\..\Lib\$(Platform)\include;..\..\include;..\..\..\ptlib\Lib\$(Platform)\include;..\..\..\ptlib\include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
-    <IncludePath Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">$(WXDIR)\lib\vc$(PlatformToolsetVersion)_dll\mswud;$(WXDIR)\lib\vc_lib\mswud;$(WXDIR)\include;..\..\Lib\$(Platform)\include;..\..\include;..\..\..\ptlib\Lib\$(Platform)\include;..\..\..\ptlib\include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
-    <IncludePath Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">$(WXDIR)\lib\vc$(PlatformToolsetVersion)_dll\mswud;$(WXDIR)\lib\vc_lib\mswud;$(WXDIR)\include;..\..\Lib\$(Platform)\include;..\..\include;..\..\..\ptlib\Lib\$(Platform)\include;..\..\..\ptlib\include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
-    <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(WXDIR)\lib\vc$(PlatformToolsetVersion)_dll;$(WXDIR)\lib\vc_lib;..\..\lib;..\..\..\ptlib\lib;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
-    <LibraryPath Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">$(WXDIR)\lib\vc$(PlatformToolsetVersion)_dll;$(WXDIR)\lib\vc_lib;..\..\lib;..\..\..\ptlib\lib;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
+    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(WXDIR)\lib\vc$(PlatformToolsetVersion)_dll\mswu;$(WXDIR)\lib\vc_lib\mswu;$(WXDIR)\include;..\..\Lib\$(Platform)\include;..\..\include;..\..\..\ptlib\Lib\$(Platform)\include;..\..\..\ptlib\include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
+    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(WXDIR)\lib\vc$(PlatformToolsetVersion)_dll\mswu;$(WXDIR)\lib\vc_lib\mswu;$(WXDIR)\include;..\..\Lib\$(Platform)\include;..\..\include;..\..\..\ptlib\Lib\$(Platform)\include;..\..\..\ptlib\include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
+    <IncludePath Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">$(WXDIR)\lib\vc$(PlatformToolsetVersion)_dll\mswu;$(WXDIR)\lib\vc_lib\mswu;$(WXDIR)\include;..\..\Lib\$(Platform)\include;..\..\include;..\..\..\ptlib\Lib\$(Platform)\include;..\..\..\ptlib\include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
+    <IncludePath Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">$(WXDIR)\lib\vc$(PlatformToolsetVersion)_dll\mswu;$(WXDIR)\lib\vc_lib\mswu;$(WXDIR)\include;..\..\Lib\$(Platform)\include;..\..\include;..\..\..\ptlib\Lib\$(Platform)\include;..\..\..\ptlib\include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
+    <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(WXDIR)\lib\vc$(PlatformToolsetVersion)_dll;$(WXDIR)\lib\vc_dll;..\..\lib;..\..\..\ptlib\lib;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
+    <LibraryPath Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">$(WXDIR)\lib\vc$(PlatformToolsetVersion)_dll;$(WXDIR)\lib\vc_dll;..\..\lib;..\..\..\ptlib\lib;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <IncludePath>$(WXDIR)\lib\vc$(PlatformToolsetVersion)_dll\mswud;$(WXDIR)\lib\vc_lib\mswud;$(WXDIR)\include;..\..\Lib\$(Platform)\include;..\..\include;..\..\..\ptlib\Lib\$(Platform)\include;..\..\..\ptlib\include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
-    <LibraryPath>$(WXDIR)\lib\vc$(PlatformToolsetVersion)_dll;$(WXDIR)\lib\vc_lib;..\..\lib;..\..\..\ptlib\lib;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
+    <LibraryPath>$(WXDIR)\lib\vc$(PlatformToolsetVersion)_dll;$(WXDIR)\lib\vc_dll;..\..\lib;..\..\..\ptlib\lib;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
+    <ExecutablePath>$(WXDIR)\lib\vc$(PlatformToolsetVersion)_dll;$(WXDIR)\lib\vc_dll;$(VC_ExecutablePath_x86);$(WindowsSDK_ExecutablePath);$(VS_ExecutablePath);$(MSBuild_ExecutablePath);$(SystemRoot)\SysWow64;$(FxCopDir);$(PATH);</ExecutablePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">
-    <LibraryPath>$(WXDIR)\lib\vc$(PlatformToolsetVersion)_x64_dll;$(WXDIR)\lib\vc_lib;..\..\lib;..\..\..\ptlib\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
+    <LibraryPath>$(WXDIR)\lib\vc$(PlatformToolsetVersion)_x64_dll;$(WXDIR)\lib\vc_x64_dll;..\..\lib;..\..\..\ptlib\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
+    <ExecutablePath>$(WXDIR)\lib\vc$(PlatformToolsetVersion)_x64_dll;$(WXDIR)\lib\vc_x64_dll;$(VC_ExecutablePath_x64);$(WindowsSDK_ExecutablePath);$(VS_ExecutablePath);$(MSBuild_ExecutablePath);$(FxCopDir);$(PATH);</ExecutablePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <LibraryPath>$(WXDIR)\lib\vc$(PlatformToolsetVersion)_x64_dll;$(WXDIR)\lib\vc_lib;..\..\lib;..\..\..\ptlib\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
+    <LibraryPath>$(WXDIR)\lib\vc$(PlatformToolsetVersion)_x64_dll;$(WXDIR)\lib\vc_x64_dll;..\..\lib;..\..\..\ptlib\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
+    <ExecutablePath>$(WXDIR)\lib\vc$(PlatformToolsetVersion)_x64_dll;$(WXDIR)\lib\vc_x64_dll;$(VC_ExecutablePath_x64);$(WindowsSDK_ExecutablePath);$(VS_ExecutablePath);$(MSBuild_ExecutablePath);$(FxCopDir);$(PATH);</ExecutablePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <LibraryPath>$(WXDIR)\lib\vc$(PlatformToolsetVersion)_x64_dll;$(WXDIR)\lib\vc_lib;..\..\lib;..\..\..\ptlib\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
+    <LibraryPath>$(WXDIR)\lib\vc$(PlatformToolsetVersion)_x64_dll;$(WXDIR)\lib\vc_x64_dll;..\..\lib;..\..\..\ptlib\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
+    <ExecutablePath>$(WXDIR)\lib\vc$(PlatformToolsetVersion)_x64_dll;$(WXDIR)\lib\vc_x64_dll;$(VC_ExecutablePath_x64);$(WindowsSDK_ExecutablePath);$(VS_ExecutablePath);$(MSBuild_ExecutablePath);$(FxCopDir);$(PATH);</ExecutablePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">
+    <ExecutablePath>$(WXDIR)\lib\vc$(PlatformToolsetVersion)_dll;$(WXDIR)\lib\vc_dll;$(VC_ExecutablePath_x86);$(WindowsSDK_ExecutablePath);$(VS_ExecutablePath);$(MSBuild_ExecutablePath);$(SystemRoot)\SysWow64;$(FxCopDir);$(PATH);</ExecutablePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ExecutablePath>$(WXDIR)\lib\vc$(PlatformToolsetVersion)_dll;$(WXDIR)\lib\vc_dll;$(VC_ExecutablePath_x86);$(WindowsSDK_ExecutablePath);$(VS_ExecutablePath);$(MSBuild_ExecutablePath);$(SystemRoot)\SysWow64;$(FxCopDir);$(PATH);</ExecutablePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <PreBuildEvent>
