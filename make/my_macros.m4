@@ -657,7 +657,7 @@ AC_MSG_NOTICE([Platform: \"$target_os\" release \"$target_release\" on \"$target
 dnl add additional information for the debugger to ensure the user can indeed
 dnl debug coredumps and macros.
 
-AC_SUBST(DEBUG_CPPFLAGS, "-D_DEBUG $DEBUG_CPPFLAGS")
+AC_SUBST(DEBUG_CPPFLAGS, "-D_DEBUG -D_GLIBCXX_DEBUG $DEBUG_CPPFLAGS")
 AS_VAR_SET_IF([DEBUG_FLAG], ,
    MY_COMPILE_IFELSE(
       [debug build (-gdwarf-4)],
