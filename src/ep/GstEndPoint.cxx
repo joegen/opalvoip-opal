@@ -1153,8 +1153,10 @@ GstMediaStream::~GstMediaStream()
 
 PBoolean GstMediaStream::Open()
 {
-  if (IsOpen())
+  if (m_isOpen)
     return true;
+
+  P_INSTRUMENTED_LOCK_READ_WRITE(return false);
 
   PTRACE(4, "Opening " << *this);
 

@@ -743,6 +743,7 @@ OpalMediaTransport::ChannelInfo & OpalMediaTransport::ChannelInfo::operator=(con
 
 void OpalMediaTransport::ChannelInfo::ThreadMain()
 {
+  PTRACE_CONTEXT_ID_PUSH_THREAD(*m_owner);
   PTRACE(4, m_owner, *m_owner << m_subchannel << " media transport read thread starting");
 
   while (m_channel->IsOpen()) {
@@ -756,6 +757,10 @@ void OpalMediaTransport::ChannelInfo::ThreadMain()
       m_owner->InternalRxData(m_subchannel, data);
     }
     else {
+      P_INSTRUMENTED_LOCK_READ_ONLY2(lock, *m_owner);
+      if (!lock.IsLocked())
+        break;
+
       switch (m_channel->GetErrorCode(PChannel::LastReadError)) {
         case PChannel::BufferTooSmall:
           PTRACE(2, m_owner, *m_owner << m_subchannel << " read packet too large for buffer of " << data.GetSize() << " bytes.");
@@ -809,6 +814,10 @@ void OpalMediaTransport::ChannelInfo::ThreadMain()
 
 bool OpalMediaTransport::ChannelInfo::HandleUnavailableError()
 {
+  P_INSTRUMENTED_LOCK_READ_WRITE2(lock, *m_owner);
+  if (!lock.IsLocked())
+    return false;
+
   if (m_timeForUnavailableErrors.HasExpired() && m_consecutiveUnavailableErrors < 10)
     m_consecutiveUnavailableErrors = 0;
 
@@ -888,7 +897,6 @@ void OpalMediaTransport::Start()
       threadName.Replace(" bundle", "-B");
       m_subchannels[subchannel].m_thread = new PThreadObj<OpalMediaTransport::ChannelInfo>
               (m_subchannels[subchannel], &OpalMediaTransport::ChannelInfo::ThreadMain, false, threadName, PThread::HighPriority);
-      PTRACE_CONTEXT_ID_TO(m_subchannels[subchannel].m_thread);
     }
   }
 }

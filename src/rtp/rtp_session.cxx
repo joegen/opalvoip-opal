@@ -2938,6 +2938,7 @@ PString OpalRTPSession::GetLocalHostName()
 
 void OpalRTPSession::SetSinglePortRx(bool singlePortRx)
 {
+  P_INSTRUMENTED_LOCK_READ_WRITE(return);
   PTRACE_IF(3, m_singlePortRx != singlePortRx, *this << (singlePortRx ? "enable" : "disable") << " single port mode for receive");
   m_singlePortRx = singlePortRx;
 }
@@ -2945,9 +2946,11 @@ void OpalRTPSession::SetSinglePortRx(bool singlePortRx)
 
 void OpalRTPSession::SetSinglePortTx(bool singlePortTx)
 {
-  PTRACE_IF(3, m_singlePortTx != singlePortTx, *this << (singlePortTx ? "enable" : "disable") << " single port mode for transmit");
-
-  m_singlePortTx = singlePortTx;
+  {
+    P_INSTRUMENTED_LOCK_READ_WRITE(return);
+    PTRACE_IF(3, m_singlePortTx != singlePortTx, *this << (singlePortTx ? "enable" : "disable") << " single port mode for transmit");
+    m_singlePortTx = singlePortTx;
+  }
 
   OpalMediaTransportPtr transport = m_transport; // This way avoids races
   if (transport == NULL)

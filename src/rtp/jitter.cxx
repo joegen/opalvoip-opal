@@ -389,6 +389,20 @@ void OpalAudioJitterBuffer::InternalReset()
 }
 
 
+RTP_Timestamp OpalAudioJitterBuffer::GetCurrentJitterDelay() const
+{
+  PWaitAndSignal mutex(m_bufferMutex);
+  return m_currentJitterDelay;
+}
+
+
+RTP_Timestamp OpalAudioJitterBuffer::GetPacketTime() const
+{
+  PWaitAndSignal mutex(m_bufferMutex);
+  return m_packetTime;
+}
+
+
 PBoolean OpalAudioJitterBuffer::WriteData(const RTP_DataFrame & frame, const PTimeInterval & tick)
 {
   if (m_closed)

@@ -465,9 +465,9 @@ class OpalMediaStream : public PSafeObject
     WORD             m_sequenceNumber;
     PString          m_identifier;
     OpalMediaFormat  m_mediaFormat;
-    bool             m_paused;
+    atomic<bool>     m_paused;
     bool             m_isSource;
-    bool             m_isOpen;
+    atomic<bool>     m_isOpen;
     PINDEX           m_defaultDataSize;
     unsigned         m_timestamp;
     bool             m_marker;

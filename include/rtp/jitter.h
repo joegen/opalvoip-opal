@@ -268,11 +268,11 @@ class OpalAudioJitterBuffer : public OpalJitterBuffer
 
     /**Get current delay for jitter buffer.
       */
-    virtual RTP_Timestamp GetCurrentJitterDelay() const { return m_currentJitterDelay; }
+    virtual RTP_Timestamp GetCurrentJitterDelay() const;
 
     /**Get average packet time for incoming data.
       */
-    virtual RTP_Timestamp GetPacketTime() const { return m_packetTime; }
+    virtual RTP_Timestamp GetPacketTime() const;
 
     /**Get maximum consecutive marker bits before buffer starts to ignore them.
       */

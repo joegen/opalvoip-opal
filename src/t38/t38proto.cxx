@@ -964,6 +964,11 @@ OpalFaxMediaStream::OpalFaxMediaStream(OpalConnection & conn,
 
 PBoolean OpalFaxMediaStream::Open()
 {
+  if (m_isOpen)
+    return false;
+
+  P_INSTRUMENTED_LOCK_READ_WRITE(return false);
+
   m_session.ApplyMediaOptions(m_mediaFormat);
   return OpalMediaStream::Open();
 }

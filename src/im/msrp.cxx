@@ -452,6 +452,11 @@ OpalMSRPMediaStream::~OpalMSRPMediaStream()
 
 bool OpalMSRPMediaStream::Open()
 {
+  if (m_isOpen)
+    return false;
+
+  P_INSTRUMENTED_LOCK_READ_WRITE(return false);
+
   return m_msrpSession.OpenMSRP(m_remoteParty) && OpalMediaStream::Open();
 }
 
