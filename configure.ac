@@ -571,6 +571,7 @@ AC_CONFIG_FILES(opal.spec)
 AC_CONFIG_FILES(opal_cfg.dxy)
 AC_CONFIG_FILES(make/opal_config.mak)
 AC_CONFIG_FILES(samples/openphone/version.wxs)
+AC_CONFIG_FILES(samples/server/version.wxs)
 AC_CONFIG_HEADERS(${ac_top_build_prefix}include/opal_config.h:include/opal_config.h.in)
 
 

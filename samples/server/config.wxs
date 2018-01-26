@@ -1,0 +1,37 @@
+<Include>
+    <?include version.wxs ?>
+
+    <?define ProductName = "OPAL Server" ?>
+    <?define ProductDescription = "VoIP gateway and IVR server for OPAL" ?>
+    <?define ProductBaseFilename = "opalserver" ?>
+    <?define ProductVersion = "$(var.OPAL_VERSION)" ?>
+    <?define ProductManufacturer = "Vox Lucida Pty. Ltd." ?>
+    <?define ProductGUID = "c972f876-ca15-43e4-8e0e-f8a74c5f925a" ?>
+
+    <?define CustomWXS = "$(sys.CURRENTDIR)\custom.wxs" ?>
+    <?define CustomProgramMenuFolder = "yes" ?>
+
+    <?if $(var.Architecture) = "x86" ?>
+        <?define SSLDir = "$(env.ProgramW6432)\OpenSSL-Win32\bin" ?>
+        <?define LuaDir = "$(env.ProgramFiles)\lua\5.1" ?>
+        <?define JPEGDir = "C:\Tools\bin" ?>
+        <?define SaslDir = "C:\Tools\bin" ?>
+        <?define LDAPDir = "C:\Tools\bin" ?>
+        <?define FFMPEGDir = "..\..\..\external\ffmpeg-win32-dev\bin" ?>
+        <?define OpenH264Dir = "$(env.ProgramFiles)\PTLib Plug Ins" ?>
+        <?define SpanDspDir = "..\..\..\external\spandsp-0.0.6\src\Release" ?>
+    <?else?>
+        <?define SSLDir = "$(env.ProgramW6432)\OpenSSL-Win64\bin" ?>
+        <?define FFMPEGDir = "..\..\..\external\ffmpeg-win64-dev\bin" ?>
+        <?define OpenH264Dir = "$(env.ProgramW6432)\PTLib Plug Ins" ?>
+        <?define SpanDspDir = "..\..\..\external\spandsp-0.0.6\src\x64\Release" ?>
+    <?endif?>
+
+    <?define AVCODECVer = "57" ?>
+    <?define AVUTILVer = "55" ?>
+    <?define SWRESAMPLEVer = "2" ?>
+
+    <?define PTLibDir = "..\..\..\ptlib" ?>
+    <?define OPALDir = "..\.." ?>
+
+</Include>

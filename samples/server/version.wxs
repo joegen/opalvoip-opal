@@ -1,0 +1,7 @@
+<Include>
+   <?define OPAL_MAJOR=3 ?>
+   <?define OPAL_MINOR=17 ?>
+   <?define OPAL_BUILD=5 ?>
+   <?define OPAL_VERSION=3.17.5 ?>
+</Include>
+

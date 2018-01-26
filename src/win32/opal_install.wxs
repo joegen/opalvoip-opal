@@ -7,16 +7,32 @@
     <?define PlatformProgramFilesFolder = "ProgramFilesFolder" ?>
     <?define PTLibName = "PTLib" ?>
     <?define OPALName  = "OPAL" ?>
-    <?define WxPlatform  = "$(var.MSVCRT_VER)" ?>
 <?else?>
     <?define IsWin64 = "yes" ?>
     <?define PlatformProgramFilesFolder = "ProgramFiles64Folder" ?>
     <?define PTLibName = "PTLib64" ?>
     <?define OPALName  = "OPAL64" ?>
-    <?define WxPlatform  = "$(var.MSVCRT_VER)_$(var.Architecture)" ?>
 <?endif?>
 
-<?define WxDllDir         = "$(var.WxDir)\lib\vc$(var.WxPlatform)_dll" ?>
+<?ifdef WxDir ?>
+    <?if $(var.WxCustom) = "yes" ?>
+        <?if $(var.Architecture) = "x86" ?>
+            <?define WxPlatform  = "_custom" ?>
+            <?define WxDllDir = "$(var.WxDir)\lib\vc_dll" ?>
+        <?else?>
+            <?define WxPlatform  = "_$(var.Architecture)_custom" ?>
+            <?define WxDllDir = "$(var.WxDir)\lib\vc_$(var.Architecture)_dll" ?>
+        <?endif?>
+    <?else?>
+        <?if $(var.Architecture) = "x86" ?>
+            <?define WxPlatform  = "$(var.MSVCRT_VER)" ?>
+        <?else?>
+            <?define WxPlatform  = "$(var.MSVCRT_VER)_$(var.Architecture)" ?>
+        <?endif?>
+        <?define WxDllDir = "$(var.WxDir)\lib\vc$(var.WxPlatform)_dll" ?>
+    <?endif?>
+<?endif?>
+
 <?define PluginReleaseDir = "$(var.OPALDir)\bin\plugins\$(var.Platform)\Release" ?>
 
 
@@ -57,11 +73,12 @@
         <Property Id="WIXUI_INSTALLDIR"
                   Value="INSTALLDIR" />
 
-        <WixVariable Id="WixUILicenseRtf" Value="./InstallerLicense.rtf" />
+        <WixVariable Id="WixUILicenseRtf" Value="$(var.OPALDir)\src\win32\InstallerLicense.rtf" />
         <UIRef Id="WixUI_InstallDir" />
         <UIRef Id="WixUI_ErrorProgressText" />
 
         <Directory Id='TARGETDIR'
+                   DiskId='1'
                    Name='SourceDir'>
             <Directory Id='$(var.PlatformProgramFilesFolder)'>
                 <Directory Id='VoxLucida'
@@ -71,18 +88,9 @@
                         <Component Id='MainExecutable'
                                    Win64="$(var.IsWin64)"
                                    Guid='*'>
-                            <File Id='$(var.ProductBaseFilename)EXE'
-                                  Name='$(var.ProductBaseFilename).exe'
-                                  Source='$(var.OPALDir)\bin\$(var.ProductBaseFilename)\$(var.Platform)\Release\$(var.ProductBaseFilename).exe'
-                                  DiskId='1'
+                            <File Id='$(var.ProductBaseFilename).exe'
+                                  Source='$(var.OPALDir)\bin\$(var.ProductName)\$(var.Platform)\Release\$(var.ProductBaseFilename).exe'
                                   KeyPath='yes'>
-                                <Shortcut Id="startmenu$(var.ProductBaseFilename)"
-                                          Directory="ProgramMenuDir"
-                                          Name="$(var.ProductName)"
-                                          WorkingDirectory='INSTALLDIR'
-                                          Icon="$(var.ProductBaseFilename).ico"
-                                          IconIndex="0"
-                                          Advertise="yes" />
                             </File>
                         </Component>
                         <Component Id='G.722.2'
@@ -91,7 +99,6 @@
                             <File Id='G_722_2_DLL'
                                   Name='g7222_ptplugin.dll'
                                   Source='$(var.PluginReleaseDir)\g7222_ptplugin.dll'
-                                  DiskId='1'
                                   KeyPath='yes' />
                         </Component>
                         <Component Id='GSM_AMR'
@@ -100,7 +107,6 @@
                             <File Id='GSM_AMR_DLL'
                                   Name='gsmamr_ptplugin.dll'
                                   Source='$(var.PluginReleaseDir)\gsmamr_ptplugin.dll'
-                                  DiskId='1'
                                   KeyPath='yes' />
                         </Component>
                         <Component Id='H.264'
@@ -109,7 +115,6 @@
                             <File Id='H264'
                                   Name='openH264_ptplugin.dll'
                                   Source='$(var.PluginReleaseDir)\openH264_ptplugin.dll'
-                                  DiskId='1'
                                   KeyPath='yes' />
                         </Component>
                         <Component Id='openH264'
@@ -118,7 +123,6 @@
                             <File Id='openH264_DLL'
                                   Name='openh264_$(var.Architecture).dll'
                                   Source='$(var.OpenH264Dir)\openh264_$(var.Architecture).dll'
-                                  DiskId='1'
                                   KeyPath='yes' />
                         </Component>
                         <Component Id='G.722'
@@ -127,7 +131,6 @@
                             <File Id='G_722_DLL'
                                   Name='g722_ptplugin.dll'
                                   Source='$(var.PluginReleaseDir)\g722_ptplugin.dll'
-                                  DiskId='1'
                                   KeyPath='yes' />
                         </Component>
                         <Component Id='G.722.1'
@@ -136,7 +139,6 @@
                             <File Id='G_722_1_DLL'
                                   Name='g7221_ptplugin.dll'
                                   Source='$(var.PluginReleaseDir)\g7221_ptplugin.dll'
-                                  DiskId='1'
                                   KeyPath='yes' />
                         </Component>
                         <Component Id='G.726'
@@ -145,7 +147,6 @@
                             <File Id='G_726_DLL'
                                   Name='g726_ptplugin.dll'
                                   Source='$(var.PluginReleaseDir)\g726_ptplugin.dll'
-                                  DiskId='1'
                                   KeyPath='yes' />
                         </Component>
                         <Component Id='GSM0610'
@@ -154,7 +155,6 @@
                             <File Id='GSM0610_DLL'
                                   Name='gsm0610_ptplugin.dll'
                                   Source='$(var.PluginReleaseDir)\gsm0610_ptplugin.dll'
-                                  DiskId='1'
                                   KeyPath='yes' />
                         </Component>
                         <Component Id='iLBC'
@@ -163,7 +163,6 @@
                             <File Id='iLBC_DLL'
                                   Name='iLBC_ptplugin.dll'
                                   Source='$(var.PluginReleaseDir)\iLBC_ptplugin.dll'
-                                  DiskId='1'
                                   KeyPath='yes' />
                         </Component>
                         <Component Id='iSAC'
@@ -172,7 +171,6 @@
                             <File Id='iSAC_DLL'
                                   Name='iSAC_ptplugin.dll'
                                   Source='$(var.PluginReleaseDir)\iSAC_ptplugin.dll'
-                                  DiskId='1'
                                   KeyPath='yes' />
                         </Component>
                         <Component Id='Opus'
@@ -181,7 +179,6 @@
                             <File Id='Opus_DLL'
                                   Name='opus_ptplugin.dll'
                                   Source='$(var.PluginReleaseDir)\opus_ptplugin.dll'
-                                  DiskId='1'
                                   KeyPath='yes' />
                         </Component>
                         <Component Id='Speex'
@@ -190,7 +187,6 @@
                             <File Id='Speex_DLL'
                                   Name='speex_ptplugin.dll'
                                   Source='$(var.PluginReleaseDir)\speex_ptplugin.dll'
-                                  DiskId='1'
                                   KeyPath='yes' />
                         </Component>
                         <Component Id='H.261'
@@ -199,7 +195,6 @@
                             <File Id='H.261_DLL'
                                   Name='h261_vic_ptplugin.dll'
                                   Source='$(var.PluginReleaseDir)\h261_vic_ptplugin.dll'
-                                  DiskId='1'
                                   KeyPath='yes' />
                         </Component>
                         <?ifdef FFMPEGDir ?>
@@ -209,7 +204,6 @@
                                 <File Id='H.263_DLL'
                                       Name='h263_ffmpeg_ptplugin.dll'
                                       Source='$(var.PluginReleaseDir)\h263_ffmpeg_ptplugin.dll'
-                                      DiskId='1'
                                       KeyPath='yes' />
                             </Component>
                             <Component Id='MPEG4'
@@ -218,7 +212,6 @@
                                 <File Id='MPEG4_DLL'
                                       Name='mpeg4_ffmpeg_ptplugin.dll'
                                       Source='$(var.PluginReleaseDir)\mpeg4_ffmpeg_ptplugin.dll'
-                                      DiskId='1'
                                       KeyPath='yes' />
                             </Component>
                             <Component Id='AVCODEC'
@@ -227,7 +220,6 @@
                                 <File Id='AVCODEC_DLL'
                                       Name='AVCODEC-$(var.AVCODECVer).DLL'
                                       Source='$(var.FFMPEGDir)\AVCODEC-$(var.AVCODECVer).DLL'
-                                      DiskId='1'
                                       KeyPath='yes' />
                             </Component>
                             <Component Id='AVUTIL'
@@ -236,7 +228,6 @@
                                 <File Id='AVUTIL_DLL'
                                       Name='AVUTIL-$(var.AVUTILVer).DLL'
                                       Source='$(var.FFMPEGDir)\AVUTIL-$(var.AVUTILVer).DLL'
-                                      DiskId='1'
                                       KeyPath='yes' />
                             </Component>
                             <Component Id='SWRESAMPLE'
@@ -245,7 +236,6 @@
                                 <File Id='SWRESAMPLE_DLL'
                                       Name='SWRESAMPLE-$(var.SWRESAMPLEVer).DLL'
                                       Source='$(var.FFMPEGDir)\SWRESAMPLE-$(var.SWRESAMPLEVer).DLL'
-                                      DiskId='1'
                                       KeyPath='yes' />
                             </Component>
                         <?endif?>
@@ -255,7 +245,6 @@
                             <File Id='VP8_DLL'
                                   Name='vp8_webm_ptplugin.dll'
                                   Source='$(var.PluginReleaseDir)\vp8_webm_ptplugin.dll'
-                                  DiskId='1'
                                   KeyPath='yes' />
                         </Component>
                         <?ifdef SpanDspDir ?>
@@ -265,7 +254,6 @@
                                 <File Id='SpanDSPFax_DLL'
                                       Name='SpanDSPFax_ptplugin.dll'
                                       Source='$(var.PluginReleaseDir)\SpanDSPFax_ptplugin.dll'
-                                      DiskId='1'
                                       KeyPath='yes' />
                             </Component>
                             <Component Id='SpanDSPLib'
@@ -274,7 +262,6 @@
                                 <File Id='SpanDSPLib_DLL'
                                       Name='libspandsp.dll'
                                       Source='$(var.SpanDspDir)\libspandsp.dll'
-                                      DiskId='1'
                                       KeyPath='yes' />
                             </Component>
                         <?endif?>
@@ -284,7 +271,6 @@
                             <File Id='OPAL_DLL'
                                   Name='$(var.OPALName).DLL'
                                   Source='$(var.OPALDir)\lib\$(var.OPALName).DLL'
-                                  DiskId='1'
                                   KeyPath='yes' />
                         </Component>
                         <Component Id='PTLib'
@@ -293,7 +279,6 @@
                             <File Id='PTLib_DLL'
                                   Name='$(var.PTLibName).DLL'
                                   Source='$(var.PTLibDir)\lib\$(var.PTLibName).DLL'
-                                  DiskId='1'
                                   KeyPath='yes' />
                         </Component>
                         <?ifdef LuaDir ?>
@@ -302,7 +287,6 @@
                                 <File Id='Lua_DLL'
                                       Name='LUA5.1.DLL'
                                       Source='$(var.LuaDir)\LUA5.1.DLL'
-                                      DiskId='1'
                                       KeyPath='yes' />
                             </Component>
                         <?endif?>
@@ -312,7 +296,6 @@
                                 <File Id='JPEG_DLL'
                                       Name='JPEG62.DLL'
                                       Source='$(var.JPEGDir)\JPEG62.DLL'
-                                      DiskId='1'
                                       KeyPath='yes' />
                             </Component>
                         <?endif?>
@@ -322,7 +305,6 @@
                                 <File Id='SASL_DLL'
                                       Name='LIBSASL.DLL'
                                       Source='$(var.SaslDir)\LIBSASL.DLL'
-                                      DiskId='1'
                                       KeyPath='yes' />
                             </Component>
                         <?endif?>
@@ -332,7 +314,6 @@
                                 <File Id='OPENLDAP_DLL'
                                       Name='OPENLDAP.DLL'
                                       Source='$(var.LDAPDir)\OPENLDAP.DLL'
-                                      DiskId='1'
                                       KeyPath='yes' />
                             </Component>
                         <?endif?>
@@ -342,7 +323,6 @@
                             <File Id='LIBEAY32_DLL'
                                   Name='LIBEAY32.DLL'
                                   Source='$(var.SSLDir)\LIBEAY32.DLL'
-                                  DiskId='1'
                                   KeyPath='yes' />
                         </Component>
                         <Component Id='OpenSSL2'
@@ -351,85 +331,91 @@
                             <File Id='SSLEAY32_DLL'
                                   Name='SSLEAY32.DLL'
                                   Source='$(var.SSLDir)\SSLEAY32.DLL'
-                                  DiskId='1'
                                   KeyPath='yes' />
                         </Component>
-                        <Component Id='WxXRC'
-                                   Win64="$(var.IsWin64)"
-                                   Guid='*'>
-                            <File Id='WXMSW$(var.WxVer)U_XRC_DLL'
-                                  Name='WXMSW$(var.WxVer)U_XRC_VC$(var.WxPlatform).DLL'
-                                  Source='$(var.WxDllDir)\WXMSW$(var.WxVer)U_XRC_VC$(var.WxPlatform).DLL'
-                                  DiskId='1'
-                                  KeyPath='yes' />
-                        </Component>
-                        <Component Id='WxHTML'
-                                   Win64="$(var.IsWin64)"
-                                   Guid='*'>
-                            <File Id='WXMSW$(var.WxVer)U_HTML_DLL'
-                                  Name='WXMSW$(var.WxVer)U_HTML_VC$(var.WxPlatform).DLL'
-                                  Source='$(var.WxDllDir)\WXMSW$(var.WxVer)U_HTML_VC$(var.WxPlatform).DLL'
-                                  DiskId='1'
-                                  KeyPath='yes' />
-                        </Component>
-                        <Component Id='WxADV'
-                                   Win64="$(var.IsWin64)"
-                                   Guid='*'>
-                            <File Id='WXMSW$(var.WxVer)U_ADV_DLL'
-                                  Name='WXMSW$(var.WxVer)U_ADV_VC$(var.WxPlatform).DLL'
-                                  Source='$(var.WxDllDir)\WXMSW$(var.WxVer)U_ADV_VC$(var.WxPlatform).DLL'
-                                  DiskId='1'
-                                  KeyPath='yes' />
-                        </Component>
-                        <Component Id='WxCore'
-                                   Win64="$(var.IsWin64)"
-                                   Guid='*'>
-                            <File Id='WXMSW$(var.WxVer)U_CORE_DLL'
-                                  Name='WXMSW$(var.WxVer)U_CORE_VC$(var.WxPlatform).DLL'
-                                  Source='$(var.WxDllDir)\WXMSW$(var.WxVer)U_CORE_VC$(var.WxPlatform).DLL'
-                                  DiskId='1'
-                                  KeyPath='yes' />
-                        </Component>
-                        <Component Id='WxXML'
-                                   Win64="$(var.IsWin64)"
-                                   Guid='*'>
-                            <File Id='WXBASE$(var.WxVer)U_XML_DLL'
-                                  Name='WXBASE$(var.WxVer)U_XML_VC$(var.WxPlatform).DLL'
-                                  Source='$(var.WxDllDir)\WXBASE$(var.WxVer)U_XML_VC$(var.WxPlatform).DLL'
-                                  DiskId='1'
-                                  KeyPath='yes' />
-                        </Component>
-                        <Component Id='WxBase'
-                                   Win64="$(var.IsWin64)"
-                                   Guid='*'>
-                            <File Id='WXBASE$(var.WxVer)U_DLL'
-                                  Name='WXBASE$(var.WxVer)U_VC$(var.WxPlatform).DLL'
-                                  Source='$(var.WxDllDir)\WXBASE$(var.WxVer)U_VC$(var.WxPlatform).DLL'
-                                  DiskId='1'
-                                  KeyPath='yes' />
-                        </Component>
+                        <?ifdef WxDir ?>
+                            <Component Id='WxXRC'
+                                       Win64="$(var.IsWin64)"
+                                       Guid='*'>
+                                <File Id='WXMSW$(var.WxVer)U_XRC_DLL'
+                                      Name='WXMSW$(var.WxVer)U_XRC_VC$(var.WxPlatform).DLL'
+                                      Source='$(var.WxDllDir)\WXMSW$(var.WxVer)U_XRC_VC$(var.WxPlatform).DLL'
+                                      KeyPath='yes' />
+                            </Component>
+                            <Component Id='WxHTML'
+                                       Win64="$(var.IsWin64)"
+                                       Guid='*'>
+                                <File Id='WXMSW$(var.WxVer)U_HTML_DLL'
+                                      Name='WXMSW$(var.WxVer)U_HTML_VC$(var.WxPlatform).DLL'
+                                      Source='$(var.WxDllDir)\WXMSW$(var.WxVer)U_HTML_VC$(var.WxPlatform).DLL'
+                                      KeyPath='yes' />
+                            </Component>
+                            <Component Id='WxADV'
+                                       Win64="$(var.IsWin64)"
+                                       Guid='*'>
+                                <File Id='WXMSW$(var.WxVer)U_ADV_DLL'
+                                      Name='WXMSW$(var.WxVer)U_ADV_VC$(var.WxPlatform).DLL'
+                                      Source='$(var.WxDllDir)\WXMSW$(var.WxVer)U_ADV_VC$(var.WxPlatform).DLL'
+                                      KeyPath='yes' />
+                            </Component>
+                            <Component Id='WxCore'
+                                       Win64="$(var.IsWin64)"
+                                       Guid='*'>
+                                <File Id='WXMSW$(var.WxVer)U_CORE_DLL'
+                                      Name='WXMSW$(var.WxVer)U_CORE_VC$(var.WxPlatform).DLL'
+                                      Source='$(var.WxDllDir)\WXMSW$(var.WxVer)U_CORE_VC$(var.WxPlatform).DLL'
+                                      KeyPath='yes' />
+                            </Component>
+                            <Component Id='WxXML'
+                                       Win64="$(var.IsWin64)"
+                                       Guid='*'>
+                                <File Id='WXBASE$(var.WxVer)U_XML_DLL'
+                                      Name='WXBASE$(var.WxVer)U_XML_VC$(var.WxPlatform).DLL'
+                                      Source='$(var.WxDllDir)\WXBASE$(var.WxVer)U_XML_VC$(var.WxPlatform).DLL'
+                                      KeyPath='yes' />
+                            </Component>
+                            <Component Id='WxBase'
+                                       Win64="$(var.IsWin64)"
+                                       Guid='*'>
+                                <File Id='WXBASE$(var.WxVer)U_DLL'
+                                      Name='WXBASE$(var.WxVer)U_VC$(var.WxPlatform).DLL'
+                                      Source='$(var.WxDllDir)\WXBASE$(var.WxVer)U_VC$(var.WxPlatform).DLL'
+                                      KeyPath='yes' />
+                            </Component>
+                        <?endif?>
                     </Directory>
                 </Directory>
             </Directory>
 
             <Directory Id="ProgramMenuFolder"
-                       Name="Programs">
-                <Directory Id="ProgramMenuDir"
-                           Name="$(var.ProductBaseFilename)">
-                    <Component Id="ProgramMenuDir"
-                               Guid="*">
-                        <RemoveFolder Id='ProgramMenuDir'
-                                      On='uninstall' />
-                        <RegistryValue Root='HKCU'
-                                       Key='Software\[Manufacturer]\[ProductName]'
-                                       Type='string'
-                                       Value=''
-                                       KeyPath='yes' />
-                    </Component>
-                </Directory>
+                        Name="Programs">
+                <Directory Id="ApplicationProgramMenuFolder"
+                           Name="$(var.ProductName)" />
             </Directory>
         </Directory>
 
+        <?ifndef CustomProgramMenuFolder ?>
+            <DirectoryRef Id="ApplicationProgramMenuFolder">
+                <Component Id="ApplicationProgramMenuShortcut"
+                           Guid="54704C8B-7822-4E06-AC20-26569F5700D1">
+                    <Shortcut Id="ApplicationProgramMenuShortcutMain"
+                              Name="$(var.ProductName)"
+                              Description="Execute $(var.ProductName)"
+                              Target="[INSTALLDIR]$(var.ProductBaseFilename).exe"
+                              WorkingDirectory="INSTALLDIR"
+                              Icon="$(var.ProductBaseFilename).ico"
+                              IconIndex="0"/>
+                    <RemoveFolder Id='ApplicationProgramMenuFolder'
+                                    On='uninstall' />
+                    <RegistryValue Root='HKCU'
+                                    Key='Software\[Manufacturer]\[ProductName]'
+                                    Type='string'
+                                    Value=''
+                                    KeyPath='yes' />
+                </Component>
+            </DirectoryRef>
+        <?endif?>
+        
         <Icon Id="$(var.ProductBaseFilename).ico"
               SourceFile=".\$(var.ProductBaseFilename).ico" />
 
@@ -440,8 +426,12 @@
                  ConfigurableDirectory='INSTALLDIR'
                  Level='1'>
             <ComponentRef Id='MainExecutable' />
-            <ComponentRef Id='ProgramMenuDir' />
+            <ComponentRef Id='ApplicationProgramMenuShortcut' />
         </Feature>
+        
+        <?ifdef CustomWXS ?>
+            <?include $(var.CustomWXS) ?>
+        <?endif?>
 
         <Feature Id='Codecs'
                  Title="OPAL Codec Plug-ins"
@@ -505,18 +495,20 @@
             <ComponentRef Id='OpenSSL2' />
         </Feature>
 
-        <Feature Id='WxWidgets'
-                 Title="wxWidgets library"
-                 AllowAdvertise="no"
-                 Display="hidden"
-                 Level='1'>
-            <ComponentRef Id='WxBase' />
-            <ComponentRef Id='WxXML' />
-            <ComponentRef Id='WxCore' />
-            <ComponentRef Id='WxADV' />
-            <ComponentRef Id='WxHTML' />
-            <ComponentRef Id='WxXRC' />
-        </Feature>
+        <?ifdef WxDir ?>
+            <Feature Id='WxWidgets'
+                     Title="wxWidgets library"
+                     AllowAdvertise="no"
+                     Display="hidden"
+                     Level='1'>
+                <ComponentRef Id='WxBase' />
+                <ComponentRef Id='WxXML' />
+                <ComponentRef Id='WxCore' />
+                <ComponentRef Id='WxADV' />
+                <ComponentRef Id='WxHTML' />
+                <ComponentRef Id='WxXRC' />
+            </Feature>
+        <?endif?>
 
         <Feature Id="VCRedist"
                  Title="Microsoft C++ Run Time Libraries"
