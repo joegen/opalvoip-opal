@@ -2159,7 +2159,7 @@ class OpalManager : public PObject
 
     PThread    * m_garbageCollector;
     PSyncPoint   m_garbageCollectExit;
-    bool         m_garbageCollectSkip;
+    PTime        m_garbageCollectChangeTime;
     PDECLARE_NOTIFIER(PThread, OpalManager, GarbageMain);
 
     friend OpalCall::OpalCall(OpalManager & mgr);
