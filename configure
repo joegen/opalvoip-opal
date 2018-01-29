@@ -5900,7 +5900,7 @@ $as_echo "$as_me: Platform: \"$target_os\" release \"$target_release\" on \"$tar
 
 
 
-DEBUG_CPPFLAGS="-D_DEBUG -D_GLIBCXX_DEBUG $DEBUG_CPPFLAGS"
+DEBUG_CPPFLAGS="-D_DEBUG $DEBUG_CPPFLAGS"
 
 if ${DEBUG_FLAG+:} false; then :
 

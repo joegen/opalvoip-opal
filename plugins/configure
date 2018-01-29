@@ -773,7 +773,6 @@ infodir
 docdir
 oldincludedir
 includedir
-runstatedir
 localstatedir
 sharedstatedir
 sysconfdir
@@ -934,7 +933,6 @@ datadir='${datarootdir}'
 sysconfdir='${prefix}/etc'
 sharedstatedir='${prefix}/com'
 localstatedir='${prefix}/var'
-runstatedir='${localstatedir}/run'
 includedir='${prefix}/include'
 oldincludedir='/usr/include'
 docdir='${datarootdir}/doc/${PACKAGE_TARNAME}'
@@ -1187,15 +1185,6 @@ do
   | -silent | --silent | --silen | --sile | --sil)
     silent=yes ;;
 
-  -runstatedir | --runstatedir | --runstatedi | --runstated \
-  | --runstate | --runstat | --runsta | --runst | --runs \
-  | --run | --ru | --r)
-    ac_prev=runstatedir ;;
-  -runstatedir=* | --runstatedir=* | --runstatedi=* | --runstated=* \
-  | --runstate=* | --runstat=* | --runsta=* | --runst=* | --runs=* \
-  | --run=* | --ru=* | --r=*)
-    runstatedir=$ac_optarg ;;
-
   -sbindir | --sbindir | --sbindi | --sbind | --sbin | --sbi | --sb)
     ac_prev=sbindir ;;
   -sbindir=* | --sbindir=* | --sbindi=* | --sbind=* | --sbin=* \
@@ -1333,7 +1322,7 @@ fi
 for ac_var in	exec_prefix prefix bindir sbindir libexecdir datarootdir \
 		datadir sysconfdir sharedstatedir localstatedir includedir \
 		oldincludedir docdir infodir htmldir dvidir pdfdir psdir \
-		libdir localedir mandir runstatedir
+		libdir localedir mandir
 do
   eval ac_val=\$$ac_var
   # Remove trailing slashes.
@@ -1486,7 +1475,6 @@ Fine tuning of the installation directories:
   --sysconfdir=DIR        read-only single-machine data [PREFIX/etc]
   --sharedstatedir=DIR    modifiable architecture-independent data [PREFIX/com]
   --localstatedir=DIR     modifiable single-machine data [PREFIX/var]
-  --runstatedir=DIR       modifiable per-process data [LOCALSTATEDIR/run]
   --libdir=DIR            object code libraries [EPREFIX/lib]
   --includedir=DIR        C header files [PREFIX/include]
   --oldincludedir=DIR     C header files for non-gcc [/usr/include]
@@ -5900,7 +5888,7 @@ $as_echo "$as_me: Platform: \"$target_os\" release \"$target_release\" on \"$tar
 
 
 
-DEBUG_CPPFLAGS="-D_DEBUG -D_GLIBCXX_DEBUG $DEBUG_CPPFLAGS"
+DEBUG_CPPFLAGS="-D_DEBUG $DEBUG_CPPFLAGS"
 
 if ${DEBUG_FLAG+:} false; then :
 
@@ -7519,8 +7507,8 @@ $as_echo "$as_me: Using directory $withval for GSM 06.10 audio codec" >&6;}
 else
 
 pkg_failed=no
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for GSM" >&5
-$as_echo_n "checking for GSM... " >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for gsm " >&5
+$as_echo_n "checking for gsm ... " >&6; }
 
 if test -n "$GSM_CFLAGS"; then
     pkg_cv_GSM_CFLAGS="$GSM_CFLAGS"
@@ -7560,7 +7548,7 @@ fi
 
 
 if test $pkg_failed = yes; then
-   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
 if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
@@ -7582,7 +7570,7 @@ fi
 
 
 elif test $pkg_failed = untried; then
-     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
                      GSM_CFLAGS=""
@@ -7806,8 +7794,8 @@ $as_echo "$as_me: Using directory $withval for iLBC audio codec" >&6;}
 else
 
 pkg_failed=no
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for ILBC" >&5
-$as_echo_n "checking for ILBC... " >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for ilbc " >&5
+$as_echo_n "checking for ilbc ... " >&6; }
 
 if test -n "$ILBC_CFLAGS"; then
     pkg_cv_ILBC_CFLAGS="$ILBC_CFLAGS"
@@ -7847,7 +7835,7 @@ fi
 
 
 if test $pkg_failed = yes; then
-   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
 if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
@@ -7869,7 +7857,7 @@ fi
 
 
 elif test $pkg_failed = untried; then
-     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
                      ILBC_CFLAGS=""
@@ -8103,8 +8091,8 @@ $as_echo "$as_me: Using directory $withval for Speex audio codec" >&6;}
 else
 
 pkg_failed=no
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for SPEEX" >&5
-$as_echo_n "checking for SPEEX... " >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for speex " >&5
+$as_echo_n "checking for speex ... " >&6; }
 
 if test -n "$SPEEX_CFLAGS"; then
     pkg_cv_SPEEX_CFLAGS="$SPEEX_CFLAGS"
@@ -8144,7 +8132,7 @@ fi
 
 
 if test $pkg_failed = yes; then
-   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
 if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
@@ -8166,7 +8154,7 @@ fi
 
 
 elif test $pkg_failed = untried; then
-     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
                      SPEEX_CFLAGS=""
@@ -8380,8 +8368,8 @@ $as_echo "$as_me: Using directory $withval for Bluetooth SBC audio codec" >&6;}
 else
 
 pkg_failed=no
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for SBC" >&5
-$as_echo_n "checking for SBC... " >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for samplerate" >&5
+$as_echo_n "checking for samplerate... " >&6; }
 
 if test -n "$SBC_CFLAGS"; then
     pkg_cv_SBC_CFLAGS="$SBC_CFLAGS"
@@ -8421,7 +8409,7 @@ fi
 
 
 if test $pkg_failed = yes; then
-   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
 if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
@@ -8443,7 +8431,7 @@ fi
 
 
 elif test $pkg_failed = untried; then
-     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
                      SBC_CFLAGS=""
@@ -8629,8 +8617,8 @@ fi
 
 
 pkg_failed=no
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for CELT" >&5
-$as_echo_n "checking for CELT... " >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for celt" >&5
+$as_echo_n "checking for celt... " >&6; }
 
 if test -n "$CELT_CFLAGS"; then
     pkg_cv_CELT_CFLAGS="$CELT_CFLAGS"
@@ -8670,7 +8658,7 @@ fi
 
 
 if test $pkg_failed = yes; then
-   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
 if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
@@ -8689,7 +8677,7 @@ fi
 	usable=no
 
 elif test $pkg_failed = untried; then
-     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 	usable=no
 
@@ -8903,8 +8891,8 @@ $as_echo "$as_me: Using directory $withval for Opus Interactive Audio Codec" >&6
 else
 
 pkg_failed=no
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for OPUS" >&5
-$as_echo_n "checking for OPUS... " >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for opus " >&5
+$as_echo_n "checking for opus ... " >&6; }
 
 if test -n "$OPUS_CFLAGS"; then
     pkg_cv_OPUS_CFLAGS="$OPUS_CFLAGS"
@@ -8944,7 +8932,7 @@ fi
 
 
 if test $pkg_failed = yes; then
-   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
 if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
@@ -8966,7 +8954,7 @@ fi
 
 
 elif test $pkg_failed = untried; then
-     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
                      OPUS_CFLAGS=""
@@ -9230,8 +9218,8 @@ $as_echo "$as_me: Using directory $withval for FFMPEG libavutil library" >&6;}
 else
 
 pkg_failed=no
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for LIBAVUTIL" >&5
-$as_echo_n "checking for LIBAVUTIL... " >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for libavutil >= 54.0.0" >&5
+$as_echo_n "checking for libavutil >= 54.0.0... " >&6; }
 
 if test -n "$LIBAVUTIL_CFLAGS"; then
     pkg_cv_LIBAVUTIL_CFLAGS="$LIBAVUTIL_CFLAGS"
@@ -9271,7 +9259,7 @@ fi
 
 
 if test $pkg_failed = yes; then
-   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
 if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
@@ -9293,7 +9281,7 @@ fi
 
 
 elif test $pkg_failed = untried; then
-     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
                      LIBAVUTIL_CFLAGS=""
@@ -9452,8 +9440,8 @@ $as_echo "$as_me: Using directory $withval for FFMPEG libswresample library" >&6
 else
 
 pkg_failed=no
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for LIBSWRESAMPLE" >&5
-$as_echo_n "checking for LIBSWRESAMPLE... " >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for libswresample >= 1.1.0" >&5
+$as_echo_n "checking for libswresample >= 1.1.0... " >&6; }
 
 if test -n "$LIBSWRESAMPLE_CFLAGS"; then
     pkg_cv_LIBSWRESAMPLE_CFLAGS="$LIBSWRESAMPLE_CFLAGS"
@@ -9493,7 +9481,7 @@ fi
 
 
 if test $pkg_failed = yes; then
-   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
 if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
@@ -9515,7 +9503,7 @@ fi
 
 
 elif test $pkg_failed = untried; then
-     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
                      LIBSWRESAMPLE_CFLAGS=""
@@ -9674,8 +9662,8 @@ $as_echo "$as_me: Using directory $withval for FFMPEG libavcodec library" >&6;}
 else
 
 pkg_failed=no
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for LIBAVCODEC" >&5
-$as_echo_n "checking for LIBAVCODEC... " >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for libavcodec >= 56.0.0" >&5
+$as_echo_n "checking for libavcodec >= 56.0.0... " >&6; }
 
 if test -n "$LIBAVCODEC_CFLAGS"; then
     pkg_cv_LIBAVCODEC_CFLAGS="$LIBAVCODEC_CFLAGS"
@@ -9715,7 +9703,7 @@ fi
 
 
 if test $pkg_failed = yes; then
-   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
 if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
@@ -9737,7 +9725,7 @@ fi
 
 
 elif test $pkg_failed = untried; then
-     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
                      LIBAVCODEC_CFLAGS=""
@@ -10133,8 +10121,8 @@ $as_echo "$as_me: Using directory $withval for VideoLan x264 H.264 video codec" 
 else
 
 pkg_failed=no
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for X264" >&5
-$as_echo_n "checking for X264... " >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for x264 >= 0.102" >&5
+$as_echo_n "checking for x264 >= 0.102... " >&6; }
 
 if test -n "$X264_CFLAGS"; then
     pkg_cv_X264_CFLAGS="$X264_CFLAGS"
@@ -10174,7 +10162,7 @@ fi
 
 
 if test $pkg_failed = yes; then
-   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
 if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
@@ -10196,7 +10184,7 @@ fi
 
 
 elif test $pkg_failed = untried; then
-     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
                      X264_CFLAGS=""
@@ -10480,8 +10468,8 @@ $as_echo "$as_me: Using directory $withval for Cisco Open H.264 video codec" >&6
 else
 
 pkg_failed=no
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for OPENH264" >&5
-$as_echo_n "checking for OPENH264... " >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for " >&5
+$as_echo_n "checking for ... " >&6; }
 
 if test -n "$OPENH264_CFLAGS"; then
     pkg_cv_OPENH264_CFLAGS="$OPENH264_CFLAGS"
@@ -10521,7 +10509,7 @@ fi
 
 
 if test $pkg_failed = yes; then
-   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
 if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
@@ -10544,7 +10532,7 @@ fi
 
 
 elif test $pkg_failed = untried; then
-     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
                      OPENH264_CFLAGS=""
@@ -10759,8 +10747,8 @@ $as_echo "$as_me: Using directory $withval for VP8 (WebM) video codec" >&6;}
 else
 
 pkg_failed=no
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for VP8" >&5
-$as_echo_n "checking for VP8... " >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for vpx" >&5
+$as_echo_n "checking for vpx... " >&6; }
 
 if test -n "$VP8_CFLAGS"; then
     pkg_cv_VP8_CFLAGS="$VP8_CFLAGS"
@@ -10800,7 +10788,7 @@ fi
 
 
 if test $pkg_failed = yes; then
-   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
 if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
@@ -10822,7 +10810,7 @@ fi
 
 
 elif test $pkg_failed = untried; then
-     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
                      VP8_CFLAGS=""
@@ -11018,8 +11006,8 @@ $as_echo "$as_me: Using directory $withval for Theora video codec" >&6;}
 else
 
 pkg_failed=no
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for THEORA" >&5
-$as_echo_n "checking for THEORA... " >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for theora" >&5
+$as_echo_n "checking for theora... " >&6; }
 
 if test -n "$THEORA_CFLAGS"; then
     pkg_cv_THEORA_CFLAGS="$THEORA_CFLAGS"
@@ -11059,7 +11047,7 @@ fi
 
 
 if test $pkg_failed = yes; then
-   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
 if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
@@ -11081,7 +11069,7 @@ fi
 
 
 elif test $pkg_failed = untried; then
-     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
                      THEORA_CFLAGS=""
@@ -11282,8 +11270,8 @@ $as_echo "$as_me: Using directory $withval for Voicetronics VPB telephony card" 
 else
 
 pkg_failed=no
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for VPB" >&5
-$as_echo_n "checking for VPB... " >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for vpb" >&5
+$as_echo_n "checking for vpb... " >&6; }
 
 if test -n "$VPB_CFLAGS"; then
     pkg_cv_VPB_CFLAGS="$VPB_CFLAGS"
@@ -11323,7 +11311,7 @@ fi
 
 
 if test $pkg_failed = yes; then
-   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
 if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
@@ -11345,7 +11333,7 @@ fi
 
 
 elif test $pkg_failed = untried; then
-     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
                      VPB_CFLAGS=""
@@ -11543,8 +11531,8 @@ $as_echo "$as_me: Using directory $withval for SpanDSP based fax" >&6;}
 else
 
 pkg_failed=no
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for SPANDSP" >&5
-$as_echo_n "checking for SPANDSP... " >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for spandsp" >&5
+$as_echo_n "checking for spandsp... " >&6; }
 
 if test -n "$SPANDSP_CFLAGS"; then
     pkg_cv_SPANDSP_CFLAGS="$SPANDSP_CFLAGS"
@@ -11584,7 +11572,7 @@ fi
 
 
 if test $pkg_failed = yes; then
-   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
 if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
@@ -11606,7 +11594,7 @@ fi
 
 
 elif test $pkg_failed = untried; then
-     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
                      SPANDSP_CFLAGS=""
