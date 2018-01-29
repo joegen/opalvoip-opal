@@ -119,6 +119,8 @@ opal.xcodeproj/xcuserdata
 /plugins/audio/Opus/opus/.libs
 /plugins/audio/Opus/opus/tests/.libs
 /plugins/audio/SILK/SILK_SDK/obj_linux_x86_64
+/plugins/audio/SILK/SILK_SDK/src/Win32
+/plugins/audio/SILK/SILK_SDK/src/x64
 /plugins/fax/fax_spandsp/spandsp-0.0.6.tar.gz
 /plugins/fax/fax_spandsp/spandsp-0.0.6/
 /plugins/fax/fax_spandsp/tiff-3.8.2.tar.gz
