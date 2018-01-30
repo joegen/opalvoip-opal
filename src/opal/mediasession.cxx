@@ -1059,8 +1059,8 @@ bool OpalUDPMediaTransport::InternalSetRemoteAddress(const PIPSocket::AddressAnd
   if (m_localHasRestrictedNAT) {
     // If have Port Restricted NAT on local host then send a datagram
     // to remote to open up the port in the firewall for return data.
-    static const BYTE dummy[1] = { 0 };
-    socket->Write(dummy, sizeof(dummy));
+    if (!InternalOpenPinHole(*socket))
+      return false;
   }
 
 #if PTRACING
@@ -1079,6 +1079,13 @@ bool OpalUDPMediaTransport::InternalSetRemoteAddress(const PIPSocket::AddressAnd
 #endif
 
   return true;
+}
+
+
+bool OpalUDPMediaTransport::InternalOpenPinHole(PUDPSocket & socket)
+{
+    static const BYTE dummy[1] = { 0 };
+    return socket.Write(dummy, sizeof(dummy));
 }
 
 

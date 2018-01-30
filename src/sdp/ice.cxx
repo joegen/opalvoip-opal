@@ -130,6 +130,13 @@ void OpalICEMediaTransport::InternalRxData(SubChannels subchannel, const PBYTEAr
 }
 
 
+bool OpalICEMediaTransport::InternalOpenPinHole(PUDPSocket &)
+{
+  // Opening pin hole not needed as ICE protocol has already done so
+  return true;
+}
+
+
 void OpalICEMediaTransport::SetCandidates(const PString & user, const PString & pass, const PNatCandidateList & remoteCandidates)
 {
   PSafeLockReadWrite lock(*this);

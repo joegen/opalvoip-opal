@@ -576,6 +576,7 @@ class OpalUDPMediaTransport : public OpalMediaTransport
   protected:
     virtual void InternalRxData(SubChannels subchannel, const PBYTEArray & data);
     virtual bool InternalSetRemoteAddress(const PIPSocket::AddressAndPort & ap, SubChannels subchannel, bool dontOverride PTRACE_PARAM(, const char * source));
+    virtual bool InternalOpenPinHole(PUDPSocket & socket);
 
     bool m_localHasRestrictedNAT;
 
