@@ -405,14 +405,13 @@ bool RTP_DataFrame::SetHeaderExtension(unsigned id, PINDEX length, const BYTE * 
     return false;
 
   PINDEX baseHeaderSize = MinHeaderSize + 4*GetContribSrcCount();
-  PUInt16b * baseExtension = (PUInt16b *)&theArray[baseHeaderSize];
-  BYTE * currentExtension = (BYTE *)&theArray[baseHeaderSize+4];
+  BYTE * currentExtension = NULL;
 
   unsigned oldId;
   PINDEX extensionSize;
   if (GetExtension()) {
-    oldId = baseExtension[0];
-    extensionSize = baseExtension[1];
+    oldId = GetAs<PUInt16b>(baseHeaderSize);
+    extensionSize = GetAs<PUInt16b>(baseHeaderSize+2);
   }
   else {
     oldId = UINT_MAX; // definitely won't match anything
@@ -422,12 +421,12 @@ bool RTP_DataFrame::SetHeaderExtension(unsigned id, PINDEX length, const BYTE * 
   switch (type) {
     case RFC3550 :
       // Have maximum length of 16 bit field header, and it is in DWORDs, that's a 265kbyte header extension, really?
-      if (!PAssert(id <= MaxHeaderExtensionId && length < (1<<16)*4, PInvalidParameter) && SetExtensionSizeDWORDs((length + 3)/4))
+      if (!PAssert(id <= MaxHeaderExtensionId && length < (1 << 16) * 4, PInvalidParameter) && !SetExtensionSizeDWORDs((length + 3) / 4))
         return false;
 
       // Primitive, and there can be only one.
-      *baseExtension = (uint16_t)id;
-      memcpy(currentExtension, data, length);
+      *(PUInt16b *)(theArray + baseHeaderSize) = (uint16_t)id;
+      memcpy(theArray + baseHeaderSize + 4, data, length);
       return true;
 
     case RFC5285_OneByte :
@@ -441,13 +440,15 @@ bool RTP_DataFrame::SetHeaderExtension(unsigned id, PINDEX length, const BYTE * 
            and copying in our one new extension. */
         if (!SetExtensionSizeDWORDs((length + 1 + 3) / 4))
           return false;
-        *baseExtension = 0xbede;
-        *currentExtension++ = (BYTE)((id << 4)|(length-1));
-        memcpy(currentExtension, data, length);
+
+        *(PUInt16b *)(theArray + baseHeaderSize) = 0xbede;
+        theArray[baseHeaderSize + 4] = (BYTE)((id << 4)|(length-1));
+        memcpy(theArray + baseHeaderSize + 5, data, length);
         return true;
       }
 
       // Search for the end of the existing headers, checking if id already there
+      currentExtension = (BYTE *)theArray + baseHeaderSize + 4;
       for (;;) {
         unsigned currentId = *currentExtension >> 4;
         PINDEX currentLen = (*currentExtension & 0xf)+1;
@@ -484,14 +485,16 @@ bool RTP_DataFrame::SetHeaderExtension(unsigned id, PINDEX length, const BYTE * 
            and copying in our one new extension. */
         if (!SetExtensionSizeDWORDs((length + 2 + 3) / 4))
           return false;
-        *baseExtension = 0x1000;
-        *currentExtension++ = (BYTE)id;
-        *currentExtension++ = (BYTE)length;
-        memcpy(currentExtension, data, length);
+
+        *(PUInt16b *)(theArray + baseHeaderSize) = 0x1000;
+        theArray[baseHeaderSize + 4] = (BYTE)id;
+        theArray[baseHeaderSize + 5] = (BYTE)length;
+        memcpy(theArray + baseHeaderSize + 6, data, length);
         return true;
       }
 
       // Search for the end of the existing headers, checking if id already there
+      currentExtension = (BYTE *)theArray + baseHeaderSize + 4;
       for (;;) {
         unsigned currentId = *currentExtension++;
         --extensionSize;
@@ -521,9 +524,9 @@ bool RTP_DataFrame::SetHeaderExtension(unsigned id, PINDEX length, const BYTE * 
   }
 
   // Calculate new RFC3550 header extension size, as we append new one to the end
-  if (!SetExtensionSizeDWORDs(((currentExtension - (BYTE *)&baseExtension[2]) // Previous header size
-                              + (type == RFC5285_OneByte ? 1 : 2) + length // New appended header size
-                              + 3)/4)) // Converted to whole DWORDs
+  PINDEX previousHeadersSize = PAssertNULL(currentExtension) - (BYTE *)&theArray[baseHeaderSize + 2];
+  PINDEX newHeadersSize = previousHeadersSize + (type == RFC5285_OneByte ? 1 : 2) + length; // New appended header size
+  if (!SetExtensionSizeDWORDs((newHeadersSize + 3)/4)) // Converted to whole DWORDs
     return false;
 
   // Set the header extensions header
