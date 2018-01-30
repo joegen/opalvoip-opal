@@ -1050,6 +1050,8 @@ OpalMediaTransportPtr OpalRTPSession::DetachTransport()
 
 bool OpalRTPSession::AddGroup(const PString & groupId, const PString & mediaId, bool overwrite)
 {
+  P_INSTRUMENTED_LOCK_READ_WRITE();
+
   if (!OpalMediaSession::AddGroup(groupId, mediaId, overwrite))
     return false;
 
@@ -1260,6 +1262,20 @@ bool OpalRTPSession::AddHeaderExtension(const RTPHeaderExtensionInfo & ext)
 
   PTRACE(3, "Unsupported header extension: " << ext);
   return false;
+}
+
+
+void OpalRTPSession::SetAnySyncSource(bool allow)
+{
+  P_INSTRUMENTED_LOCK_READ_WRITE();
+  m_allowAnySyncSource = allow;
+}
+
+
+void OpalRTPSession::SetMaxOutOfOrderPackets(PINDEX packets)
+{
+  P_INSTRUMENTED_LOCK_READ_WRITE();
+  m_maxOutOfOrderPackets = packets;
 }
 
 

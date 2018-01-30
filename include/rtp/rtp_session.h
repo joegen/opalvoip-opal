@@ -435,7 +435,7 @@ class OpalRTPSession : public OpalMediaSession
       */
     void SetAnySyncSource(
       bool allow    ///<  Flag for allow any SSRC values
-    ) { m_allowAnySyncSource = allow; }
+    );
 
 
     /**Get the maximum out of order packets before flagging it missing.
@@ -446,7 +446,7 @@ class OpalRTPSession : public OpalMediaSession
       */
     void SetMaxOutOfOrderPackets(
       PINDEX packets ///<  Number of packets.
-    )  { m_maxOutOfOrderPackets = packets; }
+    );
 
     /**Get the maximum time to wait for an out of order packet before flagging it missing.
       */
