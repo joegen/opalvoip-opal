@@ -842,7 +842,9 @@ OpalMediaStreamPtr OpalConnection::OpenMediaStream(const OpalMediaFormat & media
     }
     m_mediaStreams.Append(stream);
 
+    m_mediaSessionFailedMutex.Wait();
     m_mediaSessionFailed.erase(sessionID*2 + isSource);
+    m_mediaSessionFailedMutex.Signal();
   }
 
   if (stream->Open()) {
@@ -1780,7 +1782,10 @@ bool OpalConnection::OnMediaFailed(unsigned sessionId)
   if (IsReleased())
     return false;
 
+  m_mediaSessionFailedMutex.Wait();
   m_mediaSessionFailed.insert(sessionId);
+  m_mediaSessionFailedMutex.Signal();
+
   return GetEndPoint().GetManager().OnMediaFailed(*this, sessionId);
 }
 
@@ -1788,6 +1793,7 @@ bool OpalConnection::OnMediaFailed(unsigned sessionId)
 bool OpalConnection::AllMediaFailed() const
 {
   for (OpalMediaStreamPtr mediaStream(m_mediaStreams, PSafeReference); mediaStream != NULL; ++mediaStream) {
+    PWaitAndSignal lock(m_mediaSessionFailedMutex);
     if (m_mediaSessionFailed.find(mediaStream->GetSessionID()) == m_mediaSessionFailed.end()) {
       PTRACE(3, "Checking for all media failed: no, still have media stream " << *mediaStream << " for " << *this);
       return false;

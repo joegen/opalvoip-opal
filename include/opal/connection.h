@@ -2031,6 +2031,7 @@ class OpalConnection : public PSafeObject
     ZeroTime m_phaseTime[NumPhases];
 
     std::set<unsigned> m_mediaSessionFailed;
+    PMutex             m_mediaSessionFailedMutex;
 
 
   private:
