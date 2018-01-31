@@ -497,6 +497,7 @@ class OpalMediaTransport : public PSafeObject, public OpalMediaTransportChannelT
   protected:
     virtual void InternalClose();
     virtual void InternalStop();
+    virtual void InternalRxData(SubChannels subchannel, const PBYTEArray & data);
 
     PString       m_name;
     bool          m_remoteBehindNAT;
@@ -515,12 +516,10 @@ class OpalMediaTransport : public PSafeObject, public OpalMediaTransportChannelT
     struct ChannelInfo
     {
       ChannelInfo(
-        OpalMediaTransport * owner = NULL,
-        SubChannels subchannel = e_AllSubChannels,
-        PChannel * channel = NULL
+        OpalMediaTransport & owner,
+        SubChannels subchannel,
+        PChannel * channel
       );
-      ChannelInfo(const ChannelInfo & other);
-      ChannelInfo & operator=(const ChannelInfo & other);
 
       void ThreadMain();
       bool HandleUnavailableError();
@@ -528,18 +527,25 @@ class OpalMediaTransport : public PSafeObject, public OpalMediaTransportChannelT
       typedef PNotifierListTemplate<PBYTEArray> NotifierList;
       NotifierList m_notifiers;
 
-      OpalMediaTransport * m_owner;
-      SubChannels          m_subchannel;
-      PChannel           * m_channel;
+      OpalMediaTransport & m_owner;
+      SubChannels    const m_subchannel;
+      PChannel     * const m_channel;
       PThread            * m_thread;
       unsigned             m_consecutiveUnavailableErrors;
       PSimpleTimer         m_timeForUnavailableErrors;
+      OpalTransportAddress m_localAddress;
+      OpalTransportAddress m_remoteAddress;
 
       PTRACE_THROTTLE(m_throttleReadPacket,4,60000);
+
+      private:
+        void operator=(const ChannelInfo &) { }
     };
     friend struct ChannelInfo;
-    vector<ChannelInfo> m_subchannels;
-    virtual void InternalRxData(SubChannels subchannel, const PBYTEArray & data);
+    typedef vector<ChannelInfo> ChannelArray;
+    ChannelArray m_subchannels;
+    void AddChannel(PChannel * channel);
+    virtual PChannel * AddWrapperChannels(SubChannels subchannel, PChannel * channel);
 };
 
 typedef PSafePtr<OpalMediaTransport, PSafePtrMultiThreaded> OpalMediaTransportPtr;
@@ -566,8 +572,6 @@ class OpalUDPMediaTransport : public OpalMediaTransport
     ~OpalUDPMediaTransport() { InternalStop(); }
 
     virtual bool Open(OpalMediaSession & session, PINDEX count, const PString & localInterface, const OpalTransportAddress & remoteAddress);
-    virtual OpalTransportAddress GetLocalAddress(SubChannels subchannel = e_Media) const;
-    virtual OpalTransportAddress GetRemoteAddress(SubChannels subchannel = e_Media) const;
     virtual bool SetRemoteAddress(const OpalTransportAddress & remoteAddress, SubChannels subchannel = e_Media);
     virtual bool Write(const void * data, PINDEX length, SubChannels = e_Media, const PIPSocketAddressAndPort * = NULL);
 
@@ -579,16 +583,7 @@ class OpalUDPMediaTransport : public OpalMediaTransport
     virtual bool InternalOpenPinHole(PUDPSocket & socket);
 
     bool m_localHasRestrictedNAT;
-
-    struct SocketInfo
-    {
-      PUDPSocket         * m_socket;
-      OpalTransportAddress m_localAddress;
-      OpalTransportAddress m_remoteAddress;
-
-      SocketInfo() : m_socket(NULL) { }
-    };
-    vector<SocketInfo> m_socketInfo;
+    vector<PUDPSocket *> m_socketCache;
 };
 
 

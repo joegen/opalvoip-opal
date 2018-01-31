@@ -36,7 +36,6 @@
 #if OPAL_ICE
 
 #include <ptclib/random.h>
-#include <ptclib/pstunsrvr.h>
 #include <opal/connection.h>
 #include <opal/endpoint.h>
 #include <opal/manager.h>
@@ -67,18 +66,16 @@ OpalICEMediaTransport::OpalICEMediaTransport(const PString & name)
   , m_lite(false)
   , m_trickle(false)
   , m_state(e_Disabled)
-  , m_server(NULL)
-  , m_client(NULL)
   , m_selectedCandidate(NULL)
 {
+  PTRACE_CONTEXT_ID_TO(m_server);
+  PTRACE_CONTEXT_ID_TO(m_client);
 }
 
 
 OpalICEMediaTransport::~OpalICEMediaTransport()
 {
   InternalStop();
-  delete m_server;
-  delete m_client;
 }
 
 
@@ -137,6 +134,18 @@ bool OpalICEMediaTransport::InternalOpenPinHole(PUDPSocket &)
 }
 
 
+PChannel * OpalICEMediaTransport::AddWrapperChannels(SubChannels subchannel, PChannel * channel)
+{
+  if (m_localCandidates.size() <= (size_t)subchannel)
+    m_localCandidates.resize(subchannel + 1);
+
+  if (m_remoteCandidates.size() <= (size_t)subchannel)
+    m_remoteCandidates.resize(subchannel + 1);
+
+  return new ICEChannel(*this, subchannel, channel);
+}
+
+
 void OpalICEMediaTransport::SetCandidates(const PString & user, const PString & pass, const PNatCandidateList & remoteCandidates)
 {
   PSafeLockReadWrite lock(*this);
@@ -155,13 +164,11 @@ void OpalICEMediaTransport::SetCandidates(const PString & user, const PString & 
   }
 
   CandidatesArray newCandidates(m_subchannels.size());
-  for (PINDEX i = 0; i < newCandidates.GetSize(); ++i)
-    newCandidates.SetAt(i, new CandidateStateList);
 
   bool noSuitableCandidates = true;
   for (PNatCandidateList::const_iterator it = remoteCandidates.begin(); it != remoteCandidates.end(); ++it) {
     PTRACE(4, "Checking candidate: " << *it);
-    if (it->m_protocol == "udp" && it->m_component > 0 && (PINDEX)it->m_component <= newCandidates.GetSize()) {
+    if (it->m_protocol == "udp" && it->m_component > 0 && (size_t)it->m_component <= newCandidates.size()) {
       newCandidates[it->m_component - 1].push_back(*it);
       noSuitableCandidates = false;
     }
@@ -189,7 +196,7 @@ void OpalICEMediaTransport::SetCandidates(const PString & user, const PString & 
       break;
 
     case e_Offering :
-      if (m_remoteCandidates.IsEmpty())
+      if (m_remoteCandidates.empty())
         PTRACE(4, *this << "ICE offer answered");
       else {
         if (newCandidates == m_remoteCandidates) {
@@ -216,39 +223,28 @@ void OpalICEMediaTransport::SetCandidates(const PString & user, const PString & 
   m_remotePassword = pass;
   m_remoteCandidates = newCandidates;
 
-  if (m_server == NULL) {
-    m_server = new PSTUNServer();
-    PTRACE_CONTEXT_ID_TO(m_server);
-    if (m_lite)
-      m_server->SetIceRole(PSTUN::IceLite);
-    else if (m_state == e_Answering)
-      m_server->SetIceRole(PSTUN::IceControlled);
-    else
-      m_server->SetIceRole(PSTUN::IceControlling);
+  if (m_lite) {
+    m_server.SetIceRole(PSTUN::IceLite);
+    m_client.SetIceRole(PSTUN::IceLite);
   }
-  m_server->Open(GetSubChannelAsSocket(e_Data), GetSubChannelAsSocket(e_Control));
-  m_server->SetCredentials(m_localUsername + ':' + m_remoteUsername, m_localPassword, PString::Empty());
+  else if (m_state == e_Answering) {
+    m_server.SetIceRole(PSTUN::IceControlled);
+    m_client.SetIceRole(PSTUN::IceControlled);
+  }
+  else {
+    m_server.SetIceRole(PSTUN::IceControlling);
+    m_client.SetIceRole(PSTUN::IceControlling);
+  }
 
-  if (m_client == NULL) {
-    m_client = new PSTUNClient;
-    PTRACE_CONTEXT_ID_TO(m_client);
-    if (m_lite)
-      m_client->SetIceRole(PSTUN::IceLite);
-    else if (m_state == e_Answering)
-      m_client->SetIceRole(PSTUN::IceControlled);
-    else
-      m_client->SetIceRole(PSTUN::IceControlling);
-  }
-  m_client->SetCredentials(m_remoteUsername + ':' + m_localUsername, m_remotePassword, PString::Empty());
+  m_server.Open(GetSubChannelAsSocket(e_Data), GetSubChannelAsSocket(e_Control));
+  m_server.SetCredentials(m_localUsername + ':' + m_remoteUsername, m_localPassword, PString::Empty());
+  m_client.SetCredentials(m_remoteUsername + ':' + m_localUsername, m_remotePassword, PString::Empty());
 
   SetRemoteBehindNAT();
 
-  for (size_t subchannel = 0; subchannel < m_subchannels.size(); ++subchannel) {
-    PUDPSocket * socket = GetSubChannelAsSocket((SubChannels)subchannel);
+  for (ChannelArray::iterator it = m_subchannels.begin(); it != m_subchannels.end(); ++it) {
+    PUDPSocket * socket = GetSubChannelAsSocket(it->m_subchannel);
     socket->SetSendAddress(PIPAddressAndPort());
-
-    if (dynamic_cast<ICEChannel *>(m_subchannels[subchannel].m_channel) == NULL)
-      m_subchannels[subchannel].m_channel = new ICEChannel(*this, (SubChannels)subchannel, socket);
   }
 
 #if PTRACING
@@ -260,9 +256,9 @@ void OpalICEMediaTransport::SetCandidates(const PString & user, const PString & 
     else
       trace << "configured from remote";
     trace << " candidates:";
-    for (PINDEX i = 0; i < m_localCandidates.GetSize(); ++i)
+    for (size_t i = 0; i < m_localCandidates.size(); ++i)
       trace << " local-" << (SubChannels)i << '=' << m_localCandidates[i].size();
-    for (PINDEX i = 0; i < m_remoteCandidates.GetSize(); ++i)
+    for (size_t i = 0; i < m_remoteCandidates.size(); ++i)
       trace << " remote-" << (SubChannels)i << '=' << m_remoteCandidates[i].size();
     trace << PTrace::End;
   }
@@ -288,13 +284,11 @@ bool OpalICEMediaTransport::GetCandidates(PString & user, PString & pass, PNatCa
   static const char LiteFoundation[] = "xyzzy";
 
   CandidatesArray newCandidates(m_subchannels.size());
-  for (size_t subchannel = 0; subchannel < m_subchannels.size(); ++subchannel) {
-    newCandidates.SetAt(subchannel, new CandidateStateList);
-
+  for (ChannelArray::iterator it = m_subchannels.begin(); it != m_subchannels.end(); ++it) {
     // Only do ICE-Lite right now so just offer "host" type using local address.
     static const PNatMethod::Component ComponentId[2] = { PNatMethod::eComponent_RTP, PNatMethod::eComponent_RTCP };
-    PNatCandidate candidate(PNatCandidate::HostType, ComponentId[subchannel], LiteFoundation);
-    GetSubChannelAsSocket((SubChannels)subchannel)->GetLocalAddress(candidate.m_baseTransportAddress);
+    PNatCandidate candidate(PNatCandidate::HostType, ComponentId[it->m_subchannel], LiteFoundation);
+    it->m_localAddress.GetIpAndPort(candidate.m_baseTransportAddress);
     candidate.m_priority = (CandidateTypePriority[candidate.m_type] << 24) | (256 - candidate.m_component);
 
     if (candidate.m_baseTransportAddress.GetAddress().GetVersion() != 6)
@@ -312,7 +306,7 @@ bool OpalICEMediaTransport::GetCandidates(PString & user, PString & pass, PNatCa
     }
 
     candidates.push_back(candidate);
-    newCandidates[subchannel].push_back(candidate);
+    newCandidates[it->m_subchannel].push_back(candidate);
   }
 
   if (offering && m_localCandidates != newCandidates) {
@@ -336,9 +330,9 @@ bool OpalICEMediaTransport::GetCandidates(PString & user, PString & pass, PNatCa
         trace << "sending unchanged";
     }
     trace << " candidates:";
-    for (PINDEX i = 0; i < m_localCandidates.GetSize(); ++i)
+    for (size_t i = 0; i < m_localCandidates.size(); ++i)
       trace << " local-" << (SubChannels)i << '=' << m_localCandidates[i].size();
-    for (PINDEX i = 0; i < m_remoteCandidates.GetSize(); ++i)
+    for (size_t i = 0; i < m_remoteCandidates.size(); ++i)
       trace << " remote-" << (SubChannels)i << '=' << m_remoteCandidates[i].size();
     trace << PTrace::End;
   }
@@ -460,7 +454,7 @@ bool OpalICEMediaTransport::InternalHandleICE(SubChannels subchannel, const void
   }
 
   if (message.IsRequest()) {
-    if (!PAssertNULL(m_server)->OnReceiveMessage(message, PSTUNServer::SocketInfo(socket)))
+    if (!m_server.OnReceiveMessage(message, PSTUNServer::SocketInfo(socket)))
       return false; // Probably a authentication error
 
     if (m_state == e_Offering) {
@@ -496,7 +490,7 @@ bool OpalICEMediaTransport::InternalHandleICE(SubChannels subchannel, const void
       return false;
     }
 
-    if (!PAssertNULL(m_client)->ValidateMessageIntegrity(message))
+    if (!m_client.ValidateMessageIntegrity(message))
       return false;
   }
   else {
@@ -522,7 +516,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendICE(Channel channel)
         PTRACE(4, *this << "sending BINDING-REQUEST to " << *it);
         PSTUNMessage request(PSTUNMessage::BindingRequest);
         request.AddAttribute(PSTUNAttribute::ICE_CONTROLLED); // We are ICE-lite and always controlled
-        m_client->AppendMessageIntegrity(request);
+        m_client.AppendMessageIntegrity(request);
         if (!request.Write(*m_socket[channel], it->m_baseTransportAddress))
           return e_AbortTransport;
       }

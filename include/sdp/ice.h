@@ -36,10 +36,7 @@
 #if OPAL_ICE
 
 #include <opal/mediasession.h>
-
-
-class PSTUNServer;
-class PSTUNClient;
+#include <ptclib/pstunsrvr.h>
 
 
 /**String option key to an integer indicating the time in seconds to
@@ -73,8 +70,6 @@ class OpalICEMediaTransport : public OpalUDPMediaTransport
 
     virtual bool Open(OpalMediaSession & session, PINDEX count, const PString & localInterface, const OpalTransportAddress & remoteAddress);
     virtual bool IsEstablished() const;
-    virtual void InternalRxData(SubChannels subchannel, const PBYTEArray & data);
-    virtual bool InternalOpenPinHole(PUDPSocket & socket);
     virtual void SetCandidates(const PString & user, const PString & pass, const PNatCandidateList & candidates);
     virtual bool GetCandidates(PString & user, PString & pass, PNatCandidateList & candidates, bool offering);
 #if OPAL_STATISTICS
@@ -94,6 +89,9 @@ class OpalICEMediaTransport : public OpalUDPMediaTransport
         SubChannels             m_subchannel;
     };
     bool InternalHandleICE(SubChannels subchannel, const void * buf, PINDEX len);
+    virtual void InternalRxData(SubChannels subchannel, const PBYTEArray & data);
+    virtual bool InternalOpenPinHole(PUDPSocket & socket);
+    virtual PChannel * AddWrapperChannels(SubChannels subchannel, PChannel * channel);
 
     PString       m_localUsername;    // ICE username sent to remote
     PString       m_localPassword;    // ICE password sent to remote
@@ -122,8 +120,8 @@ class OpalICEMediaTransport : public OpalUDPMediaTransport
       {
       }
     };
-    typedef PList<CandidateState> CandidateStateList;
-    typedef PArray<CandidateStateList> CandidatesArray;
+    typedef std::list<CandidateState> CandidateStateList;
+    typedef std::vector<CandidateStateList> CandidatesArray;
     CandidatesArray m_localCandidates;
     CandidatesArray m_remoteCandidates;
 
@@ -135,8 +133,8 @@ class OpalICEMediaTransport : public OpalUDPMediaTransport
       e_Answering
     } m_state;
 
-    PSTUNServer * m_server;
-    PSTUNClient * m_client;
+    PSTUNServer m_server;
+    PSTUNClient m_client;
 
     CandidateState * m_selectedCandidate;
 };
