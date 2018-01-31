@@ -136,6 +136,10 @@ opal.xcodeproj/xcuserdata
 /samples/opalshark/resource.cpp
 /samples/opalshark/opalshark.cxx
 /samples/opalshark/config.wxs
+/samples/server/version.wxs
+/samples/server/config.wxs
+/samples/server/server.cer
+/samples/server/server.key
 /samples/fax/results
 rpmbuild/
 nbproject/private/
