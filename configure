@@ -11413,6 +11413,8 @@ ac_config_files="$ac_config_files make/opal_config.mak"
 
 ac_config_files="$ac_config_files samples/openphone/version.wxs"
 
+ac_config_files="$ac_config_files samples/server/version.wxs"
+
 ac_config_headers="$ac_config_headers ${ac_top_build_prefix}include/opal_config.h:include/opal_config.h.in"
 
 
@@ -12121,6 +12123,7 @@ do
     "opal_cfg.dxy") CONFIG_FILES="$CONFIG_FILES opal_cfg.dxy" ;;
     "make/opal_config.mak") CONFIG_FILES="$CONFIG_FILES make/opal_config.mak" ;;
     "samples/openphone/version.wxs") CONFIG_FILES="$CONFIG_FILES samples/openphone/version.wxs" ;;
+    "samples/server/version.wxs") CONFIG_FILES="$CONFIG_FILES samples/server/version.wxs" ;;
     "${ac_top_build_prefix}include/opal_config.h") CONFIG_HEADERS="$CONFIG_HEADERS ${ac_top_build_prefix}include/opal_config.h:include/opal_config.h.in" ;;
     "Platform-Makefile") CONFIG_COMMANDS="$CONFIG_COMMANDS Platform-Makefile" ;;
 
