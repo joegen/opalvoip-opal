@@ -740,11 +740,10 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
   }
 #endif
 
-  rsrc->Add(new PHTTPDividerField());
-
 #if OPAL_SCRIPT
   PStringArray languages = PScriptLanguage::GetLanguages();
   if (!languages.empty()) {
+    rsrc->Add(new PHTTPDividerField());
     PCaselessString language = cfg.GetString(ScriptLanguageKey, languages[0]);
     rsrc->Add(new PHTTPRadioField(ScriptLanguageKey, languages,
               languages.GetValuesIndex(language),"Interpreter script language."));
@@ -760,6 +759,8 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
 #endif //OPAL_SCRIPT
 
   // Routing
+  rsrc->Add(new PHTTPDividerField());
+
   PHTTPCompositeField * routeFields = new PHTTPCompositeField(ROUTES_KEY, ROUTES_SECTION,
     "Internal routing of calls to varous sub-systems.<p>"
     "The A Party and B Party columns are regular expressions for the call "
