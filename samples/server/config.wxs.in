@@ -13,7 +13,7 @@
 
     <?if $(var.Architecture) = "x86" ?>
         <?define SSLDir = "$(env.ProgramW6432)\OpenSSL-Win32\bin" ?>
-        <?define LuaDir = "$(env.ProgramFiles)\lua\5.1" ?>
+        <?define LuaDir = "..\..\..\external\Lua-win32" ?>
         <?define JPEGDir = "C:\Tools\bin" ?>
         <?define SaslDir = "C:\Tools\bin" ?>
         <?define LDAPDir = "C:\Tools\bin" ?>
@@ -22,6 +22,7 @@
         <?define SpanDspDir = "..\..\..\external\spandsp-0.0.6\src\Release" ?>
     <?else?>
         <?define SSLDir = "$(env.ProgramW6432)\OpenSSL-Win64\bin" ?>
+        <?define LuaDir = "..\..\..\external\Lua-win64" ?>
         <?define FFMPEGDir = "..\..\..\external\ffmpeg-win64-dev\bin" ?>
         <?define OpenH264Dir = "$(env.ProgramW6432)\PTLib Plug Ins" ?>
         <?define SpanDspDir = "..\..\..\external\spandsp-0.0.6\src\x64\Release" ?>

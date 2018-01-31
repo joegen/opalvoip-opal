@@ -283,10 +283,11 @@
                         </Component>
                         <?ifdef LuaDir ?>
                             <Component Id='Lua'
+                                       Win64="$(var.IsWin64)"
                                        Guid='*'>
                                 <File Id='Lua_DLL'
-                                      Name='LUA5.1.DLL'
-                                      Source='$(var.LuaDir)\LUA5.1.DLL'
+                                      Name='LUA53.DLL'
+                                      Source='$(var.LuaDir)\LUA53.DLL'
                                       KeyPath='yes' />
                             </Component>
                         <?endif?>
