@@ -538,8 +538,9 @@ class OpalMediaTransport : public PSafeObject, public OpalMediaTransportChannelT
 
       PTRACE_THROTTLE(m_throttleReadPacket,4,60000);
 
-      private:
-        void operator=(const ChannelInfo &) { }
+#if defined(__GNUC__) && __cplusplus < 201103
+      void operator=(const ChannelInfo &) { }
+#endif
     };
     friend struct ChannelInfo;
     typedef vector<ChannelInfo> ChannelArray;
