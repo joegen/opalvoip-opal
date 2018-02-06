@@ -421,7 +421,11 @@ bool RTP_DataFrame::SetHeaderExtension(unsigned id, PINDEX length, const BYTE * 
   switch (type) {
     case RFC3550 :
       // Have maximum length of 16 bit field header, and it is in DWORDs, that's a 265kbyte header extension, really?
-      if (!PAssert(id <= MaxHeaderExtensionId && length < (1 << 16) * 4, PInvalidParameter) && !SetExtensionSizeDWORDs((length + 3) / 4))
+      if (!PAssert(id <= MaxHeaderExtensionId && length < (1 << 16) * 4, PInvalidParameter))
+        return false;
+
+      // Set the header size and allocate extra space as needed
+      if (!SetExtensionSizeDWORDs((length + 3) / 4))
         return false;
 
       // Primitive, and there can be only one.
