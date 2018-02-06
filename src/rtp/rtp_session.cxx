@@ -727,27 +727,30 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveData(RTP_
     m_consecutiveOutOfOrderPackets = 0;
   }
   else if (sequenceDelta > SequenceReorderThreshold) {
-    ++m_lateOutOfOrder;
-    if (m_packetsLost > 0)
-      --m_packetsLost; // Previously marked as lost
+    if (PAssert(rxType != e_RxOutOfOrder, PLogicError)) {
+      ++m_lateOutOfOrder;
+      if (m_packetsLost > 0)
+        --m_packetsLost; // Previously marked as lost
 
-    // If get multiple late out of order packet inside a period of time
-    bool running = m_lateOutOfOrderAdaptTimer.IsRunning();
-    if (running && ++m_lateOutOfOrderAdaptCount >= m_lateOutOfOrderAdaptMax) {
-      PTimeInterval timeout = m_session.GetOutOfOrderWaitTime() + m_lateOutOfOrderAdaptBoost;
-      m_session.SetOutOfOrderWaitTime(timeout);
-      PTRACE(2, &m_session, *this << "late out of order packet:"
-                                     " got " << sequenceNumber << ", expected " << expectedSequenceNumber << ","
-                                     " increased timeout to " << setprecision(2) << timeout);
-      running = false;
+      // If get multiple late out of order packet inside a period of time
+      bool running = m_lateOutOfOrderAdaptTimer.IsRunning();
+      if (running && ++m_lateOutOfOrderAdaptCount >= m_lateOutOfOrderAdaptMax) {
+        PTimeInterval timeout = m_session.GetOutOfOrderWaitTime() + m_lateOutOfOrderAdaptBoost;
+        m_session.SetOutOfOrderWaitTime(timeout);
+        PTRACE(2, &m_session, *this << "late out of order, or duplicate, packet:"
+               " got " << sequenceNumber << ", expected " << expectedSequenceNumber << ","
+               " increased timeout to " << setprecision(2) << timeout);
+        running = false;
+      }
+      else {
+        PTRACE(3, &m_session, *this << "late out of order, or duplicate, packet: got " << sequenceNumber << ", expected " << expectedSequenceNumber);
+      }
+      if (!running) {
+        m_lateOutOfOrderAdaptTimer = m_lateOutOfOrderAdaptPeriod;
+        m_lateOutOfOrderAdaptCount = 0;
+      }
     }
-    else {
-      PTRACE(3, &m_session, *this << "late out of order packet: got " << sequenceNumber << ", expected " << expectedSequenceNumber);
-    }
-    if (!running) {
-      m_lateOutOfOrderAdaptTimer = m_lateOutOfOrderAdaptPeriod;
-      m_lateOutOfOrderAdaptCount = 0;
-    }
+    return e_IgnorePacket;
   }
   else if (sequenceDelta > SequenceRestartThreshold) {
     // Check for where sequence numbers suddenly start incrementing from a different base.
