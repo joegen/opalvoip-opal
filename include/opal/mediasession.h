@@ -74,14 +74,38 @@ struct OpalCodecStatistics
   PThreadIdentifier m_threadIdentifier;
 };
 
+#if OPAL_ICE
+struct OpalCandidateStatistics : PNatCandidate
+{
+  OpalCandidateStatistics(const PNatCandidate & cand);
+
+  virtual void PrintOn(ostream & strm) const override;
+
+  bool m_selected;
+  unsigned m_nominations;
+  PTime    m_lastNomination;
+
+  struct STUN {
+    STUN();
+    void Count();
+
+    PTime    m_first;
+    PTime    m_last;
+    unsigned m_count;
+  } m_rxRequests, m_txRequests;
+};
+#endif // OPAL_ICE
+
 struct OpalNetworkStatistics
 {
   OpalNetworkStatistics();
 
+  PString              m_transportName;
   OpalTransportAddress m_localAddress;
   OpalTransportAddress m_remoteAddress;
-#if P_NAT
-  PNatCandidate m_selectedCandidate;
+
+#if OPAL_ICE
+  std::vector<OpalCandidateStatistics> m_candidates;
 #endif
 
   PTime    m_startTime;
@@ -370,6 +394,9 @@ class OpalMediaTransport : public PSafeObject, public OpalMediaTransportChannelT
     ~OpalMediaTransport();
 
     virtual void PrintOn(ostream & strm) const;
+
+    /// Return name of the transport.
+    const PString & GetName() const { return m_name; }
 
     /**Open the media transport.
       */

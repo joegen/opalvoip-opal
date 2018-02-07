@@ -110,12 +110,18 @@ class OpalICEMediaTransport : public OpalUDPMediaTransport
       e_CandidateSucceeded
     };
 
-    struct CandidateState : PNatCandidate {
+#if OPAL_STATISTICS
+    typedef OpalCandidateStatistics CandidateStateBase;
+#else
+    typedef PNatCandidate           CandidateStateBase;
+#endif
+    struct CandidateState : CandidateStateBase
+    {
       CandidateStates m_state;
       // Not sure what else might be necessary here. Work in progress!
 
       CandidateState(const PNatCandidate & cand)
-        : PNatCandidate(cand)
+        : CandidateStateBase(cand)
         , m_state(e_CandidateInProgress)
       {
       }

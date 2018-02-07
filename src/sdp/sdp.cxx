@@ -1050,22 +1050,31 @@ void SDPMediaDescription::SetAttribute(const PString & attr, const PString & val
     }
 
     candidate.m_baseTransportAddress.SetAddress(ip, (WORD)words[5].AsUnsigned());
-    if (words[6] *= "typ") {
-      for (candidate.m_type = PNatCandidate::BeginTypes; candidate.m_type < PNatCandidate::EndTypes; ++candidate.m_type) {
-        if (words[7] *= CandidateTypeNames[candidate.m_type])
-          break;
+
+    PINDEX word = 6;
+    while (word < words.GetSize()) {
+      PCaselessString param = words[word++];
+      if (param == "typ") {
+        PCaselessString typeName = words[word++];
+        for (candidate.m_type = PNatCandidate::BeginTypes; candidate.m_type < PNatCandidate::EndTypes; ++candidate.m_type) {
+          if (typeName == CandidateTypeNames[candidate.m_type])
+            break;
+        }
       }
-      PTRACE_IF(3, candidate.m_type == PNatCandidate::EndTypes, "Unknown candidate type: \"" << words[7] << '"');
-    }
-    else {
-      PTRACE(2, "Missing candidate type: \"" << words[6] << '"');
-      return;
+      else if (param == "raddr")
+        candidate.m_localTransportAddress.SetAddress(PIPSocket::Address(words[word++]));
+      else if (param == "rport")
+        candidate.m_localTransportAddress.SetPort((WORD)words[word++].AsUnsigned());
+      else if (param == "network-cost")
+        candidate.m_networkCost = words[word++].AsUnsigned();
+      else if (param == "network-id")
+        candidate.m_networkId = words[word++].AsUnsigned();
     }
 
-    if (words.GetSize() > 9 && (words[8] *= "raddr"))
-      candidate.m_localTransportAddress.SetAddress(PIPSocket::Address(words[9]));
-    if (words.GetSize() > 11 && (words[10] *= "rport"))
-      candidate.m_localTransportAddress.SetPort((WORD)words[11].AsUnsigned());
+    if (candidate.m_type == PNatCandidate::EndTypes) {
+      PTRACE(2, "Unknown or missing candidate type: \"" << value << '"');
+      return;
+    }
 
     m_candidates.Append(new PNatCandidate(candidate));
     return;
@@ -1185,6 +1194,8 @@ void SDPMediaDescription::OutputAttributes(ostream & strm) const
            << " typ " << CandidateTypeNames[it->m_type];
       if (it->m_localTransportAddress.IsValid())
         strm << "raddr " << it->m_localTransportAddress.GetAddress() << " rport " << it->m_localTransportAddress.GetPort();
+      if (it->m_networkCost > 0 && it->m_networkId > 0)
+        strm << " network-cost " << it->m_networkCost << " network-id " << it->m_networkId;
       strm << CRLF;
       haveCandidate = true;
     }

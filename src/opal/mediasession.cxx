@@ -61,6 +61,54 @@ OpalCodecStatistics::OpalCodecStatistics()
 }
 
 
+#if OPAL_ICE
+OpalCandidateStatistics::OpalCandidateStatistics(const PNatCandidate & cand)
+  : PNatCandidate(cand)
+  , m_selected(false)
+  , m_nominations(0)
+  , m_lastNomination(0)
+{
+}
+
+OpalCandidateStatistics::STUN::STUN()
+  : m_first(0)
+  , m_last(0)
+  , m_count(0)
+{
+}
+
+void OpalCandidateStatistics::STUN::Count()
+{
+  if (!m_first.IsValid())
+    m_first.SetCurrentTime();
+  m_last.SetCurrentTime();
+  ++m_count;
+}
+
+static ostream & operator<<(ostream & strm, const OpalCandidateStatistics::STUN & stun)
+{
+  strm << " count=" << left << setw(5) << stun.m_count;
+
+  if (stun.m_first.IsValid())
+    strm << " first=" << stun.m_first.AsString(PTime::TodayFormat)
+         << " last="  << stun.m_last .AsString(PTime::TodayFormat);
+
+  return strm;
+}
+
+void OpalCandidateStatistics::PrintOn(ostream & strm) const
+{
+  strm.width(-1);
+  PNatCandidate::PrintOn(strm);
+  strm << "  tx-requests:" << m_txRequests << "  rx-requests:" << m_rxRequests;
+  if (m_nominations > 0)
+    strm << "  nominations: count=" << m_nominations << ' ' << m_lastNomination.AsString(PTime::TodayFormat);
+  if (m_selected)
+    strm << " SELECTED";
+}
+#endif // OPAL_ICE
+
+
 OpalNetworkStatistics::OpalNetworkStatistics()
   : m_startTime(0)
   , m_totalBytes(0)
@@ -722,7 +770,8 @@ void OpalMediaTransport::SetRemoteBehindNAT()
 #if OPAL_STATISTICS
 void OpalMediaTransport::GetStatistics(OpalMediaStatistics & statistics) const
 {
-  statistics.m_localAddress = GetLocalAddress(e_Media);
+  statistics.m_transportName = m_name;
+  statistics.m_localAddress  = GetLocalAddress(e_Media);
   statistics.m_remoteAddress = GetRemoteAddress(e_Media);
 }
 #endif
