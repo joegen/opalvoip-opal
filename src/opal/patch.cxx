@@ -870,6 +870,12 @@ bool OpalMediaPatch::DispatchFrame(RTP_DataFrame & frame)
     return true;
   }
 
+  if (!m_source.IsOpen()) {
+    PTRACE(3, "Media patch " << *this << " source is closed while calling DispatchFrame");
+    UnlockReadOnly(P_DEBUG_LOCATION);
+    return false;
+  }
+
   FilterFrame(frame, m_source.GetMediaFormat());
 
   OpalMediaPatchPtr patch = m_bypassToPatch;
