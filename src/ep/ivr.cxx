@@ -382,9 +382,19 @@ OpalMediaStream * OpalIVRConnection::CreateMediaStream(const OpalMediaFormat & m
                                                        unsigned sessionID,
                                                        PBoolean isSource)
 {
-  return mediaFormat.GetMediaType() != OpalMediaType::Audio()
-            ? OpalLocalConnection::CreateMediaStream(mediaFormat, sessionID, isSource)
-            : new OpalIVRMediaStream(*this, mediaFormat, sessionID, isSource, m_vxmlSession);
+  if (mediaFormat.GetMediaType() == OpalMediaType::Audio())
+    return new OpalIVRMediaStream(*this, mediaFormat, sessionID, isSource, m_vxmlSession);
+
+#if P_VXML_VIDEO
+  if (mediaFormat.GetMediaType() == OpalMediaType::Video()) {
+    if (isSource)
+      return new OpalVideoMediaStream(*this, mediaFormat, sessionID, &m_vxmlSession.GetVideoSender(), NULL, false, false);
+    else
+      return new OpalVideoMediaStream(*this, mediaFormat, sessionID, NULL, &m_vxmlSession.GetVideoReceiver(), false, false);
+  }
+#endif // P_VXML_VIDEO
+
+  return OpalLocalConnection::CreateMediaStream(mediaFormat, sessionID, isSource);
 }
 
 
