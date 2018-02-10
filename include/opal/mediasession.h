@@ -79,7 +79,7 @@ struct OpalCandidateStatistics : PNatCandidate
 {
   OpalCandidateStatistics(const PNatCandidate & cand);
 
-  virtual void PrintOn(ostream & strm) const override;
+  virtual void PrintOn(ostream & strm) const;
 
   bool m_selected;
   unsigned m_nominations;
