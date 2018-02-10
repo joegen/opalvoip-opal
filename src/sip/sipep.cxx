@@ -581,16 +581,29 @@ PBoolean SIPEndPoint::GarbageCollection()
   bool handlersDone = activeSIPHandlers.DeleteObjectsToBeRemoved();
 
 
-  m_transportsTable.GetMutex().Wait();
-  for (PSafeDictionary<OpalTransportAddress, OpalTransport>::iterator it = m_transportsTable.begin(); it != m_transportsTable.end(); ++it) {
-    if (it->second->IsIdle()) {
-      PTRACE(3, "Removing transport to " << it->first);
-      it->second->CloseWait();
-      m_transportsTable.RemoveAt(it->first);
+  {
+    PSafeList<OpalTransport> transportsToClose;
+    transportsToClose.DisallowDeleteObjects();
+
+    // Do not do the CloseWait() inside this mutex, can cause phantom (and, possibly, actual) deadlocks
+    m_transportsTable.GetMutex().Wait();
+    for (PSafeDictionary<OpalTransportAddress, OpalTransport>::iterator it = m_transportsTable.begin(); it != m_transportsTable.end(); ++it) {
+      if (it->second->IsIdle()) {
+        PTRACE(3, "Removing transport to " << it->first);
+        transportsToClose.Append(it->second);
+        m_transportsTable.RemoveAt(it->first);
+      }
     }
+    m_transportsTable.GetMutex().Signal();
+
+    for (PSafePtr<OpalTransport> it = transportsToClose; it != NULL; ++it)
+      it->CloseWait();
+
+    /* Let transportsToClose go out of scope before m_transportsTable.DeleteObjectsToBeRemoved()
+        so refernces removed, and transports can be actually be deleted. */
   }
-  m_transportsTable.GetMutex().Signal();
   bool transportsDone = m_transportsTable.DeleteObjectsToBeRemoved();
+
 
   for (PSafePtr<RegistrarAoR> ua(m_registeredUAs); ua != NULL; ++ua) {
     if (ua->ExpireBindings())
