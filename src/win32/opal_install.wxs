@@ -214,6 +214,14 @@
                                       Source='$(var.PluginReleaseDir)\mpeg4_ffmpeg_ptplugin.dll'
                                       KeyPath='yes' />
                             </Component>
+                            <Component Id='AVFORMAT'
+                                       Win64="$(var.IsWin64)"
+                                       Guid='*'>
+                                <File Id='AVFORMAT_DLL'
+                                      Name='AVFORMAT-$(var.AVFORMATVer).DLL'
+                                      Source='$(var.FFMPEGDir)\AVFORMAT-$(var.AVFORMATVer).DLL'
+                                      KeyPath='yes' />
+                            </Component>
                             <Component Id='AVCODEC'
                                       Win64="$(var.IsWin64)"
                                       Guid='*'>
@@ -236,6 +244,14 @@
                                 <File Id='SWRESAMPLE_DLL'
                                       Name='SWRESAMPLE-$(var.SWRESAMPLEVer).DLL'
                                       Source='$(var.FFMPEGDir)\SWRESAMPLE-$(var.SWRESAMPLEVer).DLL'
+                                      KeyPath='yes' />
+                            </Component>
+                            <Component Id='SWSCALE'
+                                       Win64="$(var.IsWin64)"
+                                       Guid='*'>
+                                <File Id='SWSCALE_DLL'
+                                      Name='SWSCALE-$(var.SWSCALEVer).DLL'
+                                      Source='$(var.FFMPEGDir)\SWSCALE-$(var.SWSCALEVer).DLL'
                                       KeyPath='yes' />
                             </Component>
                         <?endif?>
@@ -288,6 +304,24 @@
                                 <File Id='Lua_DLL'
                                       Name='LUA53.DLL'
                                       Source='$(var.LuaDir)\LUA53.DLL'
+                                      KeyPath='yes' />
+                            </Component>
+                        <?endif?>
+                        <?ifdef V8Dir ?>
+                            <Component Id='V8_snapshot_blob'
+                                       Win64="$(var.IsWin64)"
+                                       Guid='*'>
+                                <File Id='V8_snapshot_blob_bin'
+                                      Name='snapshot_blob.bin'
+                                      Source='$(var.V8Dir)\snapshot_blob.bin'
+                                      KeyPath='yes' />
+                            </Component>
+                            <Component Id='V8_natives_blob'
+                                       Win64="$(var.IsWin64)"
+                                       Guid='*'>
+                                <File Id='V8_natives_blob_bin'
+                                      Name='natives_blob.bin'
+                                      Source='$(var.V8Dir)\natives_blob.bin'
                                       KeyPath='yes' />
                             </Component>
                         <?endif?>
@@ -453,9 +487,11 @@
                 <ComponentRef Id='H.263' />
                 <ComponentRef Id='H.264' />
                 <ComponentRef Id='MPEG4' />
+                <ComponentRef Id='AVFORMAT' />
                 <ComponentRef Id='AVCODEC' />
                 <ComponentRef Id='AVUTIL' />
                 <ComponentRef Id='SWRESAMPLE' />
+                <ComponentRef Id='SWSCALE' />
             <?endif?>
             <ComponentRef Id='VP8' />
             <?ifdef SpanDspDir ?>
@@ -482,6 +518,10 @@
             <ComponentRef Id='PTLib' />
             <?ifdef LuaDir ?>
                 <ComponentRef Id='Lua' />
+            <?endif?>
+            <?ifdef V8Dir ?>
+                <ComponentRef Id='V8_snapshot_blob' />
+                <ComponentRef Id='V8_natives_blob' />
             <?endif?>
             <?ifdef JPEGDir ?>
                 <ComponentRef Id='JPEG' />
