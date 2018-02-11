@@ -66,7 +66,7 @@ class PURL;
 #define OPAL_MAKE_URL_PARAM2(opt, val)  OPAL_MAKE_URL_PARAM(opt) "=" val
 
 #define OPAL_OPT_AUTO_START           "AutoStart"             /**< String option for auto-started media types. This is a '\n' separated list
-                                                                   of entries of the form type:mode, type is "ausio", "video", "fax" etc. The
+                                                                   of entries of the form type:mode, type is "audio", "video", "fax" etc. The
                                                                    mode is "inactive", "sendonly", "recvonly", "sendrecv" or "no". "yes" is a
                                                                    synonym for "sendrecv".
                                                                 */
