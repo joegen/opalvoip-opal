@@ -91,6 +91,13 @@ static const PINDEX H323GatekeeperPasswordSize = 30;
 #define new PNEW
 
 
+PCREATE_SERVICE_MACRO_BLOCK(H323EndPointStatus,resource,P_EMPTY,block)
+{
+  GkStatusPage * status = dynamic_cast<GkStatusPage *>(resource.m_resource);
+  return PAssertNULL(status)->m_gkServer.OnLoadEndPointStatus(block);
+}
+
+
 ///////////////////////////////////////////////////////////////
 
 static PStringToString GetMyAliasPasswords(PConfig & cfg)
@@ -258,7 +265,6 @@ void MyH323EndPoint::AutoRegister(const PString & alias, const PString & gk, boo
 
 PString MyGatekeeperServer::OnLoadEndPointStatus(const PString & htmlBlock)
 {
-  PINDEX i;
   PString substitution;
 
   for (PSafePtr<H323RegisteredEndPoint> ep = GetFirstEndPoint(PSafeReadOnly); ep != NULL; ep++) {
@@ -268,7 +274,7 @@ PString MyGatekeeperServer::OnLoadEndPointStatus(const PString & htmlBlock)
     PServiceHTML::SpliceMacro(insert, "status EndPointIdentifier", ep->GetIdentifier());
 
     PStringStream addresses;
-    for (i = 0; i < ep->GetSignalAddressCount(); i++) {
+    for (PINDEX i = 0; i < ep->GetSignalAddressCount(); i++) {
       if (i > 0)
         addresses << "<br>";
       addresses << ep->GetSignalAddress(i);
@@ -276,7 +282,7 @@ PString MyGatekeeperServer::OnLoadEndPointStatus(const PString & htmlBlock)
     PServiceHTML::SpliceMacro(insert, "status CallSignalAddresses", addresses);
 
     PStringStream aliases;
-    for (i = 0; i < ep->GetAliasCount(); i++) {
+    for (PINDEX i = 0; i < ep->GetAliasCount(); i++) {
       if (i > 0)
         aliases << "<br>";
       aliases << ep->GetAlias(i);
@@ -298,10 +304,10 @@ PString MyGatekeeperServer::OnLoadEndPointStatus(const PString & htmlBlock)
 }
 
 
-PCREATE_SERVICE_MACRO_BLOCK(EndPointStatus,resource,P_EMPTY,block)
+bool MyGatekeeperServer::ForceUnregister(const PString id)
 {
-  GkStatusPage * status = dynamic_cast<GkStatusPage *>(resource.m_resource);
-  return PAssertNULL(status)->m_gkServer.OnLoadEndPointStatus(block);
+  PSafePtr<H323RegisteredEndPoint> ep = FindEndPointByIdentifier(id);
+  return ep != NULL && ep->Unregister();
 }
 
 

@@ -52,6 +52,13 @@ static const char SIPRegTTLKey[] = "TTL";
 static const char SIPCompatibilityKey[] = "Compatibility";
 
 
+PCREATE_SERVICE_MACRO_BLOCK(SIPEndPointStatus,resource,P_EMPTY,block)
+{
+  RegistrarStatusPage * status = dynamic_cast<RegistrarStatusPage *>(resource.m_resource);
+  return PAssertNULL(status)->m_registrar.OnLoadEndPointStatus(block);
+}
+
+
 ///////////////////////////////////////////////////////////////
 
 MySIPEndPoint::MySIPEndPoint(MyManager & mgr)
@@ -145,6 +152,47 @@ bool MySIPEndPoint::Configure(PConfig & cfg, PConfigPage * rsrc)
   }
 
   return true;
+}
+
+
+PString MySIPEndPoint::OnLoadEndPointStatus(const PString & htmlBlock)
+{
+  PString substitution;
+
+  for (PSafePtr<RegistrarAoR> ua(m_registeredUAs); ua != NULL; ++ua) {
+    // make a copy of the repeating html chunk
+    PString insert = htmlBlock;
+
+    PServiceHTML::SpliceMacro(insert, "status EndPointIdentifier", ua->GetAoR());
+
+    SIPURLList contacts = ua->GetContacts();
+    PStringStream addresses;
+    for (SIPURLList::iterator it = contacts.begin(); it != contacts.end(); ++it) {
+      if (it != contacts.begin())
+        addresses << "<br>";
+      addresses << *it;
+    }
+    PServiceHTML::SpliceMacro(insert, "status CallSignalAddresses", addresses);
+
+    PString str = "<i>Name:</i> " + ua->GetProductInfo().AsString();
+    str.Replace("\t", "<BR><i>Version:</i> ");
+    str.Replace("\t", " <i>Vendor:</i> ");
+    PServiceHTML::SpliceMacro(insert, "status Application", str);
+
+    PServiceHTML::SpliceMacro(insert, "status ActiveCalls", "N/A");
+
+    // Then put it into the page, moving insertion point along after it.
+    substitution += insert;
+  }
+
+  return substitution;
+}
+
+
+bool MySIPEndPoint::ForceUnregister(const PString id)
+{
+  PSafePtr<RegistrarAoR> ua = m_registeredUAs.FindWithLock(RegistrarAoR(id));
+  return ua != NULL;
 }
 
 
