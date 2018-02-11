@@ -337,7 +337,7 @@ bool FFMPEGCodec::SetResolution(unsigned width, unsigned height)
     m_picture->data[2] = (uint8_t *)(m_alignedYUV[2] = av_malloc(sz));
   }
 
-  if (m_fullFrame != NULL && !m_fullFrame->SetSize(width*height*2)) {
+  if (m_fullFrame != NULL && !m_fullFrame->SetSize(width*height*m_context->bit_rate/10000)) {
     PTRACE(1, m_prefix, "Frame handler SetResolution failed");
     return false;
   }
@@ -508,6 +508,8 @@ bool FFMPEGCodec::EncodeVideoPacket(const PluginCodec_RTP & in, PluginCodec_RTP 
 
 int FFMPEGCodec::EncodeVideoFrame(uint8_t * frame, size_t length, unsigned & flags)
 {
+  m_picture->key_frame = 0;
+
 #if LIBAVCODEC_VERSION_INT <= AV_VERSION_INT(54, 0, 0)
   int result = avcodec_encode_video(m_context, frame, length, m_picture);
   int gotPacket = result > 0;
@@ -519,9 +521,18 @@ int FFMPEGCodec::EncodeVideoFrame(uint8_t * frame, size_t length, unsigned & fla
 #endif
 
   if (result < 0) {
-    PTRACE(1, m_prefix, "Encoder failed");
-    return result;
+    CloseCodec();
+    if (m_consecutiveFails > 0 || !OpenCodec()) {
+      PTRACE(1, m_prefix, "Encoder failed, aborting!");
+      return result;
+    }
+
+    ++m_consecutiveFails;
+    PTRACE(3, m_prefix, "Encoder failed, continuing after reset.");
+    return EncodeVideoFrame(frame, length, flags);
   }
+
+  m_consecutiveFails = 0;
 
   if (m_picture->key_frame)
     flags |= PluginCodec_ReturnCoderIFrame;
@@ -644,7 +655,8 @@ void FFMPEGCodec::ErrorCallback(unsigned ffmpegLevel, const char * msg)
       (isxdigit(msg[1]) && msg[2] == '\0'))
     ptlibLevel = 6;
   // This is not really so severe an error, everything decodes fine! Happens with flash, a lot.
-  else if (strcmp(msg, "non-existing SPS 32 referenced in buffering period") == 0)
+  else if (strcmp(msg, "non-existing SPS 32 referenced in buffering period") == 0 ||
+           strcmp(msg, "vbv buffer overflow") == 0)
     ptlibLevel = 5;
   else if (ffmpegLevel > 2)
     ptlibLevel = ffmpegLevel;
