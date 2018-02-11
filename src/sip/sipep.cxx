@@ -1097,6 +1097,8 @@ SIP_PDU::StatusCodes SIPEndPoint::RegistrarAoR::OnReceivedREGISTER(SIPEndPoint &
       m_bindings[*contact].m_id = id;
   }
 
+  request.GetMIME().GetProductInfo(m_productInfo);
+
   return SIP_PDU::Successful_OK;
 }
 
