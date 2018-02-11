@@ -44,6 +44,9 @@ class OpalIVRConnection;
 
 #define OPAL_IVR_PREFIX "ivr"
 
+/// IVR supports this codec type natively, defulat to none.
+#define OPAL_OPT_IVR_NATIVE_CODEC "IVR-Native-Codec"
+
 
 /**Interactive Voice Response endpoint.
  */
@@ -115,6 +118,10 @@ class OpalIVREndPoint : public OpalLocalEndPoint
        The default behaviour returns the basic media formats for PCM/YUV.
       */
     virtual OpalMediaFormatList GetMediaFormats() const;
+
+    /** Get available string option names.
+      */
+    virtual PStringList GetAvailableStringOptions() const;
   //@}
 
   /**@name Customisation call backs */
@@ -150,12 +157,6 @@ class OpalIVREndPoint : public OpalLocalEndPoint
       */
     void SetDefaultVXML(
       const PString & vxml
-    );
-
-    /**Set the default media formats for all connections using VXML.
-      */
-    void SetDefaultMediaFormats(
-      const OpalMediaFormatList & formats
     );
 
     /** Called when VXML ends.
@@ -195,12 +196,11 @@ class OpalIVREndPoint : public OpalLocalEndPoint
     virtual PVXMLCache & GetTextToSpeechCache() { return m_ttsCache; }
 
   protected:
-    PString             m_defaultVXML;
-    OpalMediaFormatList m_defaultMediaFormats;
-    PString             m_defaultTTS;
+    PString        m_defaultVXML;
+    PString        m_defaultTTS;
     PDECLARE_MUTEX(m_defaultsMutex);
-    PVXMLCache          m_ttsCache;
-    PDirectory          m_recordDirectory;
+    PVXMLCache     m_ttsCache;
+    PDirectory     m_recordDirectory;
 
   private:
     P_REMOVE_VIRTUAL(OpalIVRConnection *, CreateConnection(OpalCall &,const PString &,void *,const PString &,OpalConnection::StringOptions *),0);
@@ -336,7 +336,6 @@ class OpalIVRConnection : public OpalLocalConnection
 
     OpalIVREndPoint   & endpoint;
     PString             m_vxmlScript;
-    OpalMediaFormatList m_vxmlMediaFormats;
     OpalVXMLSession     m_vxmlSession;
 };
 
