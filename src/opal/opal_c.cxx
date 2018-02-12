@@ -2500,6 +2500,10 @@ void OpalManager_C::HandleMediaStream(const OpalMessage & command, OpalMessageBu
     return;
   }
 
+  SET_MESSAGE_STRING(response, m_param.m_mediaStream.m_identifier, stream->GetID());
+  SET_MESSAGE_STRING(response, m_param.m_mediaStream.m_type,
+                     (stream->GetMediaFormat().GetMediaType() + (stream->IsSource() ? " out" : " in")).c_str());
+
   switch (command.m_param.m_mediaStream.m_state) {
     case OpalMediaStateNoChange :
       break;
@@ -2535,8 +2539,11 @@ void OpalManager_C::HandleMediaStream(const OpalMessage & command, OpalMessageBu
   if (m_apiVersion < 25)
     return;
 
+  unsigned volume;
+  if (connection->GetAudioVolume(stream->IsSource(), volume))
+    response->m_param.m_mediaStream.m_volume = volume > 0 ? (int)volume : -1;
+
   if (command.m_param.m_mediaStream.m_volume != 0) {
-    unsigned volume;
     if (command.m_param.m_mediaStream.m_volume < 0)
       volume = 0;
     else if (command.m_param.m_mediaStream.m_volume > 100)
