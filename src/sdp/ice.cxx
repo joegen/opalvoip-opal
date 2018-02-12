@@ -427,10 +427,10 @@ bool OpalICEMediaTransport::InternalHandleICE(SubChannels subchannel, const void
        the STUN, and it was constructed as per RFC recommendation, we can actually determine
        the type from it. */
     PNatCandidate newCandidate(PNatCandidate::RelayType, (PNatMethod::Component)(subchannel+1));
-    typedef PSTUNAttribute1<PSTUNAttribute::PRIORITY, PUInt32b> PSTUNIcePriority;
+
     PSTUNIcePriority * priAttr = PSTUNIcePriority::Find(message);
     if (priAttr != NULL) {
-      newCandidate.m_priority = priAttr->m_parameter;
+      newCandidate.m_priority = priAttr->m_priority;
       switch (newCandidate.m_priority >> 24) {
         case HostTypePriority :
           newCandidate.m_type = PNatCandidate::HostType;
@@ -451,6 +451,7 @@ bool OpalICEMediaTransport::InternalHandleICE(SubChannels subchannel, const void
           PTRACE(4, "Could not derive the candidate type from priority (" << newCandidate.m_priority << ") in STUN message.");
       }
     }
+
     newCandidate.m_baseTransportAddress = ap;
     m_remoteCandidates[subchannel].push_back(newCandidate);
     candidate = &m_remoteCandidates[subchannel].back();
