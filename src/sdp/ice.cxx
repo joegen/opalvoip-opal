@@ -57,6 +57,20 @@ const unsigned CandidateTypePriority[PNatCandidate::NumTypes] = {
   RelayTypePriority
 };
 
+bool operator==(const OpalICEMediaTransport::CandidatesArray & left, const OpalICEMediaTransport::CandidatesArray & right)
+{
+  if (left.size() != right.size())
+    return false;
+
+  for (size_t i = 0; i < left.size(); ++i) {
+    if (left[i] != right[i])
+      return false;
+  }
+
+  return true;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 
 OpalICEMediaTransport::OpalICEMediaTransport(const PString & name)
@@ -167,11 +181,12 @@ void OpalICEMediaTransport::SetCandidates(const PString & user, const PString & 
 
   bool noSuitableCandidates = true;
   for (PNatCandidateList::const_iterator it = remoteCandidates.begin(); it != remoteCandidates.end(); ++it) {
-    PTRACE(4, "Checking candidate: " << *it);
     if (it->m_protocol == "udp" && it->m_component > 0 && (size_t)it->m_component <= newCandidates.size()) {
       newCandidates[it->m_component - 1].push_back(*it);
       noSuitableCandidates = false;
     }
+    else
+      PTRACE(2, "Invalid/unsupported candidate: " << *it);
   }
 
   if (noSuitableCandidates) {
@@ -309,8 +324,22 @@ bool OpalICEMediaTransport::GetCandidates(PString & user, PString & pass, PNatCa
     newCandidates[it->m_subchannel].push_back(candidate);
   }
 
-  if (offering && m_localCandidates != newCandidates) {
-    PTRACE_IF(2, m_state == e_Answering, *this << "ICE state error, making local offer when answering remote offer");
+  if (offering) {
+    switch (m_state) {
+      case e_Disabled :
+        break;
+
+      case e_Offering:
+        if (m_localCandidates == newCandidates)
+          return true; // Duplicate, probably due to bundline, ignore
+
+        PTRACE(2, *this << "ICE local offer changed");
+        break;
+
+      default:
+        PTRACE(2, *this << "ICE state error, making local offer when in state " << m_state);
+        break;
+    }
     m_localCandidates = newCandidates;
     m_state = e_Offering;
   }
@@ -340,6 +369,9 @@ bool OpalICEMediaTransport::GetCandidates(PString & user, PString & pass, PNatCa
 
   if (candidates.empty())
     return false;
+
+  if (m_state == e_Answering)
+    m_state = e_OfferAnswered;
 
   if (m_trickle) {
       candidates.push_back(PNatCandidate(PNatCandidate::FinalType, PNatMethod::eComponent_RTP, LiteFoundation, 1));
