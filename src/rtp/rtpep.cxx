@@ -164,6 +164,7 @@ PStringList OpalRTPEndPoint::GetAvailableStringOptions() const
       OPAL_OPT_ICE_LITE,
       OPAL_OPT_ICE_TIMEOUT,
       OPAL_OPT_TRICKLE_ICE,
+      OPAL_OPT_NETWORK_COST_ICE,
     #endif
     #ifdef OPAL_OPT_SRTP_RTCP_ANY_SSRC
       OPAL_OPT_SRTP_RTCP_ANY_SSRC,

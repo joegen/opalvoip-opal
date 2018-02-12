@@ -79,6 +79,7 @@ OpalICEMediaTransport::OpalICEMediaTransport(const PString & name)
   , m_localPassword(PBase64::Encode(PRandom::Octets(18)))
   , m_lite(false)
   , m_trickle(false)
+  , m_useNetworkCost(false)
   , m_state(e_Disabled)
   , m_selectedCandidate(NULL)
 {
@@ -106,6 +107,7 @@ bool OpalICEMediaTransport::Open(OpalMediaSession & session,
   }
 
   m_trickle = options.GetBoolean(OPAL_OPT_TRICKLE_ICE);
+  m_useNetworkCost = options.GetBoolean(OPAL_OPT_NETWORK_COST_ICE);
   m_iceTimeout = options.GetVar(OPAL_OPT_ICE_TIMEOUT, session.GetConnection().GetEndPoint().GetManager().GetICETimeout());
 
   // As per RFC 5425
@@ -498,6 +500,22 @@ bool OpalICEMediaTransport::InternalHandleICE(SubChannels subchannel, const void
     if (!m_server.OnReceiveMessage(message, PSTUNServer::SocketInfo(socket)))
       return false; // Probably a authentication error
 
+    PSTUNIceNetworkCost * costAttr = PSTUNIceNetworkCost::Find(message);
+    if (costAttr != NULL) {
+      unsigned networkId = costAttr->m_networkId;
+      unsigned networkCost = costAttr->m_networkCost;
+      if (candidate->m_networkId != networkId || candidate->m_networkCost != networkCost) {
+        PTRACE(4, *this << subchannel << ","
+               " updating candidate network cost:"
+               " old-id=" << candidate->m_networkId << ","
+               " new-id=" << networkId << ","
+               " old-cost " << candidate->m_networkCost << ","
+               " new-cost=" << networkCost);
+        candidate->m_networkId = networkId;
+        candidate->m_networkCost = networkCost;
+      }
+    }
+
     if (m_state == e_Offering) {
       PTRACE(4, *this << subchannel << ", early STUN request in ICE.");
       return false; // Just eat the STUN packet until we get an an answer
@@ -527,8 +545,20 @@ bool OpalICEMediaTransport::InternalHandleICE(SubChannels subchannel, const void
        to implement at least that small part of full ICE. So, we check for if we
        already have a selected candidate, and ignore any others unless one with a
        higher priority arrives. */
-    if (m_state == e_Completed && m_selectedCandidate->m_priority >= candidate->m_priority)
-      return false;
+    if (m_state == e_Completed) {
+      bool useNewCandidate;
+      if (!m_useNetworkCost)
+        useNewCandidate = candidate->m_priority < m_selectedCandidate->m_priority;
+      else if (candidate->m_networkCost < m_selectedCandidate->m_networkCost)
+        useNewCandidate = true;
+      else if (candidate->m_networkCost > m_selectedCandidate->m_networkCost)
+        useNewCandidate = false;
+      else
+        useNewCandidate = candidate->m_priority < m_selectedCandidate->m_priority;
+      if (!useNewCandidate)
+        return false;
+      PTRACE(3, *this << subchannel << ", ICE found better candidate: " << *candidate);
+    }
   }
   else if (message.IsSuccessResponse()) {
     if (m_state != e_Offering) {
