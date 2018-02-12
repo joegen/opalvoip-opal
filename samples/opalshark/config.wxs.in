@@ -1,5 +1,5 @@
 <Include>
-    <?define ProductName = "OPAL Shark" ?>
+    <?define ProductName = "OpalShark" ?>
     <?define ProductDescription = "Media Player for RTP in PCAP files" ?>
     <?define ProductBaseFilename = "OpalShark" ?>
     <?define ProductVersion = "1.1.0" ?>
@@ -22,8 +22,9 @@
     <?define SWRESAMPLEVer = "2" ?>
 
     <?define WxDir = "$(env.WXDIR)" ?>
-    <?define WxVer = "310" ?>
-  
+    <?define WxVer = "$(env.WXVER)1" ?>
+    <?define WxCustom = "yes" ?>
+
     <?define PTLibDir = "..\..\..\ptlib" ?>
     <?define OPALDir = "..\.." ?>
 </Include>

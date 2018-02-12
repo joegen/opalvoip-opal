@@ -128,12 +128,13 @@ static SIP_PDU::StatusCodes GetStatusCodeFromReason(OpalConnection::CallEndReaso
     { OpalConnection::EndedByCallerAbort       , SIP_PDU::Failure_RequestTerminated      },
     { OpalConnection::EndedByCallForwarded     , SIP_PDU::Redirection_MovedTemporarily   },
     { OpalConnection::EndedByAnswerDenied      , SIP_PDU::GlobalFailure_Decline          },
+    { OpalConnection::EndedByLocalUser         , SIP_PDU::GlobalFailure_Decline          }, // Really should only occur after answer, but if it does beforehand, treat like EndedByAnswerDenied
+    { OpalConnection::EndedByRefusal           , SIP_PDU::GlobalFailure_Decline          }, // Really shouldn't happen, how can remote refuse a call it made? Again treat as EndedByAnswerDenied
     { OpalConnection::EndedByOutOfService      , SIP_PDU::Failure_ServiceUnavailable     },
-    { OpalConnection::EndedByRefusal           , SIP_PDU::GlobalFailure_Decline          }, // TODO - SGW - add for call reject from H323 side.
-    { OpalConnection::EndedByHostOffline       , SIP_PDU::Failure_NotFound               }, // TODO - SGW - add for no ip from H323 side.
-    { OpalConnection::EndedByNoEndPoint        , SIP_PDU::Failure_NotFound               }, // TODO - SGW - add for endpoints not running on a ip from H323 side.
-    { OpalConnection::EndedByUnreachable       , SIP_PDU::Failure_Forbidden              }, // TODO - SGW - add for avoid sip calls to SGW IP.
-    { OpalConnection::EndedByNoBandwidth       , SIP_PDU::GlobalFailure_NotAcceptable    }, // TODO - SGW - added to reject call when no bandwidth 
+    { OpalConnection::EndedByHostOffline       , SIP_PDU::Failure_NotFound               },
+    { OpalConnection::EndedByNoEndPoint        , SIP_PDU::Failure_NotFound               },
+    { OpalConnection::EndedByUnreachable       , SIP_PDU::Failure_Forbidden              },
+    { OpalConnection::EndedByNoBandwidth       , SIP_PDU::GlobalFailure_NotAcceptable    },
     { OpalConnection::EndedByInvalidConferenceID,SIP_PDU::Failure_TransactionDoesNotExist}
   };
 
@@ -779,9 +780,17 @@ bool SIPConnection::SwitchFaxMediaStreams(bool toT38)
 
   PTRACE(3, "Switching to " << (toT38 ? "T.38" : "audio") << " on " << *this);
   OpalMediaFormat format = toT38 ? OpalT38 : OpalG711uLaw;
-  if (m_ownerCall.OpenSourceMediaStreams(*this, format.GetMediaType(), 1, format))
+  if (m_ownerCall.OpenSourceMediaStreams(*this,
+                                         format.GetMediaType(),
+                                         1,
+                                         format,
+#if OPAL_VIDEO
+                                         OpalVideoFormat::eNoRole,
+#endif
+                                         true))
     return true;
 
+  PTRACE(3, "Failed switch to " << (toT38 ? "T.38" : "audio") << " on " << *this);
   m_ownerCall.ResetSwitchingT38();
   return false;
 }
@@ -2884,6 +2893,8 @@ void SIPConnection::OnReceivedRedirection(SIP_PDU & response)
 
   for (PStringOptions::iterator it = m_stringOptions.begin(); it != m_stringOptions.end(); ++it)
     whereTo.SetParamVar(OPAL_URL_PARAM_PREFIX + it->first, it->second);
+  if (!m_dialog.GetProxy().IsEmpty())
+    whereTo.SetParamVar(OPAL_PROXY_PARAM, m_dialog.GetProxy());
   PTRACE(3, "Received redirect to " << whereTo);
 
   PStringToString info = m_dialog.GetRequestURI().GetParamVars();

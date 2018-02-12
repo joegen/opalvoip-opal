@@ -45,8 +45,8 @@ public:
     StopAction          = 0x03,
     SelectVideoSource   = 0x04,
     VideoSourceSwitched = 0x05,
-    StoreAsPreset       = 0x07,
-    ActivatePreset      = 0x08
+    StoreAsPreset       = 0x06,
+    ActivatePreset      = 0x07
   };
 
   enum VideoMode {

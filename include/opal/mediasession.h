@@ -74,12 +74,39 @@ struct OpalCodecStatistics
   PThreadIdentifier m_threadIdentifier;
 };
 
+#if OPAL_ICE
+struct OpalCandidateStatistics : PNatCandidate
+{
+  OpalCandidateStatistics(const PNatCandidate & cand);
+
+  virtual void PrintOn(ostream & strm) const override;
+
+  bool m_selected;
+  unsigned m_nominations;
+  PTime    m_lastNomination;
+
+  struct STUN {
+    STUN();
+    void Count();
+
+    PTime    m_first;
+    PTime    m_last;
+    unsigned m_count;
+  } m_rxRequests, m_txRequests;
+};
+#endif // OPAL_ICE
+
 struct OpalNetworkStatistics
 {
   OpalNetworkStatistics();
 
+  PString              m_transportName;
   OpalTransportAddress m_localAddress;
   OpalTransportAddress m_remoteAddress;
+
+#if OPAL_ICE
+  std::vector<OpalCandidateStatistics> m_candidates;
+#endif
 
   PTime    m_startTime;
   uint64_t m_totalBytes;
@@ -87,8 +114,11 @@ struct OpalNetworkStatistics
   unsigned m_controlPacketsIn;  // RTCP received for this channel
   unsigned m_controlPacketsOut; // RTCP sent for this channel
   int      m_NACKs;             // (-1 is N/A)
+  uint32_t m_rtxSSRC;           // Zero indicates no separate retransmit source
+  int      m_rtxPackets;        // (-1 is N/A)
   int      m_FEC;               // (-1 is N/A, for tx is number of FEC frame sent, for rx is number of frames recovered via FEC)
   int      m_packetsLost;       // (-1 is N/A)
+  int      m_maxConsecutiveLost;// (-1 is N/A)
   int      m_packetsOutOfOrder; // (-1 is N/A)
   int      m_lateOutOfOrder;    // (-1 is N/A)
   int      m_packetsTooLate;    // (-1 is N/A)
@@ -365,6 +395,9 @@ class OpalMediaTransport : public PSafeObject, public OpalMediaTransportChannelT
 
     virtual void PrintOn(ostream & strm) const;
 
+    /// Return name of the transport.
+    const PString & GetName() const { return m_name; }
+
     /**Open the media transport.
       */
     virtual bool Open(
@@ -465,6 +498,7 @@ class OpalMediaTransport : public PSafeObject, public OpalMediaTransportChannelT
       */
     PChannel * GetChannel(SubChannels subchannel = e_Media) const;
 
+    void SetMediaTimeout(const PTimeInterval & t);
     void SetRemoteBehindNAT();
 
     /// Congestion control handling
@@ -481,11 +515,19 @@ class OpalMediaTransport : public PSafeObject, public OpalMediaTransportChannelT
     CongestionControl * SetCongestionControl(CongestionControl * cc);
     CongestionControl * GetCongestionControl() const { return m_congestionControl; }
 
+
     void ResetHasSetNATAddress();
+
+#if OPAL_STATISTICS
+    /**Get statistics for this media session.
+      */
+    virtual void GetStatistics(OpalMediaStatistics & statistics) const;
+#endif
 
   protected:
     virtual void InternalClose();
     virtual void InternalStop();
+    virtual void InternalRxData(SubChannels subchannel, const PBYTEArray & data);
 
     PString       m_name;
     bool          m_remoteBehindNAT;
@@ -506,12 +548,10 @@ class OpalMediaTransport : public PSafeObject, public OpalMediaTransportChannelT
     struct ChannelInfo
     {
       ChannelInfo(
-        OpalMediaTransport * owner = NULL,
-        SubChannels subchannel = e_AllSubChannels,
-        PChannel * channel = NULL
+        OpalMediaTransport & owner,
+        SubChannels subchannel,
+        PChannel * channel
       );
-      ChannelInfo(const ChannelInfo & other);
-      ChannelInfo & operator=(const ChannelInfo & other);
 
       void ThreadMain();
       bool HandleUnavailableError();
@@ -519,19 +559,26 @@ class OpalMediaTransport : public PSafeObject, public OpalMediaTransportChannelT
       typedef PNotifierListTemplate<PBYTEArray> NotifierList;
       NotifierList m_notifiers;
 
-      OpalMediaTransport * m_owner;
-      SubChannels          m_subchannel;
-      PChannel           * m_channel;
+      OpalMediaTransport & m_owner;
+      SubChannels    const m_subchannel;
+      PChannel     * const m_channel;
       PThread            * m_thread;
       unsigned             m_consecutiveUnavailableErrors;
       PSimpleTimer         m_timeForUnavailableErrors;
+      OpalTransportAddress m_localAddress;
+      OpalTransportAddress m_remoteAddress;
 
       PTRACE_THROTTLE(m_throttleReadPacket,4,60000);
+
+#if defined(__GNUC__) && __cplusplus < 201103
+      void operator=(const ChannelInfo &) { }
+#endif
     };
     friend struct ChannelInfo;
-    vector<ChannelInfo> m_subchannels;
-    virtual void InternalOnStart(SubChannels subchannel);
-    virtual void InternalRxData(SubChannels subchannel, const PBYTEArray & data);
+    typedef vector<ChannelInfo> ChannelArray;
+    ChannelArray m_subchannels;
+    void AddChannel(PChannel * channel);
+    virtual PChannel * AddWrapperChannels(SubChannels subchannel, PChannel * channel);
 };
 
 typedef PSafePtr<OpalMediaTransport, PSafePtrMultiThreaded> OpalMediaTransportPtr;
@@ -558,8 +605,6 @@ class OpalUDPMediaTransport : public OpalMediaTransport
     ~OpalUDPMediaTransport() { InternalStop(); }
 
     virtual bool Open(OpalMediaSession & session, PINDEX count, const PString & localInterface, const OpalTransportAddress & remoteAddress);
-    virtual OpalTransportAddress GetLocalAddress(SubChannels subchannel = e_Media) const;
-    virtual OpalTransportAddress GetRemoteAddress(SubChannels subchannel = e_Media) const;
     virtual bool SetRemoteAddress(const OpalTransportAddress & remoteAddress, SubChannels subchannel = e_Media);
     virtual bool Write(const void * data, PINDEX length, SubChannels = e_Media, const PIPSocketAddressAndPort * = NULL);
 
@@ -568,18 +613,10 @@ class OpalUDPMediaTransport : public OpalMediaTransport
   protected:
     virtual void InternalRxData(SubChannels subchannel, const PBYTEArray & data);
     virtual bool InternalSetRemoteAddress(const PIPSocket::AddressAndPort & ap, SubChannels subchannel, bool dontOverride PTRACE_PARAM(, const char * source));
+    virtual bool InternalOpenPinHole(PUDPSocket & socket);
 
     bool m_localHasRestrictedNAT;
-
-    struct SocketInfo
-    {
-      PUDPSocket         * m_socket;
-      OpalTransportAddress m_localAddress;
-      OpalTransportAddress m_remoteAddress;
-
-      SocketInfo() : m_socket(NULL) { }
-    };
-    vector<SocketInfo> m_socketInfo;
+    vector<PUDPSocket *> m_socketCache;
 };
 
 

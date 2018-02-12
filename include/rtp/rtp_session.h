@@ -142,6 +142,7 @@ class OpalRTPSession : public OpalMediaSession
       */
     virtual bool RemoveSyncSource(
       RTP_SyncSourceId id
+      PTRACE_PARAM(, const char * reason)
     );
 
     /**Get the all source identifiers.
@@ -434,7 +435,7 @@ class OpalRTPSession : public OpalMediaSession
       */
     void SetAnySyncSource(
       bool allow    ///<  Flag for allow any SSRC values
-    ) { m_allowAnySyncSource = allow; }
+    );
 
 
     /**Get the maximum out of order packets before flagging it missing.
@@ -445,7 +446,7 @@ class OpalRTPSession : public OpalMediaSession
       */
     void SetMaxOutOfOrderPackets(
       PINDEX packets ///<  Number of packets.
-    )  { m_maxOutOfOrderPackets = packets; }
+    );
 
     /**Get the maximum time to wait for an out of order packet before flagging it missing.
       */
@@ -756,6 +757,7 @@ class OpalRTPSession : public OpalMediaSession
 
       RTP_SyncSourceId            m_rtxSSRC; // Bidirectional link between primary and secondary
       RTP_DataFrame::PayloadTypes m_rtxPT;   // Sending rtx payload type, or receiving rtx primary paylaod type, only set in seconday SSRC
+      int                         m_rtxPackets;
 
       NotifierMap m_notifiers;
 
@@ -790,6 +792,7 @@ class OpalRTPSession : public OpalMediaSession
       unsigned m_senderReports;
       atomic<unsigned> m_NACKs;
       int      m_packetsLost;
+      int      m_maxConsecutiveLost;
       unsigned m_packetsOutOfOrder;
       int      m_lateOutOfOrder;
 

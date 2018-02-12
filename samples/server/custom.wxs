@@ -1,0 +1,71 @@
+<Include>
+    <DirectoryRef Id="INSTALLDIR">
+        <Component Id='main_menu.vxml'
+                   Win64="$(var.IsWin64)"
+                   Guid='*'>
+            <File Id='main_menu.vxml'
+                  Name='main_menu.vxml'
+                  Source='main_menu.vxml'
+                  KeyPath='yes' />
+        </Component>
+    </DirectoryRef>
+
+    <DirectoryRef Id="ApplicationProgramMenuFolder">
+        <Component Id="ApplicationProgramMenuShortcut"
+                   Guid="54704C8B-7822-4E06-AC20-26569F5700D1">
+            <Shortcut Id="ApplicationProgramMenuShortcutDebug"
+                      Name="$(var.ProductName) Debug"
+                      Description="Execute $(var.ProductName) in debug mode"
+                      Target="[INSTALLDIR]$(var.ProductBaseFilename).exe"
+                      Arguments="debug"
+                      WorkingDirectory="INSTALLDIR"
+                      Icon="$(var.ProductBaseFilename).ico"
+                      IconIndex="0"/>
+            <Shortcut Id="ApplicationProgramMenuShortcutStart"
+                      Name="Start $(var.ProductName)"
+                      Description="Start $(var.ProductName) as a background service"
+                      Target="[INSTALLDIR]$(var.ProductBaseFilename).exe"
+                      Arguments="start"
+                      WorkingDirectory="INSTALLDIR"
+                      Icon="$(var.ProductBaseFilename).ico"
+                      IconIndex="0"/>
+            <Shortcut Id="ApplicationProgramMenuShortcutStop"
+                      Name="Stop $(var.ProductName)"
+                      Description="Stop $(var.ProductName) running as background service"
+                      Target="[INSTALLDIR]$(var.ProductBaseFilename).exe"
+                      Arguments="stop"
+                      WorkingDirectory="INSTALLDIR"
+                      Icon="$(var.ProductBaseFilename).ico"
+                      IconIndex="0"/>
+            <Shortcut Id="ApplicationProgramMenuShortcutRegister"
+                      Name="Register $(var.ProductName)"
+                      Description="Register $(var.ProductName) as a background service"
+                      Target="[INSTALLDIR]$(var.ProductBaseFilename).exe"
+                      Arguments="register"
+                      WorkingDirectory="INSTALLDIR"
+                      Icon="$(var.ProductBaseFilename).ico"
+                      IconIndex="0"/>
+            <Shortcut Id="ApplicationProgramMenuShortcutRemove"
+                      Name="Remove $(var.ProductName)"
+                      Description="Remove registration of $(var.ProductName) as a background service"
+                      Target="[INSTALLDIR]$(var.ProductBaseFilename).exe"
+                      Arguments="remove"
+                      WorkingDirectory="INSTALLDIR"
+                      Icon="$(var.ProductBaseFilename).ico"
+                      IconIndex="0"/>
+            <RemoveFolder Id='ApplicationProgramMenuFolder'
+                            On='uninstall' />
+            <RegistryValue Root='HKCU'
+                            Key='Software\[Manufacturer]\[ProductName]'
+                            Type='string'
+                            Value=''
+                            KeyPath='yes' />
+        </Component>
+    </DirectoryRef>
+
+    <Feature Id='AdditionalFiles'
+                Title="Additional files for $(var.ProductName)"
+                Level='1'>
+        <ComponentRef Id='main_menu.vxml' />
+    </Feature>
+</Include>

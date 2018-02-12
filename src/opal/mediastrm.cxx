@@ -112,23 +112,22 @@ bool OpalMediaStream::SetMediaFormat(const OpalMediaFormat & newMediaFormat)
   if (!PAssert(newMediaFormat.IsValid(), PInvalidParameter))
     return false;
 
-  if (!LockReadWrite())
-    return false;
+  OpalMediaFormat oldMediaFormat;
+  OpalMediaPatchPtr mediaPatch;
+  {
+    P_INSTRUMENTED_LOCK_READ_WRITE(return false);
 
-  if (m_mediaFormat == newMediaFormat) {
-    UnlockReadWrite();
-    return true;
+    if (m_mediaFormat == newMediaFormat)
+      return true;
+
+    PTRACE(4, "Switch media format from " << m_mediaFormat << " to " << newMediaFormat << " on " << *this);
+
+    oldMediaFormat = m_mediaFormat;
+    m_mediaFormat = newMediaFormat;
+
+    // We make referenced copy of pointer so can't be deleted out from under us
+    mediaPatch = m_mediaPatch;
   }
-
-  PTRACE(4, "Switch media format from " << m_mediaFormat << " to " << newMediaFormat << " on " << *this);
-
-  OpalMediaFormat oldMediaFormat = m_mediaFormat;
-  m_mediaFormat = newMediaFormat;
-
-  // We make referenced copy of pointer so can't be deleted out from under us
-  OpalMediaPatchPtr mediaPatch = m_mediaPatch;
-
-  UnlockReadWrite();
 
   // Easy if we haven't done the patch yet
   if (mediaPatch == NULL)
@@ -138,8 +137,12 @@ bool OpalMediaStream::SetMediaFormat(const OpalMediaFormat & newMediaFormat)
   if (mediaPatch->ResetTranscoders())
     return true;
 
-  // Couldn't switch, put it back
-  m_mediaFormat = oldMediaFormat;
+  {
+    // Couldn't switch, put it back
+    P_INSTRUMENTED_LOCK_READ_WRITE(return false);
+    m_mediaFormat = oldMediaFormat;
+  }
+
   mediaPatch->ResetTranscoders();
 
   return false;
@@ -243,26 +246,15 @@ PBoolean OpalMediaStream::Start()
 
 PBoolean OpalMediaStream::Close()
 {
-  if (!m_isOpen)
+  if (!m_isOpen.exchange(false))
     return false;
 
   PTRACE(4, "Closing stream " << *this);
 
-  if (!LockReadWrite())
-    return false;
-
-  // Allow for race condition where it is closed in another thread during the above wait
-  if (!m_isOpen) {
-    PTRACE(4, "Already closed stream " << *this);
-    UnlockReadWrite();
-    return false;
+  {
+    P_INSTRUMENTED_LOCK_READ_WRITE(return false);
+    InternalClose();
   }
-
-  m_isOpen = false;
-
-  InternalClose();
-
-  UnlockReadWrite();
 
   m_connection.OnClosedMediaStream(*this);
   SetPatch(NULL);
@@ -467,18 +459,16 @@ bool OpalMediaStream::InternalSetPaused(bool pause, bool fromUser, bool fromPatc
   if (!fromPatch && mediaPatch != NULL)
     return mediaPatch->InternalSetPaused(pause, fromUser);
 
-  PSafeLockReadWrite mutex(*this);
-  if (!mutex.IsLocked())
-    return false;
-
-  if (m_paused == pause)
+  if (m_paused.exchange(pause) == pause)
     return false;
 
   PTRACE(3, (pause ? "Paused" : "Resumed") << " stream " << *this);
-  m_paused = pause;
 
-  if (fromUser)
+  if (fromUser) {
+    P_INSTRUMENTED_LOCK_READ_WRITE(return false);
     m_connection.OnPauseMediaStream(*this, pause);
+  }
+
   return true;
 }
 
@@ -1263,8 +1253,10 @@ bool OpalVideoMediaStream::InternalAdjustDevices()
 
 PBoolean OpalVideoMediaStream::Open()
 {
-  if (IsOpen())
+  if (m_isOpen)
     return true;
+
+  P_INSTRUMENTED_LOCK_READ_WRITE(return false);
 
   InternalAdjustDevices();
 

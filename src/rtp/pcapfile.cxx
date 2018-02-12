@@ -263,12 +263,24 @@ int OpalPCAPFile::GetRTP(RTP_DataFrame & rtp)
 
 int OpalPCAPFile::GetDecodedRTP(RTP_DataFrame & decodedRTP, DecodeContext & context)
 {
-  off_t thisPacketsFilePosition  = GetPosition();
-
   RTP_DataFrame encodedRTP;
   if (GetRTP(encodedRTP) < 0)
     return 0;
 
+  return DecodeRTP(encodedRTP, decodedRTP, context);
+}
+
+
+int OpalPCAPFile::DecodeRTP(RTP_DataFrame & encodedRTP, RTP_DataFrame & decodedRTP, DecodeContext & context)
+{
+  int result = InternalDecodeRTP(encodedRTP, decodedRTP, context);
+  context.m_lastPacketsFilePosition = GetPosition();
+  return result;
+}
+
+
+int OpalPCAPFile::InternalDecodeRTP(RTP_DataFrame & encodedRTP, RTP_DataFrame & decodedRTP, DecodeContext & context)
+{
   if (context.m_transcoder == NULL) {
     OpalMediaFormat srcFmt = GetMediaFormat(encodedRTP);
     if (!srcFmt.IsValid())
@@ -309,7 +321,7 @@ int OpalPCAPFile::GetDecodedRTP(RTP_DataFrame & decodedRTP, DecodeContext & cont
       /* If found move back to position so is read next time, then the one we
          are using now is skipped as out of order. If not found we read it
          again immediately. */
-      SetPosition(thisPacketsFilePosition);
+      SetPosition(context.m_lastPacketsFilePosition);
 
       if (missing) {
         GetRTP(encodedRTP);
@@ -379,9 +391,11 @@ OpalPCAPFile::DiscoveredRTPInfo::DiscoveredRTPInfo(const DiscoveredRTPKey & key)
 
 void OpalPCAPFile::DiscoveredRTPInfo::PrintOn(ostream & strm) const
 {
-  strm << m_src << " -> " << m_dst << ", SSRC=" << m_ssrc << ", " << m_payloadType << ", ";
+  strm << m_src << " -> " << m_dst << ", SSRC=" << m_ssrc << ", ";
+  if (m_payloadType != RTP_DataFrame::IllegalPayloadType)
+    strm << m_payloadType << ", ";
   if (m_mediaFormat.IsValid())
-    strm << ", " << m_mediaFormat;
+    strm << m_mediaFormat;
   else
     strm << "Unknown media format";
 }
@@ -564,7 +578,7 @@ bool OpalPCAPFile::DiscoverRTP(DiscoveredRTP & discoveredRTP, const ProgressNoti
       delete info;
   }
 
-  PTRACE(3, "Completed RTP discovery: " << discoveredRTP << " streams");
+  PTRACE(3, "Completed RTP discovery:\n" << setfill('\n') << setw(-4) << discoveredRTP);
 
   return Restart();
 }

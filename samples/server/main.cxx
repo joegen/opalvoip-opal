@@ -94,6 +94,7 @@ static const char LyncUriKey[] = "URI";
 static const char LyncAuthIDKey[] = "Auth ID";
 static const char LyncPasswordKey[] = "Password";
 static const char LyncDomainKey[] = "Domain";
+static const PConstString LyncCompleteTransferDelayKey("Lync Complete Transfer Delay");
 #endif
 
 #if OPAL_LID
@@ -739,11 +740,10 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
   }
 #endif
 
-  rsrc->Add(new PHTTPDividerField());
-
 #if OPAL_SCRIPT
   PStringArray languages = PScriptLanguage::GetLanguages();
   if (!languages.empty()) {
+    rsrc->Add(new PHTTPDividerField());
     PCaselessString language = cfg.GetString(ScriptLanguageKey, languages[0]);
     rsrc->Add(new PHTTPRadioField(ScriptLanguageKey, languages,
               languages.GetValuesIndex(language),"Interpreter script language."));
@@ -759,6 +759,8 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
 #endif //OPAL_SCRIPT
 
   // Routing
+  rsrc->Add(new PHTTPDividerField());
+
   PHTTPCompositeField * routeFields = new PHTTPCompositeField(ROUTES_KEY, ROUTES_SECTION,
     "Internal routing of calls to varous sub-systems.<p>"
     "The A Party and B Party columns are regular expressions for the call "
@@ -1103,6 +1105,10 @@ bool MyLyncEndPoint::Configure(PConfig & cfg, PConfigPage * rsrc)
       }
       break;
   }
+
+  m_transferDelay = rsrc->AddIntegerField(LyncCompleteTransferDelayKey, 0, 65535, 500, "milliseconds",
+                                          "Optional delay before completing consultative transfer");
+  PTRACE(4, "Config: m_transferDelay=" << m_transferDelay);
 
   return true;
 }

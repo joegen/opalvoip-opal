@@ -79,6 +79,15 @@ extern "C" {
   #define PICTURE_HEIGHT     m_picture->height
 #endif
 
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(56, 27, 0)
+  #define AV_CODEC_FLAG_TRUNCATED              CODEC_FLAG_TRUNCATED
+  #define AV_CODEC_FLAG_AC_PRED                CODEC_FLAG_AC_PRED
+  #define AV_CODEC_FLAG_4MV                    CODEC_FLAG_4MV
+  #define AV_CODEC_FLAG_LOOP_FILTER            CODEC_FLAG_LOOP_FILTER
+  #define AV_CODEC_FLAG2_DROP_FRAME_TIMECODE   CODEC_FLAG2_DROP_FRAME_TIMECODE
+  #define AV_CODEC_FLAG2_CHUNKS                CODEC_FLAG2_CHUNKS
+#endif
+
 
 /////////////////////////////////////////////////////////////////
 

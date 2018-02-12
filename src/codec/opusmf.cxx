@@ -50,9 +50,9 @@ class OpalOpusFormat : public OpalAudioFormatInternal
                                 1, 1, 1,
                                 sampleRate, 0, channels)
     {
+#if OPAL_SDP
       OpalMediaOption * option;
 
-#if OPAL_SDP
       option = new OpalMediaOptionBoolean(UseInBandFEC_OptionName, true, OpalMediaOption::AndMerge, DEFAULT_USE_DTX);
       option->SetFMTP(UseInBandFEC_FMTPName, NULL);
       AddOption(option);

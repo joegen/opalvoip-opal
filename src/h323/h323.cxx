@@ -400,6 +400,7 @@ bool H323Connection::SetAlertingType(const PString & info)
 PString H323Connection::GetSupportedFeatures() const
 {
   PStringStream strm;
+#if OPAL_H460
   if (m_features != NULL) {
     bool outputNewline = false;
     for (H460_FeatureSet::const_iterator it = m_features->begin(); it != m_features->end(); ++it) {
@@ -410,6 +411,7 @@ PString H323Connection::GetSupportedFeatures() const
       strm << it->first;
     }
   }
+#endif // OPAL_H460
   return strm;
 }
 
@@ -1509,11 +1511,6 @@ PBoolean H323Connection::OnReceivedSignalConnect(const H323SignalPDU & pdu)
                                                 : MonitorCallStatusTime)
                                         : PMaxTimeInterval);
 
-  // Set connected phase now so logic for not sending media before connected is not triggered
-  PSafePtr<OpalConnection> otherParty = GetOtherPartyConnection();
-  if (otherParty != NULL && !otherParty->IsNetworkConnection())
-    InternalOnConnected();
-
   // Check for fastStart data and start fast
   if (connect.HasOptionalField(H225_Connect_UUIE::e_fastStart))
     HandleFastStartAcknowledge(connect.m_fastStart);
@@ -1523,6 +1520,11 @@ PBoolean H323Connection::OnReceivedSignalConnect(const H323SignalPDU & pdu)
     m_fastStartState = FastStartDisabled;
     m_fastStartChannels.RemoveAll();
   }
+
+  // Set connected phase now so logic for not sending media before connected is not triggered
+  PSafePtr<OpalConnection> otherParty = GetOtherPartyConnection();
+  if (otherParty != NULL && !otherParty->IsNetworkConnection())
+    InternalOnConnected();
 
   // Check that it has the H.245 channel connection info
   if (!CreateOutgoingControlChannel(connect,
@@ -2212,6 +2214,9 @@ void H323Connection::SetOutgoingBearerCapabilities(H323SignalPDU & pdu) const
 
 void H323Connection::SetIncomingBearerCapabilities(const H323SignalPDU & pdu)
 {
+  if (!m_stringOptions.GetBoolean(OPAL_OPT_Q931_BEARER_BANDWIDTH, true))
+    return;
+
   // Make sure we clamp our bandwidth to whatever they said
   Q931::InformationTransferCapability bearerCap;
   unsigned transferRate;
@@ -2615,9 +2620,8 @@ PBoolean H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_Octe
 
     PTRACE(4, "H225\tFast start open:\n  " << setprecision(2) << open);
     bool transmitter = open.HasOptionalField(H245_OpenLogicalChannel::e_reverseLogicalChannelParameters);
-    const H245_DataType & dataType =
-          transmitter ? open.m_reverseLogicalChannelParameters.m_dataType
-                   : open.m_forwardLogicalChannelParameters.m_dataType;
+    const H245_DataType & dataType = transmitter ? open.m_reverseLogicalChannelParameters.m_dataType
+                                                 : open.m_forwardLogicalChannelParameters.m_dataType;
 
     const H245_H2250LogicalChannelParameters * param = NULL;
     if (transmitter && open.m_reverseLogicalChannelParameters.m_multiplexParameters.GetTag() ==
@@ -2632,31 +2636,32 @@ PBoolean H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_Octe
       if (channel != NULL) {
         OpalMediaStreamPtr mediaStream = channel->GetMediaStream();
         if (mediaStream == NULL) {
-          PTRACE(2, "H225\tFast restart has logical channel but no media stream!");
+          PTRACE(2, "H225\tFast start has logical channel but no media stream!");
           continue;
         }
 
         if (dataType.GetTag() == H245_DataType::e_nullData) {
-          PTRACE(3, "H225\tFast restart pausing " << *mediaStream);
+          PTRACE(3, "H225\tFast start pausing " << *mediaStream);
           channel->GetMediaStream()->SetPaused(true);
           continue;
         }
 
         unsigned error = 1000;
         if (!channel->OnReceivedPDU(open, error)) {
-          PTRACE(2, "H225\tFast restart capability error: " << error);
+          PTRACE(2, "H225\tFast start capability error: " << error);
           continue;
         }
 
-        PTRACE(3, "H225\tFast restart resuming " << *mediaStream);
+        PTRACE(3, "H225\tFast start resuming " << *mediaStream);
         channel->GetMediaStream()->SetPaused(false);
         pauseChannels = false;
         continue;
       }
-      PTRACE(4, "H225\tFast restart could not find session " << (unsigned)param->m_sessionID << (transmitter ? " from" : " to") << " remote");
+      PTRACE(4, "H225\tFast start could not find existing channel using session "
+             << (unsigned)param->m_sessionID << (transmitter ? " to" : " from") << " remote");
     }
     else
-      PTRACE(4, "H225\tFast restart cannot be performed without multiplexParameters");
+      PTRACE(4, "H225\tFast start cannot be performed without multiplexParameters");
 
     if (dataType.GetTag() == H245_DataType::e_nullData)
       continue;
@@ -2716,14 +2721,14 @@ PBoolean H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_Octe
     if (m_mediaStreams.IsEmpty())
       PTRACE(3, "H225\tAll fast start OLC's nullData, deferring open");
     else if (pauseChannels) {
-      PTRACE(3, "H225\tFast restart, pausing media streams");
+      PTRACE(3, "H225\tFast start, pausing media streams");
       for (OpalMediaStreamPtr stream(m_mediaStreams); stream != NULL; ++stream) {
         stream->SetPaused(true);
         OpalRTPSession * session = dynamic_cast<OpalRTPSession *>(GetMediaSession(stream->GetSessionID()));
         if (session != NULL) {
           const RTP_SyncSourceArray ssrcs = session->GetSyncSources(OpalRTPSession::e_Receiver);
           for (RTP_SyncSourceArray::const_iterator it = ssrcs.begin(); it != ssrcs.end(); ++it)
-            session->RemoveSyncSource(*it);
+            session->RemoveSyncSource(*it PTRACE_PARAM(, "H.323 fast start, nothing to open"));
         }
       }
     }
@@ -4171,6 +4176,36 @@ void H323Connection::OnSetLocalCapabilities()
   else if (rfc2833Capability != NULL)
     m_localCapabilities.SetCapability(0, P_MAX_INDEX, rfc2833Capability);
 
+  // Make sure all the payload types are between 96 and 127, first get all pt's in use
+  std::map<RTP_DataFrame::PayloadTypes, PINDEX> ptMap;
+  for (PINDEX i = 0; i < m_localCapabilities.GetSize(); ++i)
+    ptMap[m_localCapabilities[i].GetMediaFormat().GetPayloadType()] = i;
+
+  // Remove "known" ones
+  std::map<RTP_DataFrame::PayloadTypes, PINDEX>::iterator it;
+  while ((it = ptMap.begin()) != ptMap.end() && it->first <= RTP_DataFrame::LastKnownPayloadType)
+    ptMap.erase(it);
+
+  // Adjust those below 96
+  while ((it = ptMap.begin()) != ptMap.end() && it->first < RTP_DataFrame::DynamicBase) {
+    H323Capability & capability = m_localCapabilities[it->second];
+
+    RTP_DataFrame::PayloadTypes pt = RTP_DataFrame::DynamicBase;
+    while (ptMap.find(pt) != ptMap.end())
+      pt = (RTP_DataFrame::PayloadTypes)(pt + 1);
+    if (pt == RTP_DataFrame::IllegalPayloadType)
+      PTRACE(2, "Cannot reallocate payload type " << it->first << " for " << capability);
+    else {
+      PTRACE(3, "Reallocating payload type " << it->first << " to " << pt << " for " << capability);
+      OpalMediaFormat mediaFormat = capability.GetMediaFormat();
+      mediaFormat.SetPayloadType(pt);
+      capability.UpdateMediaFormat(mediaFormat);
+      ptMap[pt] = it->second;
+    }
+
+    ptMap.erase(it);
+  }
+
   m_localMediaFormats = m_localCapabilities.GetMediaFormats();
   PTRACE(3, "H323\tSetLocalCapabilities: "
          << setfill(',') << m_localMediaFormats << '\n'
@@ -4955,7 +4990,7 @@ PBoolean H323Connection::OnConflictingLogicalChannel(H323Channel & conflictingCh
 
   bool fromRemote = conflictingChannel.GetNumber().IsFromRemote();
   H323Channel * otherChannel = FindChannel(sessionID, !fromRemote);
-  H323Capability * capability;
+  const H323Capability * conflictingCapability;
 
   if (fromRemote) {
     if (otherChannel != NULL) {
@@ -4974,7 +5009,7 @@ PBoolean H323Connection::OnConflictingLogicalChannel(H323Channel & conflictingCh
       }
     }
 
-    capability = m_remoteCapabilities.FindCapability(conflictingChannel.GetCapability());
+    conflictingCapability = &conflictingChannel.GetCapability();
   }
   else {
     // The only way for the following is if we had two OLC's running at the same
@@ -4992,13 +5027,21 @@ PBoolean H323Connection::OnConflictingLogicalChannel(H323Channel & conflictingCh
     }
 
     CloseLogicalChannelNumber(conflictingChannel.GetNumber());
-    capability = m_remoteCapabilities.FindCapability(otherChannel->GetCapability());
+
+    conflictingCapability = &otherChannel->GetCapability();
   }
 
+  H323Capability * capability = m_remoteCapabilities.FindCapability(*conflictingCapability);
   if (capability == NULL) {
     PTRACE(1, "H323\tCould not resolve conflict, capability not available on remote.");
     return true;
   }
+
+  /* Update the new capability we are about to use with same media format as conflicting
+      channel capability that is remaining behind. This assures any other random
+      incompatibilities, e.g. payload type used for FECC-RTP, are removed. */
+  if (capability)
+    capability->UpdateMediaFormat(conflictingCapability->GetMediaFormat());
 
   return m_logicalChannels->Open(*capability, sessionID, 0, mediaStream);
 }

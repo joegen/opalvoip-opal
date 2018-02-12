@@ -2792,8 +2792,17 @@ void SIPDialogContext::Update(const SIP_PDU & pdu)
 
   /* Update the local/remote fields */
   if (pdu.GetMethod() == SIP_PDU::NumMethods) {
-    SetRemoteURI(mime.GetTo());
-    SetLocalURI(mime.GetFrom());
+    /* Sotel Systems sends 100 Trying with a To: field tag just before sending
+     * 401 Unauthorized. This causes us to save this tag and use it again on the
+     * ensuing invite. This is bad and is rejected. Here we check for Trying and do
+     * not save away the tag in that case.
+     */
+    if (pdu.GetStatusCode() == 100)
+      PTRACE(4, "Not updating remote URI from 100 Trying response To header");
+    else {
+      SetRemoteURI(mime.GetTo());
+      SetLocalURI(mime.GetFrom());
+    }
   }
   else {
     SetLocalURI(mime.GetTo()); // Will add a tag
@@ -3603,6 +3612,7 @@ SIPParameters::SIPParameters(const PString & aor, const PString & remote)
   , m_restoreTime(30)
   , m_minRetryTime(PMaxTimeInterval)
   , m_maxRetryTime(PMaxTimeInterval)
+  , m_retryForbidden(false)
   , m_userData(NULL)
 {
 }

@@ -154,7 +154,7 @@ bool MyManager::Initialise(PArgList & args, bool, const PString &)
   }
 
   if (args.HasOption('F')) {
-    stringOptions.SetBoolean(OPAL_NO_G111_FAX, true);
+    stringOptions.SetBoolean(OPAL_NO_G711_FAX, true);
     output << "Disabled fallback to audio (G.711) mode on T.38 switch failure\n";
   }
 
@@ -277,15 +277,17 @@ void MyManager::OnClearedCall(OpalCall & call)
       *LockedOutput() << "Call error: " << OpalConnection::GetCallEndReasonText(call.GetCallEndReason());
   }
 
-  if (GetCallCount() == 1)
+  if (GetCallCount() == 1) {
+    PTRACE(3, "Fax", "Last call cleared, exiting application.");
     EndRun();
+  }
 }
 
 
 void MyFaxEndPoint::OnFaxCompleted(OpalFaxConnection & connection, bool failed)
 {
 #if OPAL_STATISTICS
-  OpalConsoleManager::LockedStream lockedOutput(dynamic_cast<MyManager &>(GetManager()));
+  OpalManagerConsole::LockedStream lockedOutput(dynamic_cast<OpalManagerConsole &>(GetManager()));
   ostream & output = lockedOutput;
 
   OpalMediaStatistics stats;

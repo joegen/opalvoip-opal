@@ -348,10 +348,20 @@ PBoolean OpalCall::OnEstablished(OpalConnection & connection)
 
 PSafePtr<OpalConnection> OpalCall::GetOtherPartyConnection(const OpalConnection & connection) const
 {
-  PTRACE(4, "GetOtherPartyConnection " << connection);
-
   PSafePtr<OpalConnection> otherConnection;
   EnumerateConnections(otherConnection, PSafeReference, &connection);
+#if PTRACING
+  static unsigned Level = 4;
+  if (PTrace::CanTrace(Level)) {
+      ostream & trace = PTRACE_BEGIN(4);
+      trace << "GetOtherPartyConnection: connection=" << connection << ", other=";
+      if (otherConnection == NULL)
+          trace << "<null>";
+      else
+          trace << *otherConnection;
+      trace << PTrace::End;
+  }
+#endif // PTRACING
   return otherConnection;
 }
 
@@ -393,6 +403,10 @@ bool OpalCall::IsOnHold(bool fromRemote) const
 bool OpalCall::Transfer(const PString & newAddress, OpalConnection * connection)
 {
   PTRACE_CONTEXT_ID_PUSH_THREAD(this);
+
+  PSafeLockReadWrite lock(*this);
+  if (!lock.IsLocked())
+    return false;
 
   PCaselessString prefix;
   PINDEX colon = newAddress.Find(':');

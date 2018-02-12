@@ -80,6 +80,10 @@ const OpalMediaFormat & GetOpalT38()
         AddOption(new OpalMediaOptionString(OPAL_FaxStationIdentifier, false, "-"));
         AddOption(new OpalMediaOptionString(OPAL_FaxHeaderInfo, false));
         AddOption(new OpalMediaOptionBoolean(OPAL_UDPTLRawMode, false, OpalMediaOption::NoMerge, false));
+        AddOption(new OpalMediaOptionString(OPAL_UDPTLRedundancy, false));
+        AddOption(new OpalMediaOptionInteger(OPAL_UDPTLRedundancyInterval, false, OpalMediaOption::NoMerge, 0, 0, 86400));
+        AddOption(new OpalMediaOptionBoolean(OPAL_UDPTLOptimiseRetransmit, false, OpalMediaOption::NoMerge, false));
+        AddOption(new OpalMediaOptionInteger(OPAL_UDPTLKeepAliveInterval, false, OpalMediaOption::NoMerge, 0, 0, 86400));
       }
   } const T38;
   return T38;

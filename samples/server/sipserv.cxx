@@ -63,7 +63,11 @@ MySIPEndPoint::MySIPEndPoint(MyManager & mgr)
   , m_autoRegisterSkinny(false)
 #endif
   , m_manager(mgr)
+#if OPAL_SKINNY
   , m_ciscoDeviceType(OpalSkinnyEndPoint::DefaultDeviceType)
+#else
+  , m_ciscoDeviceType(0)
+#endif
   , m_ciscoDevicePattern("SEPFFFFFFFFFFFF")
 {
 }

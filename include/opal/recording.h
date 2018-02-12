@@ -54,7 +54,7 @@ class OpalRecordManager : public PObject
 
         Currently only WAV files, and for WIndows only, AVI files, are supported.
         Howeer this factory allows an application to add their own file formats. */
-    typedef PFactory<OpalRecordManager, PCaselessString> Factory;
+    typedef PFactory<OpalRecordManager, PFilePathString> Factory;
 
 #if OPAL_VIDEO
     enum VideoMode {
@@ -133,30 +133,17 @@ class OpalRecordManager : public PObject
       }
     };
 
-    virtual ~OpalRecordManager() { }
-
     /**Open the recording file.
       */
-    bool Open(const PFilePath & fn)
-    {
-      return OpenFile(fn);
-    }
+    bool Open(const PFilePath & fn);
 
     /**Open the recoding file indicating audio mode.
       */
-    bool Open(const PFilePath & fn, bool mono) // For backward compatibility
-    {
-      m_options.m_stereo = !mono;
-      return OpenFile(fn);
-    }
+    bool Open(const PFilePath & fn, bool mono); // For backward compatibility
 
     /**Open the recording file indicating the options to be used.
       */
-    bool Open(const PFilePath & fn, const Options & options)
-    {
-      m_options = options;
-      return Open(fn);
-    }
+    bool Open(const PFilePath & fn, const Options & options);
 
     /**Indicate if the recording file is open.
       */
@@ -224,17 +211,6 @@ class OpalRecordManager : public PObject
     Options m_options;
 };
 
-// Force linking of modules
-
-#ifdef P_WAVFILE
-PFACTORY_LOAD(OpalWAVRecordManager);
-#endif
-
-#if OPAL_VIDEO && P_VFW_CAPTURE
-PFACTORY_LOAD(OpalAVIRecordManager);
-#endif
-
 #endif // OPAL_HAS_MIXER
-
 
 #endif // OPAL_OPAL_AUDIORECORD_H

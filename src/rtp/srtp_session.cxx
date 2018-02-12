@@ -65,7 +65,7 @@ static const unsigned MaxConsecutiveErrors = 100;
 /////////////////////////////////////////////////////////////////////////////////////
 //
 //  SRTP implementation using Cisco libSRTP
-//  See http://srtp.sourceforge.net/srtp.html
+//  See https://github.com/cisco/libsrtp
 //
 // Will use OS installed version for Linux, for DevStudio uses built in version
 //
@@ -76,7 +76,7 @@ static const unsigned MaxConsecutiveErrors = 100;
   #include <srtp.h>
   #pragma comment(lib, "ws2_32.lib") // As libsrtp uses htonl etc
 #elif HAS_SRTP_SRTP_H
-  #include <srtp/srtp.h>
+  #include <srtp2/srtp.h>
 #else
   #include <srtp.h>
 #endif
@@ -85,7 +85,7 @@ static const unsigned MaxConsecutiveErrors = 100;
 ///////////////////////////////////////////////////////
 
 #if PTRACING
-static bool CheckError(err_status_t err,
+static bool CheckError(srtp_err_status_t err,
                        const char * fn,
                        const char * file,
                        int line,
@@ -93,7 +93,7 @@ static bool CheckError(err_status_t err,
                        RTP_SyncSourceId ssrc = 0,
                        RTP_SequenceNumber sn = 0)
 {
-  if (err == err_status_ok)
+  if (err == srtp_err_status_ok)
     return true;
 
   static unsigned const Level = 2;
@@ -105,77 +105,86 @@ static bool CheckError(err_status_t err,
       trace << *session;
   trace << "Library error " << err << " from " << fn << "() - ";
   switch (err) {
-    case err_status_fail :
+    case srtp_err_status_fail :
       trace << "unspecified failure";
       break;
-    case err_status_bad_param :
+    case srtp_err_status_bad_param :
       trace << "unsupported parameter";
       break;
-    case err_status_alloc_fail :
+    case srtp_err_status_alloc_fail :
       trace << "couldn't allocate memory";
       break;
-    case err_status_dealloc_fail :
+    case srtp_err_status_dealloc_fail :
       trace << "couldn't deallocate properly";
       break;
-    case err_status_init_fail :
+    case srtp_err_status_init_fail :
       trace << "couldn't initialize";
       break;
-    case err_status_terminus :
+    case srtp_err_status_terminus :
       trace << "can't process as much data as requested";
       break;
-    case err_status_auth_fail :
+    case srtp_err_status_auth_fail :
       trace << "authentication failure";
       break;
-    case err_status_cipher_fail :
+    case srtp_err_status_cipher_fail :
       trace << "cipher failure";
       break;
-    case err_status_replay_fail :
+    case srtp_err_status_replay_fail :
       trace << "replay check failed (bad index)";
       break;
-    case err_status_replay_old :
+    case srtp_err_status_replay_old :
       trace << "replay check failed (index too old)";
       break;
-    case err_status_algo_fail :
+    case srtp_err_status_algo_fail :
       trace << "algorithm failed test routine";
       break;
-    case err_status_no_such_op :
+    case srtp_err_status_no_such_op :
       trace << "unsupported operation";
       break;
-    case err_status_no_ctx :
+    case srtp_err_status_no_ctx :
       trace << "no appropriate context found";
       break;
-    case err_status_cant_check :
+    case srtp_err_status_cant_check :
       trace << "unable to perform desired validation";
       break;
-    case err_status_key_expired :
+    case srtp_err_status_key_expired :
       trace << "can't use key any more";
       break;
-    case err_status_socket_err :
+    case srtp_err_status_socket_err :
       trace << "error in use of socket";
       break;
-    case err_status_signal_err :
+    case srtp_err_status_signal_err :
       trace << "error in use POSIX signals";
       break;
-    case err_status_nonce_bad :
+    case srtp_err_status_nonce_bad :
       trace << "nonce check failed";
       break;
-    case err_status_read_fail :
+    case srtp_err_status_read_fail :
       trace << "couldn't read data";
       break;
-    case err_status_write_fail :
+    case srtp_err_status_write_fail :
       trace << "couldn't write data";
       break;
-    case err_status_parse_err :
+    case srtp_err_status_parse_err :
       trace << "error pasring data";
       break;
-    case err_status_encode_err :
+    case srtp_err_status_encode_err :
       trace << "error encoding data";
       break;
-    case err_status_semaphore_err :
+    case srtp_err_status_semaphore_err :
       trace << "error while using semaphores";
       break;
-    case err_status_pfkey_err :
+    case srtp_err_status_pfkey_err :
       trace << "error while using pfkey";
+      break;
+    case srtp_err_status_bad_mki :
+      trace << "MKI present in packet is invalid";
+      break;
+    case srtp_err_status_pkt_idx_old :
+      trace << "packet index is too old to consider";
+      break;
+    case srtp_err_status_pkt_idx_adv :
+      trace << "packet index advanced, reset needed";
       break;
     default :
       trace << "unknown error (" << err << ')';
@@ -190,54 +199,31 @@ static bool CheckError(err_status_t err,
 
 #define CHECK_ERROR(fn, param, ...) CheckError(fn param, #fn, __FILE__, __LINE__, ##__VA_ARGS__)
 #else //PTRACING
-#define CHECK_ERROR(fn, param, ...) ((fn param) == err_status_ok)
+#define CHECK_ERROR(fn, param, ...) ((fn param) == srtp_err_status_ok)
 #endif //PTRACING
 
-#ifndef OPAL_SRTP_ERROR_CONST
-  #define OPAL_SRTP_ERROR_CONST
-#endif
-
 extern "C" {
-  err_reporting_level_t err_level = err_level_none;
-
-  err_status_t err_reporting_init(OPAL_SRTP_ERROR_CONST char *)
-  {
-    return err_status_ok;
-  }
-
-  void err_report(int PTRACE_PARAM(priority), OPAL_SRTP_ERROR_CONST char * PTRACE_PARAM(format), ...)
+  void srtp_log_handler(srtp_log_level_t PTRACE_PARAM(srtpLevel), const char * PTRACE_PARAM(msg), void *)
   {
 #if PTRACING
-    va_list args;
-    va_start(args, format);
-
-    unsigned level;
-    switch (priority) {
-      case err_level_emergency:
-      case err_level_alert:
-      case err_level_critical:
-         level = 0;
+    unsigned traceLevel;
+    switch (srtpLevel) {
+      case srtp_log_level_error:
+         traceLevel = 1;
          break;
-      case err_level_error:
-         level = 1;
+      case srtp_log_level_warning:
+         traceLevel = 2;
          break;
-      case err_level_warning:
-         level = 2;
+      case srtp_log_level_info:
+         traceLevel = 4;
          break;
-      case err_level_notice:
-         level = 3;
-         break;
-      case err_level_info:
-         level = 4;
-         break;
-      case err_level_debug:
-      case err_level_none:
+      case srtp_log_level_debug:
       default:
-         level = 5;
+         traceLevel = 5;
          break;
     }
 
-    PTRACE(level, "libsrtp: " << pvsprintf(format, args));
+    PTRACE(traceLevel, "libsrtp2: " << msg);
 #endif //PTRACING
   }
 };
@@ -250,6 +236,8 @@ class PSRTPInitialiser : public PProcessStartup
   public:
     virtual void OnStartup()
     {
+      PTRACE(2, "Initialising SRTP: " << srtp_get_version_string());
+      CHECK_ERROR(srtp_install_log_handler,(srtp_log_handler, NULL));
       CHECK_ERROR(srtp_init,());
     }
 };
@@ -277,7 +265,7 @@ class OpalSRTPCryptoSuite_AES_CM_128_HMAC_SHA1_80 : public OpalSRTPCryptoSuite
     virtual const char * GetOID() const { return "0.0.8.235.0.4.91"; }
 #endif
 
-    virtual void SetCryptoPolicy(struct crypto_policy_t & policy) const { crypto_policy_set_aes_cm_128_hmac_sha1_80(&policy); }
+    virtual void SetCryptoPolicy(struct srtp_crypto_policy_t & policy) const { srtp_crypto_policy_set_aes_cm_128_hmac_sha1_80(&policy); }
 };
 
 PFACTORY_CREATE(OpalMediaCryptoSuiteFactory, OpalSRTPCryptoSuite_AES_CM_128_HMAC_SHA1_80, AES_CM_128_HMAC_SHA1_80, true);
@@ -295,7 +283,7 @@ class OpalSRTPCryptoSuite_AES_CM_128_HMAC_SHA1_32 : public OpalSRTPCryptoSuite
     virtual const char * GetOID() const { return "0.0.8.235.0.4.92"; }
 #endif
 
-    virtual void SetCryptoPolicy(struct crypto_policy_t & policy) const { crypto_policy_set_aes_cm_128_hmac_sha1_32(&policy); }
+    virtual void SetCryptoPolicy(struct srtp_crypto_policy_t & policy) const { srtp_crypto_policy_set_aes_cm_128_hmac_sha1_32(&policy); }
 };
 
 PFACTORY_CREATE(OpalMediaCryptoSuiteFactory, OpalSRTPCryptoSuite_AES_CM_128_HMAC_SHA1_32, AES_CM_128_HMAC_SHA1_32, true);
@@ -593,11 +581,6 @@ OpalMediaCryptoKeyInfo * OpalSRTPSession::IsCryptoSecured(bool rx) const
 
 bool OpalSRTPSession::Open(const PString & localInterface, const OpalTransportAddress & remoteAddress)
 {
-  for (int i = 0; i < 2; ++i) {
-    for (int j = 0; j < 2; j++)
-      m_consecutiveErrors[i][j] = 0;
-  }
-
   m_anyRTCP_SSRC = GetSyncSourceIn() == 0 && m_stringOptions.GetBoolean(OPAL_OPT_SRTP_RTCP_ANY_SSRC, m_anyRTCP_SSRC);
 
   return OpalRTPSession::Open(localInterface, remoteAddress);
@@ -776,6 +759,10 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveData(RTP_DataFrame &
     return e_IgnorePacket;
   }
 
+  /* Need to have a receiver SSRC (their sender) or we can't decrypt the RTCP
+     packet. Applies only if remote did not tell us about SSRC's via signalling
+     (e.g. SDP) and we just acceting anything, if it did tell us valid SSRC's
+     the this fails and we don't use the RTP data as it may be some spoofing. */
   if (UseSyncSource(ssrc, e_Receiver, false) == NULL)
     return e_IgnorePacket;
 
@@ -809,8 +796,6 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveControl(RTP_ControlF
     OPAL_SRTP_TRACE(2, e_Receiver, e_Control, ssrc, 1, "keys not set, cannot protect control");
     return e_IgnorePacket;
   }
-
-
 
   /* Need to have a receiver SSRC (their sender) or we can't decrypt the RTCP
      packet. Generally, the SSRC info is created on the fly (m_anyRTCP_SSRC==true),

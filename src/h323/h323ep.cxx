@@ -132,9 +132,9 @@ H323EndPoint::H323EndPoint(OpalManager & manager)
   manager.AttachEndPoint(this, OPAL_PREFIX_H323S);
 
   SetCompatibility(H323Connection::e_NoMultipleTunnelledH245, "Cisco IOS");
-  SetCompatibility(H323Connection::e_BadMasterSlaveConflict,  "NetMeeting|HDX");
+  SetCompatibility(H323Connection::e_BadMasterSlaveConflict,  "NetMeeting|HDX|RealPresence");
   SetCompatibility(H323Connection::e_NoUserInputCapability,   "AltiServ-ITG");
-  SetCompatibility(H323Connection::e_H224MustBeSession3,      "HDX|Tandberg");
+  SetCompatibility(H323Connection::e_H224MustBeSession3,      "HDX|Tandberg|RealPresence");
   SetCompatibility(H323Connection::e_NeedMSDAfterNonEmptyTCS, "Avaya|Radvision");
   SetCompatibility(H323Connection::e_ForceMaintainConnection, "Multivantage");
 
@@ -823,7 +823,8 @@ PSafePtr<OpalConnection> H323EndPoint::MakeConnection(OpalCall & call,
 PStringList H323EndPoint::GetAvailableStringOptions() const
 {
   static char const * const StringOpts[] = {
-    OPAL_OPT_Q931_BEARER_CAPS
+    OPAL_OPT_Q931_BEARER_CAPS,
+    OPAL_OPT_Q931_BEARER_BANDWIDTH
   };
 
   PStringList list = OpalRTPEndPoint::GetAvailableStringOptions();

@@ -51,29 +51,34 @@ class PASN_OctetString;
 
 #define OPAL_OPT_STATION_ID  "Station-Id"      ///< String option for fax station ID string
 #define OPAL_OPT_HEADER_INFO "Header-Info"     ///< String option for transmitted fax page header
-#define OPAL_NO_G111_FAX     "No-G711-Fax"     ///< Suppress G.711 fall back
+#define OPAL_NO_G711_FAX     "No-G711-Fax"     ///< Suppress G.711 fall back
 #define OPAL_SWITCH_ON_CED   "Switch-On-CED"   ///< Try switch to T.38 on receipt of CED tone
 #define OPAL_T38_SWITCH_TIME "T38-Switch-Time" ///< Seconds for fail safe switch to T.38 mode
 
 #define OPAL_FAX_TIFF_FILE "TIFF-File"
 
-#define OPAL_T38FaxRateManagement   "T38FaxRateManagement"
-#define OPAL_T38localTCF            "localTCF"
-#define OPAL_T38transferredTCF      "transferredTCF"
-#define OPAL_T38FaxVersion          "T38FaxVersion"
-#define OPAL_T38MaxBitRate          "T38MaxBitRate"
-#define OPAL_T38FaxMaxBuffer        "T38FaxMaxBuffer"
-#define OPAL_T38FaxMaxDatagram      "T38FaxMaxDatagram"
-#define OPAL_T38FaxUdpEC            "T38FaxUdpEC"
-#define OPAL_T38UDPFEC              "t38UDPFEC"
-#define OPAL_T38UDPRedundancy       "t38UDPRedundancy"
-#define OPAL_T38FaxFillBitRemoval   "T38FaxFillBitRemoval"
-#define OPAL_T38FaxTranscodingMMR   "T38FaxTranscodingMMR"
-#define OPAL_T38FaxTranscodingJBIG  "T38FaxTranscodingJBIG"
-#define OPAL_T38UseECM              "Use-ECM"
-#define OPAL_FaxStationIdentifier   "Station-Identifier"
-#define OPAL_FaxHeaderInfo          "Header-Info"
-#define OPAL_UDPTLRawMode           "UDPTL-Raw-Mode"
+#define OPAL_T38FaxRateManagement    "T38FaxRateManagement"       ///< ITU-T T.38 parameter
+#define OPAL_T38localTCF             "localTCF"                   ///< Enum value for T38FaxRateManagement
+#define OPAL_T38transferredTCF       "transferredTCF"             ///< Enum value for T38FaxRateManagement
+#define OPAL_T38FaxVersion           "T38FaxVersion"              ///< ITU-T T.38 parameter
+#define OPAL_T38MaxBitRate           "T38MaxBitRate"              ///< ITU-T T.38 parameter
+#define OPAL_T38FaxMaxBuffer         "T38FaxMaxBuffer"            ///< ITU-T T.38 parameter
+#define OPAL_T38FaxMaxDatagram       "T38FaxMaxDatagram"          ///< ITU-T T.38 parameter
+#define OPAL_T38FaxUdpEC             "T38FaxUdpEC"                ///< ITU-T T.38 parameter
+#define OPAL_T38UDPFEC               "t38UDPFEC"                  ///< Enum value for T38FaxUdpEC
+#define OPAL_T38UDPRedundancy        "t38UDPRedundancy"           ///< Enum value for T38FaxUdpEC
+#define OPAL_T38FaxFillBitRemoval    "T38FaxFillBitRemoval"       ///< ITU-T T.38 parameter
+#define OPAL_T38FaxTranscodingMMR    "T38FaxTranscodingMMR"       ///< ITU-T T.38 parameter
+#define OPAL_T38FaxTranscodingJBIG   "T38FaxTranscodingJBIG"      ///< ITU-T T.38 parameter
+#define OPAL_T38UseECM               "Use-ECM"                    ///< T.30 Error Correction Mode (boolean)
+#define OPAL_FaxStationIdentifier    "Station-Identifier"         ///< T.30 fax station identifier string.
+#define OPAL_FaxHeaderInfo           "Header-Info"                ///< T.30 fax header info string.
+#define OPAL_UDPTLRawMode            "UDPTL-Raw-Mode"             ///< Boolean indicating the "other" media stream is providing UDPTL rather than IFP
+#define OPAL_UDPTLRedundancy         "UDPTL-Redundancy"           ///< String to set redundancy pattern
+#define OPAL_UDPTLRedundancyInterval "UDPTL-Redundancy-Interval"  ///< Seconds between sending redundant packets.
+#define OPAL_UDPTLOptimiseRetransmit "UDPTL-Optimise-On-Retransmit" ///< Do not including redundant IFP in retransmitted UDPTL.
+#define OPAL_UDPTLKeepAliveInterval  "UDPTL-Keep-Alive-Interval"  ///< Seconds between sending "keep-alive" packets.
+
 
 
 #if OPAL_FAX
@@ -232,6 +237,7 @@ class OpalFaxConnection : public OpalLocalConnection
     virtual void OnReleased();
     virtual OpalMediaStream * CreateMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, PBoolean isSource);
     virtual void OnClosedMediaStream(const OpalMediaStream & stream);
+    virtual void OnStopMediaPatch(OpalMediaPatch & patch);
     virtual PBoolean SendUserInputTone(char tone, unsigned duration);
     virtual void OnUserInputTone(char tone, unsigned duration);
     virtual bool SwitchFaxMediaStreams(bool toT38);
@@ -298,6 +304,7 @@ class OpalFaxSession : public OpalMediaSession
     ~OpalFaxSession();
 
     virtual const PCaselessString & GetSessionType() const { return UDPTL(); }
+    virtual void AttachTransport(const OpalMediaTransportPtr & transport);
     virtual bool Open(const PString & localInterface, const OpalTransportAddress & remoteAddress);
     virtual bool IsOpen() const;
     virtual bool Close();
@@ -363,6 +370,7 @@ class OpalFaxMediaStream : public OpalMediaStream
     virtual PBoolean Open();
     virtual PBoolean ReadPacket(RTP_DataFrame & packet);
     virtual PBoolean WritePacket(RTP_DataFrame & packet);
+    virtual PString GetPatchThreadName() const;
     virtual PBoolean IsSynchronous() const;
     virtual bool InternalUpdateMediaFormat(const OpalMediaFormat & mediaFormat);
     virtual void GetStatistics(OpalMediaStatistics & statistics, bool fromPatch) const;

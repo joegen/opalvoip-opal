@@ -6,63 +6,35 @@ This plugin requires an external source code project, SpanDSP.
 Spandsp is a LGPL library and suite of programs that implement a faxmodem. A
 known version, compatible with OPAL, is available from the following URL:
 
-    http://www.soft-switch.org/downloads/spandsp/spandsp-0.0.6pre21.tgz
+    https://www.soft-switch.org/downloads/spandsp/spandsp-0.0.6.tar.gz
 
 
 
 Building on Windows
 -------------------
 
-After getting the spandsp tar file, unpack it so it is called "spandsp" in
-the same directory is the plug in, e.g.
+The pligins build solutionm opal\plugins\plugins_XXXX.sln, has been set up
+to automatically downlaod and build the necessary libraries. Note that this
+means you need to be connected to the internet to dot eh first time build.
 
-	opal\plugins\fax\fax_spandsp\spandsp-0.0.6
+After building, copy the following two files from:
 
-After installing SpanDSP, simply then use the spandsp_fax_2005.sln or
-spandsp_fax_2008.sln file to build the plug in. Note Visual Studio 2003 is
-not supported.
-
-Note, this will automatically try and download libtiff, another open source
-library for TIFF file operations. Thus the first time you build it you should
-be connected to the Internet so the download can proceed.
-
-Then copy the following two files from:
 	opal\bin\plugins\Release\SpanDSPFax_ptplugin.dll
 	opal\plugins\fax\fax_spandsp\Release\libspandsp.dll
 
-to C:\PTLib_Plugins, or wherever you have set the PTPLUGINDIR environment
-variable. It should work in the same directory as your application as well.
-
-Additional note: If you get errors building libtiff, you may need to edit
-tiff-3.8.2\libtiff\tiffconf.h and comment out the entries for JPEG_SUPPORT,
-LZW_SUPPORT, PIXARLOG_SUPPORT and ZIP_SUPPORT.
-
-Another note: if using Visual Studio 2010 or 2012, the spandsp_fax_2008.sln
-file will upgrade. Normally we would provide the later solution/project
-files, but in this case the spandsp tar ball only has 2008 versions, and
-they cannot be converted if already in a 2010/2012 solution. It is
-recommended that you rename spandsp_fax_2008.sln to spandsp_fax_2010.sln
-after conversion to avoid SVN always reporting a modified file.
+to C:\Program Files\PTLib Plugins, or wherever you have set the PTLIBPLUGINDIR
+environment variable. It should work in the same directory as your application
+as well.
 
 
-Building on Linux
------------------
+Building on Linux or Mac
+------------------------
 
-After getting the spandsp tar file, unpack it and go:
-
-	./configure
-	make
-	make install
-
-then go to the opal directory and go:
-
-	./configure
-
-then go to the opal/plugins/fax/fax_spandsp directory and go:
-
-	make
-
-Note: you must have libtiff installed on your system.
+As a rule, SpanDSP can be installed via "yum" or "apt-get" for flavours of Linux,
+and "port" or "brew" for Mac. The OPAL configure will locate the system installed
+libraries. Alternatively, you can download, configure and build SpanDSP yourself
+from the taball at the top of this ReadMe. You then use arguments on OPAL
+configure to point to this version.
 
 
 IMPORTANT NOTE

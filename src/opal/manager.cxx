@@ -335,7 +335,6 @@ OpalManager::OpalManager()
   , P_DISABLE_MSVC_WARNINGS(4355, m_activeCalls(*this))
   , m_clearingAllCallsCount(0)
   , m_garbageCollector(NULL)
-  , m_garbageCollectSkip(false)
   , m_decoupledEventPool(5, 0, "OPAL-Event")
 #if OPAL_SCRIPT
   , m_script(NULL)
@@ -483,6 +482,8 @@ void OpalManager::ShutDownEndpoints()
   if (m_script != NULL)
     m_script->Call("OnShutdown");
 #endif
+
+  PTRACE(2, "Shut down completed.");
 }
 
 
@@ -508,7 +509,7 @@ void OpalManager::AttachEndPoint(OpalEndPoint * endpoint, const PString & prefix
   /* Avoid strange race condition caused when garbage collection occurs
      on the endpoint instance which has not completed construction. This
      is an ulgly hack and relies on the ctors taking less than one second. */
-  m_garbageCollectSkip = true;
+  m_garbageCollectChangeTime.SetCurrentTime();
 
   // Have something which requires garbage collections, so start it up
   if (m_garbageCollector == NULL)
@@ -1458,6 +1459,12 @@ void OpalManager::OnStopMediaPatch(OpalConnection & connection, OpalMediaPatch &
 #if OPAL_SCRIPT
   OnStartStopMediaPatch(m_script, "OnStopMedia", connection, patch);
 #endif
+
+  if (&patch.GetSource().GetConnection() == &connection) {
+    PSafePtr<OpalConnection> other = connection.GetOtherPartyConnection();
+    if (other != NULL)
+      other->OnStopMediaPatch(patch);
+  }
 }
 
 
@@ -2209,9 +2216,8 @@ void OpalManager::GarbageCollection()
 
   m_endpointsMutex.StartRead();
 
-  if (m_garbageCollectSkip)
-    m_garbageCollectSkip = false;
-  else {
+  static PTimeInterval const SkipTime(0, 1);
+  if (m_garbageCollectChangeTime.GetElapsed() > SkipTime) {
     for (PList<OpalEndPoint>::iterator ep = m_endpointList.begin(); ep != m_endpointList.end(); ++ep) {
       if (!ep->GarbageCollection())
         allCleared = false;

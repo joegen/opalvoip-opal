@@ -1165,6 +1165,8 @@ PBoolean OpalMixerMediaStream::Open()
   if (m_isOpen)
     return true;
 
+  P_INSTRUMENTED_LOCK_READ_WRITE(return false);
+
   if (m_mediaFormat.GetMediaType() != OpalMediaType::Audio()
 #if OPAL_VIDEO
    && m_mediaFormat.GetMediaType() != OpalMediaType::Video()

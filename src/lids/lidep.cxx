@@ -930,8 +930,10 @@ OpalLineMediaStream::~OpalLineMediaStream()
 
 PBoolean OpalLineMediaStream::Open()
 {
-  if (IsOpen())
+  if (m_isOpen)
     return true;
+
+  P_INSTRUMENTED_LOCK_READ_WRITE(return false);
 
   if (IsSource()) {
     if (!m_line.SetReadFormat(m_mediaFormat))

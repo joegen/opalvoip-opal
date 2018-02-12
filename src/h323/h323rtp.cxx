@@ -59,12 +59,14 @@ H323_RTPChannel::H323_RTPChannel(H323Connection & conn,
   , m_session(&session)
 {
   PTRACE(3, "H323RTP\t" << (receiver ? "Receiver" : "Transmitter")
-         << " created using session " << GetSessionID());
+         << ' ' << this << " created using session " << GetSessionID());
 }
 
 
 H323_RTPChannel::~H323_RTPChannel()
 {
+  PTRACE(3, "H323RTP\t" << (GetDirection() == IsReceiver ? "Receiver" : "Transmitter")
+         << ' ' << this << " created using session " << GetSessionID());
 }
 
 

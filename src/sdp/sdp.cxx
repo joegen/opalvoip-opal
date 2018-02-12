@@ -435,32 +435,37 @@ bool SDPMediaFormat::PostDecode(const OpalMediaFormatList & mediaFormats, unsign
   if (m_encodingName.IsEmpty())
     m_encodingName = m_mediaFormat.GetEncodingName();
 
-  if (m_mediaFormat.IsEmpty()) {
-    PTRACE(5, "Matching \"" << m_encodingName << "\", pt=" << m_payloadType << ", clock=" << m_clockRate);
-    for (OpalMediaFormatList::const_iterator iterFormat = mediaFormats.FindFormat(m_payloadType, m_clockRate, m_encodingName, "sip");
-         iterFormat != mediaFormats.end();
-         iterFormat = mediaFormats.FindFormat(m_payloadType, m_clockRate, m_encodingName, "sip", iterFormat)) {
-      OpalMediaFormat adjustedFormat = *iterFormat;
-      SetMediaFormatOptions(adjustedFormat);
-      // skip formats whose fmtp don't match options
-      if (iterFormat->ValidateMerge(adjustedFormat)) {
-        PTRACE(3, "Matched payload type " << m_payloadType << " to " << *iterFormat);
-        m_mediaFormat = adjustedFormat;
-        break;
-      }
+  if (m_mediaFormat.IsValid())
+    return AdjustMediaFormat(m_mediaFormat, bandwidth);
 
-      PTRACE(4, "Did not match \"" << m_encodingName << "\", pt=" << m_payloadType
-             << ", clock=" << m_clockRate << " fmtp=\"" << m_fmtp << "\" to " << *iterFormat);
+  PTRACE(5, "Matching \"" << m_encodingName << "\", pt=" << m_payloadType << ", clock=" << m_clockRate);
+  for (OpalMediaFormatList::const_iterator iterFormat = mediaFormats.FindFormat(m_payloadType, m_clockRate, m_encodingName, "sip");
+        iterFormat != mediaFormats.end();
+        iterFormat = mediaFormats.FindFormat(m_payloadType, m_clockRate, m_encodingName, "sip", iterFormat))
+  {
+    OpalMediaFormat adjustedFormat = *iterFormat;
+    // Only accept formats whose fmtp options match are compatible, or if "rtx" which is special
+    if (AdjustMediaFormat(adjustedFormat, bandwidth) &&
+              (OpalRtx::GetName(adjustedFormat.GetMediaType()) == adjustedFormat || iterFormat->ValidateMerge(adjustedFormat)))
+    {
+      PTRACE(3, "Matched payload type " << m_payloadType << " to " << *iterFormat);
+      m_mediaFormat = adjustedFormat;
+      return true;
     }
 
-    if (m_mediaFormat.IsEmpty()) {
-      PTRACE(2, "Could not find media format for \"" << m_encodingName << "\", "
-                "pt=" << m_payloadType << ", clock=" << m_clockRate << " fmtp=\"" << m_fmtp << '"');
-      return false;
-    }
+    PTRACE(4, "Did not match \"" << m_encodingName << "\", pt=" << m_payloadType
+           << ", clock=" << m_clockRate << " fmtp=\"" << m_fmtp << "\" to " << *iterFormat);
   }
 
-  SetMediaFormatOptions(m_mediaFormat);
+  PTRACE(2, "Could not find media format for \"" << m_encodingName << "\", "
+            "pt=" << m_payloadType << ", clock=" << m_clockRate << " fmtp=\"" << m_fmtp << '"');
+  return false;
+}
+
+
+bool SDPMediaFormat::AdjustMediaFormat(OpalMediaFormat & mediaFormat, unsigned bandwidth) const
+{
+  SetMediaFormatOptions(mediaFormat);
 
   /* Set bandwidth limits, if present, e.g. "SDP-Bandwidth-AS" and "SDP-Bandwidth-TIAS".
 
@@ -472,17 +477,17 @@ bool SDPMediaFormat::PostDecode(const OpalMediaFormatList & mediaFormats, unsign
      levels to assure that a max bit rate is not exceeded. */
   for (SDPBandwidth::const_iterator r = m_parent.GetBandwidth().begin(); r != m_parent.GetBandwidth().end(); ++r) {
     if (r->second > 0)
-      m_mediaFormat.AddOption(new OpalMediaOptionValue<OpalBandwidth>(SDPBandwidthPrefix + r->first,
+      mediaFormat.AddOption(new OpalMediaOptionValue<OpalBandwidth>(SDPBandwidthPrefix + r->first,
                                                   false, OpalMediaOption::MinMerge, r->second), true);
   }
 
-  if (bandwidth > 1000 && bandwidth < (unsigned)m_mediaFormat.GetOptionInteger(OpalMediaFormat::MaxBitRateOption())) {
-    PTRACE(4, "Adjusting format \"" << m_mediaFormat << "\" bandwidth to " << bandwidth);
-    m_mediaFormat.SetOptionInteger(OpalMediaFormat::MaxBitRateOption(), bandwidth);
+  if (bandwidth > 1000 && bandwidth < (unsigned)mediaFormat.GetOptionInteger(OpalMediaFormat::MaxBitRateOption())) {
+    PTRACE(4, "Adjusting format \"" << mediaFormat << "\" bandwidth to " << bandwidth);
+    mediaFormat.SetOptionInteger(OpalMediaFormat::MaxBitRateOption(), bandwidth);
   }
 
-  m_mediaFormat.SetOptionString(OpalMediaFormat::ProtocolOption(), PLUGINCODEC_OPTION_PROTOCOL_SIP);
-  if (m_mediaFormat.ToNormalisedOptions())
+  mediaFormat.SetOptionString(OpalMediaFormat::ProtocolOption(), PLUGINCODEC_OPTION_PROTOCOL_SIP);
+  if (mediaFormat.ToNormalisedOptions())
     return true;
 
   PTRACE(2, "Could not normalise format \"" << m_encodingName << "\", pt=" << m_payloadType << ", removing.");
@@ -1048,22 +1053,31 @@ void SDPMediaDescription::SetAttribute(const PString & attr, const PString & val
     }
 
     candidate.m_baseTransportAddress.SetAddress(ip, (WORD)words[5].AsUnsigned());
-    if (words[6] *= "typ") {
-      for (candidate.m_type = PNatCandidate::BeginTypes; candidate.m_type < PNatCandidate::EndTypes; ++candidate.m_type) {
-        if (words[7] *= CandidateTypeNames[candidate.m_type])
-          break;
+
+    PINDEX word = 6;
+    while (word < words.GetSize()) {
+      PCaselessString param = words[word++];
+      if (param == "typ") {
+        PCaselessString typeName = words[word++];
+        for (candidate.m_type = PNatCandidate::BeginTypes; candidate.m_type < PNatCandidate::EndTypes; ++candidate.m_type) {
+          if (typeName == CandidateTypeNames[candidate.m_type])
+            break;
+        }
       }
-      PTRACE_IF(3, candidate.m_type == PNatCandidate::EndTypes, "Unknown candidate type: \"" << words[7] << '"');
-    }
-    else {
-      PTRACE(2, "Missing candidate type: \"" << words[6] << '"');
-      return;
+      else if (param == "raddr")
+        candidate.m_localTransportAddress.SetAddress(PIPSocket::Address(words[word++]));
+      else if (param == "rport")
+        candidate.m_localTransportAddress.SetPort((WORD)words[word++].AsUnsigned());
+      else if (param == "network-cost")
+        candidate.m_networkCost = words[word++].AsUnsigned();
+      else if (param == "network-id")
+        candidate.m_networkId = words[word++].AsUnsigned();
     }
 
-    if (words.GetSize() > 9 && (words[8] *= "raddr"))
-      candidate.m_localTransportAddress.SetAddress(PIPSocket::Address(words[9]));
-    if (words.GetSize() > 11 && (words[10] *= "rport"))
-      candidate.m_localTransportAddress.SetPort((WORD)words[11].AsUnsigned());
+    if (candidate.m_type == PNatCandidate::EndTypes) {
+      PTRACE(2, "Unknown or missing candidate type: \"" << value << '"');
+      return;
+    }
 
     m_candidates.Append(new PNatCandidate(candidate));
     return;
@@ -1183,6 +1197,8 @@ void SDPMediaDescription::OutputAttributes(ostream & strm) const
            << " typ " << CandidateTypeNames[it->m_type];
       if (it->m_localTransportAddress.IsValid())
         strm << "raddr " << it->m_localTransportAddress.GetAddress() << " rport " << it->m_localTransportAddress.GetPort();
+      if (it->m_networkCost > 0 && it->m_networkId > 0)
+        strm << " network-cost " << it->m_networkCost << " network-id " << it->m_networkId;
       strm << CRLF;
       haveCandidate = true;
     }
@@ -2123,10 +2139,8 @@ bool SDPRTPAVPMediaDescription::ToSession(OpalMediaSession * session, RTP_SyncSo
       PString cname(it->second.GetString("cname"));
       if (!cname.IsEmpty()) {
         PString oldCname = rtpSession->GetCanonicalName(ssrc, OpalRTPSession::e_Receiver);
-        if (!oldCname.IsEmpty() && oldCname != cname) {
-          rtpSession->RemoveSyncSource(ssrc);
-          PTRACE(4, "Session " << session->GetSessionID() << ", removed receiver SSRC " << RTP_TRACE_SRC(ssrc));
-        }
+        if (!oldCname.IsEmpty() && oldCname != cname)
+          rtpSession->RemoveSyncSource(ssrc PTRACE_PARAM(, "cname changed"));
         if (rtpSession->AddSyncSource(ssrc, OpalRTPSession::e_Receiver, cname) == ssrc) {
           rtpSession->SetAnySyncSource(false);
           PTRACE(4, "Session " << session->GetSessionID() << ", added receiver SSRC " << RTP_TRACE_SRC(ssrc));
@@ -2136,40 +2150,54 @@ bool SDPRTPAVPMediaDescription::ToSession(OpalMediaSession * session, RTP_SyncSo
       }
     }
 
-    // Connect up the SSRC's used for "rtx" packets
-    RTP_SyncSourceArray rtxConfirmed;
-    for (vector<RTP_SyncSourceArray>::const_iterator it = m_flowSSRC.begin(); it != m_flowSSRC.end(); ++it) {
-      if (it->size() == 2) {
-        RTP_SyncSourceId primarySSRC = it->at(0);
-        RTP_SyncSourceId rtxSSRC = it->at(1);
-        PString primaryCNAME = rtpSession->GetCanonicalName(primarySSRC, OpalRTPSession::e_Receiver);
-        PString rtxCNAME = rtpSession->GetCanonicalName(rtxSSRC, OpalRTPSession::e_Receiver);
-        if (primaryCNAME != rtxCNAME)
-          PTRACE(3, "Flow grouping not using same CNAME:"
-                    " SSRC1=" << RTP_TRACE_SRC(primarySSRC) << " CNAME1=\"" << primaryCNAME << "\""
-                    " SSRC2=" << RTP_TRACE_SRC(rtxSSRC) << " CNAME2=\"" << rtxCNAME << '"');
-        else {
-          for (SDPMediaFormatList::const_iterator format = m_formats.begin(); format != m_formats.end(); ++format) {
-            const OpalMediaFormat & mediaFormat = format->GetMediaFormat();
-            if (OpalRtx::EncodingName() == mediaFormat.GetEncodingName()) {
-              RTP_DataFrame::PayloadTypes pt = mediaFormat.GetOptionPayloadType(OpalRtx::AssociatedPayloadTypeOption());
-              if (pt != RTP_DataFrame::IllegalPayloadType) {
-                rtpSession->EnableSyncSourceRtx(primarySSRC, pt, rtxSSRC);
-                rtxConfirmed.push_back(rtxSSRC);
-              }
-            }
+    // See if "rtx" is offerred/answered by remote
+    RTP_DataFrame::PayloadTypes rtxPT = RTP_DataFrame::IllegalPayloadType;
+    for (SDPMediaFormatList::const_iterator rtxFmtIter = m_formats.begin(); rtxFmtIter != m_formats.end(); ++rtxFmtIter) {
+      const OpalMediaFormat rtxMediaFormat = rtxFmtIter->GetMediaFormat();
+      if (OpalRtx::EncodingName() != rtxMediaFormat.GetEncodingName())
+        continue;
+
+      RTP_DataFrame::PayloadTypes assocPT = rtxMediaFormat.GetOptionPayloadType(OpalRtx::AssociatedPayloadTypeOption());
+      if (assocPT == RTP_DataFrame::IllegalPayloadType)
+        continue;
+
+      // Verify it matches the primary codec
+      for (SDPMediaFormatList::const_iterator assocFmtIter = m_formats.begin(); assocFmtIter != m_formats.end(); ++assocFmtIter) {
+        if (assocFmtIter->GetMediaFormat().GetPayloadType() == assocPT) {
+          rtxPT = rtxMediaFormat.GetPayloadType();
+          break;
+        }
+      }
+      if (rtxPT != RTP_DataFrame::IllegalPayloadType)
+        break;
+    }
+
+    if (rtxPT != RTP_DataFrame::IllegalPayloadType) {
+      // Connect up the SSRC's used for "rtx" packets
+      for (vector<RTP_SyncSourceArray>::const_iterator it = m_flowSSRC.begin(); it != m_flowSSRC.end(); ++it) {
+        if (it->size() == 2) {
+          RTP_SyncSourceId primarySSRC = it->at(0);
+          RTP_SyncSourceId rtxSSRC = it->at(1);
+          PString primaryCNAME = rtpSession->GetCanonicalName(primarySSRC, OpalRTPSession::e_Receiver);
+          PString rtxCNAME = rtpSession->GetCanonicalName(rtxSSRC, OpalRTPSession::e_Receiver);
+          if (primaryCNAME == rtxCNAME)
+            rtpSession->EnableSyncSourceRtx(primarySSRC, rtxPT, rtxSSRC);
+          else {
+            PTRACE(3, "Flow grouping not using same CNAME:"
+                      " SSRC1=" << RTP_TRACE_SRC(primarySSRC) << " CNAME1=\"" << primaryCNAME << "\""
+                      " SSRC2=" << RTP_TRACE_SRC(rtxSSRC) << " CNAME2=\"" << rtxCNAME << '"');
           }
         }
       }
     }
-
-    // Go through and remove those rtx SSRC's that didn't get confirmed
-    RTP_SyncSourceArray senderSSRCs = rtpSession->GetSyncSources(OpalRTPSession::e_Sender);
-    for (RTP_SyncSourceArray::iterator it = senderSSRCs.begin(); it != senderSSRCs.end(); ++it) {
-      RTP_SyncSourceId ssrc = *it;
-      if (rtpSession->GetRtxSyncSource(ssrc, OpalRTPSession::e_Sender, false) != 0 &&
-          std::find(rtxConfirmed.begin(), rtxConfirmed.end(), ssrc) == rtxConfirmed.end())
-        rtpSession->RemoveSyncSource(ssrc);
+    else {
+      // Go through and remove rtx SSRC's, as didn't get confirmed
+      RTP_SyncSourceArray senderSSRCs = rtpSession->GetSyncSources(OpalRTPSession::e_Sender);
+      for (RTP_SyncSourceArray::iterator it = senderSSRCs.begin(); it != senderSSRCs.end(); ++it) {
+        RTP_SyncSourceId ssrc = *it;
+        if (rtpSession->GetRtxSyncSource(ssrc, OpalRTPSession::e_Sender, false) != 0)
+          rtpSession->RemoveSyncSource(ssrc PTRACE_PARAM(, "RTX not confirmed"));
+      }
     }
   }
 

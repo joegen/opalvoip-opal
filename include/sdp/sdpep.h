@@ -277,6 +277,11 @@ class OpalSDPConnection : public OpalRTPConnection
       BundleMergeInfo & bundleMergeInfo
     );
 
+    virtual void FinaliseRtx(
+      const OpalMediaStreamPtr & stream,
+      SDPMediaDescription * sdp
+    );
+
     virtual bool SetActiveMediaFormats(
       const OpalMediaFormatList & formats
     );

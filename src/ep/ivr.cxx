@@ -418,6 +418,8 @@ PBoolean OpalIVRMediaStream::Open()
   if (m_isOpen)
     return true;
 
+  P_INSTRUMENTED_LOCK_READ_WRITE(return false);
+
   if (m_vxmlSession.IsOpen()) {
     PTRACE(3, "IVR\tRe-opening");
     PVXMLChannel * vxmlChannel = m_vxmlSession.GetAndLockVXMLChannel();

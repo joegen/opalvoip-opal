@@ -89,7 +89,7 @@ class OpalDTLSMediaTransport : public OpalDTLSMediaTransportParent
     };
 
   protected:
-    virtual void InternalOnStart(SubChannels subchannel);
+    virtual void InternalRxData(SubChannels subchannel, const PBYTEArray & data);
     virtual void PerformHandshake(PChannel * baseChannel);
     virtual DTLSChannel * CreateDTLSChannel();
     PDECLARE_SSLVerifyNotifier(OpalDTLSMediaTransport, OnVerify);

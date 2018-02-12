@@ -1,7 +1,7 @@
 <Include>
     <?include version.wxs ?>
 
-    <?define ProductName = "Open Phone" ?>
+    <?define ProductName = "OpenPhone" ?>
     <?define ProductDescription = "VoIP client for OPAL" ?>
     <?define ProductBaseFilename = "OpenPhone" ?>
     <?define ProductVersion = "$(var.OPAL_VERSION)" ?>
@@ -29,8 +29,9 @@
     <?define SWRESAMPLEVer = "2" ?>
 
     <?define WxDir = "$(env.WXDIR)" ?>
-    <?define WxVer = "$(env.WXVER)0" ?>
-  
+    <?define WxVer = "$(env.WXVER)1" ?>
+    <?define WxCustom = "yes" ?>
+
     <?define PTLibDir = "..\..\..\ptlib" ?>
     <?define OPALDir = "..\.." ?>
 

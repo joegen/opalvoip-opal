@@ -357,6 +357,12 @@ AC_DEFUN([MY_OUTPUT_SUMMARY],[
    AS_ECHO("")
    m4_map_args_pair([INTERNAL_OUTPUT_SUMMARY], [AS_ECHO], $@)
    AS_ECHO("")
+   INTERNAL_OUTPUT_SUMMARY([                         CPPFLAGS], [CPPFLAGS])
+   INTERNAL_OUTPUT_SUMMARY([                           CFLAGS], [CFLAGS])
+   INTERNAL_OUTPUT_SUMMARY([                         CXXFLAGS], [CXXFLAGS])
+   INTERNAL_OUTPUT_SUMMARY([                          LDFLAGS], [CXXFLAGS])
+   INTERNAL_OUTPUT_SUMMARY([                             LIBS], [LIBS])
+   AS_ECHO("")
    AS_ECHO("========================================================================")
 ])
 
@@ -505,8 +511,8 @@ case "$target_os" in
       target_os=Darwin
       target_release=`xcodebuild -showsdks | sed -n 's/.*macosx\(.*\)/\1/p' | sort | tail -n 1`
 
-      CPPFLAGS="-mmacosx-version-min=$target_release $CPPFLAGS"
-      LDFLAGS="-mmacosx-version-min=$target_release $LDFLAGS"
+      CPPFLAGS="-mmacosx-version-min=10.12 $CPPFLAGS"
+      LDFLAGS="-mmacosx-version-min=10.12 $LDFLAGS"
       LIBS="-framework AVFoundation -framework CoreVideo -framework CoreMedia -framework AudioUnit $LIBS"
    ;;
 
@@ -681,6 +687,17 @@ MY_COMPILE_IFELSE(
    [OPT_CFLAGS="-O $OPT_CFLAGS"]
 )
 AC_SUBST(OPT_CFLAGS)
+
+MY_COMPILE_IFELSE(
+   [Don't omit frame pointers for stack walking (-fno-omit-frame-pointer)],
+   [-fno-omit-frame-pointer],
+   [],
+   [],
+   [
+      CFLAGS="-fno-omit-frame-pointer $CFLAGS"
+      CXXFLAGS="-fno-omit-frame-pointer $CXXFLAGS"
+   ]
+)
 
 
 dnl Warn about everything, well, nearly everything

@@ -1073,15 +1073,18 @@ bool OpalMediaFormat::Update(const OpalMediaFormat & mediaFormat)
   PWaitAndSignal m(m_mutex);
 
   if (!IsValid()) {
+    PTRACE(4, "MediaFormat\tUpdate (initial) of " << *this);
     *this = mediaFormat;
     return true;
   }
 
   if (*this != mediaFormat) {
-    MakeUnique();
+    PTRACE(4, "MediaFormat\tUpdate (merge) of " << *this << " from " << mediaFormat);
+    SetPayloadType(mediaFormat.GetPayloadType()); // Does MakeUnique()
     return m_info->OpalMediaFormatInternal::Merge(*mediaFormat.m_info);
   }
 
+  PTRACE(4, "MediaFormat\tUpdate (overwrite) of " << *this);
   *this = mediaFormat;
   return true;
 }
@@ -2204,11 +2207,16 @@ void OpalMediaFormatList::Remove(const PStringArray & maskList)
 
   PINDEX i;
   std::list<PStringArray> notMasks;
+  std::list<OpalMediaType> notTypes;
 
   for (i = 0; i < maskList.GetSize(); i++) {
     PString mask = maskList[i];
-    if (mask[0] == '!')
-      notMasks.push_back(mask.Mid(1).Tokenise('*', true));
+    if (mask[0] == '!') {
+      if (mask[1] == '@')
+        notTypes.push_back(mask.Mid(2));
+      else
+        notMasks.push_back(mask.Mid(1).Tokenise('*', true));
+    }
     else {
       const_iterator fmt;
       while ((fmt = FindFormat(mask)) != end())
@@ -2216,7 +2224,7 @@ void OpalMediaFormatList::Remove(const PStringArray & maskList)
     }
   }
 
-  if (notMasks.empty())
+  if (notMasks.empty() && notTypes.empty())
       return;
 
   PStringList formatsToRemove;
@@ -2229,6 +2237,14 @@ void OpalMediaFormatList::Remove(const PStringArray & maskList)
         break;
       }
     }
+
+    for (std::list<OpalMediaType>::iterator notType = notTypes.begin(); notType != notTypes.end(); ++notType) {
+      if (fmt->GetMediaType() == *notType) {
+        remove = false;
+        break;
+      }
+    }
+
     if (remove)
       formatsToRemove += name;
   }
@@ -2435,7 +2451,11 @@ namespace OpalRtx
                         RTP_DataFrame::DynamicBase,
                         EncodingName(),
                         false, 0, 0, 0,
-                        mediaType == OpalMediaType::Video() ? VideoClockRate : AudioClockRate,
+#if OPAL_VIDEO
+                        mediaType == OpalMediaType::Video() ? VideoClockRate :
+#else
+                        AudioClockRate,
+#endif
                         0, true)
     {
       OpalMediaOptionUnsigned * opt = new OpalMediaOptionUnsigned(AssociatedPayloadTypeOption(),

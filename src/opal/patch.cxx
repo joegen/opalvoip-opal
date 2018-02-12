@@ -791,7 +791,7 @@ void OpalMediaPatch::Main()
 
   m_source.OnStopMediaPatch(*this);
 
-  if (m_sinks.IsEmpty()) {
+  if (m_sinks.IsEmpty() && m_source.GetPatch() == this) {
     PTRACE(4, "Closing source media stream as no sinks in " << *this);
     m_source.GetConnection().GetEndPoint().GetManager().QueueDecoupledEvent(
                 new PSafeWorkArg1<OpalConnection, OpalMediaStreamPtr, bool>(&m_source.GetConnection(),

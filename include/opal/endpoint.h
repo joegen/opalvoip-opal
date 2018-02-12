@@ -916,6 +916,24 @@ class OpalEndPoint : public PObject
     /**Set the default mode for sending User Input Indications.
       */
     void SetSendUserInputMode(OpalConnection::SendUserInputModes mode) { m_defaultSendUserInputMode = mode; }
+
+    /**Get the IP Quality of Service info for signaling channels.
+     */
+    const PIPSocket::QoS & GetSignalQoS() const { return m_signalQoS; }
+
+    /**Set the IP Quality of Service info for signaling channels.
+     */
+    void SetSignalQoS(const PIPSocket::QoS & qos) { m_signalQoS = qos; }
+
+    /**Get the IP Quality of Service info for media (eg RTP) channels.
+       If OpalEndPoint::SetMediaQoS() was not called for this media type, then
+       the OpalManager::GetMediaQoS() is returned.
+     */
+    const PIPSocket::QoS & GetMediaQoS(const OpalMediaType & type) const;
+
+    /**Set the IP Quality of Service info for media (eg RTP) channels.
+     */
+    void SetMediaQoS(const OpalMediaType & type, const PIPSocket::QoS & qos);
   //@}
 
   protected:
@@ -927,6 +945,8 @@ class OpalEndPoint : public PObject
     PString         m_defaultLocalPartyName;
     PString         m_defaultDisplayName;
     PStringArray    m_mediaCryptoSuites;
+    PIPSocket::QoS  m_signalQoS;
+    OpalManager::MediaQoSMap m_mediaQoS;
 
     OpalBandwidth m_initialRxBandwidth;
     OpalBandwidth m_initialTxBandwidth;

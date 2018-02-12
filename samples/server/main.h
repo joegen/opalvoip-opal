@@ -508,7 +508,7 @@ class CDRPage : public BaseStatusPage
 #if P_CLI
   typedef OpalManagerCLI MyManagerParent;
 #else
-  typedef OpalConsoleManager MyManagerParent;
+  typedef OpalManagerConsole MyManagerParent;
 #endif
 
 class MyManager : public MyManagerParent

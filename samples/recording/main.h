@@ -90,7 +90,7 @@ class MyLocalEndPoint : public OpalLocalEndPoint
 {
     PCLASSINFO(MyLocalEndPoint, OpalLocalEndPoint)
   public:
-    MyLocalEndPoint(OpalConsoleManager & manager);
+    MyLocalEndPoint(OpalManagerConsole & manager);
 
     // Overrides from OpalLocalEndPoint
     /**Get the data formats this endpoint is capable of operating.
@@ -166,7 +166,7 @@ class MyLocalEndPoint : public OpalLocalEndPoint
     bool OpenWAVFile(const OpalCall & call, PWAVFile & wavFile);
 
   protected:
-    OpalConsoleManager & m_manager;
+    OpalManagerConsole & m_manager;
     PDirectory           m_wavDir;
 
     struct Mixer : public OpalAudioMixer {

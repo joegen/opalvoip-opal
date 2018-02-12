@@ -821,6 +821,7 @@ MyManager::MyManager()
 #if PTRACING
   , m_enableTracing(false)
 #endif
+  , m_lastRecordFile("*.wav")
 {
   // Give it an icon
   SetIcon(wxICON(AppIcon));
@@ -3237,11 +3238,19 @@ void MyManager::OnTransfer(wxCommandEvent & theEvent)
 
 void MyManager::OnStartRecording(wxCommandEvent & /*event*/)
 {
+  wxString wildcard;
+  OpalRecordManager::Factory::KeyList_T keyList = OpalRecordManager::Factory::GetKeyList();
+  for (OpalRecordManager::Factory::KeyList_T::iterator it = keyList.begin(); it != keyList.end(); ++it) {
+    if (it != keyList.begin())
+      wildcard << '|';
+    PwxString ext = it->Mid(1);
+    wildcard << ext.Upper() << " Files (*." << ext << ")|*." << ext;
+  }
   wxFileDialog dlg(this,
                    wxT("Save call to file"),
                    wxEmptyString,
                    m_lastRecordFile,
-                   wxT("WAV Files (*.wav)|*.wav|AVI Files (*.avi)|*.avi"),
+                   wildcard,
                    wxFD_SAVE|wxFD_OVERWRITE_PROMPT);
   if (dlg.ShowModal() == wxID_OK && m_activeCall != NULL) {
     m_lastRecordFile = dlg.GetPath();

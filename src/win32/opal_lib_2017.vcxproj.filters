@@ -100,12 +100,6 @@
     <Filter Include="Header Files\Endpoints">
       <UniqueIdentifier>{e5ff36ca-f78c-42fa-b87d-03387fd6d751}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\RTP\libSRTP\Win32">
-      <UniqueIdentifier>{9afd8835-1f4f-41df-9339-89bc23f2d6fa}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\RTP\libSRTP\Android">
-      <UniqueIdentifier>{f1df817b-4820-4c36-a791-a3a1745649b9}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\SWIG">
       <UniqueIdentifier>{1ddf6222-3ca5-4665-a093-554b67281c82}</UniqueIdentifier>
     </Filter>
@@ -132,6 +126,9 @@
     </Filter>
     <Filter Include="Source Files\SDP">
       <UniqueIdentifier>{041b848a-3efd-46c0-9599-044a70687352}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\RTP\libSRTP\Headers\Crypto">
+      <UniqueIdentifier>{98bd392d-59cb-4b0c-b687-dd299f6dc44a}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -582,70 +579,7 @@
     <ClCompile Include="..\rtp\rtp_session.cxx">
       <Filter>Source Files\RTP</Filter>
     </ClCompile>
-    <ClCompile Include="..\rtp\libsrtp\crypto\cipher\aes.c">
-      <Filter>Source Files\RTP\libSRTP\Source</Filter>
-    </ClCompile>
-    <ClCompile Include="..\rtp\libsrtp\crypto\cipher\aes_cbc.c">
-      <Filter>Source Files\RTP\libSRTP\Source</Filter>
-    </ClCompile>
-    <ClCompile Include="..\rtp\libsrtp\crypto\cipher\aes_icm.c">
-      <Filter>Source Files\RTP\libSRTP\Source</Filter>
-    </ClCompile>
-    <ClCompile Include="..\rtp\libsrtp\crypto\kernel\alloc.c">
-      <Filter>Source Files\RTP\libSRTP\Source</Filter>
-    </ClCompile>
-    <ClCompile Include="..\rtp\libsrtp\crypto\hash\auth.c">
-      <Filter>Source Files\RTP\libSRTP\Source</Filter>
-    </ClCompile>
-    <ClCompile Include="..\rtp\libsrtp\crypto\cipher\cipher.c">
-      <Filter>Source Files\RTP\libSRTP\Source</Filter>
-    </ClCompile>
-    <ClCompile Include="..\rtp\libsrtp\crypto\kernel\crypto_kernel.c">
-      <Filter>Source Files\RTP\libSRTP\Source</Filter>
-    </ClCompile>
-    <ClCompile Include="..\rtp\libsrtp\crypto\rng\ctr_prng.c">
-      <Filter>Source Files\RTP\libSRTP\Source</Filter>
-    </ClCompile>
-    <ClCompile Include="..\rtp\libsrtp\crypto\math\datatypes.c">
-      <Filter>Source Files\RTP\libSRTP\Source</Filter>
-    </ClCompile>
-    <ClCompile Include="..\rtp\libsrtp\crypto\hash\hmac.c">
-      <Filter>Source Files\RTP\libSRTP\Source</Filter>
-    </ClCompile>
-    <ClCompile Include="..\rtp\libsrtp\crypto\kernel\key.c">
-      <Filter>Source Files\RTP\libSRTP\Source</Filter>
-    </ClCompile>
-    <ClCompile Include="..\rtp\libsrtp\crypto\hash\null_auth.c">
-      <Filter>Source Files\RTP\libSRTP\Source</Filter>
-    </ClCompile>
-    <ClCompile Include="..\rtp\libsrtp\crypto\cipher\null_cipher.c">
-      <Filter>Source Files\RTP\libSRTP\Source</Filter>
-    </ClCompile>
-    <ClCompile Include="..\rtp\libsrtp\crypto\rng\prng.c">
-      <Filter>Source Files\RTP\libSRTP\Source</Filter>
-    </ClCompile>
-    <ClCompile Include="..\rtp\libsrtp\crypto\replay\rdb.c">
-      <Filter>Source Files\RTP\libSRTP\Source</Filter>
-    </ClCompile>
-    <ClCompile Include="..\rtp\libsrtp\crypto\replay\rdbx.c">
-      <Filter>Source Files\RTP\libSRTP\Source</Filter>
-    </ClCompile>
-    <ClCompile Include="..\rtp\libsrtp\crypto\hash\sha1.c">
-      <Filter>Source Files\RTP\libSRTP\Source</Filter>
-    </ClCompile>
     <ClCompile Include="..\rtp\libsrtp\srtp\srtp.c">
-      <Filter>Source Files\RTP\libSRTP\Source</Filter>
-    </ClCompile>
-    <ClCompile Include="..\rtp\libsrtp\crypto\math\stat.c">
-      <Filter>Source Files\RTP\libSRTP\Source</Filter>
-    </ClCompile>
-    <ClCompile Include="..\rtp\libsrtp\crypto\replay\ut_sim.c">
-      <Filter>Source Files\RTP\libSRTP\Source</Filter>
-    </ClCompile>
-    <ClCompile Include="..\rtp\libsrtp\crypto\rng\rand_source.c">
-      <Filter>Source Files\RTP\libSRTP\Source</Filter>
-    </ClCompile>
-    <ClCompile Include="..\rtp\libsrtp\crypto\ae_xfm\xfm.c">
       <Filter>Source Files\RTP\libSRTP\Source</Filter>
     </ClCompile>
     <ClCompile Include="..\codec\h263mf.cxx">
@@ -758,6 +692,60 @@
     </ClCompile>
     <ClCompile Include="..\ep\lyncshim.cxx">
       <Filter>Source Files\Endpoints</Filter>
+    </ClCompile>
+    <ClCompile Include="..\rtp\libsrtp\srtp\ekt.c">
+      <Filter>Source Files\RTP\libSRTP\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\rtp\libsrtp\crypto\replay\rdb.c">
+      <Filter>Source Files\RTP\libSRTP\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\rtp\libsrtp\crypto\replay\rdbx.c">
+      <Filter>Source Files\RTP\libSRTP\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\rtp\libsrtp\crypto\replay\ut_sim.c">
+      <Filter>Source Files\RTP\libSRTP\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\rtp\libsrtp\crypto\math\datatypes.c">
+      <Filter>Source Files\RTP\libSRTP\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\rtp\libsrtp\crypto\math\stat.c">
+      <Filter>Source Files\RTP\libSRTP\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\rtp\libsrtp\crypto\kernel\alloc.c">
+      <Filter>Source Files\RTP\libSRTP\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\rtp\libsrtp\crypto\kernel\crypto_kernel.c">
+      <Filter>Source Files\RTP\libSRTP\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\rtp\libsrtp\crypto\kernel\err.c">
+      <Filter>Source Files\RTP\libSRTP\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\rtp\libsrtp\crypto\kernel\key.c">
+      <Filter>Source Files\RTP\libSRTP\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\rtp\libsrtp\crypto\hash\auth.c">
+      <Filter>Source Files\RTP\libSRTP\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\rtp\libsrtp\crypto\hash\hmac.c">
+      <Filter>Source Files\RTP\libSRTP\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\rtp\libsrtp\crypto\hash\null_auth.c">
+      <Filter>Source Files\RTP\libSRTP\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\rtp\libsrtp\crypto\hash\sha1.c">
+      <Filter>Source Files\RTP\libSRTP\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\rtp\libsrtp\crypto\cipher\aes.c">
+      <Filter>Source Files\RTP\libSRTP\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\rtp\libsrtp\crypto\cipher\aes_icm.c">
+      <Filter>Source Files\RTP\libSRTP\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\rtp\libsrtp\crypto\cipher\cipher.c">
+      <Filter>Source Files\RTP\libSRTP\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\rtp\libsrtp\crypto\cipher\null_cipher.c">
+      <Filter>Source Files\RTP\libSRTP\Source</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -1175,91 +1163,7 @@
     <ClInclude Include="..\..\include\rtp\rtp_session.h">
       <Filter>Header Files\RTP</Filter>
     </ClInclude>
-    <ClInclude Include="..\rtp\libsrtp\crypto\include\aes.h">
-      <Filter>Source Files\RTP\libSRTP\Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\rtp\libsrtp\crypto\include\aes_cbc.h">
-      <Filter>Source Files\RTP\libSRTP\Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\rtp\libsrtp\crypto\include\aes_icm.h">
-      <Filter>Source Files\RTP\libSRTP\Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\rtp\libsrtp\crypto\include\alloc.h">
-      <Filter>Source Files\RTP\libSRTP\Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\rtp\libsrtp\crypto\include\auth.h">
-      <Filter>Source Files\RTP\libSRTP\Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\rtp\libsrtp\crypto\include\cipher.h">
-      <Filter>Source Files\RTP\libSRTP\Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\rtp\libsrtp\crypto\include\crypto.h">
-      <Filter>Source Files\RTP\libSRTP\Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\rtp\libsrtp\crypto\include\crypto_kernel.h">
-      <Filter>Source Files\RTP\libSRTP\Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\rtp\libsrtp\crypto\include\crypto_math.h">
-      <Filter>Source Files\RTP\libSRTP\Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\rtp\libsrtp\crypto\include\crypto_types.h">
-      <Filter>Source Files\RTP\libSRTP\Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\rtp\libsrtp\crypto\include\cryptoalg.h">
-      <Filter>Source Files\RTP\libSRTP\Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\rtp\libsrtp\crypto\include\datatypes.h">
-      <Filter>Source Files\RTP\libSRTP\Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\rtp\libsrtp\crypto\include\err.h">
-      <Filter>Source Files\RTP\libSRTP\Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\rtp\libsrtp\crypto\include\gf2_8.h">
-      <Filter>Source Files\RTP\libSRTP\Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\rtp\libsrtp\crypto\include\hmac.h">
-      <Filter>Source Files\RTP\libSRTP\Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\rtp\libsrtp\crypto\include\integers.h">
-      <Filter>Source Files\RTP\libSRTP\Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\rtp\libsrtp\crypto\include\kernel_compat.h">
-      <Filter>Source Files\RTP\libSRTP\Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\rtp\libsrtp\crypto\include\key.h">
-      <Filter>Source Files\RTP\libSRTP\Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\rtp\libsrtp\crypto\include\null_auth.h">
-      <Filter>Source Files\RTP\libSRTP\Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\rtp\libsrtp\crypto\include\null_cipher.h">
-      <Filter>Source Files\RTP\libSRTP\Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\rtp\libsrtp\crypto\include\prng.h">
-      <Filter>Source Files\RTP\libSRTP\Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\rtp\libsrtp\crypto\include\xfm.h">
-      <Filter>Source Files\RTP\libSRTP\Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\rtp\libsrtp\crypto\include\rand_source.h">
-      <Filter>Source Files\RTP\libSRTP\Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\rtp\libsrtp\crypto\include\rdb.h">
-      <Filter>Source Files\RTP\libSRTP\Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\rtp\libsrtp\crypto\include\rdbx.h">
-      <Filter>Source Files\RTP\libSRTP\Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\rtp\libsrtp\include\rtp.h">
-      <Filter>Source Files\RTP\libSRTP\Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\rtp\libsrtp\crypto\include\sha1.h">
-      <Filter>Source Files\RTP\libSRTP\Headers</Filter>
-    </ClInclude>
     <ClInclude Include="..\rtp\libsrtp\include\srtp.h">
-      <Filter>Source Files\RTP\libSRTP\Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\rtp\libsrtp\crypto\include\stat.h">
       <Filter>Source Files\RTP\libSRTP\Headers</Filter>
     </ClInclude>
     <ClInclude Include="..\rtp\libsrtp\include\ut_sim.h">
@@ -1282,12 +1186,6 @@
     </ClInclude>
     <ClInclude Include="..\..\include\ep\opalmixer.h">
       <Filter>Header Files\Endpoints</Filter>
-    </ClInclude>
-    <ClInclude Include="..\rtp\libsrtp\Android\config.h">
-      <Filter>Source Files\RTP\libSRTP\Android</Filter>
-    </ClInclude>
-    <ClInclude Include="..\rtp\libsrtp\Win32\config.h">
-      <Filter>Source Files\RTP\libSRTP\Win32</Filter>
     </ClInclude>
     <ClInclude Include="..\..\lib\Win32\include\opal_config.h">
       <Filter>Header Files\Config\Win32</Filter>
@@ -1334,6 +1232,87 @@
     <ClInclude Include="..\..\include\ep\lyncep.h">
       <Filter>Header Files\Endpoints</Filter>
     </ClInclude>
+    <ClInclude Include="..\rtp\libsrtp\include\ekt.h">
+      <Filter>Source Files\RTP\libSRTP\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rtp\libsrtp\include\srtp_priv.h">
+      <Filter>Source Files\RTP\libSRTP\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rtp\libsrtp\crypto\include\aes.h">
+      <Filter>Source Files\RTP\libSRTP\Headers\Crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rtp\libsrtp\crypto\include\aes_cbc.h">
+      <Filter>Source Files\RTP\libSRTP\Headers\Crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rtp\libsrtp\crypto\include\aes_icm.h">
+      <Filter>Source Files\RTP\libSRTP\Headers\Crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rtp\libsrtp\crypto\include\alloc.h">
+      <Filter>Source Files\RTP\libSRTP\Headers\Crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rtp\libsrtp\crypto\include\auth.h">
+      <Filter>Source Files\RTP\libSRTP\Headers\Crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rtp\libsrtp\crypto\include\cipher.h">
+      <Filter>Source Files\RTP\libSRTP\Headers\Crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rtp\libsrtp\crypto\include\crypto.h">
+      <Filter>Source Files\RTP\libSRTP\Headers\Crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rtp\libsrtp\crypto\include\cryptoalg.h">
+      <Filter>Source Files\RTP\libSRTP\Headers\Crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rtp\libsrtp\crypto\include\crypto_types.h">
+      <Filter>Source Files\RTP\libSRTP\Headers\Crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rtp\libsrtp\crypto\include\crypto_kernel.h">
+      <Filter>Source Files\RTP\libSRTP\Headers\Crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rtp\libsrtp\crypto\include\datatypes.h">
+      <Filter>Source Files\RTP\libSRTP\Headers\Crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rtp\libsrtp\crypto\include\err.h">
+      <Filter>Source Files\RTP\libSRTP\Headers\Crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rtp\libsrtp\crypto\include\gf2_8.h">
+      <Filter>Source Files\RTP\libSRTP\Headers\Crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rtp\libsrtp\crypto\include\hmac.h">
+      <Filter>Source Files\RTP\libSRTP\Headers\Crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rtp\libsrtp\crypto\include\integers.h">
+      <Filter>Source Files\RTP\libSRTP\Headers\Crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rtp\libsrtp\crypto\include\key.h">
+      <Filter>Source Files\RTP\libSRTP\Headers\Crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rtp\libsrtp\crypto\include\null_auth.h">
+      <Filter>Source Files\RTP\libSRTP\Headers\Crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rtp\libsrtp\crypto\include\null_cipher.h">
+      <Filter>Source Files\RTP\libSRTP\Headers\Crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rtp\libsrtp\crypto\include\prng.h">
+      <Filter>Source Files\RTP\libSRTP\Headers\Crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rtp\libsrtp\crypto\include\rand_source.h">
+      <Filter>Source Files\RTP\libSRTP\Headers\Crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rtp\libsrtp\crypto\include\rdb.h">
+      <Filter>Source Files\RTP\libSRTP\Headers\Crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rtp\libsrtp\crypto\include\rdbx.h">
+      <Filter>Source Files\RTP\libSRTP\Headers\Crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rtp\libsrtp\crypto\include\sha1.h">
+      <Filter>Source Files\RTP\libSRTP\Headers\Crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rtp\libsrtp\crypto\include\stat.h">
+      <Filter>Source Files\RTP\libSRTP\Headers\Crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rtp\libsrtp\include\config.h">
+      <Filter>Source Files\RTP\libSRTP\Headers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="..\..\include\opal_config.h.in">
@@ -1347,6 +1326,9 @@
     </CustomBuild>
     <CustomBuild Include="..\csharp\opal.i">
       <Filter>Source Files\SWIG\C#</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\rtp\libsrtp\config.hw">
+      <Filter>Source Files\RTP\libSRTP</Filter>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>

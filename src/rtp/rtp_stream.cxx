@@ -99,6 +99,8 @@ PBoolean OpalRTPMediaStream::Open()
   if (m_isOpen)
     return true;
 
+  P_INSTRUMENTED_LOCK_READ_WRITE(return false);
+
   if (IsSource()) {
     delete m_jitterBuffer;
     OpalJitterBuffer::Init init(m_connection.GetEndPoint().GetManager(), m_mediaFormat.GetTimeUnits());
