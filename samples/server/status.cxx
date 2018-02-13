@@ -564,9 +564,9 @@ void CallStatusPage::CreateContent(PHTML & html, const PStringToString &) const
        << PHTML::TableStart(PHTML::Border1, PHTML::CellPad4)
        << PHTML::TableRow()
        << PHTML::TableHeader()
-       << PHTML::NonBreakSpace() << "Party" << PHTML::NonBreakSpace()
+       << PHTML::NonBreakSpace() << 'A' << PHTML::NonBreakSpace() << "Party" << PHTML::NonBreakSpace()
        << PHTML::TableHeader()
-       << PHTML::NonBreakSpace() << "Party" << PHTML::NonBreakSpace()
+       << PHTML::NonBreakSpace() << 'B' << PHTML::NonBreakSpace() << "Party" << PHTML::NonBreakSpace()
        << PHTML::TableHeader()
        << PHTML::NonBreakSpace() << "Duration" << PHTML::NonBreakSpace()
        << "<!--#macrostart CallStatus-->"
@@ -612,6 +612,15 @@ PCREATE_SERVICE_MACRO(CallCount, resource, P_EMPTY)
 }
 
 
+static PString BuildPartyStatus(const PString & party, const PString & name)
+{
+  if (name.IsEmpty())
+    return party;
+
+  return PSTRSTRM(name << "<BR>" << party);
+}
+
+
 PCREATE_SERVICE_MACRO_BLOCK(CallStatus,resource,P_EMPTY,htmlBlock)
 {
   CallStatusPage * status = dynamic_cast<CallStatusPage *>(resource.m_resource);
@@ -631,11 +640,12 @@ PCREATE_SERVICE_MACRO_BLOCK(CallStatus,resource,P_EMPTY,htmlBlock)
     PString insert = htmlBlock;
 
     PServiceHTML::SpliceMacro(insert, "status Token",    call->GetToken());
-    PServiceHTML::SpliceMacro(insert, "status A-Party",  call->GetPartyA());
-    PServiceHTML::SpliceMacro(insert, "status B-Party",  call->GetPartyB());
+    PServiceHTML::SpliceMacro(insert, "status A-Party",  BuildPartyStatus(call->GetPartyA(), call->GetNameA()));
+    PServiceHTML::SpliceMacro(insert, "status B-Party",  BuildPartyStatus(call->GetPartyB(), call->GetNameB()));
 
     PStringStream duration;
     duration.precision(0);
+    duration.width(5);
     if (call->GetEstablishedTime().IsValid())
       duration << call->GetEstablishedTime().GetElapsed();
     else
