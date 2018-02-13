@@ -548,13 +548,13 @@ bool OpalICEMediaTransport::InternalHandleICE(SubChannels subchannel, const void
     if (m_state == e_Completed) {
       bool useNewCandidate;
       if (!m_useNetworkCost)
-        useNewCandidate = candidate->m_priority < m_selectedCandidate->m_priority;
+        useNewCandidate = candidate->m_priority > m_selectedCandidate->m_priority;
       else if (candidate->m_networkCost < m_selectedCandidate->m_networkCost)
         useNewCandidate = true;
       else if (candidate->m_networkCost > m_selectedCandidate->m_networkCost)
         useNewCandidate = false;
       else
-        useNewCandidate = candidate->m_priority < m_selectedCandidate->m_priority;
+        useNewCandidate = candidate->m_priority > m_selectedCandidate->m_priority;
       if (!useNewCandidate)
         return false;
       PTRACE(3, *this << subchannel << ", ICE found better candidate: " << *candidate);
