@@ -450,6 +450,12 @@ class OpusPluginEncoder : public OpusPluginCodec
                              unsigned & toLen,
                              unsigned & flags)
     {
+      if (fromLen == 0) {
+        static const short silence[20 * 48];
+        fromPtr = silence;
+        fromLen = sizeof(silence);;
+      }
+
       opus_int32 result = opus_encode(m_encoder,
                                       (const opus_int16 *)fromPtr, fromLen/m_channels/2,
                                       (opus_uint8 *)toPtr, toLen);
