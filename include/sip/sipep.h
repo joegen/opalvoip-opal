@@ -810,11 +810,13 @@ class SIPEndPoint : public OpalSDPEndPoint
 
         const PURL & GetAoR() const { return m_aor; }
         SIPURLList GetContacts() const;
+        const OpalProductInfo & GetProductInfo() const { return m_productInfo; }
 
         bool HasBindings() const { return !m_bindings.empty(); }
 
       protected:
         PURL m_aor;
+        OpalProductInfo m_productInfo;
 
         struct Binding {
           PString m_id;

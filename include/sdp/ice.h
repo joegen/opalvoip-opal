@@ -58,6 +58,11 @@
 */
 #define OPAL_OPT_TRICKLE_ICE "Trickle-ICE"
 
+/**Support network cost in ICE candidate selection.
+   Defaults to false.
+*/
+#define OPAL_OPT_NETWORK_COST_ICE "Network-Cost-ICE"
+
 
 /** Class for low level transport of media that uses ICE
   */
@@ -100,6 +105,7 @@ class OpalICEMediaTransport : public OpalUDPMediaTransport
     PTimeInterval m_iceTimeout;
     bool          m_lite;
     bool          m_trickle;
+    bool          m_useNetworkCost;
 
     enum CandidateStates
     {
@@ -128,6 +134,8 @@ class OpalICEMediaTransport : public OpalUDPMediaTransport
     };
     typedef std::list<CandidateState> CandidateStateList;
     typedef std::vector<CandidateStateList> CandidatesArray;
+    friend bool operator==(const CandidatesArray & left, const CandidatesArray & right);
+
     CandidatesArray m_localCandidates;
     CandidatesArray m_remoteCandidates;
 

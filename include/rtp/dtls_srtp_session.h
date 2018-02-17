@@ -72,26 +72,29 @@ class OpalDTLSMediaTransport : public OpalDTLSMediaTransportParent
     PSSLCertificateFingerprint GetLocalFingerprint(PSSLCertificateFingerprint::HashType hashType) const;
     bool SetRemoteFingerprint(const PSSLCertificateFingerprint& fp);
 
+  protected:
+    virtual PChannel * AddWrapperChannels(SubChannels subchannel, PChannel * channel);
+
     class DTLSChannel : public PSSLChannelDTLS
     {
         PCLASSINFO(DTLSChannel, PSSLChannelDTLS);
       public:
-        DTLSChannel(const OpalDTLSMediaTransport & transport);
+        DTLSChannel(OpalDTLSMediaTransport & transport, PChannel * channel);
         ~DTLSChannel() { Close(); }
-        virtual PBoolean OnOpen();
-        virtual PBoolean Close();
+        virtual bool Read(void * buf, PINDEX len);
 #if PTRACING
         virtual int BioRead(char * buf, int len);
-        virtual int BioWrite(const char * buf, int len);
 #endif
+        virtual int BioWrite(const char * buf, int len);
       protected:
-        PTimeInterval m_originalReadTimeout;
+        OpalDTLSMediaTransport & m_transport;
+        PBYTEArray               m_lastResponseData;
+        PINDEX                   m_lastResponseLength;
     };
+    friend class DTLSChannel;
 
-  protected:
-    virtual void InternalRxData(SubChannels subchannel, const PBYTEArray & data);
-    virtual void PerformHandshake(PChannel * baseChannel);
-    virtual DTLSChannel * CreateDTLSChannel();
+    bool InternalPerformHandshake(DTLSChannel * channel);
+    virtual bool PerformHandshake(DTLSChannel & channel);
     PDECLARE_SSLVerifyNotifier(OpalDTLSMediaTransport, OnVerify);
 
     bool            m_passiveMode;
@@ -103,6 +106,9 @@ class OpalDTLSMediaTransport : public OpalDTLSMediaTransportParent
     std::auto_ptr<OpalMediaCryptoKeyInfo> m_keyInfo[2];
 
   friend class OpalDTLSContext;
+
+  P_REMOVE_VIRTUAL(DTLSChannel*,CreateDTLSChannel(),NULL);
+  P_REMOVE_VIRTUAL_VOID(PerformHandshake(PChannel*));
 };
 
 

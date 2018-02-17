@@ -564,9 +564,9 @@ void CallStatusPage::CreateContent(PHTML & html, const PStringToString &) const
        << PHTML::TableStart(PHTML::Border1, PHTML::CellPad4)
        << PHTML::TableRow()
        << PHTML::TableHeader()
-       << PHTML::NonBreakSpace() << "Party" << PHTML::NonBreakSpace()
+       << PHTML::NonBreakSpace() << 'A' << PHTML::NonBreakSpace() << "Party" << PHTML::NonBreakSpace()
        << PHTML::TableHeader()
-       << PHTML::NonBreakSpace() << "Party" << PHTML::NonBreakSpace()
+       << PHTML::NonBreakSpace() << 'B' << PHTML::NonBreakSpace() << "Party" << PHTML::NonBreakSpace()
        << PHTML::TableHeader()
        << PHTML::NonBreakSpace() << "Duration" << PHTML::NonBreakSpace()
        << "<!--#macrostart CallStatus-->"
@@ -612,6 +612,15 @@ PCREATE_SERVICE_MACRO(CallCount, resource, P_EMPTY)
 }
 
 
+static PString BuildPartyStatus(const PString & party, const PString & name)
+{
+  if (name.IsEmpty())
+    return party;
+
+  return PSTRSTRM(name << "<BR>" << party);
+}
+
+
 PCREATE_SERVICE_MACRO_BLOCK(CallStatus,resource,P_EMPTY,htmlBlock)
 {
   CallStatusPage * status = dynamic_cast<CallStatusPage *>(resource.m_resource);
@@ -631,11 +640,12 @@ PCREATE_SERVICE_MACRO_BLOCK(CallStatus,resource,P_EMPTY,htmlBlock)
     PString insert = htmlBlock;
 
     PServiceHTML::SpliceMacro(insert, "status Token",    call->GetToken());
-    PServiceHTML::SpliceMacro(insert, "status A-Party",  call->GetPartyA());
-    PServiceHTML::SpliceMacro(insert, "status B-Party",  call->GetPartyB());
+    PServiceHTML::SpliceMacro(insert, "status A-Party",  BuildPartyStatus(call->GetPartyA(), call->GetNameA()));
+    PServiceHTML::SpliceMacro(insert, "status B-Party",  BuildPartyStatus(call->GetPartyB(), call->GetNameB()));
 
     PStringStream duration;
     duration.precision(0);
+    duration.width(5);
     if (call->GetEstablishedTime().IsValid())
       duration << call->GetEstablishedTime().GetElapsed();
     else
@@ -681,7 +691,7 @@ void GkStatusPage::CreateContent(PHTML & html, const PStringToString &) const
        << PHTML::NonBreakSpace() << "Application" << PHTML::NonBreakSpace()
        << PHTML::TableHeader()
        << PHTML::NonBreakSpace() << "Active" << PHTML::NonBreakSpace() << "Calls" << PHTML::NonBreakSpace()
-       << "<!--#macrostart EndPointStatus-->"
+       << "<!--#macrostart H323EndPointStatus-->"
        << PHTML::TableRow()
        << PHTML::TableData()
        << "<!--#status EndPointIdentifier-->"
@@ -695,7 +705,7 @@ void GkStatusPage::CreateContent(PHTML & html, const PStringToString &) const
        << "<!--#status ActiveCalls-->"
        << PHTML::TableData()
        << PHTML::SubmitButton("Unregister", "!--#status EndPointIdentifier--")
-       << "<!--#macroend EndPointStatus-->"
+       << "<!--#macroend H323EndPointStatus-->"
        << PHTML::TableEnd();
 }
 
@@ -705,15 +715,10 @@ PBoolean GkStatusPage::OnPostControl(const PStringToString & data, PHTML & msg)
   bool gotOne = false;
 
   for (PStringToString::const_iterator it = data.begin(); it != data.end(); ++it) {
-    PString key = it->first;
-    PString value = it->second;
-    if (value == "Unregister") {
-      PSafePtr<H323RegisteredEndPoint> ep = m_gkServer.FindEndPointByIdentifier(key);
-      if (ep != NULL) {
-        msg << PHTML::Heading(2) << "Unregistered endpoint " << *ep << PHTML::Heading(2);
-        ep->Unregister();
-        gotOne = true;
-      }
+    PString id = it->first;
+    if (it->second == "Unregister" && m_gkServer.ForceUnregister(id)) {
+      msg << PHTML::Heading(2) << "Unregistered " << id << PHTML::Heading(2);
+      gotOne = true;
     }
   }
 
@@ -722,6 +727,70 @@ PBoolean GkStatusPage::OnPostControl(const PStringToString & data, PHTML & msg)
 
 
 #endif //OPAL_H323
+
+
+///////////////////////////////////////////////////////////////
+
+#if OPAL_SIP
+
+RegistrarStatusPage::RegistrarStatusPage(MyManager & mgr, const PHTTPAuthority & auth)
+  : BaseStatusPage(mgr, auth, "RegistrarStatus")
+  , m_registrar(*mgr.FindEndPointAs<MySIPEndPoint>(OPAL_PREFIX_SIP))
+{
+}
+
+
+const char * RegistrarStatusPage::GetTitle() const
+{
+  return "OPAL Registrar Status";
+}
+
+
+void RegistrarStatusPage::CreateContent(PHTML & html, const PStringToString &) const
+{
+  html << PHTML::TableStart(PHTML::Border1)
+       << PHTML::TableRow()
+       << PHTML::TableHeader()
+       << PHTML::NonBreakSpace() << "End" << PHTML::NonBreakSpace() << "Point" << PHTML::NonBreakSpace() << "Identifier" << PHTML::NonBreakSpace()
+       << PHTML::TableHeader()
+       << PHTML::NonBreakSpace() << "Call" << PHTML::NonBreakSpace() << "Signal" << PHTML::NonBreakSpace() << "Addresses" << PHTML::NonBreakSpace()
+       << PHTML::TableHeader()
+       << PHTML::NonBreakSpace() << "Application" << PHTML::NonBreakSpace()
+       << PHTML::TableHeader()
+       << PHTML::NonBreakSpace() << "Active" << PHTML::NonBreakSpace() << "Calls" << PHTML::NonBreakSpace()
+       << "<!--#macrostart SIPEndPointStatus-->"
+       << PHTML::TableRow()
+       << PHTML::TableData()
+       << "<!--#status EndPointIdentifier-->"
+       << PHTML::TableData()
+       << "<!--#status CallSignalAddresses-->"
+       << PHTML::TableData(PHTML::NoWrap)
+       << "<!--#status Application-->"
+       << PHTML::TableData("align=center")
+       << "<!--#status ActiveCalls-->"
+       << PHTML::TableData()
+       << PHTML::SubmitButton("Unregister", "!--#status EndPointIdentifier--")
+       << "<!--#macroend SIPEndPointStatus-->"
+       << PHTML::TableEnd();
+}
+
+
+PBoolean RegistrarStatusPage::OnPostControl(const PStringToString & data, PHTML & msg)
+{
+  bool gotOne = false;
+
+  for (PStringToString::const_iterator it = data.begin(); it != data.end(); ++it) {
+    PString aor = it->first;
+    if (it->second == "Unregister" && m_registrar.ForceUnregister(aor)) {
+      msg << PHTML::Heading(2) << "Unregistered " << aor << PHTML::Heading(2);
+      gotOne = true;
+    }
+  }
+
+  return gotOne;
+}
+
+#endif //OPAL_SIP
 
 
 // End of File ///////////////////////////////////////////////////////////////

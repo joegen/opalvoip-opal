@@ -201,6 +201,7 @@ class MyGatekeeperServer : public H323GatekeeperServer
     // new functions
     bool Configure(PConfig & cfg, PConfigPage * rsrc);
     PString OnLoadEndPointStatus(const PString & htmlBlock);
+    bool ForceUnregister(const PString id);
 
 #ifdef H323_TRANSNEXUS_OSP
     OpalOSP::Provider * GetOSPProvider() const
@@ -288,6 +289,8 @@ public:
   void AutoRegisterCisco(const PString & server, const PString & wildcard, const PString & deviceType, bool registering);
 
   bool Configure(PConfig & cfg, PConfigPage * rsrc);
+  PString OnLoadEndPointStatus(const PString & htmlBlock);
+  bool ForceUnregister(const PString id);
 
 #if OPAL_H323 || OPAL_SKINNY
   virtual void OnChangedRegistrarAoR(RegistrarAoR & ua);
@@ -471,10 +474,33 @@ class GkStatusPage : public BaseStatusPage
 
     MyGatekeeperServer & m_gkServer;
 
-    friend class PServiceMacro_EndPointStatus;
+    friend class PServiceMacro_H323EndPointStatus;
 };
 
 #endif // OPAL_H323
+
+
+///////////////////////////////////////
+
+#if OPAL_SIP
+
+class RegistrarStatusPage : public BaseStatusPage
+{
+    PCLASSINFO(RegistrarStatusPage, BaseStatusPage);
+  public:
+    RegistrarStatusPage(MyManager & mgr, const PHTTPAuthority & auth);
+
+  protected:
+    virtual const char * GetTitle() const;
+    virtual void CreateContent(PHTML & html, const PStringToString & query) const;
+    virtual bool OnPostControl(const PStringToString & data, PHTML & msg);
+
+    MySIPEndPoint & m_registrar;
+
+    friend class PServiceMacro_SIPEndPointStatus;
+};
+
+#endif // OPAL_SIP
 
 
 ///////////////////////////////////////

@@ -289,6 +289,11 @@ PBoolean MyProcess::Initialise(const char * initMsg)
   m_httpNameSpace.AddResource(gkStatusPage, PHTTPSpace::Overwrite);
 #endif // OPAL_H323
 
+#if OPAL_SIP
+  RegistrarStatusPage * registrarStatusPage = new RegistrarStatusPage(*m_manager, params.m_authority);
+  m_httpNameSpace.AddResource(registrarStatusPage, PHTTPSpace::Overwrite);
+#endif // OPAL_H323
+
   CDRListPage * cdrListPage = new CDRListPage(*m_manager, params.m_authority);
   m_httpNameSpace.AddResource(cdrListPage, PHTTPSpace::Overwrite);
   m_httpNameSpace.AddResource(new CDRPage(*m_manager, params.m_authority), PHTTPSpace::Overwrite);
@@ -307,14 +312,18 @@ PBoolean MyProcess::Initialise(const char * initMsg)
          << PHTML::HotLink(params.m_configPage->GetHotLink()) << "System Parameters" << PHTML::HotLink()
          << PHTML::Paragraph()
          << PHTML::HotLink(callStatusPage->GetHotLink()) << "Call Status" << PHTML::HotLink()
-#if OPAL_H323
-         << PHTML::BreakLine()
-         << PHTML::HotLink(gkStatusPage->GetHotLink()) << "Gatekeeper Status" << PHTML::HotLink()
-#endif // OPAL_H323
 #if OPAL_H323 | OPAL_SIP | OPAL_SKINNY | OPAL_LYNC
          << PHTML::BreakLine()
-         << PHTML::HotLink(registrationStatusPage->GetHotLink()) << "Registration Status" << PHTML::HotLink()
+         << PHTML::HotLink(registrationStatusPage->GetHotLink()) << "Upstream Registration Status" << PHTML::HotLink()
 #endif
+#if OPAL_H323
+         << PHTML::BreakLine()
+         << PHTML::HotLink(gkStatusPage->GetHotLink()) << "H.323 Gatekeeper Status" << PHTML::HotLink()
+#endif // OPAL_H323
+#if OPAL_SIP
+         << PHTML::BreakLine()
+         << PHTML::HotLink(registrarStatusPage->GetHotLink()) << "SIP Registrar Status" << PHTML::HotLink()
+#endif // OPAL_SIP
          << PHTML::Paragraph()
          << PHTML::HotLink(cdrListPage->GetHotLink()) << "Call Detail Records" << PHTML::HotLink()
          << PHTML::Paragraph();

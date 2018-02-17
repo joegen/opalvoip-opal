@@ -14,6 +14,7 @@
     <?if $(var.Architecture) = "x86" ?>
         <?define SSLDir = "$(env.ProgramW6432)\OpenSSL-Win32\bin" ?>
         <?define LuaDir = "..\..\..\external\Lua-win32" ?>
+        <?define V8Dir = "..\..\..\external\v8\v8\out.gn\ia32.release" ?>
         <?define JPEGDir = "C:\Tools\bin" ?>
         <?define SaslDir = "C:\Tools\bin" ?>
         <?define LDAPDir = "C:\Tools\bin" ?>
@@ -23,14 +24,17 @@
     <?else?>
         <?define SSLDir = "$(env.ProgramW6432)\OpenSSL-Win64\bin" ?>
         <?define LuaDir = "..\..\..\external\Lua-win64" ?>
+        <?define V8Dir = "..\..\..\external\v8\v8\out.gn\x64.release" ?>
         <?define FFMPEGDir = "..\..\..\external\ffmpeg-win64-dev\bin" ?>
         <?define OpenH264Dir = "$(env.ProgramW6432)\PTLib Plug Ins" ?>
         <?define SpanDspDir = "..\..\..\external\spandsp-0.0.6\src\x64\Release" ?>
     <?endif?>
 
+    <?define AVFORMATVer = "57" ?>
     <?define AVCODECVer = "57" ?>
     <?define AVUTILVer = "55" ?>
     <?define SWRESAMPLEVer = "2" ?>
+    <?define SWSCALEVer = "4" ?>
 
     <?define PTLibDir = "..\..\..\ptlib" ?>
     <?define OPALDir = "..\.." ?>

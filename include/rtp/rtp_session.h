@@ -763,6 +763,7 @@ class OpalRTPSession : public OpalMediaSession
 
       // Sequence handling
       RTP_SequenceNumber m_lastSequenceNumber;
+      uint32_t           m_firstSequenceNumber;
       uint32_t           m_extendedSequenceNumber;
       unsigned           m_lastFIRSequenceNumber;
       unsigned           m_lastTSTOSequenceNumber;
@@ -815,7 +816,7 @@ class OpalRTPSession : public OpalMediaSession
       RTP_Timestamp      m_lastJitterTimestamp;
 
       // Things to remember for filling in fields of sent SR/RR/DLRR
-      unsigned           m_packetsLostSinceLastRR;
+      unsigned           m_lastRRPacketsReceived;
       uint32_t           m_lastRRSequenceNumber;
       uint64_t           m_ntpPassThrough;       // The NTP time from SR
       PTime              m_lastSenderReportTime; // Local time that SR was sent/received

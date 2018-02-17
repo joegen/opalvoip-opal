@@ -980,7 +980,16 @@ void OpalMediaTransport::InternalStop()
 void OpalMediaTransport::AddChannel(PChannel * channel)
 {
   SubChannels subchannel = (SubChannels)m_subchannels.size();
-  m_subchannels.push_back(ChannelInfo(*this, subchannel, AddWrapperChannels(subchannel, channel)));
+
+  PTRACE_CONTEXT_ID_TO(channel);
+  channel = AddWrapperChannels(subchannel, channel);
+
+  /* Make socket timeout slightly longer (200ms) than media timeout to avoid
+      a race condition with m_mediaTimer expiring. */
+  channel->SetReadTimeout(m_mediaTimeout+200);
+
+  m_subchannels.push_back(ChannelInfo(*this, subchannel, channel));
+  PTRACE(5, "Added " << subchannel << " channel " << channel->GetName());
 }
 
 
@@ -1302,15 +1311,10 @@ bool OpalUDPMediaTransport::Open(OpalMediaSession & session,
   for (ChannelArray::iterator it = m_subchannels.begin(); it != m_subchannels.end(); ++it) {
     PUDPSocket & socket = *dynamic_cast<PUDPSocket *>(it->m_channel->GetBaseReadChannel());
     m_socketCache.push_back(&socket);
-    PTRACE_CONTEXT_ID_TO(socket);
 
     PIPSocketAddressAndPort ap;
     if (socket.GetLocalAddress(ap) && ap.IsValid())
       it->m_localAddress = OpalTransportAddress(ap, OpalTransportAddress::UdpPrefix());
-
-    /* Make socket timeout slightly longer (200ms) than media timeout to avoid
-       a race condition with m_mediaTimer expiring. */
-    socket.SetReadTimeout(m_mediaTimeout+200);
 
     // Increase internal buffer size on media UDP sockets
     SetMinBufferSize(socket, SO_RCVBUF, session.GetMediaType() == OpalMediaType::Audio() ? 0x4000 : 0x100000);

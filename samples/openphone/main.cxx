@@ -3627,9 +3627,9 @@ PBoolean MyManager::CreateVideoOutputDevice(const OpalConnection & connection,
   mediaFormat.AdjustVideoArgs(videoArgs);
 
 #if VIDEO_WINDOW_AUTO_DELETE
-  autoDelete = false;
-#else
   autoDelete = true;
+#else
+  autoDelete = false;
 #endif
   device = PVideoOutputDevice::CreateOpenedDevice(videoArgs, false);
   return device != NULL;

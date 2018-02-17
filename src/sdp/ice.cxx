@@ -57,6 +57,20 @@ const unsigned CandidateTypePriority[PNatCandidate::NumTypes] = {
   RelayTypePriority
 };
 
+bool operator==(const OpalICEMediaTransport::CandidatesArray & left, const OpalICEMediaTransport::CandidatesArray & right)
+{
+  if (left.size() != right.size())
+    return false;
+
+  for (size_t i = 0; i < left.size(); ++i) {
+    if (left[i] != right[i])
+      return false;
+  }
+
+  return true;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 
 OpalICEMediaTransport::OpalICEMediaTransport(const PString & name)
@@ -65,6 +79,7 @@ OpalICEMediaTransport::OpalICEMediaTransport(const PString & name)
   , m_localPassword(PBase64::Encode(PRandom::Octets(18)))
   , m_lite(false)
   , m_trickle(false)
+  , m_useNetworkCost(false)
   , m_state(e_Disabled)
   , m_selectedCandidate(NULL)
 {
@@ -92,6 +107,7 @@ bool OpalICEMediaTransport::Open(OpalMediaSession & session,
   }
 
   m_trickle = options.GetBoolean(OPAL_OPT_TRICKLE_ICE);
+  m_useNetworkCost = options.GetBoolean(OPAL_OPT_NETWORK_COST_ICE);
   m_iceTimeout = options.GetVar(OPAL_OPT_ICE_TIMEOUT, session.GetConnection().GetEndPoint().GetManager().GetICETimeout());
 
   // As per RFC 5425
@@ -167,11 +183,12 @@ void OpalICEMediaTransport::SetCandidates(const PString & user, const PString & 
 
   bool noSuitableCandidates = true;
   for (PNatCandidateList::const_iterator it = remoteCandidates.begin(); it != remoteCandidates.end(); ++it) {
-    PTRACE(4, "Checking candidate: " << *it);
     if (it->m_protocol == "udp" && it->m_component > 0 && (size_t)it->m_component <= newCandidates.size()) {
       newCandidates[it->m_component - 1].push_back(*it);
       noSuitableCandidates = false;
     }
+    else
+      PTRACE(2, "Invalid/unsupported candidate: " << *it);
   }
 
   if (noSuitableCandidates) {
@@ -309,8 +326,22 @@ bool OpalICEMediaTransport::GetCandidates(PString & user, PString & pass, PNatCa
     newCandidates[it->m_subchannel].push_back(candidate);
   }
 
-  if (offering && m_localCandidates != newCandidates) {
-    PTRACE_IF(2, m_state == e_Answering, *this << "ICE state error, making local offer when answering remote offer");
+  if (offering) {
+    switch (m_state) {
+      case e_Disabled :
+        break;
+
+      case e_Offering:
+        if (m_localCandidates == newCandidates)
+          return true; // Duplicate, probably due to bundline, ignore
+
+        PTRACE(2, *this << "ICE local offer changed");
+        break;
+
+      default:
+        PTRACE(2, *this << "ICE state error, making local offer when in state " << m_state);
+        break;
+    }
     m_localCandidates = newCandidates;
     m_state = e_Offering;
   }
@@ -340,6 +371,9 @@ bool OpalICEMediaTransport::GetCandidates(PString & user, PString & pass, PNatCa
 
   if (candidates.empty())
     return false;
+
+  if (m_state == e_Answering)
+    m_state = e_OfferAnswered;
 
   if (m_trickle) {
       candidates.push_back(PNatCandidate(PNatCandidate::FinalType, PNatMethod::eComponent_RTP, LiteFoundation, 1));
@@ -427,10 +461,10 @@ bool OpalICEMediaTransport::InternalHandleICE(SubChannels subchannel, const void
        the STUN, and it was constructed as per RFC recommendation, we can actually determine
        the type from it. */
     PNatCandidate newCandidate(PNatCandidate::RelayType, (PNatMethod::Component)(subchannel+1));
-    typedef PSTUNAttribute1<PSTUNAttribute::PRIORITY, PUInt32b> PSTUNIcePriority;
+
     PSTUNIcePriority * priAttr = PSTUNIcePriority::Find(message);
     if (priAttr != NULL) {
-      newCandidate.m_priority = priAttr->m_parameter;
+      newCandidate.m_priority = priAttr->m_priority;
       switch (newCandidate.m_priority >> 24) {
         case HostTypePriority :
           newCandidate.m_type = PNatCandidate::HostType;
@@ -451,9 +485,10 @@ bool OpalICEMediaTransport::InternalHandleICE(SubChannels subchannel, const void
           PTRACE(4, "Could not derive the candidate type from priority (" << newCandidate.m_priority << ") in STUN message.");
       }
     }
+
+    newCandidate.m_baseTransportAddress = ap;
     m_remoteCandidates[subchannel].push_back(newCandidate);
     candidate = &m_remoteCandidates[subchannel].back();
-    candidate->m_baseTransportAddress = ap;
     PTRACE(3, *this << subchannel << ", received STUN request for unknown ICE candidate, adding: " << newCandidate);
   }
 
@@ -464,6 +499,22 @@ bool OpalICEMediaTransport::InternalHandleICE(SubChannels subchannel, const void
 
     if (!m_server.OnReceiveMessage(message, PSTUNServer::SocketInfo(socket)))
       return false; // Probably a authentication error
+
+    PSTUNIceNetworkCost * costAttr = PSTUNIceNetworkCost::Find(message);
+    if (costAttr != NULL) {
+      unsigned networkId = costAttr->m_networkId;
+      unsigned networkCost = costAttr->m_networkCost;
+      if (candidate->m_networkId != networkId || candidate->m_networkCost != networkCost) {
+        PTRACE(4, *this << subchannel << ","
+               " updating candidate network cost:"
+               " old-id=" << candidate->m_networkId << ","
+               " new-id=" << networkId << ","
+               " old-cost " << candidate->m_networkCost << ","
+               " new-cost=" << networkCost);
+        candidate->m_networkId = networkId;
+        candidate->m_networkCost = networkCost;
+      }
+    }
 
     if (m_state == e_Offering) {
       PTRACE(4, *this << subchannel << ", early STUN request in ICE.");
@@ -494,8 +545,20 @@ bool OpalICEMediaTransport::InternalHandleICE(SubChannels subchannel, const void
        to implement at least that small part of full ICE. So, we check for if we
        already have a selected candidate, and ignore any others unless one with a
        higher priority arrives. */
-    if (m_state == e_Completed && m_selectedCandidate->m_priority >= candidate->m_priority)
-      return false;
+    if (m_state == e_Completed) {
+      bool useNewCandidate;
+      if (!m_useNetworkCost)
+        useNewCandidate = candidate->m_priority > m_selectedCandidate->m_priority;
+      else if (candidate->m_networkCost < m_selectedCandidate->m_networkCost)
+        useNewCandidate = true;
+      else if (candidate->m_networkCost > m_selectedCandidate->m_networkCost)
+        useNewCandidate = false;
+      else
+        useNewCandidate = candidate->m_priority > m_selectedCandidate->m_priority;
+      if (!useNewCandidate)
+        return false;
+      PTRACE(3, *this << subchannel << ", ICE found better candidate: " << *candidate);
+    }
   }
   else if (message.IsSuccessResponse()) {
     if (m_state != e_Offering) {
