@@ -355,7 +355,7 @@
 	</object>
 	<object class="wxPanel" name="InCallPanel" subclass="InCallPanel">
 		<style>wxSUNKEN_BORDER|wxTAB_TRAVERSAL</style>
-		<size>617,358</size>
+		<size>610,358</size>
 		<object class="wxBoxSizer">
 			<orient>wxHORIZONTAL</orient>
 			<object class="sizeritem">
@@ -366,13 +366,13 @@
 					<orient>wxVERTICAL</orient>
 					<object class="sizeritem">
 						<option>0</option>
-						<flag></flag>
+						<flag>wxEXPAND</flag>
 						<border>0</border>
 						<object class="wxBoxSizer">
 							<orient>wxHORIZONTAL</orient>
 							<object class="sizeritem">
 								<option>0</option>
-								<flag>wxTOP|wxBOTTOM|wxEXPAND</flag>
+								<flag>wxBOTTOM|wxEXPAND|wxTOP</flag>
 								<border>8</border>
 								<object class="wxBoxSizer">
 									<orient>wxVERTICAL</orient>
@@ -415,6 +415,12 @@
 										</object>
 									</object>
 								</object>
+							</object>
+							<object class="spacer">
+								<option>1</option>
+								<flag>wxEXPAND</flag>
+								<border>0</border>
+								<size>2,10</size>
 							</object>
 							<object class="sizeritem">
 								<option>0</option>
@@ -462,9 +468,15 @@
 									</object>
 								</object>
 							</object>
+							<object class="spacer">
+								<option>1</option>
+								<flag>wxEXPAND</flag>
+								<border>0</border>
+								<size>2,10</size>
+							</object>
 							<object class="sizeritem">
 								<option>0</option>
-								<flag>wxRIGHT|wxTOP|wxBOTTOM|wxEXPAND</flag>
+								<flag>wxBOTTOM|wxRIGHT|wxTOP</flag>
 								<border>8</border>
 								<object class="wxBoxSizer">
 									<orient>wxVERTICAL</orient>
@@ -483,12 +495,12 @@
 														<object class="sizeritem">
 															<option>0</option>
 															<flag>wxALL</flag>
-															<border>4</border>
+															<border>8</border>
 															<object class="wxFlexGridSizer">
 																<rows>7</rows>
 																<cols>4</cols>
 																<vgap>0</vgap>
-																<hgap>2</hgap>
+																<hgap>4</hgap>
 																<growablecols></growablecols>
 																<growablerows></growablerows>
 																<object class="sizeritem">
@@ -752,12 +764,12 @@
 														<object class="sizeritem">
 															<option>0</option>
 															<flag>wxALL</flag>
-															<border>4</border>
+															<border>8</border>
 															<object class="wxFlexGridSizer">
 																<rows>5</rows>
 																<cols>4</cols>
 																<vgap>0</vgap>
-																<hgap>2</hgap>
+																<hgap>4</hgap>
 																<growablecols></growablecols>
 																<growablerows></growablerows>
 																<object class="sizeritem">
@@ -957,12 +969,12 @@
 														<object class="sizeritem">
 															<option>0</option>
 															<flag>wxALL</flag>
-															<border>4</border>
+															<border>8</border>
 															<object class="wxFlexGridSizer">
 																<rows>8</rows>
 																<cols>4</cols>
 																<vgap>0</vgap>
-																<hgap>2</hgap>
+																<hgap>4</hgap>
 																<growablecols></growablecols>
 																<growablerows></growablerows>
 																<object class="sizeritem">
@@ -1280,12 +1292,12 @@
 														<object class="sizeritem">
 															<option>0</option>
 															<flag>wxALL</flag>
-															<border>4</border>
+															<border>8</border>
 															<object class="wxFlexGridSizer">
 																<rows>7</rows>
 																<cols>4</cols>
 																<vgap>0</vgap>
-																<hgap>2</hgap>
+																<hgap>4</hgap>
 																<growablecols></growablecols>
 																<growablerows></growablerows>
 																<object class="sizeritem">
@@ -1564,7 +1576,7 @@
 														<object class="sizeritem">
 															<option>0</option>
 															<flag>wxALL</flag>
-															<border>4</border>
+															<border>8</border>
 															<object class="wxFlexGridSizer">
 																<rows>6</rows>
 																<cols>3</cols>
@@ -1738,7 +1750,7 @@
 										</object>
 									</object>
 									<object class="sizeritem">
-										<option>1</option>
+										<option>0</option>
 										<flag>wxEXPAND</flag>
 										<border>0</border>
 										<object class="wxBoxSizer">
@@ -1765,13 +1777,19 @@
 														<weight>bold</weight>
 														<underlined>0</underlined>
 													</font>
-													<label>-:--</label>
+													<label>--:--</label>
 													<wrap>-1</wrap>
 												</object>
 											</object>
 										</object>
 									</object>
 								</object>
+							</object>
+							<object class="spacer">
+								<option>1</option>
+								<flag>wxEXPAND</flag>
+								<border>0</border>
+								<size>2,10</size>
 							</object>
 							<object class="sizeritem">
 								<option>0</option>
@@ -1786,8 +1804,8 @@
 											<object class="wxBoxSizer">
 												<orient>wxVERTICAL</orient>
 												<object class="sizeritem">
-													<option>4</option>
-													<flag>wxEXPAND</flag>
+													<option>0</option>
+													<flag></flag>
 													<border>0</border>
 													<object class="wxGridSizer">
 														<rows>4</rows>
@@ -1795,109 +1813,121 @@
 														<vgap>0</vgap>
 														<hgap>0</hgap>
 														<object class="sizeritem">
-															<option>1</option>
-															<flag>wxEXPAND</flag>
+															<option>0</option>
+															<flag></flag>
 															<border>0</border>
 															<object class="wxButton" name="Input1">
+																<size>40,40</size>
 																<label>1</label>
 																<default>0</default>
 															</object>
 														</object>
 														<object class="sizeritem">
-															<option>1</option>
-															<flag>wxEXPAND</flag>
+															<option>0</option>
+															<flag></flag>
 															<border>0</border>
 															<object class="wxButton" name="Input2">
+																<size>40,40</size>
 																<label>2\nabc</label>
 																<default>0</default>
 															</object>
 														</object>
 														<object class="sizeritem">
-															<option>1</option>
-															<flag>wxEXPAND</flag>
+															<option>0</option>
+															<flag></flag>
 															<border>0</border>
 															<object class="wxButton" name="Input3">
+																<size>40,40</size>
 																<label>3\ndef</label>
 																<default>0</default>
 															</object>
 														</object>
 														<object class="sizeritem">
-															<option>1</option>
-															<flag>wxEXPAND</flag>
+															<option>0</option>
+															<flag></flag>
 															<border>0</border>
 															<object class="wxButton" name="Input4">
+																<size>40,40</size>
 																<label>4\nghi</label>
 																<default>0</default>
 															</object>
 														</object>
 														<object class="sizeritem">
-															<option>1</option>
-															<flag>wxEXPAND</flag>
+															<option>0</option>
+															<flag></flag>
 															<border>0</border>
 															<object class="wxButton" name="Input5">
+																<size>40,40</size>
 																<label>5\njkl</label>
 																<default>0</default>
 															</object>
 														</object>
 														<object class="sizeritem">
-															<option>1</option>
-															<flag>wxEXPAND</flag>
+															<option>0</option>
+															<flag></flag>
 															<border>0</border>
 															<object class="wxButton" name="Input6">
+																<size>40,40</size>
 																<label>6\nmno</label>
 																<default>0</default>
 															</object>
 														</object>
 														<object class="sizeritem">
-															<option>1</option>
-															<flag>wxEXPAND</flag>
+															<option>0</option>
+															<flag></flag>
 															<border>0</border>
 															<object class="wxButton" name="Input7">
+																<size>40,40</size>
 																<label>7\npqrs</label>
 																<default>0</default>
 															</object>
 														</object>
 														<object class="sizeritem">
-															<option>1</option>
-															<flag>wxEXPAND</flag>
+															<option>0</option>
+															<flag></flag>
 															<border>0</border>
 															<object class="wxButton" name="Input8">
+																<size>40,40</size>
 																<label>8\ntuv</label>
 																<default>0</default>
 															</object>
 														</object>
 														<object class="sizeritem">
-															<option>1</option>
-															<flag>wxEXPAND</flag>
+															<option>0</option>
+															<flag></flag>
 															<border>0</border>
 															<object class="wxButton" name="Input9">
+																<size>40,40</size>
 																<label>9\nwxyz</label>
 																<default>0</default>
 															</object>
 														</object>
 														<object class="sizeritem">
-															<option>1</option>
-															<flag>wxEXPAND</flag>
+															<option>0</option>
+															<flag></flag>
 															<border>0</border>
 															<object class="wxButton" name="InputStar">
+																<size>40,40</size>
 																<label>*</label>
 																<default>0</default>
 															</object>
 														</object>
 														<object class="sizeritem">
-															<option>1</option>
-															<flag>wxEXPAND</flag>
+															<option>0</option>
+															<flag></flag>
 															<border>0</border>
 															<object class="wxButton" name="Input0">
+																<size>40,40</size>
 																<label>0</label>
 																<default>0</default>
 															</object>
 														</object>
 														<object class="sizeritem">
-															<option>1</option>
-															<flag>wxEXPAND</flag>
+															<option>0</option>
+															<flag></flag>
 															<border>0</border>
 															<object class="wxButton" name="InputHash">
+																<size>40,40</size>
 																<label>#</label>
 																<default>0</default>
 															</object>
@@ -1921,29 +1951,32 @@
 										<selected>0</selected>
 										<object class="wxPanel" name="Controls_pane_2">
 											<style>wxTAB_TRAVERSAL</style>
+											<size>60,40</size>
 											<object class="wxBoxSizer">
 												<orient>wxVERTICAL</orient>
 												<object class="sizeritem">
-													<option>1</option>
-													<flag>wxEXPAND</flag>
+													<option>0</option>
+													<flag></flag>
 													<border>0</border>
 													<object class="wxBoxSizer">
 														<orient>wxHORIZONTAL</orient>
 														<object class="sizeritem">
-															<option>1</option>
-															<flag>wxEXPAND</flag>
+															<option>0</option>
+															<flag></flag>
 															<border>0</border>
 															<object class="wxButton" name="ZoomWide">
+																<size>60,40</size>
 																<enabled>0</enabled>
 																<label>Wide</label>
 																<default>0</default>
 															</object>
 														</object>
 														<object class="sizeritem">
-															<option>1</option>
-															<flag>wxEXPAND</flag>
+															<option>0</option>
+															<flag></flag>
 															<border>0</border>
 															<object class="wxButton" name="ZoomTight">
+																<size>60,40</size>
 																<enabled>0</enabled>
 																<label>Tight</label>
 																<default>0</default>
@@ -1952,109 +1985,115 @@
 													</object>
 												</object>
 												<object class="sizeritem">
-													<option>3</option>
-													<flag>wxEXPAND</flag>
+													<option>0</option>
+													<flag></flag>
 													<border>0</border>
 													<object class="wxFlexGridSizer">
-														<rows>5</rows>
+														<rows>3</rows>
 														<cols>3</cols>
 														<vgap>0</vgap>
 														<hgap>0</hgap>
 														<growablecols></growablecols>
-														<growablerows>0,1,2</growablerows>
+														<growablerows></growablerows>
 														<object class="spacer">
-															<option>1</option>
-															<flag>wxEXPAND</flag>
+															<option>0</option>
+															<flag></flag>
 															<border>0</border>
 															<size>5,5</size>
 														</object>
 														<object class="sizeritem">
-															<option>1</option>
+															<option>0</option>
 															<flag>wxEXPAND</flag>
 															<border>0</border>
 															<object class="wxButton" name="TiltUp">
+																<size>40,40</size>
 																<enabled>0</enabled>
 																<label>U</label>
 																<default>0</default>
 															</object>
 														</object>
 														<object class="spacer">
-															<option>1</option>
-															<flag>wxEXPAND</flag>
+															<option>0</option>
+															<flag></flag>
 															<border>0</border>
 															<size>5,5</size>
 														</object>
 														<object class="sizeritem">
-															<option>1</option>
+															<option>0</option>
 															<flag>wxEXPAND</flag>
 															<border>0</border>
 															<object class="wxButton" name="PanLeft">
+																<size>40,40</size>
 																<enabled>0</enabled>
 																<label>L</label>
 																<default>0</default>
 															</object>
 														</object>
 														<object class="spacer">
-															<option>1</option>
-															<flag>wxEXPAND</flag>
+															<option>0</option>
+															<flag></flag>
 															<border>0</border>
 															<size>5,5</size>
 														</object>
 														<object class="sizeritem">
-															<option>1</option>
+															<option>0</option>
 															<flag>wxEXPAND</flag>
 															<border>0</border>
 															<object class="wxButton" name="PanRight">
+																<size>40,40</size>
 																<enabled>0</enabled>
 																<label>R</label>
 																<default>0</default>
 															</object>
 														</object>
 														<object class="spacer">
-															<option>1</option>
-															<flag>wxEXPAND</flag>
+															<option>0</option>
+															<flag></flag>
 															<border>0</border>
 															<size>5,5</size>
 														</object>
 														<object class="sizeritem">
-															<option>1</option>
+															<option>0</option>
 															<flag>wxEXPAND</flag>
 															<border>0</border>
 															<object class="wxButton" name="TiltDown">
+																<size>40,40</size>
 																<enabled>0</enabled>
 																<label>D</label>
 																<default>0</default>
 															</object>
 														</object>
 														<object class="spacer">
-															<option>1</option>
-															<flag>wxEXPAND</flag>
+															<option>0</option>
+															<flag></flag>
 															<border>0</border>
 															<size>5,5</size>
 														</object>
 													</object>
 												</object>
 												<object class="sizeritem">
-													<option>1</option>
-													<flag>wxEXPAND</flag>
+													<option>0</option>
+													<flag></flag>
 													<border>0</border>
 													<object class="wxBoxSizer">
 														<orient>wxHORIZONTAL</orient>
 														<object class="sizeritem">
-															<option>1</option>
-															<flag>wxEXPAND</flag>
+															<option>0</option>
+															<flag></flag>
 															<border>0</border>
 															<object class="wxButton" name="FocusIn">
+																<size>60,40</size>
 																<enabled>0</enabled>
 																<label>In</label>
 																<default>0</default>
 															</object>
 														</object>
 														<object class="sizeritem">
-															<option>1</option>
-															<flag>wxEXPAND</flag>
+															<option>0</option>
+															<flag></flag>
 															<border>0</border>
 															<object class="wxButton" name="FocusOut">
+																<size>60,40</size>
 																<enabled>0</enabled>
 																<label>Out</label>
 																<default>0</default>
@@ -2070,7 +2109,7 @@
 						</object>
 					</object>
 					<object class="sizeritem">
-						<option>1</option>
+						<option>0</option>
 						<flag>wxEXPAND</flag>
 						<border>0</border>
 						<object class="wxBoxSizer">
