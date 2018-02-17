@@ -338,6 +338,29 @@ int TranscoderThread::InitialiseCodec(PArgList & args,
             mediaFormat.SetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption(), fpp);
         }
 
+        if (args.HasOption("bit-rate")) {
+          PString str = args.GetOptionString("bit-rate");
+          double bitrate = str.AsReal();
+          switch (str[str.GetLength()-1]) {
+            case 'K' :
+            case 'k' :
+              bitrate *= 1000;
+              break;
+            case 'M' :
+            case 'm' :
+              bitrate *= 1000000;
+              break;
+          }
+          if (bitrate < 100 || bitrate > INT_MAX) {
+            cerr << "Could not set bit rate to " << str << endl;
+            return false;
+          }
+          mediaFormat.SetOptionInteger(OpalVideoFormat::TargetBitRateOption(), (unsigned)bitrate);
+          if (mediaFormat.GetOptionInteger(OpalVideoFormat::MaxBitRateOption()) < bitrate)
+            mediaFormat.SetOptionInteger(OpalVideoFormat::MaxBitRateOption(), (unsigned)bitrate);
+        }
+        cout << "Target bit rate set to " << PString(PString::ScaleSI, mediaFormat.GetOptionInteger(OpalVideoFormat::TargetBitRateOption())) << "bps" << endl;
+
         PStringArray options = args.GetOptionString('O').Lines();
         for (PINDEX opt = 0; opt < options.GetSize(); ++opt) {
           PString option = options[opt];
@@ -688,29 +711,6 @@ bool VideoThread::Initialise(PArgList & args)
     cout << "converted to " << nativeWidth << 'x' << nativeHeight;
   cout << ')' << endl;
 
-
-  if (args.HasOption("bit-rate")) {
-    PString str = args.GetOptionString("bit-rate");
-    double bitrate = str.AsReal();
-    switch (str[str.GetLength()-1]) {
-      case 'K' :
-      case 'k' :
-        bitrate *= 1000;
-        break;
-      case 'M' :
-      case 'm' :
-        bitrate *= 1000000;
-        break;
-    }
-    if (bitrate < 100 || bitrate > INT_MAX) {
-      cerr << "Could not set bit rate to " << str << endl;
-      return false;
-    }
-    mediaFormat.SetOptionInteger(OpalVideoFormat::TargetBitRateOption(), (unsigned)bitrate);
-    if (mediaFormat.GetOptionInteger(OpalVideoFormat::MaxBitRateOption()) < bitrate)
-      mediaFormat.SetOptionInteger(OpalVideoFormat::MaxBitRateOption(), (unsigned)bitrate);
-  }
-  cout << "Target bit rate set to " << mediaFormat.GetOptionInteger(OpalVideoFormat::TargetBitRateOption()) << " bps" << endl;
 
   if (args.HasOption('T'))
     m_frameFilename = "frame_stats.csv";
