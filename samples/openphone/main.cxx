@@ -2972,7 +2972,10 @@ void MyManager::OnClosedMediaStream(const OpalMediaStream & stream)
   if (videoStream == NULL)
     return;
 
-  VideoWindowInfo newWindowInfo(videoStream->GetVideoOutputDevice());
+  PVideoOutputDevice * device = videoStream->GetVideoOutputDevice();
+  VideoWindowInfo newWindowInfo(device);
+  device->Close();
+
   if (newWindowInfo.x == INT_MIN)
     return;
 
