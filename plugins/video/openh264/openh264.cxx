@@ -749,6 +749,7 @@ class H264_Encoder : public PluginVideoEncoder<MY_CODEC>
           return false;
       }
 
+      m_encapsulation.SetPacketisationMode(mode);
       m_encapsulation.SetMaxPayloadSize(m_maxRTPSize);
 
       int err = m_encoder->InitializeExt(&param);
