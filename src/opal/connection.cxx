@@ -691,29 +691,58 @@ void OpalConnection::AdjustMediaFormats(bool   local,
 
   mediaFormats.Remove(m_stringOptions(OPAL_OPT_REMOVE_CODEC).Lines());
 
-  if (local) {
-    for (PStringToString::const_iterator it = m_stringOptions.begin(); it != m_stringOptions.end(); ++it) {
-      PString key = it->first;
-      PString fmtName, optName;
-      if (key.Split(':', fmtName, optName, PString::SplitTrimBefore|PString::SplitNonEmpty)) {
-        PString optValue = it->second;
-        OpalMediaFormatList::const_iterator iterFormat;
-        while ((iterFormat = mediaFormats.FindFormat(fmtName, iterFormat)) != mediaFormats.end()) {
-          OpalMediaFormat & format = const_cast<OpalMediaFormat &>(*iterFormat);
-          if (format.SetOptionValue(optName, optValue)) {
-            PTRACE(4, "Set media format " << format
-                    << " option " << optName << " to \"" << optValue << '"');
-          }
-          else {
-            PTRACE(2, "Failed to set media format " << format
-                    << " option " << optName << " to \"" << optValue << '"');
-          }
+  if (!local)
+    return m_endpoint.AdjustMediaFormats(local, *this, mediaFormats);
+
+  for (PStringToString::const_iterator it = m_stringOptions.begin(); it != m_stringOptions.end(); ++it) {
+    PString key = it->first;
+    PString fmtName, optName;
+    if (key.Split(':', fmtName, optName, PString::SplitTrimBefore|PString::SplitNonEmpty)) {
+      PString optValue = it->second;
+      OpalMediaFormatList::const_iterator iterFormat;
+      while ((iterFormat = mediaFormats.FindFormat(fmtName, iterFormat)) != mediaFormats.end()) {
+        OpalMediaFormat & format = const_cast<OpalMediaFormat &>(*iterFormat);
+        if (format.SetOptionValue(optName, optValue)) {
+          PTRACE(4, "Set media format " << format
+                  << " option " << optName << " to \"" << optValue << '"');
+        }
+        else {
+          PTRACE(2, "Failed to set media format " << format
+                  << " option " << optName << " to \"" << optValue << '"');
         }
       }
     }
   }
 
   m_endpoint.AdjustMediaFormats(local, *this, mediaFormats);
+
+  // See if we can assign more reasonable payload type numbers to use
+  std::vector<OpalMediaFormat *> usedFormats(RTP_DataFrame::MaxPayloadType+2);
+  for (OpalMediaFormatList::iterator it = mediaFormats.begin(); it != mediaFormats.end(); ++it)
+    usedFormats[it->GetPayloadType()] = &*it;
+
+  RTP_DataFrame::PayloadTypes unusedPT = RTP_DataFrame::DynamicBase;
+  for (RTP_DataFrame::PayloadTypes checkPT = (RTP_DataFrame::PayloadTypes)(RTP_DataFrame::LastKnownPayloadType + 1);
+                          checkPT < RTP_DataFrame::DynamicBase; checkPT = (RTP_DataFrame::PayloadTypes)(checkPT + 1)) {
+    if (checkPT == RTP_DataFrame::StartConflictRTCP)
+      checkPT = RTP_DataFrame::EndConflictRTCP;
+    else if (usedFormats[checkPT] != NULL) {
+      while (usedFormats[unusedPT] != NULL) {
+        if (unusedPT < RTP_DataFrame::DynamicBase) {
+          unusedPT = (RTP_DataFrame::PayloadTypes)(unusedPT - 1);
+          if (unusedPT <= checkPT)
+            return; // We are full
+        }
+        else {
+          unusedPT = (RTP_DataFrame::PayloadTypes)(unusedPT + 1);
+          if (unusedPT >= RTP_DataFrame::MaxPayloadType)
+            unusedPT = (RTP_DataFrame::PayloadTypes)(RTP_DataFrame::DynamicBase - 1);
+        }
+      }
+      usedFormats[checkPT]->SetPayloadType(unusedPT);
+      std::swap(usedFormats[unusedPT], usedFormats[checkPT]);
+    }
+  }
 }
 
 
