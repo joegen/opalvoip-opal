@@ -451,7 +451,7 @@ class OpusPluginEncoder : public OpusPluginCodec
                              unsigned & flags)
     {
       if (fromLen == 0) {
-        static const short silence[20 * 48];
+        static const short silence[20 * 48] = { };
         fromPtr = silence;
         fromLen = sizeof(silence);;
       }
