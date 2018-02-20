@@ -984,9 +984,16 @@ void OpalMediaTransport::AddChannel(PChannel * channel)
   PTRACE_CONTEXT_ID_TO(channel);
   channel = AddWrapperChannels(subchannel, channel);
 
-  /* Make socket timeout slightly longer (200ms) than media timeout to avoid
+  if (subchannel == e_Control) {
+    ///  We basically extend timeout to 1 day for the control channel
+    /// So audio does not get disconnected due to some remote endpoints
+    /// not sending RTCP at all
+    channel->SetReadTimeout(m_mediaTimeout + (((1000 * 60) * 60) * 24) ); 
+  } else {
+    /* Make socket timeout slightly longer (200ms) than media timeout to avoid
       a race condition with m_mediaTimer expiring. */
-  channel->SetReadTimeout(m_mediaTimeout+200);
+    channel->SetReadTimeout(m_mediaTimeout+200);
+  }
 
   m_subchannels.push_back(ChannelInfo(*this, subchannel, channel));
   PTRACE(5, "Added " << subchannel << " channel " << channel->GetName());
