@@ -1068,6 +1068,12 @@ void OpalTransport::CloseWait()
 
   if (!LockReadWrite())
     return;
+  
+  if (!m_thread) {
+    UnlockReadWrite();
+    return;
+  }
+  
   PThread * exitingThread = m_thread;
   m_thread = NULL;
   UnlockReadWrite();

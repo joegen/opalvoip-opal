@@ -587,6 +587,7 @@ OpalMediaTransport::OpalMediaTransport(const PString & name)
   , m_maxNoTransmitTime(0, 10)    // Sending data for 10 seconds, ICMP says still not there
   , m_opened(false)
   , m_started(false)
+  , m_closeInvoked(false)
   , m_congestionControl(NULL)
 {
   m_ccTimer.SetNotifier(PCREATE_NOTIFIER(ProcessCongestionControl), "RTP-CC");
@@ -955,17 +956,27 @@ void OpalMediaTransport::Start()
   }
 }
 
+void OpalMediaTransport::CloseWait()
+{
+  PWaitAndSignal lock(m_closeMutex);
+  
+  if (m_closeInvoked) {
+    return;
+  }
+  m_closeInvoked = true;
+  PTRACE(4, *this << "stopping " << m_subchannels.size() << " subchannels.");
+  InternalClose();
+
+  for (vector<ChannelInfo>::iterator it = m_subchannels.begin(); it != m_subchannels.end(); ++it)
+    PThread::WaitAndDelete(it->m_thread);
+}
 
 void OpalMediaTransport::InternalStop()
 {
   if (m_subchannels.empty())
     return;
 
-  PTRACE(4, *this << "stopping " << m_subchannels.size() << " subchannels.");
-  InternalClose();
-
-  for (vector<ChannelInfo>::iterator it = m_subchannels.begin(); it != m_subchannels.end(); ++it)
-    PThread::WaitAndDelete(it->m_thread);
+  CloseWait();
 
   P_INSTRUMENTED_LOCK_READ_WRITE();
 
@@ -1431,7 +1442,11 @@ bool OpalMediaSession::IsEstablished() const
 bool OpalMediaSession::Close()
 {
   // A close here is detach but don't do anything with detached transport
-  return OpalMediaSession::DetachTransport() != NULL;
+  OpalMediaTransportPtr transport = OpalMediaSession::DetachTransport();
+  if (transport) {
+    transport->CloseWait();
+  }
+  return  transport != NULL;
 }
 
 

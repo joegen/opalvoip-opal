@@ -493,6 +493,8 @@ class OpalMediaTransport : public PSafeObject, public OpalMediaTransportChannelT
       PObject * target,
       SubChannels subchannel = e_Media
     );
+    
+    void CloseWait();
 
     /**Get channel object for subchannel index.
       */
@@ -540,6 +542,8 @@ class OpalMediaTransport : public PSafeObject, public OpalMediaTransportChannelT
     PTimeInterval m_maxNoTransmitTime;
     atomic<bool>  m_opened;
     atomic<bool>  m_started;
+    PMutex m_closeMutex;
+    bool m_closeInvoked;
 
     atomic<CongestionControl *> m_congestionControl;
     PTimer m_ccTimer;
