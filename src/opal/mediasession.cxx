@@ -584,7 +584,7 @@ OpalMediaTransport::OpalMediaTransport(const PString & name)
   , m_remoteAddressSet(false)
   , m_packetSize(2048)
   , m_mediaTimeout(0, 0, 5)       // Nothing received for 5 minutes
-  , m_maxNoTransmitTime(0, 10)    // Sending data for 10 seconds, ICMP says still not there
+  , m_maxNoTransmitTime(PMaxTimeInterval)    // Tiemout for ICMP says still not there
   , m_opened(false)
   , m_started(false)
   , m_closeInvoked(false)
@@ -996,10 +996,10 @@ void OpalMediaTransport::AddChannel(PChannel * channel)
   channel = AddWrapperChannels(subchannel, channel);
 
   if (subchannel == e_Control) {
-    ///  We basically extend timeout to 1 day for the control channel
+    ///  We basically extend timeout to maximum for the control channel
     /// So audio does not get disconnected due to some remote endpoints
     /// not sending RTCP at all
-    channel->SetReadTimeout(m_mediaTimeout + (((1000 * 60) * 60) * 24) ); 
+    channel->SetReadTimeout(PMaxTimeInterval);
   } else {
     /* Make socket timeout slightly longer (200ms) than media timeout to avoid
       a race condition with m_mediaTimer expiring. */

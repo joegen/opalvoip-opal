@@ -238,7 +238,7 @@ OpalTranscoder * OpalTranscoder::Create(const OpalMediaFormat & srcFormat,
 {
   OpalTranscoder * transcoder = OpalTranscoderFactory::CreateInstance(OpalTranscoderKey(srcFormat.GetName(), destFormat.GetName()));
   if (transcoder == NULL) {
-    PTRACE2(2, NULL, "Could not create transcoder instance from " << srcFormat << " to " << destFormat);
+    PTRACE2(5, NULL, "Direct transcoder from " << srcFormat << " to " << destFormat << " is not available");
     return NULL;
   }
 
@@ -253,7 +253,10 @@ OpalTranscoder * OpalTranscoder::Create(const OpalMediaFormat & srcFormat,
 
   // This is called to make sure options are sent to plug ins.
   if (transcoder->UpdateMediaFormats(srcFormat, destFormat))
+  {
+    PTRACE2(5, NULL, "Created transcoder instance from " << srcFormat << " to " << destFormat);
     return transcoder;
+  }
 
   PTRACE2(2, transcoder, "Error creating transcoder instance from " << srcFormat << " to " << destFormat);
   delete transcoder;
