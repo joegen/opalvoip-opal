@@ -873,7 +873,13 @@ bool OpalMediaTransport::ChannelInfo::HandleUnavailableError()
   P_INSTRUMENTED_LOCK_READ_WRITE2(lock, m_owner);
   if (!lock.IsLocked())
     return false;
-
+  
+  // Ignore control channel ICMP errors
+  if (m_subchannel == e_Control) {
+    m_consecutiveUnavailableErrors = 0;
+    return true;
+  }
+  
   if (m_timeForUnavailableErrors.HasExpired() && m_consecutiveUnavailableErrors < 10)
     m_consecutiveUnavailableErrors = 0;
 
