@@ -309,7 +309,7 @@ OpalManager::OpalManager()
   , m_mediaFormatMask(PARRAYSIZE(DefaultMediaFormatMask), DefaultMediaFormatMask)
   , m_disableDetectInBandDTMF(false)
   , m_noMediaTimeout(0, 0, 5)     // Minutes
-  , m_txMediaTimeout(0, 10)       // Seconds
+  , m_txMediaTimeout(0, 0, 60 * 24) // minutes
   , m_signalingTimeout(0, 10)     // Seconds
   , m_transportIdleTime(0, 0, 1)  // Minute
   , m_natKeepAliveTime(0, 30)     // Seconds

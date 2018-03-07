@@ -584,7 +584,7 @@ OpalMediaTransport::OpalMediaTransport(const PString & name)
   , m_remoteAddressSet(false)
   , m_packetSize(2048)
   , m_mediaTimeout(0, 0, 5)       // Nothing received for 5 minutes
-  , m_maxNoTransmitTime(PMaxTimeInterval)    // Tiemout for ICMP says still not there
+  , m_maxNoTransmitTime(0, 0, 60 * 24)    // One whole day
   , m_opened(false)
   , m_started(false)
   , m_closeInvoked(false)
