@@ -90,7 +90,7 @@ static void SpanDSP_Message(int level, const char *text)
     if (!LogFunction(level, NULL, 0, NULL, NULL))
       return;
 
-    int last = strlen(text)-1;
+    size_t last = strlen(text)-1;
     if (text[last] == '\n')
       ((char *)text)[last] = '\0';
     LogFunction(level, __FILE__, __LINE__, "SpanDSP", text);
@@ -673,7 +673,7 @@ class FaxT38
       if (toLen < size)
         return false;
 
-      toLen = size;
+      toLen = (unsigned)size;
 
       memcpy(PluginCodec_RTP_GetPayloadPtr(toPtr), &packet[0], packet.size());
 

@@ -379,7 +379,7 @@ class Context
 
     static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     {
-      Context * context = (Context *)GetWindowLong(hWnd, 0);
+      Context * context = (Context *)GetWindowLongPtr(hWnd, 0);
       if (context != NULL)
         context->HandleMsg(message, wParam, lParam);
       return DefWindowProc(hWnd, message, wParam, lParam);
@@ -417,7 +417,7 @@ class Context
         return;
       }
 
-      SetWindowLong(m_hWnd, 0, (LONG)this);
+      SetWindowLongPtr(m_hWnd, 0, (LONG_PTR)this);
 
       if (!Register(true)) {
         DestroyWindow(m_hWnd);
