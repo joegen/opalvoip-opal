@@ -24,9 +24,11 @@
         <?define SpanDspDir = "..\..\..\external\spandsp-0.0.6\src\x64\Release" ?>
     <?endif?>
 
+    <?define AVFORMATVer = "57" ?>
     <?define AVCODECVer = "57" ?>
     <?define AVUTILVer = "55" ?>
     <?define SWRESAMPLEVer = "2" ?>
+    <?define SWSCALEVer = "4" ?>
 
     <?define WxDir = "$(env.WXDIR)" ?>
     <?define WxVer = "$(env.WXVER)1" ?>
