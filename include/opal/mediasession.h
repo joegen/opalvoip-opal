@@ -498,6 +498,7 @@ class OpalMediaTransport : public PSafeObject, public OpalMediaTransportChannelT
       */
     PChannel * GetChannel(SubChannels subchannel = e_Media) const;
 
+    void SetDiscoverMTU(int mode) { m_mtuDiscoverMode = mode; }
     void SetMediaTimeout(const PTimeInterval & t);
     void SetRemoteBehindNAT();
 
@@ -530,6 +531,7 @@ class OpalMediaTransport : public PSafeObject, public OpalMediaTransportChannelT
     bool          m_remoteBehindNAT;
     bool          m_remoteAddressSet;
     PINDEX        m_packetSize;
+    int           m_mtuDiscoverMode;
     PTimeInterval m_mediaTimeout;
     PSimpleTimer  m_mediaTimer;
     PTimeInterval m_maxNoTransmitTime;

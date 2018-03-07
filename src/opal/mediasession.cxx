@@ -581,6 +581,7 @@ OpalMediaTransport::OpalMediaTransport(const PString & name)
   , m_remoteBehindNAT(false)
   , m_remoteAddressSet(false)
   , m_packetSize(2048)
+  , m_mtuDiscoverMode(-1)
   , m_mediaTimeout(0, 0, 5)       // Nothing received for 5 minutes
   , m_maxNoTransmitTime(0, 10)    // Sending data for 10 seconds, ICMP says still not there
   , m_opened(false)
@@ -1091,7 +1092,10 @@ bool OpalUDPMediaTransport::InternalSetRemoteAddress(const PIPSocket::AddressAnd
 
   m_subchannels[subchannel].m_remoteAddress = OpalTransportAddress(newAP, OpalTransportAddress::UdpPrefix());
   m_subchannels[subchannel].m_consecutiveUnavailableErrors = 0; // Prevent errors from previous address.
-  socket->SetSendAddress(newAP);
+  if (socket->SetSendAddress(newAP, m_mtuDiscoverMode))
+    PTRACE_IF(3, m_mtuDiscoverMode >= 0, *this << source << " enabling MTU discvery mode " << m_mtuDiscoverMode);
+  else
+    PTRACE(2, *this << source << " cannot enable MTU discovery: " << socket->GetErrorText());
   m_remoteAddressSet = true;
 
   if (m_localHasRestrictedNAT) {
@@ -1335,9 +1339,10 @@ bool OpalUDPMediaTransport::Write(const void * data, PINDEX length, SubChannels 
   }
 
   if (socket->GetErrorCode(PChannel::LastWriteError) == PChannel::Unavailable && m_subchannels[subchannel].HandleUnavailableError())
-    return true;
+      return true;
 
-  PTRACE(1, *this << "error writing to " << sendAddr
+  PTRACE_IF(1, m_mtuDiscoverMode < 0 || socket->GetErrorCode(PChannel::LastWriteError) != PChannel::BufferTooSmall,
+            *this << "error writing to " << sendAddr
                   << " (" << length << " bytes)"
                      " on " << subchannel << " subchannel"
                      " (" << socket->GetErrorNumber(PChannel::LastWriteError) << "):"

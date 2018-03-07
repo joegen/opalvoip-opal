@@ -682,6 +682,16 @@ bool OpalPluginTranscoder::ExecuteCommand(const OpalMediaCommand & command)
       return ok;
   }
 
+  const OpalMediaMaxPayload * mp = dynamic_cast<const OpalMediaMaxPayload *>(&command);
+  if (mp != NULL) {
+      PStringToString opts;
+      opts.SetAt(PLUGINCODEC_OPTION_MAX_TX_PACKET_SIZE, mp->GetPayloadSize());
+      char ** options = opts.ToCharArray(false);
+      bool ok = setCodecOptionsControl.Call(options, sizeof(options), context) != 0;
+      free(options);
+      return ok;
+  }
+
   OpalPluginControl cmd(codecDef, command.GetName());
   return cmd.Call(command.GetPlugInData(), command.GetPlugInSize(), context) > 0;
 }

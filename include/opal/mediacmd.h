@@ -170,6 +170,28 @@ class OpalMediaPacketLoss : public OpalMediaCommand
 };
 
 
+/**This indicates a new max payload size should be sued.
+  */
+class OpalMediaMaxPayload : public OpalMediaCommand
+{
+    PCLASSINFO_WITH_CLONE(OpalMediaMaxPayload, OpalMediaCommand);
+  public:
+    OpalMediaMaxPayload(
+      unsigned payloadSize,            ///< New payload size
+      const OpalMediaType & mediaType, ///< Media type to search for in open streams
+      unsigned sessionID = 0,          ///< Session for media stream, 0 is use first \p mediaType stream
+      unsigned ssrc = 0                ///< Sync Source for media stream (if RTP)
+    );
+
+    virtual PString GetName() const;
+
+    unsigned GetPayloadSize() const { return m_payloadSize; }
+
+  protected:
+    unsigned m_payloadSize;
+};
+
+
 #endif // OPAL_OPAL_MEDIACMD_H
 
 

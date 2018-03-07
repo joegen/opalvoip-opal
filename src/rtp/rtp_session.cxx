@@ -2985,6 +2985,12 @@ void OpalRTPSession::SetSinglePortTx(bool singlePortTx)
   if (transport == NULL)
     return;
 
+  /* We cannot do MTU if only have one local socket (m_singlePortRx true) and
+     we need to send to two different remote ports (m_singlePortTx false) as
+     the MTU discovery rquiresw a socket connect() which prevents sendto()
+     from working as desired. */
+  transport->SetDiscoverMTU((m_singlePortRx && !m_singlePortTx) ? -1 : IP_PMTUDISC_DO);
+
   OpalTransportAddress remoteDataAddress = transport->GetRemoteAddress(e_Data);
   if (singlePortTx)
     transport->SetRemoteAddress(remoteDataAddress, e_Control);
@@ -3166,6 +3172,19 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::WriteData(RTP_DataFrame & fram
     case e_ProcessPacket :
       if (transport->Write(frame.GetPointer(), frame.GetPacketSize(), e_Data, remote))
         return e_ProcessPacket;
+
+      {
+        PUDPSocket * socket = dynamic_cast<PUDPSocket *>(transport->GetChannel(e_Data));
+        if (socket != NULL && socket->GetErrorCode(PChannel::LastWriteError) == PChannel::BufferTooSmall) {
+          int mtu = socket->GetCurrentMTU();
+          PTRACE(2, *this << "write packet too large: size=" << frame.GetPacketSize() << ", MTU=" << mtu);
+          if (mtu > 0) {
+            static const int HeadersAllowance = 20+16+12+16; // IP/UDP/RTP/extensions
+            m_connection.ExecuteMediaCommand(OpalMediaMaxPayload(mtu - HeadersAllowance, m_mediaType, m_sessionId, frame.GetSyncSource()), true);
+          }
+          return e_IgnorePacket;
+        }
+      }
 
       // Do abort case
     default :

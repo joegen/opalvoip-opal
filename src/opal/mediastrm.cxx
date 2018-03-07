@@ -1611,4 +1611,20 @@ PString OpalMediaPacketLoss::GetName() const
 }
 
 
+OpalMediaMaxPayload::OpalMediaMaxPayload(unsigned payloadSize,
+                                         const OpalMediaType & mediaType,
+                                         unsigned sessionID,
+                                         unsigned ssrc)
+  : OpalMediaCommand(mediaType, sessionID, ssrc)
+  , m_payloadSize(payloadSize)
+{
+}
+
+
+PString OpalMediaMaxPayload::GetName() const
+{
+  return "Max Payload Size";
+}
+
+
 // End of file ////////////////////////////////////////////////////////////////
