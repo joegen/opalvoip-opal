@@ -647,7 +647,7 @@ H261Encoder::flush(Transmitter::pktbuf* pb, int nbit,
 
 	if (npb != 0) {
 		u_char* nbs = (u_char*)npb->buf->data;
-		u_int bc = (bc_ - bs_) << 3;
+		u_int bc = (u_int)(bc_ - bs_) << 3;
 		int tbit = bc + nbb_;
 		int extra = ((tbit + 7) >> 3) - (nbit >> 3);
 		if (extra > 0)
@@ -722,7 +722,7 @@ int H261Encoder::encode(const VideoFrame* vf, const BYTE *crvec) {
 		u_int loff = loff_[gobIndex];
 		u_int coff = coff_[gobIndex];
 		u_int blkno = blkno_[gobIndex];
-		u_int nbit = ((bc_ - bs_) << 3) + nbb_; // # of bits already in buffer
+		u_int nbit = ((u_int)(bc_ - bs_) << 3) + nbb_; // # of bits already in buffer
 
 		/* GSC/GN */
 		PUT_BITS(0x10 | (gobIndex + 1), 20, nbb_, bb_, bc_);
@@ -743,7 +743,7 @@ int H261Encoder::encode(const VideoFrame* vf, const BYTE *crvec) {
 			if ((s & CR_SEND) != 0) {
 				u_int mbpred = mba_;
 				encode_mb(mba, frm, loff, coff, CR_STATE(s)); // encode MB
-				u_int cbits = ((bc_ - bs_) << 3) + nbb_;
+				u_int cbits = ((u_int)(bc_ - bs_) << 3) + nbb_;
 				if (cbits > ec) { // make new packet
 					Transmitter::pktbuf* npb;
 					npb = tx_->alloc();
@@ -781,7 +781,7 @@ int H261Encoder::encode(const VideoFrame* vf, const BYTE *crvec) {
 
 		}
 	}
-	cc += flush(pb, ((bc_ - bs_) << 3) + nbb_, 0); 
+	cc += flush(pb, ((u_int)(bc_ - bs_) << 3) + nbb_, 0); 
 	return (cc);
 }
 
@@ -851,7 +851,7 @@ void H261PixelEncoder::IncEncodeAndGetPacket(
   usedBB_INTs = (gNbytes + gDbase)/sizeof(BB_INT);
   msrc = gData + usedBB_INTs*sizeof(BB_INT);
   gDbase = (gDbase + gNbytes) % sizeof(BB_INT);
-  m1 = bc_ - msrc;
+  m1 = (u_int)(bc_ - msrc);
   if (m1) memcpy(gData, msrc, m1);
   bc_ = gData + m1; // set starting bc_ address
   
@@ -877,7 +877,7 @@ void H261PixelEncoder::IncEncodeAndGetPacket(
   unsigned bitLimit = 8*(RTP_MTU - sizeof(h261hdr));
   u_char* bbase = gData + gDbase;
   if (!(gNxtGOB > gGobMax)) {
-    while ((currentBitCount = nbb_ + 8*(bc_ - bbase)) <= bitLimit) {
+    while ((currentBitCount = nbb_ + 8*(u_int)(bc_ - bbase)) <= bitLimit) {
       // everything encoded up till now fits within the RTP_MTU buffer
       // test to see if the packet can be broken here
       if (gSendGOBhdr || (0 != mba_)){ // if packet can be broken,
@@ -946,7 +946,7 @@ void H261PixelEncoder::IncEncodeAndGetPacket(
   // flush bits from bb_
   STORE_BITS(bb_, bc_); // necessary when gDbase != 0
   if (gDone) {
-    unsigned totalBits = nbb_ + 8*(bc_ - bbase);
+    unsigned totalBits = nbb_ + 8*(u_int)(bc_ - bbase);
     if (totalBits <= bitLimit) { // would packet be too big?
       previousBitCount = totalBits;
     }
