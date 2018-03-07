@@ -3092,7 +3092,7 @@ void OpalRTPSession::OnRxDataPacket(OpalMediaTransport &, PBYTEArray data)
   P_INSTRUMENTED_LOCK_READ_WRITE(return);
 
   if (data.IsEmpty()) {
-    CheckMediaFailed(e_Data);
+    SessionFailed(e_Data PTRACE_PARAM(, "with no data"));
     return;
   }
 
@@ -3106,12 +3106,12 @@ void OpalRTPSession::OnRxDataPacket(OpalMediaTransport &, PBYTEArray data)
   unsigned type = control.GetPayloadType();
   if (type >= RTP_ControlFrame::e_FirstValidPayloadType && type <= RTP_ControlFrame::e_LastValidPayloadType) {
     if (OnReceiveControl(control) == e_AbortTransport)
-      CheckMediaFailed(e_Control);
+      SessionFailed(e_Control PTRACE_PARAM(, "OnReceiveControl abort"));
   }
   else {
     RTP_DataFrame frame(data);
     if (OnPreReceiveData(frame) == e_AbortTransport)
-      CheckMediaFailed(e_Data);
+      SessionFailed(e_Data PTRACE_PARAM(, "OnReceiveData abort"));
   }
 }
 
@@ -3121,14 +3121,14 @@ void OpalRTPSession::OnRxControlPacket(OpalMediaTransport &, PBYTEArray data)
   P_INSTRUMENTED_LOCK_READ_WRITE(return);
 
   if (data.IsEmpty()) {
-    CheckMediaFailed(e_Control);
+    SessionFailed(e_Control PTRACE_PARAM(, "with no data"));
     return;
   }
 
   RTP_ControlFrame control(data, data.GetSize(), false);
   if (control.IsValid()) {
     if (OnReceiveControl(control) == e_AbortTransport)
-      CheckMediaFailed(e_Control);
+      SessionFailed(e_Control PTRACE_PARAM(, "OnReceiveControl abort"));
   }
   else {
     PTRACE_IF(2, data.GetSize() > 1 || m_rtcpPacketsReceived > 0,
@@ -3166,32 +3166,31 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::WriteData(RTP_DataFrame & fram
   UnlockReadWrite(P_DEBUG_LOCATION);
 
   switch (status) {
-    case e_IgnorePacket :
+    case e_IgnorePacket:
       return e_IgnorePacket;
 
-    case e_ProcessPacket :
-      if (transport->Write(frame.GetPointer(), frame.GetPacketSize(), e_Data, remote))
+    case e_ProcessPacket:
+    {
+      int mtu = INT_MIN;
+      if (transport->Write(frame.GetPointer(), frame.GetPacketSize(), e_Data, remote, &mtu))
         return e_ProcessPacket;
 
-      {
-        PUDPSocket * socket = dynamic_cast<PUDPSocket *>(transport->GetChannel(e_Data));
-        if (socket != NULL && socket->GetErrorCode(PChannel::LastWriteError) == PChannel::BufferTooSmall) {
-          int mtu = socket->GetCurrentMTU();
-          PTRACE(2, *this << "write packet too large: size=" << frame.GetPacketSize() << ", MTU=" << mtu);
-          if (mtu > 0) {
-            static const int HeadersAllowance = 20+16+12+16; // IP/UDP/RTP/extensions
-            m_connection.ExecuteMediaCommand(OpalMediaMaxPayload(mtu - HeadersAllowance, m_mediaType, m_sessionId, frame.GetSyncSource()), true);
-          }
-          return e_IgnorePacket;
-        }
+      if (mtu > INT_MIN) {
+        PTRACE(2, *this << "write packet too large: size=" << frame.GetPacketSize() << ", MTU=" << mtu);
+        static const int HeadersAllowance = 40 + 74 + 56 + 16 + 12 + 16; // GRE/IPv6/IPSsec/VPN/UDP/RTP/extensions
+        if (mtu > HeadersAllowance)
+          m_connection.ExecuteMediaCommand(OpalMediaMaxPayload(mtu - HeadersAllowance, m_mediaType, m_sessionId, frame.GetSyncSource()), true);
+
+        return e_IgnorePacket;
       }
+    }
 
       // Do abort case
     default :
       break;
   }
 
-  CheckMediaFailed(e_Data);
+  SessionFailed(e_Data PTRACE_PARAM(, "on transport write"));
   return e_AbortTransport;
 }
 
@@ -3239,14 +3238,15 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::WriteControl(RTP_ControlFrame 
       break;
   }
 
-  CheckMediaFailed(e_Control);
+  SessionFailed(e_Control PTRACE_PARAM(, "on transport write"));
   return e_AbortTransport;
 }
 
 
-void OpalRTPSession::CheckMediaFailed(SubChannels subchannel)
+void OpalRTPSession::SessionFailed(SubChannels subchannel PTRACE_PARAM(, const char * reason))
 {
-  PTRACE(4, *this << "media failed for " << subchannel);
+  PTRACE(4, *this << subchannel << " subchannel failed " << reason);
+
   /* Really should test if both data and control fail, but as it is unlikely we would
      get one failed without the other, we don't bother. */
   if (subchannel == e_Data && m_connection.OnMediaFailed(m_sessionId)) {

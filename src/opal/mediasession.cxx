@@ -687,27 +687,6 @@ bool OpalMediaTransport::GetCandidates(PString &, PString &, PNatCandidateList &
 }
 
 
-bool OpalMediaTransport::Write(const void * data, PINDEX length, SubChannels subchannel, const PIPSocketAddressAndPort *)
-{
-  P_INSTRUMENTED_LOCK_READ_ONLY(return false);
-
-  PChannel * channel;
-  if ((size_t)subchannel >= m_subchannels.size() || (channel = m_subchannels[subchannel].m_channel) == NULL) {
-    PTRACE(4, *this << "write to closed/unopened subchannel " << subchannel);
-    return false;
-  }
-
-  if (channel->Write(data, length))
-    return true;
-
-  PTRACE(1, *this << "write (" << length << " bytes) error"
-            " on " << subchannel << " subchannel"
-            " (" << channel->GetErrorNumber(PChannel::LastWriteError) << "):"
-            " " << channel->GetErrorText(PChannel::LastWriteError));
-  return false;
-}
-
-
 #if OPAL_SRTP
 bool OpalMediaTransport::GetKeyInfo(OpalMediaCryptoKeyInfo * [2])
 {
@@ -1022,6 +1001,27 @@ bool OpalTCPMediaTransport::SetRemoteAddress(const OpalTransportAddress & remote
 }
 
 
+bool OpalTCPMediaTransport::Write(const void * data, PINDEX length, SubChannels subchannel, const PIPSocketAddressAndPort *, int *)
+{
+  P_INSTRUMENTED_LOCK_READ_ONLY(return false);
+
+  PChannel * channel;
+  if ((size_t)subchannel >= m_subchannels.size() || (channel = m_subchannels[subchannel].m_channel) == NULL) {
+    PTRACE(4, *this << "write to closed/unopened subchannel " << subchannel);
+    return false;
+  }
+
+  if (channel->Write(data, length))
+    return true;
+
+  PTRACE(1, *this << "write (" << length << " bytes) error"
+            " on " << subchannel << " subchannel"
+            " (" << channel->GetErrorNumber(PChannel::LastWriteError) << "):"
+            " " << channel->GetErrorText(PChannel::LastWriteError));
+  return false;
+}
+
+
 //////////////////////////////////////////////////////////////////////////////
 
 OpalUDPMediaTransport::OpalUDPMediaTransport(const PString & name)
@@ -1310,7 +1310,7 @@ bool OpalUDPMediaTransport::Open(OpalMediaSession & session,
 }
 
 
-bool OpalUDPMediaTransport::Write(const void * data, PINDEX length, SubChannels subchannel, const PIPSocketAddressAndPort * dest)
+bool OpalUDPMediaTransport::Write(const void * data, PINDEX length, SubChannels subchannel, const PIPSocketAddressAndPort * dest, int * mtu)
 {
   P_INSTRUMENTED_LOCK_READ_ONLY(return false);
 
@@ -1326,23 +1326,36 @@ bool OpalUDPMediaTransport::Write(const void * data, PINDEX length, SubChannels 
   else
     socket->GetSendAddress(sendAddr);
 
-  if (sendAddr.IsValid()) {
-    if (socket->WriteTo(data, length, sendAddr))
-      return true;
-  }
-  else {
+  if (!sendAddr.IsValid()) {
     PTRACE(4, "UDP write has no destination address.");
     /* The following makes not having destination address yet be processed the
        same as if the remote is not yet listening on the port (ICMP errors) so it
        will keep trying for a while, then give up and close the media transport. */
     socket->SetErrorValues(PChannel::Unavailable, EINVAL, PChannel::LastWriteError);
+    return false;
   }
 
-  if (socket->GetErrorCode(PChannel::LastWriteError) == PChannel::Unavailable && m_subchannels[subchannel].HandleUnavailableError())
-      return true;
+  if (socket->WriteTo(data, length, sendAddr))
+    return true;
 
-  PTRACE_IF(1, m_mtuDiscoverMode < 0 || socket->GetErrorCode(PChannel::LastWriteError) != PChannel::BufferTooSmall,
-            *this << "error writing to " << sendAddr
+  switch (socket->GetErrorCode(PChannel::LastWriteError)) {
+    case PChannel::Unavailable:
+      if (m_subchannels[subchannel].HandleUnavailableError())
+        return true;
+      break;
+
+    case PChannel::BufferTooSmall:
+      if (m_mtuDiscoverMode >= 0 && mtu != NULL) {
+        *mtu = socket->GetCurrentMTU();
+        return false;
+      }
+      break;
+
+    default:
+      break;
+  }
+
+  PTRACE(1, *this << "error writing to " << sendAddr
                   << " (" << length << " bytes)"
                      " on " << subchannel << " subchannel"
                      " (" << socket->GetErrorNumber(PChannel::LastWriteError) << "):"

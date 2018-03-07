@@ -663,7 +663,7 @@ class OpalRTPSession : public OpalMediaSession
 
     PDECLARE_MediaReadNotifier(OpalRTPSession, OnRxDataPacket);
     PDECLARE_MediaReadNotifier(OpalRTPSession, OnRxControlPacket);
-    void CheckMediaFailed(SubChannels subchannel);
+    void SessionFailed(SubChannels subchannel PTRACE_PARAM(, const char * reason));
 
     OpalRTPEndPoint   & m_endpoint;
     OpalManager       & m_manager;
