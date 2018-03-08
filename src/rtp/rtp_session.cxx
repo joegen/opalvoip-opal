@@ -50,8 +50,8 @@
 #include <algorithm>
 
 
-static const uint16_t SequenceReorderThreshold = (1<<16)-100;  // As per RFC3550 RTP_SEQ_MOD - MAX_MISORDER
-static const uint16_t SequenceRestartThreshold = 3000;         // As per RFC3550 MAX_DROPOUT
+static const RTP_SequenceNumber SequenceReorderThreshold = (1<<16)-100;  // As per RFC3550 RTP_SEQ_MOD - MAX_MISORDER
+static const RTP_SequenceNumber SequenceRestartThreshold = 3000;         // As per RFC3550 MAX_DROPOUT
 
 
 enum { JitterRoundingGuardBits = 4 };
@@ -841,43 +841,8 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveData(RTP_
     return status;
 
   // We are receiving retransmissions in this SSRC
-  if (IsRtx()) {
-    PINDEX payloadSize = frame.GetPayloadSize();
-    if (payloadSize < 2) {
-      PTRACE(2, &m_session, *this << "retransmission packet too small: " << frame);
-      return e_IgnorePacket;
-    }
-
-    SyncSource * primary;
-    if (!m_session.GetSyncSource(m_rtxSSRC, e_Receiver, primary)) {
-      PTRACE(2, &m_session, *this << "retransmission without primary SSRC=" << RTP_TRACE_SRC(m_rtxSSRC));
-      return e_IgnorePacket;
-    }
-
-    BYTE * payloadPtr = frame.GetPayloadPtr();
-    RTP_SequenceNumber rtxSN = *(PUInt16b *)payloadPtr;
-
-    if (!primary->IsExpectingRetransmit(rtxSN)) {
-      PTRACE(5, &m_session, *this << "ignoring retransmission for SN=" << rtxSN << " for primary SSRC=" << RTP_TRACE_SRC(m_rtxSSRC));
-      return e_IgnorePacket;
-    }
-
-    PTRACE(5, &m_session, *this << "retransmission received:"
-                          " rtx-sn=" << frame.GetSequenceNumber() << ","
-                          " pri-sn=" << rtxSN << ","
-                          " pri-pt=" << m_rtxPT << ","
-                          " pri-SSRC=" << RTP_TRACE_SRC(m_rtxSSRC));
-
-    payloadSize -= 2;
-    memmove(payloadPtr, payloadPtr + 2, payloadSize); // Move payload down over the SN
-    frame.SetPayloadSize(payloadSize);
-    frame.SetSyncSource(m_rtxSSRC);
-    frame.SetSequenceNumber(rtxSN);
-    frame.SetPayloadType(m_rtxPT);
-    frame.SetDiscontinuity(0);
-
-    return primary->OnReceiveData(frame, e_RxRetransmission);
-  }
+  if (IsRtx())
+    return OnReceiveRetransmit(frame);
 
   Data data(frame);
   for (NotifierMap::iterator it = m_notifiers.begin(); it != m_notifiers.end(); ++it) {
@@ -889,6 +854,46 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveData(RTP_
   }
 
   return e_ProcessPacket;
+}
+
+
+OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveRetransmit(RTP_DataFrame & frame)
+{
+  PINDEX payloadSize = frame.GetPayloadSize();
+  if (payloadSize < 2) {
+    PTRACE(2, &m_session, *this << "retransmission packet too small: " << frame);
+    return e_IgnorePacket;
+  }
+
+  SyncSource * primary;
+  if (!m_session.GetSyncSource(m_rtxSSRC, e_Receiver, primary)) {
+    PTRACE(2, &m_session, *this << "retransmission without primary SSRC=" << RTP_TRACE_SRC(m_rtxSSRC));
+    return e_IgnorePacket;
+  }
+
+  BYTE * payloadPtr = frame.GetPayloadPtr();
+  RTP_SequenceNumber rtxSN = *(PUInt16b *)payloadPtr;
+
+  if (!primary->IsExpectingRetransmit(rtxSN)) {
+    PTRACE(5, &m_session, *this << "ignoring retransmission for SN=" << rtxSN << " for primary SSRC=" << RTP_TRACE_SRC(m_rtxSSRC));
+    return e_IgnorePacket;
+  }
+
+  PTRACE(5, &m_session, *this << "retransmission received:"
+                        " rtx-sn=" << frame.GetSequenceNumber() << ","
+                        " pri-sn=" << rtxSN << ","
+                        " pri-pt=" << m_rtxPT << ","
+                        " pri-SSRC=" << RTP_TRACE_SRC(m_rtxSSRC));
+
+  payloadSize -= 2;
+  memmove(payloadPtr, payloadPtr + 2, payloadSize); // Move payload down over the SN
+  frame.SetPayloadSize(payloadSize);
+  frame.SetSyncSource(m_rtxSSRC);
+  frame.SetSequenceNumber(rtxSN);
+  frame.SetPayloadType(m_rtxPT);
+  frame.SetDiscontinuity(0);
+
+  return primary->OnReceiveData(frame, e_RxRetransmission);
 }
 
 

@@ -715,6 +715,7 @@ class OpalRTPSession : public OpalMediaSession
 
       virtual SendReceiveStatus OnSendData(RTP_DataFrame & frame, RewriteMode rewrite);
       virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame, ReceiveType rxType);
+      virtual SendReceiveStatus OnReceiveRetransmit(RTP_DataFrame & frame);
       virtual void SetLastSequenceNumber(RTP_SequenceNumber sequenceNumber);
       virtual void SaveSentData(const RTP_DataFrame & frame);
       virtual void OnRxNACK(const RTP_ControlFrame::LostPacketMask & lostPackets);
