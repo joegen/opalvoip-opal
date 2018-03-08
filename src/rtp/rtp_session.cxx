@@ -874,6 +874,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveData(RTP_
     frame.SetSyncSource(m_rtxSSRC);
     frame.SetSequenceNumber(rtxSN);
     frame.SetPayloadType(m_rtxPT);
+    frame.SetDiscontinuity(0);
 
     return primary->OnReceiveData(frame, e_RxRetransmission);
   }
