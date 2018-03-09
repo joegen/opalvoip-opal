@@ -264,6 +264,7 @@ OpalTransportPtr SIPEndPoint::GetTransport(const SIPTransactionOwner & transacto
       }
       if (handler->GetMethod() == SIP_PDU::Method_REGISTER) {
         remoteAddress = handler->GetRemoteTransportAddress();
+        PTRACE(4, "Found registration: aor=" << handler->GetAddressOfRecord() << ", remote" << remoteAddress);
         break;
       }
     }
@@ -271,7 +272,7 @@ OpalTransportPtr SIPEndPoint::GetTransport(const SIPTransactionOwner & transacto
 
   OpalTransportPtr transport;
   {
-    PWaitAndSignal transportsGuard(m_transportsTable.GetMutex());
+    P_INSTRUMENTED_WAIT_AND_SIGNAL(m_transportsMutex);
 
     // See if already have a link to that remote
     transport = m_transportsTable.FindWithLock(remoteAddress, PSafeReference);
@@ -295,9 +296,12 @@ OpalTransportPtr SIPEndPoint::GetTransport(const SIPTransactionOwner & transacto
         PString domain = transactor.GetRequestURI().GetHostPort();
 
         // Unlock to avoid deadlock through the registrar handler list
-        m_transportsTable.GetMutex().Signal();
+        m_transportsMutex.InstrumentedSignal(P_DEBUG_LOCATION);
 
         PSafePtr<SIPRegisterHandler> handler = PSafePtrCast<SIPHandler, SIPRegisterHandler>(activeSIPHandlers.FindSIPHandlerByDomain(domain, SIP_PDU::Method_REGISTER, PSafeReadOnly));
+
+        // Lock it again, as the rest of this must be atomic
+        m_transportsMutex.InstrumentedWait(PMaxTimeInterval, P_DEBUG_LOCATION);
 
         if (handler != NULL) {
           switch (handler->GetParams().m_compatibility) {
@@ -308,9 +312,6 @@ OpalTransportPtr SIPEndPoint::GetTransport(const SIPTransactionOwner & transacto
               break;
           }
         }
-
-        // Lock it again, as the rest of this must be atomic
-        m_transportsTable.GetMutex().Wait();
 
         // See if the above unlocked section had us create the same desired transport in a different thread
         transport = m_transportsTable.FindWithLock(remoteAddress, PSafeReference);
@@ -388,7 +389,7 @@ OpalTransportPtr SIPEndPoint::GetTransport(const SIPTransactionOwner & transacto
     }
   }
 
-  // Outside of m_transportsTable.GetMutex() to avoid deadlock in CloseWait
+  // Outside of m_transportsTableMutex to avoid deadlock in CloseWait
   if (transport != NULL)
     transport->CloseWait();
 
@@ -586,15 +587,16 @@ PBoolean SIPEndPoint::GarbageCollection()
     transportsToClose.DisallowDeleteObjects();
 
     // Do not do the CloseWait() inside this mutex, can cause phantom (and, possibly, actual) deadlocks
-    m_transportsTable.GetMutex().Wait();
-    for (PSafeDictionary<OpalTransportAddress, OpalTransport>::iterator it = m_transportsTable.begin(); it != m_transportsTable.end(); ++it) {
-      if (it->second->IsIdle()) {
-        PTRACE(3, "Removing transport to " << it->first);
-        transportsToClose.Append(it->second);
-        m_transportsTable.RemoveAt(it->first);
+    {
+      P_INSTRUMENTED_WAIT_AND_SIGNAL(m_transportsMutex);
+      for (PSafeDictionary<OpalTransportAddress, OpalTransport>::iterator it = m_transportsTable.begin(); it != m_transportsTable.end(); ++it) {
+        if (it->second->IsIdle()) {
+          PTRACE(3, "Removing transport to " << it->first);
+          transportsToClose.Append(it->second);
+          m_transportsTable.RemoveAt(it->first);
+        }
       }
     }
-    m_transportsTable.GetMutex().Signal();
 
     for (PSafePtr<OpalTransport> it = transportsToClose; it != NULL; ++it)
       it->CloseWait();

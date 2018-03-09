@@ -1059,6 +1059,7 @@ class SIPEndPoint : public OpalSDPEndPoint
 
     // Transport management
     PSafeDictionary<OpalTransportAddress, OpalTransport> m_transportsTable;
+    PDECLARE_INSTRUMENTED_MUTEX(m_transportsMutex, SIPTransport, 2000, 1000);
 
     // Sub-protocol handlers
     SIPHandlersList   activeSIPHandlers;
