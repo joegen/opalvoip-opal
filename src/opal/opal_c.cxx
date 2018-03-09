@@ -2410,6 +2410,13 @@ void OpalManager_C::HandleRetrieveCall(const OpalMessage & command, OpalMessageB
 }
 
 
+static PString GetPrefixFromPartyAddress(const PString & party)
+{
+  PINDEX colon = party.Find(':');
+  return colon != P_MAX_INDEX ? party.Left(colon) : PString::Empty();
+}
+
+
 void OpalManager_C::HandleTransferCall(const OpalMessage & command, OpalMessageBuffer & response)
 {
   PString partyB = command.m_param.m_callSetUp.m_partyB;
@@ -2417,14 +2424,6 @@ void OpalManager_C::HandleTransferCall(const OpalMessage & command, OpalMessageB
     response.SetError("No transfer address provided.");
     return;
   }
-
-  PINDEX colon = partyB.Find(':');
-  if (colon == P_MAX_INDEX) {
-    response.SetError("Invalid transfer address provided, must have prefix.");
-    return;
-  }
-
-  PString prefixB = partyB.Left(colon);
 
   PSafePtr<OpalCall> call;
   if (!FindCall(command.m_param.m_callSetUp.m_callToken, response, call))
@@ -2434,6 +2433,11 @@ void OpalManager_C::HandleTransferCall(const OpalMessage & command, OpalMessageB
 
   PString search = command.m_param.m_callSetUp.m_partyA;
   if (search == "*") {
+	PString prefixB = GetPrefixFromPartyAddress(partyB);
+	if (prefixB.IsEmpty()) {
+      response.SetError("Invalid transfer address provided, must have prefix.");
+      return;
+	}
     OpalEndPoint * ep = FindEndPoint(prefixB);
     if (ep != NULL) {
       PTRACE(4, "Searching for local/network connection the same as " << *ep);
@@ -2444,8 +2448,13 @@ void OpalManager_C::HandleTransferCall(const OpalMessage & command, OpalMessageB
     }
   }
   else {
-    if (search.IsEmpty())
-      search = prefixB;
+    if (search.IsEmpty()) {
+      search = GetPrefixFromPartyAddress(partyB);
+      if (search.IsEmpty()) {
+        response.SetError("Invalid transfer address provided, must have prefix.");
+        return;
+      }
+    }
     else
       search.Delete(search.Find(':'), P_MAX_INDEX);
     search += ':';
