@@ -933,12 +933,10 @@ void OpalMediaTransport::InternalRxData(SubChannels subchannel, const PBYTEArray
   ChannelInfo::NotifierList notifiers = m_subchannels[subchannel].m_notifiers;
   UnlockReadOnly(P_DEBUG_LOCATION);
 
-  // lock the close mutex to guaranty that rtp_session is blocked while we call its notifiers
-  PWaitAndSignal lock(m_closeMutex);
-  if (!m_closeInvoked) {
-    notifiers(*this, data);
-    m_mediaTimer = m_mediaTimeout;
-  }
+  // Note:  MediaSession::DetachTransport calls a CloseWait before removing notifiers
+  // so if our thread is still alive, then the notifiers lifetime is still guaranteed
+  notifiers(*this, data);
+  m_mediaTimer = m_mediaTimeout;
 }
 
 
@@ -1452,9 +1450,6 @@ bool OpalMediaSession::Close()
 {
   // A close here is detach but don't do anything with detached transport
   OpalMediaTransportPtr transport = OpalMediaSession::DetachTransport();
-  if (transport) {
-    transport->CloseWait();
-  }
   return  transport != NULL;
 }
 
@@ -1493,9 +1488,13 @@ OpalMediaTransportPtr OpalMediaSession::DetachTransport()
 
   if (transport != NULL) {
     PTRACE(3, *transport << "detaching from session " << GetSessionID());
+    // Closing the transport to avoid race condition where the notifier
+    // is called by the transport while it is in the process of being removed
+    transport->CloseWait();
+    // Only remove the notifier after we know that the thread has ended.  
+    // CloseWait guaraties this.
     transport->RemoveReadNotifier(this, e_AllSubChannels);
   }
-
   return transport;
 }
 
