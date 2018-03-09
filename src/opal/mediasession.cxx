@@ -933,9 +933,12 @@ void OpalMediaTransport::InternalRxData(SubChannels subchannel, const PBYTEArray
   ChannelInfo::NotifierList notifiers = m_subchannels[subchannel].m_notifiers;
   UnlockReadOnly(P_DEBUG_LOCATION);
 
-  notifiers(*this, data);
-
-  m_mediaTimer = m_mediaTimeout;
+  // lock the close mutex to guaranty that rtp_session is blocked while we call its notifiers
+  PWaitAndSignal lock(m_closeMutex);
+  if (!m_closeInvoked) {
+    notifiers(*this, data);
+    m_mediaTimer = m_mediaTimeout;
+  }
 }
 
 
