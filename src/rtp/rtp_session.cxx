@@ -789,16 +789,19 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveData(RTP_
       sequenceDelta = sequenceNumber - expectedSequenceNumber;
     }
 
-    frame.SetDiscontinuity(sequenceDelta);
-    m_packetsLost += sequenceDelta;
-    if (m_maxConsecutiveLost < (int)(unsigned)sequenceDelta)
-      m_maxConsecutiveLost = sequenceDelta;
-    PTRACE(3, &m_session, *this << sequenceDelta << " packet(s) missing at " << expectedSequenceNumber << ", processing from " << sequenceNumber);
     SetLastSequenceNumber(sequenceNumber);
     m_consecutiveOutOfOrderPackets = 0;
+
+    if (sequenceDelta > 0) {
+      frame.SetDiscontinuity(sequenceDelta);
+      m_packetsLost += sequenceDelta;
+      if (m_maxConsecutiveLost < (int)(unsigned)sequenceDelta)
+        m_maxConsecutiveLost = sequenceDelta;
+      PTRACE(3, &m_session, *this << sequenceDelta << " packet(s) missing at " << expectedSequenceNumber << ", processing from " << sequenceNumber);
 #if OPAL_RTCP_XR
-    if (m_metrics != NULL) m_metrics->OnPacketLost(sequenceDelta);
+      if (m_metrics != NULL) m_metrics->OnPacketLost(sequenceDelta);
 #endif
+    }
   }
 
   PTime absTime(0);
