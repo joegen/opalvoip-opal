@@ -2985,11 +2985,13 @@ void OpalRTPSession::SetSinglePortTx(bool singlePortTx)
   if (transport == NULL)
     return;
 
+#ifdef IP_PMTUDISC_DO
   /* We cannot do MTU if only have one local socket (m_singlePortRx true) and
      we need to send to two different remote ports (m_singlePortTx false) as
      the MTU discovery rquiresw a socket connect() which prevents sendto()
      from working as desired. */
   transport->SetDiscoverMTU((m_singlePortRx && !m_singlePortTx) ? -1 : IP_PMTUDISC_DO);
+#endif
 
   OpalTransportAddress remoteDataAddress = transport->GetRemoteAddress(e_Data);
   if (singlePortTx)
