@@ -39,6 +39,7 @@
 
 
 #define new PNEW
+#define PTraceModule() "IVR"
 
 
 #if OPAL_IVR
@@ -59,13 +60,13 @@ OpalIVREndPoint::OpalIVREndPoint(OpalManager & mgr, const char * prefix)
                 "  </form>\n"
                  "</vxml>\n");
 
-  PTRACE(4, "IVR\tCreated endpoint.");
+  PTRACE(4, "Created endpoint.");
 }
 
 
 OpalIVREndPoint::~OpalIVREndPoint()
 {
-  PTRACE(4, "IVR\tDeleted endpoint.");
+  PTRACE(4, "Deleted endpoint.");
 }
 
 
@@ -171,7 +172,7 @@ void OpalIVREndPoint::SetDefaultVXML(const PString & vxml)
 
 void OpalIVREndPoint::OnEndDialog(OpalIVRConnection & connection)
 {
-  PTRACE(3, "IVR\tOnEndDialog for connection " << connection);
+  PTRACE(3, "OnEndDialog for connection " << connection);
   connection.Release();
 }
 
@@ -198,13 +199,13 @@ OpalIVRConnection::OpalIVRConnection(OpalCall & call,
   m_vxmlSession.SetRecordDirectory(ep.GetRecordDirectory());
   m_stringOptions.Merge(ExtractOptionsFromVXML(vxml), PStringOptions::e_MergeOverwrite);
 
-  PTRACE(4, "IVR\tConstructed");
+  PTRACE(4, "Constructed");
 }
 
 
 OpalIVRConnection::~OpalIVRConnection()
 {
-  PTRACE(4, "IVR\tDestroyed.");
+  PTRACE(4, "Destroyed.");
 }
 
 
@@ -275,7 +276,7 @@ PBoolean OpalIVRConnection::StartVXML(const PString & vxml)
 
   PCaselessString vxmlHead = vxmlToLoad.LeftTrim().Left(5);
   if (vxmlHead == "<?xml" || vxmlHead == "<vxml") {
-    PTRACE(4, "IVR\tStarted using raw VXML:\n" << vxmlToLoad);
+    PTRACE(4, "Started using raw VXML:\n" << vxmlToLoad);
     ok = m_vxmlSession.LoadVXML(vxmlToLoad);
   }
   else {
@@ -285,7 +286,7 @@ PBoolean OpalIVRConnection::StartVXML(const PString & vxml)
       if (vxmlFile.GetType() != ".vxml")
         ok = StartScript(vxmlToLoad);
       else {
-        PTRACE(4, "IVR\tStarted using VXML file: " << vxmlFile);
+        PTRACE(4, "Started using VXML file: " << vxmlFile);
         ok = m_vxmlSession.LoadFile(vxmlFile);
       }
     }
@@ -308,7 +309,7 @@ bool OpalIVRConnection::StartScript(const PString & script)
   PINDEX delay = 0;
   PString voice;
 
-  PTRACE(4, "IVR\tStarted using simplified script: " << script);
+  PTRACE(4, "Started using simplified script: " << script);
 
   PINDEX i;
   PStringArray tokens = script.Tokenise(';', false);
@@ -318,20 +319,20 @@ bool OpalIVRConnection::StartScript(const PString & script)
     if (str.Find("file:") == 0) {
       PURL url = str;
       if (url.IsEmpty()) {
-        PTRACE(2, "IVR\tInvalid URL \"" << str << '"');
+        PTRACE(2, "Invalid URL \"" << str << '"');
         continue;
       }
 
       PFilePath fn = url.AsFilePath();
       if (fn.IsEmpty()) {
-        PTRACE(2, "IVR\tUnsupported host in URL " << url);
+        PTRACE(2, "Unsupported host in URL " << url);
         continue;
       }
 
       if (!voice.IsEmpty())
         fn = fn.GetDirectory() + voice + PDIR_SEPARATOR + fn.GetFileName();
 
-      PTRACE(3, "IVR\tPlaying file " << fn << ' ' << repeat << " times, " << delay << "ms");
+      PTRACE(3, "Playing file " << fn << ' ' << repeat << " times, " << delay << "ms");
       m_vxmlSession.PlayFile(fn, repeat, delay);
       continue;
     }
@@ -357,14 +358,14 @@ bool OpalIVRConnection::StartScript(const PString & script)
     }
 
     else if (key *= "tone") {
-      PTRACE(3, "IVR\tPlaying tone " << val);
+      PTRACE(3, "Playing tone " << val);
       m_vxmlSession.PlayTone(val, repeat, delay);
    }
 
     else if (key *= "speak") {
       if (!val.IsEmpty() && (val[0] == '$'))
         val = m_vxmlSession.GetVar(val.Mid(1));
-      PTRACE(3, "IVR\tSpeaking text '" << val << "'");
+      PTRACE(3, "Speaking text '" << val << "'");
       m_vxmlSession.PlayText(val, PTextToSpeech::Default, repeat, delay);
     }
 
@@ -374,11 +375,11 @@ bool OpalIVRConnection::StartScript(const PString & script)
         msecs = m_vxmlSession.GetVar(val.Mid(1)).AsUnsigned();
       else
         msecs = val.AsUnsigned();
-      PTRACE(3, "IVR\tSpeaking silence for " << msecs << " msecs");
+      PTRACE(3, "Speaking silence for " << msecs << " msecs");
       m_vxmlSession.PlaySilence(msecs);
     }
     else {
-      PTRACE(2, "IVR\tInvalid command in \"" << script << '"');
+      PTRACE(2, "Invalid command in \"" << script << '"');
       return false;
     }
   }
@@ -430,7 +431,7 @@ OpalMediaStream * OpalIVRConnection::CreateMediaStream(const OpalMediaFormat & m
 
 PBoolean OpalIVRConnection::SendUserInputString(const PString & value)
 {
-  PTRACE(3, "IVR\tSendUserInputString(" << value << ')');
+  PTRACE(3, "SendUserInputString(" << value << ')');
 
   for (PINDEX i = 0; i < value.GetLength(); i++)
     m_vxmlSession.OnUserInput(value[i]);
@@ -449,7 +450,7 @@ OpalIVRMediaStream::OpalIVRMediaStream(OpalIVRConnection & conn,
   : OpalRawMediaStream(conn, mediaFormat, sessionID, isSourceStream, &vxml, FALSE)
   , m_vxmlSession(vxml)
 {
-  PTRACE(3, "IVR\tOpalIVRMediaStream sessionID = " << sessionID << ", isSourceStream = " << isSourceStream);
+  PTRACE(3, "OpalIVRMediaStream sessionID = " << sessionID << ", isSourceStream = " << isSourceStream);
 }
 
 
@@ -461,10 +462,10 @@ PBoolean OpalIVRMediaStream::Open()
   P_INSTRUMENTED_LOCK_READ_WRITE(return false);
 
   if (m_vxmlSession.IsOpen()) {
-    PTRACE(3, "IVR\tRe-opening");
+    PTRACE(3, "Re-opening");
     PVXMLChannel * vxmlChannel = m_vxmlSession.GetAndLockVXMLChannel();
     if (vxmlChannel == NULL) {
-      PTRACE(1, "IVR\tVXML engine not really open");
+      PTRACE(1, "VXML engine not really open");
       return false;
     }
 
@@ -472,18 +473,18 @@ PBoolean OpalIVRMediaStream::Open()
     m_vxmlSession.UnLockVXMLChannel();
     
     if (m_mediaFormat.GetName() != vxmlChannelMediaFormat) {
-      PTRACE(1, "IVR\tCannot use VXML engine: asymmetrical media formats: " << m_mediaFormat << " <-> " << vxmlChannelMediaFormat);
+      PTRACE(1, "Cannot use VXML engine: asymmetrical media formats: " << m_mediaFormat << " <-> " << vxmlChannelMediaFormat);
       return false;
     }
 
     return OpalMediaStream::Open();
   }
 
-  PTRACE(3, "IVR\tOpening");
+  PTRACE(3, "Opening");
   if (m_vxmlSession.Open(m_mediaFormat))
     return OpalMediaStream::Open();
 
-  PTRACE(1, "IVR\tCannot open VXML engine: incompatible media format");
+  PTRACE(1, "Cannot open VXML engine: incompatible media format");
   return false;
 }
 
