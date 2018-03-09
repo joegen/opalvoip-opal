@@ -176,7 +176,8 @@ class OpalRTPSession : public OpalMediaSession
     enum ReceiveType {
       e_RxFromNetwork,
       e_RxOutOfOrder,
-      e_RxRetransmission
+      e_RxRetransmission,
+      e_RxPendingRTX
     };
 
     /**Write a data frame from the RTP channel.
@@ -245,7 +246,6 @@ class OpalRTPSession : public OpalMediaSession
     virtual SendReceiveStatus OnPreReceiveData(RTP_DataFrame & frame);
     virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame, ReceiveType rxType);
     virtual SendReceiveStatus OnReceiveControl(RTP_ControlFrame & frame);
-    virtual SendReceiveStatus OnOutOfOrderPacket(RTP_DataFrame & frame);
 
     virtual void OnRxSenderReport(const RTP_SenderReport & sender);
     virtual void OnRxReceiverReports(RTP_SyncSourceId src, const RTP_ControlFrame::ReceiverReport * rr, unsigned count);
@@ -720,7 +720,7 @@ class OpalRTPSession : public OpalMediaSession
       virtual void SaveSentData(const RTP_DataFrame & frame);
       virtual void OnRxNACK(const RTP_ControlFrame::LostPacketMask & lostPackets);
       virtual bool IsExpectingRetransmit(RTP_SequenceNumber sequenceNumber);
-      virtual SendReceiveStatus OnOutOfOrderPacket(RTP_DataFrame & frame);
+      virtual SendReceiveStatus OnOutOfOrderPacket(RTP_DataFrame & frame, ReceiveType rxType);
       virtual bool HandlePendingFrames();
 #if OPAL_RTP_FEC
       virtual SendReceiveStatus OnSendRedundantFrame(RTP_DataFrame & frame);
@@ -843,7 +843,8 @@ class OpalRTPSession : public OpalMediaSession
       PTRACE_THROTTLE(m_throttleInvalidLost,2,60000);
 
       P_REMOVE_VIRTUAL(SendReceiveStatus, OnSendData(RTP_DataFrame &, bool), e_AbortTransport);
-    };
+      P_REMOVE_VIRTUAL(SendReceiveStatus, OnOutOfOrderPacket(RTP_DataFrame &), e_AbortTransport);
+   };
 
     typedef std::map<RTP_SyncSourceId, SyncSource *> SyncSourceMap;
     SyncSourceMap    m_SSRC;
@@ -906,6 +907,7 @@ class OpalRTPSession : public OpalMediaSession
     P_REMOVE_VIRTUAL(SendReceiveStatus,SendReport(bool),e_AbortTransport);
     P_REMOVE_VIRTUAL(SendReceiveStatus,OnReceiveData(RTP_DataFrame&, PINDEX),e_AbortTransport);
     P_REMOVE_VIRTUAL(SendReceiveStatus,OnReceiveData(RTP_DataFrame&),e_AbortTransport);
+    P_REMOVE_VIRTUAL(SendReceiveStatus,OnOutOfOrderPacket(RTP_DataFrame&),e_AbortTransport);
 
   friend class RTCP_XR_Metrics;
 };

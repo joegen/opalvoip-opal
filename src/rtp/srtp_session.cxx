@@ -750,7 +750,7 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveData(RTP_DataFrame &
 {
   // Aleady locked on entry
 
-  if (rxType == e_RxRetransmission)
+  if (rxType == e_RxRetransmission || rxType == e_RxPendingRTX)
     return OpalRTPSession::OnReceiveData(frame, rxType);
 
   RTP_SyncSourceId ssrc = frame.GetSyncSource();

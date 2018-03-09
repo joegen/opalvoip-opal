@@ -782,7 +782,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveData(RTP_
   }
   else {
     if (m_session.ResequenceOutOfOrderPackets(*this)) {
-      SendReceiveStatus status = m_session.OnOutOfOrderPacket(frame);
+      SendReceiveStatus status = OnOutOfOrderPacket(frame, rxType);
       if (status != e_ProcessPacket)
         return status;
       sequenceNumber = frame.GetSequenceNumber();
@@ -929,7 +929,7 @@ bool OpalRTPSession::SyncSource::IsExpectingRetransmit(RTP_SequenceNumber /*sequ
 }
 
 
-OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnOutOfOrderPacket(RTP_DataFrame & frame)
+OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnOutOfOrderPacket(RTP_DataFrame & frame, ReceiveType)
 {
   RTP_SequenceNumber sequenceNumber = frame.GetSequenceNumber();
   RTP_SequenceNumber expectedSequenceNumber = m_lastSequenceNumber + 1;
@@ -1702,16 +1702,6 @@ OpalMediaTransport::CongestionControl * OpalRTPSession::GetCongestionControl()
 
   PTRACE(3, *this << "setting TWCC handler");
   return transport->SetCongestionControl(new RTP_TransportWideCongestionControlHandler(*this));
-}
-
-
-OpalRTPSession::SendReceiveStatus OpalRTPSession::OnOutOfOrderPacket(RTP_DataFrame & frame)
-{
-  SyncSource * ssrc;
-  if (GetSyncSource(frame.GetSyncSource(), e_Receiver, ssrc))
-    return ssrc->OnOutOfOrderPacket(frame);
-
-  return e_ProcessPacket;
 }
 
 
