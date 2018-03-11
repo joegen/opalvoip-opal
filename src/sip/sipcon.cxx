@@ -397,6 +397,13 @@ void SIPConnection::OnReleased()
 
       // create BYE now & delete it later to prevent memory access errors
       bye = new SIPBye(*this);
+
+      if (m_callEndReason == OpalConnection::EndedByQ931Cause)
+        bye->GetMIME().Set("Reason", PSTRSTRM("Q.850 ;cause=" << m_callEndReason.q931));
+      else if (m_callEndReason != OpalConnection::EndedByLocalUser)
+        bye->GetMIME().Set("Reason", PSTRSTRM("SIP ;cause=" << GetStatusCodeFromReason(m_callEndReason)
+                                              << "; text=" << GetCallEndReasonText().ToLiteral()));
+
       if (!bye->Start())
         bye.SetNULL();
 
