@@ -669,39 +669,36 @@ bool OpalPluginTranscoder::UpdateOptions(OpalMediaFormat & fmt)
 }
 
 
+bool OpalPluginTranscoder::SetCodecOption(const PString & optionName, const PString & optionValue)
+{
+  PTRACE(3, "OpalPlugin",
+         "Setting \"" << optionName << "\" "
+         "to \"" << optionValue << "\" "
+         "for " << (isEncoder ? codecDef->destFormat : codecDef->sourceFormat));
+
+  PStringToString opts;
+  opts.SetAt(optionName, optionValue);
+
+  char ** options = opts.ToCharArray(false);
+  bool ok = setCodecOptionsControl.Call(options, sizeof(options), context) != 0;
+  free(options);
+
+  return ok;
+}
+
+
 bool OpalPluginTranscoder::ExecuteCommand(const OpalMediaCommand & command)
 {
   if (context == NULL)
     return false;
 
   const OpalMediaPacketLoss * pl = dynamic_cast<const OpalMediaPacketLoss *>(&command);
-  if (pl != NULL) {
-      PTRACE(3, "OpalPlugin",
-             "Setting \"" PLUGINCODEC_OPTION_DYNAMIC_PACKET_LOSS "\" "
-             "to " << pl->GetPacketLoss() << " "
-             "for " << (isEncoder ? codecDef->destFormat : codecDef->sourceFormat));
-      PStringToString opts;
-      opts.SetAt(PLUGINCODEC_OPTION_DYNAMIC_PACKET_LOSS, pl->GetPacketLoss());
-      char ** options = opts.ToCharArray(false);
-      bool ok = setCodecOptionsControl.Call(options, sizeof(options), context) != 0;
-      free(options);
-      return ok;
-  }
+  if (pl != NULL)
+    return SetCodecOption(PLUGINCODEC_OPTION_DYNAMIC_PACKET_LOSS, pl->GetPacketLoss());
 
   const OpalMediaMaxPayload * mp = dynamic_cast<const OpalMediaMaxPayload *>(&command);
-  if (mp != NULL && mp->GetPayloadSize() < m_maxPayloadSize) {
-      m_maxPayloadSize = mp->GetPayloadSize();
-      PTRACE(3, "OpalPlugin",
-             "Setting \"" PLUGINCODEC_OPTION_MAX_TX_PACKET_SIZE "\" "
-             "to " << m_maxPayloadSize << " "
-             "for " << (isEncoder ? codecDef->destFormat : codecDef->sourceFormat));
-      PStringToString opts;
-      opts.SetAt(PLUGINCODEC_OPTION_MAX_TX_PACKET_SIZE, m_maxPayloadSize);
-      char ** options = opts.ToCharArray(false);
-      bool ok = setCodecOptionsControl.Call(options, sizeof(options), context) != 0;
-      free(options);
-      return ok;
-  }
+  if (mp != NULL && mp->GetPayloadSize() < m_maxPayloadSize)
+    return SetCodecOption(OpalMediaFormat::MaxTxPacketSizeOption(), m_maxPayloadSize = mp->GetPayloadSize());
 
   OpalPluginControl cmd(codecDef, command.GetName());
   return cmd.Call(command.GetPlugInData(), command.GetPlugInSize(), context) > 0;

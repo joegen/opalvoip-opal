@@ -224,6 +224,8 @@ class OpalPluginTranscoder
     }
 
   protected:
+    bool SetCodecOption(const PString & optionName, const PString & optionValue);
+
     const PluginCodec_Definition * codecDef;
     bool   isEncoder;
     void * context;
