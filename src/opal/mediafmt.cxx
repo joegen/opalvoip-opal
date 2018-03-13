@@ -121,7 +121,7 @@ static OpalMediaFormatList & GetMediaFormatsList()
 
 static PMutex & GetMediaFormatsListMutex()
 {
-  static PMutex mutex;
+  static PMutex mutex(PDebugLocation(__FILE__, __LINE__, "OpalMediaFormatsList"));
   return mutex;
 }
 
@@ -866,12 +866,12 @@ OpalMediaFormat::OpalMediaFormat(const OpalMediaFormat & c)
 OpalMediaFormat::~OpalMediaFormat()
 {
   if (m_info != NULL)
-    m_info->media_format_mutex.Wait(); // don't use PWaitAndSignal as m_info can be removed
+    m_info->m_mutex.Wait(); // don't use PWaitAndSignal as m_info can be removed
 
   Destruct();
 
   if (m_info != NULL)
-    m_info->media_format_mutex.Signal();
+    m_info->m_mutex.Signal();
 }
 
 
@@ -941,7 +941,7 @@ PBoolean OpalMediaFormat::MakeUnique()
   if (m_info == NULL)
     return true;
 
-  PWaitAndSignal m2(m_info->media_format_mutex);
+  PWaitAndSignal m2(m_info->m_mutex);
 
   if (PContainer::MakeUnique())
     return true;
@@ -960,10 +960,10 @@ void OpalMediaFormat::AssignContents(const PContainer & c)
   PWaitAndSignal m2(other.m_mutex);
 
   if (m_info != NULL) {
-    m_info->media_format_mutex.Wait(); // don't use PWaitAndSignal as m_info can be removed
+    m_info->m_mutex.Wait(); // don't use PWaitAndSignal as m_info can be removed
     PContainer::AssignContents(c);
     if (m_info != NULL)
-      m_info->media_format_mutex.Signal();
+      m_info->m_mutex.Signal();
   }
   else // current object can't be removed
     PContainer::AssignContents(c);
@@ -1384,7 +1384,7 @@ void OpalMediaFormatInternal::DeconflictPayloadTypes(OpalMediaFormatList & forma
 
 PObject * OpalMediaFormatInternal::Clone() const
 {
-  PWaitAndSignal m1(media_format_mutex);
+  PWaitAndSignal m1(m_mutex);
   return new OpalMediaFormatInternal(*this);
 }
 
@@ -1393,8 +1393,8 @@ bool OpalMediaFormatInternal::Merge(const OpalMediaFormatInternal & mediaFormat)
 {
   PTRACE(4, "MediaFormat\tMerging " << mediaFormat << " into " << *this);
 
-  PWaitAndSignal m1(media_format_mutex);
-  PWaitAndSignal m2(mediaFormat.media_format_mutex);
+  PWaitAndSignal m1(m_mutex);
+  PWaitAndSignal m2(mediaFormat.m_mutex);
 
   for (PINDEX i = 0; i < options.GetSize(); i++) {
     OpalMediaOption & opt = options[i];
@@ -1417,8 +1417,8 @@ bool OpalMediaFormatInternal::Merge(const OpalMediaFormatInternal & mediaFormat)
 
 bool OpalMediaFormatInternal::ValidateMerge(const OpalMediaFormatInternal & mediaFormat) const
 {
-  PWaitAndSignal m1(media_format_mutex);
-  PWaitAndSignal m2(mediaFormat.media_format_mutex);
+  PWaitAndSignal m1(m_mutex);
+  PWaitAndSignal m2(mediaFormat.m_mutex);
 
   for (PINDEX i = 0; i < options.GetSize(); i++) {
     OpalMediaOption & opt = options[i];
@@ -1464,7 +1464,7 @@ bool OpalMediaFormatInternal::IsTransportable() const
 
 PStringToString OpalMediaFormatInternal::GetOptions() const
 {
-  PWaitAndSignal m1(media_format_mutex);
+  PWaitAndSignal m1(m_mutex);
   PStringToString dict;
   for (PINDEX i = 0; i < options.GetSize(); i++)
     dict.SetAt(options[i].GetName(), options[i].AsString());
@@ -1474,7 +1474,7 @@ PStringToString OpalMediaFormatInternal::GetOptions() const
 
 bool OpalMediaFormatInternal::GetOptionValue(const PString & name, PString & value) const
 {
-  PWaitAndSignal m(media_format_mutex);
+  PWaitAndSignal m(m_mutex);
   OpalMediaOption * option = FindOption(name);
   if (option == NULL)
     return false;
@@ -1486,7 +1486,7 @@ bool OpalMediaFormatInternal::GetOptionValue(const PString & name, PString & val
 
 bool OpalMediaFormatInternal::SetOptionValue(const PString & name, const PString & value)
 {
-  PWaitAndSignal m(media_format_mutex);
+  PWaitAndSignal m(m_mutex);
 
   OpalMediaOption * option = FindOption(name);
   if (option == NULL)
@@ -1534,7 +1534,7 @@ static bool SetOptionOfType(OpalMediaFormatInternal & format, const PString & na
 
 bool OpalMediaFormatInternal::GetOptionBoolean(const PString & name, bool dflt) const
 {
-  PWaitAndSignal m(media_format_mutex);
+  PWaitAndSignal m(m_mutex);
   const OpalMediaOptionEnum * optEnum = dynamic_cast<const OpalMediaOptionEnum *>(FindOption(name));
   if (optEnum != NULL && optEnum->GetEnumerations().GetSize() == 2)
     return optEnum->GetValue() != 0;
@@ -1545,7 +1545,7 @@ bool OpalMediaFormatInternal::GetOptionBoolean(const PString & name, bool dflt) 
 
 bool OpalMediaFormatInternal::SetOptionBoolean(const PString & name, bool value)
 {
-  PWaitAndSignal m(media_format_mutex);
+  PWaitAndSignal m(m_mutex);
   OpalMediaOptionEnum * optEnum = dynamic_cast<OpalMediaOptionEnum *>(FindOption(name));
   if (optEnum != NULL && optEnum->GetEnumerations().GetSize() == 2) {
     optEnum->SetValue(value);
@@ -1558,7 +1558,7 @@ bool OpalMediaFormatInternal::SetOptionBoolean(const PString & name, bool value)
 
 int OpalMediaFormatInternal::GetOptionInteger(const PString & name, int dflt) const
 {
-  PWaitAndSignal m(media_format_mutex);
+  PWaitAndSignal m(m_mutex);
   OpalMediaOptionUnsigned * optUnsigned = dynamic_cast<OpalMediaOptionUnsigned *>(FindOption(name));
   if (optUnsigned != NULL)
     return optUnsigned->GetValue();
@@ -1569,7 +1569,7 @@ int OpalMediaFormatInternal::GetOptionInteger(const PString & name, int dflt) co
 
 bool OpalMediaFormatInternal::SetOptionInteger(const PString & name, int value)
 {
-  PWaitAndSignal m(media_format_mutex);
+  PWaitAndSignal m(m_mutex);
   OpalMediaOptionUnsigned * optUnsigned = dynamic_cast<OpalMediaOptionUnsigned *>(FindOption(name));
   if (optUnsigned != NULL) {
     optUnsigned->SetValue(value);
@@ -1582,49 +1582,49 @@ bool OpalMediaFormatInternal::SetOptionInteger(const PString & name, int value)
 
 double OpalMediaFormatInternal::GetOptionReal(const PString & name, double dflt) const
 {
-  PWaitAndSignal m(media_format_mutex);
+  PWaitAndSignal m(m_mutex);
   return GetOptionOfType<OpalMediaOptionReal, double>(*this, name, dflt);
 }
 
 
 bool OpalMediaFormatInternal::SetOptionReal(const PString & name, double value)
 {
-  PWaitAndSignal m(media_format_mutex);
+  PWaitAndSignal m(m_mutex);
   return SetOptionOfType<OpalMediaOptionReal, double>(*this, name, value);
 }
 
 
 PINDEX OpalMediaFormatInternal::GetOptionEnum(const PString & name, PINDEX dflt) const
 {
-  PWaitAndSignal m(media_format_mutex);
+  PWaitAndSignal m(m_mutex);
   return GetOptionOfType<OpalMediaOptionEnum, PINDEX>(*this, name, dflt);
 }
 
 
 bool OpalMediaFormatInternal::SetOptionEnum(const PString & name, PINDEX value)
 {
-  PWaitAndSignal m(media_format_mutex);
+  PWaitAndSignal m(m_mutex);
   return SetOptionOfType<OpalMediaOptionEnum, PINDEX>(*this, name, value);
 }
 
 
 PString OpalMediaFormatInternal::GetOptionString(const PString & name, const PString & dflt) const
 {
-  PWaitAndSignal m(media_format_mutex);
+  PWaitAndSignal m(m_mutex);
   return GetOptionOfType<OpalMediaOptionString, PString>(*this, name, dflt);
 }
 
 
 bool OpalMediaFormatInternal::SetOptionString(const PString & name, const PString & value)
 {
-  PWaitAndSignal m(media_format_mutex);
+  PWaitAndSignal m(m_mutex);
   return SetOptionOfType<OpalMediaOptionString, PString>(*this, name, value);
 }
 
 
 bool OpalMediaFormatInternal::GetOptionOctets(const PString & name, PBYTEArray & octets) const
 {
-  PWaitAndSignal m(media_format_mutex);
+  PWaitAndSignal m(m_mutex);
   OpalMediaOption * option = FindOption(name);
   if (option == NULL)
     return false;
@@ -1636,21 +1636,21 @@ bool OpalMediaFormatInternal::GetOptionOctets(const PString & name, PBYTEArray &
 
 bool OpalMediaFormatInternal::SetOptionOctets(const PString & name, const PBYTEArray & octets)
 {
-  PWaitAndSignal m(media_format_mutex);
+  PWaitAndSignal m(m_mutex);
   return SetOptionOfType<OpalMediaOptionOctets, const PBYTEArray &>(*this, name, octets);
 }
 
 
 bool OpalMediaFormatInternal::SetOptionOctets(const PString & name, const BYTE * data, PINDEX length)
 {
-  PWaitAndSignal m(media_format_mutex);
+  PWaitAndSignal m(m_mutex);
   return SetOptionOfType<OpalMediaOptionOctets, const PBYTEArray &>(*this, name, PBYTEArray(data, length));
 }
 
 
 bool OpalMediaFormatInternal::AddOption(OpalMediaOption * option, PBoolean overwrite)
 {
-  PWaitAndSignal m(media_format_mutex);
+  PWaitAndSignal m(m_mutex);
   if (PAssertNULL(option) == NULL)
     return false;
 
@@ -1679,7 +1679,7 @@ public:
 
 OpalMediaOption * OpalMediaFormatInternal::FindOption(const PString & name) const
 {
-  PWaitAndSignal m(media_format_mutex);
+  PWaitAndSignal m(m_mutex);
   OpalMediaOptionSearchArg search(name);
   PINDEX index = options.GetValuesIndex(search);
   if (index == P_MAX_INDEX)
@@ -1693,7 +1693,7 @@ OpalMediaOption * OpalMediaFormatInternal::FindOption(const PString & name) cons
 
 bool OpalMediaFormatInternal::IsValidForProtocol(const PString & protocol) const
 {
-  PWaitAndSignal m(media_format_mutex);
+  PWaitAndSignal m(m_mutex);
 
   // the protocol is only valid for SIP if the RTP name is not NULL
   if (protocol *= "sip")
@@ -1706,7 +1706,7 @@ bool OpalMediaFormatInternal::IsValidForProtocol(const PString & protocol) const
 bool OpalMediaFormatInternal::AdjustByOptionMaps(PTRACE_PARAM(const char * operation,)
                   bool (*adjuster)(PluginCodec_OptionMap & original, PluginCodec_OptionMap & changed))
 {
-  PWaitAndSignal m(media_format_mutex);
+  PWaitAndSignal m(m_mutex);
 
 #if PTRACING
   if (PTrace::CanTrace(5))
@@ -1738,7 +1738,7 @@ bool OpalMediaFormatInternal::AdjustByOptionMaps(PTRACE_PARAM(const char * opera
 void OpalMediaFormatInternal::PrintOn(ostream & strm) const
 {
   PINDEX i;
-  PWaitAndSignal m(media_format_mutex);
+  PWaitAndSignal m(m_mutex);
 
   if (strm.width() != -1) {
     strm << formatName;
@@ -1902,15 +1902,15 @@ OpalAudioFormatInternal::OpalAudioFormatInternal(const char * fullName,
 
 PObject * OpalAudioFormatInternal::Clone() const
 {
-  PWaitAndSignal m(media_format_mutex);
+  PWaitAndSignal m(m_mutex);
   return new OpalAudioFormatInternal(*this);
 }
 
 
 bool OpalAudioFormatInternal::Merge(const OpalMediaFormatInternal & mediaFormat)
 {
-  PWaitAndSignal m1(media_format_mutex);
-  PWaitAndSignal m2(mediaFormat.media_format_mutex);
+  PWaitAndSignal m1(m_mutex);
+  PWaitAndSignal m2(mediaFormat.m_mutex);
 
   if (!OpalMediaFormatInternal::Merge(mediaFormat))
     return false;
@@ -2066,14 +2066,14 @@ OpalVideoFormatInternal::OpalVideoFormatInternal(const char * fullName,
 
 PObject * OpalVideoFormatInternal::Clone() const
 {
-  PWaitAndSignal m(media_format_mutex);
+  PWaitAndSignal m(m_mutex);
   return new OpalVideoFormatInternal(*this);
 }
 
 
 bool OpalVideoFormatInternal::Merge(const OpalMediaFormatInternal & mediaFormat)
 {
-  PWaitAndSignal m(media_format_mutex);
+  PWaitAndSignal m(m_mutex);
 
   if (!OpalMediaFormatInternal::Merge(mediaFormat))
     return false;
@@ -2474,7 +2474,7 @@ namespace OpalRtx
     return "rtx-" + mediaType;
   }
 
-  static PMutex s_rtxMutex;
+  static PMutex s_rtxMutex(P_DEBUG_LOCATION);
 
   OpalMediaFormat GetMediaFormat(const OpalMediaType & mediaType)
   {

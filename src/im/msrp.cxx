@@ -272,42 +272,20 @@ void SDPMSRPMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-class MSRPInitialiser : public PProcessStartup
+static OpalMSRPManager & GetOpalMSRPManager(OpalManager & opal)
 {
-  PCLASSINFO(MSRPInitialiser, PProcessStartup)
-  public:
-    virtual void OnShutdown()
-    {
-      PWaitAndSignal m(mutex);
-      delete manager;
-      manager = NULL;
-    }
-
-    static OpalMSRPManager & KickStart(OpalManager & opalManager)
-    {
-      PWaitAndSignal m(mutex);
-      if (manager == NULL) 
-        manager = new OpalMSRPManager(opalManager, OpalMSRPManager::DefaultPort);
-
-      return * manager;
-    }
-
-protected:
-    static PMutex mutex;
-    static OpalMSRPManager * manager;
-};
-
-PMutex MSRPInitialiser::mutex;
-OpalMSRPManager * MSRPInitialiser::manager = NULL;
-
-PFACTORY_CREATE_SINGLETON(PProcessStartupFactory, MSRPInitialiser);
+  static PCriticalSection mutex;
+  PWaitAndSignal lock(mutex);
+  static OpalMSRPManager mgr(opal);
+  return mgr;
+}
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
 OpalMSRPMediaSession::OpalMSRPMediaSession(const Init & init)
   : OpalMediaSession(init)
-  , m_manager(MSRPInitialiser::KickStart(init.m_connection.GetEndPoint().GetManager()))
+  , m_manager(GetOpalMSRPManager(init.m_connection.GetEndPoint().GetManager()))
 {
 }
 

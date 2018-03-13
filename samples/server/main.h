@@ -238,7 +238,7 @@ class MyGatekeeperServer : public H323GatekeeperServer
     };
     PList<RouteMap> routes;
 
-    PMutex reconfigurationMutex;
+    PDECLARE_MUTEX(reconfigurationMutex);
 
 #ifdef H323_TRANSNEXUS_OSP
     OpalOSP::Provider * ospProvider;
@@ -431,7 +431,7 @@ class RegistrationStatusPage : public BaseStatusPage
 #if OPAL_LYNC
     StatusMap m_lync;
 #endif
-    PMutex m_mutex;
+    PDECLARE_MUTEX(m_mutex);
 };
 
 
@@ -453,7 +453,7 @@ class CallStatusPage : public BaseStatusPage
     virtual bool OnPostControl(const PStringToString & data, PHTML & msg);
 
     PArray<PString> m_calls;
-    PMutex m_mutex;
+    PDECLARE_MUTEX(m_mutex);
 };
 
 
@@ -627,7 +627,7 @@ class MyManager : public MyManagerParent
 #if P_ODBC
     PODBC     m_odbc;
 #endif
-    PMutex    m_cdrMutex;
+    PDECLARE_MUTEX(m_cdrMutex);
 };
 
 

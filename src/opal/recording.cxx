@@ -86,7 +86,7 @@ class OpalMediaFileRecordManager : public OpalRecordManager
     };
 
   protected:
-    PMutex       m_mutex;
+    PDECLARE_MUTEX(m_mutex);
     PMediaFile * m_file;
 
     // Audio

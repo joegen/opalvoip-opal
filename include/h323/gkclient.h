@@ -378,7 +378,7 @@ class H323Gatekeeper : public H225_RAS
     // Gatekeeper registration state variables
     bool                    discoveryComplete;
     PStringList             m_aliases;
-    PMutex                  m_aliasMutex;
+    PDECLARE_MUTEX(         m_aliasMutex);
     PWCharArray             m_endpointIdentifier;
     RegistrationFailReasons m_registrationFailReason;
     void SetRegistrationFailReason(unsigned reason, unsigned commandMask);
@@ -416,7 +416,7 @@ class H323Gatekeeper : public H225_RAS
     AlternateList m_alternates;
     bool          m_alternateTemporary;
 
-    PMutex             m_requestMutex;
+    PDECLARE_MUTEX(    m_requestMutex);
     H235Authenticators m_authenticators;
 	
 #if OPAL_H460

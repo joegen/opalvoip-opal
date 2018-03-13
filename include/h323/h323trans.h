@@ -244,7 +244,7 @@ class H323Transactor : public PObject
 
         PTimeInterval m_whenResponseExpected;
         PSyncPoint    m_responseHandled;
-        PMutex        m_responseMutex;
+        PDECLARE_MUTEX(m_responseMutex);
     };
 
     virtual PBoolean MakeRequest(
@@ -296,10 +296,10 @@ class H323Transactor : public PObject
     atomic<uint16_t> m_nextSequenceNumber;
 
     PDictionary<POrdinalKey, Request> m_requests;
-    PMutex                            m_requestsMutex;
+    PDECLARE_MUTEX(                   m_requestsMutex);
     Request                         * m_lastRequest;
 
-    PMutex                m_pduWriteMutex;
+    PDECLARE_MUTEX(       m_pduWriteMutex);
     PSortedList<Response> m_responses;
 };
 
@@ -481,7 +481,7 @@ class H323TransactionServer : public PObject
     PThread      * m_monitorThread;
     PSyncPoint     m_monitorExit;
 
-    PMutex         m_mutex;
+    PDECLARE_MUTEX(m_mutex);
 
     PLIST(ListenerList, H323Transactor);
     ListenerList m_listeners;

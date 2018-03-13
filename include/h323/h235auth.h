@@ -167,7 +167,7 @@ class H235Authenticator : public PObject
 
     Application usage;	       ///< Authenticator's Application 
 
-    PMutex mutex;
+    PDECLARE_MUTEX(mutex);
 
   private:
     P_REMOVE_VIRTUAL(H225_CryptoH323Token *,CreateCryptoToken(),NULL);

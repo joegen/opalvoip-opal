@@ -771,7 +771,7 @@ class OpalMediaFormatInternal : public PObject
     RTP_DataFrame::PayloadTypes  rtpPayloadType;
     PCaselessString              rtpEncodingName;
     OpalMediaType                mediaType;
-    PMutex                       media_format_mutex;
+    PDECLARE_MUTEX(              m_mutex, OpalMediaFormatInternal1000);
     PSortedList<OpalMediaOption> options;
     time_t                       codecVersionTime;
     bool                         forceIsTransportable;
@@ -1369,7 +1369,7 @@ class OpalMediaFormat : public PContainer
     void Construct(OpalMediaFormatInternal * info);
 
     OpalMediaFormatInternal * m_info;
-    PMutex                    m_mutex;
+    PDECLARE_MUTEX(m_mutex, OpalMediaFormat, 1000);
 
   friend class OpalMediaFormatInternal;
   friend class OpalMediaFormatList;

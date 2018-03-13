@@ -193,7 +193,7 @@ protected:
     BYTE manufacturerClientID
   ) const;
 
-  PMutex                m_transmitMutex;
+  PDECLARE_MUTEX(       m_transmitMutex);
   bool                  m_canTransmit;
   bool                  m_transmitHDLCTunneling;
   PINDEX                m_transmitBitIndex;

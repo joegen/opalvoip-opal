@@ -541,7 +541,7 @@ class OpalPresentity : public PSafeObject
 #endif // OPAL_HAS_IM
 
     atomic<bool> m_open;
-    PMutex m_notificationMutex;
+    PDECLARE_MUTEX(m_notificationMutex);
     bool m_temporarilyUnavailable;
     OpalPresenceInfo m_localInfo;
 };
@@ -624,7 +624,7 @@ class OpalPresentityWithCommandThread : public OpalPresentity
 
     typedef std::queue<OpalPresentityCommand *> CommandQueue;
     CommandQueue     m_commandQueue;
-    PMutex           m_commandQueueMutex;
+    PDECLARE_MUTEX(  m_commandQueueMutex);
     atomic<unsigned> m_commandSequence;
     PSyncPoint       m_commandQueueSync;
 

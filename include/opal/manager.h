@@ -2131,7 +2131,7 @@ class OpalManager : public PObject
 #endif
 
     RouteTable m_routeTable;
-    PMutex     m_routeMutex;
+    PDECLARE_MUTEX(m_routeMutex);
 
     // Dynamic variables
     PDECLARE_READ_WRITE_MUTEX(m_endpointsMutex);
@@ -2153,7 +2153,7 @@ class OpalManager : public PObject
 #endif // OPAL_HAS_PRESENCE
 
     atomic<PINDEX> m_clearingAllCallsCount;
-    PMutex         m_clearingAllCallsMutex;
+    PDECLARE_MUTEX(m_clearingAllCallsMutex);
     PSyncPoint     m_allCallsCleared;
     void InternalClearAllCalls(OpalConnection::CallEndReason reason, bool wait, bool first);
 

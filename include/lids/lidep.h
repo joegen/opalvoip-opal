@@ -295,7 +295,7 @@ class OpalLineEndPoint : public OpalEndPoint
     OpalLIDList  m_devices;
     OpalLineList m_lines;
     PString      m_defaultLine;
-    PMutex       m_linesMutex;
+    PDECLARE_MUTEX(m_linesMutex);
     PThread    * m_monitorThread;
     PSyncPoint   m_exitFlag;
 };

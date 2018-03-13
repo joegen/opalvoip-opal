@@ -491,25 +491,25 @@ class H323PeerElement : public H323_AnnexG
     PDECLARE_NOTIFIER(PThread, H323PeerElement, UpdateAllDescriptors);
     PDECLARE_NOTIFIER(PTimer, H323PeerElement, TickleMonitor);
 
-    PMutex localNameMutex;
+    PDECLARE_MUTEX(localNameMutex);
     PString localIdentifier;
     PString domainName;
 
-    PMutex     m_requestMutex;
+    PDECLARE_MUTEX(m_requestMutex);
     PThread  * monitor;
     bool       monitorStop;
     PSyncPoint monitorTickle;
 
-    PMutex basePeerOrdinalMutex;
+    PDECLARE_MUTEX(basePeerOrdinalMutex);
     PINDEX basePeerOrdinal;
 
     // structures needed to maintain local service relationships (for which we receive a ServiceRequest)
     PSafeSortedList<H323PeerElementServiceRelationship> localServiceRelationships;
-    PMutex localPeerListMutex;
+    PDECLARE_MUTEX(localPeerListMutex);
     POrdinalSet localServiceOrdinals;
 
     // structures needed to maintain remote service relationships (for which we send a ServiceRequest)
-    PMutex remotePeerListMutex;
+    PDECLARE_MUTEX(remotePeerListMutex);
     PSafeSortedList<H323PeerElementServiceRelationship> remoteServiceRelationships;
     PStringToString remotePeerAddrToServiceID;
     PDICTIONARY(StringToOrdinalKey, PString, POrdinalKey);
@@ -519,7 +519,7 @@ class H323PeerElement : public H323_AnnexG
 
     PSORTED_LIST(AliasKeyList, H225_AliasAddress);
 
-    PMutex aliasMutex;
+    PDECLARE_MUTEX(aliasMutex);
     AliasKeyList transportAddressToDescriptorID;
     AliasKeyList specificAliasToDescriptorID;
     AliasKeyList wildcardAliasToDescriptorID;

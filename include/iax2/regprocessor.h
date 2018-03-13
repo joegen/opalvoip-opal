@@ -98,7 +98,7 @@ class IAX2RegProcessor : public IAX2Processor
   
   /** A mutex to protect the registrationState variable and the flow
       of the RegProcessor.*/      
-  PMutex stateMutex;
+  PDECLARE_MUTEX(stateMutex);
   
 #ifdef DOC_PLUS_PLUS
   /**A pwlib callback function to start the registration process again */

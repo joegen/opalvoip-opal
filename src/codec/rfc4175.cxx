@@ -60,7 +60,7 @@ class RFC4175VideoFormatInternal : public OpalVideoFormatInternal
 
     virtual PObject * Clone() const
     {
-      PWaitAndSignal m(media_format_mutex);
+      PWaitAndSignal m(m_mutex);
       return new RFC4175VideoFormatInternal(*this);
     }
 

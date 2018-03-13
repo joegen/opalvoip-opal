@@ -101,7 +101,7 @@ protected:
   double mean;
   int clockRate;
   PQueueChannel *echo_chan;
-  PMutex stateMutex;
+  PDECLARE_MUTEX(stateMutex);
   SpeexEchoState *echoState;
   SpeexPreprocessState *preprocessState;
 

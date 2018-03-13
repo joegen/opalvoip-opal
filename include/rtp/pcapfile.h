@@ -202,7 +202,7 @@ class OpalPCAPFile : public PFile
         bool m_otherEndian;
     };
     Frame m_rawPacket;
-    PMutex m_writeMutex;
+    PDECLARE_MUTEX(m_writeMutex);
 
     PIPSocketAddressAndPort m_filterSrc;
     PIPSocketAddressAndPort m_filterDst;

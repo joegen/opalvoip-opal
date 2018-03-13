@@ -187,7 +187,7 @@ class OpalSilenceDetector : public PObject
     unsigned m_silenceReceivedTime;   // Duration of silence received
     unsigned m_lastSignalLevel;       // Energy level from last data frame
     Result   m_lastResult;            // What it says
-    PMutex   m_inUse;                 // Protects values to allow change while running
+    PDECLARE_MUTEX(m_inUse);          // Protects values to allow change while running
 };
 
 

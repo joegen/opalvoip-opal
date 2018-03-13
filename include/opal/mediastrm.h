@@ -664,7 +664,7 @@ class OpalRawMediaStream : public OpalMediaStream
 
     PUInt64    m_averageSignalSum;
     unsigned   m_averageSignalSamples;
-    PMutex     m_averagingMutex;
+    PDECLARE_MUTEX(m_averagingMutex);
 
     void CollectAverage(const BYTE * buffer, PINDEX size);
 };

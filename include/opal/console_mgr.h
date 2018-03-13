@@ -482,14 +482,14 @@ class OpalManagerConsole : public OpalManager
     bool       m_interrupted;
     bool       m_verbose;
     ostream  * m_outputStream;
-    PMutex     m_outputMutex;
+    PDECLARE_MUTEX(m_outputMutex, OpalConsoleOutput);
 
 #if OPAL_STATISTICS
     PTimeInterval m_statsPeriod;
     PFilePath     m_statsFile;
     typedef map<PString, OpalMediaStatistics> StatsMap;
     StatsMap m_statistics;
-    PMutex   m_statsMutex;
+    PDECLARE_MUTEX(m_statsMutex, OpalConsoleStats);
     virtual bool OutputStatistics();
     virtual bool OutputStatistics(ostream & strm);
     virtual bool OutputCallStatistics(ostream & strm, OpalCall & call);

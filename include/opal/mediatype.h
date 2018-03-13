@@ -119,7 +119,7 @@ class OpalMediaType : public std::string     // do not make this PCaselessString
         void SetGlobalAutoStart();
 
       protected:
-        PMutex m_mutex;
+        PDECLARE_MUTEX(m_mutex);
     };
 };
 
