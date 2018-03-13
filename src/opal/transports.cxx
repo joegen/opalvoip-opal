@@ -1051,6 +1051,8 @@ bool OpalTransport::SetInterface(const PString &)
 
 PBoolean OpalTransport::Close()
 {
+  m_keepAliveTimer.Stop();
+
   /* Do not use PIndirectChannel::Close() as this deletes the sub-channel
      member field crashing the background thread. Just close the base
      sub-channel so breaks the threads I/O block.
