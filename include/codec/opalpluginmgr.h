@@ -227,6 +227,7 @@ class OpalPluginTranscoder
     const PluginCodec_Definition * codecDef;
     bool   isEncoder;
     void * context;
+    unsigned m_maxPayloadSize;
 
     OpalPluginControl setCodecOptionsControl;
     OpalPluginControl getActiveOptionsControl;

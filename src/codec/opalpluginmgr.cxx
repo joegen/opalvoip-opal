@@ -586,6 +586,7 @@ bool OpalPluginVideoFormatInternal::ToCustomisedOptions()
 OpalPluginTranscoder::OpalPluginTranscoder(const PluginCodec_Definition * defn, bool isEnc)
   : codecDef(defn)
   , isEncoder(isEnc)
+  , m_maxPayloadSize(PluginCodec_RTP_MaxPayloadSize)
   , setCodecOptionsControl(defn, PLUGINCODEC_CONTROL_SET_CODEC_OPTIONS)
   , getActiveOptionsControl(defn, PLUGINCODEC_CONTROL_GET_ACTIVE_OPTIONS)
   , freeOptionsControl(defn, PLUGINCODEC_CONTROL_FREE_CODEC_OPTIONS)
@@ -663,6 +664,7 @@ bool OpalPluginTranscoder::UpdateOptions(OpalMediaFormat & fmt)
     }
   }
 
+  m_maxPayloadSize = fmt.GetOptionInteger(OpalMediaFormat::MaxTxPacketSizeOption(), m_maxPayloadSize);
   return ok;
 }
 
@@ -674,6 +676,10 @@ bool OpalPluginTranscoder::ExecuteCommand(const OpalMediaCommand & command)
 
   const OpalMediaPacketLoss * pl = dynamic_cast<const OpalMediaPacketLoss *>(&command);
   if (pl != NULL) {
+      PTRACE(3, "OpalPlugin",
+             "Setting \"" PLUGINCODEC_OPTION_DYNAMIC_PACKET_LOSS "\" "
+             "to " << pl->GetPacketLoss() << " "
+             "for " << (isEncoder ? codecDef->destFormat : codecDef->sourceFormat));
       PStringToString opts;
       opts.SetAt(PLUGINCODEC_OPTION_DYNAMIC_PACKET_LOSS, pl->GetPacketLoss());
       char ** options = opts.ToCharArray(false);
@@ -683,9 +689,14 @@ bool OpalPluginTranscoder::ExecuteCommand(const OpalMediaCommand & command)
   }
 
   const OpalMediaMaxPayload * mp = dynamic_cast<const OpalMediaMaxPayload *>(&command);
-  if (mp != NULL) {
+  if (mp != NULL && mp->GetPayloadSize() < m_maxPayloadSize) {
+      m_maxPayloadSize = mp->GetPayloadSize();
+      PTRACE(3, "OpalPlugin",
+             "Setting \"" PLUGINCODEC_OPTION_MAX_TX_PACKET_SIZE "\" "
+             "to " << m_maxPayloadSize << " "
+             "for " << (isEncoder ? codecDef->destFormat : codecDef->sourceFormat));
       PStringToString opts;
-      opts.SetAt(PLUGINCODEC_OPTION_MAX_TX_PACKET_SIZE, mp->GetPayloadSize());
+      opts.SetAt(PLUGINCODEC_OPTION_MAX_TX_PACKET_SIZE, m_maxPayloadSize);
       char ** options = opts.ToCharArray(false);
       bool ok = setCodecOptionsControl.Call(options, sizeof(options), context) != 0;
       free(options);
