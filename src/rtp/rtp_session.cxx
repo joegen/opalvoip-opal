@@ -1063,9 +1063,7 @@ bool OpalRTPSession::AddGroup(const PString & groupId, const PString & mediaId, 
     return false;
 
   if (IsGroupMember(GetBundleGroupId())) {
-    // When bundling we force rtcp-mux and only allow announced SSRC values
     m_singlePortRx = true;
-    m_allowAnySyncSource = false;
   }
 
   return true;

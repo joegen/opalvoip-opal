@@ -2142,7 +2142,10 @@ bool SDPRTPAVPMediaDescription::ToSession(OpalMediaSession * session, RTP_SyncSo
         if (!oldCname.IsEmpty() && oldCname != cname)
           rtpSession->RemoveSyncSource(ssrc PTRACE_PARAM(, "cname changed"));
         if (rtpSession->AddSyncSource(ssrc, OpalRTPSession::e_Receiver, cname) == ssrc) {
-          rtpSession->SetAnySyncSource(false);
+          //
+          // Joegen: We dont want to police RTP.  Let the human ear handle stray packets (for now)
+          //
+          // rtpSession->SetAnySyncSource(false);
           PTRACE(4, "Session " << session->GetSessionID() << ", added receiver SSRC " << RTP_TRACE_SRC(ssrc));
         }
         rtpSession->SetMediaTrackId(it->second.GetString("label"), ssrc, OpalRTPSession::e_Receiver);
