@@ -1155,6 +1155,7 @@ class OpalConnection : public PSafeObject
     /**Request close all media streams on connection.
       */
     virtual void CloseMediaStreams();
+    virtual bool CloseMediaStream(OpalMediaStream &) { return false; };
     
     /**Pause media streams for connection.
       */
@@ -2055,7 +2056,6 @@ class OpalConnection : public PSafeObject
     P_REMOVE_VIRTUAL(unsigned, GetBandwidthUsed() const, 0);
     P_REMOVE_VIRTUAL(PBoolean, SetBandwidthUsed(unsigned, unsigned), false);
     P_REMOVE_VIRTUAL_VOID(OnSwitchedFaxMediaStreams(bool));
-    P_REMOVE_VIRTUAL(bool, CloseMediaStream(OpalMediaStream &),false);
     P_REMOVE_VIRTUAL(bool,GetMediaTransportAddresses(const OpalMediaType&,OpalTransportAddressArray&) const,false);
     P_REMOVE_VIRTUAL(bool,GetMediaTransportAddresses(OpalConnection&,const OpalMediaType&,OpalTransportAddressArray &) const,false);
 #if OPAL_PTLIB_NAT
