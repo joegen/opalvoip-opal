@@ -773,6 +773,8 @@ void OpalMediaTransport::SetMediaTimeout(const PTimeInterval & t)
 
 void OpalMediaTransport::SetRemoteBehindNAT()
 {
+  m_hasSetNATControlAddress = false;
+  m_hasSetNATMediaAddress = false;
   m_remoteBehindNAT = true;
 }
 
