@@ -819,6 +819,8 @@ class OpalRTPSession : public OpalMediaSession
       // Things to remember for filling in fields of sent SR/RR/DLRR
       unsigned           m_lastRRPacketsReceived;
       uint32_t           m_lastRRSequenceNumber;
+      float              m_rtcpDiscardRate;       // from extended RR
+      int                m_rtcpJitterBufferDelay; // from extended RR
       uint64_t           m_ntpPassThrough;       // The NTP time from SR
       PTime              m_lastSenderReportTime; // Local time that SR was sent/received
       PTime              m_referenceReportTime;

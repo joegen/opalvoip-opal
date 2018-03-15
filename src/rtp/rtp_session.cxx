@@ -455,6 +455,8 @@ OpalRTPSession::SyncSource::SyncSource(OpalRTPSession & session, RTP_SyncSourceI
   , m_lastJitterTimestamp(0)
   , m_lastRRPacketsReceived(0)
   , m_lastRRSequenceNumber(0)
+  , m_rtcpDiscardRate(-1)
+  , m_rtcpJitterBufferDelay(-1)
   , m_ntpPassThrough(0)
   , m_lastSenderReportTime(0)
   , m_referenceReportTime(0)
