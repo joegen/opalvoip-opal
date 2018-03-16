@@ -3181,12 +3181,16 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::WriteData(RTP_DataFrame & fram
         return e_ProcessPacket;
 
       if (mtu > INT_MIN) {
-        PTRACE(2, *this << "write packet too large: size=" << frame.GetPacketSize() << ", MTU=" << mtu);
+        PTRACE(2, *this << "write packet too large: "
+                           "size=" << frame.GetPacketSize() << ", "
+                           "MTU=" << mtu << ", "
+                           "SN=" << frame.GetSequenceNumber() << ", "
+                           "SSRC=" << RTP_TRACE_SRC(frame.GetSyncSource()));
         static const int HeadersAllowance = 40 + 74 + 56 + 16 + 12 + 16; // GRE/IPv6/IPSsec/VPN/UDP/RTP/extensions
         if (mtu > HeadersAllowance)
           m_connection.ExecuteMediaCommand(OpalMediaMaxPayload(mtu - HeadersAllowance, m_mediaType, m_sessionId, frame.GetSyncSource()), true);
 
-        return e_IgnorePacket;
+        return e_ProcessPacket;
       }
     }
 
