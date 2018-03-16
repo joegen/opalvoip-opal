@@ -60,8 +60,7 @@ const OpalMediaFormat & GetOpalT38()
                           false, // No jitter for data
                           1440, // 100's bits/sec
                           528,
-                          0,
-                          0)
+                          0, 0, 0, false, true)
       {
         SetOptionString(OpalMediaFormat::DescriptionOption(), "ITU-T T.38 Group 3 facsimile");
 
@@ -85,8 +84,8 @@ const OpalMediaFormat & GetOpalT38()
         AddOption(new OpalMediaOptionBoolean(OPAL_UDPTLOptimiseRetransmit, false, OpalMediaOption::NoMerge, false));
         AddOption(new OpalMediaOptionInteger(OPAL_UDPTLKeepAliveInterval, false, OpalMediaOption::NoMerge, 0, 0, 86400));
       }
-  } const T38;
-  return T38;
+  } * T38 = new T38MediaFormat; // Will be deleted (indirectly) in ~OpalManager
+  return *T38;
 }
 
 

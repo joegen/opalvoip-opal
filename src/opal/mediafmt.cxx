@@ -804,8 +804,9 @@ const PString & OpalMediaFormat::ProtocolOption()        { static const PConstSt
 const PString & OpalMediaFormat::MaxTxPacketSizeOption() { static const PConstString s(PLUGINCODEC_OPTION_MAX_TX_PACKET_SIZE); return s; }
 
 
-OpalMediaFormat::OpalMediaFormat(OpalMediaFormatInternal * info)
+OpalMediaFormat::OpalMediaFormat(OpalMediaFormatInternal * info, bool dyn)
   : m_info(NULL)
+  , m_dynamic(dyn)
 {
   Construct(info);
 }
@@ -813,6 +814,7 @@ OpalMediaFormat::OpalMediaFormat(OpalMediaFormatInternal * info)
 
 OpalMediaFormat::OpalMediaFormat(RTP_DataFrame::PayloadTypes pt, unsigned clockRate, const char * name, const char * protocol)
   : m_info(NULL)
+  , m_dynamic(false)
 {
   PWaitAndSignal mutex(GetMediaFormatsListMutex());
   const OpalMediaFormatList & registeredFormats = GetMediaFormatsList();
@@ -825,6 +827,7 @@ OpalMediaFormat::OpalMediaFormat(RTP_DataFrame::PayloadTypes pt, unsigned clockR
 
 OpalMediaFormat::OpalMediaFormat(const char * wildcard)
   : m_info(NULL)
+  , m_dynamic(false)
 {
   operator=(PString(wildcard));
 }
@@ -832,6 +835,7 @@ OpalMediaFormat::OpalMediaFormat(const char * wildcard)
 
 OpalMediaFormat::OpalMediaFormat(const PString & wildcard)
   : m_info(NULL)
+  , m_dynamic(false)
 {
   operator=(wildcard);
 }
@@ -847,7 +851,9 @@ OpalMediaFormat::OpalMediaFormat(const char * fullName,
                                  unsigned ft,
                                  unsigned cr,
                                  time_t ts,
-                                 bool am)
+                                 bool am,
+                                 bool dyn)
+  : m_dynamic(dyn)
 {
   Construct(new OpalMediaFormatInternal(fullName, mediaType, pt, en, nj, bw, fs, ft,cr, ts, am));
 }
@@ -856,6 +862,7 @@ OpalMediaFormat::OpalMediaFormat(const char * fullName,
 OpalMediaFormat::OpalMediaFormat(const OpalMediaFormat & c)
   : PContainer() // can't use PContainer copy c-tor as this c-tor must be synchronized
   , m_info(NULL)
+  , m_dynamic(false)
 {
   PWaitAndSignal m(c.m_mutex); // here is no need to use mutex of the shared object
   PContainer::AssignContents(c);
@@ -887,6 +894,8 @@ void OpalMediaFormat::Construct(OpalMediaFormatInternal * info)
   if (fmt != registeredFormats.end()) {
     *this = *fmt;
     delete info;
+    if (m_dynamic)
+      delete this;
   }
   else {
     m_info = info;
@@ -1244,19 +1253,21 @@ bool OpalMediaFormat::SetRegisteredMediaFormat(const OpalMediaFormat & mediaForm
 }
 
 
-bool OpalMediaFormat::RemoveRegisteredMediaFormat(const OpalMediaFormat & mediaFormat)
+bool OpalMediaFormat::RemoveRegisteredMediaFormats(const PString & wildcard)
 {
   PWaitAndSignal mutex(GetMediaFormatsListMutex());
   OpalMediaFormatList & registeredFormats = GetMediaFormatsList();
 
-  for (OpalMediaFormatList::iterator format = registeredFormats.begin(); format != registeredFormats.end(); ++format) {
-    if (*format == mediaFormat) {
-      registeredFormats.erase(format);
-      return true;
-    }
+  bool found = false;
+  OpalMediaFormatList::const_iterator format;
+  while ((format = registeredFormats.FindFormat(wildcard)) != registeredFormats.end()) {
+    if (format->m_dynamic)
+      delete &*format;
+    registeredFormats.erase(format);
+    found = true;
   }
 
-  return false;
+  return found;
 }
 
 
@@ -2453,10 +2464,9 @@ namespace OpalRtx
                         false, 0, 0, 0,
 #if OPAL_VIDEO
                         mediaType == OpalMediaType::Video() ? VideoClockRate :
-#else
-                        AudioClockRate,
 #endif
-                        0, true)
+                        AudioClockRate,
+                        0, true, true)
     {
       OpalMediaOptionUnsigned * opt = new OpalMediaOptionUnsigned(AssociatedPayloadTypeOption(),
                                           true, OpalMediaOption::EqualMerge, 0, 0, RTP_DataFrame::MaxPayloadType);
@@ -2484,9 +2494,7 @@ namespace OpalRtx
       PWaitAndSignal lock(s_rtxMutex);
       fmt = name; // Check again after mutex to avoid race condition
       if (!fmt.IsValid()) {
-        // Need to keep a primordial copy of the media format, and release memory on program exit
-        static OpalMediaFormatList cleanUpRtx;
-        cleanUpRtx.OpalMediaFormatBaseList::Append(new OpalRtxMediaFormat(mediaType));
+        new OpalRtxMediaFormat(mediaType); // Will be deleted (indirectly) in ~OpalManager
         fmt = name;
       }
     }

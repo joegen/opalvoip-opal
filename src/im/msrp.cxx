@@ -101,7 +101,8 @@ const OpalMediaFormat & GetOpalMSRP()
                           1440, 
                           512, 
                           0, 
-                          1000)
+                          1000,
+                          0, false, true)
       { 
         SetOptionString(OpalMediaFormat::DescriptionOption(), "RFC 4975 (MSRP) Instant Message Relay");
 
@@ -123,8 +124,8 @@ const OpalMediaFormat & GetOpalMSRP()
         option->SetMerge(OpalMediaOption::MaxMerge);
         AddOption(option);
       } 
-  } const f; 
-  return f; 
+  } * f = new IMMSRPMediaFormat;  // Will be deleted (indirectly) in ~OpalManager
+  return *f; 
 } 
 
 

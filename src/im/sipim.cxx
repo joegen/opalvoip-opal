@@ -147,7 +147,8 @@ const OpalMediaFormat & GetOpalSIPIM()
                           1440, 
                           512, 
                           0, 
-                          1000)
+                          1000,
+                          0, false, true)
       { 
         SetOptionString(OpalMediaFormat::DescriptionOption(), "RFC 3428 (SIP) Instant Messaging");
 
@@ -155,8 +156,8 @@ const OpalMediaFormat & GetOpalSIPIM()
         option->SetMerge(OpalMediaOption::NoMerge);
         AddOption(option);
       } 
-  } const f; 
-  return f; 
+  } * f = new OpalSIPIMMediaFormat; // Will be deleted (indirectly) in ~OpalManager 
+  return *f; 
 } 
 
 

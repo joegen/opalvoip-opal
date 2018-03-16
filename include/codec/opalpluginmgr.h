@@ -126,7 +126,6 @@ class OpalPluginCodecManager : public PPluginModuleManager
     void OnLoadPlugin(PDynaLink & dll, P_INT_PTR code);
 
     virtual void OnStartup();
-    virtual void OnShutdown();
 
 #if OPAL_H323
     H323Capability * CreateCapability(
@@ -138,9 +137,6 @@ class OpalPluginCodecManager : public PPluginModuleManager
 #endif
 
   protected:
-    // Note the below MUST NOT be an OpalMediaFormatList
-    PList<OpalMediaFormat> mediaFormatsOnHeap;
-
     void RegisterCodecPlugins  (unsigned int count, const PluginCodec_Definition * codecList, OpalPluginCodecHandler * handler);
     void UnregisterCodecPlugins(unsigned int count, const PluginCodec_Definition * codecList, OpalPluginCodecHandler * handler);
 

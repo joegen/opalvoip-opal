@@ -62,8 +62,9 @@ class OpalH224MediaFormat : public OpalMediaFormat
     PCLASSINFO(OpalH224MediaFormat, OpalMediaFormat);
   public:
     OpalH224MediaFormat(
-      OpalH224MediaFormatInternal * info
-    ) : OpalMediaFormat(info) { }
+      OpalH224MediaFormatInternal * info,
+      bool dynamic
+    ) : OpalMediaFormat(info, dynamic) { }
 
     static const PString & HDLCTunnelingOption();
 };

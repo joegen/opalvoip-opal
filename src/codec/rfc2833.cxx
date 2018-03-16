@@ -171,13 +171,14 @@ const OpalMediaFormat & GetOpalRFC2833()
                         32*(1000/50), // bits/sec  (32 bits every 50ms)
                         4,      // bytes/frame
                         10*8,   // 10 millisecond
-                        OpalMediaFormat::AudioClockRate)
+                        OpalMediaFormat::AudioClockRate,
+                        0, false, true)
     {
       SetOptionString(OpalMediaFormat::DescriptionOption(), "RFC 2833 - telephone event");
       AddEventsOption(*this, "0-16,32,36", "0-15");  // Support DTMF 0-9,*,#,A-D & hookflash, CNG, CED
     }
-  } const RFC2833;
-  return RFC2833;
+  } * RFC2833 = new OpalRFC2833MediaFormat;
+  return *RFC2833;
 }
 
 const OpalMediaFormat & GetOpalCiscoNSE()
@@ -192,13 +193,14 @@ const OpalMediaFormat & GetOpalCiscoNSE()
                         32*(1000/50), // bits/sec  (32 bits every 50ms)
                         4,      // bytes/frame
                         10*8,   // 10 millisecond
-                        OpalMediaFormat::AudioClockRate)
+                        OpalMediaFormat::AudioClockRate,
+                        0, false, true)
     {
       SetOptionString(OpalMediaFormat::DescriptionOption(), "Cisco NSE - fax event");
       AddEventsOption(*this, "192,193", "192,193");
     }
-  } const CiscoNSE;
-  return CiscoNSE;
+  } * CiscoNSE = new OpalCiscoNSEMediaFormat;
+  return *CiscoNSE;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

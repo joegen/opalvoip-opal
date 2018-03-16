@@ -771,7 +771,7 @@ class OpalMediaFormatInternal : public PObject
     RTP_DataFrame::PayloadTypes  rtpPayloadType;
     PCaselessString              rtpEncodingName;
     OpalMediaType                mediaType;
-    PDECLARE_MUTEX(              m_mutex, OpalMediaFormatInternal1000);
+    PDECLARE_MUTEX(              m_mutex, OpalMediaFormatInternal, 1000);
     PSortedList<OpalMediaOption> options;
     time_t                       codecVersionTime;
     bool                         forceIsTransportable;
@@ -811,7 +811,8 @@ class OpalMediaFormat : public PContainer
     /**Default constructor creates a PCM-16 media format.
       */
     OpalMediaFormat(
-      OpalMediaFormatInternal * info = NULL
+      OpalMediaFormatInternal * info = NULL,
+      bool dynamic = false
     );
 
     /**This form of the constructor will register the full details of the
@@ -838,7 +839,8 @@ class OpalMediaFormat : public PContainer
       unsigned frameTime,                         ///<  Time for frame in RTP units (if applicable)
       unsigned clockRate,                         ///<  Clock rate for data (if applicable)
       time_t timeStamp = 0,                       ///<  timestamp (for versioning)
-      bool allowMultiple = false                  ///<  allow multiple copies of media format in list
+      bool allowMultiple = false,                 ///<  allow multiple copies of media format in list
+      bool dynamic = false                        ///<  indicate is allocated on heap and should be deleted
     );
 
     /**Construct a media format, searching database for information.
@@ -1281,10 +1283,10 @@ class OpalMediaFormat : public PContainer
     );
 
     /**Remove the media format from master format list entry.
-       The media format must already be registered. Returns false if not.
+       Returns false if for matching formats are found.
       */
-    static bool RemoveRegisteredMediaFormat(
-      const OpalMediaFormat & mediaFormat  ///<  Media format to copy to master list
+    static bool RemoveRegisteredMediaFormats(
+      const PString & wildcard  ///<  Media format to remove from master list
     );
 
     /**
@@ -1370,6 +1372,7 @@ class OpalMediaFormat : public PContainer
 
     OpalMediaFormatInternal * m_info;
     PDECLARE_MUTEX(m_mutex, OpalMediaFormat, 1000);
+    bool m_dynamic;
 
   friend class OpalMediaFormatInternal;
   friend class OpalMediaFormatList;

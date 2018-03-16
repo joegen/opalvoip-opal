@@ -416,6 +416,8 @@ OpalManager::~OpalManager()
   delete m_natMethods;
 #endif
 
+  OpalMediaFormat::RemoveRegisteredMediaFormats("*");
+
   PTRACE(4, "Deleted manager.");
 }
 

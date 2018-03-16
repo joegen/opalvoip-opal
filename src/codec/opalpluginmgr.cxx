@@ -1595,13 +1595,6 @@ OpalPluginCodecManager::~OpalPluginCodecManager()
 {
 }
 
-void OpalPluginCodecManager::OnShutdown()
-{
-  for (PList<OpalMediaFormat>::iterator it = mediaFormatsOnHeap.begin(); it != mediaFormatsOnHeap.end(); ++it)
-    OpalMediaFormat::RemoveRegisteredMediaFormat(*it);
-  mediaFormatsOnHeap.RemoveAll();
-}
-
 void OpalPluginCodecManager::OnLoadPlugin(PDynaLink & dll, P_INT_PTR code)
 {
   PluginCodec_GetCodecFunction getCodecs;
@@ -1791,12 +1784,8 @@ bool OpalPluginCodecManager::AddMediaFormat(OpalPluginCodecHandler * handler,
     return false;
   }
 
-  OpalMediaFormat * newMediaFormat = new OpalMediaFormat(mediaFormatInternal);
-
-  // Remember format so we can deallocate it on shut down
-  mediaFormatsOnHeap.Append(newMediaFormat);
-
-  mediaFormat = *newMediaFormat;
+  new OpalMediaFormat(mediaFormatInternal, true); // Will be deleted (indirectly) in ~OpalManager
+  mediaFormat = fmtName;
   return true;
 }
 

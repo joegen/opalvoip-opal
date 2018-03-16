@@ -46,15 +46,15 @@ static BYTE CapabilityAttributeBits[OpalH281Client::Capability::NumAttributes] =
 
 const OpalMediaFormat & GetOpalFECC_RTP()
 {
-  static OpalH224MediaFormat h224_rtp(new OpalH224MediaFormatInternal(OPAL_FECC_RTP, "Far End Camera Control (H.224 over RTP)", false));
-  return h224_rtp;
+  static OpalH224MediaFormat * h224_rtp = new OpalH224MediaFormat(new OpalH224MediaFormatInternal(OPAL_FECC_RTP, "Far End Camera Control (H.224 over RTP)", false), true);
+  return *h224_rtp;
 };
 
 
 const OpalMediaFormat & GetOpalFECC_HDLC()
 {
-  static OpalH224MediaFormat h224_hdlc(new OpalH224MediaFormatInternal(OPAL_FECC_HDLC, "Far End Camera Control (H.224 over HDLC)", true));
-  return h224_hdlc;
+  static OpalH224MediaFormat * h224_hdlc = new OpalH224MediaFormat(new OpalH224MediaFormatInternal(OPAL_FECC_HDLC, "Far End Camera Control (H.224 over HDLC)", true), true);
+  return *h224_hdlc;
 }
 
 
