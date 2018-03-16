@@ -773,9 +773,14 @@ void OpalMediaTransport::SetMediaTimeout(const PTimeInterval & t)
 
 void OpalMediaTransport::SetRemoteBehindNAT()
 {
+  ResetHasSetRemoteMediaAddress();
+  m_remoteBehindNAT = true;
+}
+
+void OpalMediaTransport::ResetHasSetRemoteMediaAddress()
+{
   m_hasSetNATControlAddress = false;
   m_hasSetNATMediaAddress = false;
-  m_remoteBehindNAT = true;
 }
 
 
@@ -1576,6 +1581,13 @@ void OpalMediaSession::SetRemoteBehindNAT()
   OpalMediaTransportPtr transport = m_transport; // This way avoids races
   if (transport != NULL)
     transport->SetRemoteBehindNAT();
+}
+
+void OpalMediaSession::ResetHasSetRemoteMediaAddress()
+{
+  OpalMediaTransportPtr transport = m_transport; // This way avoids races
+  if (transport != NULL)
+    transport->ResetHasSetRemoteMediaAddress();
 }
 
 void OpalMediaSession::OfferCryptoSuite(const PString & cryptoSuiteName)
