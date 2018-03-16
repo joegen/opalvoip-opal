@@ -150,7 +150,7 @@ class OpalICEMediaTransport : public OpalUDPMediaTransport
     PSTUNServer m_server;
     PSTUNClient m_client;
 
-    CandidateState * m_selectedCandidate;
+    PNatCandidate m_selectedCandidate;
 };
 
 

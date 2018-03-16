@@ -81,7 +81,6 @@ OpalICEMediaTransport::OpalICEMediaTransport(const PString & name)
   , m_trickle(false)
   , m_useNetworkCost(false)
   , m_state(e_Disabled)
-  , m_selectedCandidate(NULL)
 {
   PTRACE_CONTEXT_ID_TO(m_server);
   PTRACE_CONTEXT_ID_TO(m_client);
@@ -222,7 +221,7 @@ void OpalICEMediaTransport::SetCandidates(const PString & user, const PString & 
           return;
         }
 
-        /* My undersanding is that an ICE restart is only when user/pass changes.
+        /* My understanding is that an ICE restart is only when user/pass changes.
            However, Firefox changes the candidates without changing the user/pass
            so include that in test for restart. */
         PTRACE(3, *this << "ICE offer already in progress for bundle, remote candidates changed");
@@ -328,12 +327,13 @@ bool OpalICEMediaTransport::GetCandidates(PString & user, PString & pass, PNatCa
 
   if (offering) {
     switch (m_state) {
-      case e_Disabled :
+      case e_Disabled:
+      case e_Completed:
         break;
 
       case e_Offering:
         if (m_localCandidates == newCandidates)
-          return true; // Duplicate, probably due to bundline, ignore
+          return true; // Duplicate, probably due to bundling, ignore
 
         PTRACE(2, *this << "ICE local offer changed");
         break;
@@ -419,7 +419,7 @@ PBoolean OpalICEMediaTransport::ICEChannel::Read(void * data, PINDEX size)
 
 bool OpalICEMediaTransport::InternalHandleICE(SubChannels subchannel, const void * data, PINDEX length)
 {
-  PSafeLockReadOnly lock(*this);
+  PSafeLockReadWrite lock(*this);
   if (!lock.IsLocked())
     return true;
 
@@ -432,7 +432,7 @@ bool OpalICEMediaTransport::InternalHandleICE(SubChannels subchannel, const void
 
   PSTUNMessage message((BYTE *)data, length, ap);
   if (!message.IsValid()) {
-    if (m_state == e_Completed && PAssertNULL(m_selectedCandidate)->m_baseTransportAddress == ap)
+    if (m_state == e_Completed && m_selectedCandidate.m_baseTransportAddress == ap)
       return true; // Only process non-STUN packets from the selected candidate
 
     PTRACE(5, *this << subchannel << ", ignoring data "
@@ -533,7 +533,7 @@ bool OpalICEMediaTransport::InternalHandleICE(SubChannels subchannel, const void
 
     /* Already got this candidate, so don't do any more processing, but still return
        false as we don't want next layer in stack trying to use this STUN packet. */
-    if (m_state == e_Completed && PAssertNULL(m_selectedCandidate)->m_baseTransportAddress == ap)
+    if (m_state == e_Completed && m_selectedCandidate.m_baseTransportAddress == ap)
       return false;
 
     candidate->m_state = e_CandidateSucceeded;
@@ -548,13 +548,13 @@ bool OpalICEMediaTransport::InternalHandleICE(SubChannels subchannel, const void
     if (m_state == e_Completed) {
       bool useNewCandidate;
       if (!m_useNetworkCost)
-        useNewCandidate = candidate->m_priority > m_selectedCandidate->m_priority;
-      else if (candidate->m_networkCost < m_selectedCandidate->m_networkCost)
+        useNewCandidate = candidate->m_priority > m_selectedCandidate.m_priority;
+      else if (candidate->m_networkCost < m_selectedCandidate.m_networkCost)
         useNewCandidate = true;
-      else if (candidate->m_networkCost > m_selectedCandidate->m_networkCost)
+      else if (candidate->m_networkCost > m_selectedCandidate.m_networkCost)
         useNewCandidate = false;
       else
-        useNewCandidate = candidate->m_priority > m_selectedCandidate->m_priority;
+        useNewCandidate = candidate->m_priority > m_selectedCandidate.m_priority;
       if (!useNewCandidate)
         return false;
       PTRACE(3, *this << subchannel << ", ICE found better candidate: " << *candidate);
@@ -579,7 +579,7 @@ bool OpalICEMediaTransport::InternalHandleICE(SubChannels subchannel, const void
   for (CandidateStateList::iterator it = m_remoteCandidates[subchannel].begin(); it != m_remoteCandidates[subchannel].end(); ++it)
     it->m_selected = &*it == candidate;
 #endif
-  m_selectedCandidate = candidate;
+  m_selectedCandidate = *candidate;
   m_state = e_Completed;
 
   // Don't pass this STUN packet up the protocol stack
