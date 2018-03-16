@@ -129,7 +129,9 @@ bool OpalICEMediaTransport::Open(OpalMediaSession & session,
 
 bool OpalICEMediaTransport::IsEstablished() const
 {
-  return m_state <= e_Completed && OpalUDPMediaTransport::IsEstablished();
+  if (m_state != e_Disabled && m_selectedCandidate.m_type == PNatCandidate::EndTypes)
+    return false;
+  return OpalUDPMediaTransport::IsEstablished();
 }
 
 
@@ -432,7 +434,9 @@ bool OpalICEMediaTransport::InternalHandleICE(SubChannels subchannel, const void
 
   PSTUNMessage message((BYTE *)data, length, ap);
   if (!message.IsValid()) {
-    if (m_state == e_Completed && m_selectedCandidate.m_baseTransportAddress == ap)
+    /* During ICE restart, continue to accept traffic from previously-selected candidate
+       until a new one is selected. */
+    if (m_selectedCandidate.m_type != PNatCandidate::EndTypes && m_selectedCandidate.m_baseTransportAddress == ap)
       return true; // Only process non-STUN packets from the selected candidate
 
     PTRACE(5, *this << subchannel << ", ignoring data "
