@@ -1050,11 +1050,12 @@ class OpalMediaStreamMixer
   public:
     OpalMediaStreamMixer();
     void Append(const PSafePtr<OpalMixerMediaStream> & stream);
-    void Remove(const PSafePtr<OpalMixerMediaStream> & stream) { m_outputStreams.Remove(stream); }
+    void Remove(const PSafePtr<OpalMixerMediaStream> & stream) { m_outputStreams.RemoveAt(stream->GetID()); }
     void CloseOne(const PSafePtr<OpalMixerMediaStream> & stream);
 
   protected:
-    PSafeList<OpalMixerMediaStream> m_outputStreams;
+    typedef PSafeDictionary<PString, OpalMixerMediaStream> StreamDict;
+    StreamDict m_outputStreams;
 };
 
 /** Audio mixer.
@@ -1303,8 +1304,8 @@ class OpalMixerNode : public PSafeObject
     PTime                  m_creationTime;
     atomic<bool>           m_shuttingDown;
 
-    PSafeList<OpalConnection> m_connections;
-    PString                   m_ownerConnection;
+    PSafeArray<OpalConnection> m_connections;
+    PString                    m_ownerConnection;
 
     OpalAudioStreamMixer * m_audioMixer;
 #if OPAL_VIDEO

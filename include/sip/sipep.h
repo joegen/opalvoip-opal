@@ -428,13 +428,13 @@ class SIPEndPoint : public OpalSDPEndPoint
 
     /** Returns the number of registered accounts.
      */
-    unsigned GetRegistrationsCount() const { return activeSIPHandlers.GetCount(SIP_PDU::Method_REGISTER); }
+    unsigned GetRegistrationsCount() const { return m_activeSIPHandlers.GetCount(SIP_PDU::Method_REGISTER); }
 
     /** Returns a list of registered accounts.
      */
     PStringList GetRegistrations(
       bool includeOffline = false   ///< Include offline registrations
-    ) const { return activeSIPHandlers.GetAddresses(includeOffline, SIP_PDU::Method_REGISTER); }
+    ) const { return m_activeSIPHandlers.GetAddresses(includeOffline, SIP_PDU::Method_REGISTER); }
 
     /** Information provided on the registration status. */
     struct RegistrationStatus {
@@ -594,14 +594,14 @@ class SIPEndPoint : public OpalSDPEndPoint
      */
     unsigned GetSubscriptionCount(
       const SIPSubscribe::EventPackage & eventPackage  ///< Event package of subscription
-    ) { return activeSIPHandlers.GetCount(SIP_PDU::Method_SUBSCRIBE, eventPackage); }
+    ) { return m_activeSIPHandlers.GetCount(SIP_PDU::Method_SUBSCRIBE, eventPackage); }
 
     /** Returns a list of subscribed accounts for package.
      */
     PStringList GetSubscriptions(
       const SIPSubscribe::EventPackage & eventPackage, ///< Event package of subscription
       bool includeOffline = false   ///< Include offline subscriptions
-    ) const { return activeSIPHandlers.GetAddresses(includeOffline, SIP_PDU::Method_REGISTER, eventPackage); }
+    ) const { return m_activeSIPHandlers.GetAddresses(includeOffline, SIP_PDU::Method_REGISTER, eventPackage); }
 
     /** Information provided on the subscription status. */
     typedef SIPSubscribe::SubscriptionStatus SubscriptionStatus;
@@ -764,7 +764,7 @@ class SIPEndPoint : public OpalSDPEndPoint
     PStringList GetPublications(
       const SIPSubscribe::EventPackage & eventPackage, ///< Event package for publication
       bool includeOffline = false   ///< Include offline publications
-    ) const { return activeSIPHandlers.GetAddresses(includeOffline, SIP_PDU::Method_PUBLISH, eventPackage); }
+    ) const { return m_activeSIPHandlers.GetAddresses(includeOffline, SIP_PDU::Method_PUBLISH, eventPackage); }
 
 
 #if OPAL_SIP_PRESENCE
@@ -808,14 +808,14 @@ class SIPEndPoint : public OpalSDPEndPoint
         virtual SIP_PDU::StatusCodes OnReceivedREGISTER(SIPEndPoint & endpoint, const SIP_PDU & request);
         virtual bool ExpireBindings();
 
-        const PURL & GetAoR() const { return m_aor; }
+        const SIPURL & GetAoR() const { return m_aor; }
         SIPURLList GetContacts() const;
         const OpalProductInfo & GetProductInfo() const { return m_productInfo; }
 
         bool HasBindings() const { return !m_bindings.empty(); }
 
       protected:
-        PURL m_aor;
+        SIPURL m_aor;
         OpalProductInfo m_productInfo;
 
         struct Binding {
@@ -830,7 +830,7 @@ class SIPEndPoint : public OpalSDPEndPoint
     friend class RegistrarAoR;
 
     virtual RegistrarAoR * CreateRegistrarAoR(const SIP_PDU & request);
-    virtual PSafePtr<RegistrarAoR> FindRegistrarAoR(const SIPURL & aor) { return m_registeredUAs.FindWithLock(RegistrarAoR(aor)); }
+    virtual PSafePtr<RegistrarAoR> FindRegistrarAoR(const SIPURL & aor) { return m_registeredUAs.Find(aor); }
     virtual SIPURLList GetRegistrarAoRs() const;
     virtual void OnChangedRegistrarAoR(RegistrarAoR & ua);
 
@@ -922,10 +922,10 @@ class SIPEndPoint : public OpalSDPEndPoint
 
     void AddTransaction(
       SIPTransaction * transaction
-    ) { m_transactions.Append(transaction); }
+    ) { m_activeTransactions.SetAt(transaction->GetTransactionID(), transaction); }
 
     PSafePtr<SIPTransaction> GetTransaction(const PString & transactionID, PSafetyMode mode)
-    { return PSafePtrCast<SIPTransactionBase, SIPTransaction>(m_transactions.FindWithLock(transactionID, mode)); }
+    { return PSafePtrCast<SIPTransactionBase, SIPTransaction>(m_activeTransactions.Find(transactionID, mode)); }
     
     /**Return the next CSEQ for the next transaction.
      */
@@ -1018,13 +1018,13 @@ class SIPEndPoint : public OpalSDPEndPoint
 
 
     PSafePtr<SIPHandler> FindSIPHandlerByCallID(const PString & callID, PSafetyMode m)
-      { return activeSIPHandlers.FindSIPHandlerByCallID(callID, m); }
+      { return m_activeSIPHandlers.FindSIPHandlerByCallID(callID, m); }
 
     PSafePtr<SIPHandler> FindSIPHandlerByUrl(const PString & aor, SIP_PDU::Methods method, PSafetyMode mode)
-      { return activeSIPHandlers.FindSIPHandlerByUrl(aor, method, mode); }
+      { return m_activeSIPHandlers.FindSIPHandlerByUrl(aor, method, mode); }
 
     void UpdateHandlerIndexes(SIPHandler * handler)
-      { activeSIPHandlers.Update(handler); }
+      { m_activeSIPHandlers.Update(handler); }
 
 
     SIPThreadPool & GetThreadPool() { return m_threadPool; }
@@ -1062,13 +1062,13 @@ class SIPEndPoint : public OpalSDPEndPoint
     PDECLARE_INSTRUMENTED_MUTEX(m_transportsMutex, SIPTransport, 2000, 1000);
 
     // Sub-protocol handlers
-    SIPHandlersList   activeSIPHandlers;
+    SIPHandlers m_activeSIPHandlers;
     PSafePtr<SIPHandler> FindHandlerByPDU(const SIP_PDU & pdu, PSafetyMode mode);
 
     PStringToString   m_receivedConnectionTokens;
     PDECLARE_MUTEX(m_receivedConnectionMutex);
 
-    PSafeSortedList<SIPTransactionBase> m_transactions;
+    PSafeDictionary<PString, SIPTransactionBase> m_activeTransactions;
 
     atomic<unsigned> m_lastSentCSeq;
     int              m_defaultAppearanceCode;
@@ -1085,8 +1085,8 @@ class SIPEndPoint : public OpalSDPEndPoint
     ConferenceMap m_conferenceAOR;
 
     // Registrar
-    typedef PSafeSortedList<RegistrarAoR> RegistrarList;
-    RegistrarList m_registeredUAs;
+    typedef PSafeDictionary<SIPURL, RegistrarAoR> RegistrarDict;
+    RegistrarDict m_registeredUAs;
     PStringSet    m_registrarDomains;
 
     // Thread pooling

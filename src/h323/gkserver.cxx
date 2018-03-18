@@ -2863,7 +2863,7 @@ H323GatekeeperRequest::Response H323GatekeeperServer::OnRegistration(H323Gatekee
   // See if we have had a GRQ for this EP
   if (info.rrq.HasOptionalField(H225_RegistrationRequest::e_terminalAlias)) {
     for (i = 0; i < info.rrq.m_terminalAlias.GetSize(); i++) {
-      info.m_endpoint = m_discoveredEndpoints.FindWithLock(info.rrq.m_terminalAlias[i]);
+      info.m_endpoint = m_discoveredEndpoints.Find(info.rrq.m_terminalAlias[i]);
       if (info.m_endpoint != NULL) {
         PTRACE(1, "RAS\tFound endpoint from previous GRQ: " << *info.m_endpoint);
         m_discoveredEndpoints.DisallowDeleteObjects();
@@ -2984,7 +2984,7 @@ void H323GatekeeperServer::AddEndPoint(H323RegisteredEndPoint * ep)
 
   m_mutex.Wait();
 
-  if (m_byIdentifier.FindWithLock(ep->GetIdentifier(), PSafeReference) != ep) {
+  if (m_byIdentifier.Find(ep->GetIdentifier(), PSafeReference) != ep) {
     m_byIdentifier.SetAt(ep->GetIdentifier(), ep);
 
     if (m_byIdentifier.GetSize() > m_peakRegistrations)
@@ -3103,7 +3103,7 @@ PString H323GatekeeperServer::CreateEndPointIdentifier()
 PSafePtr<H323RegisteredEndPoint> H323GatekeeperServer::FindEndPointByIdentifier(
                                             const PString & identifier, PSafetyMode mode)
 {
-  return m_byIdentifier.FindWithLock(identifier, mode);
+  return m_byIdentifier.Find(identifier, mode);
 }
 
 

@@ -3148,14 +3148,6 @@ SIP_PDU::StatusCodes SIPTransactionOwner::HandleAuthentication(const SIP_PDU & r
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-PObject::Comparison SIPTransactionBase::Compare(const PObject & other) const
-{
-  return GetTransactionID().Compare(dynamic_cast<const SIPTransactionBase&>(other).GetTransactionID());
-}
-
-
-////////////////////////////////////////////////////////////////////////////////////
-
 SIPTransaction::SIPTransaction(Methods method,
                                SIPTransactionOwner * owner,
                                OpalTransport * transport,

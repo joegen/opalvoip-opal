@@ -124,29 +124,34 @@ void SIPEndPoint::ShutDown()
   m_shuttingDown = true;
 
   // Clean up the handlers, wait for them to finish before destruction.
-  bool shuttingDown = true;
-  while (shuttingDown) {
-    shuttingDown = false;
-    PSafePtr<SIPHandler> handler = activeSIPHandlers.GetFirstHandler();
-    while (handler != NULL) {
-      if (handler->ShutDown())
-        activeSIPHandlers.Remove(handler++);
-      else {
-        shuttingDown = true;
-        ++handler;
+  for (;;) {
+    bool allShutDown = true;
+    for (SIPHandlers::iterator it = m_activeSIPHandlers.begin(); it != m_activeSIPHandlers.end(); ++it) {
+      if (!it->second->ShutDown()) {
+        allShutDown = false;
+        break;
       }
     }
+    if (allShutDown)
+      break;
     PThread::Sleep(100);
   }
+  m_activeSIPHandlers.RemoveAll();
 
   // Clean up transactions still in progress, waiting for them to terminate.
-  PSafePtr<SIPTransactionBase> transaction;
-  while ((transaction = m_transactions.GetAt(0, PSafeReference)) != NULL) {
-    if (transaction->IsTerminated())
-      m_transactions.Remove(transaction);
-    else
-      PThread::Sleep(100);
+  for (;;) {
+    bool allTerminated = true;
+    for (PSafeDictionary<PString, SIPTransactionBase>::iterator it = m_activeTransactions.begin(); it != m_activeTransactions.end(); ++it) {
+      if (!it->second->IsTerminated()) {
+        allTerminated = false;
+        break;
+      }
+    }
+    if (allTerminated)
+      break;
+    PThread::Sleep(100);
   }
+  m_activeTransactions.RemoveAll();
 
   for (PSafeDictionary<OpalTransportAddress, OpalTransport>::iterator it = m_transportsTable.begin(); it != m_transportsTable.end(); ++it)
     it->second->CloseWait();
@@ -183,9 +188,9 @@ PStringList SIPEndPoint::GetNetworkURIs(const PString & name) const
 {
   PStringList list = OpalRTPEndPoint::GetNetworkURIs(name);
 
-  for (PSafePtr<SIPHandler> handler = activeSIPHandlers.GetFirstHandler(PSafeReadOnly); handler != NULL; ++handler) {
-    if (handler->GetMethod() == SIP_PDU::Method_REGISTER && handler->GetAddressOfRecord().GetUserName() == name)
-      list += handler->GetAddressOfRecord();
+  for (SIPHandlers::const_iterator it = m_activeSIPHandlers.begin(); it != m_activeSIPHandlers.end(); ++it) {
+    if (it->second->GetMethod() == SIP_PDU::Method_REGISTER && it->second->GetAddressOfRecord().GetUserName() == name)
+      list += it->second->GetAddressOfRecord();
   }
 
   return list;
@@ -256,15 +261,10 @@ OpalTransportPtr SIPEndPoint::GetTransport(const SIPTransactionOwner & transacto
 {
   OpalTransportAddress remoteAddress = transactor.GetRemoteTransportAddress();
   if (remoteAddress.IsEmpty()) {
-    for (PSafePtr<SIPHandler> handler = activeSIPHandlers.GetFirstHandler(); ; ++handler) {
-      if (handler == NULL) {
-        reason = SIP_PDU::Local_CannotMapScheme;
-        PTRACE(1, "Cannot use " << transactor.GetRequestURI().GetScheme() << " URI without phone-context or existing registration.");
-        return NULL;
-      }
-      if (handler->GetMethod() == SIP_PDU::Method_REGISTER) {
-        remoteAddress = handler->GetRemoteTransportAddress();
-        PTRACE(4, "Found registration: aor=" << handler->GetAddressOfRecord() << ", remote" << remoteAddress);
+    for (SIPHandlers::iterator it = m_activeSIPHandlers.begin(); ; ++it) {
+      if (it->second->GetMethod() == SIP_PDU::Method_REGISTER) {
+        remoteAddress = it->second->GetRemoteTransportAddress();
+        PTRACE(4, "Found registration: aor=" << it->second->GetAddressOfRecord() << ", remote" << remoteAddress);
         break;
       }
     }
@@ -275,7 +275,7 @@ OpalTransportPtr SIPEndPoint::GetTransport(const SIPTransactionOwner & transacto
     P_INSTRUMENTED_WAIT_AND_SIGNAL(m_transportsMutex);
 
     // See if already have a link to that remote
-    transport = m_transportsTable.FindWithLock(remoteAddress, PSafeReference);
+    transport = m_transportsTable.Find(remoteAddress, PSafeReference);
     if (transport != NULL && transport->IsOpen()) {
       PTRACE(4, "Found existing transport " << *transport);
       return transport;
@@ -298,7 +298,7 @@ OpalTransportPtr SIPEndPoint::GetTransport(const SIPTransactionOwner & transacto
         // Unlock to avoid deadlock through the registrar handler list
         m_transportsMutex.InstrumentedSignal(P_DEBUG_LOCATION);
 
-        PSafePtr<SIPRegisterHandler> handler = PSafePtrCast<SIPHandler, SIPRegisterHandler>(activeSIPHandlers.FindSIPHandlerByDomain(domain, SIP_PDU::Method_REGISTER, PSafeReadOnly));
+        PSafePtr<SIPRegisterHandler> handler = PSafePtrCast<SIPHandler, SIPRegisterHandler>(m_activeSIPHandlers.FindSIPHandlerByDomain(domain, SIP_PDU::Method_REGISTER, PSafeReadOnly));
 
         // Lock it again, as the rest of this must be atomic
         m_transportsMutex.InstrumentedWait(PMaxTimeInterval, P_DEBUG_LOCATION);
@@ -314,7 +314,7 @@ OpalTransportPtr SIPEndPoint::GetTransport(const SIPTransactionOwner & transacto
         }
 
         // See if the above unlocked section had us create the same desired transport in a different thread
-        transport = m_transportsTable.FindWithLock(remoteAddress, PSafeReference);
+        transport = m_transportsTable.Find(remoteAddress, PSafeReference);
         if (transport != NULL) {
           if (transport->IsOpen()) {
             PTRACE(4, "Found newly created transport " << *transport);
@@ -412,8 +412,8 @@ void SIPEndPoint::HandlePDU(const OpalTransportPtr & transport)
     case SIP_PDU::Local_TransportLost :
       if (transport->IsReliable() && transport->HasKeepAlive()) {
         PTRACE(4, "Trying to reconnect dropped transport " << *transport);
-        for (PSafePtr<SIPHandler> handler = activeSIPHandlers.GetFirstHandler(); handler != NULL; ++handler) {
-          SIPRegisterHandler * regHandler = dynamic_cast<SIPRegisterHandler *>(&*handler);
+        for (SIPHandlers::iterator it = m_activeSIPHandlers.begin(); it != m_activeSIPHandlers.end(); ++it) {
+          SIPRegisterHandler * regHandler = dynamic_cast<SIPRegisterHandler *>(&*it->second);
           if (  regHandler != NULL &&
                 regHandler->GetState() == SIPHandler::Subscribed &&
                 regHandler->GetParams().m_compatibility == SIPRegister::e_RFC5626 &&
@@ -426,12 +426,12 @@ void SIPEndPoint::HandlePDU(const OpalTransportPtr & transport)
                 if (!transport->Connect()) {
                   // Remote has not come back quickly, possibly never, set register into Unavailable
                   // mode where it periodically retries reconnect.
-                  handler->ActivateState(SIPHandler::Unavailable);
+                  regHandler->ActivateState(SIPHandler::Unavailable);
                   break;
                 }
               }
             }
-            handler->ActivateState(SIPHandler::Restoring);
+            regHandler->ActivateState(SIPHandler::Restoring);
           }
         }
       }
@@ -536,7 +536,7 @@ void SIPEndPoint::OnConferenceStatusChanged(OpalEndPoint & endpoint, const PStri
         break;
 
       case OpalConferenceState::Created :
-        if (activeSIPHandlers.FindSIPHandlerByDomain(aor.GetHostName(), SIP_PDU::Method_REGISTER, PSafeReference) == NULL) {
+        if (m_activeSIPHandlers.FindSIPHandlerByDomain(aor.GetHostName(), SIP_PDU::Method_REGISTER, PSafeReference) == NULL) {
           PTRACE(4, "Conference domain " << aor.GetHostName() << " unregistered, not registering name " << aor.GetUserName());
         }
         else {
@@ -556,35 +556,24 @@ void SIPEndPoint::OnConferenceStatusChanged(OpalEndPoint & endpoint, const PStri
 
 PBoolean SIPEndPoint::GarbageCollection()
 {
-  PTRACE(6, "Garbage collection: transactions=" << m_transactions.GetSize() << ", connections=" << m_connectionsActive.GetSize());
+  PTRACE(6, "Garbage collection: transactions=" << m_activeTransactions.GetSize() << ", connections=" << m_connectionsActive.GetSize());
 
-  {
-    PSafePtr<SIPTransactionBase> transaction(m_transactions, PSafeReference);
-    while (transaction != NULL) {
-      if (transaction->IsTerminated())
-        m_transactions.Remove(transaction++);
-      else
-        ++transaction;
-    }
+  for (PSafeDictionary<PString, SIPTransactionBase>::iterator it = m_activeTransactions.begin(); it != m_activeTransactions.end(); ++it) {
+    if (it->second->IsTerminated())
+      m_activeTransactions.RemoveAt(it->first); // Unlike a PDictionary() or std::map<>, this is safe to do
   }
-  bool transactionsDone = m_transactions.DeleteObjectsToBeRemoved();
+  bool transactionsDone = m_activeTransactions.DeleteObjectsToBeRemoved();
 
-  {
-    PSafePtr<SIPHandler> handler = activeSIPHandlers.GetFirstHandler();
-    while (handler != NULL) {
-      // If unsubscribed then we do the shut down to clean up the handler
-      if (handler->GetState() == SIPHandler::Unsubscribed && handler->ShutDown())
-        activeSIPHandlers.Remove(handler++);
-      else
-        ++handler;
-    }
+  for (SIPHandlers::iterator it = m_activeSIPHandlers.begin(); it != m_activeSIPHandlers.end(); ++it) {
+    // If unsubscribed then we do the shut down to clean up the handler
+    if (it->second->GetState() == SIPHandler::Unsubscribed && it->second->ShutDown())
+      m_activeSIPHandlers.RemoveAt(it->first); // Unlike a PDictionary() or std::map<>, this is safe to do
   }
-  bool handlersDone = activeSIPHandlers.DeleteObjectsToBeRemoved();
+  bool handlersDone = m_activeSIPHandlers.DeleteObjectsToBeRemoved();
 
 
   {
-    PSafeList<OpalTransport> transportsToClose;
-    transportsToClose.DisallowDeleteObjects();
+    std::list<OpalTransportPtr> transportsToClose;
 
     // Do not do the CloseWait() inside this mutex, can cause phantom (and, possibly, actual) deadlocks
     {
@@ -592,14 +581,14 @@ PBoolean SIPEndPoint::GarbageCollection()
       for (PSafeDictionary<OpalTransportAddress, OpalTransport>::iterator it = m_transportsTable.begin(); it != m_transportsTable.end(); ++it) {
         if (it->second->IsIdle()) {
           PTRACE(3, "Removing transport to " << it->first);
-          transportsToClose.Append(it->second);
+          transportsToClose.push_back(it->second);
           m_transportsTable.RemoveAt(it->first);
         }
       }
     }
 
-    for (PSafePtr<OpalTransport> it = transportsToClose; it != NULL; ++it)
-      it->CloseWait();
+    for (std::list<OpalTransportPtr>::iterator it = transportsToClose.begin(); it != transportsToClose.end(); ++it)
+      (*it)->CloseWait();
 
     /* Let transportsToClose go out of scope before m_transportsTable.DeleteObjectsToBeRemoved()
         so refernces removed, and transports can be actually be deleted. */
@@ -607,11 +596,11 @@ PBoolean SIPEndPoint::GarbageCollection()
   bool transportsDone = m_transportsTable.DeleteObjectsToBeRemoved();
 
 
-  for (PSafePtr<RegistrarAoR> ua(m_registeredUAs); ua != NULL; ++ua) {
-    if (ua->ExpireBindings())
-      OnChangedRegistrarAoR(*ua);
-    if (!ua->HasBindings())
-      m_registeredUAs.Remove(ua);
+  for (RegistrarDict::iterator it = m_registeredUAs.begin(); it != m_registeredUAs.end(); ++it) {
+    if (it->second->ExpireBindings())
+      OnChangedRegistrarAoR(*it->second);
+    if (!it->second->HasBindings())
+      m_registeredUAs.RemoveAt(it->first);
   }
   bool registrarDone = m_registeredUAs.DeleteObjectsToBeRemoved();
 
@@ -948,7 +937,7 @@ bool SIPEndPoint::OnReceivedREGISTER(SIP_PDU & request)
 
 SIP_PDU::StatusCodes SIPEndPoint::InternalHandleREGISTER(SIP_PDU & request, SIP_PDU * response)
 {
-  PSafePtr<RegistrarAoR> ua = m_registeredUAs.FindWithLock(RegistrarAoR(request.GetMIME().GetTo()));
+  PSafePtr<RegistrarAoR> ua = m_registeredUAs.Find(request.GetMIME().GetTo());
   if (ua == NULL) {
     if (request.GetMIME().GetExpires(0) == 0)
       return SIP_PDU::Failure_NotFound;
@@ -958,7 +947,7 @@ SIP_PDU::StatusCodes SIPEndPoint::InternalHandleREGISTER(SIP_PDU & request, SIP_
       return SIP_PDU::Failure_Forbidden;
 
     PTRACE(3, "SIP-Reg", "Created new Registered UA: " << *ua);
-    m_registeredUAs.Append(ua);
+    m_registeredUAs.SetAt(ua->GetAoR(), ua);
   }
 
   SIP_PDU::StatusCodes status = ua->OnReceivedREGISTER(*this, request);
@@ -1130,7 +1119,7 @@ bool SIPEndPoint::OnReceivedSUBSCRIBE(SIP_PDU & request, SIPDialogContext * dial
 
     handler = new SIPNotifyHandler(*this, eventPackage, *dialog);
     handler.SetSafetyMode(PSafeReadWrite);
-    activeSIPHandlers.Append(handler);
+    m_activeSIPHandlers.Append(handler);
 
     mime.SetTo(dialog->GetLocalURI());
   }
@@ -1336,7 +1325,7 @@ bool SIPEndPoint::OnReceivedNOTIFY(SIP_PDU & request)
     PTRACE(4, "Work around Asterisk bug in message-summary event package.");
     SIPURL to(mime.GetFrom().GetHostName());
     to.SetUserName(mime.GetTo().GetUserName());
-    handler = activeSIPHandlers.FindSIPHandlerByUrl(to, SIP_PDU::Method_SUBSCRIBE, eventPackage, PSafeReadWrite);
+    handler = m_activeSIPHandlers.FindSIPHandlerByUrl(to, SIP_PDU::Method_SUBSCRIBE, eventPackage, PSafeReadWrite);
   }
 
   if (handler == NULL) {
@@ -1435,7 +1424,7 @@ bool SIPEndPoint::Register(const SIPRegister::Params & newParams, PString & aor,
     return false;
 
   PTRACE(4, "Start REGISTER\n" << params);
-  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(params.m_addressOfRecord, SIP_PDU::Method_REGISTER, PSafeReadWrite);
+  PSafePtr<SIPHandler> handler = m_activeSIPHandlers.FindSIPHandlerByUrl(params.m_addressOfRecord, SIP_PDU::Method_REGISTER, PSafeReadWrite);
 
   // If there is already a request with this URL and method, 
   // then update it with the new information
@@ -1445,7 +1434,7 @@ bool SIPEndPoint::Register(const SIPRegister::Params & newParams, PString & aor,
   else {
     // Otherwise create a new request with this method type
     handler = CreateRegisterHandler(params);
-    activeSIPHandlers.Append(handler);
+    m_activeSIPHandlers.Append(handler);
   }
 
   aor = handler->GetAddressOfRecord().AsString();
@@ -1471,9 +1460,9 @@ SIPRegisterHandler * SIPEndPoint::CreateRegisterHandler(const SIPRegister::Param
 
 PBoolean SIPEndPoint::IsRegistered(const PString & token, bool includeOffline) 
 {
-  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByCallID(token, PSafeReference);
+  PSafePtr<SIPHandler> handler = m_activeSIPHandlers.FindSIPHandlerByCallID(token, PSafeReference);
   if (handler == NULL)
-    handler = activeSIPHandlers.FindSIPHandlerByUrl(token, SIP_PDU::Method_REGISTER, PSafeReference);
+    handler = m_activeSIPHandlers.FindSIPHandlerByUrl(token, SIP_PDU::Method_REGISTER, PSafeReference);
 
   if (handler != NULL)
     return includeOffline ? (handler->GetState() != SIPHandler::Unsubscribed)
@@ -1486,9 +1475,9 @@ PBoolean SIPEndPoint::IsRegistered(const PString & token, bool includeOffline)
 
 PBoolean SIPEndPoint::Unregister(const PString & token)
 {
-  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByCallID(token, PSafeReference);
+  PSafePtr<SIPHandler> handler = m_activeSIPHandlers.FindSIPHandlerByCallID(token, PSafeReference);
   if (handler == NULL)
-    handler = activeSIPHandlers.FindSIPHandlerByUrl(token, SIP_PDU::Method_REGISTER, PSafeReference);
+    handler = m_activeSIPHandlers.FindSIPHandlerByUrl(token, SIP_PDU::Method_REGISTER, PSafeReference);
 
   if (handler != NULL)
     return handler->ActivateState(SIPHandler::Unsubscribing);
@@ -1502,9 +1491,9 @@ bool SIPEndPoint::UnregisterAll()
 {
   bool atLeastOne = false;
 
-  for (PSafePtr<SIPHandler> handler = activeSIPHandlers.GetFirstHandler(); handler != NULL; ++handler) {
-    if (handler->GetMethod() == SIP_PDU::Method_REGISTER &&
-        handler->ActivateState(SIPHandler::Unsubscribing))
+  for (SIPHandlers::iterator it = m_activeSIPHandlers.begin(); it != m_activeSIPHandlers.end(); ++it) {
+    if (it->second->GetMethod() == SIP_PDU::Method_REGISTER &&
+        it->second->ActivateState(SIPHandler::Unsubscribing))
       atLeastOne = true;
   }
 
@@ -1575,9 +1564,9 @@ ostream & operator<<(ostream & strm, const SIPSubscribe::SubscriptionStatus & st
 
 bool SIPEndPoint::GetRegistrationStatus(const PString & token, RegistrationStatus & status)
 {
-  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByCallID(token, PSafeReference);
+  PSafePtr<SIPHandler> handler = m_activeSIPHandlers.FindSIPHandlerByCallID(token, PSafeReference);
   if (handler == NULL)
-    handler = activeSIPHandlers.FindSIPHandlerByUrl(token, SIP_PDU::Method_REGISTER, PSafeReference);
+    handler = m_activeSIPHandlers.FindSIPHandlerByUrl(token, SIP_PDU::Method_REGISTER, PSafeReference);
 
   if (handler == NULL) {
     PTRACE(1, "Could not find active REGISTER for " << token);
@@ -1658,7 +1647,7 @@ bool SIPEndPoint::Subscribe(const SIPSubscribe::Params & newParams, PString & to
     return false;
 
   PTRACE(4, "Start SUBSCRIBE\n" << params);
-  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(params.m_addressOfRecord, SIP_PDU::Method_SUBSCRIBE, params.m_eventPackage, PSafeReadWrite);
+  PSafePtr<SIPHandler> handler = m_activeSIPHandlers.FindSIPHandlerByUrl(params.m_addressOfRecord, SIP_PDU::Method_SUBSCRIBE, params.m_eventPackage, PSafeReadWrite);
 
   // If there is already a request with this URL and method, 
   // then update it with the new information
@@ -1667,7 +1656,7 @@ bool SIPEndPoint::Subscribe(const SIPSubscribe::Params & newParams, PString & to
   else {
     // Otherwise create a new request with this method type
     handler = new SIPSubscribeHandler(*this, params);
-    activeSIPHandlers.Append(handler);
+    m_activeSIPHandlers.Append(handler);
   }
 
   token = tokenIsAOR ? handler->GetAddressOfRecord().AsString() : handler->GetCallID();
@@ -1678,7 +1667,7 @@ bool SIPEndPoint::Subscribe(const SIPSubscribe::Params & newParams, PString & to
 
 bool SIPEndPoint::IsSubscribed(const PString & token, bool includeOffline) 
 {
-  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByCallID(token, PSafeReadOnly);
+  PSafePtr<SIPHandler> handler = m_activeSIPHandlers.FindSIPHandlerByCallID(token, PSafeReadOnly);
   if (handler == NULL)
     return false;
 
@@ -1689,9 +1678,9 @@ bool SIPEndPoint::IsSubscribed(const PString & token, bool includeOffline)
 
 bool SIPEndPoint::IsSubscribed(const PString & eventPackage, const PString & token, bool includeOffline) 
 {
-  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByCallID(token, PSafeReference);
+  PSafePtr<SIPHandler> handler = m_activeSIPHandlers.FindSIPHandlerByCallID(token, PSafeReference);
   if (handler == NULL)
-    handler = activeSIPHandlers.FindSIPHandlerByUrl(token, SIP_PDU::Method_SUBSCRIBE, eventPackage, PSafeReference);
+    handler = m_activeSIPHandlers.FindSIPHandlerByUrl(token, SIP_PDU::Method_SUBSCRIBE, eventPackage, PSafeReference);
   else {
     if (handler->GetEventPackage() != eventPackage)
       handler.SetNULL();
@@ -1720,10 +1709,10 @@ bool SIPEndPoint::Unsubscribe(SIPSubscribe::PredefinedPackages eventPackage,
 bool SIPEndPoint::Unsubscribe(const PString & eventPackage, const PString & token, bool invalidateNotifiers)
 {
   PSafePtr<SIPSubscribeHandler> handler = PSafePtrCast<SIPHandler, SIPSubscribeHandler>(
-                                                activeSIPHandlers.FindSIPHandlerByCallID(token, PSafeReference));
+                                                m_activeSIPHandlers.FindSIPHandlerByCallID(token, PSafeReference));
   if (handler == NULL)
     handler = PSafePtrCast<SIPHandler, SIPSubscribeHandler>(
-          activeSIPHandlers.FindSIPHandlerByUrl(token, SIP_PDU::Method_SUBSCRIBE, eventPackage, PSafeReference));
+          m_activeSIPHandlers.FindSIPHandlerByUrl(token, SIP_PDU::Method_SUBSCRIBE, eventPackage, PSafeReference));
   else {
     if (!eventPackage.IsEmpty() && handler->GetEventPackage() != eventPackage)
       handler.SetNULL();
@@ -1765,10 +1754,10 @@ bool SIPEndPoint::UnsubcribeAll(const PString & eventPackage)
 {
   bool atLeastOne = false;
 
-  for (PSafePtr<SIPHandler> handler = activeSIPHandlers.GetFirstHandler(); handler != NULL; ++handler) {
-    if (handler->GetMethod() == SIP_PDU::Method_SUBSCRIBE &&
-        handler->GetEventPackage() == eventPackage &&
-        handler->ActivateState(SIPHandler::Unsubscribing))
+  for (SIPHandlers::iterator it = m_activeSIPHandlers.begin(); it != m_activeSIPHandlers.end(); ++it) {
+    if (it->second->GetMethod() == SIP_PDU::Method_SUBSCRIBE &&
+        it->second->GetEventPackage() == eventPackage &&
+        it->second->ActivateState(SIPHandler::Unsubscribing))
       atLeastOne = true;
   }
 
@@ -1779,10 +1768,10 @@ bool SIPEndPoint::UnsubcribeAll(const PString & eventPackage)
 bool SIPEndPoint::GetSubscriptionStatus(const PString & token, const PString & eventPackage, SubscriptionStatus & status)
 {
   PSafePtr<SIPSubscribeHandler> handler = PSafePtrCast<SIPHandler, SIPSubscribeHandler>(
-                                                activeSIPHandlers.FindSIPHandlerByCallID(token, PSafeReference));
+                                                m_activeSIPHandlers.FindSIPHandlerByCallID(token, PSafeReference));
   if (handler == NULL)
     handler = PSafePtrCast<SIPHandler, SIPSubscribeHandler>(
-          activeSIPHandlers.FindSIPHandlerByUrl(token, SIP_PDU::Method_SUBSCRIBE, eventPackage, PSafeReference));
+          m_activeSIPHandlers.FindSIPHandlerByUrl(token, SIP_PDU::Method_SUBSCRIBE, eventPackage, PSafeReference));
   else {
     if (!eventPackage.IsEmpty() && handler->GetEventPackage() != eventPackage)
       handler.SetNULL();
@@ -1890,11 +1879,11 @@ bool SIPEndPoint::Notify(const SIPURL & aor, const PString & eventPackage, const
 {
   bool atLeastOne = false;
 
-  for (PSafePtr<SIPHandler> handler = activeSIPHandlers.GetFirstHandler(); handler != NULL; ++handler) {
-    if (handler->GetMethod() == SIP_PDU::Method_NOTIFY &&
-        handler->GetAddressOfRecord() == aor &&
-        handler->GetEventPackage() == eventPackage &&
-        handler->SendNotify(&body))
+  for (SIPHandlers::iterator it = m_activeSIPHandlers.begin(); it != m_activeSIPHandlers.end(); ++it) {
+    if (it->second->GetMethod() == SIP_PDU::Method_NOTIFY &&
+        it->second->GetAddressOfRecord() == aor &&
+        it->second->GetEventPackage() == eventPackage &&
+        it->second->SendNotify(&body))
       atLeastOne = true;
   }
 
@@ -1921,14 +1910,14 @@ bool SIPEndPoint::SendMESSAGE(SIPMessage::Params & params)
      call ID). Else create a new conversation. */
   PSafePtr<SIPHandler> handler;
   if (params.m_id.IsEmpty())
-    handler = activeSIPHandlers.FindSIPHandlerByUrl(params.m_remoteAddress, SIP_PDU::Method_MESSAGE, PSafeReference);
+    handler = m_activeSIPHandlers.FindSIPHandlerByUrl(params.m_remoteAddress, SIP_PDU::Method_MESSAGE, PSafeReference);
   else
-    handler = activeSIPHandlers.FindSIPHandlerByCallID(params.m_id, PSafeReference);
+    handler = m_activeSIPHandlers.FindSIPHandlerByCallID(params.m_id, PSafeReference);
 
   // create or update the handler if required
   if (handler == NULL) {
     handler = new SIPMessageHandler(*this, params);
-    activeSIPHandlers.Append(handler);
+    m_activeSIPHandlers.Append(handler);
   }
   else
     PSafePtrCast<SIPHandler, SIPMessageHandler>(handler)->UpdateParameters(params);
@@ -1972,10 +1961,10 @@ void SIPEndPoint::OnOptionsCompleted(const SIPOptions::Params & PTRACE_PARAM(par
 
 PBoolean SIPEndPoint::Ping(const PURL & to)
 {
-  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(to, SIP_PDU::Method_PING, PSafeReference);
+  PSafePtr<SIPHandler> handler = m_activeSIPHandlers.FindSIPHandlerByUrl(to, SIP_PDU::Method_PING, PSafeReference);
   if (handler == NULL) {
     handler = new SIPPingHandler(*this, to);
-    activeSIPHandlers.Append(handler);
+    m_activeSIPHandlers.Append(handler);
   }
 
   return handler->ActivateState(SIPHandler::Subscribing);
@@ -1989,12 +1978,12 @@ bool SIPEndPoint::Publish(const SIPSubscribe::Params & newParams, const PString 
     return false;
 
   PTRACE(4, "Start PUBLISH\n" << params);
-  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(params.m_addressOfRecord, SIP_PDU::Method_PUBLISH, params.m_eventPackage, PSafeReadWrite);
+  PSafePtr<SIPHandler> handler = m_activeSIPHandlers.FindSIPHandlerByUrl(params.m_addressOfRecord, SIP_PDU::Method_PUBLISH, params.m_eventPackage, PSafeReadWrite);
   if (handler != NULL)
     handler->SetBody(params.m_expire != 0 ? body : PString::Empty());
   else {
     handler = new SIPPublishHandler(*this, params, body);
-    activeSIPHandlers.Append(handler);
+    m_activeSIPHandlers.Append(handler);
   }
 
   aor = handler->GetAddressOfRecord().AsString();
@@ -2127,13 +2116,19 @@ unsigned SIPEndPoint::GetAllowedMethods() const
 bool SIPEndPoint::GetAuthentication(const PString & realm, PString & authId, PString & password)
 {
   // Try to find authentication parameters for the given realm
-  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByAuthRealm(realm, authId, PSafeReadOnly);
+  PSafePtr<SIPHandler> handler = m_activeSIPHandlers.FindSIPHandlerByAuthRealm(realm, authId, PSafeReadOnly);
   if (handler == NULL) {
     if (m_registeredUserMode)
       return false;
 
-    if ((handler = activeSIPHandlers.FindSIPHandlerByAuthRealm(realm, PSafeReadOnly)) == NULL) {
-      if ((handler = activeSIPHandlers.FindFirstHandler(SIP_PDU::Method_REGISTER, PSafeReadOnly)) == NULL)
+    if ((handler = m_activeSIPHandlers.FindSIPHandlerByAuthRealm(realm, PSafeReadOnly)) == NULL) {
+      for (SIPHandlers::iterator it = m_activeSIPHandlers.begin(); it != m_activeSIPHandlers.end(); ++it) {
+        if (it->second->GetMethod() == SIP_PDU::Method_REGISTER) {
+          handler = it->second;
+          break;
+        }
+      }
+      if (handler == NULL)
         return false;
       PTRACE(4, "Using first registrar " << handler->GetAddressOfRecord() << " for authentication");
     }
@@ -2226,13 +2221,18 @@ void SIPEndPoint::AdjustToRegistration(SIP_PDU & pdu, SIPConnection * connection
   if (scheme != "tel") {
     SIPURL url(domain);
     url.SetUserName(user);
-    handler = activeSIPHandlers.FindSIPHandlerByUrl(url, SIP_PDU::Method_REGISTER, PSafeReadOnly);
+    handler = m_activeSIPHandlers.FindSIPHandlerByUrl(url, SIP_PDU::Method_REGISTER, PSafeReadOnly);
     PTRACE_IF(4, handler != NULL, "Found registrar on aor sip:" << user << '@' << domain);
   }
   else {
     if (domain.IsEmpty() || OpalIsE164(domain)) {
       // No context, just get first registration
-      handler = activeSIPHandlers.FindFirstHandler(SIP_PDU::Method_REGISTER);
+      for (SIPHandlers::iterator it = m_activeSIPHandlers.begin(); it != m_activeSIPHandlers.end(); ++it) {
+        if (it->second->GetMethod() == SIP_PDU::Method_REGISTER) {
+          handler = it->second;
+          break;
+        }
+      }
       if (handler != NULL) {
         PTRACE(4, "Using first registrar " << handler->GetAddressOfRecord() << " for tel URI");
         if (connection != NULL)
@@ -2253,7 +2253,7 @@ void SIPEndPoint::AdjustToRegistration(SIP_PDU & pdu, SIPConnection * connection
 
   // If precise AOR not found, locate the name used for the domain.
   if (handler == NULL && !m_registeredUserMode) {
-    handler = activeSIPHandlers.FindSIPHandlerByDomain(domain, SIP_PDU::Method_REGISTER, PSafeReadOnly);
+    handler = m_activeSIPHandlers.FindSIPHandlerByDomain(domain, SIP_PDU::Method_REGISTER, PSafeReadOnly);
     PTRACE_IF(4, handler != NULL, "Found registrar on domain " << domain);
   }
   if (handler != NULL) {
@@ -2335,14 +2335,14 @@ PSafePtr<SIPHandler> SIPEndPoint::FindHandlerByPDU(const SIP_PDU & pdu, PSafetyM
   PSafePtr<SIPHandler> handler;
 
   PString id = mime.GetCallID();
-  if ((handler = activeSIPHandlers.FindSIPHandlerByCallID(id, mode)) != NULL)
+  if ((handler = m_activeSIPHandlers.FindSIPHandlerByCallID(id, mode)) != NULL)
     return handler;
 
   PString tag = mime.GetTo().GetTag();
-  if ((handler = activeSIPHandlers.FindSIPHandlerByCallID(tag, mode)) != NULL)
+  if ((handler = m_activeSIPHandlers.FindSIPHandlerByCallID(tag, mode)) != NULL)
     return handler;
 
-  return activeSIPHandlers.FindSIPHandlerByCallID(id+';'+tag, mode);
+  return m_activeSIPHandlers.FindSIPHandlerByCallID(id+';'+tag, mode);
 }
 
 
@@ -2466,9 +2466,9 @@ void SIPEndPoint::OnHighPriorityInterfaceChange(PInterfaceMonitor &, PInterfaceM
     // the transport will still listen on the old interface only. Therefore, clear the
     // socket binding BEFORE the monitored sockets update their interfaces.
     if (PInterfaceMonitor::GetInstance().HasInterfaceFilter()) {
-      for (PSafePtr<SIPHandler> handler = activeSIPHandlers.GetFirstHandler(PSafeReadOnly); handler != NULL; ++handler) {
-        if (handler->GetInterface() == entry.GetName())
-          handler->ActivateState(SIPHandler::Unavailable, true);
+      for (SIPHandlers::iterator it = m_activeSIPHandlers.begin(); it != m_activeSIPHandlers.end(); ++it) {
+        if (it->second->GetInterface() == entry.GetName())
+          it->second->ActivateState(SIPHandler::Unavailable, true);
       }
     }
   }
@@ -2477,14 +2477,14 @@ void SIPEndPoint::OnHighPriorityInterfaceChange(PInterfaceMonitor &, PInterfaceM
 
 void SIPEndPoint::OnLowPriorityInterfaceChange(PInterfaceMonitor &, PInterfaceMonitor::InterfaceChange entry)
 {
-  for (PSafePtr<SIPHandler> handler = activeSIPHandlers.GetFirstHandler(); handler != NULL; ++handler) {
+  for (SIPHandlers::iterator it = m_activeSIPHandlers.begin(); it != m_activeSIPHandlers.end(); ++it) {
     if (entry.m_added) {
-      if (handler->GetState() == SIPHandler::Unavailable)
-        handler->ActivateState(SIPHandler::Restoring);
+      if (it->second->GetState() == SIPHandler::Unavailable)
+        it->second->ActivateState(SIPHandler::Restoring);
     }
     else {
-      if (handler->GetInterface() == entry.GetName())
-        handler->ActivateState(handler->GetState() == SIPHandler::Subscribed
+      if (it->second->GetInterface() == entry.GetName())
+        it->second->ActivateState(it->second->GetState() == SIPHandler::Subscribed
                                   ? SIPHandler::Refreshing : SIPHandler::Restoring, true);
     }
   }

@@ -1974,7 +1974,9 @@ class OpalConnection : public PSafeObject
     OpalMediaFormat       m_filterMediaFormat;
 
     OpalMediaFormatList        m_localMediaFormats;
-    PSafeList<OpalMediaStream> m_mediaStreams;
+
+    typedef PSafeDictionary<PKey<OpalMediaStream*>, OpalMediaStream> StreamDict;
+    StreamDict m_mediaStreams;
 
     OpalJitterBuffer::Params m_jitterParams;
 

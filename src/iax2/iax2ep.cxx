@@ -555,8 +555,7 @@ PBoolean IAX2EndPoint::ProcessFrameInConnection(IAX2Frame *f,
 						const PString & token)
 {
   IAX2Connection *connection;
-  connection = PSafePtrCast<OpalConnection, IAX2Connection>
-    (m_connectionsActive.FindWithLock(token));
+  connection = PSafePtrCast<OpalConnection, IAX2Connection>(m_connectionsActive.Find(token));
   if (connection != NULL) {
     PTRACE(5, "Distribution\tHave a connection for " << f->GetRemoteInfo());
     connection->IncomingEthernetFrame(f);

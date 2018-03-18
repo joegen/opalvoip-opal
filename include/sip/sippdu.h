@@ -1005,7 +1005,7 @@ class SIPTransactionOwner
     SIPAuthentication * m_authentication;
     unsigned            m_authenticateErrors;
 
-    PSafeList<SIPTransaction> m_transactions;
+    PSafeArray<SIPTransaction> m_transactions;
     PDECLARE_MUTEX(m_forkMutex);
 
   friend class SIPTransaction;
@@ -1026,10 +1026,6 @@ class SIPTransactionBase : public SIP_PDU
     SIPTransactionBase(
       const PString & transactionID
     ) { m_transactionID = transactionID; }
-
-    Comparison Compare(
-      const PObject & other
-    ) const;
 
     virtual bool IsTerminated() const { return true; }
 };

@@ -135,9 +135,9 @@ bool OpalEndPoint::SetInitialBandwidth(OpalBandwidth::Direction dir, OpalBandwid
 
 PBoolean OpalEndPoint::GarbageCollection()
 {
-  for (PSafePtr<OpalConnection> connection(m_connectionsActive, PSafeReference); connection != NULL; ++connection) {
-    PTRACE_CONTEXT_ID_PUSH_THREAD(connection);
-    connection->GarbageCollection();
+  for (ConnectionDict::iterator it = m_connectionsActive.begin(); it != m_connectionsActive.end(); ++it) {
+    PTRACE_CONTEXT_ID_PUSH_THREAD(it->second);
+    it->second->GarbageCollection();
   }
 
   return m_connectionsActive.DeleteObjectsToBeRemoved();
@@ -401,7 +401,7 @@ PSafePtr<OpalConnection> OpalEndPoint::GetConnectionWithLock(const PString & tok
   if (token.IsEmpty() || token == "*")
     return PSafePtr<OpalConnection>(m_connectionsActive, mode);
 
-  PSafePtr<OpalConnection> connection = m_connectionsActive.FindWithLock(token, mode);
+  PSafePtr<OpalConnection> connection = m_connectionsActive.Find(token, mode);
   if (connection != NULL)
     return connection;
 

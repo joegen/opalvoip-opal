@@ -869,7 +869,7 @@ OpalMediaStreamPtr OpalConnection::OpenMediaStream(const OpalMediaFormat & media
       PTRACE(1, "CreateMediaStream returned NULL for session " << sessionID << " on " << *this);
       return NULL;
     }
-    m_mediaStreams.Append(stream);
+    m_mediaStreams.SetAt(&*stream, stream);
 
     m_mediaSessionFailedMutex.Wait();
     m_mediaSessionFailed.erase(sessionID*2 + isSource);
@@ -888,7 +888,7 @@ OpalMediaStreamPtr OpalConnection::OpenMediaStream(const OpalMediaFormat & media
     PTRACE(2, "Source media stream open failed for " << *stream << " (" << mediaFormat << ')');
   }
 
-  m_mediaStreams.Remove(stream);
+  m_mediaStreams.RemoveAt(&*stream);
 
   return NULL;
 }
@@ -913,7 +913,7 @@ PBoolean OpalConnection::RemoveMediaStream(OpalMediaStream & stream)
 {
   stream.Close();
   PTRACE(3, "Removed media stream " << stream);
-  return m_mediaStreams.Remove(&stream);
+  return m_mediaStreams.RemoveAt(&stream);
 }
 
 

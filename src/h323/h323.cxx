@@ -4445,7 +4445,7 @@ OpalMediaStreamPtr H323Connection::OpenMediaStream(const OpalMediaFormat & media
         PTRACE(1, "H323\tCreateMediaStream returned NULL for session " << sessionID << " on " << *this);
         return NULL;
       }
-      m_mediaStreams.Append(stream);
+      m_mediaStreams.SetAt(&*stream, stream);
 
       // Channel from other side, do RequestModeChange
       RequestModeChange(mediaFormat);
@@ -4471,7 +4471,7 @@ OpalMediaStreamPtr H323Connection::OpenMediaStream(const OpalMediaFormat & media
       PTRACE(4, "H323\tOpenMediaStream fast opened for session " << sessionID);
       stream = CreateMediaStream(mediaFormat, sessionID, isSource);
       if (stream != NULL && stream->Open() && OnOpenMediaStream(*stream)) {
-        m_mediaStreams.Append(stream);
+        m_mediaStreams.SetAt(&*stream, stream);
         iterChan->SetMediaStream(stream);
         m_logicalChannels->Add(*iterChan);
         return stream;
@@ -4537,7 +4537,7 @@ OpalMediaStreamPtr H323Connection::OpenMediaStream(const OpalMediaFormat & media
   stream = channel->GetMediaStream();
   if (stream != NULL && stream->Open()) {
     PTRACE(3, "H323\tOpenMediaStream using channel " << channel->GetNumber() << " for session " << sessionID);
-    m_mediaStreams.Append(stream);
+    m_mediaStreams.SetAt(&*stream, stream);
     return stream;
   }
 
@@ -4985,7 +4985,7 @@ PBoolean H323Connection::OnConflictingLogicalChannel(H323Channel & conflictingCh
       some channel. Possibly closing channels as master has precedence.
    */
 
-  OpalMediaStreamPtr mediaStream = m_conflictingChannels.FindWithLock(sessionID, PSafeReference);
+  OpalMediaStreamPtr mediaStream = m_conflictingChannels.Find(sessionID, PSafeReference);
   m_conflictingChannels.RemoveAt(sessionID);
 
   bool fromRemote = conflictingChannel.GetNumber().IsFromRemote();

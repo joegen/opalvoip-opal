@@ -776,8 +776,8 @@ class SIPConnection : public OpalSDPConnection, public SIPTransactionOwner
     SIPURL                m_delayedReferTo;
     SIPURL                m_sentReferTo;
 
-    PSafeList<SIPTransaction> m_forkedInvitations; // Not for re-INVITE
-    PSafeList<SIPTransaction> m_pendingInvitations; // For re-INVITE
+    PSafeArray<SIPTransaction> m_forkedInvitations; // Not for re-INVITE
+    PSafeArray<SIPTransaction> m_pendingInvitations; // For re-INVITE
 
     enum {
       ReleaseWithBYE,

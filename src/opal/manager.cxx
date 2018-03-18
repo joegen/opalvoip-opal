@@ -753,7 +753,7 @@ void OpalManager::OnEstablishedCall(OpalCall & /*call*/)
 
 PBoolean OpalManager::IsCallEstablished(const PString & token)
 {
-  PSafePtr<OpalCall> call = m_activeCalls.FindWithLock(token, PSafeReadOnly);
+  PSafePtr<OpalCall> call = m_activeCalls.Find(token, PSafeReadOnly);
   if (call == NULL)
     return false;
 
@@ -774,7 +774,7 @@ PBoolean OpalManager::ClearCall(const PString & token,
    */
 
   // Find the call by token, callid or conferenceid
-  PSafePtr<OpalCall> call = m_activeCalls.FindWithLock(token, PSafeReference);
+  PSafePtr<OpalCall> call = m_activeCalls.Find(token, PSafeReference);
   if (call == NULL) {
     PTRACE(2, "Could not find/lock call token \"" << token << '"');
     return false;
@@ -2256,7 +2256,7 @@ bool OpalManager::StartRecording(const PString & callToken,
                                  const PFilePath & fn,
                                  const OpalRecordManager::Options & options)
 {
-  PSafePtr<OpalCall> call = m_activeCalls.FindWithLock(callToken, PSafeReadWrite);
+  PSafePtr<OpalCall> call = m_activeCalls.Find(callToken, PSafeReadWrite);
   if (call == NULL)
     return false;
 
@@ -2273,7 +2273,7 @@ bool OpalManager::IsRecording(const PString & callToken)
 
 bool OpalManager::StopRecording(const PString & callToken)
 {
-  PSafePtr<OpalCall> call = m_activeCalls.FindWithLock(callToken, PSafeReadWrite);
+  PSafePtr<OpalCall> call = m_activeCalls.Find(callToken, PSafeReadWrite);
   if (call == NULL)
     return false;
 
@@ -2300,7 +2300,7 @@ PSafePtr<OpalPresentity> OpalManager::AddPresentity(const PString & presentity)
   if (presentity.IsEmpty())
     return NULL;
 
-  PSafePtr<OpalPresentity> oldPresentity = m_presentities.FindWithLock(presentity, PSafeReadWrite);
+  PSafePtr<OpalPresentity> oldPresentity = m_presentities.Find(presentity, PSafeReadWrite);
   if (oldPresentity != NULL)
     return oldPresentity;
 
@@ -2316,7 +2316,7 @@ PSafePtr<OpalPresentity> OpalManager::AddPresentity(const PString & presentity)
 
 PSafePtr<OpalPresentity> OpalManager::GetPresentity(const PString & presentity, PSafetyMode mode)
 {
-  return m_presentities.FindWithLock(presentity, mode);
+  return m_presentities.Find(presentity, mode);
 }
 
 

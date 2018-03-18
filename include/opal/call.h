@@ -642,7 +642,7 @@ class OpalCall : public PSafeObject
     OpalConnection::CallEndReason m_callEndReason;
     std::list<PSyncPoint *> m_endCallSyncPoint;
 
-    PSafeList<OpalConnection> m_connectionsActive;
+    PSafeArray<OpalConnection> m_connectionsActive;
 
 #if OPAL_HAS_MIXER
     OpalRecordManager * m_recordManager;
