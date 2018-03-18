@@ -191,8 +191,7 @@ PString MySIPEndPoint::OnLoadEndPointStatus(const PString & htmlBlock)
 
 bool MySIPEndPoint::ForceUnregister(const PString id)
 {
-  PSafePtr<RegistrarAoR> ua = m_registeredUAs.FindWithLock(RegistrarAoR(id));
-  return ua != NULL;
+  return m_registeredUAs.RemoveAt(id);
 }
 
 
