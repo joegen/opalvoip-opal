@@ -604,7 +604,7 @@ RTP_SyncSourceId OpalSRTPSession::AddSyncSource(RTP_SyncSourceId ssrc, Direction
   if (AddStreamToSRTP(ssrc, dir))
     return ssrc;
 
-  m_SSRC.erase(m_SSRC.find(ssrc));
+  RemoveSyncSource(ssrc PTRACE_PARAM(, "Could not add SRTP stream"));
   return 0;
 }
 

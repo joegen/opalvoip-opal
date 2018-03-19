@@ -1089,28 +1089,7 @@ bool OpalRTPSession::AddGroup(const PString & groupId, const PString & mediaId, 
 
 OpalRTPSession::SendReceiveStatus OpalRTPSession::SendBYE(RTP_SyncSourceId ssrc)
 {
-  if (!IsOpen())
-    return e_AbortTransport;
-
-  P_INSTRUMENTED_LOCK_READ_ONLY(return e_AbortTransport);
-
-  SyncSource * sender;
-  if (!GetSyncSource(ssrc, e_Sender, sender))
-    return e_ProcessPacket;
-
-  SendReceiveStatus status = sender->SendBYE();
-  if (status == e_ProcessPacket) {
-    P_INSTRUMENTED_LOCK_READ_WRITE2(writeLock, *this);
-
-    // Now remove the shut down SSRC
-    SyncSourceMap::iterator it = m_SSRC.find(ssrc);
-    if (it != m_SSRC.end()) {
-      delete it->second;
-      m_SSRC.erase(it);
-    }
-  }
-
-  return status;
+  return RemoveSyncSource(ssrc PTRACE_PARAM(, "SendBYE")) ? e_ProcessPacket : e_AbortTransport;
 }
 
 
@@ -1860,7 +1839,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SendReport(RTP_SyncSourceId ss
     // Clean out old stale SSRC's
     for (SyncSourceMap::iterator it = m_SSRC.begin(); it != m_SSRC.end();) {
       if (it->second->IsStaleReceiver())
-        m_SSRC.erase(it++);
+        RemoveSyncSource((it++)->first PTRACE_PARAM(, "stale"));
       else
         ++it;
     }
