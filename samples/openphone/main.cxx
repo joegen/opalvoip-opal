@@ -4952,7 +4952,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   for (i = 0; i < routeTable.GetSize(); i++)
     AddRouteTableEntry(routeTable[i]);
 
-  for (i = 0; i < m_Routes->GetColumnCount(); i++)
+  for (i = 0; i < (PINDEX)m_Routes->GetColumnCount(); i++)
     m_Routes->SetColumnWidth(i, wxLIST_AUTOSIZE_USEHEADER);
 
   {
@@ -5728,7 +5728,7 @@ void OptionsDialog::RemoveInterface(wxCommandEvent & /*event*/)
 {
   wxString iface = m_LocalInterfaces->GetStringSelection();
 
-  for (int i = 0; i < PARRAYSIZE(InterfacePrefixes); i++) {
+  for (PINDEX i = 0; i < PARRAYSIZE(InterfacePrefixes); i++) {
     if (iface.StartsWith(PwxString(InterfacePrefixes[i]))) {
       m_InterfaceProtocol->SetSelection(i);
       iface.Remove(0, strlen(InterfacePrefixes[i]));

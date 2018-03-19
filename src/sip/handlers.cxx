@@ -75,8 +75,8 @@ SIPHandler::SIPHandler(SIP_PDU::Methods method,
                        SIPEndPoint & ep,
                        const SIPParameters & params,
                        const PString & callID)
-  : m_callID(callID)
-  , P_DISABLE_MSVC_WARNINGS(4355, SIPTransactionOwner(*this, ep))
+  : P_DISABLE_MSVC_WARNINGS(4355, SIPTransactionOwner(*this, ep))
+  , m_callID(callID)
   , m_username(params.m_authID)
   , m_password(params.m_password)
   , m_realm(params.m_realm)
@@ -1739,7 +1739,7 @@ PString SIPDialogNotification::GetEventName(Events state)
     "error",
     "timeout"
   };
-  if (state < PARRAYSIZE(Names) && Names[state] != NULL)
+  if ((PINDEX)state < PARRAYSIZE(Names) && Names[state] != NULL)
     return Names[state];
 
   return psprintf("<%u>", state);

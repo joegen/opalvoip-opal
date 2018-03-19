@@ -190,7 +190,7 @@ bool OpalRFC4175Encoder::ConvertFrames(const RTP_DataFrame & input, RTP_DataFram
   m_frameWidth        = header->width;
 
   // make sure the incoming frame is big enough for the specified frame size
-  if (input.GetPayloadSize() < (int)(sizeof(PluginCodec_Video_FrameHeader) + PixelsToBytes(m_frameWidth*m_frameHeight))) {
+  if (input.GetPayloadSize() < (PINDEX)(sizeof(PluginCodec_Video_FrameHeader) + PixelsToBytes(m_frameWidth*m_frameHeight))) {
     PTRACE(1,"RFC4175\tPayload of grabbed frame too small for full frame");
     return false;
   }

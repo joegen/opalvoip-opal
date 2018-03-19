@@ -825,7 +825,7 @@ void VideoThread::CalcSNR(const RTP_DataFrame & src, const RTP_DataFrame & dst)
 
   unsigned size = m_snrHeight * m_snrWidth;
 
-  int tsize = sizeof(OpalVideoTranscoder::FrameHeader) + size*3/2;
+  PINDEX tsize = sizeof(OpalVideoTranscoder::FrameHeader) + size*3/2;
 
   if (src.GetPayloadSize() < tsize || dst.GetPayloadSize() < tsize)
     return;

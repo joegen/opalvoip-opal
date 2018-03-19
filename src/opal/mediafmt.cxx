@@ -474,7 +474,7 @@ bool OpalMediaOptionEnum::Merge(const OpalMediaOption & option)
   if (otherOption == NULL)
     return false;
 
-  int newValue = m_value & otherOption->m_value;
+  PINDEX newValue = m_value & otherOption->m_value;
   if (m_value != newValue) {
     PTRACE(4, "MediaFormat\tChanged media option \"" << m_name << "\" "
               "from 0x" << hex << m_value << " to 0x" << newValue << dec);

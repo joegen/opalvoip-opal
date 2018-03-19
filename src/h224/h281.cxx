@@ -73,7 +73,7 @@ ostream & operator<<(ostream & strm, const OpalH281Client::Capability & cap)
   strm << '"' << cap.m_name << '"';
   if (cap.m_available) {
     bool nothing = true;
-    for (int i = 0; i < PARRAYSIZE(cap.m_attribute); ++i) {
+    for (PINDEX i = 0; i < PARRAYSIZE(cap.m_attribute); ++i) {
       if (cap.m_attribute[i]) {
         nothing = false;
 
