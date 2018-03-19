@@ -1300,10 +1300,6 @@ void SDPMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat)
     return;
   }
 
-  SDPMediaFormat * sdpFormat = CreateSDPMediaFormat();
-  if (sdpFormat == NULL)
-    return; // Probably dummy, no formats
-
   RTP_DataFrame::PayloadTypes payloadType = mediaFormat.GetPayloadType();
   const char * encodingName = mediaFormat.GetEncodingName();
   unsigned clockRate = mediaFormat.GetClockRate();
@@ -1322,6 +1318,10 @@ void SDPMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat)
       return;
     }
   }
+
+  SDPMediaFormat * sdpFormat = CreateSDPMediaFormat();
+  if (sdpFormat == NULL)
+    return; // Probably dummy, no formats
 
   sdpFormat->FromMediaFormat(mediaFormat);
   AddSDPMediaFormat(sdpFormat);
