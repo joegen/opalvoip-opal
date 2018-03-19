@@ -1320,7 +1320,7 @@ PSafePtr<H323Connection> H323EndPoint::FindConnectionWithLock(const PString & to
 {
   PSafePtr<H323Connection> connection = PSafePtrCast<OpalConnection, H323Connection>(GetConnectionWithLock(token, mode));
   if (connection == NULL)
-    connection = m_connectionsByCallId.FindWithLock(token, mode);
+    connection = m_connectionsByCallId.Find(token, mode);
 
   return connection;
 }
