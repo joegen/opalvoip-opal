@@ -750,7 +750,7 @@ RTP_MetricsReport::RTP_MetricsReport(const RTP_ControlFrame::MetricsReport & mr)
 }
 
 
-void OpalRTPSession::OnRxMetricsReport(RTP_SyncSourceId PTRACE_PARAM(ssrc), const RTP_MetricsReport & PTRACE_PARAM(report))
+void OpalRTPSession::OnRxMetricsReport(RTP_SyncSourceId PTRACE_PARAM(ssrc), const RTP_MetricsReport & report)
 {
   PTRACE(4, "RTP", *this << "OnMetricsReport: ssrc=" << RTP_TRACE_SRC(ssrc) << ' ' << report);
   SyncSource * info;
