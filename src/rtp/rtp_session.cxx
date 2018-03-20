@@ -3101,6 +3101,9 @@ void OpalRTPSession::OnRxDataPacket(OpalMediaTransport &, PBYTEArray data)
   }
   else {
     RTP_DataFrame frame(data);
+    if (frame.GetSyncSource() == 2602817036 && frame.GetPayloadType() == 13) {
+      return;
+    }
     if (OnPreReceiveData(frame) == e_AbortTransport)
       CheckMediaFailed(e_Data);
   }
