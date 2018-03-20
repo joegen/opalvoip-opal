@@ -810,7 +810,7 @@ class OpalMediaFormat : public PContainer
   public:
     /**Default constructor creates a PCM-16 media format.
       */
-    OpalMediaFormat(
+    explicit OpalMediaFormat(
       OpalMediaFormatInternal * info = NULL,
       bool dynamic = false
     );
