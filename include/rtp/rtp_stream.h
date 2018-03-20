@@ -169,7 +169,7 @@ class OpalRTPMediaStream : public OpalMediaStream
 
     virtual PString GetPatchThreadName() const;
 
-    RTP_SyncSourceId SetSyncSource() const { return m_syncSource; }
+    RTP_SyncSourceId GetSyncSource() const { return m_syncSource; }
     void SetSyncSource(RTP_SyncSourceId ssrc);
 
     const PTimeInterval & GetReadTimeout() const { return m_readTimeout; }

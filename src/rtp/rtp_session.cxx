@@ -1510,6 +1510,12 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnPreReceiveData(RTP_DataFrame
   }
 
   RTP_SyncSourceId ssrc = frame.GetSyncSource();
+  
+  if (ssrc == 0) {
+    ssrc = 0xFFFF;
+    frame.SetSyncSource(ssrc);
+  }
+  
   SyncSource * receiver = UseSyncSource(ssrc, e_Receiver, false);
   if (receiver == NULL) {
       PTRACE_IF(2, m_loggedBadSSRC.insert(ssrc).second, *this << "ignoring unknown SSRC: " << setw(1) << frame);
