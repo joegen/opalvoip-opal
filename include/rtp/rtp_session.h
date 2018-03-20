@@ -170,14 +170,15 @@ class OpalRTPSession : public OpalMediaSession
       e_RewriteHeader,
       e_RewriteSSRC,
       e_RewriteNothing,
-      e_Retransmit
+      e_RetransmitFirst,
+      e_RetransmitAgain
     };
 
     enum ReceiveType {
       e_RxFromNetwork,
       e_RxOutOfOrder,
-      e_RxRetransmission,
-      e_RxPendingRTX
+      e_RxRetransmit,
+      e_RxFromRTX
     };
 
     /**Write a data frame from the RTP channel.
@@ -185,14 +186,16 @@ class OpalRTPSession : public OpalMediaSession
     virtual SendReceiveStatus WriteData(
       RTP_DataFrame & frame,                          ///<  Frame to write to the RTP session
       RewriteMode rewrite = e_RewriteHeader,          ///< Indicate what headers are to be rewritten
-      const PIPSocketAddressAndPort * remote = NULL   ///< Alternate address to transmit data frame
+      const PIPSocketAddressAndPort * remote = NULL,  ///< Alternate address to transmit data frame
+      const PTime & now = PTime()
     );
 
     /**Send a report to remote.
       */
     virtual SendReceiveStatus SendReport(
       RTP_SyncSourceId ssrc,    ///< Zero means all senders, not just first.
-      bool force                ///< Send even if no packets sent yet
+      bool force,               ///< Send even if no packets sent yet
+      const PTime & now = PTime()
     );
 
     /**Write a control frame from the RTP channel.
@@ -241,25 +244,25 @@ class OpalRTPSession : public OpalMediaSession
       RTP_SyncSourceId ssrc = 0
     );
 
-    virtual SendReceiveStatus OnSendData(RTP_DataFrame & frame, RewriteMode rewrite);
-    virtual SendReceiveStatus OnSendControl(RTP_ControlFrame & frame);
-    virtual SendReceiveStatus OnPreReceiveData(RTP_DataFrame & frame);
-    virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame, ReceiveType rxType);
-    virtual SendReceiveStatus OnReceiveControl(RTP_ControlFrame & frame);
+    virtual SendReceiveStatus OnSendData(RTP_DataFrame & frame, RewriteMode rewrite, const PTime & now);
+    virtual SendReceiveStatus OnSendControl(RTP_ControlFrame & frame, const PTime & now);
+    virtual SendReceiveStatus OnPreReceiveData(RTP_DataFrame & frame, const PTime & now);
+    virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame, ReceiveType rxType, const PTime & now);
+    virtual SendReceiveStatus OnReceiveControl(RTP_ControlFrame & frame, const PTime & now);
 
-    virtual void OnRxSenderReport(const RTP_SenderReport & sender);
-    virtual void OnRxReceiverReports(RTP_SyncSourceId src, const RTP_ControlFrame::ReceiverReport * rr, unsigned count);
+    virtual void OnRxSenderReport(const RTP_SenderReport & sender, const PTime & now);
+    virtual void OnRxReceiverReports(RTP_SyncSourceId src, const RTP_ControlFrame::ReceiverReport * rr, unsigned count, const PTime & now);
     virtual void OnRxReceiverReports(RTP_SyncSourceId src, const std::vector<RTP_ReceiverReport> & reports);
     virtual void OnRxReceiverReport(RTP_SyncSourceId src, const RTP_ControlFrame::ReceiverReport & rr);
     virtual void OnRxReceiverReport(RTP_SyncSourceId src, const RTP_ReceiverReport & report);
     virtual void OnRxSourceDescription(const RTP_SourceDescriptionArray & descriptions);
     virtual void OnRxGoodbye(const RTP_SyncSourceArray & sources, const PString & reason);
-    virtual void OnRxNACK(RTP_SyncSourceId ssrc, const RTP_ControlFrame::LostPacketMask & lostPackets);
+    virtual void OnRxNACK(RTP_SyncSourceId ssrc, const RTP_ControlFrame::LostPacketMask & lostPackets, const PTime & now);
     virtual void OnRxTWCC(const RTP_TransportWideCongestionControl & twcc);
     virtual void OnRxApplDefined(const RTP_ControlFrame::ApplDefinedInfo & info);
-    virtual bool OnReceiveExtendedReports(const RTP_ControlFrame & frame);
-    virtual void OnRxReceiverReferenceTimeReport(RTP_SyncSourceId ssrc, const PTime & ntp);
-    virtual void OnRxDelayLastReceiverReport(const RTP_DelayLastReceiverReport & dlrr);
+    virtual bool OnReceiveExtendedReports(const RTP_ControlFrame & frame, const PTime & now);
+    virtual void OnRxReceiverReferenceTimeReport(RTP_SyncSourceId ssrc, const PTime & ntp, const PTime & now);
+    virtual void OnRxDelayLastReceiverReport(const RTP_DelayLastReceiverReport & dlrr, const PTime & now);
 
     typedef PNotifierListTemplate<const RTP_ControlFrame::ApplDefinedInfo &> ApplDefinedNotifierList;
     typedef PNotifierTemplate<const RTP_ControlFrame::ApplDefinedInfo &> ApplDefinedNotifier;
@@ -530,12 +533,12 @@ class OpalRTPSession : public OpalMediaSession
 
     /**Get total number received packets lost in session.
       */
-    unsigned GetPacketsLost(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Receiver).m_packetsLost; }
+    unsigned GetPacketsLost(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Receiver).m_packetsUnrecovered; }
 
     /**Get total number transmitted packets lost by remote in session.
        Determined via RTCP. -1 indicates no RTCP received yet.
       */
-    int GetPacketsLostByRemote(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Sender).m_packetsLost; }
+    int GetPacketsLostByRemote(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Sender).m_packetsMissing; }
 
     /**Get total number of packets received out of order in session.
       */
@@ -638,7 +641,11 @@ class OpalRTPSession : public OpalMediaSession
         This is called when the media stream receives an OpalVideoUpdatePicture
         media command.
       */
-    virtual SendReceiveStatus SendIntraFrameRequest(unsigned options, RTP_SyncSourceId ssrc = 0);
+    virtual SendReceiveStatus SendIntraFrameRequest(
+      unsigned options,
+      RTP_SyncSourceId ssrc = 0,
+      const PTime & now = PTime()
+    );
 
     /** Tell the rtp session to send out an temporal spatial trade off request
         control packet. This is called when the media stream receives an
@@ -713,15 +720,16 @@ class OpalRTPSession : public OpalMediaSession
       { return strm << ssrc.m_session << "SSRC=" << RTP_TRACE_SRC(ssrc.m_sourceIdentifier) << ", "; }
 #endif
 
-      virtual SendReceiveStatus OnSendData(RTP_DataFrame & frame, RewriteMode rewrite);
-      virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame, ReceiveType rxType);
-      virtual SendReceiveStatus OnReceiveRetransmit(RTP_DataFrame & frame);
+      virtual SendReceiveStatus OnSendData(RTP_DataFrame & frame, RewriteMode rewrite, const PTime & now);
+      virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame, ReceiveType rxType, const PTime & now);
+      virtual SendReceiveStatus OnReceiveRetransmit(RTP_DataFrame & frame, const PTime & now);
       virtual void SetLastSequenceNumber(RTP_SequenceNumber sequenceNumber);
-      virtual void SaveSentData(const RTP_DataFrame & frame);
-      virtual void OnRxNACK(const RTP_ControlFrame::LostPacketMask & lostPackets);
+      virtual void SaveSentData(const RTP_DataFrame & frame, const PTime & now);
+      virtual void OnRxNACK(const RTP_ControlFrame::LostPacketMask & lostPackets, const PTime & now);
       virtual bool IsExpectingRetransmit(RTP_SequenceNumber sequenceNumber);
-      virtual SendReceiveStatus OnOutOfOrderPacket(RTP_DataFrame & frame, ReceiveType rxType);
-      virtual bool HandlePendingFrames();
+      virtual SendReceiveStatus OnOutOfOrderPacket(RTP_DataFrame & frame, ReceiveType & rxType, const PTime & now);
+      virtual bool HasPendingFrames() const;
+      virtual bool HandlePendingFrames(const PTime & now);
 #if OPAL_RTP_FEC
       virtual SendReceiveStatus OnSendRedundantFrame(RTP_DataFrame & frame);
       virtual SendReceiveStatus OnSendRedundantData(RTP_DataFrame & primary, RTP_DataFrameList & redundancies);
@@ -732,20 +740,20 @@ class OpalRTPSession : public OpalMediaSession
 #endif // OPAL_RTP_FEC
 
 
-      void CalculateRTT(const PTime & reportTime, const PTimeInterval & reportDelay);
-      virtual void CalculateStatistics(const RTP_DataFrame & frame);
+      void CalculateRTT(const PTime & reportTime, const PTimeInterval & reportDelay, const PTime & now);
+      virtual void CalculateStatistics(const RTP_DataFrame & frame, const PTime & now);
 #if OPAL_STATISTICS
       virtual void GetStatistics(OpalMediaStatistics & statistics) const;
 #endif
 
-      virtual bool OnSendReceiverReport(RTP_ControlFrame::ReceiverReport * report PTRACE_PARAM(, unsigned logLevel));
-      virtual bool OnSendDelayLastReceiverReport(RTP_ControlFrame::DelayLastReceiverReport::Receiver * report);
-      virtual void OnRxSenderReport(const RTP_SenderReport & report);
-      virtual void OnRxReceiverReport(const RTP_ReceiverReport & report);
-      virtual void OnRxDelayLastReceiverReport(const RTP_DelayLastReceiverReport & dlrr);
+      virtual bool OnSendReceiverReport(RTP_ControlFrame::ReceiverReport * report, const PTime & now PTRACE_PARAM(, unsigned logLevel));
+      virtual bool OnSendDelayLastReceiverReport(RTP_ControlFrame::DelayLastReceiverReport::Receiver * report, const PTime & now);
+      virtual void OnRxSenderReport(const RTP_SenderReport & report, const PTime & now);
+      virtual void OnRxReceiverReport(const RTP_ReceiverReport & report, const PTime & now);
+      virtual void OnRxDelayLastReceiverReport(const RTP_DelayLastReceiverReport & dlrr, const PTime & now);
       virtual SendReceiveStatus SendBYE();
 
-      bool IsStaleReceiver() const;
+      bool IsStaleReceiver(const PTime & now) const;
       bool IsRtx() const { return m_rtxPT != RTP_DataFrame::IllegalPayloadType; }
 
       OpalRTPSession  & m_session;
@@ -759,6 +767,7 @@ class OpalRTPSession : public OpalMediaSession
       RTP_SyncSourceId            m_rtxSSRC; // Bidirectional link between primary and secondary
       RTP_DataFrame::PayloadTypes m_rtxPT;   // Sending rtx payload type, or receiving rtx primary paylaod type, only set in seconday SSRC
       int                         m_rtxPackets;
+      int                         m_rtxDuplicates;
 
       NotifierMap m_notifiers;
 
@@ -769,10 +778,10 @@ class OpalRTPSession : public OpalMediaSession
       unsigned           m_lastFIRSequenceNumber;
       unsigned           m_lastTSTOSequenceNumber;
       unsigned           m_consecutiveOutOfOrderPackets;
-      PSimpleTimer       m_consecutiveOutOfOrderTimer;
+      PTime              m_consecutiveOutOfOrderEndTime;
       RTP_SequenceNumber m_nextOutOfOrderPacket;
-      PSimpleTimer       m_waitOutOfOrderTimer;
-      PSimpleTimer       m_lateOutOfOrderAdaptTimer;
+      PTime              m_endWaitOutOfOrderTime;
+      PTime              m_lateOutOfOrderAdaptTime;
       unsigned           m_lateOutOfOrderAdaptCount;
       unsigned           m_lateOutOfOrderAdaptMax;
       PTimeInterval      m_lateOutOfOrderAdaptBoost;
@@ -789,11 +798,12 @@ class OpalRTPSession : public OpalMediaSession
       // Statistics gathered
       RTP_DataFrame::PayloadTypes m_payloadType;
       PTime    m_firstPacketTime;
-      unsigned m_packets;
+      unsigned m_packets;  // Note, does not include retransmits via NACK
       uint64_t m_octets;
       unsigned m_senderReports;
       atomic<unsigned> m_NACKs;
-      int      m_packetsLost;
+      int      m_packetsMissing;  // As per RFC
+      int      m_packetsUnrecovered; // After possible recovery via NACK (only on rx)
       int      m_maxConsecutiveLost;
       unsigned m_packetsOutOfOrder;
       int      m_lateOutOfOrder;
@@ -845,7 +855,9 @@ class OpalRTPSession : public OpalMediaSession
       PTRACE_THROTTLE(m_throttleInvalidLost,2,60000);
 
       P_REMOVE_VIRTUAL(SendReceiveStatus, OnSendData(RTP_DataFrame &, bool), e_AbortTransport);
+      P_REMOVE_VIRTUAL(SendReceiveStatus, OnSendData(RTP_DataFrame &, RewriteMode), e_AbortTransport);
       P_REMOVE_VIRTUAL(SendReceiveStatus, OnOutOfOrderPacket(RTP_DataFrame &), e_AbortTransport);
+      P_REMOVE_VIRTUAL(SendReceiveStatus, OnReceiveData(RTP_DataFrame &, ReceiveType), e_AbortTransport);
    };
 
     typedef std::map<RTP_SyncSourceId, SyncSource *> SyncSourceMap;
@@ -861,7 +873,7 @@ class OpalRTPSession : public OpalMediaSession
     virtual bool ResequenceOutOfOrderPackets(SyncSource & ssrc) const;
 
     /// Set up RTCP as per RFC rules
-    virtual bool InternalSendReport(RTP_ControlFrame & report, SyncSource & sender, bool includeReceivers, bool forced);
+    virtual bool InternalSendReport(RTP_ControlFrame & report, SyncSource & sender, bool includeReceivers, bool forced, const PTime & now);
     virtual void InitialiseControlFrame(RTP_ControlFrame & frame, SyncSource & sender);
 
     // Some statitsics not SSRC related
@@ -902,7 +914,8 @@ class OpalRTPSession : public OpalMediaSession
     P_REMOVE_VIRTUAL(SendReceiveStatus,ReadDataOrControlPDU(BYTE *,PINDEX,bool),e_AbortTransport);
     P_REMOVE_VIRTUAL(bool,WriteDataOrControlPDU(const BYTE *,PINDEX,bool),false);
     P_REMOVE_VIRTUAL(SendReceiveStatus,OnSendData(RTP_DataFrame &),e_AbortTransport);
-    P_REMOVE_VIRTUAL(SendReceiveStatus, OnSendData(RTP_DataFrame &,bool), e_AbortTransport);
+    P_REMOVE_VIRTUAL(SendReceiveStatus,OnSendData(RTP_DataFrame&,bool),e_AbortTransport);
+    P_REMOVE_VIRTUAL(SendReceiveStatus,OnSendData(RTP_DataFrame&,RewriteMode),e_AbortTransport);
     P_REMOVE_VIRTUAL(bool,WriteData(RTP_DataFrame &,const PIPSocketAddressAndPort*,bool),false);
     P_REMOVE_VIRTUAL(SendReceiveStatus,OnReadTimeout(RTP_DataFrame&),e_AbortTransport);
     P_REMOVE_VIRTUAL(SendReceiveStatus,InternalReadData(RTP_DataFrame &),e_AbortTransport);
@@ -910,6 +923,7 @@ class OpalRTPSession : public OpalMediaSession
     P_REMOVE_VIRTUAL(SendReceiveStatus,OnReceiveData(RTP_DataFrame&, PINDEX),e_AbortTransport);
     P_REMOVE_VIRTUAL(SendReceiveStatus,OnReceiveData(RTP_DataFrame&),e_AbortTransport);
     P_REMOVE_VIRTUAL(SendReceiveStatus,OnOutOfOrderPacket(RTP_DataFrame&),e_AbortTransport);
+    P_REMOVE_VIRTUAL(SendReceiveStatus,OnPreReceiveData(RTP_DataFrame &),e_AbortTransport);
 
   friend class RTCP_XR_Metrics;
 };

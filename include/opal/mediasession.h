@@ -116,8 +116,10 @@ struct OpalNetworkStatistics
   int      m_NACKs;             // (-1 is N/A)
   uint32_t m_rtxSSRC;           // Zero indicates no separate retransmit source
   int      m_rtxPackets;        // (-1 is N/A)
+  int      m_rtxDuplicates;     // (-1 is N/A)
   int      m_FEC;               // (-1 is N/A, for tx is number of FEC frame sent, for rx is number of frames recovered via FEC)
-  int      m_packetsLost;       // (-1 is N/A)
+  int      m_unrecovered;       // (-1 is N/A) Packets that failed to arrive and could not be recovered via NACK/FEC
+  int      m_packetsLost;       // (-1 is N/A) Packets that failed to arrive (as per RTCP Receiver Report specification)
   int      m_maxConsecutiveLost;// (-1 is N/A)
   int      m_packetsOutOfOrder; // (-1 is N/A)
   int      m_lateOutOfOrder;    // (-1 is N/A)

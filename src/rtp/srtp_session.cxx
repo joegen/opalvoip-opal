@@ -671,11 +671,11 @@ void OpalSRTPSession::OnRxControlPacket(OpalMediaTransport & transport, PBYTEArr
 }
 
 
-OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnSendData(RTP_DataFrame & frame, RewriteMode rewrite)
+OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnSendData(RTP_DataFrame & frame, RewriteMode rewrite, const PTime & now)
 {
   // Aleady locked on entry
 
-  SendReceiveStatus status = OpalRTPSession::OnSendData(frame, rewrite);
+  SendReceiveStatus status = OpalRTPSession::OnSendData(frame, rewrite, now);
   if (status != e_ProcessPacket)
     return status;
 
@@ -710,11 +710,11 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnSendData(RTP_DataFrame & fr
 }
 
 
-OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnSendControl(RTP_ControlFrame & frame)
+OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnSendControl(RTP_ControlFrame & frame, const PTime & now)
 {
   // Aleady locked on entry
 
-  SendReceiveStatus status = OpalRTPSession::OnSendControl(frame);
+  SendReceiveStatus status = OpalRTPSession::OnSendControl(frame, now);
   if (status != e_ProcessPacket)
     return status;
 
@@ -746,12 +746,12 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnSendControl(RTP_ControlFram
 }
 
 
-OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveData(RTP_DataFrame & frame, ReceiveType rxType)
+OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveData(RTP_DataFrame & frame, ReceiveType rxType, const PTime & now)
 {
   // Aleady locked on entry
 
-  if (rxType == e_RxRetransmission || rxType == e_RxPendingRTX)
-    return OpalRTPSession::OnReceiveData(frame, rxType);
+  if (rxType == e_RxFromRTX)
+    return OpalRTPSession::OnReceiveData(frame, rxType, now);
 
   RTP_SyncSourceId ssrc = frame.GetSyncSource();
   if (!IsCryptoSecured(e_Receiver)) {
@@ -783,11 +783,11 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveData(RTP_DataFrame &
 
   frame.SetPayloadSize(len - frame.GetHeaderSize());
 
-  return OpalRTPSession::OnReceiveData(frame, rxType);
+  return OpalRTPSession::OnReceiveData(frame, rxType, now);
 }
 
 
-OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveControl(RTP_ControlFrame & encoded)
+OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveControl(RTP_ControlFrame & encoded, const PTime & now)
 {
   /* Aleady locked on entry */
 
@@ -829,13 +829,13 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveControl(RTP_ControlF
 
   decoded.SetPacketSize(len);
 
-  return OnReceiveDecodedControl(decoded);
+  return OnReceiveDecodedControl(decoded, now);
 }
 
 
-OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveDecodedControl(RTP_ControlFrame & frame)
+OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveDecodedControl(RTP_ControlFrame & frame, const PTime & now)
 {
-  return OpalRTPSession::OnReceiveControl(frame);
+  return OpalRTPSession::OnReceiveControl(frame, now);
 }
 
 

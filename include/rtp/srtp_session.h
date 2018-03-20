@@ -140,12 +140,12 @@ class OpalSRTPSession : public OpalRTPSession
     virtual bool Open(const PString & localInterface, const OpalTransportAddress & remoteAddress);
     virtual RTP_SyncSourceId AddSyncSource(RTP_SyncSourceId id, Direction dir, const char * cname = NULL);
 
-    virtual SendReceiveStatus OnSendData(RTP_DataFrame & frame, RewriteMode rewrite);
-    virtual SendReceiveStatus OnSendControl(RTP_ControlFrame & frame);
-    virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame, ReceiveType rxType);
-    virtual SendReceiveStatus OnReceiveControl(RTP_ControlFrame & frame);
+    virtual SendReceiveStatus OnSendData(RTP_DataFrame & frame, RewriteMode rewrite, const PTime & now);
+    virtual SendReceiveStatus OnSendControl(RTP_ControlFrame & frame, const PTime & now);
+    virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame, ReceiveType rxType, const PTime & now);
+    virtual SendReceiveStatus OnReceiveControl(RTP_ControlFrame & frame, const PTime & now);
 
-    virtual SendReceiveStatus OnReceiveDecodedControl(RTP_ControlFrame & frame);
+    virtual SendReceiveStatus OnReceiveDecodedControl(RTP_ControlFrame & frame, const PTime & now);
 
   protected:
     virtual bool ResequenceOutOfOrderPackets(SyncSource & ssrc) const;
