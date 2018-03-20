@@ -1244,7 +1244,8 @@ bool OpalMediaFormat::SetRegisteredMediaFormat(const OpalMediaFormat & mediaForm
          be assigning the left hand side with exactly the same value. But what
          is really happening is the above only compares the name, and below
          copies all of the attributes (OpalMediaFormatOtions) across. */
-      *format = mediaFormat;
+      *format->m_info = *mediaFormat.m_info;
+      format->m_info->options.MakeUnique();
       return true;
     }
   }
