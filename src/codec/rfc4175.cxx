@@ -81,14 +81,14 @@ class RFC4175VideoFormatInternal : public OpalVideoFormatInternal
 
 const OpalVideoFormat & GetOpalRFC4175_YCbCr420()
 {
-  static OpalVideoFormat RFC4175_YCbCr420(new RFC4175VideoFormatInternal(OPAL_RFC4175_YCbCr420, "YCbCr-4:2:0", (FRAME_WIDTH*FRAME_HEIGHT*3/2)*FRAME_RATE));
+  static OpalMediaFormatStatic<OpalVideoFormat> RFC4175_YCbCr420(new RFC4175VideoFormatInternal(OPAL_RFC4175_YCbCr420, "YCbCr-4:2:0", (FRAME_WIDTH*FRAME_HEIGHT*3/2)*FRAME_RATE));
   return RFC4175_YCbCr420;
 }
 
 
 const OpalVideoFormat & GetOpalRFC4175_RGB()
 {
-  static OpalVideoFormat RFC4175_RGB(new RFC4175VideoFormatInternal(OPAL_RFC4175_RGB, "RGB", FRAME_WIDTH*FRAME_HEIGHT*3*FRAME_RATE));
+  static OpalMediaFormatStatic<OpalVideoFormat> RFC4175_RGB(new RFC4175VideoFormatInternal(OPAL_RFC4175_RGB, "RGB", FRAME_WIDTH*FRAME_HEIGHT*3*FRAME_RATE));
   return RFC4175_RGB;
 }
 

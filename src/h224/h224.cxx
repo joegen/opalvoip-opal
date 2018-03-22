@@ -87,7 +87,7 @@ OPAL_MEDIATYPE(OpalH224Media);
 
 const PString & OpalH224MediaFormat::HDLCTunnelingOption() { static const PConstString s("HDLC Tunneling"); return s; }
 
-OpalH224MediaFormatInternal::OpalH224MediaFormatInternal(const char * fullName, const char * description, bool hdlcTunneling)
+OpalH224MediaFormat::Internal::Internal(const char * fullName, const char * description, bool hdlcTunneling)
   : OpalMediaFormatInternal(fullName,
                             OpalH224MediaType(),
                             RTP_DataFrame::DynamicBase,
@@ -104,7 +104,7 @@ OpalH224MediaFormatInternal::OpalH224MediaFormatInternal(const char * fullName, 
 }
 
 
-bool OpalH224MediaFormatInternal::IsValidForProtocol(const PString & protocol) const
+bool OpalH224MediaFormat::Internal::IsValidForProtocol(const PString & protocol) const
 {
   return (protocol *= "H.323") || !GetOptionBoolean(OpalH224MediaFormat::HDLCTunnelingOption(), false);
 }

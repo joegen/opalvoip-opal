@@ -62,9 +62,8 @@
   static const char G726_##rate##K_EncodingName[] = "G726-" #rate; \
   const OpalAudioFormat & GetOpalG726_##rate##K() \
   { \
-    static OpalAudioFormat const plugin(G726_##rate##K_FormatName); if (plugin.IsValid()) return plugin; \
-    static const OpalAudioFormat format(G726_##rate##K_FormatName, RTP_DataFrame::DynamicBase, \
-                                        G726_##rate##K_EncodingName, bits, 8, 240, 30, 256, 8000); \
+    static const OpalMediaFormatStatic<OpalAudioFormat> format(new OpalAudioFormatInternal(G726_##rate##K_FormatName, \
+                                RTP_DataFrame::DynamicBase, G726_##rate##K_EncodingName, bits, 8, 240, 30, 256, 8000)); \
     CAPABILITY(rate); \
     return format; \
   }

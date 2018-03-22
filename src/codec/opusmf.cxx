@@ -100,8 +100,7 @@ class OpalOpusFormat : public OpalAudioFormatInternal
 #define DEF_MEDIA_FORMAT(rate,stereo) \
   const OpalAudioFormat & GetOpalOpus##rate##stereo() \
   { \
-    static OpalAudioFormat const plugin("Opus-" #rate #stereo); if (plugin.IsValid()) return plugin; \
-    static OpalAudioFormat const format(new OpalOpusFormat(OPAL_OPUS##rate##stereo, rate*1000, CHANNEL##stereo)); \
+    static OpalMediaFormatStatic<OpalAudioFormat> format(new OpalOpusFormat(OPAL_OPUS##rate##stereo, rate*1000, CHANNEL##stereo)); \
     return format; \
   }
 

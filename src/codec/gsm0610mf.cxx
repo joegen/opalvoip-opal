@@ -84,21 +84,16 @@ class H323_GSM0610Capability : public H323AudioCapability
       return true;
     }
 };
+
+typedef OpalMediaFormatStaticH323<OpalAudioFormat, H323_GSM0610Capability> OpalGSM0610Format;
+#else
+typedef OpalMediaFormatStatic<OpalAudioFormat> OpalGSM0610Format;
 #endif // OPAL_H323
 
 
 const OpalAudioFormat & GetOpalGSM0610()
 {
-  static OpalAudioFormat const plugin(OPAL_GSM0610);
-  if (plugin.IsValid())
-    return plugin;
-
-  static const OpalAudioFormat format(OPAL_GSM0610, RTP_DataFrame::GSM, "GSM",  33, 160, 7, 4, 7, 8000);
-
-#if OPAL_H323
-  static H323CapabilityFactory::Worker<H323_GSM0610Capability> capability(OPAL_GSM0610, true);
-#endif // OPAL_H323
-
+  static OpalGSM0610Format const format(new OpalAudioFormatInternal(OPAL_GSM0610, RTP_DataFrame::GSM, "GSM",  33, 160, 7, 4, 7, 8000));
   return format;
 }
 

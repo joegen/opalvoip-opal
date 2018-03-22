@@ -35,10 +35,10 @@
 #include <h323/h323caps.h>
 
 
-class OpalG7221Format : public OpalAudioFormatInternal
+class OpalG7221FormatInternal : public OpalAudioFormatInternal
 {
   public:
-    OpalG7221Format(const char * formatName, unsigned bitRate, unsigned sampleRate)
+    OpalG7221FormatInternal(const char * formatName, unsigned bitRate, unsigned sampleRate)
       : OpalAudioFormatInternal(formatName,
                                 RTP_DataFrame::DynamicBase,
                                 G7221EncodingName,
@@ -72,32 +72,27 @@ class OpalG7221Format : public OpalAudioFormatInternal
 
     virtual PObject * Clone() const
     {
-      return new OpalG7221Format(*this);
+      return new OpalG7221FormatInternal(*this);
     }
 };
 
 
 #if OPAL_H323
-  #define OID(type) \
-    extern const char type##_Identifier[] = type##_OID;
-
   #define CAPABILITY(type) \
-    static H323CapabilityFactory::Worker< \
+    extern const char type##_Identifier[] = type##_OID; \
+    typedef OpalMediaFormatStaticH323<OpalAudioFormat, \
       H323GenericAudioCapabilityTemplate<type##_Identifier, GetOpal##type, type##_BIT_RATE> \
-    > capability(type##_FormatName, true);
+    > Opal##type##Format;
 #else
-  #define OID(type)
-  #define CAPABILITY(type)
+  #define CAPABILITY(type) typedef OpalMediaFormatStatic<OpalAudioFormat> Opal##type##Format;
 #endif
 
 
 #define FORMAT(type) \
-  OID(type) \
+  CAPABILITY(type) \
   const OpalAudioFormat & GetOpal##type() \
   { \
-    static OpalAudioFormat const plugin(type##_FormatName); if (plugin.IsValid()) return plugin; \
-    static OpalAudioFormat const format(new OpalG7221Format(type##_FormatName, type##_BIT_RATE, type##_SAMPLE_RATE)); \
-    CAPABILITY(type) \
+    static Opal##type##Format const format(new OpalG7221FormatInternal(type##_FormatName, type##_BIT_RATE, type##_SAMPLE_RATE)); \
     return format; \
   }
 

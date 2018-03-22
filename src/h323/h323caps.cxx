@@ -1804,11 +1804,12 @@ PObject * H323H239ControlCapability::Clone() const
 
 PString H323H239ControlCapability::GetFormatName() const
 {
-  static OpalMediaFormat * name = new OpalMediaFormat("H.239-Control",
-                                                      OpalPresentationVideoMediaDefinition::Name(),
-                                                      RTP_DataFrame::MaxPayloadType,
-                                                      NULL, false, 0, 0, 0, 0, 0, false, true);
-  return *name;
+  static const char name[] = "H.239-Control";
+  static OpalMediaFormatStatic<OpalMediaFormat> h239(new OpalMediaFormatInternal(name,
+                                                     OpalPresentationVideoMediaDefinition::Name(),
+                                                     RTP_DataFrame::MaxPayloadType,
+                                                     NULL, false, 0, 0, 0, 0));
+  return name;
 }
 
 
@@ -1978,11 +1979,12 @@ void H235SecurityCapability::AddAllCapabilities(H323Capabilities & capabilities,
 H235SecurityAlgorithmCapability::H235SecurityAlgorithmCapability(const H323Capability & mediaCapability)
   : H235SecurityCapability(mediaCapability)
 {
-  static OpalMediaFormat * h2356 = new OpalMediaFormat("H.235.6",
-                                                       OpalH235MediaType::Name(),
-                                                       RTP_DataFrame::MaxPayloadType,
-                                                       NULL, false, 0, 0, 0, 0, 0, false, true);
-  m_mediaCapabilityName += h2356->GetName();
+  static const char name[] = "H.235.6";
+  static OpalMediaFormatStatic<OpalMediaFormat> h2356(new OpalMediaFormatInternal(name,
+                                                      OpalH235MediaType::Name(),
+                                                      RTP_DataFrame::MaxPayloadType,
+                                                      NULL, false, 0, 0, 0, 0));
+  m_mediaCapabilityName += name;
 }
 
 
@@ -2224,11 +2226,12 @@ H235SecurityGenericCapability::H235SecurityGenericCapability(const H323Capabilit
   : H235SecurityCapability(mediaCapability)
   , H323GenericCapabilityInfo("0.0.8.235.0.4.90", 0, true)
 {
-  static OpalMediaFormat * h2358 = new OpalMediaFormat("H.235.8",
+  static const char name[] = "H.235.8";
+  static OpalMediaFormatStatic<OpalMediaFormat> h2358(new OpalMediaFormatInternal(name,
                                                        OpalH235MediaType::Name(),
                                                        RTP_DataFrame::MaxPayloadType,
-                                                       NULL, false, 0, 0, 0, 0, 0, false, true);
-  m_mediaCapabilityName += h2358->GetName();
+                                                       NULL, false, 0, 0, 0, 0));
+  m_mediaCapabilityName += name;
 }
 
 

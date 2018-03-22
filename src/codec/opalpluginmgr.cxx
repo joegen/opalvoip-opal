@@ -1784,7 +1784,14 @@ bool OpalPluginCodecManager::AddMediaFormat(OpalPluginCodecHandler * handler,
     return false;
   }
 
-  new OpalMediaFormat(mediaFormatInternal, true); // Will be deleted (indirectly) in ~OpalManager
+  if (OpalMediaFormat(fmtName).IsEmpty())
+    new OpalMediaFormat(mediaFormatInternal, true); // Will be deleted (indirectly) in ~OpalManager
+  else {
+    // Create a temporary instance, so it will override the existing
+    // master list data, assuming the "timestamp" field is later
+    OpalMediaFormat dummy(mediaFormatInternal);
+  }
+
   mediaFormat = fmtName;
   return true;
 }

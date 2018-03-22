@@ -146,11 +146,11 @@ typedef H323_G7231Capability H323_G7231A_5k3_Capability;
 
 /////////////////////////////////////////////////////////////////////////////
 
-class OpalG7231Format : public OpalAudioFormat
+class OpalG7231Format : public OpalAudioFormatInternal
 {
   public:
     OpalG7231Format(const char * variant, unsigned rate, bool isAnnexA)
-      : OpalAudioFormat(variant, RTP_DataFrame::G7231, "G723", 24, 240,  8,  3, 256,  8000)
+      : OpalAudioFormatInternal(variant, RTP_DataFrame::G7231, "G723", 24, 240,  8,  3, 256,  8000)
     {
       static const char * const yesno[] = { "no", "yes" };
       OpalMediaOption * option = new OpalMediaOptionEnum(PLUGINCODEC_OPTION_VOICE_ACTIVITY_DETECT, true, yesno, 2, OpalMediaOption::AndMerge, isAnnexA);
@@ -162,7 +162,7 @@ class OpalG7231Format : public OpalAudioFormat
 
       // Automatic calculation comes to 6400, but that includes the tiny, tiny header
       // So need to back it down to the official bit rate.
-      SetOptionInteger(MaxBitRateOption(), rate); 
+      SetOptionInteger(OpalMediaFormat::MaxBitRateOption(), rate); 
     }
 
 
@@ -175,8 +175,7 @@ class OpalG7231Format : public OpalAudioFormat
 #define FORMAT(name, rate, annex) \
   const OpalAudioFormat & GetOpal##name() \
   { \
-    static OpalAudioFormat const plugin(OPAL_##name); if (plugin.IsValid()) return plugin; \
-    static const OpalG7231Format format(OPAL_##name, rate, annex); \
+    static const OpalMediaFormatStatic<OpalAudioFormat> format(new OpalG7231Format(OPAL_##name, rate, annex)); \
     CAPABILITY(name); \
     return format; \
   }

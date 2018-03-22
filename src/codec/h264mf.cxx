@@ -38,7 +38,7 @@
 #include <h323/h323caps.h>
 
 
-class OpalH264Format : public OpalVideoFormatInternal
+class OpalH264FormatInternal : public OpalVideoFormatInternal
 {
   public:
     enum PacketizationMode {
@@ -47,7 +47,7 @@ class OpalH264Format : public OpalVideoFormatInternal
       Interleaved // Unused as yet
     };
 
-    OpalH264Format(const char * formatName, PacketizationMode mode)
+    OpalH264FormatInternal(const char * formatName, PacketizationMode mode)
       : OpalVideoFormatInternal(formatName, RTP_DataFrame::DynamicBase, H264EncodingName,
                                 PVideoFrameInfo::MaxWidth, PVideoFrameInfo::MaxHeight, 30, 16000000)
     {
@@ -161,7 +161,7 @@ class OpalH264Format : public OpalVideoFormatInternal
 
     virtual PObject * Clone() const
     {
-      return new OpalH264Format(*this);
+      return new OpalH264FormatInternal(*this);
     }
 
 
@@ -177,33 +177,26 @@ class OpalH264Format : public OpalVideoFormatInternal
 };
 
 
+typedef OpalMediaFormatStatic<OpalVideoFormat> OpalH2640Format;
 #if OPAL_H323
 extern const char H264_Identifer[] = OpalPluginCodec_Identifer_H264_Generic;
+typedef OpalMediaFormatStaticH323<OpalVideoFormat, H323GenericVideoCapabilityTemplate<H264_Identifer, GetOpalH264_MODE1>> OpalH2641Format;
+#else
+typedef OpalMediaFormatStatic<OpalVideoFormat> OpalH2641Format;
 #endif
 
 
 
 const OpalVideoFormat & GetOpalH264_MODE0()
 {
-  static OpalVideoFormat const format(new OpalH264Format(H264_Mode0_FormatName, OpalH264Format::Aligned));
+  static OpalH2640Format const format(new OpalH264FormatInternal(H264_Mode0_FormatName, OpalH264FormatInternal::Aligned));
   return format;
 }
 
 
 const OpalVideoFormat & GetOpalH264_MODE1()
 {
-  static OpalVideoFormat const plugin(H264_Mode1_FormatName);
-  if (plugin.IsValid())
-    return plugin;
-
-  static OpalVideoFormat const format(new OpalH264Format(H264_Mode1_FormatName, OpalH264Format::NonInterleaved));
-
-#if OPAL_H323
-  static H323CapabilityFactory::Worker<
-    H323GenericVideoCapabilityTemplate<H264_Identifer, GetOpalH264_MODE1>
-  > capability(H264_Mode1_FormatName, true);
-#endif // OPAL_H323
-
+  static OpalH2641Format const format(new OpalH264FormatInternal(H264_Mode1_FormatName, OpalH264FormatInternal::NonInterleaved));
   return format;
 }
 

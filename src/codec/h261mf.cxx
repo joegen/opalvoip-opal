@@ -68,10 +68,10 @@ static bool ClampSizes(PluginCodec_OptionMap & original, PluginCodec_OptionMap &
 
 
 
-class OpalH261Format : public OpalVideoFormatInternal
+class OpalH261FormatInternal : public OpalVideoFormatInternal
 {
   public:
-    OpalH261Format()
+    OpalH261FormatInternal()
       : OpalVideoFormatInternal(H261FormatName, RTP_DataFrame::DynamicBase, "H261",
                                 PVideoFrameInfo::CIFWidth, PVideoFrameInfo::CIFHeight, 30, 1920000)
     {
@@ -89,7 +89,7 @@ class OpalH261Format : public OpalVideoFormatInternal
 
     virtual PObject * Clone() const
     {
-      return new OpalH261Format(*this);
+      return new OpalH261FormatInternal(*this);
     }
 
 
@@ -105,18 +105,15 @@ class OpalH261Format : public OpalVideoFormatInternal
 };
 
 
+#if OPAL_H323
+typedef OpalMediaFormatStaticH323<OpalVideoFormat, H323H261Capability> OpalH261Format;
+#else
+typedef OpalMediaFormatStatic<OpalVideoFormat> OpalH261Format;
+#endif
+
 const OpalVideoFormat & GetOpalH261()
 {
-  static OpalVideoFormat const plugin(H261FormatName);
-  if (plugin.IsValid())
-    return plugin;
-
-  static OpalVideoFormat const format(new OpalH261Format());
-
-#if OPAL_H323
-  static H323CapabilityFactory::Worker<H323H261Capability> capability(H261FormatName, true);
-#endif // OPAL_H323
-
+  static OpalH261Format const format(new OpalH261FormatInternal);
   return format;
 }
 

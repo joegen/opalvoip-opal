@@ -892,10 +892,12 @@ void OpalMediaFormat::Construct(OpalMediaFormatInternal * info)
 
   OpalMediaFormatList::const_iterator fmt = registeredFormats.FindFormat(info->formatName);
   if (fmt != registeredFormats.end()) {
-    *this = *fmt;
-    delete info;
-    if (m_dynamic)
-      delete this;
+    PAssert(!m_dynamic, PLogicError);
+
+    if (info->codecVersionTime > fmt->m_info->codecVersionTime)
+      *fmt->m_info = *info;
+    else
+      *this = *fmt;
   }
   else {
     m_info = info;
@@ -1289,7 +1291,7 @@ OpalMediaFormatInternal::OpalMediaFormatInternal(const char * fullName,
   , rtpPayloadType(pt)
   , rtpEncodingName(en)
   , mediaType(_mediaType)
-  , codecVersionTime(ts != 0 ? ts : PTime().GetTimeInSeconds())
+  , codecVersionTime(ts)
   , forceIsTransportable(false)
   , m_allowMultiple(am)
 {
@@ -1840,6 +1842,12 @@ const PString & OpalAudioFormat::MinPacketTimeOption()     { static const PConst
 const PString & OpalAudioFormat::MaxPacketTimeOption()     { static const PConstString s("maxptime"); return s; }
 #endif
 
+OpalAudioFormat::OpalAudioFormat(Internal * info, bool dynamic)
+  : OpalMediaFormat(info, dynamic)
+{
+}
+
+
 OpalAudioFormat::OpalAudioFormat(const char * fullName,
                                  RTP_DataFrame::PayloadTypes rtpPayloadType,
                                  const char * encodingName,
@@ -1978,8 +1986,8 @@ const PString & OpalVideoFormat::UseImageAttributeInSDP()         { static const
 #endif
 
 
-OpalVideoFormat::OpalVideoFormat(OpalVideoFormatInternal * info)
-  : OpalMediaFormat(info)
+OpalVideoFormat::OpalVideoFormat(OpalVideoFormatInternal * info, bool dynamic)
+  : OpalMediaFormat(info, dynamic)
 {
 }
 

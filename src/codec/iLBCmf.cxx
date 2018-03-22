@@ -49,10 +49,10 @@ enum
 
 static char PreferredMode[] = "Preferred Mode";
 
-class OpaliLBCFormat : public OpalAudioFormatInternal
+class OpaliLBCFormatInternal : public OpalAudioFormatInternal
 {
   public:
-    OpaliLBCFormat()
+    OpaliLBCFormatInternal()
       : OpalAudioFormatInternal(OPAL_iLBC, RTP_DataFrame::DynamicBase, "iLBC",  50, 160, 1, 1, 1, 8000, 0)
     {
       OpalMediaOption * option = new OpalMediaOptionInteger(PreferredMode, false, OpalMediaOption::MaxMerge, 7);
@@ -65,7 +65,10 @@ class OpaliLBCFormat : public OpalAudioFormatInternal
       FindOption(OpalMediaFormat::FrameTimeOption())->SetMerge(OpalMediaOption::MaxMerge);
     }
 
-    virtual PObject * Clone() const { return new OpaliLBCFormat(*this); }
+    virtual PObject * Clone() const
+    {
+      return new OpaliLBCFormatInternal(*this);
+    }
 
     virtual bool ToNormalisedOptions()
     {
@@ -108,23 +111,15 @@ class OpaliLBCFormat : public OpalAudioFormatInternal
 
 #if OPAL_H323
 extern const char iLBC_Identifier[] = OpalPluginCodec_Identifer_iLBC;
+typedef OpalMediaFormatStaticH323<OpalAudioFormat, H323GenericAudioCapabilityTemplate<iLBC_Identifier, GetOpaliLBC>> OpaliLBCFormat;
+#else
+typedef OpalMediaFormatStatic<OpalAudioFormat> OpaliLBCFormat;
 #endif // OPAL_H323
 
 
 const OpalAudioFormat & GetOpaliLBC()
 {
-  static OpalAudioFormat const plugin(OPAL_iLBC);
-  if (plugin.IsValid())
-    return plugin;
-
-  static OpalAudioFormat const iLBC_Format(new OpaliLBCFormat);
-
-#if OPAL_H323
-  static H323CapabilityFactory::Worker<
-    H323GenericAudioCapabilityTemplate<iLBC_Identifier, GetOpaliLBC>
-  > capability(OPAL_iLBC, true);
-#endif // OPAL_H323
-
+  static OpaliLBCFormat const iLBC_Format(new OpaliLBCFormatInternal);
   return iLBC_Format;
 }
 

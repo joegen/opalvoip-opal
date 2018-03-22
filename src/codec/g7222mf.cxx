@@ -34,10 +34,10 @@
 #include <h323/h323caps.h>
 
 
-class OpalG7222Format : public OpalAudioFormatInternal
+class OpalG7222FormatInternal : public OpalAudioFormatInternal
 {
   public:
-    OpalG7222Format()
+    OpalG7222FormatInternal()
       : OpalAudioFormatInternal(G7222FormatName,
                                 RTP_DataFrame::DynamicBase,
                                 G7222EncodingName,
@@ -98,30 +98,22 @@ class OpalG7222Format : public OpalAudioFormatInternal
 
     virtual PObject * Clone() const
     {
-      return new OpalG7222Format(*this);
+      return new OpalG7222FormatInternal(*this);
     }
 };
 
 
 #if OPAL_H323
 extern const char G7222_Identifier[] = OpalPluginCodec_Identifer_G7222;
+typedef OpalMediaFormatStaticH323<OpalAudioFormat, H323GenericAudioCapabilityTemplate<G7222_Identifier, GetOpalG7222>> OpalG7222Format;
+#else
+typedef OpalMediaFormatStatic<OpalAudioFormat> OpalG7222Format;
 #endif
 
 
 const OpalAudioFormat & GetOpalG7222()
 {
-  static OpalAudioFormat const plugin(G7222FormatName);
-  if (plugin.IsValid())
-    return plugin;
-
-  static OpalAudioFormat const format(new OpalG7222Format);
-
-#if OPAL_H323
-  static H323CapabilityFactory::Worker<
-    H323GenericAudioCapabilityTemplate<G7222_Identifier, GetOpalG7222>
-  > capability(G7222FormatName, true);
-#endif
-
+  static OpalG7222Format const format(new OpalG7222FormatInternal);
   return format;
 }
 
