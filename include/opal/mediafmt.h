@@ -1383,6 +1383,8 @@ class OpalMediaFormat : public PContainer
 };
 
 
+class OpalAudioFormatInternal;
+
 class OpalAudioFormat : public OpalMediaFormat
 {
     PCLASSINFO(OpalAudioFormat, OpalMediaFormat);
@@ -1611,18 +1613,21 @@ public:
   explicit OpalMediaFormatStatic(typename MEDIA_FORMAT::Internal * formatInfo)
     : m_previousFormat(formatInfo->GetName())
   {
-    if (m_previousFormat.IsEmpty()) {
-      m_mediaFormat = new MEDIA_FORMAT(formatInfo, true);
+    if (this->m_previousFormat.IsEmpty()) {
+      this->m_mediaFormat = new MEDIA_FORMAT(formatInfo, true);
     }
     else {
-      m_mediaFormat = &m_previousFormat;
+      this->m_mediaFormat = &this->m_previousFormat;
       delete formatInfo;
     }
   }
-  operator const MEDIA_FORMAT &() const { return *m_mediaFormat; }
+  operator const MEDIA_FORMAT &() const { return *this->m_mediaFormat; }
 };
 
 #if OPAL_H323
+class H323Capability;
+typedef PFactory<H323Capability> H323CapabilityFactory;
+
 template <class MEDIA_FORMAT, class H323_CAPABILITY>
 class OpalMediaFormatStaticH323 : public OpalMediaFormatStatic<MEDIA_FORMAT>
 {
@@ -1630,8 +1635,8 @@ public:
   OpalMediaFormatStaticH323(typename MEDIA_FORMAT::Internal * formatInfo)
     : OpalMediaFormatStatic<MEDIA_FORMAT>(formatInfo)
   {
-    if (m_mediaFormat != &m_previousFormat)
-      static H323CapabilityFactory::Worker<H323_CAPABILITY> capability(m_mediaFormat->GetName(), true);
+    if (this->m_mediaFormat != &this->m_previousFormat)
+      static H323CapabilityFactory::Worker<H323_CAPABILITY> capability(this->m_mediaFormat->GetName(), true);
   }
 };
 #endif // OPAL_H323

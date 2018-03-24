@@ -180,7 +180,7 @@ class OpalH264FormatInternal : public OpalVideoFormatInternal
 typedef OpalMediaFormatStatic<OpalVideoFormat> OpalH2640Format;
 #if OPAL_H323
 extern const char H264_Identifer[] = OpalPluginCodec_Identifer_H264_Generic;
-typedef OpalMediaFormatStaticH323<OpalVideoFormat, H323GenericVideoCapabilityTemplate<H264_Identifer, GetOpalH264_MODE1>> OpalH2641Format;
+typedef OpalMediaFormatStaticH323<OpalVideoFormat, H323GenericVideoCapabilityTemplate<H264_Identifer, GetOpalH264_MODE1> > OpalH2641Format;
 #else
 typedef OpalMediaFormatStatic<OpalVideoFormat> OpalH2641Format;
 #endif

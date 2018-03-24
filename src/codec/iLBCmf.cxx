@@ -111,7 +111,7 @@ class OpaliLBCFormatInternal : public OpalAudioFormatInternal
 
 #if OPAL_H323
 extern const char iLBC_Identifier[] = OpalPluginCodec_Identifer_iLBC;
-typedef OpalMediaFormatStaticH323<OpalAudioFormat, H323GenericAudioCapabilityTemplate<iLBC_Identifier, GetOpaliLBC>> OpaliLBCFormat;
+typedef OpalMediaFormatStaticH323<OpalAudioFormat, H323GenericAudioCapabilityTemplate<iLBC_Identifier, GetOpaliLBC> > OpaliLBCFormat;
 #else
 typedef OpalMediaFormatStatic<OpalAudioFormat> OpaliLBCFormat;
 #endif // OPAL_H323

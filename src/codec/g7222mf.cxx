@@ -105,7 +105,7 @@ class OpalG7222FormatInternal : public OpalAudioFormatInternal
 
 #if OPAL_H323
 extern const char G7222_Identifier[] = OpalPluginCodec_Identifer_G7222;
-typedef OpalMediaFormatStaticH323<OpalAudioFormat, H323GenericAudioCapabilityTemplate<G7222_Identifier, GetOpalG7222>> OpalG7222Format;
+typedef OpalMediaFormatStaticH323<OpalAudioFormat, H323GenericAudioCapabilityTemplate<G7222_Identifier, GetOpalG7222> > OpalG7222Format;
 #else
 typedef OpalMediaFormatStatic<OpalAudioFormat> OpalG7222Format;
 #endif

@@ -73,7 +73,7 @@ class OpalGSMAMRFormatInternal : public OpalAudioFormatInternal
 
 #if OPAL_H323
 extern const char GSM_AMR_Identifier[] = OpalPluginCodec_Identifer_AMR;
-typedef OpalMediaFormatStaticH323<OpalAudioFormat, H323GenericAudioCapabilityTemplate<GSM_AMR_Identifier, GetOpalGSMAMR>> OpalGSMAMRFormat;
+typedef OpalMediaFormatStaticH323<OpalAudioFormat, H323GenericAudioCapabilityTemplate<GSM_AMR_Identifier, GetOpalGSMAMR> > OpalGSMAMRFormat;
 #else
 typedef OpalMediaFormatStatic<OpalAudioFormat> OpalGSMAMRFormat;
 #endif

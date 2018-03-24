@@ -100,7 +100,7 @@ class OpalMPEG4FormatInternal : public OpalVideoFormatInternal
 
 #if OPAL_H323
 extern const char MPEG4_Identifer[] = OpalPluginCodec_Identifer_MPEG4;
-typedef OpalMediaFormatStaticH323<OpalVideoFormat, H323GenericVideoCapabilityTemplate<MPEG4_Identifer, GetOpalMPEG4>> OpalMPEG4Format;
+typedef OpalMediaFormatStaticH323<OpalVideoFormat, H323GenericVideoCapabilityTemplate<MPEG4_Identifer, GetOpalMPEG4> > OpalMPEG4Format;
 #else
 typedef OpalMediaFormatStatic<OpalVideoFormat> OpalMPEG4Format;
 #endif
