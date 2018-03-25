@@ -920,12 +920,8 @@ void OpalConnection::CloseMediaStreams()
   while (someOpen) {
     someOpen = false;
     for (OpalMediaStreamPtr mediaStream(m_mediaStreams, PSafeReference); mediaStream != NULL; ++mediaStream) {
-      if (mediaStream->IsOpen()) {
-        someOpen = true;
-        CloseMediaStream(mediaStream);
-      } else {
-        PTRACE(1, "Media stream " << mediaStream << " already closed");
-      }
+      someOpen = mediaStream->IsOpen();
+      CloseMediaStream(mediaStream);
     }
   }
   PTRACE(1, "All media streams CLOSED");

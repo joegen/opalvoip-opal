@@ -129,7 +129,7 @@ PBoolean OpalRTPMediaStream::Open()
 
 bool OpalRTPMediaStream::IsOpen() const
 {
-  return OpalMediaStream::IsOpen() && m_rtpSession.IsOpen();
+  return OpalMediaStream::IsOpen() /*&& m_rtpSession.IsOpen()*/;
 }
 
 
