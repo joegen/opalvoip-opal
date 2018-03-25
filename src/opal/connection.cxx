@@ -920,7 +920,7 @@ void OpalConnection::CloseMediaStreams()
   while (someOpen) {
     someOpen = false;
     for (OpalMediaStreamPtr mediaStream(m_mediaStreams, PSafeReference); mediaStream != NULL; ++mediaStream) {
-      someOpen = mediaStream->IsOpen();
+      someOpen = someOpen || mediaStream->IsOpen();
       CloseMediaStream(mediaStream);
     }
   }
