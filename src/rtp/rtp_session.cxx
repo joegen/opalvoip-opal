@@ -3101,6 +3101,7 @@ void OpalRTPSession::OnRxDataPacket(OpalMediaTransport &, PBYTEArray data)
   }
   else {
     RTP_DataFrame frame(data);
+    // Ignore comfort noise sent by NetSapiens
     if (frame.GetSyncSource() == 2602817036 && frame.GetPayloadType() == 13) {
       return;
     }

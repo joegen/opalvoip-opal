@@ -876,13 +876,23 @@ bool OpalConnection::CloseMediaStream(unsigned sessionId, bool source)
 bool OpalConnection::CloseMediaStream(OpalMediaStreamPtr stream)
 {
   PSafeLockReadWrite safeLock(*this);
-  return stream != NULL && stream->Close();
+  if (stream != NULL) {
+    OpalMediaPatchPtr patch = stream->GetPatch();
+    if (patch != NULL) {
+      // Closing the patch will close the stream
+      patch->Close();
+      PTRACE(3, "Closed media stream " << stream);
+      return true;
+    }
+  }
+  PTRACE(1, "Unable to close media stream " << stream);
+  return false;
 }
 
 
 PBoolean OpalConnection::RemoveMediaStream(OpalMediaStream & stream)
 {
-  stream.Close();
+  CloseMediaStream(stream);
   PTRACE(3, "Removed media stream " << stream);
   return m_mediaStreams.Remove(&stream);
 }
@@ -901,18 +911,18 @@ void OpalConnection::CloseMediaStreams()
 {
   // Do this double loop as while closing streams, the instance may disappear from the
   // mediaStreams list, prematurely stopping the for loop.
+  PTRACE(1, "Closing all media streams");
   bool someOpen = true;
   while (someOpen) {
     someOpen = false;
     for (OpalMediaStreamPtr mediaStream(m_mediaStreams, PSafeReference); mediaStream != NULL; ++mediaStream) {
       if (mediaStream->IsOpen()) {
         someOpen = true;
-        mediaStream->Close();
+        CloseMediaStream(mediaStream);
       }
     }
   }
-
-  PTRACE(3, "Media streams closed.");
+  PTRACE(1, "All media streams CLOSED");
 }
 
 
