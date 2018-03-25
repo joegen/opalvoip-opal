@@ -883,6 +883,10 @@ bool OpalConnection::CloseMediaStream(OpalMediaStreamPtr stream)
       patch->Close();
       PTRACE(3, "Closed media stream " << stream);
       return true;
+    } else {
+      stream->Close();
+      PTRACE(3, "Closed media stream without a patch " << stream);
+      return true;;
     }
   }
   PTRACE(1, "Unable to close media stream " << stream);
@@ -919,6 +923,8 @@ void OpalConnection::CloseMediaStreams()
       if (mediaStream->IsOpen()) {
         someOpen = true;
         CloseMediaStream(mediaStream);
+      } else {
+        PTRACE(1, "Media stream " << mediaStream << " already closed");
       }
     }
   }
