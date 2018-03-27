@@ -897,6 +897,7 @@ void OpalMediaFormat::Construct(OpalMediaFormatInternal * info)
       *fmt->m_info = *info;
     else
       *this = *fmt;
+    delete info;
   }
   else {
     m_info = info;
