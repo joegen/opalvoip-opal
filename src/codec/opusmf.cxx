@@ -38,10 +38,10 @@
 //#include <h323/h323caps.h>
 
 
-class OpalOpusFormat : public OpalAudioFormatInternal
+class OpalOpusFormatInternal : public OpalAudioFormatInternal
 {
   public:
-    OpalOpusFormat(const char * formatName, unsigned sampleRate, unsigned channels)
+    OpalOpusFormatInternal(const char * formatName, unsigned sampleRate, unsigned channels)
       : OpalAudioFormatInternal(formatName,
                                 RTP_DataFrame::DynamicBase,
                                 OpusEncodingName,
@@ -83,14 +83,13 @@ class OpalOpusFormat : public OpalAudioFormatInternal
 
       option = FindOption(OpalMediaFormat::MaxBitRateOption());
       option->SetFMTP(MaxAverageBitRate_FMTPName, NULL);
-      AddOption(option);
 #endif
     }
 
 
     virtual PObject * Clone() const
     {
-      return new OpalOpusFormat(*this);
+      return new OpalOpusFormatInternal(*this);
     }
 };
 
@@ -100,7 +99,7 @@ class OpalOpusFormat : public OpalAudioFormatInternal
 #define DEF_MEDIA_FORMAT(rate,stereo) \
   const OpalAudioFormat & GetOpalOpus##rate##stereo() \
   { \
-    static OpalMediaFormatStatic<OpalAudioFormat> format(new OpalOpusFormat(OPAL_OPUS##rate##stereo, rate*1000, CHANNEL##stereo)); \
+    static OpalMediaFormatStatic<OpalAudioFormat> format(new OpalOpusFormatInternal(OPAL_OPUS##rate##stereo, rate*1000, CHANNEL##stereo)); \
     return format; \
   }
 
