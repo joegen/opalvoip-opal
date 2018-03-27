@@ -1694,13 +1694,13 @@ OpalMediaOption * OpalMediaFormatInternal::FindOption(const PString & name) cons
 {
   PWaitAndSignal m(m_mutex);
   OpalMediaOptionSearchArg search(name);
-  PINDEX index = options.GetValuesIndex(search);
-  if (index == P_MAX_INDEX)
+  PSortedList<OpalMediaOption>::const_iterator it = options.find(search);
+  if (it == options.end())
     return NULL;
 
-  PAssert(options[index].GetName() == name, "OpalMediaOption name mismatch");
+  PAssert(it->GetName() == name, "OpalMediaOption name mismatch");
 
-  return &options[index];
+  return const_cast<OpalMediaOption *>(&*it);
 }
 
 
