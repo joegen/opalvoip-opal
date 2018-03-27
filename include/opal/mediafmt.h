@@ -841,8 +841,7 @@ class OpalMediaFormat : public PContainer
       unsigned frameTime,                         ///<  Time for frame in RTP units (if applicable)
       unsigned clockRate,                         ///<  Clock rate for data (if applicable)
       time_t timeStamp = 0,                       ///<  timestamp (for versioning)
-      bool allowMultiple = false,                 ///<  allow multiple copies of media format in list
-      bool dynamic = false                        ///<  indicate is allocated on heap and should be deleted
+      bool allowMultiple = false                  ///<  allow multiple copies of media format in list
     );
 
     /**Construct a media format, searching database for information.

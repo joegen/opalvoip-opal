@@ -135,20 +135,19 @@ SDPMediaDescription * OpalSIPIMMediaDefinition::CreateSDPMediaDescription(const 
 
 const OpalMediaFormat & GetOpalSIPIM() 
 { 
-  static class OpalSIPIMMediaFormat : public OpalMediaFormat
+  class OpalSIPIMMediaFormatInternal : public OpalMediaFormatInternal
   { 
     public: 
-      OpalSIPIMMediaFormat() 
-        : OpalMediaFormat(OPAL_SIPIM, 
-                          OpalSIPIMMediaType(),
-                          RTP_DataFrame::MaxPayloadType, 
-                          "+", 
-                          false,  
-                          1440, 
-                          512, 
-                          0, 
-                          1000,
-                          0, false, true)
+      OpalSIPIMMediaFormatInternal() 
+        : OpalMediaFormatInternal(OPAL_SIPIM, 
+                                  OpalSIPIMMediaType(),
+                                  RTP_DataFrame::MaxPayloadType, 
+                                  "+", 
+                                  false,  
+                                  1440, 
+                                  512, 
+                                  0, 
+                                  1000)
       { 
         SetOptionString(OpalMediaFormat::DescriptionOption(), "RFC 3428 (SIP) Instant Messaging");
 
@@ -156,8 +155,9 @@ const OpalMediaFormat & GetOpalSIPIM()
         option->SetMerge(OpalMediaOption::NoMerge);
         AddOption(option);
       } 
-  } * f = new OpalSIPIMMediaFormat; // Will be deleted (indirectly) in ~OpalManager 
-  return *f; 
+  };
+  static OpalMediaFormatStatic<OpalMediaFormat> SIPIM(new OpalSIPIMMediaFormatInternal);
+  return SIPIM;
 } 
 
 

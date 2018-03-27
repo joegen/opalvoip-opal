@@ -67,24 +67,24 @@ OPAL_MEDIATYPE(OpalT140Media);
 
 const OpalMediaFormat & GetOpalT140() 
 { 
-  static class T140MediaFormat : public OpalMediaFormat { 
+  class OpalT140MediaFormatInternal : public OpalMediaFormatInternal { 
     public: 
-      T140MediaFormat() 
-        : OpalMediaFormat(OPAL_T140, 
-                          OpalT140MediaType(), 
-                          RTP_DataFrame::DynamicBase, 
-                          "t140", 
-                          false,  
-                          1440, 
-                          512, 
-                          0, 
-                          1000,    // as defined in RFC 4103
-                          0, false, true)
+      OpalT140MediaFormatInternal()
+        : OpalMediaFormatInternal(OPAL_T140,
+                                  OpalT140MediaType(),
+                                  RTP_DataFrame::DynamicBase,
+                                  "t140",
+                                  false,
+                                  1440,
+                                  512,
+                                  0,
+                                  1000)    // as defined in RFC 4103
       { 
         SetOptionString(OpalMediaFormat::DescriptionOption(), "ITU-T T.140 (RFC 4103) Instant Messaging");
       } 
-  } * f = new T140MediaFormat;  // Will be deleted (indirectly) in ~OpalManager
-  return *f; 
+  };
+  static OpalMediaFormatStatic<OpalMediaFormat> T140(new OpalT140MediaFormatInternal);
+  return T140; 
 } 
 
 

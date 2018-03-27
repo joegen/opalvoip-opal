@@ -90,19 +90,18 @@ DECLARE_MSRP_ENCODING(HTML, "message/html");
 
 const OpalMediaFormat & GetOpalMSRP() 
 { 
-  static class IMMSRPMediaFormat : public OpalMediaFormat { 
+  class OpalIMMSRPMediaFormatInternal : public OpalMediaFormatInternal {
     public: 
-      IMMSRPMediaFormat() 
-        : OpalMediaFormat(OPAL_MSRP, 
-                          OpalMSRPMediaType(),
-                          RTP_DataFrame::MaxPayloadType, 
-                          "+", 
-                          false,  
-                          1440, 
-                          512, 
-                          0, 
-                          1000,
-                          0, false, true)
+      OpalIMMSRPMediaFormatInternal() 
+        : OpalMediaFormatInternal(OPAL_MSRP, 
+                                  OpalMSRPMediaType(),
+                                  RTP_DataFrame::MaxPayloadType, 
+                                  "+", 
+                                  false,  
+                                  1440, 
+                                  512, 
+                                  0, 
+                                  1000)
       { 
         SetOptionString(OpalMediaFormat::DescriptionOption(), "RFC 4975 (MSRP) Instant Message Relay");
 
@@ -124,8 +123,9 @@ const OpalMediaFormat & GetOpalMSRP()
         option->SetMerge(OpalMediaOption::MaxMerge);
         AddOption(option);
       } 
-  } * f = new IMMSRPMediaFormat;  // Will be deleted (indirectly) in ~OpalManager
-  return *f; 
+  };
+  static OpalMediaFormatStatic<OpalMediaFormat> MSRP(new OpalIMMSRPMediaFormatInternal);
+  return MSRP;
 } 
 
 

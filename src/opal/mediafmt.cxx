@@ -851,9 +851,8 @@ OpalMediaFormat::OpalMediaFormat(const char * fullName,
                                  unsigned ft,
                                  unsigned cr,
                                  time_t ts,
-                                 bool am,
-                                 bool dyn)
-  : m_dynamic(dyn)
+                                 bool am)
+  : m_dynamic(false)
 {
   Construct(new OpalMediaFormatInternal(fullName, mediaType, pt, en, nj, bw, fs, ft,cr, ts, am));
 }
@@ -2466,16 +2465,15 @@ namespace OpalRtx
   {
   public:
     OpalRtxMediaFormat(const OpalMediaType & mediaType)
-      : OpalMediaFormat(OpalRtx::GetName(mediaType),
-                        mediaType,
-                        RTP_DataFrame::DynamicBase,
-                        EncodingName(),
-                        false, 0, 0, 0,
+      : OpalMediaFormat(new OpalMediaFormatInternal(OpalRtx::GetName(mediaType),
+                                                    mediaType,
+                                                    RTP_DataFrame::DynamicBase,
+                                                    EncodingName(),
+                                                    false, 0, 0, 0,
 #if OPAL_VIDEO
-                        mediaType == OpalMediaType::Video() ? VideoClockRate :
+                                                    mediaType == OpalMediaType::Video() ? VideoClockRate :
 #endif
-                        AudioClockRate,
-                        0, true, true)
+                                                    AudioClockRate), true)
     {
       OpalMediaOptionUnsigned * opt = new OpalMediaOptionUnsigned(AssociatedPayloadTypeOption(),
                                           true, OpalMediaOption::EqualMerge, 0, 0, RTP_DataFrame::MaxPayloadType);

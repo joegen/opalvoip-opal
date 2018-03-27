@@ -50,17 +50,17 @@ const PCaselessString & OpalFaxMediaDefinition::UDPTL() { static const PConstCas
 
 const OpalMediaFormat & GetOpalT38()
 {
-  static class T38MediaFormat : public OpalMediaFormat {
+  class OpalT38MediaFormatInternal : public OpalMediaFormatInternal {
     public:
-      T38MediaFormat()
-        : OpalMediaFormat(OPAL_T38,
+      OpalT38MediaFormatInternal()
+        : OpalMediaFormatInternal(OPAL_T38,
                           OpalFaxMediaType(),
                           RTP_DataFrame::T38,
                           "t38",
                           false, // No jitter for data
                           1440, // 100's bits/sec
                           528,
-                          0, 0, 0, false, true)
+                          0, 0, 0)
       {
         SetOptionString(OpalMediaFormat::DescriptionOption(), "ITU-T T.38 Group 3 facsimile");
 
@@ -84,8 +84,9 @@ const OpalMediaFormat & GetOpalT38()
         AddOption(new OpalMediaOptionBoolean(OPAL_UDPTLOptimiseRetransmit, false, OpalMediaOption::NoMerge, false));
         AddOption(new OpalMediaOptionInteger(OPAL_UDPTLKeepAliveInterval, false, OpalMediaOption::NoMerge, 0, 0, 86400));
       }
-  } * T38 = new T38MediaFormat; // Will be deleted (indirectly) in ~OpalManager
-  return *T38;
+  };
+  static OpalMediaFormatStatic<OpalMediaFormat> T38(new OpalT38MediaFormatInternal);
+  return T38;
 }
 
 
