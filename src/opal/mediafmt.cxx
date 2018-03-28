@@ -1005,12 +1005,13 @@ PObject * OpalMediaFormat::Clone() const
 PObject::Comparison OpalMediaFormat::Compare(const PObject & obj) const
 {
   PWaitAndSignal m(m_mutex);
-  PAssert(PIsDescendant(&obj, OpalMediaFormat), PInvalidCast);
-  const OpalMediaFormat & other = (const OpalMediaFormat &)obj;
-  if (m_info == NULL)
-    return other.m_info == NULL ? EqualTo : LessThan;
+  const OpalMediaFormat & other = dynamic_cast<const OpalMediaFormat &>(obj);
+  if (m_info == other.m_info)
+    return EqualTo;
   if (other.m_info == NULL)
-    return m_info == NULL ? EqualTo : GreaterThan;
+    return GreaterThan;
+  if (m_info == NULL)
+    return LessThan;
   return m_info->formatName.Compare(other.m_info->formatName);
 }
 
