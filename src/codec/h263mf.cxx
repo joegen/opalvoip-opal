@@ -100,8 +100,8 @@ class OpalCustomSizeOption : public OpalMediaOptionString
 class OpalH263FormatInternal : public OpalVideoFormatInternal
 {
   public:
-    OpalH263FormatInternal(const char * formatName, const char * encodingName)
-      : OpalVideoFormatInternal(formatName, RTP_DataFrame::DynamicBase, encodingName,
+    OpalH263FormatInternal(const char * formatName, const char * encodingName, RTP_DataFrame::PayloadTypes payloadType)
+      : OpalVideoFormatInternal(formatName, payloadType, encodingName,
                                 PVideoFrameInfo::CIF16Width, PVideoFrameInfo::CIF16Height, 30, H263_BITRATE)
     {
       OpalMediaOption * option;
@@ -200,14 +200,14 @@ typedef OpalMediaFormatStatic<OpalVideoFormat> OpalH263plusFormat;
 
 const OpalVideoFormat & GetOpalH263()
 {
-  static OpalH263Format const format(new OpalH263FormatInternal(H263FormatName, H263EncodingName));
+  static OpalH263Format const format(new OpalH263FormatInternal(H263FormatName, H263EncodingName, RTP_DataFrame::H263));
   return format;
 }
 
 
 const OpalVideoFormat & GetOpalH263plus()
 {
-  static OpalH263plusFormat const format(new OpalH263FormatInternal(H263plusFormatName, H263plusEncodingName));
+  static OpalH263plusFormat const format(new OpalH263FormatInternal(H263plusFormatName, H263plusEncodingName, RTP_DataFrame::DynamicBase));
   return format;
 }
 
