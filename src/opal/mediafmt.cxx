@@ -135,11 +135,11 @@ static void Clamp(OpalMediaFormatInternal & fmt1, const OpalMediaFormatInternal 
   unsigned minValue = fmt2.GetOptionInteger(minOption, 0);
   unsigned maxValue = fmt2.GetOptionInteger(maxOption, UINT_MAX);
   if (value < minValue) {
-    PTRACE(4, "MediaFormat\tClamped media option \"" << variableOption << "\" from " << value << " to min " << minValue);
+    PTRACE(4, "Clamped media option \"" << variableOption << "\" from " << value << " to min " << minValue);
     fmt1.SetOptionInteger(variableOption, minValue);
   }
   else if (value > maxValue) {
-    PTRACE(4, "MediaFormat\tClamped media option \"" << variableOption << "\" from " << value << " to max " << maxValue);
+    PTRACE(4, "Clamped media option \"" << variableOption << "\" from " << value << " to max " << maxValue);
     fmt1.SetOptionInteger(variableOption, maxValue);
   }
 }
@@ -279,14 +279,14 @@ bool OpalMediaOption::Merge(const OpalMediaOption & option)
     case EqualMerge :
       if (CompareValue(option) == EqualTo)
         return true;
-      PTRACE(2, "MediaFormat\tMerge of media option \"" << m_name << "\" failed, "
+      PTRACE(2, "Merge of media option \"" << m_name << "\" failed, "
                 "required to be equal: \"" << *this << "\"!=\"" << option << '"');
       return false;
 
     case NotEqualMerge :
       if (CompareValue(option) != EqualTo)
         return true;
-      PTRACE(2, "MediaFormat\tMerge of media option \"" << m_name << "\" failed, "
+      PTRACE(2, "Merge of media option \"" << m_name << "\" failed, "
                 "required to be not equal: \"" << *this << "\"==\"" << option << '"');
       return false;
 
@@ -300,7 +300,7 @@ bool OpalMediaOption::Merge(const OpalMediaOption & option)
   }
 
   if (assign) {
-    PTRACE(4, "MediaFormat\tChanged media option \"" << m_name << "\" "
+    PTRACE(4, "Changed media option \"" << m_name << "\" "
               "from \"" << *this << "\" to \"" << option << '"');
     Assign(option);
   }
@@ -326,7 +326,7 @@ bool OpalMediaOption::ValidateMerge(const OpalMediaOption & option) const
       return true;
   }
 
-  PTRACE(3, "MediaFormat\tValidation of merge for media option \"" << m_name << "\" failed.");
+  PTRACE(3, "Validation of merge for media option \"" << m_name << "\" failed.");
   return false;
 }
 
@@ -476,7 +476,7 @@ bool OpalMediaOptionEnum::Merge(const OpalMediaOption & option)
 
   PINDEX newValue = m_value & otherOption->m_value;
   if (m_value != newValue) {
-    PTRACE(4, "MediaFormat\tChanged media option \"" << m_name << "\" "
+    PTRACE(4, "Changed media option \"" << m_name << "\" "
               "from 0x" << hex << m_value << " to 0x" << newValue << dec);
     m_value = newValue;
   }
@@ -519,7 +519,7 @@ void OpalMediaOptionEnum::SetValue(PINDEX value)
     m_value = value;
   else {
     m_value = maxEnum;
-    PTRACE(1, "MediaFormat\tIllegal value (" << value << ") for OpalMediaOptionEnum");
+    PTRACE(1, "Illegal value (" << value << ") for OpalMediaOptionEnum");
   }
 }
 
@@ -612,7 +612,7 @@ bool OpalMediaOptionString::Merge(const OpalMediaOption & option)
   newValue << setfill(',') << mySet;
 
   if (m_value != newValue) {
-    PTRACE(4, "MediaFormat\tChanged media option \"" << m_name << "\" "
+    PTRACE(4, "Changed media option \"" << m_name << "\" "
               "from " << m_value << " to " << newValue);
     m_value = newValue;
   }
@@ -1083,19 +1083,24 @@ bool OpalMediaFormat::Update(const OpalMediaFormat & mediaFormat)
 
   PWaitAndSignal m(m_mutex);
 
+  if (m_info == mediaFormat.m_info) {
+    PTRACE(4, "Update to same object for " << *this);
+    return true;
+  }
+
   if (!IsValid()) {
-    PTRACE(4, "MediaFormat\tUpdate (initial) of " << *this);
+    PTRACE(4, "Update (initial) of " << *this);
     *this = mediaFormat;
     return true;
   }
 
   if (*this != mediaFormat) {
-    PTRACE(4, "MediaFormat\tUpdate (merge) of " << *this << " from " << mediaFormat);
+    PTRACE(4, "Update (merge) of " << *this << " from " << mediaFormat);
     SetPayloadType(mediaFormat.GetPayloadType()); // Does MakeUnique()
     return m_info->OpalMediaFormatInternal::Merge(*mediaFormat.m_info);
   }
 
-  PTRACE(4, "MediaFormat\tUpdate (overwrite) of " << *this);
+  PTRACE(4, "Update (overwrite) of " << *this);
   *this = mediaFormat;
   return true;
 }
@@ -1107,7 +1112,7 @@ bool OpalMediaFormat::Merge(const OpalMediaFormat & mediaFormat, bool copyPayloa
   MakeUnique();
 
   if (copyPayloadType && GetPayloadType() != mediaFormat.GetPayloadType()) {
-    PTRACE(4, "MediaFormat\tChanging payload type from " << GetPayloadType()
+    PTRACE(4, "Changing payload type from " << GetPayloadType()
            << " to " << mediaFormat.GetPayloadType() << " in " << *this);
     SetPayloadType(mediaFormat.GetPayloadType());
   }
@@ -1224,7 +1229,7 @@ bool OpalMediaFormat::RegisterKnownMediaFormats(const PString & name)
   for (PINDEX i = 0; i < PARRAYSIZE(known); ++i) {
     if (name.IsEmpty() || (name *= known[i].m_name)) {
       (known[i].m_function)();
-      PTRACE(5, NULL, "MediaFormat",
+      PTRACE(5, NULL, PTraceModule(),
              "Known media " << known[i].m_name << " registered as:\n"
              << setw(-1) << OpalMediaFormat(known[i].m_name));
       atLeastOne = true;
@@ -1405,7 +1410,7 @@ PObject * OpalMediaFormatInternal::Clone() const
 
 bool OpalMediaFormatInternal::Merge(const OpalMediaFormatInternal & mediaFormat)
 {
-  PTRACE(4, "MediaFormat\tMerging " << mediaFormat << " into " << *this);
+  PTRACE(4, "Merging " << mediaFormat << " into " << *this);
 
   PWaitAndSignal m1(m_mutex);
   PWaitAndSignal m2(mediaFormat.m_mutex);
@@ -1415,7 +1420,7 @@ bool OpalMediaFormatInternal::Merge(const OpalMediaFormatInternal & mediaFormat)
     PString name = opt.GetName();
     OpalMediaOption * option = mediaFormat.FindOption(opt.GetName());
     if (option == NULL) {
-      PTRACE_IF(3, formatName == mediaFormat.formatName, "MediaFormat\tCannot merge unmatched option " << opt.GetName());
+      PTRACE_IF(3, formatName == mediaFormat.formatName, "Cannot merge unmatched option " << opt.GetName());
     }
     else 
     {
@@ -1439,7 +1444,7 @@ bool OpalMediaFormatInternal::ValidateMerge(const OpalMediaFormatInternal & medi
     PString name = opt.GetName();
     OpalMediaOption * option = mediaFormat.FindOption(opt.GetName());
     if (option == NULL) {
-      PTRACE_IF(2, formatName == mediaFormat.formatName, "MediaFormat\tValidate: unmatched option " << opt.GetName());
+      PTRACE_IF(2, formatName == mediaFormat.formatName, "Validate: unmatched option " << opt.GetName());
     }
     else {
       PAssert(option->GetName() == opt.GetName(), "find returned bad name");
@@ -1521,7 +1526,7 @@ static ValueType GetOptionOfType(const OpalMediaFormatInternal & format, const P
   if (typedOption != NULL)
     return typedOption->GetValue();
 
-  PTRACE(1, "MediaFormat\tInvalid type for getting option " << name << " in " << format);
+  PTRACE(1, "Invalid type for getting option " << name << " in " << format);
   PAssertAlways(PInvalidCast);
   return dflt;
 }
@@ -1540,7 +1545,7 @@ static bool SetOptionOfType(OpalMediaFormatInternal & format, const PString & na
     return true;
   }
 
-  PTRACE(1, "MediaFormat\tInvalid type for setting option " << name << " in " << format);
+  PTRACE(1, "Invalid type for setting option " << name << " in " << format);
   PAssertAlways(PInvalidCast);
   return false;
 }
@@ -1724,9 +1729,9 @@ bool OpalMediaFormatInternal::AdjustByOptionMaps(PTRACE_PARAM(const char * opera
 
 #if PTRACING
   if (PTrace::CanTrace(5))
-    PTRACE(5, "OpalPlugin\t" << operation << ":\n" << setw(-1) << *this);
+    PTRACE(5, operation << ":\n" << setw(-1) << *this);
   else
-    PTRACE(4, "OpalPlugin\t" << operation << ": " << *this);
+    PTRACE(4, operation << ": " << *this);
 #endif
 
   PluginCodec_OptionMap original;
@@ -1740,7 +1745,7 @@ bool OpalMediaFormatInternal::AdjustByOptionMaps(PTRACE_PARAM(const char * opera
   for (PluginCodec_OptionMap::const_iterator it = changed.begin(); it != changed.end(); ++it) {
     PString oldValue;
     if (GetOptionValue(it->first, oldValue) && oldValue != it->second.c_str()) {
-      PTRACE(3, "MediaFormat\tChanged option \"" << it->first << "\" from \"" << oldValue << "\" to \"" << it->second << '"');
+      PTRACE(3, "Changed option \"" << it->first << "\" from \"" << oldValue << "\" to \"" << it->second << '"');
       SetOptionValue(it->first, it->second);
     }
   }
@@ -2223,7 +2228,7 @@ void OpalMediaFormatList::Remove(const PStringArray & maskList)
   if (maskList.IsEmpty())
     return;
 
-  PTRACE(4,"MediaFormat\tRemoving codecs " << setfill(',') << maskList);
+  PTRACE(4, "Removing codecs " << setfill(',') << maskList);
 
   PINDEX i;
   std::list<PStringArray> notMasks;
