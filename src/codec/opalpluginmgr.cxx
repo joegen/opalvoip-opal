@@ -1707,6 +1707,13 @@ bool OpalPluginCodecManager::AddMediaFormat(OpalPluginCodecHandler * handler,
     return false;
   }
 
+#if OPAL_VIDEO
+  if (GetOpalYUV420P() == fmtName) {
+    mediaFormat = GetOpalYUV420P();
+    return true;
+  }
+#endif
+
   // deal with codec having no info, or timestamp in future
   time_t timeStamp;
   if (codecDefn->info == NULL)
