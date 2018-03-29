@@ -346,15 +346,10 @@ class SDPMediaDescription : public PObject, public SDPCommonAttributes
     PNatCandidateList GetCandidates() const { return m_candidates; }
     bool HasICE() const;
     void SetICE(
-      const PString & username,
-      const PString & password,
-      const PNatCandidateList & candidates
-    )
-    {
-      m_username = username;
-      m_password = password;
-      m_candidates = candidates;
-    }
+        const PString & username,
+        const PString & password,
+        const PNatCandidateList & candidates
+    );
 #endif //OPAL_ICE
 
     virtual OpalMediaType GetMediaType() const { return m_mediaType; }

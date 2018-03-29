@@ -773,19 +773,6 @@ PBoolean SDPMediaDescription::SetAddresses(const OpalTransportAddress & media,
 }
 
 
-#if OPAL_ICE
-static bool CanUseCandidate(const PNatCandidate & candidate)
-{
-  return !candidate.m_foundation.IsEmpty() &&
-          candidate.m_component > 0 &&
-         !candidate.m_protocol.IsEmpty() &&
-          candidate.m_priority > 0 &&
-          candidate.m_baseTransportAddress.IsValid() &&
-          candidate.m_type < PNatCandidate::NumTypes;
-}
-#endif //OPAL_ICE
-
-
 bool SDPMediaDescription::FromSession(OpalMediaSession * session,
                                       const SDPMediaDescription *
 #if OPAL_ICE
@@ -817,8 +804,8 @@ bool SDPMediaDescription::FromSession(OpalMediaSession * session,
 
     PString user, pass;
     PNatCandidateList candidates;
-    transport->GetCandidates(user, pass, candidates, offer == NULL);
-    SetICE(user, pass, candidates);
+    if (transport->GetCandidates(user, pass, candidates, offer == NULL))
+      SetICE(user, pass, candidates);
   }
 #endif // OPAL_ICE
 
@@ -1181,34 +1168,40 @@ void SDPMediaDescription::OutputAttributes(ostream & strm) const
   if (m_username.IsEmpty() || m_password.IsEmpty())
     return;
 
-  bool haveCandidate = false;
   for (PNatCandidateList::const_iterator it = m_candidates.begin(); it != m_candidates.end(); ++it) {
-    if (CanUseCandidate(*it)) {
-      strm << "a=candidate:"
-           << it->m_foundation << ' '
-           << it->m_component << ' '
-           << it->m_protocol << ' '
-           << it->m_priority << ' '
-           << it->m_baseTransportAddress.GetAddress() << ' '
-           << it->m_baseTransportAddress.GetPort()
-           << " typ " << CandidateTypeNames[it->m_type];
-      if (it->m_localTransportAddress.IsValid())
-        strm << "raddr " << it->m_localTransportAddress.GetAddress() << " rport " << it->m_localTransportAddress.GetPort();
-      if (it->m_networkCost > 0 && it->m_networkId > 0)
-        strm << " network-cost " << it->m_networkCost << " network-id " << it->m_networkId;
-      strm << CRLF;
-      haveCandidate = true;
-    }
+    strm << "a=candidate:"
+          << it->m_foundation << ' '
+          << it->m_component << ' '
+          << it->m_protocol << ' '
+          << it->m_priority << ' '
+          << it->m_baseTransportAddress.GetAddress() << ' '
+          << it->m_baseTransportAddress.GetPort()
+          << " typ " << CandidateTypeNames[it->m_type];
+    if (it->m_localTransportAddress.IsValid())
+      strm << "raddr " << it->m_localTransportAddress.GetAddress() << " rport " << it->m_localTransportAddress.GetPort();
+    if (it->m_networkCost > 0 && it->m_networkId > 0)
+      strm << " network-cost " << it->m_networkCost << " network-id " << it->m_networkId;
+    strm << CRLF;
   }
 
-  if (haveCandidate)
-    strm << "a=ice-ufrag:" << m_username << CRLF
-         << "a=ice-pwd:" << m_password << CRLF;
+  strm << "a=ice-ufrag:" << m_username << CRLF
+       << "a=ice-pwd:" << m_password << CRLF;
 #endif //OPAL_ICE
 }
 
 
 #if OPAL_ICE
+static bool CanUseCandidate(const PNatCandidate & candidate)
+{
+  return !candidate.m_foundation.IsEmpty() &&
+          candidate.m_component > 0 &&
+         !candidate.m_protocol.IsEmpty() &&
+          candidate.m_priority > 0 &&
+          candidate.m_baseTransportAddress.IsValid() &&
+          candidate.m_type < PNatCandidate::NumTypes;
+}
+
+
 bool SDPMediaDescription::HasICE() const
 {
   if (m_username.IsEmpty())
@@ -1224,7 +1217,7 @@ bool SDPMediaDescription::HasICE() const
     return true;
 
   if (m_candidates.IsEmpty())
-    return false;
+    return true; // Either renegotiate without change, or trickle
 
   for (PNatCandidateList::const_iterator it = m_candidates.begin(); it != m_candidates.end(); ++it) {
     if (CanUseCandidate(*it))
@@ -1232,6 +1225,19 @@ bool SDPMediaDescription::HasICE() const
   }
 
   return false;
+}
+
+
+void SDPMediaDescription::SetICE(const PString & username, const PString & password, const PNatCandidateList & candidates)
+{
+    m_username = username;
+    m_password = password;
+
+    m_candidates.clear();
+    for (PNatCandidateList::const_iterator it = candidates.begin(); it != candidates.end(); ++it) {
+      if (CanUseCandidate(*it))
+        m_candidates.push_back(*it);
+    }
 }
 #endif //OPAL_ICE
 
