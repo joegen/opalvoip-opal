@@ -161,14 +161,21 @@ RTP_SyncSourceId OpalRTPSession::AddSyncSource(RTP_SyncSourceId id, Direction di
 {
   P_INSTRUMENTED_LOCK_READ_WRITE(return 0);
 
-  SyncSourceMap::iterator it = m_SSRC.find(id);
-  if (it != m_SSRC.end()) {
-    if (cname == NULL || it->second->m_canonicalName == cname)
-      return id;
-    PTRACE(2, *this << "could not add SSRC=" << RTP_TRACE_SRC(id) << ","
-              " probable clash with " << it->second->m_direction << ","
-              " cname=" << it->second->m_canonicalName);
-    return 0;
+  if (id == 0) {
+    do {
+      id = PRandom::Number();
+    } while (id < 4 || m_SSRC.find(id) != m_SSRC.end());
+  }
+  else {
+    SyncSourceMap::iterator it = m_SSRC.find(id);
+    if (it != m_SSRC.end()) {
+      if (cname == NULL || it->second->m_canonicalName == cname)
+        return id;
+      PTRACE(2, *this << "could not add SSRC=" << RTP_TRACE_SRC(id) << ","
+                " probable clash with " << it->second->m_direction << ","
+                " cname=" << it->second->m_canonicalName);
+      return 0;
+    }
   }
 
   if (m_defaultSSRC[dir] == 0) {
