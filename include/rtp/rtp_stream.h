@@ -221,7 +221,7 @@ protected:
     unsigned      m_jbLatencySampleCount;
 #endif
 
-    PTRACE_THROTTLE(m_throttleWriteData,3,500);
+    //PTRACE_THROTTLE(m_throttleWriteData,3,500);
     PTRACE_THROTTLE(m_throttleSendReport,3,500);
 };
 
