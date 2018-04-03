@@ -1698,10 +1698,6 @@ bool OpalPluginCodecManager::AddMediaFormat(OpalPluginCodecHandler * handler,
                                             OpalMediaFormat & mediaFormat)
 {
   // Create (if needed) the media format
-  mediaFormat = fmtName;
-  if (mediaFormat.IsValid())
-    return true;
-
   if (strcasecmp(fmtName, "L16") == 0 || strcasecmp(fmtName, "L16S") == 0) {
     mediaFormat = GetOpalPCM16(codecDefn->sampleRate, OpalPluginCodecHandler::GetChannelCount(codecDefn));
     if (mediaFormat.IsValid())
@@ -1725,12 +1721,20 @@ bool OpalPluginCodecManager::AddMediaFormat(OpalPluginCodecHandler * handler,
   }
 
   mediaFormat = fmtName;
-  if (mediaFormat.IsValid() && mediaFormat.GetCodecVersionTime() > timeStamp) {
-    PTRACE(2, "OpalPlugin\tNewer media format " << mediaFormat << " already exists");
-    return true;
-  }
+  bool creating = !mediaFormat.IsValid();
+  if (creating)
+    PTRACE(3, "OpalPlugin\tCreating new media format " << fmtName);
+  else {
+    if (!mediaFormat.IsTransportable())
+      return true; // Raw format side
 
-  PTRACE(3, "OpalPlugin\tCreating new media format " << fmtName);
+    if (mediaFormat.GetCodecVersionTime() > timeStamp) {
+      PTRACE(2, "OpalPlugin\tNewer media format " << mediaFormat << " already exists");
+      return true;
+    }
+
+    PTRACE(3, "OpalPlugin\tOverwriting media format " << mediaFormat);
+  }
 
   OpalMediaFormatInternal * mediaFormatInternal = NULL;
   unsigned frameTime = codecDefn->usPerFrame*codecDefn->sampleRate/1000000;
@@ -1788,7 +1792,7 @@ bool OpalPluginCodecManager::AddMediaFormat(OpalPluginCodecHandler * handler,
     return false;
   }
 
-  if (OpalMediaFormat(fmtName).IsEmpty())
+  if (creating)
     new OpalMediaFormat(mediaFormatInternal, true); // Will be deleted (indirectly) in ~OpalManager
   else {
     // Create a temporary instance, so it will override the existing
