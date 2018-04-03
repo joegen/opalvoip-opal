@@ -1698,6 +1698,10 @@ bool OpalPluginCodecManager::AddMediaFormat(OpalPluginCodecHandler * handler,
                                             OpalMediaFormat & mediaFormat)
 {
   // Create (if needed) the media format
+  mediaFormat = fmtName;
+  if (mediaFormat.IsValid())
+    return true;
+
   if (strcasecmp(fmtName, "L16") == 0 || strcasecmp(fmtName, "L16S") == 0) {
     mediaFormat = GetOpalPCM16(codecDefn->sampleRate, OpalPluginCodecHandler::GetChannelCount(codecDefn));
     if (mediaFormat.IsValid())
@@ -1706,13 +1710,6 @@ bool OpalPluginCodecManager::AddMediaFormat(OpalPluginCodecHandler * handler,
     PTRACE(2, "OpalPlugin\tRaw audio format has invalid number of channels or sample rate.");
     return false;
   }
-
-#if OPAL_VIDEO
-  if (GetOpalYUV420P() == fmtName) {
-    mediaFormat = GetOpalYUV420P();
-    return true;
-  }
-#endif
 
   // deal with codec having no info, or timestamp in future
   time_t timeStamp;
