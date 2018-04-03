@@ -532,7 +532,6 @@ class OpalMediaTransport : public PSafeObject, public OpalMediaTransportChannelT
 
     PString       m_name;
     bool          m_remoteBehindNAT;
-    bool          m_remoteAddressSet;
     PINDEX        m_packetSize;
     int           m_mtuDiscoverMode;
     PTimeInterval m_mediaTimeout;
@@ -544,6 +543,17 @@ class OpalMediaTransport : public PSafeObject, public OpalMediaTransportChannelT
     atomic<CongestionControl *> m_congestionControl;
     PTimer m_ccTimer;
     PDECLARE_NOTIFIER(PTimer, OpalMediaTransport, ProcessCongestionControl);
+
+    enum RemoteAddressSources {
+      e_RemoteAddressUnknown,
+      e_RemoteAddressFromSignalling,
+      e_RemoteAddressFromFirstPacket,
+      e_RemoteAddressFromProvisionalPair,
+      e_RemoteAddressFromICE
+    };
+#if PTRACING
+    friend ostream & operator<<(ostream & strm, RemoteAddressSources source);
+#endif
 
     struct ChannelInfo
     {
@@ -567,6 +577,7 @@ class OpalMediaTransport : public PSafeObject, public OpalMediaTransportChannelT
       PSimpleTimer         m_timeForUnavailableErrors;
       OpalTransportAddress m_localAddress;
       OpalTransportAddress m_remoteAddress;
+      RemoteAddressSources m_remoteAddressSource;
 
       PTRACE_THROTTLE(m_throttleReadPacket,4,60000);
 
@@ -613,7 +624,7 @@ class OpalUDPMediaTransport : public OpalMediaTransport
 
   protected:
     virtual void InternalRxData(SubChannels subchannel, const PBYTEArray & data);
-    virtual bool InternalSetRemoteAddress(const PIPSocket::AddressAndPort & ap, SubChannels subchannel, bool dontOverride PTRACE_PARAM(, const char * source));
+    virtual bool InternalSetRemoteAddress(const PIPSocket::AddressAndPort & ap, SubChannels subchannel, RemoteAddressSources source);
     virtual bool InternalOpenPinHole(PUDPSocket & socket);
 
     bool m_localHasRestrictedNAT;

@@ -585,7 +585,7 @@ bool OpalICEMediaTransport::InternalHandleICE(SubChannels subchannel, const void
     return false;
   }
 
-  InternalSetRemoteAddress(ap, subchannel, false PTRACE_PARAM(, "ICE"));
+  InternalSetRemoteAddress(ap, subchannel, e_RemoteAddressFromICE);
 #if OPAL_STATISTICS
   for (CandidateStateList::iterator it = m_remoteCandidates[subchannel].begin(); it != m_remoteCandidates[subchannel].end(); ++it)
     it->m_selected = &*it == candidate;

@@ -581,7 +581,6 @@ OpalMediaTransport::OpalMediaTransport(const PString & name)
   : PSafeObject(m_instrumentedMutex)
   , m_name(name)
   , m_remoteBehindNAT(false)
-  , m_remoteAddressSet(false)
   , m_packetSize(2048)
   , m_mtuDiscoverMode(-1)
   , m_mediaTimeout(0, 0, 5)       // Nothing received for 5 minutes
@@ -640,7 +639,8 @@ bool OpalMediaTransport::IsOpen() const
 
 bool OpalMediaTransport::IsEstablished() const
 {
-  return m_remoteAddressSet && IsOpen();
+  P_INSTRUMENTED_LOCK_READ_ONLY();
+  return IsOpen() && m_subchannels.front().m_remoteAddressSource != e_RemoteAddressUnknown;
 }
 
 
@@ -765,6 +765,7 @@ OpalMediaTransport::ChannelInfo::ChannelInfo(OpalMediaTransport & owner, SubChan
   , m_channel(chan)
   , m_thread(NULL)
   , m_consecutiveUnavailableErrors(0)
+  , m_remoteAddressSource(e_RemoteAddressUnknown)
 {
 }
 
@@ -998,7 +999,7 @@ bool OpalTCPMediaTransport::SetRemoteAddress(const OpalTransportAddress & remote
   if (!socket.Connect(ap.GetAddress()))
     return false;
 
-  m_remoteAddressSet = true;
+  m_subchannels[0].m_remoteAddressSource = e_RemoteAddressFromSignalling;
   return true;
 }
 
@@ -1035,17 +1036,11 @@ OpalUDPMediaTransport::OpalUDPMediaTransport(const PString & name)
 
 bool OpalUDPMediaTransport::SetRemoteAddress(const OpalTransportAddress & remoteAddress, SubChannels subchannel)
 {
-  // This bool is safe, and lock is in InternalSetRemoteAddress
-  if (m_remoteBehindNAT) {
-    PTRACE(3, *this << "ignoring remote address as is behind NAT");
-    return true;
-  }
-
   PIPAddressAndPort ap;
   if (!remoteAddress.GetIpAndPort(ap))
     return false;
 
-  return InternalSetRemoteAddress(ap, subchannel, false PTRACE_PARAM(, "signalling"));
+  return InternalSetRemoteAddress(ap, subchannel, e_RemoteAddressFromSignalling);
 }
 
 
@@ -1056,17 +1051,42 @@ void OpalUDPMediaTransport::InternalRxData(SubChannels subchannel, const PBYTEAr
     // it out from the first packet received.
     PIPAddressAndPort ap;
     GetSubChannelAsSocket(subchannel)->GetLastReceiveAddress(ap);
-    InternalSetRemoteAddress(ap, subchannel, true PTRACE_PARAM(, "first PDU"));
+    InternalSetRemoteAddress(ap, subchannel, e_RemoteAddressFromFirstPacket);
+    if (subchannel == e_Control) {
+      ap.SetPort(ap.GetPort() - 1);
+      InternalSetRemoteAddress(ap, subchannel, e_RemoteAddressFromProvisionalPair);
+    }
+    else if (subchannel == e_Data && m_subchannels.size() > e_Control) {
+      ap.SetPort(ap.GetPort() + 1);
+      InternalSetRemoteAddress(ap, subchannel, e_RemoteAddressFromProvisionalPair);
+    }
   }
 
   OpalMediaTransport::InternalRxData(subchannel, data);
 }
 
 
+#if PTRACING
+ostream & operator<<(ostream & strm, OpalUDPMediaTransport::RemoteAddressSources source)
+{
+  switch (source) {
+    case OpalUDPMediaTransport::e_RemoteAddressFromSignalling :
+      return strm << "signalling";
+    case OpalUDPMediaTransport::e_RemoteAddressFromFirstPacket :
+      return strm << "first packet";
+    case OpalUDPMediaTransport::e_RemoteAddressFromProvisionalPair :
+      return strm << "first paired packet";
+    case OpalUDPMediaTransport::e_RemoteAddressFromICE :
+      return strm << "ICE";
+    default :
+      return strm;
+  }
+}
+#endif
+
 bool OpalUDPMediaTransport::InternalSetRemoteAddress(const PIPSocket::AddressAndPort & newAP,
                                                      SubChannels subchannel,
-                                                     bool dontOverride
-                                                     PTRACE_PARAM(, const char * source))
+                                                     RemoteAddressSources source)
 {
   P_INSTRUMENTED_LOCK_READ_WRITE();
   if (!lock.IsLocked())
@@ -1077,8 +1097,7 @@ bool OpalUDPMediaTransport::InternalSetRemoteAddress(const PIPSocket::AddressAnd
     return false;
 
   PIPSocketAddressAndPort oldAP;
-  socket->GetLocalAddress(oldAP);
-  if (newAP == oldAP) {
+  if (socket->GetLocalAddress(oldAP) && newAP == oldAP) {
     PTRACE(2, *this << source << " cannot set remote address/port to same as local: " << oldAP);
     return false;
   }
@@ -1087,18 +1106,38 @@ bool OpalUDPMediaTransport::InternalSetRemoteAddress(const PIPSocket::AddressAnd
   if (newAP == oldAP)
     return true;
 
-  if (dontOverride && oldAP.IsValid()) {
-    PTRACE(3, *this << source << " cannot set remote address/port to " << newAP << ", already set to " << oldAP);
-    return false;
+  ChannelInfo & info = m_subchannels[subchannel];
+
+  switch (info.m_remoteAddressSource) {
+    case e_RemoteAddressFromFirstPacket :
+      if (source == e_RemoteAddressFromProvisionalPair) {
+        PTRACE(3, *this << source << " cannot set remote address/port to " << newAP << ", already set to " << oldAP);
+        return false;
+      }
+      break;
+
+    case e_RemoteAddressFromProvisionalPair :
+      if (source != e_RemoteAddressFromFirstPacket) {
+        PTRACE(3, *this << source << " is awaiting remote address/port, ignoring " << newAP);
+        return false;
+      }
+      break;
+
+    default :
+      if (m_remoteBehindNAT && source == e_RemoteAddressFromSignalling) {
+        PTRACE(3, *this << "ignoring signalled remote address, as is behind NAT, or ICE in operation.");
+        return true;
+      }
+      break;
   }
 
-  m_subchannels[subchannel].m_remoteAddress = OpalTransportAddress(newAP, OpalTransportAddress::UdpPrefix());
-  m_subchannels[subchannel].m_consecutiveUnavailableErrors = 0; // Prevent errors from previous address.
+  info.m_remoteAddressSource = source;
+  info.m_remoteAddress = OpalTransportAddress(newAP, OpalTransportAddress::UdpPrefix());
+  info.m_consecutiveUnavailableErrors = 0; // Prevent errors from previous address.
   if (socket->SetSendAddress(newAP, m_mtuDiscoverMode))
     PTRACE_IF(3, m_mtuDiscoverMode >= 0, *this << source << " enabling MTU discovery mode " << m_mtuDiscoverMode);
   else
     PTRACE(2, *this << source << " cannot enable MTU discovery: " << socket->GetErrorText());
-  m_remoteAddressSet = true;
 
   if (m_localHasRestrictedNAT) {
     // If have Port Restricted NAT on local host then send a datagram
@@ -1329,7 +1368,7 @@ bool OpalUDPMediaTransport::Write(const void * data, PINDEX length, SubChannels 
     socket->GetSendAddress(sendAddr);
 
   if (!sendAddr.IsValid()) {
-    PTRACE(4, "UDP write has no destination address.");
+    PTRACE(4, "UDP write has no destination address on subchannel " << subchannel);
     /* The following makes not having destination address yet be processed the
        same as if the remote is not yet listening on the port (ICMP errors) so it
        will keep trying for a while, then give up and close the media transport. */
