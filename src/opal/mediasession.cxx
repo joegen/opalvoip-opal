@@ -1054,11 +1054,11 @@ void OpalUDPMediaTransport::InternalRxData(SubChannels subchannel, const PBYTEAr
     InternalSetRemoteAddress(ap, subchannel, e_RemoteAddressFromFirstPacket);
     if (subchannel == e_Control) {
       ap.SetPort(ap.GetPort() - 1);
-      InternalSetRemoteAddress(ap, subchannel, e_RemoteAddressFromProvisionalPair);
+      InternalSetRemoteAddress(ap, e_Data, e_RemoteAddressFromProvisionalPair);
     }
     else if (subchannel == e_Data && m_subchannels.size() > e_Control) {
       ap.SetPort(ap.GetPort() + 1);
-      InternalSetRemoteAddress(ap, subchannel, e_RemoteAddressFromProvisionalPair);
+      InternalSetRemoteAddress(ap, e_Control, e_RemoteAddressFromProvisionalPair);
     }
   }
 
@@ -1088,6 +1088,9 @@ bool OpalUDPMediaTransport::InternalSetRemoteAddress(const PIPSocket::AddressAnd
                                                      SubChannels subchannel,
                                                      RemoteAddressSources source)
 {
+  if (!newAP.IsValid())
+    return false;
+
   P_INSTRUMENTED_LOCK_READ_WRITE();
   if (!lock.IsLocked())
     return false;
