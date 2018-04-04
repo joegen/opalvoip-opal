@@ -175,28 +175,20 @@ void OpalICEMediaTransport::SetCandidates(const PString & user, const PString & 
     return;
   }
 
-  if (remoteCandidates.IsEmpty()) {
-    PTRACE(4, *this << "no ICE candidates from remote");
+  if (m_state == e_Completed && user == m_remoteUsername && pass == m_remotePassword) {
+    PTRACE(4, *this << "completed ICE username/password unchanged, ignoring candidates.");
     return;
   }
 
   CandidatesArray newCandidates(m_subchannels.size());
-
-  bool noSuitableCandidates = true;
   for (PNatCandidateList::const_iterator it = remoteCandidates.begin(); it != remoteCandidates.end(); ++it) {
-    if (it->m_protocol == "udp" && it->m_component > 0 && (size_t)it->m_component <= newCandidates.size()) {
+    if (it->m_protocol == "udp" && it->m_component > 0 && (size_t)it->m_component <= newCandidates.size())
       newCandidates[it->m_component - 1].push_back(*it);
-      noSuitableCandidates = false;
-    }
     else
-      PTRACE(2, "Invalid/unsupported candidate: " << *it);
+      PTRACE(3, "Invalid/unsupported candidate: " << *it);
   }
 
-  if (noSuitableCandidates) {
-    PTRACE(2, *this << "no suitable ICE candidates from remote: state=" << m_state);
-    m_state = e_Disabled;
-    return;
-  }
+  PTRACE_IF(2, newCandidates.empty(), *this << "no suitable ICE candidates from remote: state=" << m_state);
 
   switch (m_state) {
     case e_Disabled :
@@ -205,10 +197,6 @@ void OpalICEMediaTransport::SetCandidates(const PString & user, const PString & 
       break;
 
     case e_Completed :
-      if (user == m_remoteUsername && pass == m_remotePassword) {
-        PTRACE(4, *this << "ICE username/password unchanged");
-        return;
-      }
       PTRACE(2, *this << "ICE restart (username/password changed)");
       m_state = e_Answering;
       break;
@@ -259,11 +247,6 @@ void OpalICEMediaTransport::SetCandidates(const PString & user, const PString & 
   m_client.SetCredentials(m_remoteUsername + ':' + m_localUsername, m_remotePassword, PString::Empty());
 
   SetRemoteBehindNAT();
-
-  for (ChannelArray::iterator it = m_subchannels.begin(); it != m_subchannels.end(); ++it) {
-    PUDPSocket * socket = GetSubChannelAsSocket(it->m_subchannel);
-    socket->SetSendAddress(PIPAddressAndPort());
-  }
 
 #if PTRACING
   if (PTrace::CanTrace(3)) {
