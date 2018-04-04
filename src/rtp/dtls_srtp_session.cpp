@@ -108,7 +108,7 @@ OpalDTLSMediaTransport::DTLSChannel::DTLSChannel(OpalDTLSMediaTransport & transp
   SetMTU(m_transport.m_MTU);
   SetVerifyMode(PSSLContext::VerifyPeerMandatory,
                 PCREATE_NOTIFIER2_EXT(m_transport, OpalDTLSMediaTransport, OnVerify, PSSLChannel::VerifyInfo &));
-  Open(channel, false);
+  Open(channel);
 }
 
 
