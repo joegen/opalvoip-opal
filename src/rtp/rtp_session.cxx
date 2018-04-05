@@ -832,9 +832,9 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveData(RTP_
 
   CalculateStatistics(frame);
   
-  // Send Report every 500 packets
-  if (m_packets % 500 == 0) {
-    SendReport(0, false);
+  // Send Report every 200 packets
+  if (m_packets % 200 == 0) {
+    m_session.SendReport(0, false);
   }
 
   // Final user handling of the read frame
