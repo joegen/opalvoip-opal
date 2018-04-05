@@ -134,8 +134,8 @@ OpalRTPSession::OpalRTPSession(const Init & init)
   m_defaultSSRC[e_Receiver] = m_defaultSSRC[e_Sender] = 0;
 
   PTRACE_CONTEXT_ID_TO(m_reportTimer);
-  m_reportTimer.SetNotifier(PCREATE_NOTIFIER(TimedSendReport), "RTP-Report");
-  m_reportTimer.Stop();
+  //m_reportTimer.SetNotifier(PCREATE_NOTIFIER(TimedSendReport), "RTP-Report");
+  //m_reportTimer.Stop();
 }
 
 
@@ -831,6 +831,11 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveData(RTP_
 #endif
 
   CalculateStatistics(frame);
+  
+  // Send Report every 500 packets
+  if (m_packets % 500 == 0) {
+    SendReport(0, false);
+  }
 
   // Final user handling of the read frame
   if (status != e_ProcessPacket)
@@ -1031,8 +1036,8 @@ void OpalRTPSession::InternalAttachTransport(const OpalMediaTransportPtr & newTr
 
   SetQoS(m_qos);
 
-  if (!m_reportTimer.IsRunning())
-    m_reportTimer.RunContinuous(m_reportTimer.GetResetTime());
+  //if (!m_reportTimer.IsRunning())
+  //  m_reportTimer.RunContinuous(m_reportTimer.GetResetTime());
 
   RTP_SyncSourceId ssrc = GetSyncSourceOut();
   if (ssrc == 0)
@@ -1890,8 +1895,8 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SendReport(RTP_SyncSourceId ss
           frames.push_back(frame);
       }
 
-      if (force && !frames.empty() && !m_reportTimer.IsRunning())
-        m_reportTimer.RunContinuous(m_reportTimer.GetResetTime());
+      //if (force && !frames.empty() && !m_reportTimer.IsRunning())
+      //  m_reportTimer.RunContinuous(m_reportTimer.GetResetTime());
     }
   }
 
@@ -1903,7 +1908,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SendReport(RTP_SyncSourceId ss
       break;
   }
 
-  PTRACE(4, *this << "sent " << frames.size() << ' ' << (force ? "forced" : "periodic") << " reports: status=" << status);
+  PTRACE(3, *this << "sent " << frames.size() << ' ' << (force ? "forced" : "periodic") << " reports: status=" << status);
   return status;
 }
 
@@ -2946,7 +2951,7 @@ bool OpalRTPSession::Close()
 {
   PTRACE(3, *this << "closing RTP.");
 
-  m_reportTimer.Stop(true);
+  //m_reportTimer.Stop(true);
   m_endpoint.RegisterLocalRTP(this, true);
 
   if (IsOpen() && LockReadOnly(P_DEBUG_LOCATION)) {
