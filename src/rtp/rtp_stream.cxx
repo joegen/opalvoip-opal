@@ -162,11 +162,15 @@ PBoolean OpalRTPMediaStream::Start()
   return OpalMediaStream::Start();
 }
 
-static bool nsleep(const PTimeInterval & timeout) {
-  struct timespec ts;
-  ts.tv_sec = timeout.GetSeconds();
-  ts.tv_nsec = timeout.GetNanoSeconds()%1000000000;
-  return nanosleep(&ts, &ts) == 0;
+static void thread_sleep( unsigned long milliseconds )
+  /// Pause thread execution for certain time expressed in milliseconds
+{
+#if defined ( WIN32 )
+	::Sleep( milliseconds );
+#else
+  timeval sTimeout = { (long int)(milliseconds / 1000), (long int)(( milliseconds % 1000 ) * 1000) };
+	select( 0, 0, 0, 0, &sTimeout );
+#endif
 }
 
 void OpalRTPMediaStream::OnStartMediaPatch()
@@ -176,9 +180,7 @@ void OpalRTPMediaStream::OnStartMediaPatch()
   if (IsSink() && !m_rtpSession.IsSinglePortRx()) {
     while (IsOpen() && m_rtpSession.SendReport(m_syncSource, true) == OpalRTPSession::e_IgnorePacket) {
       PTRACE(m_throttleSendReport, m_rtpSession << "initial send report write delayed.");
-      if (!nsleep(20)) {
-        break;
-      }
+      thread_sleep(20);
     }
   }
 
