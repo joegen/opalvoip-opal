@@ -613,6 +613,10 @@ class MyManager : public MyManagerParent
     bool m_enableCAPI;
 #endif
 
+#if OPAL_IVR
+    PFilePath m_signLanguageAnalyserDLL;
+#endif
+
 #if OPAL_SCRIPT
     PString m_scriptLanguage;
     PString m_scriptText;

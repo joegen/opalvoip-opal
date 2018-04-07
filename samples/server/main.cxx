@@ -109,6 +109,7 @@ static const PConstString EnableCAPIKey("CAPI ISDN");
 static const PConstString VXMLKey("VXML Script");
 static const PConstString IVRCacheKey("TTS Cache Directory");
 static const PConstString IVRRecordDirKey("Record Message Directory");
+static const PConstString SignLanguageAnalyserDLLKey("Sign Language Analyser DLL");
 #endif
 
 #if OPAL_HAS_MIXER
@@ -718,11 +719,14 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
     OpalIVREndPoint * ivrEP = FindEndPointAs<OpalIVREndPoint>(OPAL_PREFIX_IVR);
     // Set IVR protocol handler
     ivrEP->SetDefaultVXML(rsrc->AddStringField(VXMLKey, 0, ivrEP->GetDefaultVXML(),
-      "Interactive Voice Response VXML script, may be a URL or the actual VXML", 10, 80));
+          "Interactive Voice Response VXML script, may be a URL or the actual VXML", 10, 80));
     ivrEP->SetCacheDir(rsrc->AddStringField(IVRCacheKey, 0, ivrEP->GetCacheDir(),
-      "Interactive Voice Response directory to cache Text To Speech phrases", 1, 50));
+          "Interactive Voice Response directory to cache Text To Speech phrases", 1, 50));
     ivrEP->SetRecordDirectory(rsrc->AddStringField(IVRRecordDirKey, 0, ivrEP->GetRecordDirectory(),
-      "Interactive Voice Response directory to save recorded messages", 1, 50));
+          "Interactive Voice Response directory to save recorded messages", 1, 50));
+    m_signLanguageAnalyserDLL = rsrc->AddStringField(SignLanguageAnalyserDLLKey, 0, m_signLanguageAnalyserDLL,
+          "Interactive Voice Response Sign Language Library", 1, 50);
+    PVXMLSession::SetSignLanguageAnalyser(m_signLanguageAnalyserDLL);
   }
 #endif
 
