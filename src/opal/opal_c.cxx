@@ -515,12 +515,14 @@ void OpalMessageBuffer::SetMIME(unsigned & length, const OpalMIME * & variable, 
 
   length = mime.size();
   SetData((const char **)&variable, NULL, length*sizeof(OpalMIME));
-  OpalMIME * item = const_cast<OpalMIME *>(variable);
-  for (PMultiPartList::const_iterator it = mime.begin(); it != mime.end(); ++it) {
-    SetString(&item->m_type, it->m_mime.GetString(PMIMEInfo::ContentTypeTag));
-    item->m_length = it->m_textBody.GetLength();
-    SetData(&item->m_data, it->m_textBody.GetPointer(), item->m_length);
-    ++item;
+  size_t offset = m_strPtrOffset.back();
+  size_t index = 0;
+  for (PMultiPartList::const_iterator it = mime.begin(); it != mime.end(); ++it, ++index) {
+    // Recalculate pointers as SetString/SetData can do realloc and they move.
+    SetString(&(*reinterpret_cast<OpalMIME **>(m_data+offset))[index].m_type, it->m_mime.GetString(PMIMEInfo::ContentTypeTag));
+    OpalMIME & item = (*reinterpret_cast<OpalMIME **>(m_data+offset))[index];
+    item.m_length = it->m_textBody.GetLength();
+    SetData(&item.m_data, it->m_textBody.GetPointer(), item.m_length);
   }
 }
 
