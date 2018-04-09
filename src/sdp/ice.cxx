@@ -202,21 +202,7 @@ void OpalICEMediaTransport::SetCandidates(const PString & user, const PString & 
       break;
 
     case e_Offering :
-      if (m_remoteCandidates.empty())
-        PTRACE(4, *this << "ICE offer answered");
-      else {
-        if (newCandidates == m_remoteCandidates) {
-          PTRACE(4, *this << "ICE answer to offer unchanged");
-          m_state = e_Completed;
-          return;
-        }
-
-        /* My understanding is that an ICE restart is only when user/pass changes.
-           However, Firefox changes the candidates without changing the user/pass
-           so include that in test for restart. */
-        PTRACE(3, *this << "ICE offer already in progress for bundle, remote candidates changed");
-      }
-
+      PTRACE(4, *this << "ICE offer answered");
       m_state = e_OfferAnswered;
       break;
 
@@ -227,7 +213,43 @@ void OpalICEMediaTransport::SetCandidates(const PString & user, const PString & 
 
   m_remoteUsername = user;
   m_remotePassword = pass;
-  m_remoteCandidates = newCandidates;
+
+  /* Merge candidates with what we might already have. Typically, that is
+     candidates that came in via STUN before the SDP answer did. Though, in
+     the future, it could also be trickle ICE too. */
+  for (size_t i = 0; i < newCandidates.size(); ++i) {
+    for (CandidateStateList::iterator itNew = newCandidates[i].begin(); itNew != newCandidates[i].end(); ++itNew) {
+      bool add = true;
+      for (CandidateStateList::iterator itOld = m_remoteCandidates[i].begin(); itOld != m_remoteCandidates[i].end(); ++itOld) {
+        if (*itOld != *itNew && // Not identical
+             itOld->m_foundation.IsEmpty() && // Came from early STUN
+             itOld->m_component  == itNew->m_component &&
+             itOld->m_protocol   == itNew->m_protocol &&
+             itOld->m_baseTransportAddress == itNew->m_baseTransportAddress)
+        {
+          PTRACE(4, *this << "ICE candidate merged:\n"
+                             "  New ICE candidate: " << setw(-1) << *itNew << "\n"
+                             "  Old ICE candidate: " << setw(-1) << *itOld);
+          /* Update the fields. For some, the SDP value is "better" and for
+             others, like networkCost, the value in the STUN request is
+             "better". */
+          itOld->m_type = itNew->m_type;
+          itOld->m_priority = itNew->m_priority;
+          itOld->m_foundation = itNew->m_foundation;
+          if (itOld->m_networkId == 0)
+            itOld->m_networkId = itNew->m_networkId;
+          if (itOld->m_networkCost == 0)
+            itOld->m_networkCost = itNew->m_networkCost;
+          add = false;
+          break;
+        }
+      }
+      if (add) {
+        PTRACE(4, *this << "ICE candidate added: " << PNatCandidate(*itNew)); // Remove statistics
+        m_remoteCandidates[i].push_back(*itNew);
+      }
+    }
+  }
 
   if (m_lite) {
     m_server.SetIceRole(PSTUN::IceLite);
@@ -327,8 +349,10 @@ bool OpalICEMediaTransport::GetCandidates(PString & user, PString & pass, PNatCa
         break;
 
       case e_Offering:
-        if (m_localCandidates == newCandidates)
+        if (m_localCandidates == newCandidates) {
+          PTRACE(2, *this << "ICE offer in progress, duplicate candidates");
           return true; // Duplicate, probably due to bundling, ignore
+        }
 
         PTRACE(2, *this << "ICE local offer changed");
         break;
