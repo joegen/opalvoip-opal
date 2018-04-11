@@ -229,31 +229,36 @@ OpalPCSSConnection * OpalPCSSEndPoint::CreateConnection(OpalCall & call,
 
 PSoundChannel * OpalPCSSEndPoint::CreateSoundChannel(const OpalPCSSConnection & connection,
                                                         const OpalMediaFormat & mediaFormat,
-                                                                     PBoolean   isSource)
+                                                                     unsigned   sessionID,
+                                                                         bool   isSource)
 {
   if (!isSource)
-    return CreateSoundChannel(connection, mediaFormat, connection.GetSoundChannelPlayDevice(), isSource);
+    return CreateSoundChannel(connection, mediaFormat, sessionID, isSource, connection.GetSoundChannelPlayDevice());
 
   if (connection.GetCall().IsOnHold())
-    return CreateSoundChannel(connection, mediaFormat, connection.GetSoundChannelOnHoldDevice(), isSource);
+    return CreateSoundChannel(connection, mediaFormat, sessionID, isSource, connection.GetSoundChannelOnHoldDevice());
 
   if (connection.GetPhase() < OpalConnection::AlertingPhase && !connection.GetSoundChannelOnRingDevice().IsEmpty())
-    return CreateSoundChannel(connection, mediaFormat, connection.GetSoundChannelOnRingDevice(), isSource);
+    return CreateSoundChannel(connection, mediaFormat, sessionID, isSource, connection.GetSoundChannelOnRingDevice());
 
-  return CreateSoundChannel(connection, mediaFormat, connection.GetSoundChannelRecordDevice(), isSource);
+  return CreateSoundChannel(connection, mediaFormat, sessionID, isSource, connection.GetSoundChannelRecordDevice());
 }
 
 
-PSoundChannel * OpalPCSSEndPoint::CreateSoundChannel(const OpalPCSSConnection & PTRACE_PARAM(connection),
+PSoundChannel * OpalPCSSEndPoint::CreateSoundChannel(const OpalPCSSConnection & connection,
                                                         const OpalMediaFormat & mediaFormat,
-                                                                const PString & device,
-                                                                         bool   isSource)
+                                                                     unsigned   sessionID,
+                                                                         bool   isSource,
+                                                                const PString & device)
 {
   PSoundChannel::Params params;
   params.m_device = device;
   params.m_direction = isSource ? PSoundChannel::Recorder : PSoundChannel::Player;
   params.m_channels = mediaFormat.GetOptionInteger(OpalAudioFormat::ChannelsOption());
   params.m_sampleRate = mediaFormat.GetClockRate();
+
+  params.m_device.Replace("%token%", connection.GetCall().GetToken(), true);
+  params.m_device.Replace("%session%", sessionID, true);
 
   PSoundChannel * soundChannel = PSoundChannel::CreateOpenedChannel(params);
   if (soundChannel == NULL)
@@ -568,7 +573,7 @@ void OpalPCSSConnection::RingbackMain()
 {
   PTRACE(4, "Started ringback thread");
 
-  PSoundChannel * channel = CreateSoundChannel(OpalPCM16, false);
+  PSoundChannel * channel = CreateSoundChannel(OpalPCM16, 0, false);
 
   if (PFile::Exists(m_localRingbackTone)) {
     do {
@@ -647,7 +652,7 @@ OpalMediaStream * OpalPCSSConnection::CreateMediaStream(const OpalMediaFormat & 
   if (mediaFormat.GetMediaType() != OpalMediaType::Audio() || m_endpoint.UseCallback(mediaFormat, isSource))
     return OpalLocalConnection::CreateMediaStream(mediaFormat, sessionID, isSource);
 
-  PSoundChannel * soundChannel = CreateSoundChannel(mediaFormat, isSource);
+  PSoundChannel * soundChannel = CreateSoundChannel(mediaFormat, sessionID, isSource);
   if (soundChannel == NULL)
     return NULL;
 
@@ -721,9 +726,9 @@ unsigned OpalPCSSConnection::GetAudioSignalLevel(PBoolean source)
 }
 
 
-PSoundChannel * OpalPCSSConnection::CreateSoundChannel(const OpalMediaFormat & mediaFormat, PBoolean isSource)
+PSoundChannel * OpalPCSSConnection::CreateSoundChannel(const OpalMediaFormat & mediaFormat, unsigned sessionID, bool isSource)
 {
-  return m_endpoint.CreateSoundChannel(*this, mediaFormat, isSource);
+  return m_endpoint.CreateSoundChannel(*this, mediaFormat, sessionID, isSource);
 }
 
 
@@ -742,7 +747,7 @@ bool OpalPCSSConnection::ChangeSoundChannel(const PString & device, bool isSourc
     return true;
   }
 
-  stream->SetChannel(m_endpoint.CreateSoundChannel(*this, stream->GetMediaFormat(), device, isSource));
+  stream->SetChannel(m_endpoint.CreateSoundChannel(*this, stream->GetMediaFormat(), sessionID, isSource, device));
   return true;
 }
 

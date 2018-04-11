@@ -8315,9 +8315,10 @@ PBoolean MyPCSSEndPoint::OnShowOutgoing(const OpalPCSSConnection & connection)
 
 PSoundChannel * MyPCSSEndPoint::CreateSoundChannel(const OpalPCSSConnection & connection,
                                                    const OpalMediaFormat & mediaFormat,
-                                                   PBoolean isSource)
+                                                   unsigned sessionID,
+                                                   bool isSource)
 {
-  PSoundChannel * channel = OpalPCSSEndPoint::CreateSoundChannel(connection, mediaFormat, isSource);
+  PSoundChannel * channel = OpalPCSSEndPoint::CreateSoundChannel(connection, mediaFormat, sessionID, isSource);
   if (channel != NULL)
     return channel;
 
