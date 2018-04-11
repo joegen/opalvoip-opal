@@ -970,6 +970,12 @@ bool SDPMediaDescription::PostDecode(const OpalMediaFormatList & mediaFormats)
       m_formats.erase(format++);
   }
 
+#if OPAL_ICE
+  // Do not confuse ICE with "old style" hold
+  if (m_mediaAddress.IsEmpty() && HasICE())
+    m_mediaAddress = OpalTransportAddress(PIPAddress(), m_port, OpalTransportAddress::UdpPrefix());
+#endif
+
   return true;
 }
 
@@ -2992,6 +2998,18 @@ bool SDPSessionDescription::Decode(const PStringArray & lines, const OpalMediaFo
            << " '" << currentMedia->GetSDPMediaType() << "' formats,"
               " ok=" << boolalpha << ok);
   }
+
+#if OPAL_ICE
+  // Do not confuse ICE with "old style" hold
+  if (defaultConnectAddress.IsEmpty()) {
+    for (PINDEX i = 0; i < mediaDescriptions.GetSize(); ++i) {
+      if (mediaDescriptions[i].HasICE()) {
+        defaultConnectAddress = mediaDescriptions[i].GetMediaAddress();
+        break;
+      }
+    }
+  }
+#endif
 
   // Match up groups and mid's
   for (PINDEX i = 0; i < mediaDescriptions.GetSize(); ++i)
