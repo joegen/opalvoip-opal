@@ -1070,9 +1070,17 @@ SDPMediaDescription * OpalSDPConnection::OnSendAnswerSDPSession(SDPMediaDescript
       }
     }
 
-    if (sendStream != NULL) {
-      // In case is new offer and remote has tweaked the streams paramters, we need to merge them
-      sendStream->UpdateMediaFormat(*m_activeFormatList.FindFormat(sendStream->GetMediaFormat()), true);
+    if (sendStream != NULL && !m_activeFormatList.IsEmpty()) {
+      // In case this is new offer and remote has tweaked the streams paramters, we need to merge them
+      OpalMediaFormatList::const_iterator format = m_activeFormatList.FindFormat(sendStream->GetMediaFormat());
+      if (format != m_activeFormatList.end()) {
+        PTRACE(2, "Received new Offer and updating media stream " << *sendStream);
+        sendStream->UpdateMediaFormat(*format, true);
+      } else {
+        PTRACE(1, "Received new Offer but we do not have a common format for " << sendStream->GetMediaFormat() << " for stream " << *sendStream);
+      }
+    } else {
+      PTRACE(1, "Received new Offer but sendStream is NULL or  m_activeFormatList is empty");
     }
 
     if (recvStream == NULL) {
