@@ -1975,7 +1975,17 @@ class OpalConnection : public PSafeObject
 
     OpalMediaFormatList        m_localMediaFormats;
 
-    typedef PSafeDictionary<PKey<OpalMediaStream*>, OpalMediaStream> StreamDict;
+    struct StreamKey : PKey<uint64_t>
+    {
+      StreamKey(unsigned sessionID, bool isSource)
+        : PKey<uint64_t>(sessionID + (isSource ? 0x100000000ULL : 0x200000000ULL))
+      { }
+      StreamKey(const OpalMediaStream & stream)
+        : PKey<uint64_t>(stream.GetSessionID() + (stream.IsSource() ? 0x100000000ULL : 0x200000000ULL))
+      { }
+      PObject * Clone() const { return new StreamKey(*this); }
+    };
+    typedef PSafeDictionary<StreamKey, OpalMediaStream> StreamDict;
     StreamDict m_mediaStreams;
 
     OpalJitterBuffer::Params m_jitterParams;

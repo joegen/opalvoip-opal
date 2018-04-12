@@ -373,7 +373,8 @@ bool OpalRTPConnection::ChangeSessionID(unsigned fromSessionID, unsigned toSessi
     m_sessions.SetAt(toSessionID, session);
   }
 
-  for (OpalMediaStreamPtr stream(m_mediaStreams, PSafeReference); stream != NULL; ++stream) {
+  for (StreamDict::iterator it = m_mediaStreams.begin(); it != m_mediaStreams.end(); ++it) {
+    OpalMediaStreamPtr stream = it->second;
     if (stream->GetSessionID() == fromSessionID) {
       stream->SetSessionID(toSessionID);
       OpalMediaPatchPtr patch = stream->GetPatch();

@@ -861,7 +861,8 @@ bool OpalSDPConnection::OnSendAnswerSDP(const SDPSessionDescription & sdpOffer, 
   /* Shut down any media that is in a session not mentioned in answer.
       While the SIP/SDP specification says this shouldn't happen, it does
       anyway so we need to deal. */
-  for (OpalMediaStreamPtr stream(m_mediaStreams, PSafeReference); stream != NULL; ++stream) {
+  for (StreamDict::iterator it = m_mediaStreams.begin(); it != m_mediaStreams.end(); ++it) {
+    OpalMediaStreamPtr stream = it->second;
     unsigned session = stream->GetSessionID();
     if (session > sessionCount || sdpMediaDescriptions[session] == NULL)
       stream->Close();
@@ -1224,7 +1225,8 @@ bool OpalSDPConnection::OnReceivedAnswerSDP(const SDPSessionDescription & sdp, b
   /* Shut down any media that is in a session not mentioned in answer to our offer.
      While the SIP/SDP specification says this shouldn't happen, it does
      anyway so we need to deal. */
-  for (OpalMediaStreamPtr stream(m_mediaStreams, PSafeReference); stream != NULL; ++stream) {
+  for (StreamDict::iterator it = m_mediaStreams.begin(); it != m_mediaStreams.end(); ++it) {
+    OpalMediaStreamPtr stream = it->second;
     if (stream->GetSessionID() > mediaDescriptionCount)
       stream->Close();
   }

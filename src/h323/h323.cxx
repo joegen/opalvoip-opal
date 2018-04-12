@@ -2722,13 +2722,14 @@ PBoolean H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_Octe
       PTRACE(3, "H225\tAll fast start OLC's nullData, deferring open");
     else if (pauseChannels) {
       PTRACE(3, "H225\tFast start, pausing media streams");
-      for (OpalMediaStreamPtr stream(m_mediaStreams); stream != NULL; ++stream) {
+      for (StreamDict::iterator itStrm = m_mediaStreams.begin(); itStrm != m_mediaStreams.end(); ++itStrm) {
+        OpalMediaStreamPtr stream = itStrm->second;
         stream->SetPaused(true);
         OpalRTPSession * session = dynamic_cast<OpalRTPSession *>(GetMediaSession(stream->GetSessionID()));
         if (session != NULL) {
           const RTP_SyncSourceArray ssrcs = session->GetSyncSources(OpalRTPSession::e_Receiver);
-          for (RTP_SyncSourceArray::const_iterator it = ssrcs.begin(); it != ssrcs.end(); ++it)
-            session->RemoveSyncSource(*it PTRACE_PARAM(, "H.323 fast start, nothing to open"));
+          for (RTP_SyncSourceArray::const_iterator itSSRC = ssrcs.begin(); itSSRC != ssrcs.end(); ++itSSRC)
+            session->RemoveSyncSource(*itSSRC PTRACE_PARAM(, "H.323 fast start, nothing to open"));
         }
       }
     }
@@ -4006,7 +4007,8 @@ PBoolean H323Connection::OnReceivedCapabilitySet(const H323Capabilities & remote
 
     // Adjust any media transmitters
     OpalMediaFormatList remoteFormats = m_remoteCapabilities.GetMediaFormats();
-    for (OpalMediaStreamPtr stream = m_mediaStreams; stream != NULL; ++stream) {
+    for (StreamDict::iterator it = m_mediaStreams.begin(); it != m_mediaStreams.end(); ++it) {
+      OpalMediaStreamPtr stream = it->second;
       if (stream->IsSink()) {
         OpalMediaFormatList::const_iterator format = remoteFormats.FindFormat(stream->GetMediaFormat());
         if (format != remoteFormats.end()) {
@@ -4445,7 +4447,7 @@ OpalMediaStreamPtr H323Connection::OpenMediaStream(const OpalMediaFormat & media
         PTRACE(1, "H323\tCreateMediaStream returned NULL for session " << sessionID << " on " << *this);
         return NULL;
       }
-      m_mediaStreams.SetAt(&*stream, stream);
+      m_mediaStreams.SetAt(*stream, stream);
 
       // Channel from other side, do RequestModeChange
       RequestModeChange(mediaFormat);
@@ -4471,7 +4473,7 @@ OpalMediaStreamPtr H323Connection::OpenMediaStream(const OpalMediaFormat & media
       PTRACE(4, "H323\tOpenMediaStream fast opened for session " << sessionID);
       stream = CreateMediaStream(mediaFormat, sessionID, isSource);
       if (stream != NULL && stream->Open() && OnOpenMediaStream(*stream)) {
-        m_mediaStreams.SetAt(&*stream, stream);
+        m_mediaStreams.SetAt(*stream, stream);
         iterChan->SetMediaStream(stream);
         m_logicalChannels->Add(*iterChan);
         return stream;
@@ -4537,7 +4539,7 @@ OpalMediaStreamPtr H323Connection::OpenMediaStream(const OpalMediaFormat & media
   stream = channel->GetMediaStream();
   if (stream != NULL && stream->Open()) {
     PTRACE(3, "H323\tOpenMediaStream using channel " << channel->GetNumber() << " for session " << sessionID);
-    m_mediaStreams.SetAt(&*stream, stream);
+    m_mediaStreams.SetAt(*stream, stream);
     return stream;
   }
 

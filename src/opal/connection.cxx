@@ -643,15 +643,11 @@ bool OpalConnection::InternalOnEstablished()
     return false;
   }
 
-  bool notAllEstablishedYet = false;
-  for (OpalMediaStreamPtr strm(m_mediaStreams); strm != NULL; ++strm) {
-    if (!strm->IsEstablished())
-      notAllEstablishedYet = true;
-  }
-
-  if (notAllEstablishedYet) {
-    PTRACE(5, "A media stream not ready, cannot move to EstablishedPhase on " << *this);
-    return false;
+  for (StreamDict::iterator it = m_mediaStreams.begin(); it != m_mediaStreams.end(); ++it) {
+    if (!it->second->IsEstablished()) {
+      PTRACE(5, "Media stream " << *it->second << " is not established, cannot move to EstablishedPhase on " << *this);
+      return false;
+    }
   }
 
   SetPhase(EstablishedPhase);
@@ -869,7 +865,7 @@ OpalMediaStreamPtr OpalConnection::OpenMediaStream(const OpalMediaFormat & media
       PTRACE(1, "CreateMediaStream returned NULL for session " << sessionID << " on " << *this);
       return NULL;
     }
-    m_mediaStreams.SetAt(&*stream, stream);
+    m_mediaStreams.SetAt(*stream, stream);
 
     m_mediaSessionFailedMutex.Wait();
     m_mediaSessionFailed.erase(sessionID*2 + isSource);
@@ -888,7 +884,7 @@ OpalMediaStreamPtr OpalConnection::OpenMediaStream(const OpalMediaFormat & media
     PTRACE(2, "Source media stream open failed for " << *stream << " (" << mediaFormat << ')');
   }
 
-  m_mediaStreams.RemoveAt(&*stream);
+  m_mediaStreams.RemoveAt(*stream);
 
   return NULL;
 }
@@ -913,14 +909,14 @@ PBoolean OpalConnection::RemoveMediaStream(OpalMediaStream & stream)
 {
   stream.Close();
   PTRACE(3, "Removed media stream " << stream);
-  return m_mediaStreams.RemoveAt(&stream);
+  return m_mediaStreams.RemoveAt(stream);
 }
 
 
 void OpalConnection::StartMediaStreams()
 {
-  for (OpalMediaStreamPtr mediaStream = m_mediaStreams; mediaStream != NULL; ++mediaStream)
-    mediaStream->Start();
+  for (StreamDict::iterator it = m_mediaStreams.begin(); it != m_mediaStreams.end(); ++it)
+    it->second->Start();
 
   PTRACE(3, "Media stream threads started for " << *this);
 }
@@ -933,7 +929,8 @@ void OpalConnection::CloseMediaStreams()
   bool someOpen = true;
   while (someOpen) {
     someOpen = false;
-    for (OpalMediaStreamPtr mediaStream(m_mediaStreams, PSafeReference); mediaStream != NULL; ++mediaStream) {
+    for (StreamDict::iterator it = m_mediaStreams.begin(); it != m_mediaStreams.end(); ++it) {
+      OpalMediaStreamPtr mediaStream = it->second;
       if (mediaStream->IsOpen()) {
         someOpen = true;
         mediaStream->Close();
@@ -947,8 +944,8 @@ void OpalConnection::CloseMediaStreams()
 
 void OpalConnection::PauseMediaStreams(bool paused)
 {
-  for (OpalMediaStreamPtr mediaStream = m_mediaStreams; mediaStream != NULL; ++mediaStream)
-    mediaStream->SetPaused(paused);
+  for (StreamDict::iterator it = m_mediaStreams.begin(); it != m_mediaStreams.end(); ++it)
+    it->second->SetPaused(paused);
 }
 
 
@@ -1186,7 +1183,8 @@ void OpalConnection::InternalOnRecordVideo(PString key, std::auto_ptr<RTP_DataFr
 
 OpalMediaStreamPtr OpalConnection::GetMediaStream(const PString & streamID, bool source) const
 {
-  for (PSafePtr<OpalMediaStream> mediaStream(m_mediaStreams, PSafeReference); mediaStream != NULL; ++mediaStream) {
+  for (StreamDict::const_iterator it = m_mediaStreams.begin(); it != m_mediaStreams.end(); ++it) {
+    OpalMediaStreamPtr mediaStream = it->second;
     if ((streamID.IsEmpty() || mediaStream->GetID() == streamID) && mediaStream->IsSource() == source)
       return mediaStream;
   }
@@ -1197,12 +1195,8 @@ OpalMediaStreamPtr OpalConnection::GetMediaStream(const PString & streamID, bool
 
 OpalMediaStreamPtr OpalConnection::GetMediaStream(unsigned sessionId, bool source) const
 {
-  for (OpalMediaStreamPtr mediaStream(m_mediaStreams, PSafeReference); mediaStream != NULL; ++mediaStream) {
-    if (mediaStream->GetSessionID() == sessionId && mediaStream->IsSource() == source)
-      return mediaStream;
-  }
-
-  return NULL;
+  StreamDict::const_iterator it = m_mediaStreams.find(StreamKey(sessionId, source));
+  return it != m_mediaStreams.end() ? it->second : OpalMediaStreamPtr();
 }
 
 
@@ -1821,7 +1815,8 @@ bool OpalConnection::OnMediaFailed(unsigned sessionId)
 
 bool OpalConnection::AllMediaFailed() const
 {
-  for (OpalMediaStreamPtr mediaStream(m_mediaStreams, PSafeReference); mediaStream != NULL; ++mediaStream) {
+  for (StreamDict::const_iterator it = m_mediaStreams.begin(); it != m_mediaStreams.end(); ++it) {
+    OpalMediaStreamPtr mediaStream = it->second;
     PWaitAndSignal lock(m_mediaSessionFailedMutex);
     if (m_mediaSessionFailed.find(mediaStream->GetSessionID()) == m_mediaSessionFailed.end()) {
       PTRACE(3, "Checking for all media failed: no, still have media stream " << *mediaStream << " for " << *this);

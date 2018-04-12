@@ -1869,8 +1869,8 @@ void SIPConnection::NotifyDialogState(SIPDialogNotification::States state, SIPDi
   if (GetPhase() == EstablishedPhase)
     info.m_local.m_rendering = info.m_remote.m_rendering = SIPDialogNotification::NotRenderingMedia;
 
-  for (OpalMediaStreamPtr mediaStream(m_mediaStreams, PSafeReference); mediaStream != NULL; ++mediaStream) {
-    if (mediaStream->IsSource())
+  for (StreamDict::iterator it = m_mediaStreams.begin(); it != m_mediaStreams.end(); ++it) {
+    if (it->second->IsSource())
       info.m_remote.m_rendering = SIPDialogNotification::RenderingMedia;
     else
       info.m_local.m_rendering = SIPDialogNotification::RenderingMedia;
