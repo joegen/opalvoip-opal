@@ -586,6 +586,7 @@ OpalMediaTransport::OpalMediaTransport(const PString & name)
   , m_mediaTimeout(0, 0, 5)       // Nothing received for 5 minutes
   , m_maxNoTransmitTime(0, 10)    // Sending data for 10 seconds, ICMP says still not there
   , m_opened(false)
+  , m_established(false)
   , m_started(false)
   , m_congestionControl(NULL)
 {
@@ -639,8 +640,7 @@ bool OpalMediaTransport::IsOpen() const
 
 bool OpalMediaTransport::IsEstablished() const
 {
-  P_INSTRUMENTED_LOCK_READ_ONLY();
-  return IsOpen() && m_subchannels.front().m_remoteAddressSource != e_RemoteAddressUnknown;
+  return m_established;
 }
 
 
@@ -870,6 +870,8 @@ void OpalMediaTransport::InternalClose()
 {
   P_INSTRUMENTED_LOCK_READ_ONLY(return);
 
+  m_opened = m_established = false;
+
   for (vector<ChannelInfo>::iterator it = m_subchannels.begin(); it != m_subchannels.end(); ++it) {
     if (it->m_channel != NULL) {
       PChannel * base = it->m_channel->GetBaseReadChannel();
@@ -1000,6 +1002,7 @@ bool OpalTCPMediaTransport::SetRemoteAddress(const OpalTransportAddress & remote
     return false;
 
   m_subchannels[0].m_remoteAddressSource = e_RemoteAddressFromSignalling;
+  m_established = true;
   return true;
 }
 
@@ -1148,6 +1151,9 @@ bool OpalUDPMediaTransport::InternalSetRemoteAddress(const PIPSocket::AddressAnd
     if (!InternalOpenPinHole(*socket))
       return false;
   }
+
+  if (subchannel == e_Data)
+    m_established = true;
 
 #if PTRACING
   static const int Level = 3;

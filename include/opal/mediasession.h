@@ -538,6 +538,7 @@ class OpalMediaTransport : public PSafeObject, public OpalMediaTransportChannelT
     PSimpleTimer  m_mediaTimer;
     PTimeInterval m_maxNoTransmitTime;
     atomic<bool>  m_opened;
+    atomic<bool>  m_established;
     atomic<bool>  m_started;
 
     atomic<CongestionControl *> m_congestionControl;
