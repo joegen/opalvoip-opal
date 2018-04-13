@@ -28,14 +28,15 @@
         <?define FFMPEGDir = "..\..\..\external\ffmpeg-win64-dev\bin" ?>
         <?define OpenH264Dir = "$(env.ProgramW6432)\PTLib Plug Ins" ?>
         <?define SpanDspDir = "..\..\..\external\spandsp-0.0.6\src\x64\Release" ?>
-    <?endif?>
+        <?define ImageMagickDir = "$(env.ProgramW6432)\imagemagick-7.0.5-q16" ?>
+  <?endif?>
 
     <?define AVFORMATVer = "57" ?>
     <?define AVCODECVer = "57" ?>
     <?define AVUTILVer = "55" ?>
     <?define SWRESAMPLEVer = "2" ?>
     <?define SWSCALEVer = "4" ?>
-
+  
     <?define PTLibDir = "..\..\..\ptlib" ?>
     <?define OPALDir = "..\.." ?>
 
