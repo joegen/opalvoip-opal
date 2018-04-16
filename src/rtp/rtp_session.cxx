@@ -2954,6 +2954,7 @@ bool OpalRTPSession::Close()
   //m_reportTimer.Stop(true);
   m_endpoint.RegisterLocalRTP(this, true);
 
+#if 0 // This is prone to race condition.  The transport might already be in the process of deletion
   if (IsOpen() && LockReadOnly(P_DEBUG_LOCATION)) {
     for (SyncSourceMap::iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
       if ( it->second->m_direction == e_Sender &&
@@ -2963,9 +2964,10 @@ bool OpalRTPSession::Close()
     }
     UnlockReadOnly(P_DEBUG_LOCATION);
   }
-
+#endif
   return OpalMediaSession::Close();
 }
+
 
 
 PString OpalRTPSession::GetLocalHostName()
