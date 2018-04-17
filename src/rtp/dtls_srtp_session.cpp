@@ -112,7 +112,7 @@ OpalDTLSMediaTransport::DTLSChannel::DTLSChannel(OpalDTLSMediaTransport & transp
 }
 
 
-bool OpalDTLSMediaTransport::DTLSChannel::Read(void * buf, PINDEX len)
+bool OpalDTLSMediaTransport::DTLSChannel::Read(void * buf, PINDEX size)
 {
   if (CheckNotOpen())
     return false;
@@ -123,7 +123,7 @@ bool OpalDTLSMediaTransport::DTLSChannel::Read(void * buf, PINDEX len)
     // Keep reading, and throwing stuff away, until we have remote address.
     while (!m_transport.OpalDTLSMediaTransportParent::IsEstablished()) {
       // Let lower protocol layers handle their packets
-      if (!PSSLChannelDTLS::Read(buf, len))
+      if (!PSSLChannelDTLS::Read(buf, size))
         return false;
     }
 
@@ -132,10 +132,55 @@ bool OpalDTLSMediaTransport::DTLSChannel::Read(void * buf, PINDEX len)
       return false;
   }
 
-  while (PSSLChannelDTLS::Read(buf, len)) {
-    unsigned firstByte = *static_cast<BYTE *>(buf);
-    if (firstByte < 0x20 || firstByte > 0x63)
+  while (PSSLChannelDTLS::Read(buf, size)) {
+    PINDEX len = GetLastReadCount();
+    if (len == 0)
+      return false; // Shouldn't happen, but just in case ...
+
+#pragma pack(1)
+    struct AlertFrame {
+      uint8_t  m_type;
+      int8_t   m_versionMajor;
+      int8_t   m_versionMinor;
+      PUInt16b m_epoch;
+      PUInt16b m_snHigh;
+      PUInt32b m_snLow;
+      PUInt16b m_length;
+      uint8_t  m_cipherType;
+      uint8_t  m_alertLevel;
+      uint8_t  m_alertDescription;
+    } * frame = reinterpret_cast<AlertFrame *>(buf);
+#pragma pack()
+
+    if (frame->m_type <= 19 || frame->m_type >= 64)
       return true; // Not a DTLS packet
+
+    if (len < sizeof(*frame)) {
+      PTRACE(2, "Truncated frame received: " << ::hex << ::setfill('0') << PBYTEArray((const BYTE *)buf, len, false));
+      continue;
+    }
+
+    PTRACE(4, "Packet received after handshake completed:"
+           " type=" << (unsigned)frame->m_type << ","
+           " ver=" << ~frame->m_versionMajor << '.' << ~frame->m_versionMinor << ","
+           " epoch=" << frame->m_epoch << ","
+           " sn=" << (frame->m_snHigh*0x100000000ULL+frame->m_snLow) << ","
+           " cipher=" << (unsigned)frame->m_cipherType << ","
+           " len=" << frame->m_length << ","
+           " level=" << (unsigned)frame->m_alertLevel << ","
+           " desc=" << (unsigned)frame->m_alertDescription << '\n'
+           << ::hex << ::setfill('0') << PBYTEArray((const BYTE *)buf, len, false));
+
+    if (frame->m_type == 21 /* DTLS Alert */ &&
+        frame->m_cipherType == 0 && /* stream cipher */
+        frame->m_length >= 2 &&
+        frame->m_alertLevel == 1 && /* Warning level */
+        frame->m_alertDescription == 0) /* close_notify */
+    {
+      PTRACE(2, "Received close_notify from remote.");
+      Close(); // Does SSL
+      return false;
+    }
 
     /* In case remote didn't get our last response, send it again if we get
        a DTLS packet. This is a bit primitive, but we don't really want to
@@ -164,7 +209,7 @@ int OpalDTLSMediaTransport::DTLSChannel::BioRead(char * buf, int len)
 #if PTRACING
     static unsigned const Level = 5;
     if (PTrace::CanTrace(Level)) {
-    PUDPSocket * udp = dynamic_cast<PUDPSocket *>(GetBaseReadChannel());
+      PUDPSocket * udp = dynamic_cast<PUDPSocket *>(GetBaseReadChannel());
       if (udp != NULL)
         PTRACE_BEGIN(Level) << "Read " << result << " bytes from " << udp->GetLastReceiveAddress() << PTrace::End;
     }
@@ -187,7 +232,7 @@ int OpalDTLSMediaTransport::DTLSChannel::BioWrite(const char * buf, int len)
 #if PTRACING
     static unsigned const Level = 5;
     if (PTrace::CanTrace(Level)) {
-    PUDPSocket * udp = dynamic_cast<PUDPSocket *>(GetBaseReadChannel());
+      PUDPSocket * udp = dynamic_cast<PUDPSocket *>(GetBaseReadChannel());
       if (udp != NULL)
         PTRACE_BEGIN(Level) << "Written " << result << " bytes from " << udp->GetSendAddress() << PTrace::End;
     }
