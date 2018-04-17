@@ -161,8 +161,14 @@ int OpalDTLSMediaTransport::DTLSChannel::BioRead(char * buf, int len)
   if (result < 0)
     PTRACE_IF(2, IsOpen(), "Read error: " << GetErrorText(PChannel::LastReadError));
   else {
+#if PTRACING
+    static unsigned const Level = 5;
+    if (PTrace::CanTrace(Level)) {
     PUDPSocket * udp = dynamic_cast<PUDPSocket *>(GetBaseReadChannel());
-    PTRACE_IF(5, udp != NULL, "Read " << result << " bytes from " << udp->GetLastReceiveAddress());
+      if (udp != NULL)
+        PTRACE_BEGIN(Level) << "Read " << result << " bytes from " << udp->GetLastReceiveAddress() << PTrace::End;
+    }
+#endif // PTRACING
   }
   return result;
 }
@@ -179,9 +185,13 @@ int OpalDTLSMediaTransport::DTLSChannel::BioWrite(const char * buf, int len)
     m_lastResponseLength = result;
 
 #if PTRACING
+    static unsigned const Level = 5;
+    if (PTrace::CanTrace(Level)) {
     PUDPSocket * udp = dynamic_cast<PUDPSocket *>(GetBaseReadChannel());
-    PTRACE_IF(5, udp != NULL, "Written " << result << " bytes to " << udp->GetSendAddress());
-#endif
+      if (udp != NULL)
+        PTRACE_BEGIN(Level) << "Written " << result << " bytes from " << udp->GetSendAddress() << PTrace::End;
+    }
+#endif // PTRACING
   }
   return result;
 }

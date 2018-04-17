@@ -107,7 +107,8 @@ bool RTP_DataFrame::SetPacketSize(PINDEX sz)
 
   if (sz < m_headerSize) {
     PTRACE(2, "RTP\tInvalid RTP packet, "
-              "smaller than indicated header size, " << sz << " < " << m_headerSize);
+              "smaller than indicated header size, " << sz << " < " << m_headerSize << ": "
+           << hex << setfill('0') << PBYTEArray(GetPointer(), std::min(sz, (PINDEX)16), false));
     m_payloadSize = m_paddingSize = 0;
     return false;
   }
@@ -125,7 +126,8 @@ bool RTP_DataFrame::SetPacketSize(PINDEX sz)
   m_paddingSize = theArray[sz-1] & 0xff;
   if (m_headerSize + m_paddingSize > sz) {
     PTRACE(2, "RTP\tInvalid RTP packet, padding indicated but not enough data, "
-              "size=" << sz << ", pad=" << m_paddingSize << ", header=" << m_headerSize);
+              "size=" << sz << ", pad=" << m_paddingSize << ", header=" << m_headerSize << ": "
+           << hex << setfill('0') << PBYTEArray(GetPointer(), std::min(sz, (PINDEX)16), false));
     m_paddingSize = 0;
   }
 
