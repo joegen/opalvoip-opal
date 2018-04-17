@@ -207,7 +207,7 @@ void OpalICEMediaTransport::SetCandidates(const PString & user, const PString & 
       break;
 
     default :
-      PTRACE_IF(2, newCandidates != m_remoteCandidates, *this << "ICE candidates in bundled session different!");
+      PTRACE_IF(3, newCandidates != m_remoteCandidates, *this << "ICE candidates in bundled session different!");
       return;
   }
 
