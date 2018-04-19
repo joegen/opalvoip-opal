@@ -104,6 +104,9 @@ light -nologo -sice:ICE03 -sice:ICE60 -sice:ICE61 -sice:ICE82 -ext WixUIExtensio
     </None>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\ptlib\samples\vxmltest\vxmltest_2017.vcxproj">
+      <Project>{7e636b64-da9d-4711-9f5d-4e1c2efa8db2}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\..\plugins\audio\G.722.1\G.722.1_2017.vcxproj">
       <Project>{3c127609-b3a6-47fd-9b94-8fd2cb2d6623}</Project>
     </ProjectReference>
