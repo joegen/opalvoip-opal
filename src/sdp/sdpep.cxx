@@ -78,6 +78,7 @@ PStringList OpalSDPEndPoint::GetAvailableStringOptions() const
       OPAL_OPT_OFFER_ICE,
     #endif
     OPAL_OPT_AV_BUNDLE,
+    OPAL_OPT_INACTIVE_AUDIO_FLOW,
     OPAL_OPT_MULTI_SSRC
   };
 
