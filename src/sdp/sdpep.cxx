@@ -485,10 +485,7 @@ static bool SetNxECapabilities(OpalRFC2833Proto * handler,
 }
 
 
-static bool PauseOrCloseMediaStream(OpalMediaStreamPtr & stream,
-                                    const OpalMediaFormatList & answerFormats,
-                                    bool changed,
-                                    bool paused)
+bool OpalSDPConnection::PauseOrCloseMediaStream(OpalMediaStreamPtr & stream, bool changed, bool paused)
 {
   if (stream == NULL)
     return false;
@@ -500,9 +497,17 @@ static bool PauseOrCloseMediaStream(OpalMediaStreamPtr & stream,
   }
 
   if (!changed) {
-    OpalMediaFormatList::const_iterator fmt = answerFormats.FindFormat(stream->GetMediaFormat());
-    if (fmt != answerFormats.end() && stream->UpdateMediaFormat(*fmt, true)) {
-      PTRACE2(4, &*stream, "Answer SDP change needs to " << (paused ? "pause" : "resume") << " stream " << *stream);
+    OpalMediaFormatList::const_iterator fmt = m_activeFormatList.FindFormat(stream->GetMediaFormat());
+    if (fmt != m_activeFormatList.end() && stream->UpdateMediaFormat(*fmt, true)) {
+      if (paused &&
+          m_stringOptions.GetBoolean(OPAL_OPT_INACTIVE_AUDIO_FLOW) &&
+          stream->IsSource() &&
+          stream->GetMediaFormat().GetMediaType() == OpalMediaType::Audio())
+      {
+        PTRACE(4, "Answer SDP change pause ignored on stream " << *stream);
+        return true;
+      }
+      PTRACE(4, "Answer SDP change needs to " << (paused ? "pause" : "resume") << " stream " << *stream);
       stream->InternalSetPaused(paused, false, false);
       return !paused;
     }
@@ -1028,11 +1033,11 @@ SDPMediaDescription * OpalSDPConnection::OnSendAnswerSDPSession(SDPMediaDescript
   // Check if we had a stream and the remote has either changed the codec or
   // changed the direction of the stream
   OpalMediaStreamPtr sendStream = GetMediaStream(sessionId, false);
-  if (PauseOrCloseMediaStream(sendStream, m_activeFormatList, replaceSession, (otherSidesDir&SDPMediaDescription::RecvOnly) == 0))
+  if (PauseOrCloseMediaStream(sendStream, replaceSession, (otherSidesDir&SDPMediaDescription::RecvOnly) == 0))
     newDirection = SDPMediaDescription::SendOnly;
 
   OpalMediaStreamPtr recvStream = GetMediaStream(sessionId, true);
-  if (PauseOrCloseMediaStream(recvStream, m_activeFormatList, replaceSession,
+  if (PauseOrCloseMediaStream(recvStream, replaceSession,
                               m_holdToRemote >= eHoldOn || (otherSidesDir&SDPMediaDescription::SendOnly) == 0))
     newDirection = newDirection != SDPMediaDescription::Inactive ? SDPMediaDescription::SendRecv : SDPMediaDescription::RecvOnly;
 
@@ -1308,12 +1313,12 @@ bool OpalSDPConnection::OnReceivedAnswerSDPSession(const SDPMediaDescription * m
   OpalMediaStreamPtr sendStream = GetMediaStream(sessionId, false);
   bool sendDisabled = bundleMergeInfo.m_allowPauseSendMediaStream[sessionId] && (otherSidesDir&SDPMediaDescription::RecvOnly) == 0;
   bundleMergeInfo.m_allowPauseSendMediaStream[sessionId] = sendDisabled;
-  PauseOrCloseMediaStream(sendStream, m_activeFormatList, false, sendDisabled);
+  PauseOrCloseMediaStream(sendStream, false, sendDisabled);
 
   OpalMediaStreamPtr recvStream = GetMediaStream(sessionId, true);
   bool recvDisabled = bundleMergeInfo.m_allowPauseRecvMediaStream[sessionId] && (otherSidesDir&SDPMediaDescription::SendOnly) == 0;
   bundleMergeInfo.m_allowPauseRecvMediaStream[sessionId] = recvDisabled;
-  PauseOrCloseMediaStream(recvStream, m_activeFormatList, false, recvDisabled);
+  PauseOrCloseMediaStream(recvStream, false, recvDisabled);
 
   /* After (possibly) closing streams, we now open them again if necessary,
      OpenSourceMediaStreams will just return true if they are already open.

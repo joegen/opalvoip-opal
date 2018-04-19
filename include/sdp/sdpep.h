@@ -61,6 +61,16 @@ class OpalSDPHTTPConnection;
 */
 #define OPAL_OPT_MULTI_SSRC "Multi-SSRC"
 
+/**Indicate audio will continue to flow when audio is inactive.
+   Usually, the media patch thread for received audio is halted completely
+   when the remote indicates no media will flow, via the SDP "recvonly" or
+   "inactive" states. If set to false, then the patch thread continues to run,
+   and silence, out of the jitter buffer, is tranferred to the sink stream.
+
+   Defaults to false.
+  */
+#define OPAL_OPT_INACTIVE_AUDIO_FLOW "Inactive-Audio-Flow"
+
 
 /**Base class for endpoint types that use SDP for media transport.
    Protocols such as SIP, RTSP or WebRTC.
@@ -293,6 +303,8 @@ class OpalSDPConnection : public OpalRTPConnection
       OpalTransportAddress & localAddress,
       BundleMergeInfo & bundleMergeInfo
     );
+
+    bool PauseOrCloseMediaStream(OpalMediaStreamPtr & stream, bool changed, bool paused);
 
     void RetryHoldRemote(bool placeOnHold);
     virtual bool OnHoldStateChanged(bool placeOnHold);
