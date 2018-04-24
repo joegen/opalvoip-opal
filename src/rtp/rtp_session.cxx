@@ -822,9 +822,6 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveData(RTP_
 #endif
   }
   else {
-    if (rxType == e_RxRetransmit || rxType == e_RxFromRTX)
-      ++m_rtxPackets;
-
     if (m_session.ResequenceOutOfOrderPackets(*this)) {
       SendReceiveStatus status = OnOutOfOrderPacket(frame, rxType, now);
       if (status != e_ProcessPacket)
