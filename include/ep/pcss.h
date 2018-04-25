@@ -591,7 +591,11 @@ class OpalPCSSConnection : public OpalLocalConnection
     virtual bool ChangeSoundChannel(
       const PString & device,   ///< Device to change to
       bool isSource,            ///< Change source (recorder) or sink (player)
-      unsigned sessionID = 0    ///< Session for media stream, 0 indicates first audio stream
+      unsigned sessionID = 0    ///< Session for media stream, 0 indicates all audio streams
+    );
+    virtual bool ChangeSoundChannel(
+      const PString & device,       ///< Device to change to
+      OpalAudioMediaStream * stream ///< Audio stream to change
     );
 
     /**Read characters from the channel and produce User Input Indications.
