@@ -2172,7 +2172,7 @@ bool SDPRTPAVPMediaDescription::ToSession(OpalMediaSession * session, RTP_SyncSo
       // Verify it matches the primary codec
       for (SDPMediaFormatList::const_iterator assocFmtIter = m_formats.begin(); assocFmtIter != m_formats.end(); ++assocFmtIter) {
         if (assocFmtIter->GetMediaFormat().GetPayloadType() == assocPT) {
-          rtxPT = rtxMediaFormat.GetPayloadType();
+          rtxPT = assocPT;
           break;
         }
       }

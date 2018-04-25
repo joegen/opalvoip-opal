@@ -1423,7 +1423,7 @@ void OpalSDPConnection::FinaliseRtx(const OpalMediaStreamPtr & stream, SDPMediaD
     RTP_SyncSourceId primarySSRC = *it;
     RTP_SyncSourceId rtxSSRC = rtpSession->GetRtxSyncSource(primarySSRC, dir, true);
     if (rtxSSRC != 0)
-      rtpSession->EnableSyncSourceRtx(primarySSRC, newPT, rtxSSRC);
+      rtpSession->EnableSyncSourceRtx(primarySSRC, dir == OpalRTPSession::e_Receiver ? primaryPT : newPT, rtxSSRC);
   }
 }
 
