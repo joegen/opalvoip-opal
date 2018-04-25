@@ -1234,15 +1234,15 @@ bool OpalPluginVideoTranscoder::DecodeFrame(const RTP_DataFrame & src, RTP_DataF
     }
   }
 
-  PTRACE_IF(3, (flags & PluginCodec_ReturnCoderRequestIFrame) != 0, "Could not decode frame"
-                          ", sending OpalVideoPictureLoss in hope of an I-Frame: sn=" << sequenceNumber);
+  PTRACE_IF(3, (flags & PluginCodec_ReturnCoderRequestIFrame) != 0, "Could not decode frame, "
+                      "sending OpalVideoPictureLoss in hope of an I-Frame: " << setw(1) << src);
 
   if (packetsLost && HasErrorConcealment()) {
     packetsLost = false;
     PTRACE(4, "Suppressing OpalVideoPictureLoss on packet loss, codec can do error concealment");
   }
 
-  PTRACE_IF(3, packetsLost, "Packets lost, sending OpalVideoPictureLoss in hope of an I-Frame: sn=" << sequenceNumber);
+  PTRACE_IF(3, packetsLost, "Packets lost, sending OpalVideoPictureLoss in hope of an I-Frame: " << setw(1) << src);
   bool pictureLost = packetsLost || (flags & PluginCodec_ReturnCoderRequestIFrame) != 0;
   if (pictureLost)
     SendIFrameRequest(sequenceNumber, src.GetTimestamp());
@@ -1289,11 +1289,9 @@ bool OpalPluginVideoTranscoder::DecodeFrame(const RTP_DataFrame & src, RTP_DataF
   PTRACE(m_lastFrameWasIFrame ? 4 : 5, "Video decoder returned "
          << (m_lastFrameWasIFrame ? 'I' : 'P') << "-Frame: "
          << videoHeader->width << 'x' << videoHeader->height
-         << ", sn=" << sequenceNumber
-         << ", ts=" << src.GetTimestamp()
-         << ", SSRC=" << RTP_TRACE_SRC(src.GetSyncSource())
          << (pictureLost ? ", decode error" : "")
-         << (m_frozenTillIFrame ? ", frozen" : ""));
+         << (m_frozenTillIFrame ? ", frozen, " : ", ")
+         << setw(1) << src);
 
   return true;
 };
