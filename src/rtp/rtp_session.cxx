@@ -1537,6 +1537,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendData(RTP_DataFrame & fra
       break;
 
     case e_RetransmitAgain:
+      PTRACE(4, *syncSource << "received duplicate packet: SN=" << frame.GetSequenceNumber());
       ++syncSource->m_rtxDuplicates;
       break;
   }
