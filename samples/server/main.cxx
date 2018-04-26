@@ -56,6 +56,7 @@ static const PConstString RTPTOSKey("RTP Type of Service");
 #if P_NAT
 static const PConstString NATActiveKey("Active");
 static const PConstString NATServerKey("Server");
+static const PConstString NATInterfaceKey("Interface");
 #endif
 
 static const PConstString OverrideProductInfoKey("Override Product Info");
@@ -176,11 +177,13 @@ struct NATInfo {
   PString m_friendly;
   bool    m_active;
   PString m_server;
+  PString m_interface;
   NATInfo(const PNatMethod & method)
     : m_method(method.GetMethodName())
     , m_friendly(method.GetFriendlyName())
     , m_active(method.IsActive())
     , m_server(method.GetServer())
+    , m_interface(method.GetInterface())
   { }
 
   __inline bool operator<(const NATInfo & other) const { return m_method < other.m_method; }
@@ -654,9 +657,10 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
                    "Enable flag and Server IP/hostname for NAT traversal using " + it->m_friendly);
       fields->Append(new PHTTPBooleanField(NATActiveKey, it->m_active));
       fields->Append(new PHTTPStringField(NATServerKey, 0, 0, it->m_server, NULL, 1, 50));
+      fields->Append(new PHTTPStringField(NATInterfaceKey, 0, 0, it->m_interface, NULL, 1, 12));
       rsrc->Add(fields);
       if (!fields->LoadFromConfig(cfg))
-        SetNATServer(it->m_method, (*fields)[1].GetValue(), (*fields)[0].GetValue() *= "true");
+        SetNATServer(it->m_method, (*fields)[1].GetValue(), (*fields)[0].GetValue() *= "true", 0, (*fields)[2].GetValue());
     }
   }
 #endif // P_NAT

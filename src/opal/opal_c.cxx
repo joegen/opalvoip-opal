@@ -1487,10 +1487,13 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
   // Note: in this case there is a difference between NULL and "".
   if (command.m_param.m_general.m_natMethod == NULL) {
 #if P_STUN
-    if (command.m_param.m_general.m_natServer != NULL &&
-        !SetNATServer(PSTUNClient::MethodName(), command.m_param.m_general.m_natServer)) {
-      response.SetError("Error setting STUN server.");
-      return;
+    if (command.m_param.m_general.m_natServer != NULL) {
+      PString server, iface;
+      PString(command.m_param.m_general.m_natServer).Split('\t', server, iface, PString::SplitDefaultToBefore);
+      if (!SetNATServer(PSTUNClient::MethodName(), server, true, 0, iface)) {
+        response.SetError("Error setting STUN server.");
+        return;
+      }
     }
 #endif
   }
@@ -1504,7 +1507,9 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
       PStringArray natMethods = PString(command.m_param.m_general.m_natMethod).Lines();
       PStringArray natServers = PString(command.m_param.m_general.m_natServer).Lines();
       for (PINDEX methodIndex = 0; methodIndex < natMethods.GetSize(); ++methodIndex) {
-        if (!SetNATServer(natMethods[methodIndex], natServers[methodIndex], true, (methodIndex+1)*10)) {
+        PString server, iface;
+        natServers[methodIndex].Split('\t', server, iface, PString::SplitDefaultToBefore);
+        if (!SetNATServer(natMethods[methodIndex], server, true, (methodIndex+1)*10, iface)) {
           error << "Error setting NAT method " << natMethods[methodIndex];
           if (!natServers[methodIndex].IsEmpty())
             error << " to server \"" << natServers[methodIndex] << '"';

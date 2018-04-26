@@ -1577,7 +1577,8 @@ class OpalManager : public PObject
       const PString & method,
       const PString & server,
       bool active = true,
-      unsigned priority = 0 // Zero is no change
+      unsigned priority = 0, // Zero is no change
+      const PString & iface = PString::Empty() // Any interface
     );
 
     /**Get the current host name and optional port for the NAT server.

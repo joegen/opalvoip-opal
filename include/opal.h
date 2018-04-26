@@ -712,8 +712,9 @@ typedef struct OpalParamGeneral {
                                            only "STUN" is assumed, and if this is a host name or IP
                                            address, then a "Fixed" NAT router is used. */
   const char * m_natServer;           /**< The host name or IP address of the NAT (e.g. STUN) server which
-                                           may be used to determine the NAT router characteristics
-                                           automatically. If m_natMethod then this must have corresponding
+                                           may be used to determine the NAT router characteristics. The local
+                                           interface used may be optionally set after a '\t' characters. If
+                                           m_natMethod has multiple entries, then this must have corresponding
                                            '\n' separated entries. */
   unsigned     m_tcpPortBase;         /**< Base of range of ports to use for TCP communications. This may
                                            be required by some firewalls. */

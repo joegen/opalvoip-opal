@@ -1963,6 +1963,7 @@ PString OpalManagerConsole::GetArgumentSpec() const
 #if OPAL_PTLIB_NAT
          "-nat-method:       Set NAT method, defaults to STUN\n"
          "-nat-server:       Set NAT server for the above method\n"
+         "-nat-interface:    Set NAT interface for the above method\n"
 #if P_STUN
          "-stun:             Set NAT traversal STUN server\n"
 #endif
@@ -2258,20 +2259,15 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose, const PString
 
   if (!natMethod.IsEmpty()) {
     if (verbose)
-      output << natMethod << " server: " << flush;
-    SetNATServer(natMethod, natServer);
-    if (verbose) {
-      PNatMethod * nat = GetNatMethods().GetMethodByName(natMethod);
-      if (nat == NULL)
-        output << "Unavailable";
-      else {
-        PNatMethod::NatTypes natType = nat->GetNatType();
-        output << '"' << nat->GetServer() << "\" replies " << natType;
-        PIPSocket::Address externalAddress;
-        if (natType != PNatMethod::BlockedNat && nat->GetExternalAddress(externalAddress))
-          output << " with external address " << externalAddress;
-      }
-      output << '\n';
+      output << "Establishing " << natMethod << " ..." << flush;
+    if (SetNATServer(natMethod, natServer, true, 0, args.GetOptionString("nat-interface"))) {
+      if (verbose)
+        output << '\n' << *GetNatMethods().GetMethodByName(natMethod) << '\n';
+    }
+    else {
+      if (verbose)
+        output << '\n';
+      output << natMethod << " unavailable.\n";
     }
   }
 #endif // OPAL_PTLIB_NAT
