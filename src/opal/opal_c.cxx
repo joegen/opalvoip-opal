@@ -144,7 +144,7 @@ class OpalMessageBuffer
     operator OpalMessage *() const   { return  (OpalMessage *)m_data; }
 
     void SetString(const char * * variable, const char * value);
-    void SetData(const char * * variable, const char * value, size_t len);
+    void SetData(const char * * variable, const void * value, size_t len);
     void SetMIME(unsigned & length, const OpalMIME * & variable, const PMultiPartList & mime);
     void SetError(const char * errorText);
 
@@ -477,7 +477,7 @@ void OpalMessageBuffer::SetString(const char * * variable, const char * value)
 }
 
 
-void OpalMessageBuffer::SetData(const char * * variable, const char * value, size_t length)
+void OpalMessageBuffer::SetData(const char * * variable, const void * value, size_t length)
 {
   PAssert((char *)variable >= m_data && (char *)variable < m_data+m_size, PInvalidParameter);
 
@@ -521,8 +521,14 @@ void OpalMessageBuffer::SetMIME(unsigned & length, const OpalMIME * & variable, 
     // Recalculate pointers as SetString/SetData can do realloc and they move.
     SetString(&(*reinterpret_cast<OpalMIME **>(m_data+offset))[index].m_type, it->m_mime.GetString(PMIMEInfo::ContentTypeTag));
     OpalMIME & item = (*reinterpret_cast<OpalMIME **>(m_data+offset))[index];
-    item.m_length = it->m_textBody.GetLength();
-    SetData(&item.m_data, it->m_textBody.GetPointer(), item.m_length);
+    if (it->m_textBody.IsEmpty()) {
+      item.m_length = it->m_binaryBody.GetSize();
+      SetData(&item.m_data, it->m_binaryBody, item.m_length);
+    }
+    else {
+      item.m_length = it->m_textBody.GetLength();
+      SetData(&item.m_data, it->m_textBody.GetPointer(), item.m_length+1);
+    }
   }
 }
 
