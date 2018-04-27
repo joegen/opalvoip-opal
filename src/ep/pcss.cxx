@@ -663,15 +663,16 @@ OpalMediaStream * OpalPCSSConnection::CreateMediaStream(const OpalMediaFormat & 
 
 PBoolean OpalPCSSConnection::SetAudioVolume(PBoolean source, unsigned percentage)
 {
-  PSafePtr<OpalAudioMediaStream> stream = PSafePtrCast<OpalMediaStream, OpalAudioMediaStream>(GetMediaStream(OpalMediaType::Audio(), source));
-  if (stream == NULL)
-    return false;
-
-  PSoundChannel * channel = dynamic_cast<PSoundChannel *>(stream->GetChannel());
-  if (channel == NULL)
-    return false;
-
-  return channel->SetVolume(percentage);
+  bool oneOK = false;
+  for (StreamDict::iterator it = m_mediaStreams.begin(); it != m_mediaStreams.end(); ++it) {
+    OpalAudioMediaStream * stream = dynamic_cast<OpalAudioMediaStream *>(&*it->second);
+    if (stream != NULL && stream->IsSource() == source) {
+      PSoundChannel * channel = dynamic_cast<PSoundChannel *>(stream->GetChannel());
+      if (channel != NULL && channel->SetVolume(percentage))
+        oneOK = true;
+    }
+  }
+  return oneOK;
 }
 
 PBoolean OpalPCSSConnection::GetAudioVolume(PBoolean source, unsigned & percentage)
@@ -690,15 +691,16 @@ PBoolean OpalPCSSConnection::GetAudioVolume(PBoolean source, unsigned & percenta
 
 bool OpalPCSSConnection::SetAudioMute(bool source, bool mute)
 {
-  PSafePtr<OpalAudioMediaStream> stream = PSafePtrCast<OpalMediaStream, OpalAudioMediaStream>(GetMediaStream(OpalMediaType::Audio(), source));
-  if (stream == NULL)
-    return false;
-
-  PSoundChannel * channel = dynamic_cast<PSoundChannel *>(stream->GetChannel());
-  if (channel == NULL)
-    return false;
-
-  return channel->SetMute(mute);
+  bool oneOK = false;
+  for (StreamDict::iterator it = m_mediaStreams.begin(); it != m_mediaStreams.end(); ++it) {
+    OpalAudioMediaStream * stream = dynamic_cast<OpalAudioMediaStream *>(&*it->second);
+    if (stream != NULL && stream->IsSource() == source) {
+      PSoundChannel * channel = dynamic_cast<PSoundChannel *>(stream->GetChannel());
+      if (channel != NULL && channel->SetMute(mute))
+        oneOK = true;
+    }
+  }
+  return oneOK;
 }
 
 
