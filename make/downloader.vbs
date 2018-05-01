@@ -12,7 +12,7 @@
 Set WshShell = CreateObject("WScript.Shell")
 Set FSO = CreateObject("Scripting.FileSystemObject")
 Set WshSysEnv = WshShell.Environment("SYSTEM")
-Set xml = CreateObject("Microsoft.XMLHTTP")
+Set xml = CreateObject("MSXML2.ServerXMLHTTP")
 Dim UseWgetEXE
 
 On Error Resume Next
