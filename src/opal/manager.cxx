@@ -2075,7 +2075,7 @@ bool OpalManager::SetNATServer(const PString & method,
   }
 
   PIPSocket::Address ifaceIP = PIPSocket::GetDefaultIpAny();
-  if (!iface.IsEmpty() && ifaceIP.FromString(iface)) {
+  if (!iface.IsEmpty() && !ifaceIP.FromString(iface)) {
     PTRACE(2, "Invalid interface \"" << iface << "\" for " << method << " NAT method");
     return false;
   }
