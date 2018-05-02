@@ -155,7 +155,7 @@ void SIPEndPoint::ShutDown()
 
   for (PSafeDictionary<OpalTransportAddress, OpalTransport>::iterator it = m_transportsTable.begin(); it != m_transportsTable.end(); ++it)
     it->second->CloseWait();
-  m_transportsTable.RemoveAll();
+  m_transportsTable.RemoveAll(true); // Make sure anything left is really deleted
 
   // Now shut down listeners and aggregators
   OpalEndPoint::ShutDown();
