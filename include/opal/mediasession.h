@@ -400,6 +400,9 @@ class OpalMediaTransport : public PSafeObject, public OpalMediaTransportChannelT
     /// Return name of the transport.
     const PString & GetName() const { return m_name; }
 
+    /// Return the type of the transport
+    virtual PString GetType();
+
     /**Open the media transport.
       */
     virtual bool Open(

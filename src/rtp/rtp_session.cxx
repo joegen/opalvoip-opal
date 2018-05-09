@@ -1090,10 +1090,8 @@ void OpalRTPSession::InternalAttachTransport(const OpalMediaTransportPtr & newTr
   m_rtcpPacketsReceived = 0;
 
   PIPAddress localAddress(0);
-  OpalUDPMediaTransport * udpTransport = dynamic_cast<OpalUDPMediaTransport *>(&*newTransport);
-  if (udpTransport != NULL)
-    udpTransport->GetSubChannelAsSocket(e_Media)->GetLocalAddress(localAddress);
-  m_packetOverhead = localAddress.GetVersion() == 4 ? (20 + 8 + 12) : (40 + 8 + 12);
+  if (newTransport->GetLocalAddress(e_Media).GetIpAddress(localAddress))
+    m_packetOverhead = localAddress.GetVersion() != 6 ? (20 + 8 + 12) : (40 + 8 + 12);
 
   SetQoS(m_qos);
 
@@ -3082,35 +3080,17 @@ void OpalRTPSession::SetSinglePortTx(bool singlePortTx)
 
 WORD OpalRTPSession::GetLocalDataPort() const
 {
+  PIPAddressAndPort ap;
   OpalMediaTransportPtr transport = m_transport; // This way avoids races
-  OpalUDPMediaTransport * udp = transport != NULL ? dynamic_cast<OpalUDPMediaTransport *>(&*transport) : NULL;
-  PUDPSocket * socket = udp != NULL ? udp->GetSubChannelAsSocket(e_Media) : NULL;
-  return socket != NULL ? socket->GetPort() : 0;
+  return transport != NULL && transport->GetLocalAddress(e_Media).GetIpAndPort(ap) ? ap.GetPort() : 0;
 }
 
 
 WORD OpalRTPSession::GetLocalControlPort() const
 {
+  PIPAddressAndPort ap;
   OpalMediaTransportPtr transport = m_transport; // This way avoids races
-  OpalUDPMediaTransport * udp = transport != NULL ? dynamic_cast<OpalUDPMediaTransport *>(&*transport) : NULL;
-  PUDPSocket * socket = udp != NULL ? udp->GetSubChannelAsSocket(e_Control) : NULL;
-  return socket != NULL ? socket->GetPort() : 0;
-}
-
-
-PUDPSocket & OpalRTPSession::GetDataSocket()
-{
-  OpalMediaTransportPtr transport = m_transport; // This way avoids races
-  OpalUDPMediaTransport * udp = transport != NULL ? dynamic_cast<OpalUDPMediaTransport *>(&*transport) : NULL;
-  return *PAssertNULL(udp)->GetSubChannelAsSocket(e_Media);
-}
-
-
-PUDPSocket & OpalRTPSession::GetControlSocket()
-{
-  OpalMediaTransportPtr transport = m_transport; // This way avoids races
-  OpalUDPMediaTransport * udp = transport != NULL ? dynamic_cast<OpalUDPMediaTransport *>(&*transport) : NULL;
-  return *PAssertNULL(udp)->GetSubChannelAsSocket(e_Control);
+  return transport != NULL && transport->GetLocalAddress(e_Control).GetIpAndPort(ap) ? ap.GetPort() : 0;
 }
 
 

@@ -632,6 +632,26 @@ void OpalMediaTransport::PrintOn(ostream & strm) const
 }
 
 
+PString OpalMediaTransport::GetType()
+{
+  PString type;
+
+  P_INSTRUMENTED_LOCK_READ_ONLY();
+  if (lock.IsLocked() && !m_subchannels.empty()) {
+    PChannel * channel = m_subchannels.front().m_channel;
+    if (channel != NULL) {
+      channel = channel->GetBaseReadChannel();
+      if (channel != NULL) {
+        type = channel->GetName();
+        type.Delete(type.Find(':'), P_MAX_INDEX);
+      }
+    }
+  }
+
+  return type;
+}
+
+
 bool OpalMediaTransport::IsOpen() const
 {
   return m_opened;

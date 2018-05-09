@@ -499,22 +499,6 @@ class OpalRTPSession : public OpalMediaSession
       */
     virtual WORD GetLocalControlPort() const;
 
-    /**Get remote data port of session.
-      */
-    //virtual WORD GetRemoteDataPort() const;
-
-    /**Get remote control port of session.
-      */
-    //virtual WORD GetRemoteControlPort() const;
-
-    /**Get data UDP socket of session.
-      */
-    virtual PUDPSocket & GetDataSocket();
-
-    /**Get control UDP socket of session.
-      */
-    virtual PUDPSocket & GetControlSocket();
-
     /**Get total number of packets sent in session.
       */
     unsigned GetPacketsSent(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Sender).m_packets; }

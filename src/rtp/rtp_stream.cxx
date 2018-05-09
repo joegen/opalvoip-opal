@@ -543,9 +543,12 @@ void OpalRTPMediaStream::PrintDetail(ostream & strm, const char * prefix, Detail
 
 #if OPAL_PTLIB_NAT
   if ((details & DetailNAT) && m_rtpSession.IsOpen()) {
-    PString sockName = m_rtpSession.GetDataSocket().GetName();
-    if (sockName.NumCompare("udp") != PObject::EqualTo)
-      strm << ", " << sockName.Left(sockName.Find(':'));
+    OpalMediaTransportPtr transport = m_rtpSession.GetTransport();
+    if (transport != NULL) {
+      PCaselessString type = transport->GetType();
+      if (type != "udp")
+        strm << ", " << type; // e.g. "STUN"
+    }
   }
 #endif // OPAL_PTLIB_NAT
 
