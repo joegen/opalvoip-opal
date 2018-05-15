@@ -281,10 +281,10 @@ OpalMediaCryptoKeyInfo * H2356_Session::IsCryptoSecured(bool rx) const
 }
 
 
-OpalRTPSession::SendReceiveStatus H2356_Session::OnSendData(RTP_DataFrame & frame, RewriteMode rewrite, const PTime & now)
+OpalRTPSession::SendReceiveStatus H2356_Session::OnSendData(RewriteMode & rewrite, RTP_DataFrame & frame, const PTime & now)
 {
-  SendReceiveStatus status = OpalRTPSession::OnSendData(frame, rewrite, now);
-  if (status == e_ProcessPacket) {
+  SendReceiveStatus status = OpalRTPSession::OnSendData(rewrite, frame, now);
+  if (status == e_ProcessPacket && rewrite != e_RewriteNothing) {
     if (!m_tx.Encrypt(frame))
       return e_IgnorePacket;
   }

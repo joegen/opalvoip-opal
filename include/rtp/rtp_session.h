@@ -244,7 +244,7 @@ class OpalRTPSession : public OpalMediaSession
       RTP_SyncSourceId ssrc = 0
     );
 
-    virtual SendReceiveStatus OnSendData(RTP_DataFrame & frame, RewriteMode rewrite, const PTime & now);
+    virtual SendReceiveStatus OnSendData(RewriteMode & rewrite, RTP_DataFrame & frame, const PTime & now);
     virtual SendReceiveStatus OnSendControl(RTP_ControlFrame & frame, const PTime & now);
     virtual SendReceiveStatus OnPreReceiveData(RTP_DataFrame & frame, const PTime & now);
     virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame, ReceiveType rxType, const PTime & now);
@@ -900,6 +900,7 @@ class OpalRTPSession : public OpalMediaSession
     P_REMOVE_VIRTUAL(SendReceiveStatus,OnSendData(RTP_DataFrame &),e_AbortTransport);
     P_REMOVE_VIRTUAL(SendReceiveStatus,OnSendData(RTP_DataFrame&,bool),e_AbortTransport);
     P_REMOVE_VIRTUAL(SendReceiveStatus,OnSendData(RTP_DataFrame&,RewriteMode),e_AbortTransport);
+    P_REMOVE_VIRTUAL(SendReceiveStatus,OnSendData(RTP_DataFrame&,RewriteMode,const PTime&),e_AbortTransport);
     P_REMOVE_VIRTUAL(bool,WriteData(RTP_DataFrame &,const PIPSocketAddressAndPort*,bool),false);
     P_REMOVE_VIRTUAL(SendReceiveStatus,OnReadTimeout(RTP_DataFrame&),e_AbortTransport);
     P_REMOVE_VIRTUAL(SendReceiveStatus,InternalReadData(RTP_DataFrame &),e_AbortTransport);

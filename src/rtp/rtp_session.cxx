@@ -1470,8 +1470,8 @@ void OpalRTPSession::SyncSource::OnRxDelayLastReceiverReport(const RTP_DelayLast
 }
 
 
-OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendData(RTP_DataFrame & frame,
-                                                             RewriteMode rewrite,
+OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendData(RewriteMode & rewrite,
+                                                             RTP_DataFrame & frame,
                                                              const PTime & now)
 {
   RTP_SyncSourceId ssrc = frame.GetSyncSource();
@@ -1540,13 +1540,16 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendData(RTP_DataFrame & fra
       break;
   }
 
-  if (syncSource->m_rtxSSRC == 0)
-    return syncSource->OnSendData(frame, e_RewriteNothing, now);
+  if (syncSource->m_rtxSSRC == 0) {
+    rewrite = e_RewriteNothing;
+    return syncSource->OnSendData(frame, rewrite, now);
+  }
 
   // Is a retransmit using RFC4588, switch to "rtx" sync source
+  rewrite = e_RewriteHeader;
   SyncSource * rtxSyncSource;
   if (GetSyncSource(syncSource->m_rtxSSRC, e_Sender, rtxSyncSource))
-    return rtxSyncSource->OnSendData(frame, e_RewriteHeader, now);
+    return rtxSyncSource->OnSendData(frame, rewrite, now);
 
   return e_IgnorePacket;
 }
@@ -3214,7 +3217,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::WriteData(RTP_DataFrame & fram
   if (!LockReadWrite(P_DEBUG_LOCATION))
     return e_AbortTransport;
 
-  SendReceiveStatus status = OnSendData(frame, rewrite, now);
+  SendReceiveStatus status = OnSendData(rewrite, frame, now);
 
   UnlockReadWrite(P_DEBUG_LOCATION);
 

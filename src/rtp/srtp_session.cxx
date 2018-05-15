@@ -671,11 +671,11 @@ void OpalSRTPSession::OnRxControlPacket(OpalMediaTransport & transport, PBYTEArr
 }
 
 
-OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnSendData(RTP_DataFrame & frame, RewriteMode rewrite, const PTime & now)
+OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnSendData(RewriteMode & rewrite, RTP_DataFrame & frame, const PTime & now)
 {
   // Aleady locked on entry
 
-  SendReceiveStatus status = OpalRTPSession::OnSendData(frame, rewrite, now);
+  SendReceiveStatus status = OpalRTPSession::OnSendData(rewrite, frame, now);
   if (status != e_ProcessPacket)
     return status;
 
