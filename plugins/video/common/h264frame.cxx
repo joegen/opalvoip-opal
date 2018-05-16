@@ -44,6 +44,7 @@ H264Frame::H264Frame()
   , m_constraint_set3(false)
   , m_packetisationMode(0)
   , m_timestamp(0)
+  , m_receiverState(e_NormalProcessing)
 {
   m_maxPayloadSize = 1400;
   Reset();
@@ -202,9 +203,7 @@ bool H264Frame::EncapsulateSTAP(PluginCodec_RTP & frame, unsigned int & flags)
   }
 
   // set the nri value in the stap header
-  //uint8_t stap = 24 | maxNRI;
-  //memcpy (frame.GetPayloadPtr(),&stap,1);
-  memset (frame.GetPayloadPtr(), 24 | maxNRI, 1);
+*frame.GetPayloadPtr() = (unsigned char)(H264_NAL_TYPE_STAP | maxNRI);
   frame.SetTimestamp(m_timestamp);
   frame.SetMarker(m_currentNAL >= m_numberOfNALsInFrame ? 1 : 0);
   if (frame.GetMarker())
@@ -223,7 +222,7 @@ bool H264Frame::EncapsulateFU(PluginCodec_RTP & frame, unsigned int & flags)
   {
     m_currentNALFURemainingLen = m_NALs[m_currentNAL].length;
     m_currentNALFURemainingDataPtr = m_buffer + m_NALs[m_currentNAL].offset;
-    m_currentNALFUHeader0 = (*m_currentNALFURemainingDataPtr & 0x60) | 28;
+    m_currentNALFUHeader0 = (*m_currentNALFURemainingDataPtr & 0x60) | H264_NAL_TYPE_FU;
     m_currentNALFUHeader1 = *m_currentNALFURemainingDataPtr & 0x1f;
     header[0] = m_currentNALFUHeader0;
     header[1] = 0x80 | m_currentNALFUHeader1; // s indication
@@ -272,6 +271,13 @@ bool H264Frame::EncapsulateFU(PluginCodec_RTP & frame, unsigned int & flags)
 
 bool H264Frame::AddPacket(const PluginCodec_RTP & frame, unsigned & flags)
 {
+  if (flags&PluginCodec_CoderPacketLoss) {
+    flags = PluginCodec_ReturnCoderRequestIFrame;
+    m_receiverState = e_AwaitingMarker;
+    Reset();
+    return true;
+  }
+
   const uint8_t * payloadPtr = frame.GetPayloadPtr();
   size_t payloadSize = frame.GetPayloadSize();
 
@@ -280,19 +286,34 @@ bool H264Frame::AddPacket(const PluginCodec_RTP & frame, unsigned & flags)
 
   uint8_t curNALType = *payloadPtr & 0x1f;
 
+  switch (m_receiverState) {
+    case e_AwaitingMarker :
+      if (frame.GetMarker())
+        m_receiverState = e_AwaitingIntra;
+      return true;
+
+    case e_AwaitingIntra :
+      if (curNALType != H264_NAL_TYPE_SEQ_PARAM && (curNALType != H264_NAL_TYPE_STAP || payloadPtr[3] != H264_NAL_TYPE_SEQ_PARAM))
+        return true;
+
+      m_receiverState = e_NormalProcessing;
+    default :
+      break;
+  }
+
   if (curNALType >= H264_NAL_TYPE_NON_IDR_SLICE && curNALType <= H264_NAL_TYPE_FILLER_DATA) {
     // regular NAL - put in buffer, adding the header.
     PTRACE(6, GetName(), "Deencapsulating a regular NAL unit NAL of " << payloadSize - 1 << " bytes (type " << (int) curNALType << ")");
     return AddDataToEncodedFrame(payloadPtr + 1, payloadSize - 1, *payloadPtr, true);
   }
 
-  if (curNALType == 24) 
+  if (curNALType == H264_NAL_TYPE_STAP) 
   {
     // stap-A (single time aggregation packet )
     if (DeencapsulateSTAP(payloadPtr, payloadSize))
       return true;
   } 
-  else if (curNALType == 28) 
+  else if (curNALType == H264_NAL_TYPE_FU) 
   {
     // Fragmentation Units
     if (DeencapsulateFU(payloadPtr, payloadSize))
