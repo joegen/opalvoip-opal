@@ -981,7 +981,15 @@ bool GstEndPoint::ConfigurePipeline(PGstPipeline & pipeline, const GstMediaStrea
   PGstElement el;
   PINDEX i;
 
-  P_INT_PTR rtpHandle = session->GetDataSocket().GetHandle();
+  OpalMediaTransportPtr transport = session->GetTransport();
+  if (transport == NULL)
+    return false;
+
+  PChannel * channel = transport->GetChannel(OpalMediaTransport::e_Media);
+  if (channel == NULL)
+    return false;
+
+  P_INT_PTR rtpHandle = channel->GetHandle();
   PString media(stream.GetMediaFormat().GetMediaType());
   const char *rtp_suffixes[] = { "TxRTP", "RxRTP", };
   for (i = 0; i < PARRAYSIZE(rtp_suffixes); i++) {
@@ -992,8 +1000,13 @@ bool GstEndPoint::ConfigurePipeline(PGstPipeline & pipeline, const GstMediaStrea
     }
   }
 
-  P_INT_PTR rtcpHandle = session->GetLocalDataPort() == session->GetLocalControlPort()
-                              ? session->GetDataSocket().GetHandle() : session->GetControlSocket().GetHandle();
+  P_INT_PTR rtcpHandle = rtpHandle;
+  if (session->GetLocalDataPort() != session->GetLocalControlPort()) {
+    channel = transport->GetChannel(OpalMediaTransport::e_Control);
+    if (channel != NULL)
+      rtcpHandle = channel->GetHandle();
+  }
+
   const char *rtcp_suffixes[] = { "TxRTCP", "RxRTCP", };
   for (i = 0; i < PARRAYSIZE(rtcp_suffixes); i++) {
     PString name = media + rtcp_suffixes[i];
