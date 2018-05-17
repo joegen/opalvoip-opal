@@ -1870,10 +1870,13 @@ void SIPConnection::NotifyDialogState(SIPDialogNotification::States state, SIPDi
     info.m_local.m_rendering = info.m_remote.m_rendering = SIPDialogNotification::NotRenderingMedia;
 
   for (StreamDict::iterator it = m_mediaStreams.begin(); it != m_mediaStreams.end(); ++it) {
-    if (it->second->IsSource())
-      info.m_remote.m_rendering = SIPDialogNotification::RenderingMedia;
-    else
-      info.m_local.m_rendering = SIPDialogNotification::RenderingMedia;
+    OpalMediaStreamPtr mediaStream = it->second;
+    if (mediaStream != NULL) {
+      if (mediaStream->IsSource())
+        info.m_remote.m_rendering = SIPDialogNotification::RenderingMedia;
+      else
+        info.m_local.m_rendering = SIPDialogNotification::RenderingMedia;
+    }
   }
 
   GetEndPoint().SendNotifyDialogInfo(info);

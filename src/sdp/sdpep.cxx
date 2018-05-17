@@ -869,9 +869,11 @@ bool OpalSDPConnection::OnSendAnswerSDP(const SDPSessionDescription & sdpOffer, 
       anyway so we need to deal. */
   for (StreamDict::iterator it = m_mediaStreams.begin(); it != m_mediaStreams.end(); ++it) {
     OpalMediaStreamPtr stream = it->second;
-    unsigned session = stream->GetSessionID();
-    if (session > sessionCount || sdpMediaDescriptions[session] == NULL)
-      stream->Close();
+    if (stream != NULL) {
+      unsigned session = stream->GetSessionID();
+      if (session > sessionCount || sdpMediaDescriptions[session] == NULL)
+        stream->Close();
+    }
   }
 
   bool holdFromRemote = sdpOffer.IsHold();
@@ -1233,7 +1235,7 @@ bool OpalSDPConnection::OnReceivedAnswerSDP(const SDPSessionDescription & sdp, b
      anyway so we need to deal. */
   for (StreamDict::iterator it = m_mediaStreams.begin(); it != m_mediaStreams.end(); ++it) {
     OpalMediaStreamPtr stream = it->second;
-    if (stream->GetSessionID() > mediaDescriptionCount)
+    if (stream != NULL && stream->GetSessionID() > mediaDescriptionCount)
       stream->Close();
   }
 
