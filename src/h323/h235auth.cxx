@@ -400,7 +400,7 @@ H225_CryptoH323Token * H235AuthSimpleMD5::CreateCryptoToken(bool digits)
   // Set the token data that actually goes over the wire
   cryptoEPPwdHash.m_timeStamp = clearToken.m_timeStamp;
   cryptoEPPwdHash.m_token.m_algorithmOID = OID_MD5;
-  cryptoEPPwdHash.m_token.m_hash.SetData(sizeof(digest)*8, (const BYTE *)&digest);
+  cryptoEPPwdHash.m_token.m_hash.SetData(digest);
 
   return cryptoToken;
 }
@@ -450,8 +450,7 @@ H235Authenticator::ValidationResult H235AuthSimpleMD5::ValidateCryptoToken(
   PMessageDigest5::Code digest;
   stomach.Complete(digest);
 
-  if (cryptoEPPwdHash.m_token.m_hash.GetSize() == sizeof(digest)*8 &&
-      memcmp(cryptoEPPwdHash.m_token.m_hash.GetDataPointer(), &digest, sizeof(digest)) == 0)
+  if (cryptoEPPwdHash.m_token.m_hash.GetData() == digest)
     return e_OK;
 
   PTRACE(1, "H235RAS\tH235AuthSimpleMD5 digest does not match.");
@@ -559,7 +558,7 @@ H235_ClearToken * H235AuthCAT::CreateClearToken()
   stomach.Complete(digest);
 
   clearToken->IncludeOptionalField(H235_ClearToken::e_challenge);
-  clearToken->m_challenge.SetValue((const BYTE *)&digest, sizeof(digest));
+  clearToken->m_challenge.SetValue(digest);
 
   return clearToken;
 }
@@ -632,12 +631,7 @@ H235Authenticator::ValidationResult H235AuthCAT::ValidateClearToken(const H235_C
   PMessageDigest5::Code digest;
   stomach.Complete(digest);
 
-  if (clearToken.m_challenge.GetValue().GetSize() != sizeof(digest)) {
-    PTRACE(1, "H235RAS\tCAT requires 16 byte challenge field");
-    return e_Error;
-  }
-
-  if (memcmp((const BYTE *)clearToken.m_challenge.GetValue(), &digest, sizeof(digest)) == 0)
+  if (clearToken.m_challenge.GetValue() == digest)
     return e_OK;
 
   PTRACE(2, "H235RAS\tCAT hash does not match");
