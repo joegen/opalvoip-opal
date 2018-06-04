@@ -103,8 +103,6 @@ OpalRTPSession::OpalRTPSession(const Init & init)
   , m_timeUnits(m_isAudio ? 8 : 90)
   , m_toolName(PProcess::Current().GetName())
   , m_absSendTimeHdrExtId(UINT_MAX)
-  , m_absSendTimeHighBits(0)
-  , m_absSendTimeAllBits(0)
   , m_transportWideSeqNumHdrExtId(UINT_MAX)
   , m_allowAnySyncSource(true)
   , m_staleReceiverTimeout(m_manager.GetStaleReceiverTimeout())
@@ -432,6 +430,11 @@ OpalRTPSession::SyncSource::SyncSource(OpalRTPSession & session, RTP_SyncSourceI
   , m_reportTimestamp(0)
   , m_reportAbsoluteTime(0)
   , m_synthesizeAbsTime(true)
+  , m_absSendTimeHighBits(0)
+  , m_absSendTimeLowBits(0)
+#if PTRACING
+  , m_absSendTimeLoglevel(6)
+#endif
   , m_firstPacketTime(0)
   , m_packets(0)
   , m_octets(0)
@@ -878,8 +881,40 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveData(RTP_
     status = OnReceiveRedundantFrame(frame);
 #endif
 
-  if (rxType != e_RxFromRTX)
+  if (rxType != e_RxFromRTX) {
+    PINDEX hdrlen;
+    BYTE * exthdr = frame.GetHeaderExtension(RTP_DataFrame::RFC5285_OneByte, m_session.m_absSendTimeHdrExtId, hdrlen);
+    if (exthdr != NULL) {
+      // 24 bits in middle of NTP time, as per http://webrtc.org/experiments/rtp-hdrext/abs-send-time/
+      uint32_t ts = (exthdr[0] << 16) | (exthdr[1] << 8) | exthdr[2];
+
+      if (m_absSendTimeHighBits == 0) {
+        m_absSendTimeHighBits = now.GetNTP() & (~0ULL << 38);
+        m_absSendTimeLowBits = ts;
+      }
+
+      uint64_t highBits = m_absSendTimeHighBits;
+      int32_t delta = (ts - m_absSendTimeLowBits) & 0xffffff;
+      if (delta > 0x800000)
+        highBits -= 1LL << 38; // Got a ts from the previous cycle
+      else {
+        if (ts < m_absSendTimeLowBits) {
+          highBits += 1LL << 38; // We wrapped, increment the cycle
+          m_absSendTimeHighBits = highBits;
+        }
+        m_absSendTimeLowBits = ts;
+      }
+
+      frame.SetTransmitTimeNTP(highBits | ((uint64_t)ts << 14));
+      PTRACE(m_absSendTimeLoglevel, &m_session, *this << "set transmit time on RTP:"
+             " sn=" << frame.GetSequenceNumber() << ","
+             " hdr=0x" << std::hex << setfill('0') << setw(6) << ts << ","
+             " delta=0x" << setw(6) << delta << setfill(' ') << std::dec << ","
+             " time=" << frame.GetMetaData().m_transmitTime.AsString(PTime::TodayFormat));
+    }
+
     CalculateStatistics(frame, now);
+  }
 
   // Final user handling of the read frame
   if (status != e_ProcessPacket)
@@ -1595,37 +1630,10 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnPreReceiveData(RTP_DataFrame
 }
 
 
-OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveData(RTP_DataFrame & frame, ReceiveType, const PTime & now)
+OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveData(RTP_DataFrame & frame, ReceiveType, const PTime &)
 {
   BYTE * exthdr;
   PINDEX hdrlen;
-  if ((exthdr = frame.GetHeaderExtension(RTP_DataFrame::RFC5285_OneByte, m_absSendTimeHdrExtId, hdrlen)) != NULL) {
-    const uint64_t HighBitsMask = ~0ULL << 38;
-
-    if (m_absSendTimeHighBits == 0) {
-      PTime highBits = frame.GetAbsoluteTime();
-      if (!highBits.IsValid())
-        highBits = now;
-      m_absSendTimeHighBits = highBits.GetNTP() & HighBitsMask;
-    }
-
-    int64_t     ntp  = *exthdr++;
-    ntp <<= 8;  ntp |= *exthdr++;
-    ntp <<= 8;  ntp |= *exthdr++;
-    ntp <<= 14; ntp |= m_absSendTimeHighBits;
-
-    if (ntp < m_absSendTimeAllBits) {
-      m_absSendTimeHighBits += 1LL << 38;
-      ntp = (ntp & ~HighBitsMask) | m_absSendTimeHighBits;
-    }
-
-    m_absSendTimeAllBits = ntp;
-    frame.SetTransmitTimeNTP(ntp);
-    PTRACE(6, "Set transmit time on RTP:"
-              " sn=" << frame.GetSequenceNumber() << ","
-              " time=" << frame.GetMetaData().m_transmitTime.AsString(PTime::TodayFormat));
-  }
-
   if ((exthdr = frame.GetHeaderExtension(RTP_DataFrame::RFC5285_OneByte, m_transportWideSeqNumHdrExtId, hdrlen)) != NULL) {
     uint16_t sn = *(PUInt16b *)exthdr;
     OpalMediaTransport::CongestionControl * cc = GetCongestionControl();

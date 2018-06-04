@@ -666,8 +666,6 @@ class OpalRTPSession : public OpalMediaSession
     PString             m_toolName;
     RTPHeaderExtensions m_headerExtensions;
     unsigned            m_absSendTimeHdrExtId;
-    int64_t             m_absSendTimeHighBits;
-    int64_t             m_absSendTimeAllBits;
     unsigned            m_transportWideSeqNumHdrExtId;
     bool                m_allowAnySyncSource;
     PTimeInterval       m_staleReceiverTimeout;
@@ -778,6 +776,13 @@ class OpalRTPSession : public OpalMediaSession
       RTP_Timestamp      m_reportTimestamp;
       PTime              m_reportAbsoluteTime;
       bool               m_synthesizeAbsTime;
+
+      // Handling Abs-Send-Time header extension
+      uint64_t m_absSendTimeHighBits;
+      uint32_t m_absSendTimeLowBits;
+#if PTRACING
+      unsigned m_absSendTimeLoglevel;
+#endif
 
       // Statistics gathered
       RTP_DataFrame::PayloadTypes m_payloadType;
