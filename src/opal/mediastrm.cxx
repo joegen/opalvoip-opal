@@ -1408,14 +1408,18 @@ PBoolean OpalVideoMediaStream::WriteData(const BYTE * data, PINDEX length, PINDE
     return false;
   }
 
-  bool keyFrameNeeded = false;
-  if (!m_outputDevice->SetFrameData(frame->x, frame->y,
-                                    frame->width, frame->height,
-                                    OpalVideoFrameDataPtr(frame),
-                                    m_marker, keyFrameNeeded))
+  PVideoOutputDevice::FrameData frameData;
+  frameData.x = frame->x;
+  frameData.y = frame->y;
+  frameData.width = frame->width;
+  frameData.height = frame->height;
+  frameData.pixels = OpalVideoFrameDataPtr(frame);
+  frameData.partialFrame = !m_marker;
+  frameData.timestamp = m_timestamp * 1000LL / m_mediaFormat.GetTimeUnits();
+  if (!m_outputDevice->SetFrameData(frameData))
     return false;
 
-  if (keyFrameNeeded)
+  if (frameData.keyFrameNeeded)
     ExecuteCommand(OpalVideoUpdatePicture());
 
   return true;
