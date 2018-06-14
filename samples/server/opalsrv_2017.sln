@@ -51,6 +51,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Video - H.264 (Cisco OpenH2
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VXML Test", "..\..\..\ptlib\samples\vxmltest\vxmltest_2017.vcxproj", "{7E636B64-DA9D-4711-9F5D-4E1C2EFA8DB2}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Call Generator", "..\callgen\callgen_2017.vcxproj", "{23696513-8FEA-4B89-B8BF-ED0E9DEBE2EA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -348,6 +350,18 @@ Global
 		{7E636B64-DA9D-4711-9F5D-4E1C2EFA8DB2}.Release|Win32.Build.0 = Release|Win32
 		{7E636B64-DA9D-4711-9F5D-4E1C2EFA8DB2}.Release|x64.ActiveCfg = Release|x64
 		{7E636B64-DA9D-4711-9F5D-4E1C2EFA8DB2}.Release|x64.Build.0 = Release|x64
+		{23696513-8FEA-4B89-B8BF-ED0E9DEBE2EA}.Debug|Win32.ActiveCfg = Debug|Win32
+		{23696513-8FEA-4B89-B8BF-ED0E9DEBE2EA}.Debug|Win32.Build.0 = Debug|Win32
+		{23696513-8FEA-4B89-B8BF-ED0E9DEBE2EA}.Debug|x64.ActiveCfg = Debug|x64
+		{23696513-8FEA-4B89-B8BF-ED0E9DEBE2EA}.Debug|x64.Build.0 = Debug|x64
+		{23696513-8FEA-4B89-B8BF-ED0E9DEBE2EA}.No Trace|Win32.ActiveCfg = Release|Win32
+		{23696513-8FEA-4B89-B8BF-ED0E9DEBE2EA}.No Trace|Win32.Build.0 = Release|Win32
+		{23696513-8FEA-4B89-B8BF-ED0E9DEBE2EA}.No Trace|x64.ActiveCfg = Release|x64
+		{23696513-8FEA-4B89-B8BF-ED0E9DEBE2EA}.No Trace|x64.Build.0 = Release|x64
+		{23696513-8FEA-4B89-B8BF-ED0E9DEBE2EA}.Release|Win32.ActiveCfg = Release|Win32
+		{23696513-8FEA-4B89-B8BF-ED0E9DEBE2EA}.Release|Win32.Build.0 = Release|Win32
+		{23696513-8FEA-4B89-B8BF-ED0E9DEBE2EA}.Release|x64.ActiveCfg = Release|x64
+		{23696513-8FEA-4B89-B8BF-ED0E9DEBE2EA}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

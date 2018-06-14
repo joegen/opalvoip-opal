@@ -155,6 +155,9 @@ light -nologo -sice:ICE03 -sice:ICE60 -sice:ICE61 -sice:ICE82 -ext WixUIExtensio
     <ProjectReference Include="..\..\plugins\video\VP8-WebM\vp8_webm_2017.vcxproj">
       <Project>{f663f1b8-24d5-4baa-8a3c-e76a5ac619d4}</Project>
     </ProjectReference>
+    <ProjectReference Include="..\callgen\callgen_2017.vcxproj">
+      <Project>{23696513-8fea-4b89-b8bf-ed0e9debe2ea}</Project>
+    </ProjectReference>
     <ProjectReference Include="opalsrv_2017.vcxproj">
       <Project>{48a0e613-0a49-4c11-900d-fdbbca2b0591}</Project>
     </ProjectReference>

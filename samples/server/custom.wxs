@@ -11,10 +11,18 @@
         <Component Id='VXMLTest.exe'
                    Win64="$(var.IsWin64)"
                    Guid='*'>
-          <File Id='VXMLTest.exe'
-                Name='VXMLTest.exe'
-                Source='$(var.PTLibDir)\bin\VXML Test\x64\Release\VXMLTest.exe'
-                KeyPath='yes' />
+            <File Id='VXMLTest.exe'
+                  Name='VXMLTest.exe'
+                  Source='$(var.PTLibDir)\bin\VXML Test\x64\Release\VXMLTest.exe'
+                  KeyPath='yes' />
+        </Component>
+        <Component Id='callgen.exe'
+                   Win64="$(var.IsWin64)"
+                   Guid='*'>
+            <File Id='callgen.exe'
+                  Name='callgen.exe'
+                  Source='$(var.OPALDir)\bin\Call Generator\x64\Release\callgen.exe'
+                  KeyPath='yes' />
         </Component>
     </DirectoryRef>
 
@@ -76,5 +84,6 @@
                 Level='1'>
         <ComponentRef Id='main_menu.vxml' />
       <ComponentRef Id='VXMLTest.exe' />
+      <ComponentRef Id='callgen.exe' />
     </Feature>
 </Include>
