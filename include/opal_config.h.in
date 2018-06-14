@@ -51,9 +51,7 @@
 #undef  OPAL_PTLIB_WAVFILE
 #undef  OPAL_PTLIB_DTMF
 #undef  OPAL_PTLIB_IPV6
-#ifndef _WIN32_WCE
 #undef  OPAL_PTLIB_DNS_RESOLVER
-#endif
 #ifndef P_IPHONEOS
 #undef  OPAL_PTLIB_LDAP
 #endif
@@ -304,7 +302,7 @@
 */
 //#undef HAS_LIBZRTP
 
-#if defined(OPAL_SRTP) && defined(HAS_LIBZRTP) && !defined(_WIN32_WCE)
+#if defined(OPAL_SRTP) && defined(HAS_LIBZRTP)
 
   #define OPAL_ZRTP  1
 
@@ -396,9 +394,7 @@
 // Ruby support
 //
 
-#if !defined(_WIN32_WCE)
-  #undef OPAL_RUBY
-#endif
+#undef OPAL_RUBY
 
 #if OPAL_RUBY
 
