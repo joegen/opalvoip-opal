@@ -346,7 +346,7 @@ PBoolean MyProcess::Initialise(const char * initMsg)
   }
 
   // set up the HTTP port for listening & start the first HTTP thread
-  if (ListenForHTTP(params.m_httpPort))
+  if (ListenForHTTP(params.m_httpInterfaces, params.m_httpPort))
     PSYSTEMLOG(Info, "Opened master socket(s) for HTTP: " << m_httpListeningSockets.front().GetPort());
   else {
     PSYSTEMLOG(Fatal, "Cannot run without HTTP");
