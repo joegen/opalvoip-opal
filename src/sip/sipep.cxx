@@ -410,6 +410,7 @@ void SIPEndPoint::HandlePDU(const OpalTransportPtr & transport)
       break;
 
     case SIP_PDU::Local_TransportLost :
+      transport->Close();
       if (transport->IsReliable() && transport->HasKeepAlive()) {
         PTRACE(4, "Trying to reconnect dropped transport " << *transport);
         for (SIPHandlers::iterator it = m_activeSIPHandlers.begin(); it != m_activeSIPHandlers.end(); ++it) {
@@ -418,20 +419,18 @@ void SIPEndPoint::HandlePDU(const OpalTransportPtr & transport)
                 regHandler->GetState() == SIPHandler::Subscribed &&
                 regHandler->GetParams().m_compatibility == SIPRegister::e_RFC5626 &&
                 regHandler->GetRemoteTransportAddress().IsEquivalent(transport->GetRemoteAddress())) {
-            if (!transport->IsGood()) {
-              transport->Close();
+            SIPHandler::State newState = SIPHandler::Restoring;
+            if (!transport->Connect()) {
+              // In case remote is bouncing, and is back up quickly, have another go
+              PThread::Sleep(1000);
               if (!transport->Connect()) {
-                // In case remote is bouncing, and is back up quickly, have another go
-                PThread::Sleep(1000);
-                if (!transport->Connect()) {
-                  // Remote has not come back quickly, possibly never, set register into Unavailable
-                  // mode where it periodically retries reconnect.
-                  regHandler->ActivateState(SIPHandler::Unavailable);
-                  break;
-                }
+                // Remote has not come back quickly, possibly never, set register into Unavailable
+                // mode where it periodically retries reconnect.
+                newState = SIPHandler::Unavailable;
               }
             }
-            regHandler->ActivateState(SIPHandler::Restoring);
+            regHandler->ActivateState(newState);
+            break;
           }
         }
       }
