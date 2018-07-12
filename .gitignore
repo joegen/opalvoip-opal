@@ -22,6 +22,7 @@ ipch/
 *.opendb
 .vs/
 .libs/
+.deps/
 lib*/
 obj*/
 opal.xcodeproj/xcuserdata
