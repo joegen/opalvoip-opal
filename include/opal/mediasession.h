@@ -584,6 +584,7 @@ class OpalMediaTransport : public PSafeObject, public OpalMediaTransportChannelT
       RemoteAddressSources m_remoteAddressSource;
 
       PTRACE_THROTTLE(m_throttleReadPacket,4,60000);
+      PTRACE_PARAM(bool m_logFirstRead);
 
 #if defined(__GNUC__) && __cplusplus < 201103
       void operator=(const ChannelInfo &) { }

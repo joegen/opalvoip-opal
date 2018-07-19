@@ -786,6 +786,7 @@ OpalMediaTransport::ChannelInfo::ChannelInfo(OpalMediaTransport & owner, SubChan
   , m_thread(NULL)
   , m_consecutiveUnavailableErrors(0)
   , m_remoteAddressSource(e_RemoteAddressUnknown)
+  PTRACE_PARAM(, m_logFirstRead(true))
 {
 }
 
@@ -798,11 +799,15 @@ void OpalMediaTransport::ChannelInfo::ThreadMain()
   while (m_channel->IsOpen()) {
     PBYTEArray data(m_owner.m_packetSize);
 
-    PTRACE(m_throttleReadPacket, &m_owner, m_owner << m_subchannel <<
-           " read packet: sz=" << data.GetSize() << " timeout=" << m_channel->GetReadTimeout());
+    PTRACE(m_throttleReadPacket, &m_owner, m_owner << m_subchannel << " reading packet:"
+           " sz=" << data.GetSize() << ","
+           " timeout=" << m_channel->GetReadTimeout() << ","
+           " if=" << m_localAddress);
 
     if (m_channel->Read(data.GetPointer(), data.GetSize())) {
       data.SetSize(m_channel->GetLastReadCount());
+      PTRACE_IF(4, m_logFirstRead, &m_owner, m_owner << m_subchannel << " first receive data: sz=" << data.GetSize());
+      PTRACE_PARAM(m_logFirstRead = false);
       m_owner.InternalRxData(m_subchannel, data);
     }
     else {
