@@ -35,6 +35,7 @@
 
 #if OPAL_SRTP
 
+#include <opal.h>
 #include <rtp/dtls_srtp_session.h>
 #include <h323/h323caps.h>
 #include <ptclib/cypher.h>
@@ -301,7 +302,7 @@ H235SecurityCapability * OpalSRTPCryptoSuite::CreateCapability(const H323Capabil
 
 bool OpalSRTPCryptoSuite::Supports(const PCaselessString & proto) const
 {
-  return proto == "sip" || proto == "h323";
+  return proto == OPAL_PREFIX_SIP || proto == OPAL_PREFIX_H323 || proto == OPAL_PREFIX_SDP;
 }
 
 
