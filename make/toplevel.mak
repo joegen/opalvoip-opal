@@ -140,6 +140,7 @@ SOURCES += $(OPAL_SRCDIR)/opal/manager.cxx \
            $(OPAL_SRCDIR)/rtp/rtpep.cxx \
            $(OPAL_SRCDIR)/rtp/rtpconn.cxx \
            $(OPAL_SRCDIR)/ep/localep.cxx \
+           $(OPAL_SRCDIR)/ep/sockep.cxx \
            $(OPAL_SRCDIR)/opal/opal_c.cxx \
            $(OPAL_SRCDIR)/opal/pres_ent.cxx
 

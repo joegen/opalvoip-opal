@@ -160,13 +160,13 @@ bool OpalSockConnection::OpenMediaSocket(PIPSocket * & socket,
   PString addr = m_stringOptions.GetString(addrKey);
   if (!PIPAddress(addr).IsValid()) {
     PTRACE(2, "Invalid IP address provided: \"" << addr << '"');
-    return NULL;
+    return false;
   }
 
   long port = m_stringOptions.GetInteger(portKey);
   if (port < 1024 || port > 65535) {
     PTRACE(2, "Invalid port provided: " << port);
-    return NULL;
+    return false;
   }
 
   PCaselessString proto = m_stringOptions.GetString(protoKey, "tcp");
@@ -176,7 +176,7 @@ bool OpalSockConnection::OpenMediaSocket(PIPSocket * & socket,
     socket = new PUDPSocket;
   else {
     PTRACE(2, "Invalid protocol provided: \"" << proto << '"');
-    return NULL;
+    return false;
   }
 
   socket->SetPort((uint16_t)port);
