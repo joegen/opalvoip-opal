@@ -747,6 +747,9 @@
     <ClCompile Include="..\rtp\libsrtp\crypto\cipher\null_cipher.c">
       <Filter>Source Files\RTP\libSRTP\Source</Filter>
     </ClCompile>
+    <ClCompile Include="..\ep\sockep.cxx">
+      <Filter>Source Files\Endpoints</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\codec\echocancel.h">
@@ -1312,6 +1315,10 @@
     </ClInclude>
     <ClInclude Include="..\rtp\libsrtp\include\config.h">
       <Filter>Source Files\RTP\libSRTP\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\sdp\bfcpinterface.h" />
+    <ClInclude Include="..\..\include\ep\sockep.h">
+      <Filter>Header Files\Endpoints</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

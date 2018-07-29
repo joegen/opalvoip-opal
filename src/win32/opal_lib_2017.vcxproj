@@ -415,6 +415,7 @@
       <EnableParallelCodeGeneration Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">false</EnableParallelCodeGeneration>
       <EnableParallelCodeGeneration Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</EnableParallelCodeGeneration>
     </ClCompile>
+    <ClCompile Include="..\ep\sockep.cxx" />
     <ClCompile Include="..\rtp\libsrtp\crypto\kernel\err.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">NotUsing</PrecompiledHeader>
@@ -1782,6 +1783,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\ep\lyncep.h" />
+    <ClInclude Include="..\..\include\ep\sockep.h" />
     <ClInclude Include="..\..\include\sdp\bfcpinterface.h" />
     <ClInclude Include="..\..\include\sdp\ice.h" />
     <ClInclude Include="..\..\include\sdp\sdphttpep.h" />

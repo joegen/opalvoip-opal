@@ -1,0 +1,284 @@
+/*
+ * sockep.cxx
+ *
+ * Media from socket endpoint.
+ *
+ * Open Phone Abstraction Library (OPAL)
+ *
+ * Copyright (c) 2018 Vox Lucida Pty. Ltd.
+ *
+ * The contents of this file are subject to the Mozilla Public License
+ * Version 1.0 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
+ * the License for the specific language governing rights and limitations
+ * under the License.
+ *
+ * The Original Code is Open Phone Abstraction Library.
+ *
+ * The Initial Developer of the Original Code is Vox Lucdia Pty. Ltd.
+ *
+ * Contributor(s): Robert Jongbleod robertj@voxlucida.com.au.
+ */
+
+#include <ptlib.h>
+
+#include <ep/sockep.h>
+
+
+#define PTraceModule() "sock-ep"
+#define new PNEW
+
+
+OpalSockEndPoint::OpalSockEndPoint(OpalManager & manager, const char * prefix)
+  : OpalLocalEndPoint(manager, prefix)
+{
+}
+
+
+OpalSockEndPoint::~OpalSockEndPoint()
+{
+}
+
+
+PSafePtr<OpalConnection> OpalSockEndPoint::MakeConnection(OpalCall & call,
+                                                     const PString & remoteParty,
+                                                              void * userData,
+                                                        unsigned int options,
+                                     OpalConnection::StringOptions * stringOptions)
+{
+  OpalConnection::StringOptions localStringOptions;
+
+  // First strip of the prefix if present
+  if (remoteParty.Find(GetPrefixName() + ":") == 0)
+    PURL::SplitVars(remoteParty.Mid(GetPrefixName().GetLength() + 1), localStringOptions, ',', '=');
+  else
+    PURL::SplitVars(remoteParty, localStringOptions, ',', '=');
+
+  if (stringOptions != NULL)
+    localStringOptions.Merge(*stringOptions, PStringToString::e_MergeAppend);
+
+  return AddConnection(CreateConnection(call, userData, options, &localStringOptions));
+}
+
+
+OpalLocalConnection * OpalSockEndPoint::CreateConnection(OpalCall & call,
+                                                        void * userData,
+                                                        unsigned options,
+                                                        OpalConnection::StringOptions * stringOptions)
+{
+  return new OpalSockConnection(call, *this, userData, options, stringOptions);
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+OpalSockConnection::OpalSockConnection(OpalCall & call,
+                                       OpalSockEndPoint & endpoint,
+                                       void * userData,
+                                       unsigned options,
+                                       OpalConnection::StringOptions * stringOptions)
+  : OpalLocalConnection(call, endpoint, userData, options, stringOptions, 'I')
+  , m_endpoint(endpoint)
+  , m_audioSocket(NULL)
+#if OPAL_VIDEO
+  , m_videoSocket(NULL)
+#endif
+{
+}
+
+
+OpalSockConnection::~OpalSockConnection()
+{
+  delete m_audioSocket;
+#if OPAL_VIDEO
+  delete m_videoSocket;
+#endif
+}
+
+
+void OpalSockConnection::OnReleased()
+{
+}
+
+
+OpalMediaFormatList OpalSockConnection::GetMediaFormats() const
+{
+  OpalMediaFormatList fmts;
+  fmts += m_stringOptions.GetString(OPAL_OPT_SOCK_EP_AUDIO_CODEC, OPAL_OPUS48);
+#if OPAL_VIDEO
+  fmts += m_stringOptions.GetString(OPAL_OPT_SOCK_EP_VIDEO_CODEC, OPAL_H264_MODE1);
+#endif
+  return fmts;
+}
+
+
+bool OpalSockConnection::TransferConnection(const PString & remoteParty)
+{
+  return OpalLocalConnection::TransferConnection(remoteParty);
+}
+
+
+bool OpalSockConnection::OnOutgoing()
+{
+  return OpenMediaSockets();
+}
+
+
+bool OpalSockConnection::OnIncoming()
+{
+  return OpenMediaSockets();
+}
+
+
+bool OpalSockConnection::OpenMediaSockets()
+{
+  if (!OpenMediaSocket(m_audioSocket, OPAL_OPT_SOCK_EP_AUDIO_IP, OPAL_OPT_SOCK_EP_AUDIO_PORT, OPAL_OPT_SOCK_EP_AUDIO_PROTO))
+    return false;
+
+#if OPAL_VIDEO
+  if (!OpenMediaSocket(m_videoSocket, OPAL_OPT_SOCK_EP_VIDEO_IP, OPAL_OPT_SOCK_EP_VIDEO_PORT, OPAL_OPT_SOCK_EP_VIDEO_PROTO))
+    return false;
+#endif
+
+  PTRACE(3, "Opened media sockets.");
+  return true;
+}
+
+
+bool OpalSockConnection::OpenMediaSocket(PIPSocket * & socket,
+                                         const PString & addrKey,
+                                         const PString & portKey,
+                                         const PCaselessString & protoKey)
+{
+  delete socket;
+  socket = NULL;
+
+  PString addr = m_stringOptions.GetString(addrKey);
+  if (!PIPAddress(addr).IsValid()) {
+    PTRACE(2, "Invalid IP address provided: \"" << addr << '"');
+    return NULL;
+  }
+
+  long port = m_stringOptions.GetInteger(portKey);
+  if (port < 1024 || port > 65535) {
+    PTRACE(2, "Invalid port provided: " << port);
+    return NULL;
+  }
+
+  PCaselessString proto = m_stringOptions.GetString(protoKey, "tcp");
+  if (proto == "tcp")
+    socket = new PTCPSocket;
+  else if (proto == "udp")
+    socket = new PUDPSocket;
+  else {
+    PTRACE(2, "Invalid protocol provided: \"" << proto << '"');
+    return NULL;
+  }
+
+  socket->SetPort((uint16_t)port);
+  if (socket->Connect(addr)) {
+    PTRACE(3, "Connected to media socket: \"" << socket->GetPeerAddress() << '"');
+    return true;
+  }
+
+  PTRACE(2, "Could not connect to " << addr << ':' << port);
+  delete socket;
+  socket = NULL;
+  return false;
+}
+
+
+#pragma pack(1)
+struct MediaSockHeader {
+  uint8_t  m_headerSize;
+  uint8_t m_length[3];
+};
+#pragma pack()
+
+
+bool OpalSockConnection::OnReadMediaData(const OpalMediaStream & mediaStream,
+                                         void * data,
+                                         PINDEX size,
+                                         PINDEX & length)
+{
+  OpalMediaType mediaType = mediaStream.GetMediaFormat().GetMediaType();
+
+  PIPSocket * socket;
+  if (mediaType == OpalMediaType::Audio())
+    socket = m_audioSocket;
+#if OPAL_VIDEO
+  else if (mediaType == OpalMediaType::Video())
+    socket = m_videoSocket;
+#endif
+  else {
+    PTRACE(2, "Unsupported media type: " << mediaType);
+    return false;
+  }
+
+  if (socket == NULL || !socket->IsOpen()) {
+    PTRACE(2, "Socket not open for media type " << mediaType);
+    return false;
+  }
+
+  MediaSockHeader hdr;
+  if (!socket->ReadBlock(&hdr, sizeof(hdr))) {
+    PTRACE(2, "Socket read error for media type " << mediaType << " - " << socket->GetErrorText());
+    return false;
+  }
+  length = (hdr.m_length[0] << 16) | (hdr.m_length[1] << 8) | hdr.m_length[2];
+
+  if (length > size) {
+    PTRACE(2, "unexpectedly large data for media type " << mediaType << ": " << length << " > " << size);
+    return false;
+  }
+
+  if (socket->ReadBlock(data, length))
+    return true;
+
+  PTRACE(2, "Socket read error for media type " << mediaType << " - " << socket->GetErrorText());
+  return false;
+}
+
+
+bool OpalSockConnection::OnWriteMediaData(const OpalMediaStream & mediaStream,
+                                          const void * data,
+                                          PINDEX length,
+                                          PINDEX & written)
+{
+  OpalMediaType mediaType = mediaStream.GetMediaFormat().GetMediaType();
+
+  PIPSocket * socket;
+  if (mediaType == OpalMediaType::Audio())
+    socket = m_audioSocket;
+#if OPAL_VIDEO
+  else if (mediaType == OpalMediaType::Video())
+    socket = m_videoSocket;
+#endif
+  else {
+    PTRACE(2, "Unsupported media type: " << mediaType);
+    return false;
+  }
+
+  if (socket == NULL || !socket->IsOpen()) {
+    PTRACE(2, "Socket not open for media type " << mediaType);
+    return false;
+  }
+
+  MediaSockHeader hdr;
+  hdr.m_headerSize = sizeof(hdr);
+  hdr.m_length[0] = length >> 16;
+  hdr.m_length[1] = length >> 8;
+  hdr.m_length[2] = length;
+  if (!socket->Write(&hdr, sizeof(hdr)) || !socket->Write(data, length)) {
+    PTRACE(2, "Socket write error for media type " << mediaType << " - " << socket->GetErrorText());
+    return false;
+  }
+
+  written = socket->GetLastWriteCount();
+  return true;
+}
+

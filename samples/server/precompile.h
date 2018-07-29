@@ -32,6 +32,7 @@
 #include <opal/patch.h>
 #include <h323/gkclient.h>
 #include <h323/gkserver.h>
+#include <ep/sockep.h>
 
 #if OPAL_PTLIB_SSL
 #include <ptclib/shttpsvc.h>
