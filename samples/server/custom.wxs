@@ -8,6 +8,14 @@
                   Source='main_menu.vxml'
                   KeyPath='yes' />
         </Component>
+        <Component Id='webrtc_test.html'
+                   Win64="$(var.IsWin64)"
+                   Guid='*'>
+            <File Id='webrtc_test.html'
+                  Name='webrtc_test.html'
+                  Source='webrtc_test.html'
+                  KeyPath='yes' />
+        </Component>
         <Component Id='VXMLTest.exe'
                    Win64="$(var.IsWin64)"
                    Guid='*'>
@@ -82,7 +90,8 @@
     <Feature Id='AdditionalFiles'
                 Title="Additional files for $(var.ProductName)"
                 Level='1'>
-        <ComponentRef Id='main_menu.vxml' />
+      <ComponentRef Id='main_menu.vxml' />
+      <ComponentRef Id='webrtc_test.html' />
       <ComponentRef Id='VXMLTest.exe' />
       <ComponentRef Id='callgen.exe' />
     </Feature>
