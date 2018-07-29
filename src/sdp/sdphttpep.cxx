@@ -218,7 +218,7 @@ bool OpalSDPHTTPConnection::OnReceivedHTTP(PHTTPServer & server, const PHTTPConn
   SetPhase(SetUpPhase);
   OnApplyStringOptions();
   if (!OnIncomingConnection(0, NULL))
-    return server.OnError(PHTTP::NotFound, "Must have a destination query parameter", connectInfo);
+    return server.OnError(PHTTP::NotFound, "Invalid destination query parameter", connectInfo);
 
   InternalSetMediaAddresses(server);
 
@@ -246,6 +246,7 @@ bool OpalSDPHTTPConnection::OnReceivedHTTP(PHTTPServer & server, const PHTTPConn
   m_answerSDP = NULL;
 
   PMIMEInfo headers;
+  headers.Set(PHTTP::ContentTypeTag(), OpalSDPEndPoint::ContentType());
   server.StartResponse(PHTTP::RequestOK, headers, answer.GetLength());
   return server.WriteString(answer);
 }

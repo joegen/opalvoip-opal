@@ -35,6 +35,7 @@
 #if OPAL_SDP_HTTP
 
 #include <sdp/sdpep.h>
+#include <opal.h>
 
 
 /**Endpoint for SDP over HTTP POST command (used for WebRTC).
@@ -55,7 +56,7 @@ class OpalSDPHTTPEndPoint : public OpalSDPEndPoint
      */
     OpalSDPHTTPEndPoint(
       OpalManager & manager,          ///<  Manager of all endpoints.
-      const PCaselessString & prefix = "sdp" ///<  Prefix for URL style address strings
+      const PCaselessString & prefix = OPAL_PREFIX_SDP ///<  Prefix for URL style address strings
     );
 
     /**Destroy the endpoint.

@@ -58,6 +58,9 @@
     <None Include="opalsrv.ico">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="webrtc_test.html">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="svcproc.rc">

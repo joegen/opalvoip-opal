@@ -318,6 +318,7 @@
   <ItemGroup>
     <None Include="messages.bin" />
     <None Include="opalsrv.ico" />
+    <None Include="webrtc_test.html" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="svcproc.rc" />

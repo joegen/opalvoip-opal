@@ -277,8 +277,11 @@ PBoolean MyProcess::Initialise(const char * initMsg)
 #if OPAL_PTLIB_HTTP && OPAL_PTLIB_SSL
   m_httpNameSpace.AddResource(new OpalHTTPConnector(*m_manager, "/websocket", params.m_authority), PHTTPSpace::Overwrite);
 #endif // OPAL_PTLIB_HTTP && OPAL_PTLIB_SSL
+
 #if OPAL_SDP
   m_httpNameSpace.AddResource(new OpalSDPHTTPResource(*m_manager->FindEndPointAs<OpalSDPHTTPEndPoint>(OPAL_PREFIX_SDP), "/sdp", params.m_authority), PHTTPSpace::Overwrite);
+  PHTTPFile * webrtcTest = new PHTTPFile("/webrtc_test.html", "./webrtc_test.html", params.m_authority);
+  m_httpNameSpace.AddResource(webrtcTest, PHTTPSpace::Overwrite);
 #endif
 
 
@@ -330,6 +333,10 @@ PBoolean MyProcess::Initialise(const char * initMsg)
 #endif // OPAL_SIP
          << PHTML::Paragraph()
          << PHTML::HotLink(cdrListPage->GetHotLink()) << "Call Detail Records" << PHTML::HotLink()
+#if OPAL_SDP
+         << PHTML::Paragraph()
+         << PHTML::HotLink(webrtcTest->GetHotLink()) << "WebRTC Test" << PHTML::HotLink()
+#endif
          << PHTML::Paragraph();
 
     if (params.m_fullLogPage != NULL)
@@ -681,7 +688,7 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
   rsrc->Add(new PHTTPDividerField());
   {
     OpalSDPHTTPEndPoint * ep = FindEndPointAs<OpalSDPHTTPEndPoint>(OPAL_PREFIX_SDP);
-    if (!ConfigureCommon(ep, "SDP", cfg, rsrc))
+    if (!ConfigureCommon(ep, "WebRTC", cfg, rsrc))
       return false;
   }
 #endif // OPAL_SDP_HTTP
