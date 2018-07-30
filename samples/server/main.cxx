@@ -36,6 +36,7 @@ const WORD DefaultHTTPPort = 1719;
 const WORD DefaultTelnetPort = 1718;
 static const PConstString TelnetPortKey("Console Port");
 static const PConstString DisplayNameKey("Display Name");
+static const PConstString MaxSimultaneousCallsKey("Maximum Simultaneous Calls");
 static const PConstString MediaTransferModeKey("Media Transfer Mode");
 static const PConstString AutoStartKeyPrefix("Auto Start ");
 static const PConstString PreferredMediaKey("Preferred Media");
@@ -444,6 +445,7 @@ bool MyManager::ConfigureCommon(OpalEndPoint * ep,
 MyManager::MyManager()
   : MyManagerParent(OPAL_CONSOLE_PREFIXES OPAL_PREFIX_PCSS " " OPAL_PREFIX_IVR " " OPAL_PREFIX_MIXER)
   , m_systemLog(PSystemLog::Info)
+  , m_maxCalls(9999)
   , m_mediaTransferMode(MediaTransferForward)
   , m_savedProductInfo(GetProductInfo())
 #if OPAL_CAPI
@@ -527,6 +529,8 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
     SetProductInfo(m_savedProductInfo);
 
   rsrc->Add(new PHTTPDividerField());
+
+  m_maxCalls = rsrc->AddIntegerField(MaxSimultaneousCallsKey, 1, 9999, m_maxCalls, "", "Maximum simultaneous calls");
 
   m_mediaTransferMode = cfg.GetEnum(MediaTransferModeKey, m_mediaTransferMode);
   static const char * const MediaTransferModeValues[] = { "0", "1", "2" };
@@ -874,7 +878,11 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
 
 OpalCall * MyManager::CreateCall(void *)
 {
-  return new MyCall(*this);
+  if (m_activeCalls.GetSize() < m_maxCalls)
+    return new MyCall(*this);
+
+  PTRACE(2, "Maximum simultaneous calls (" << m_maxCalls << ") exceeeded.");
+  return NULL;
 }
 
 
