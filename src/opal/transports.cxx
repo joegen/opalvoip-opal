@@ -947,7 +947,7 @@ OpalTransport * OpalListenerUDP::Accept(const PTimeInterval & timeout)
   param.m_timeout = timeout;
   m_listenerBundle->ReadFromBundle(param);
 
-  if (param.m_errorCode != PChannel::NoError)
+  if (param.m_errorCode != PChannel::NoError && param.m_errorCode != PChannel::BufferTooSmall)
     return NULL;
 
   pdu.SetSize(param.m_lastCount);
