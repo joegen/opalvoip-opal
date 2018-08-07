@@ -2003,6 +2003,14 @@ void OpalManager_C::HandleSetProtocol(const OpalMessage & command, OpalMessageBu
     OpalMediaCryptoSuite * cryptoSuite = OpalMediaCryptoSuiteFactory::CreateInstance(allMediaCryptoSutes[i]);
     strm << cryptoSuite->GetFactoryName() << '=' << cryptoSuite->GetDescription() << 'n';
   }
+  SET_MESSAGE_STRING(response, m_param.m_protocol.m_allMediaCryptoSuites, strm);
+
+  if (m_apiVersion < 37)
+    return;
+
+  response->m_param.m_protocol.m_maxSizeUDP = ep->GetMaxSizeUDP();
+  if (command.m_param.m_protocol.m_maxSizeUDP > 0)
+    ep->SetMaxSizeUDP(command.m_param.m_protocol.m_maxSizeUDP);
 }
 
 

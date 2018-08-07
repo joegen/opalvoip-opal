@@ -108,6 +108,14 @@ public class OpalParamProtocol {
     return OPALJNI.OpalParamProtocol_allMediaCryptoSuites_get(swigCPtr, this);
   }
 
+  public void setMaxSizeUDP(long value) {
+    OPALJNI.OpalParamProtocol_maxSizeUDP_set(swigCPtr, this, value);
+  }
+
+  public long getMaxSizeUDP() {
+    return OPALJNI.OpalParamProtocol_maxSizeUDP_get(swigCPtr, this);
+  }
+
   public OpalParamProtocol() {
     this(OPALJNI.new_OpalParamProtocol(), true);
   }

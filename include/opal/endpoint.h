@@ -934,6 +934,14 @@ class OpalEndPoint : public PObject
     /**Set the IP Quality of Service info for media (eg RTP) channels.
      */
     void SetMediaQoS(const OpalMediaType & type, const PIPSocket::QoS & qos);
+
+    /**Get the maximum size of a UDP packet that can be received.
+      */
+    PINDEX GetMaxSizeUDP() const { return m_maxSizeUDP; }
+
+    /**Set the maximum size of a UDP packet that can be received.
+      */
+    void SetMaxSizeUDP(PINDEX size) { m_maxSizeUDP = size; }
   //@}
 
   protected:

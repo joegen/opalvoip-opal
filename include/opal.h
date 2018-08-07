@@ -76,7 +76,7 @@ typedef struct OpalHandleStruct * OpalHandle;
 typedef struct OpalMessage OpalMessage;
 
 /// Current API version
-#define OPAL_C_API_VERSION 36
+#define OPAL_C_API_VERSION 37
 
 
 ///////////////////////////////////////
@@ -926,6 +926,7 @@ typedef struct OpalParamProtocol {
   const char * m_allMediaCryptoSuites;/**< This is only provided as a return value, and lists all of the
                                            crypto suites supported by this protocol in the form:
                                               "name1=description1\nname2=description2\n" */
+  unsigned m_maxSizeUDP;              /**< Maximum size of signalling UDP packet. */
 } OpalParamProtocol;
 
 

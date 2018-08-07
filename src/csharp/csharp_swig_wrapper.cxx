@@ -306,7 +306,7 @@ SWIGEXPORT int SWIGSTDCALL CSharp_OPAL_C_API_VERSION_get() {
   int jresult ;
   int result;
   
-  result = (int)(36);
+  result = (int)(37);
   jresult = result; 
   return jresult;
 }
@@ -2110,6 +2110,28 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_OpalParamProtocol_allMediaCryptoSuites_get(
   arg1 = (OpalParamProtocol *)jarg1; 
   result = (char *) ((arg1)->m_allMediaCryptoSuites);
   jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_OpalParamProtocol_maxSizeUDP_set(void * jarg1, unsigned int jarg2) {
+  OpalParamProtocol *arg1 = (OpalParamProtocol *) 0 ;
+  unsigned int arg2 ;
+  
+  arg1 = (OpalParamProtocol *)jarg1; 
+  arg2 = (unsigned int)jarg2; 
+  if (arg1) (arg1)->m_maxSizeUDP = arg2;
+}
+
+
+SWIGEXPORT unsigned int SWIGSTDCALL CSharp_OpalParamProtocol_maxSizeUDP_get(void * jarg1) {
+  unsigned int jresult ;
+  OpalParamProtocol *arg1 = (OpalParamProtocol *) 0 ;
+  unsigned int result;
+  
+  arg1 = (OpalParamProtocol *)jarg1; 
+  result = (unsigned int) ((arg1)->m_maxSizeUDP);
+  jresult = result; 
   return jresult;
 }
 
