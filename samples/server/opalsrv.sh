@@ -15,6 +15,8 @@ fi
 
 case $1 in
   start )
+    cd $INFO_DIR
+	cp $SRC_DIR/webrtc_test.html $INFO_DIR
     COMMAND="$PROG $ARGS --daemon"
   ;;
 
