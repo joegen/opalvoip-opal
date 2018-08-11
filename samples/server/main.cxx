@@ -377,8 +377,10 @@ bool MyManager::ConfigureCommon(OpalEndPoint * ep,
   bool disabled = !rsrc->AddBooleanField(cfgPrefix & "Enabled", true);
   PStringArray listeners = rsrc->AddStringArrayField(cfgPrefix & "Interfaces", false, 25, PStringArray(),
                                       "Local network interfaces and ports to listen on, blank means all");
-  if (disabled)
+  if (disabled) {
+    PSYSTEMLOG(Info, "Disabled " << cfgPrefix);
     ep->RemoveListener(NULL);
+  }
   else if (!ep->StartListeners(listeners)) {
     PSYSTEMLOG(Error, "Could not open any listeners for " << cfgPrefix);
   }
@@ -517,6 +519,7 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
 #endif //P_CLI && P_TELNET
 
   rsrc->Add(new PHTTPDividerField());
+  PSYSTEMLOG(Info, "Configuring Globals");
 
   // General parameters for all endpoint types
   SetDefaultDisplayName(rsrc->AddStringField(DisplayNameKey, 25, GetDefaultDisplayName(), "Display name used in various protocols"));
@@ -656,6 +659,7 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
 
 #if P_STUN
   rsrc->Add(new PHTTPDividerField());
+  PSYSTEMLOG(Info, "Configuring NAT");
 
   {
     std::set<NATInfo> natInfo;
@@ -679,18 +683,21 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
 
 #if OPAL_H323
   rsrc->Add(new PHTTPDividerField());
+  PSYSTEMLOG(Info, "Configuring H.323");
   if (!GetH323EndPoint().Configure(cfg, rsrc))
     return false;
 #endif // OPAL_H323
 
 #if OPAL_SIP
   rsrc->Add(new PHTTPDividerField());
+  PSYSTEMLOG(Info, "Configuring SIP");
   if (!GetSIPEndPoint().Configure(cfg, rsrc))
     return false;
 #endif // OPAL_SIP
 
 #if OPAL_SDP_HTTP
   rsrc->Add(new PHTTPDividerField());
+  PSYSTEMLOG(Info, "Configuring HTTP/SDP");
   {
     OpalSDPHTTPEndPoint * ep = FindEndPointAs<OpalSDPHTTPEndPoint>(OPAL_PREFIX_SDP);
     if (!ConfigureCommon(ep, "WebRTC", cfg, rsrc))
@@ -700,18 +707,21 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
 
 #if OPAL_SKINNY
   rsrc->Add(new PHTTPDividerField());
+  PSYSTEMLOG(Info, "Configuring Skinny");
   if (!GetSkinnyEndPoint().Configure(cfg, rsrc))
     return false;
 #endif // OPAL_SKINNY
 
 #if OPAL_LYNC
   rsrc->Add(new PHTTPDividerField());
+  PSYSTEMLOG(Info, "Configuring Lync");
   if (!GetLyncEndPoint().Configure(cfg, rsrc))
     return false;
 #endif // OPAL_LYNC
 
 #if OPAL_LID
   rsrc->Add(new PHTTPDividerField());
+  PSYSTEMLOG(Info, "Configuring LIDs");
   // Add POTS and PSTN endpoints
   if (!FindEndPointAs<OpalLineEndPoint>(OPAL_PREFIX_POTS)->AddDeviceNames(rsrc->AddSelectArrayField(LIDKey, false,
     OpalLineInterfaceDevice::GetAllDevices(), PStringArray(), "Line Interface Devices (PSTN, ISDN etc) to monitor, if any"))) {
@@ -722,6 +732,7 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
 
 #if OPAL_CAPI
   rsrc->Add(new PHTTPDividerField());
+  PSYSTEMLOG(Info, "Configuring CAPI");
   m_enableCAPI = rsrc->AddBooleanField(EnableCAPIKey, m_enableCAPI, "Enable CAPI ISDN controller(s), if available");
   if (m_enableCAPI && FindEndPointAs<OpalCapiEndPoint>(OPAL_PREFIX_CAPI)->OpenControllers() == 0) {
     PSYSTEMLOG(Error, "No CAPI controllers!");
@@ -731,6 +742,7 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
 
 #if OPAL_IVR
   rsrc->Add(new PHTTPDividerField());
+  PSYSTEMLOG(Info, "Configuring IVR");
   {
     OpalIVREndPoint * ivrEP = FindEndPointAs<OpalIVREndPoint>(OPAL_PREFIX_IVR);
     // Set IVR protocol handler
@@ -748,6 +760,7 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
 
 #if OPAL_HAS_MIXER
   rsrc->Add(new PHTTPDividerField());
+  PSYSTEMLOG(Info, "Configuring MCU");
   {
     OpalMixerEndPoint * mcuEP = FindEndPointAs<OpalMixerEndPoint>(OPAL_PREFIX_MIXER);
     OpalMixerNodeInfo adHoc;
@@ -789,6 +802,7 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
 
   // Routing
   rsrc->Add(new PHTTPDividerField());
+  PSYSTEMLOG(Info, "Configuring Routes");
 
   PHTTPCompositeField * routeFields = new PHTTPCompositeField(ROUTES_KEY, ROUTES_SECTION,
     "Internal routing of calls to varous sub-systems.<p>"
@@ -871,6 +885,7 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
   SetRouteTable(routes);
 
   rsrc->Add(new PHTTPDividerField());
+  PSYSTEMLOG(Info, "Configuring CDR");
 
   return ConfigureCDR(cfg, rsrc);
 }
