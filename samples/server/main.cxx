@@ -216,9 +216,7 @@ PBoolean MyProcess::OnStart()
 
   if (m_manager == NULL)
     m_manager = new MyManager();
-  return m_manager->PreInitialise(GetArguments(), false) &&
-         PHTTPServiceProcess::OnStart() &&
-         m_manager->Initialise(GetArguments(), false);
+  return m_manager->Initialise(GetArguments(), false) && PHTTPServiceProcess::OnStart();
 }
 
 
