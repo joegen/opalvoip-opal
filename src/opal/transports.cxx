@@ -1503,7 +1503,7 @@ OpalTransportUDP::OpalTransportUDP(OpalEndPoint & ep,
                                    bool preOpen)
   : OpalTransportIP(ep, NULL, binding, localPort)
   , m_manager(ep.GetManager())
-  , m_bufferSize(8192)
+  , m_bufferSize(ep.GetMaxSizeUDP())
   , m_preReadOK(false)
 {
   PMonitoredSockets * sockets = PMonitoredSockets::Create(binding.AsString(),
@@ -1521,7 +1521,7 @@ OpalTransportUDP::OpalTransportUDP(OpalEndPoint & ep,
                                    const OpalTransportAddress & remoteAddress)
   : OpalTransportIP(ep, new PMonitoredSocketChannel(listener, true), PIPSocket::GetDefaultIpAny(), 0)
   , m_manager(ep.GetManager())
-  , m_bufferSize(8192)
+  , m_bufferSize(ep.GetMaxSizeUDP())
   , m_preReadOK(true)
 {
   if (!remoteAddress.GetIpAndPort(m_remoteAP)) {
