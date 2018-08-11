@@ -13,15 +13,21 @@ if [ ! -x $PROG ]; then
   exit 1
 fi
 
+cd $INFO_DIR
+
 case $1 in
   start )
-    cd $INFO_DIR
 	cp $SRC_DIR/webrtc_test.html $INFO_DIR
     COMMAND="$PROG $ARGS --daemon"
   ;;
 
   stop )
     COMMAND="$PROG $ARGS --kill"
+  ;;
+
+  restart )
+    COMMAND="$PROG $ARGS --kill"
+    COMMAND="$PROG $ARGS --daemon"
   ;;
 
   status )
