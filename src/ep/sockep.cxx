@@ -124,13 +124,14 @@ bool OpalSockConnection::TransferConnection(const PString & remoteParty)
 
 bool OpalSockConnection::OnOutgoing()
 {
-  return OpenMediaSockets();
+  return OpenMediaSockets() && OpalLocalConnection::OnOutgoing();
 }
 
 
 bool OpalSockConnection::OnIncoming()
 {
-  return OpenMediaSockets();
+  // Returning false is EndedByLocalBusy
+  return OpenMediaSockets() && OpalLocalConnection::OnIncoming();
 }
 
 
