@@ -917,7 +917,7 @@ bool OpalConsoleSkinnyEndPoint::Initialise(PArgList & args, bool verbose, const 
     }
   }
 
-  if (none)
+  if (none && verbose)
     output << "SCCP has no phone devices registered" << endl;
 
   AddRoutesFor(this, defaultRoute);
