@@ -365,7 +365,7 @@ PBoolean OpalLocalConnection::SetAlerting(const PString & calleeName, PBoolean)
   PTRACE(3, "LocalCon\tSetAlerting(" << calleeName << ')');
   SetPhase(AlertingPhase);
   m_remotePartyName = calleeName;
-  return m_endpoint.OnOutgoingCall(*this);
+  return OnOutgoing();
 }
 
 
@@ -375,6 +375,12 @@ PBoolean OpalLocalConnection::SetConnected()
 
   if (GetMediaStream(PString::Empty(), true) == NULL)
     AutoStartMediaStreams(); // if no media streams, try and start them
+
+  if (GetPhase() < AlertingPhase) {
+    SetPhase(AlertingPhase);
+    if (!OnOutgoing())
+      return false;
+  }
 
   return OpalConnection::SetConnected();
 }
