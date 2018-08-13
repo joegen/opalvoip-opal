@@ -31,6 +31,10 @@
 
 #include <sdp/sdphttpep.h>
 
+
+#define PTraceModule() "SDP-HTTP"
+
+
 #if OPAL_SDP_HTTP
 
 OpalSDPHTTPEndPoint::OpalSDPHTTPEndPoint(OpalManager & manager, const PCaselessString & prefix)
@@ -222,6 +226,7 @@ bool OpalSDPHTTPConnection::OnReceivedHTTP(PHTTPServer & server, const PHTTPConn
 
   InternalSetMediaAddresses(server);
 
+  PTRACE(4, "Received SDP:\n" << connectInfo.GetEntityBody());
   m_offerSDP = m_endpoint.CreateSDP(0, 0, OpalTransportAddress());
   if (!m_offerSDP->Decode(connectInfo.GetEntityBody(), GetLocalMediaFormats()) || m_offerSDP->GetMediaDescriptions().IsEmpty()) {
     PTRACE(1, "HTTP body does not have acceptable SDP");
@@ -244,6 +249,8 @@ bool OpalSDPHTTPConnection::OnReceivedHTTP(PHTTPServer & server, const PHTTPConn
   PString answer = m_answerSDP->Encode();
   delete m_answerSDP;
   m_answerSDP = NULL;
+
+  PTRACE(4, "Sending SDP:\n" << answer);
 
   PMIMEInfo headers;
   headers.Set(PHTTP::ContentTypeTag(), OpalSDPEndPoint::ContentType());
