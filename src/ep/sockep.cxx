@@ -223,26 +223,26 @@ bool OpalSockConnection::OnReadMediaData(const OpalMediaStream & mediaStream,
   }
 
   if (socket == NULL || !socket->IsOpen()) {
-    PTRACE(2, "Socket not open for media type " << mediaType);
+    PTRACE(2, "Socket not open for " << mediaType);
     return false;
   }
 
   MediaSockHeader hdr;
   if (!socket->ReadBlock(&hdr, sizeof(hdr))) {
-    PTRACE(2, "Socket read error for media type " << mediaType << " - " << socket->GetErrorText());
+    PTRACE(2, "Socket read error for " << mediaType << " - " << socket->GetErrorText());
     return false;
   }
   length = (hdr.m_length[0] << 16) | (hdr.m_length[1] << 8) | hdr.m_length[2];
 
   if (length > size) {
-    PTRACE(2, "unexpectedly large data for media type " << mediaType << ": " << length << " > " << size);
+    PTRACE(2, "Unexpectedly large data for " << mediaType << ": " << length << " > " << size);
     return false;
   }
 
   if (socket->ReadBlock(data, length))
     return true;
 
-  PTRACE(2, "Socket read error for media type " << mediaType << " - " << socket->GetErrorText());
+  PTRACE(2, "Socket read error for " << mediaType << " - " << socket->GetErrorText());
   return false;
 }
 
@@ -267,7 +267,7 @@ bool OpalSockConnection::OnWriteMediaData(const OpalMediaStream & mediaStream,
   }
 
   if (socket == NULL || !socket->IsOpen()) {
-    PTRACE(2, "Socket not open for media type " << mediaType);
+    PTRACE(2, "Socket not open for " << mediaType);
     return false;
   }
 
@@ -277,7 +277,7 @@ bool OpalSockConnection::OnWriteMediaData(const OpalMediaStream & mediaStream,
   hdr.m_length[1] = length >> 8;
   hdr.m_length[2] = length;
   if (!socket->Write(&hdr, sizeof(hdr)) || !socket->Write(data, length)) {
-    PTRACE(2, "Socket write error for media type " << mediaType << " - " << socket->GetErrorText());
+    PTRACE(2, "Socket write error for " << mediaType << " - " << socket->GetErrorText());
     return false;
   }
 
