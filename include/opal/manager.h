@@ -1672,7 +1672,7 @@ class OpalManager : public PObject
     void SetMediaQoS(const OpalMediaType & type, const PIPSocket::QoS & qos);
 
     /**Get the maximum transmitted RTP payload size.
-       Defaults to maximum safe MTU size (576 bytes as per RFC879) minus the
+       Defaults to maximum safe MTU size (1400 bytes) minus the
        typical size of the IP, UDP an RTP headers.
       */
     PINDEX GetMaxRtpPayloadSize() const { return m_rtpPayloadSizeMax; }
