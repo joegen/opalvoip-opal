@@ -74,6 +74,9 @@ OpalMediaStream::OpalMediaStream(OpalConnection & conn, const OpalMediaFormat & 
   PTRACE_CONTEXT_ID_FROM(conn);
   PTRACE_CONTEXT_ID_TO(m_identifier);
 
+  if (m_defaultDataSize == 0)
+    m_defaultDataSize = m_connection.GetEndPoint().GetManager().GetMaxRtpPayloadSize();
+
   m_connection.SafeReference();
   PTRACE(5, "Created " << (IsSource() ? "Source" : "Sink") << ' ' << this);
 }
@@ -403,8 +406,10 @@ PBoolean OpalMediaStream::PushPacket(RTP_DataFrame & packet)
 
 PBoolean OpalMediaStream::SetDataSize(PINDEX dataSize, PINDEX /*frameTime*/)
 {
-  if (dataSize <= 0)
+  if (dataSize <= 0) {
+    PTRACE(4, "Ignoring set data size of " << dataSize << ", leaving as " << GetDataSize() << " on " << *this);
     return false;
+  }
 
   PTRACE_IF(4, GetDataSize() != dataSize, "Set data size from "
             << GetDataSize() << " to " << dataSize << " on " << *this);
