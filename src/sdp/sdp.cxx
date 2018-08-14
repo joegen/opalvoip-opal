@@ -972,8 +972,10 @@ bool SDPMediaDescription::PostDecode(const OpalMediaFormatList & mediaFormats)
 
 #if OPAL_ICE
   // Do not confuse ICE with "old style" hold
-  if (m_mediaAddress.IsEmpty() && HasICE())
-    m_mediaAddress = OpalTransportAddress(PIPAddress(), m_port, OpalTransportAddress::UdpPrefix());
+  if (m_mediaAddress.IsEmpty() && HasICE()) {
+    m_controlAddress = m_mediaAddress = OpalTransportAddress(PIPAddress(), m_port, OpalTransportAddress::UdpPrefix());
+    PTRACE(3, "ICE detected, not using 0.0.0.0 as HOLD request.");
+  }
 #endif
 
   return true;
@@ -3005,6 +3007,7 @@ bool SDPSessionDescription::Decode(const PStringArray & lines, const OpalMediaFo
     for (PINDEX i = 0; i < mediaDescriptions.GetSize(); ++i) {
       if (mediaDescriptions[i].HasICE()) {
         defaultConnectAddress = mediaDescriptions[i].GetMediaAddress();
+        PTRACE(3, "ICE detected, not using 0.0.0.0 as HOLD request as default.");
         break;
       }
     }
