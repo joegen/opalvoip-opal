@@ -41,6 +41,7 @@
 
 
 #define new PNEW
+#define PTraceModule() "Local-EP"
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -53,7 +54,7 @@ OpalLocalEndPoint::OpalLocalEndPoint(OpalManager & mgr, const char * prefix, boo
   , m_defaultAudioSynchronicity(e_Synchronous)
   , m_defaultVideoSourceSynchronicity(e_Synchronous)
 {
-  PTRACE(3, "LocalEP\tCreated endpoint.");
+  PTRACE(3, "Created endpoint.");
 
   if (useCallbacks) {
     OpalMediaTypeList mediaTypes = OpalMediaType::GetList();
@@ -65,7 +66,7 @@ OpalLocalEndPoint::OpalLocalEndPoint(OpalManager & mgr, const char * prefix, boo
 
 OpalLocalEndPoint::~OpalLocalEndPoint()
 {
-  PTRACE(4, "LocalEP\tDeleted endpoint.");
+  PTRACE(4, "Deleted endpoint.");
 }
 
 
@@ -120,7 +121,7 @@ bool OpalLocalEndPoint::AlertingIncomingCall(const PString & token,
 {
   PSafePtr<OpalLocalConnection> connection = GetLocalConnectionWithLock(token, PSafeReadOnly);
   if (connection == NULL) {
-    PTRACE(2, "LocalEP\tCould not find connection using token \"" << token << '"');
+    PTRACE(2, "Could not find connection using token \"" << token << '"');
     return false;
   }
 
@@ -136,7 +137,7 @@ bool OpalLocalEndPoint::AcceptIncomingCall(const PString & token, OpalConnection
 {
   PSafePtr<OpalLocalConnection> connection = GetLocalConnectionWithLock(token, PSafeReadOnly);
   if (connection == NULL) {
-    PTRACE(2, "LocalEP\tCould not find connection using token \"" << token << '"');
+    PTRACE(2, "Could not find connection using token \"" << token << '"');
     return false;
   }
 
@@ -152,11 +153,11 @@ bool OpalLocalEndPoint::RejectIncomingCall(const PString & token, const OpalConn
 {
   PSafePtr<OpalLocalConnection> connection = GetLocalConnectionWithLock(token, PSafeReadOnly);
   if (connection == NULL) {
-    PTRACE(2, "LocalEP\tCould not find connection using token \"" << token << '"');
+    PTRACE(2, "Could not find connection using token \"" << token << '"');
     return false;
   }
 
-  PTRACE(3, "LocalEP\tRejecting incoming call with reason " << reason);
+  PTRACE(3, "Rejecting incoming call with reason " << reason);
   connection->Release(reason);
   return true;
 }
@@ -292,7 +293,7 @@ OpalLocalConnection::OpalLocalConnection(OpalCall & call,
   m_h224Handler->AddClient(*m_farEndCameraControl);
 #endif
 
-  PTRACE(4, "LocalCon\tCreated connection with token \"" << m_callToken << '"');
+  PTRACE(4, "Created connection with token \"" << m_callToken << '"');
 }
 
 
@@ -304,7 +305,7 @@ OpalLocalConnection::~OpalLocalConnection()
 #if OPAL_HAS_H224
   delete m_h224Handler;
 #endif
-  PTRACE(4, "LocalCon\tDeleted connection.");
+  PTRACE(4, "Deleted connection.");
 }
 
 
@@ -314,7 +315,7 @@ void OpalLocalConnection::OnApplyStringOptions()
 
   PSafePtr<OpalConnection> otherConnection = GetOtherPartyConnection();
   if (otherConnection != NULL && dynamic_cast<OpalLocalConnection*>(&*otherConnection) == NULL) {
-    PTRACE(4, "LocalCon\tPassing string options to " << *otherConnection);
+    PTRACE(4, "Passing string options to " << *otherConnection);
     otherConnection->SetStringOptions(m_stringOptions, false);
   }
 }
@@ -328,7 +329,7 @@ PBoolean OpalLocalConnection::OnIncomingConnection(unsigned int options, OpalCon
   if (OnOutgoingSetUp())
     return true;
 
-  PTRACE(4, "LocalCon\tOnOutgoingSetUp returned false on " << *this);
+  PTRACE(4, "OnOutgoingSetUp returned false on " << *this);
   Release(EndedByNoAccept);
   return false;
 }
@@ -348,7 +349,7 @@ PBoolean OpalLocalConnection::SetUpConnection()
     return true;
 
   if (!OnIncoming()) {
-    PTRACE(4, "LocalCon\tOnIncoming returned false on " << *this);
+    PTRACE(4, "OnIncoming returned false on " << *this);
     Release(EndedByLocalBusy);
     return false;
   }
@@ -362,7 +363,7 @@ PBoolean OpalLocalConnection::SetUpConnection()
 
 PBoolean OpalLocalConnection::SetAlerting(const PString & calleeName, PBoolean)
 {
-  PTRACE(3, "LocalCon\tSetAlerting(" << calleeName << ')');
+  PTRACE(3, "SetAlerting(" << calleeName << ')');
   SetPhase(AlertingPhase);
   m_remotePartyName = calleeName;
   return OnOutgoing();
@@ -371,7 +372,7 @@ PBoolean OpalLocalConnection::SetAlerting(const PString & calleeName, PBoolean)
 
 PBoolean OpalLocalConnection::SetConnected()
 {
-  PTRACE(3, "LocalCon\tSetConnected()");
+  PTRACE(3, "SetConnected()");
 
   if (GetMediaStream(PString::Empty(), true) == NULL)
     AutoStartMediaStreams(); // if no media streams, try and start them
@@ -411,9 +412,9 @@ OpalMediaStream * OpalLocalConnection::CreateMediaStream(const OpalMediaFormat &
       PVideoInputDevice * videoDevice;
       PBoolean autoDeleteGrabber;
       if (CreateVideoInputDevice(mediaFormat, videoDevice, autoDeleteGrabber))
-        PTRACE(4, "OpalCon\tCreated video input device \"" << videoDevice->GetDeviceName() << '"');
+        PTRACE(4, "Created video input device \"" << videoDevice->GetDeviceName() << '"');
       else {
-        PTRACE(3, "OpalCon\tCreating fake text video input");
+        PTRACE(3, "Creating fake text video input");
         PVideoDevice::OpenArgs args;
         args.deviceName = P_FAKE_VIDEO_TEXT "=No Video Input";
         mediaFormat.AdjustVideoArgs(args);
@@ -423,7 +424,7 @@ OpalMediaStream * OpalLocalConnection::CreateMediaStream(const OpalMediaFormat &
       PVideoOutputDevice * previewDevice;
       PBoolean autoDeletePreview;
       if (CreateVideoOutputDevice(mediaFormat, true, previewDevice, autoDeletePreview))
-        PTRACE(4, "OpalCon\tCreated preview device \"" << previewDevice->GetDeviceName() << '"');
+        PTRACE(4, "Created preview device \"" << previewDevice->GetDeviceName() << '"');
       else
         previewDevice = NULL;
 
@@ -433,10 +434,10 @@ OpalMediaStream * OpalLocalConnection::CreateMediaStream(const OpalMediaFormat &
       PVideoOutputDevice * videoDevice;
       PBoolean autoDelete;
       if (CreateVideoOutputDevice(mediaFormat, false, videoDevice, autoDelete)) {
-        PTRACE(4, "OpalCon\tCreated display device \"" << videoDevice->GetDeviceName() << '"');
+        PTRACE(4, "Created display device \"" << videoDevice->GetDeviceName() << '"');
         return new OpalVideoMediaStream(*this, mediaFormat, sessionID, NULL, videoDevice, false, autoDelete);
       }
-      PTRACE(2, "OpalCon\tCould not create video output device");
+      PTRACE(2, "Could not create video output device");
     }
 
     return NULL;
@@ -471,7 +472,7 @@ void OpalLocalConnection::OnClosedMediaStream(const OpalMediaStream & stream)
 
 bool OpalLocalConnection::SendUserInputString(const PString & value)
 {
-  PTRACE(3, "LocalCon\tSendUserInputString(" << value << ')');
+  PTRACE(3, "SendUserInputString(" << value << ')');
   return m_endpoint.OnUserInput(*this, value);
 }
 
@@ -498,7 +499,7 @@ void OpalLocalConnection::AlertingIncoming(bool withMedia)
 {
   if (LockReadWrite()) {
     if (GetPhase() < AlertingPhase) {
-      PTRACE(3, "LocalCon\tAlertingIncoming " << (withMedia ? "with" : "sans") << " media");
+      PTRACE(3, "AlertingIncoming " << (withMedia ? "with" : "sans") << " media");
 
       if (withMedia)
         AutoStartMediaStreams();
@@ -516,7 +517,7 @@ void OpalLocalConnection::AlertingIncoming(bool withMedia)
 
 void OpalLocalConnection::AcceptIncoming()
 {
-  PTRACE(3, "LocalEP\tAccepting incoming call " << *this);
+  PTRACE(3, "Accepting incoming call " << *this);
   GetEndPoint().GetManager().QueueDecoupledEvent(
         new PSafeWorkNoArg<OpalLocalConnection>(this, &OpalLocalConnection::InternalAcceptIncoming));
 }
@@ -524,7 +525,7 @@ void OpalLocalConnection::AcceptIncoming()
 
 void OpalLocalConnection::InternalAcceptIncoming()
 {
-  PTRACE(4, "LocalEP\tAccepting (internal) incoming call " << *this);
+  PTRACE(4, "Accepting (internal) incoming call " << *this);
   PThread::Sleep(100);
 
   if (LockReadWrite()) {
@@ -601,7 +602,7 @@ bool OpalLocalConnection::ChangeVideoInputDevice(const PVideoDevice::OpenArgs & 
   PVideoInputDevice * newDevice;
   bool autoDelete;
   if (!m_endpoint.GetManager().CreateVideoInputDevice(*this, deviceArgs, newDevice, autoDelete)) {
-    PTRACE(2, "OpalCon\tCould not open video device \"" << deviceArgs.deviceName << '"');
+    PTRACE(2, "Could not open video device \"" << deviceArgs.deviceName << '"');
     return false;
   }
 
@@ -623,7 +624,7 @@ bool OpalLocalConnection::ChangeVideoOutputDevice(const PVideoDevice::OpenArgs &
 
   PVideoOutputDevice * newDevice = PVideoOutputDevice::CreateOpenedDevice(deviceArgs, false);
   if (newDevice == NULL) {
-    PTRACE(2, "OpalCon\tCould not open video device \"" << deviceArgs.deviceName << '"');
+    PTRACE(2, "Could not open video device \"" << deviceArgs.deviceName << '"');
     return false;
   }
 
@@ -708,6 +709,8 @@ PBoolean OpalLocalMediaStream::ReadData(BYTE * data, PINDEX size, PINDEX & lengt
 
   m_timestamp += OpalMediaStream::m_frameTime;
 
+  PTRACE(m_readLogThrottle, "ReadData: length=" << length << ", timestamp=" << m_timestamp << m_readLogThrottle);
+
   if (m_synchronicity == OpalLocalEndPoint::e_SimulateSynchronous)
     Pace(false, size, m_marker);
   return true;
@@ -722,12 +725,14 @@ PBoolean OpalLocalMediaStream::WriteData(const BYTE * data, PINDEX length, PINDE
     else {
       length = m_silence.GetSize();
       data = m_silence;
-      PTRACE(6, "Media\tPlaying silence " << length << " bytes");
+      PTRACE(6, "Playing silence " << length << " bytes");
     }
   }
 
   if (!m_connection.OnWriteMediaData(*this, data, length, written))
     return false;
+
+  PTRACE(m_readLogThrottle, "WriteData: length=" << length << ", timestamp=" << m_timestamp << m_readLogThrottle);
 
   if (m_synchronicity == OpalLocalEndPoint::e_SimulateSynchronous)
     Pace(false, written, m_marker);
