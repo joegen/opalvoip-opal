@@ -104,6 +104,15 @@ OpalSockConnection::~OpalSockConnection()
 
 void OpalSockConnection::OnReleased()
 {
+  if (m_audioSocket != NULL)
+    m_audioSocket->Close();
+
+#if OPAL_VIDEO
+  if (m_videoSocket != NULL)
+    m_videoSocket->Close();
+#endif
+
+  OpalLocalConnection::OnReleased();
 }
 
 
