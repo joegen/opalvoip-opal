@@ -134,7 +134,7 @@ class OpalICEMediaTransport : public OpalUDPMediaTransport
     };
     typedef std::list<CandidateState> CandidateStateList;
     typedef std::vector<CandidateStateList> CandidatesArray;
-    friend bool operator==(const CandidatesArray & left, const CandidatesArray & right);
+    friend bool operator!=(const CandidatesArray & left, const CandidatesArray & right);
 
     CandidatesArray m_localCandidates;
     CandidatesArray m_remoteCandidates;
