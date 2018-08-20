@@ -421,6 +421,12 @@ void PNatMethod_H46019::InternalUpdate()
 }
 
 
+bool PNatMethod_H46019::InternalGetServerAddress(PIPSocketAddressAndPort &) const
+{
+  return false;
+}
+
+
 PNATUDPSocket * PNatMethod_H46019::InternalCreateSocket(Component component, PObject * context)
 {
   return new H46019UDPSocket(component, *dynamic_cast<OpalRTPSession *>(context));
