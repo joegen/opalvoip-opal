@@ -141,7 +141,7 @@
   #define OPAL_SDP_HTTP 1
 #endif
 
-#if OPAL_SDP && P_STUNSRVR
+#if OPAL_SDP && P_STUNSRVR && P_SSL
   #define OPAL_ICE 1
 #endif
 
