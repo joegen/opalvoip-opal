@@ -535,12 +535,14 @@ bool OpalICEMediaTransport::InternalHandleICE(SubChannels subchannel, const void
       }
     }
 
+    bool notUsingCandidate = message.FindAttribute(PSTUNAttribute::USE_CANDIDATE) == NULL;
     if (m_state == e_Offering) {
-      PTRACE(4, *this << subchannel << ", early STUN request in ICE.");
+      PTRACE(4, *this << subchannel << ", early STUN request in ICE"
+             << (notUsingCandidate ? "." : ", with USE-CANDIDATE."));
       return false; // Just eat the STUN packet until we get an an answer
     }
 
-    if (message.FindAttribute(PSTUNAttribute::USE_CANDIDATE) == NULL) {
+    if (notUsingCandidate) {
       PTRACE_IF(4, m_state != e_Completed, *this << subchannel << ", ICE awaiting USE-CANDIDATE");
       return false;
     }
