@@ -529,7 +529,8 @@ void OpalLocalConnection::InternalAcceptIncoming()
   PThread::Sleep(100);
 
   if (LockReadWrite()) {
-    AlertingIncoming();
+    if (!m_stringOptions.GetBoolean(OPAL_OPT_EXPLICIT_ALERTING, false))
+      AlertingIncoming();
     InternalOnConnected();
     AutoStartMediaStreams();
     UnlockReadWrite();
