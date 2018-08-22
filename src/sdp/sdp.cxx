@@ -2133,9 +2133,9 @@ bool SDPRTPAVPMediaDescription::ToSession(OpalMediaSession * session, RTP_SyncSo
 
     /* Set single port or disjoint RTCP port, must be done before Open()
        and before SDPMediaDescription::ToSession() */
-    rtpSession->SetSinglePortTx(m_controlAddress == m_mediaAddress);
-    if (m_stringOptions.GetBoolean(OPAL_OPT_RTCP_MUX))
-      rtpSession->SetSinglePortRx();
+    bool singlePort = m_controlAddress == m_mediaAddress;
+    rtpSession->SetSinglePortTx(singlePort);
+    rtpSession->SetSinglePortRx(singlePort && m_stringOptions.GetBoolean(OPAL_OPT_RTCP_MUX));
     rtpSession->SetReducedSizeRTCP(m_reducedSizeRTCP);
     rtpSession->SetHeaderExtensions(GetHeaderExtensions());
 
