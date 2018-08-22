@@ -762,11 +762,12 @@ SDPMediaDescription::SDPMediaDescription(const OpalTransportAddress & address, c
 PBoolean SDPMediaDescription::SetAddresses(const OpalTransportAddress & media,
                                            const OpalTransportAddress & control)
 {
-  PIPSocket::Address ip;
-  if (!media.GetIpAndPort(ip, m_port))
+  PIPSocket::Address dummy;
+  if (!media.GetIpAndPort(dummy, m_port))
     return false;
 
-  m_mediaAddress = OpalTransportAddress(ip, m_port, OpalTransportAddress::UdpPrefix());
+  PTRACE(3, "Set addresses: media=" << media << ", control=" << control);
+  m_mediaAddress = media;
   m_controlAddress = control;
 
   return true;
@@ -787,12 +788,7 @@ bool SDPMediaDescription::FromSession(OpalMediaSession * session,
     return true;
   }
 
-  m_mediaAddress = session->GetLocalAddress(true);
-  m_controlAddress = session->GetLocalAddress(false);
-
-  PIPSocket::Address dummy;
-  if (!m_mediaAddress.GetIpAndPort(dummy, m_port))
-    return false;
+  SetAddresses(session->GetLocalAddress(true), session->GetLocalAddress(false));
 
 #if OPAL_ICE
   if (offer != NULL ? offer->HasICE() : m_stringOptions.GetBoolean(OPAL_OPT_OFFER_ICE)) {
@@ -877,7 +873,7 @@ bool SDPMediaDescription::Decode(const PStringArray & tokens)
     case 0 :
       PTRACE(3, "Ignoring media session " << m_mediaType << " with port=0");
       m_direction = Inactive;
-      m_mediaAddress = m_controlAddress = PString::Empty();
+      m_mediaAddress = m_controlAddress = OpalTransportAddress();
       break;
 
     case 65535 :
@@ -1590,7 +1586,7 @@ bool SDPRTPAVPMediaDescription::Decode(const PStringArray & tokens)
   PIPSocket::Address ip;
   if (m_mediaAddress.GetIpAddress(ip)) {
     m_controlAddress = OpalTransportAddress(ip, m_port+1, OpalTransportAddress::UdpPrefix());
-    PTRACE(4, "Setting rtcp connection address " << m_controlAddress);
+    PTRACE(4, "Setting control connection address " << m_controlAddress);
   }
 
   m_transportType = tokens[2];
@@ -2101,7 +2097,7 @@ bool SDPRTPAVPMediaDescription::FromSession(OpalMediaSession * session,
     }
 
     PStringList groups = rtpSession->GetGroups();
-    PTRACE(4, "Adding groups: " << setfill(',') << groups);
+    PTRACE_IF(4, !groups.empty(), "Adding groups: " << setfill(',') << groups);
     for (PStringList::iterator it = groups.begin(); it != groups.end(); ++it) {
       if (singleSSRC != 0)
         m_groups.SetAt(*it, PSTRSTRM(rtpSession->GetGroupMediaId(*it) << '_' << singleSSRC));
