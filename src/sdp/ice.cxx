@@ -195,22 +195,22 @@ void OpalICEMediaTransport::SetCandidates(const PString & user, const PString & 
   PTRACE_IF(2, newCandidates.empty(), *this << "no suitable ICE candidates from remote: state=" << m_state);
 
   switch (m_state) {
-    case e_Disabled :
+    case e_Disabled:
       PTRACE(3, *this << "ICE initial answer");
       m_state = e_Answering;
       break;
 
-    case e_Completed :
+    case e_Completed:
       PTRACE(2, *this << "ICE restart (username/password changed)");
       m_state = e_Answering;
       break;
 
-    case e_Offering :
+    case e_Offering:
       PTRACE(4, *this << "ICE offer answered");
       m_state = e_OfferAnswered;
       break;
 
-    default :
+    default:
       PTRACE_IF(3, newCandidates != m_remoteCandidates, *this << "ICE candidates in bundled session different!");
       return;
   }
@@ -245,6 +245,13 @@ void OpalICEMediaTransport::SetCandidates(const PString & user, const PString & 
           if (itOld->m_networkCost == 0)
             itOld->m_networkCost = itNew->m_networkCost;
           itOld->m_localTransportAddress = itNew->m_localTransportAddress;
+
+          // Update the early USE-CANDIDATE as well
+          if (m_selectedCandidate.m_component  == itOld->m_component &&
+              m_selectedCandidate.m_protocol == itOld->m_protocol &&
+              m_selectedCandidate.m_baseTransportAddress == itOld->m_baseTransportAddress)
+            m_selectedCandidate = *itOld;
+
           add = false;
           break;
         }
@@ -273,6 +280,15 @@ void OpalICEMediaTransport::SetCandidates(const PString & user, const PString & 
   m_client.SetCredentials(m_remoteUsername + ':' + m_localUsername, m_remotePassword, PString::Empty());
 
   SetRemoteBehindNAT();
+
+  // If we had an early USE-CANDIDATE before we got this answer to our offer, then we complete now.
+  if (m_state == e_OfferAnswered && m_selectedCandidate.m_type != PNatCandidate::EndTypes) {
+    PTRACE(4, *this << "Using early USE-CANDIDATE " << m_selectedCandidate);
+    InternalSetRemoteAddress(m_selectedCandidate.m_baseTransportAddress,
+                              static_cast<SubChannels>(m_selectedCandidate.m_component - 1),
+                              e_RemoteAddressFromICE);
+    m_state = e_Completed;
+  }
 
 #if PTRACING
   if (PTrace::CanTrace(3)) {
@@ -454,7 +470,7 @@ bool OpalICEMediaTransport::InternalHandleICE(SubChannels subchannel, const void
   if (!message.IsValid()) {
     /* During ICE restart, continue to accept traffic from previously-selected candidate
        until a new one is selected. */
-    if (m_selectedCandidate.m_type != PNatCandidate::EndTypes && m_selectedCandidate.m_baseTransportAddress == ap)
+    if (m_state == e_Completed && m_selectedCandidate.m_baseTransportAddress == ap)
       return true; // Only process non-STUN packets from the selected candidate
 
     PTRACE(5, *this << subchannel << ", ignoring data "
@@ -538,15 +554,10 @@ bool OpalICEMediaTransport::InternalHandleICE(SubChannels subchannel, const void
       }
     }
 
-    bool notUsingCandidate = message.FindAttribute(PSTUNAttribute::USE_CANDIDATE) == NULL;
-    if (m_state == e_Offering) {
-      PTRACE(4, *this << subchannel << ", early STUN request in ICE"
-             << (notUsingCandidate ? "." : ", with USE-CANDIDATE."));
-      return false; // Just eat the STUN packet until we get an an answer
-    }
-
-    if (notUsingCandidate) {
-      PTRACE_IF(4, m_state != e_Completed, *this << subchannel << ", ICE awaiting USE-CANDIDATE");
+    if (message.FindAttribute(PSTUNAttribute::USE_CANDIDATE) == NULL) {
+      PTRACE_IF(4, m_state != e_Completed, *this << subchannel << ", "
+                << (m_state == e_Offering ? "early" : "answer")
+                << " STUN request in ICE, awaiting USE-CANDIDATE");
       return false;
     }
 
@@ -598,13 +609,17 @@ bool OpalICEMediaTransport::InternalHandleICE(SubChannels subchannel, const void
     return false;
   }
 
-  InternalSetRemoteAddress(ap, subchannel, e_RemoteAddressFromICE);
 #if OPAL_STATISTICS
   for (CandidateStateList::iterator it = m_remoteCandidates[subchannel].begin(); it != m_remoteCandidates[subchannel].end(); ++it)
     it->m_selected = &*it == candidate;
 #endif
   m_selectedCandidate = *candidate;
-  m_state = e_Completed;
+
+  // Do not compelte, if we just got an early USE-CANDIDATE
+  if (m_state != e_Offering) {
+    InternalSetRemoteAddress(ap, subchannel, e_RemoteAddressFromICE);
+    m_state = e_Completed;
+  }
 
   // Don't pass this STUN packet up the protocol stack
   return false;
