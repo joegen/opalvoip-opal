@@ -205,8 +205,8 @@ class SIPURL : public PURL
     static PString GenerateTag();
 
     /// Set a tag with a new unique ID.
-    void SetTag(
-      const PString & tag = PString::Empty(),
+    PString SetTag(
+      const PString & tag = GenerateTag(),
       bool force = false
     );
 
