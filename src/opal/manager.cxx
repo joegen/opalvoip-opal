@@ -2074,15 +2074,17 @@ bool OpalManager::SetNATServer(const PString & method,
     return false;
   }
 
-  PIPSocket::Address ifaceIP = PIPSocket::GetDefaultIpAny();
-  if (!iface.IsEmpty() && !ifaceIP.FromString(iface)) {
-    PTRACE(2, "Invalid interface \"" << iface << "\" for " << method << " NAT method");
-    return false;
-  }
+  if (activate) {
+    PIPSocket::Address ifaceIP = PIPSocket::GetDefaultIpAny();
+    if (!iface.IsEmpty() && !ifaceIP.FromString(iface)) {
+      PTRACE(2, "Invalid interface \"" << iface << "\" for " << method << " NAT method");
+      return false;
+    }
 
-  if (!natMethod->Open(ifaceIP)) {
-    PTRACE(2, "Could not open server \"" << server << " for " << method << " NAT method");
-    return false;
+    if (!natMethod->Open(ifaceIP)) {
+      PTRACE(2, "Could not open server \"" << server << " for " << method << " NAT method");
+      return false;
+    }
   }
 
   PTRACE(3, "NAT: " << *natMethod);
