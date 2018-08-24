@@ -1215,6 +1215,20 @@ OpalJitterBuffer * OpalRTPSession::SyncSource::GetJitterBuffer() const
 }
 
 
+PString OpalRTPSession::GetLabel() const
+{
+  P_INSTRUMENTED_LOCK_READ_ONLY(return PString::Empty());
+  return m_label.GetPointer();
+}
+
+
+void OpalRTPSession::SetLabel(const PString & name)
+{
+  P_INSTRUMENTED_LOCK_READ_WRITE(return);
+  m_label = name.GetPointer();
+}
+
+
 PString OpalRTPSession::GetCanonicalName(RTP_SyncSourceId ssrc, Direction dir) const
 {
   P_INSTRUMENTED_LOCK_READ_ONLY(return PString::Empty());

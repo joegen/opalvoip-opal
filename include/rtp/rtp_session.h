@@ -361,6 +361,14 @@ class OpalRTPSession : public OpalMediaSession
     void SetUlpFecSendLevel(unsigned level) { m_ulpFecSendLevel = level; }
 #endif // OPAL_RTP_FEC
 
+    /**Get the label for the RTP session.
+      */
+    PString GetLabel() const;
+
+    /**Set the label for the RTP session.
+      */
+    void SetLabel(const PString & name);
+
     /**Get the canonical name for the RTP session.
       */
     PString GetCanonicalName(RTP_SyncSourceId ssrc = 0, Direction dir = e_Sender) const;
@@ -664,6 +672,7 @@ class OpalRTPSession : public OpalMediaSession
     bool                m_isAudio;
     unsigned            m_timeUnits;
     PString             m_toolName;
+    PString             m_label;
     RTPHeaderExtensions m_headerExtensions;
     unsigned            m_absSendTimeHdrExtId;
     unsigned            m_transportWideSeqNumHdrExtId;

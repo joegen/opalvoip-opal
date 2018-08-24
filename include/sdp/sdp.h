@@ -501,6 +501,7 @@ class SDPRTPAVPMediaDescription : public SDPMediaDescription
 
     PCaselessString               m_transportType;
     SsrcInfo                      m_ssrcInfo;
+    PString                       m_label;
     PString                       m_msid;
     vector<RTP_SyncSourceArray>   m_flowSSRC;
     OpalMediaFormat::RTCPFeedback m_rtcp_fb;

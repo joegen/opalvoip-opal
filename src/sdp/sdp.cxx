@@ -1803,6 +1803,9 @@ void SDPRTPAVPMediaDescription::OutputAttributes(ostream & strm) const
   if (m_reducedSizeRTCP)
     strm << "a=rtcp-rsize\r\n";
 
+  if (!m_label.IsEmpty())
+    strm << "a=label:" << m_label << CRLF;
+
   /* Specification does not seem to say to do this, but all the RFC examples group
      the FID ssrc parameters together, so we do the same to maximise interoperability */
   std::set<RTP_SyncSourceId> ssrcInfoDone;
@@ -1967,11 +1970,16 @@ void SDPRTPAVPMediaDescription::SetAttribute(const PString & attr, const PString
     return;
   }
 
+  if (attr *= "label") {
+    PTRACE(4, "m level label: \"" << m_msid << '"');
+    m_label = value;
+  }
+
   if (attr *= "msid") {
     m_msid = value;
     for (SsrcInfo::iterator it = m_ssrcInfo.begin(); it != m_ssrcInfo.end(); ++it) {
       SetMediaStreamAndTrackIds(value, it->second);
-      PTRACE(2, "SSRC: " << RTP_TRACE_SRC(it->first) << " m level msid: \"" << m_msid << '"');
+      PTRACE(4, "SSRC: " << RTP_TRACE_SRC(it->first) << " m level msid: \"" << m_msid << '"');
     }
     return;
   }
@@ -1986,7 +1994,7 @@ void SDPRTPAVPMediaDescription::SetAttribute(const PString & attr, const PString
     else {
       if (!m_msid.IsEmpty()) {
         SetMediaStreamAndTrackIds(m_msid, m_ssrcInfo[ssrc]);
-        PTRACE(2, "SSRC: " << RTP_TRACE_SRC(ssrc) << " m level msid: \"" << m_msid << '"');
+        PTRACE(4, "SSRC: " << RTP_TRACE_SRC(ssrc) << " m level msid: \"" << m_msid << '"');
       }
 
       PCaselessString key = value(space + 1, endToken - 1);
@@ -2021,6 +2029,8 @@ bool SDPRTPAVPMediaDescription::FromSession(OpalMediaSession * session,
   OpalRTPSession * rtpSession = dynamic_cast<OpalRTPSession *>(session);
   if (rtpSession != NULL) {
     PTRACE(4, "Setting SDP from RTP session " << *rtpSession);
+    m_label = rtpSession->GetLabel();
+
     if (offer != NULL) {
       m_headerExtensions = rtpSession->GetHeaderExtensions();
       m_reducedSizeRTCP = rtpSession->UseReducedSizeRTCP();
@@ -2138,6 +2148,7 @@ bool SDPRTPAVPMediaDescription::ToSession(OpalMediaSession * session, RTP_SyncSo
     rtpSession->SetSinglePortRx(singlePort && m_stringOptions.GetBoolean(OPAL_OPT_RTCP_MUX));
     rtpSession->SetReducedSizeRTCP(m_reducedSizeRTCP);
     rtpSession->SetHeaderExtensions(GetHeaderExtensions());
+    rtpSession->SetLabel(m_label);
 
     for (SsrcInfo::const_iterator it = m_ssrcInfo.begin(); it != m_ssrcInfo.end(); ++it) {
       RTP_SyncSourceId ssrc = it->first;
