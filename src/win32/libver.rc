@@ -50,7 +50,7 @@
 #define MkStr2(s) #s
 #define MkStr(s) MkStr2(s)
 
-#define VERSION_STRING MkStr(MAJOR_VERSION) "." MkStr(MINOR_VERSION) MkStr(BUILD_TYPE) MkStr(BUILD_NUMBER) " ("  MkStr(SVN_REVISION) ")"
+#define VERSION_STRING MkStr(MAJOR_VERSION) "." MkStr(MINOR_VERSION) MkStr(BUILD_TYPE) MkStr(BUILD_NUMBER) " ("  GIT_COMMIT ")"
 
 
 #ifndef PRODUCT_NAME
@@ -71,11 +71,11 @@
 
 VS_VERSION_INFO VERSIONINFO
 
-#define pl 0
+#define pl 2
 #define beta 1
-#define alpha 2
-  FILEVERSION     MAJOR_VERSION,MINOR_VERSION,BUILD_NUMBER,0
-  PRODUCTVERSION  MAJOR_VERSION,MINOR_VERSION,BUILD_NUMBER,0
+#define alpha 0
+  FILEVERSION     MAJOR_VERSION,MINOR_VERSION,BUILD_NUMBER,BUILD_TYPE
+  PRODUCTVERSION  MAJOR_VERSION,MINOR_VERSION,BUILD_NUMBER,BUILD_TYPE
 #undef alpha
 #undef beta
 #undef pl
@@ -95,10 +95,10 @@ BEGIN
         BLOCK "0c0904b0"
         BEGIN
             VALUE "CompanyName",      MANUFACTURER_NAME "\0"
-            VALUE "FileDescription",  PRODUCT_DESCRIPTION "\0"
+            VALUE "FileDescription",  PRODUCT_DESCRIPTION " DLL\0"
             VALUE "FileVersion",      VERSION_STRING "\0"
             VALUE "InternalName",     PRODUCT_NAME "\0"
-            VALUE "LegalCopyright",   "Copyright © " MANUFACTURER_NAME " 1993-2000\0"
+            VALUE "LegalCopyright",   "Copyright © " MANUFACTURER_NAME " 2001-2018\0"
             VALUE "OriginalFilename", EXECUTABLE_NAME "\0"
             VALUE "ProductName",      PRODUCT_DESCRIPTION "\0"
             VALUE "ProductVersion",   VERSION_STRING "\0"
