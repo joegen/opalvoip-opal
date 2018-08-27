@@ -2732,7 +2732,7 @@ void SIPDialogContext::SetLocalURI(const SIPURL & url)
   m_localURI = url;
   m_localURI.Sanitise(SIPURL::FromURI);
   m_localTag = m_localURI.SetTag(m_localTag);
-  PTRACE(4, "Set dialog local URI to " << m_localTag);
+  PTRACE(4, "Set dialog local URI to " << m_localURI.AsQuotedString());
 }
 
 
@@ -2741,7 +2741,7 @@ void SIPDialogContext::SetRemoteURI(const SIPURL & url)
   m_remoteURI = url;
   m_remoteURI.Sanitise(SIPURL::ToURI);
   m_remoteTag = m_remoteURI.SetTag(m_remoteTag);
-  PTRACE(4, "Set dialog remote URI to " << m_remoteURI);
+  PTRACE(4, "Set dialog remote URI to " << m_remoteURI.AsQuotedString());
 }
 
 
@@ -2803,7 +2803,7 @@ void SIPDialogContext::Update(const SIP_PDU & pdu)
       PTRACE(4, "Not updating remote URI from 100 Trying response To header");
     else {
       m_remoteTag = m_remoteURI.SetTag(mime.GetTo().GetTag(), true);  // Response form our INVITE/SUSBCRIBE etc
-      PTRACE(4, "Set dialog remote URI from response: local=" << m_localTag << ", remote=" << m_remoteURI);
+      PTRACE(4, "Set dialog URIs from response: local is " << m_localURI.AsQuotedString() << ", remote is " << m_remoteURI.AsQuotedString());
     }
   }
   else {
@@ -2812,7 +2812,7 @@ void SIPDialogContext::Update(const SIP_PDU & pdu)
     m_localTag = m_localURI.SetTag();
     m_remoteURI = mime.GetFrom();
     m_remoteTag = m_remoteURI.GetTag();
-    PTRACE(4, "Set dialog URIs from command: local=" << m_localTag << ", remote=" << m_remoteURI);
+    PTRACE(4, "Set dialog URIs from command: local is " << m_localURI.AsQuotedString() << ", remote is " << m_remoteURI.AsQuotedString());
   }
 
   m_fixedTransportAddress = pdu.GetExternalTransportAddress();
