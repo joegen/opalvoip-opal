@@ -2802,14 +2802,16 @@ void SIPDialogContext::Update(const SIP_PDU & pdu)
     if (pdu.GetStatusCode() == 100)
       PTRACE(4, "Not updating remote URI from 100 Trying response To header");
     else {
-      m_remoteTag = m_remoteURI.SetTag(mime.GetTo().GetTag(), true);  // Response form our INVITE/SUSBCRIBE etc
+      // Response from our INVITE/SUSBCRIBE etc
+      m_remoteURI = mime.GetTo();
+      m_remoteTag = m_remoteURI.GetTag();
       PTRACE(4, "Set dialog URIs from response: local is " << m_localURI.AsQuotedString() << ", remote is " << m_remoteURI.AsQuotedString());
     }
   }
   else {
     // e.g. INVITE coming in, set (if not there) our local tag, use tag the provided
     m_localURI = mime.GetTo();
-    m_localTag = m_localURI.SetTag();
+    m_localTag = m_localURI.SetTag(m_localTag);
     m_remoteURI = mime.GetFrom();
     m_remoteTag = m_remoteURI.GetTag();
     PTRACE(4, "Set dialog URIs from command: local is " << m_localURI.AsQuotedString() << ", remote is " << m_remoteURI.AsQuotedString());
