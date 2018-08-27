@@ -156,7 +156,7 @@ bool OpalDTLSMediaTransport::DTLSChannel::Read(void * buf, PINDEX size)
       return true; // Not a DTLS packet
 
     if (len < sizeof(*frame)) {
-      PTRACE(2, "Truncated frame received: " << ::hex << ::setfill('0') << PBYTEArray((const BYTE *)buf, len, false));
+      PTRACE(2, "Truncated frame received: " << PHexDump(buf, len));
       continue;
     }
 
@@ -169,7 +169,7 @@ bool OpalDTLSMediaTransport::DTLSChannel::Read(void * buf, PINDEX size)
            " len=" << frame->m_length << ","
            " level=" << (unsigned)frame->m_alertLevel << ","
            " desc=" << (unsigned)frame->m_alertDescription << '\n'
-           << ::hex << ::setfill('0') << PBYTEArray((const BYTE *)buf, len, false));
+           << setprecision(2) << PHexDump(buf, len, false));
 
     if (frame->m_type == 21 /* DTLS Alert */ &&
         frame->m_cipherType == 0 && /* stream cipher */

@@ -716,9 +716,7 @@ PBoolean OpalLocalMediaStream::ReadData(BYTE * data, PINDEX size, PINDEX & lengt
          " marker=" << m_marker << ","
          " timestamp=" << m_timestamp << ","
          " length=" << length << ","
-         " data=" << hex << fixed << setfill('0') << setprecision(0) << setw(std::min(MaxDataLen, length))
-                  << PBYTEArray(data, std::min(MaxDataLen, length), false)
-                  << dec << scientific << setfill(' ') <<
+         " data=" << PHexDump(data, std::min(MaxDataLen, length)) <<
          " on " << *this <<
          m_readLogThrottle);
 
@@ -748,9 +746,7 @@ PBoolean OpalLocalMediaStream::WriteData(const BYTE * data, PINDEX length, PINDE
          " timestamp=" << m_timestamp << ","
          " length=" << length << ","
          " written=" << written << ","
-         " data=" << hex << fixed << setfill('0') << setprecision(0) << setw(std::min(MaxDataLen, length))
-                  << PBYTEArray(data, std::min(MaxDataLen, length), false)
-                  << dec << scientific << setfill(' ') <<
+         " data=" << PHexDump(data, std::min(MaxDataLen, length)) <<
          " on " << *this <<
          m_writeLogThrottle);
 

@@ -108,7 +108,7 @@ bool RTP_DataFrame::SetPacketSize(PINDEX sz)
   if (sz < m_headerSize) {
     PTRACE(2, "RTP\tInvalid RTP packet, "
               "smaller than indicated header size, " << sz << " < " << m_headerSize << ": "
-           << hex << setfill('0') << PBYTEArray(GetPointer(), std::min(sz, (PINDEX)16), false));
+           << PHexDump(GetPointer(), std::min(sz, (PINDEX)16)));
     m_payloadSize = m_paddingSize = 0;
     return false;
   }
@@ -127,7 +127,7 @@ bool RTP_DataFrame::SetPacketSize(PINDEX sz)
   if (m_headerSize + m_paddingSize > sz) {
     PTRACE(2, "RTP\tInvalid RTP packet, padding indicated but not enough data, "
               "size=" << sz << ", pad=" << m_paddingSize << ", header=" << m_headerSize << ": "
-           << hex << setfill('0') << PBYTEArray(GetPointer(), std::min(sz, (PINDEX)16), false));
+           << PHexDump(GetPointer(), std::min(sz, (PINDEX)16)));
     m_paddingSize = 0;
   }
 
@@ -643,12 +643,11 @@ void RTP_DataFrame::PrintOn(ostream & strm) const
           continue;
         break;
       }
-      strm << "  Header Extension: " << id << " (0x" << hex << id << ")\n"
-           << setfill('0') << PBYTEArray(ptr, len, false) << setfill(' ') << dec << '\n';
+      strm << "  Header Extension: " << id << " (0x" << hex << id << ")\n" << PHexDump(ptr, len) << '\n';
     }
   }
 
-  strm << "Payload:\n" << hex << setfill('0') << PBYTEArray(GetPayloadPtr(), GetPayloadSize(), false) << setfill(' ') << dec;
+  strm << "Payload:\n" << PHexDump(GetPayloadPtr(), GetPayloadSize(), false);
 }
 
 
@@ -767,11 +766,8 @@ RTP_ControlFrame::RTP_ControlFrame(const BYTE * data, PINDEX size, bool dynamic)
 #if PTRACING
 void RTP_ControlFrame::PrintOn(ostream & strm) const
 {
-  char fill = strm.fill();
   strm << "RTCP frame, " << m_packetSize << " bytes:\n"
-       << hex << setprecision(2) << setfill('0')
-       << PBYTEArray((const BYTE *)theArray, m_packetSize, false)
-       << dec << setfill(fill);
+       << setprecision(2) << PHexDump(*this, false);
 }
 #endif
 
