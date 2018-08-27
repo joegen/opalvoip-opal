@@ -710,7 +710,13 @@ PBoolean OpalLocalMediaStream::ReadData(BYTE * data, PINDEX size, PINDEX & lengt
 
   m_timestamp += OpalMediaStream::m_frameTime;
 
-  PTRACE(m_readLogThrottle, "ReadData: length=" << length << ", timestamp=" << m_timestamp << m_readLogThrottle);
+  PTRACE(m_readLogThrottle, "ReadData:"
+         " marker=" << m_marker << ","
+         " timestamp=" << m_timestamp << ","
+         " length=" << length << ","
+         " data=" << hex << setfill('0') << setw(2) << PBYTEArray(data, 8, false) << dec << setfill(' ') <<
+         " on " << *this <<
+         m_readLogThrottle);
 
   if (m_synchronicity == OpalLocalEndPoint::e_SimulateSynchronous)
     Pace(false, size, m_marker);
@@ -733,7 +739,13 @@ PBoolean OpalLocalMediaStream::WriteData(const BYTE * data, PINDEX length, PINDE
   if (!m_connection.OnWriteMediaData(*this, data, length, written))
     return false;
 
-  PTRACE(m_readLogThrottle, "WriteData: length=" << length << ", timestamp=" << m_timestamp << m_readLogThrottle);
+  PTRACE(m_writeLogThrottle, "WriteData:"
+         " marker=" << m_marker << ","
+         " timestamp=" << m_timestamp << ","
+         " length=" << length << ","
+         " data=" << hex << setfill('0') << setw(2) << PBYTEArray(data, 8, false) << dec << setfill(' ') <<
+         " on " << *this <<
+         m_writeLogThrottle);
 
   if (m_synchronicity == OpalLocalEndPoint::e_SimulateSynchronous)
     Pace(false, written, m_marker);

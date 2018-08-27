@@ -906,8 +906,8 @@ class OpalLocalMediaStream : public OpalMediaStream, public OpalMediaStreamPacin
     OpalLocalConnection            & m_connection;
     OpalLocalEndPoint::Synchronicity m_synchronicity;
     PBYTEArray                       m_silence;
-    PTRACE_THROTTLE(m_readLogThrottle, 3, 60000);
-    PTRACE_THROTTLE(m_writeLogThrottle, 3, 60000);
+    PTRACE_THROTTLE(m_readLogThrottle, 3, 60000, 5);
+    PTRACE_THROTTLE(m_writeLogThrottle, 3, 60000, 5);
 };
 
 
