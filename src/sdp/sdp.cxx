@@ -1971,8 +1971,8 @@ void SDPRTPAVPMediaDescription::SetAttribute(const PString & attr, const PString
   }
 
   if (attr *= "label") {
-    PTRACE(4, "m level label: \"" << m_msid << '"');
     m_label = value;
+    PTRACE(4, "m level label: \"" << m_label << '"');
   }
 
   if (attr *= "msid") {
