@@ -703,6 +703,8 @@ PBoolean OpalLocalMediaStream::WritePacket(RTP_DataFrame & frame)
 }
 
 
+static PINDEX const MaxDataLen = 8;
+
 PBoolean OpalLocalMediaStream::ReadData(BYTE * data, PINDEX size, PINDEX & length)
 {
   if (!m_connection.OnReadMediaData(*this, data, size, length))
@@ -714,7 +716,7 @@ PBoolean OpalLocalMediaStream::ReadData(BYTE * data, PINDEX size, PINDEX & lengt
          " marker=" << m_marker << ","
          " timestamp=" << m_timestamp << ","
          " length=" << length << ","
-         " data=" << hex << setfill('0') << setw(2) << PBYTEArray(data, 8, false) << dec << setfill(' ') <<
+         " data=" << hex << setfill('0') << setw(2) << PBYTEArray(data, std::min(MaxDataLen, length), false) << dec << setfill(' ') <<
          " on " << *this <<
          m_readLogThrottle);
 
@@ -743,7 +745,8 @@ PBoolean OpalLocalMediaStream::WriteData(const BYTE * data, PINDEX length, PINDE
          " marker=" << m_marker << ","
          " timestamp=" << m_timestamp << ","
          " length=" << length << ","
-         " data=" << hex << setfill('0') << setw(2) << PBYTEArray(data, 8, false) << dec << setfill(' ') <<
+         " written=" << written << ","
+         " data=" << hex << setfill('0') << setw(2) << PBYTEArray(data, std::min(MaxDataLen, length), false) << dec << setfill(' ') <<
          " on " << *this <<
          m_writeLogThrottle);
 
