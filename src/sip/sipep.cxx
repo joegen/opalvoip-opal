@@ -2209,7 +2209,6 @@ void SIPEndPoint::AdjustToRegistration(SIP_PDU & pdu, SIPConnection * connection
     scheme = from.GetScheme();
     if (connection != NULL && to.GetDisplayName() != connection->GetDisplayName()) {
       to.SetDisplayName(connection->GetDisplayName());
-      to.Sanitise(SIPURL::ToURI);
       mime.SetTo(to);
     }
   }
