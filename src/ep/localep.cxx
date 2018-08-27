@@ -202,8 +202,8 @@ bool OpalLocalEndPoint::OnWriteMediaFrame(const OpalLocalConnection & /*connecti
 }
 
 
-bool OpalLocalEndPoint::OnReadMediaData(const OpalLocalConnection & /*connection*/,
-                                        const OpalMediaStream & /*mediaStream*/,
+bool OpalLocalEndPoint::OnReadMediaData(OpalLocalConnection & /*connection*/,
+                                        OpalMediaStream & /*mediaStream*/,
                                         void * data,
                                         PINDEX size,
                                         PINDEX & length)
@@ -550,7 +550,7 @@ bool OpalLocalConnection::OnWriteMediaFrame(const OpalMediaStream & mediaStream,
 }
 
 
-bool OpalLocalConnection::OnReadMediaData(const OpalMediaStream & mediaStream, void * data, PINDEX size, PINDEX & length)
+bool OpalLocalConnection::OnReadMediaData(OpalMediaStream & mediaStream, void * data, PINDEX size, PINDEX & length)
 {
   return m_endpoint.OnReadMediaData(*this, mediaStream, data, size, length);
 }

@@ -227,10 +227,10 @@ class OpalSockConnection : public OpalLocalConnection
        The default implementation fills the buffer with zeros and returns true.
       */
     virtual bool OnReadMediaData(
-      const OpalMediaStream & mediaStream,    ///<  Media stream data is required for
-      void * data,                            ///<  Data to send
-      PINDEX size,                            ///<  Maximum size of data buffer
-      PINDEX & length                         ///<  Number of bytes placed in buffer
+      OpalMediaStream & mediaStream, ///<  Media stream data is required for
+      void * data,                   ///<  Data to send
+      PINDEX size,                   ///<  Maximum size of data buffer
+      PINDEX & length                ///<  Number of bytes placed in buffer
     );
 
     /**Call back to handle received media data.

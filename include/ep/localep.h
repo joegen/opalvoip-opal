@@ -283,11 +283,11 @@ class OpalLocalEndPoint : public OpalEndPoint
        The default implementation fills the buffer with zeros and returns true.
       */
     virtual bool OnReadMediaData(
-      const OpalLocalConnection & connection, ///<  Connection for media
-      const OpalMediaStream & mediaStream,    ///<  Media stream data is required for
-      void * data,                            ///<  Data to send
-      PINDEX size,                            ///<  Maximum size of data buffer
-      PINDEX & length                         ///<  Number of bytes placed in buffer
+      OpalLocalConnection & connection, ///<  Connection for media
+      OpalMediaStream & mediaStream,    ///<  Media stream data is required for
+      void * data,                      ///<  Data to send
+      PINDEX size,                      ///<  Maximum size of data buffer
+      PINDEX & length                   ///<  Number of bytes placed in buffer
     );
 
     /**Call back to handle received media data.
@@ -701,10 +701,10 @@ class OpalLocalConnection : public OpalConnection
        The default implementation fills the buffer with zeros and returns true.
       */
     virtual bool OnReadMediaData(
-      const OpalMediaStream & mediaStream,    ///<  Media stream data is required for
-      void * data,                            ///<  Data to send
-      PINDEX size,                            ///<  Maximum size of data buffer
-      PINDEX & length                         ///<  Number of bytes placed in buffer
+      OpalMediaStream & mediaStream, ///<  Media stream data is required for
+      void * data,                   ///<  Data to send
+      PINDEX size,                   ///<  Maximum size of data buffer
+      PINDEX & length                ///<  Number of bytes placed in buffer
     );
 
     /**Call back to handle received media data.
