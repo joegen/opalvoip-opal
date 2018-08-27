@@ -324,21 +324,6 @@ void SIPConnection::OnReleased()
 {
   PTRACE(3, "OnReleased: " << *this);
 
-  if (!PAssert(LockReadWrite(),PLogicError))
-    return;
-
-  if (m_referOfRemoteInProgress) {
-    m_referOfRemoteInProgress = false;
-
-    PStringToString info;
-    info.SetAt("result", "blind");
-    info.SetAt("party", "B");
-    info.SetAt("Refer-To", m_sentReferTo);
-    OnTransferNotify(info, this);
-  }
-
-  UnlockReadWrite();
-
   // If forwardParty is a connection token, then must be INVITE with replaces scenario
   if (!m_forwardParty.IsEmpty()) {
     PSafePtr<SIPConnection> replacerConnection = GetEndPoint().GetSIPConnectionWithLock(m_forwardParty);
@@ -465,6 +450,25 @@ void SIPConnection::OnReleased()
      have an out for the client in this case, it would continue forever if the
      server says so. Fail safe on call termination. */
   AbortPendingTransactions();
+
+  // We have a REFER in progress, wait for a while to get status indication
+  if (m_referOfRemoteInProgress) {
+    PTRACE(4, "Waiting for indication REFER completed on " << *this);
+    PSimpleTimer timeout = m_sipEndpoint.GetInviteTimeout();
+    while (m_referOfRemoteInProgress && timeout.IsRunning())
+      PThread::Sleep(250);
+
+    if (m_referOfRemoteInProgress && PAssert(LockReadWrite(), PLogicError)) {
+      PTRACE(2, "Timed out waiting for indication REFER completed on " << *this);
+      PStringToString info;
+      info.SetAt("result", "blind");
+      info.SetAt("party", "B");
+      info.SetAt("Refer-To", m_sentReferTo);
+      OnTransferNotify(info, this);
+
+      UnlockReadWrite();
+    }
+  }
 
   // Close media and indicate call ended, even though we have a little bit more
   // to go in clean up, don't let other bits wait for it.
