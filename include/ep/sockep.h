@@ -52,6 +52,7 @@ class OpalSocketConnection;
 #define OPAL_OPT_SOCK_EP_VIDEO_PORT  "video-port"
 #define OPAL_OPT_SOCK_EP_VIDEO_PROTO "video-proto"
 #define OPAL_OPT_SOCK_EP_VIDEO_CODEC "video"
+#define OPAL_OPT_SOCK_EP_FRAME_RATE  "frame-rate"
 
 #endif // OPAL_VIDEO
 

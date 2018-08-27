@@ -121,7 +121,13 @@ OpalMediaFormatList OpalSockConnection::GetMediaFormats() const
   OpalMediaFormatList fmts;
   fmts += m_stringOptions.GetString(OPAL_OPT_SOCK_EP_AUDIO_CODEC, OPAL_OPUS48);
 #if OPAL_VIDEO
-  fmts += m_stringOptions.GetString(OPAL_OPT_SOCK_EP_VIDEO_CODEC, OPAL_H264_MODE1);
+  OpalMediaFormat video = m_stringOptions.GetString(OPAL_OPT_SOCK_EP_VIDEO_CODEC, OPAL_H264_MODE1);
+  if (video.IsValid()) {
+    double fps = m_stringOptions.GetReal(OPAL_OPT_SOCK_EP_FRAME_RATE);
+    if (fps > 0)
+      video.SetOptionInteger(OpalMediaFormat::FrameTimeOption(), static_cast<int>(video.GetClockRate() / fps));
+    fmts += video;
+  }
 #endif
   return fmts;
 }
