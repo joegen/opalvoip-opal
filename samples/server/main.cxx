@@ -279,7 +279,7 @@ PBoolean MyProcess::Initialise(const char * initMsg)
 
 #if OPAL_SDP
   m_httpNameSpace.AddResource(new OpalSDPHTTPResource(*m_manager->FindEndPointAs<OpalSDPHTTPEndPoint>(OPAL_PREFIX_SDP), "/sdp", params.m_authority), PHTTPSpace::Overwrite);
-  PHTTPFile * webrtcTest = new PHTTPFile("/webrtc_test.html", "./webrtc_test.html", params.m_authority);
+  PHTTPFile * webrtcTest = new PHTTPFile("/webrtc_test.html", GetFile().GetDirectory() + "webrtc_test.html", params.m_authority);
   m_httpNameSpace.AddResource(webrtcTest, PHTTPSpace::Overwrite);
   new OpalSockEndPoint(*m_manager);
 #endif
