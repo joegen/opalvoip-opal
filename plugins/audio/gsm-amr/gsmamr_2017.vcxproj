@@ -22,7 +22,7 @@
     <ProjectName>Audio - GSM-AMR</ProjectName>
     <ProjectGuid>{92E9FA1E-2925-42FD-8226-A07CBD237E18}</ProjectGuid>
     <RootNamespace>gsmamr</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

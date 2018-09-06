@@ -22,7 +22,7 @@
     <ProjectName>Audio - iSAC</ProjectName>
     <RootNamespace>iSAC Audio Codec</RootNamespace>
     <ProjectGuid>{851A8648-5021-4FC3-ACED-40D2802D9C5E}</ProjectGuid>
-    <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">

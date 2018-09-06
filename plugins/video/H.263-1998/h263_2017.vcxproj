@@ -22,7 +22,7 @@
     <ProjectName>Video - H.263-1998 (FFMPEG)</ProjectName>
     <ProjectGuid>{E75AF717-C8A6-40E7-82CB-80D67CE01611}</ProjectGuid>
     <RootNamespace>H.263-1998 (FFMPEG) Video Codec</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
