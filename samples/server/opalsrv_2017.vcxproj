@@ -21,7 +21,7 @@
   <PropertyGroup Label="Globals">
     <ProjectName>OPAL Server</ProjectName>
     <ProjectGuid>{48A0E613-0A49-4C11-900D-FDBBCA2B0591}</ProjectGuid>
-    <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

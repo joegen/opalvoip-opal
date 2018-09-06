@@ -21,7 +21,7 @@
   <PropertyGroup Label="Globals">
     <ProjectName>Call Generator</ProjectName>
     <ProjectGuid>{23696513-8FEA-4B89-B8BF-ED0E9DEBE2EA}</ProjectGuid>
-    <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
