@@ -35,18 +35,18 @@ ifndef DESTDIR
   DESTDIR=/opt/opalsrv
 endif
 
-BINDIR=$DESTDIR/bin
-ETCDIR=$DESTDIR/etc
-INIFILE=$ETCDIR/opalsrv.ini
+BINDIR=$(DESTDIR)/bin
+ETCDIR=$(DESTDIR)/etc
+INIFILE=$(ETCDIR)/opalsrv.ini
 
-install: $(TARGET) | $BINDIR $ETCDIR
-	install $(TARGET) $BINDIR
-	install start.sh $BINDIR
-	install webrtc_test.vxml $BINDIR
-	install main_menu.vxml $ETCDIR
-	if [ ! -e "$INIFILE" ]; then install default.ini "$INIFILE"; fi
+install: $(TARGET) | $(BINDIR) $(ETCDIR)
+	install $(TARGET) $(BINDIR)
+	install start.sh $(BINDIR)
+	install webrtc_test.vxml $(BINDIR)
+	install main_menu.vxml $(ETCDIR)
+	if [ ! -e "$(INIFILE)" ]; then install default.ini "$(INIFILE)"; fi
 
-$BINDIR $ETCDIR:
+$(BINDIR) $(ETCDIR):
 	mkdir $@
 
 
