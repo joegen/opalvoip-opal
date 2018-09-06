@@ -69,6 +69,7 @@ OPAL_SIMPLE_PLUGIN([LPC10],    [lpc10],    [LPC-10 very low bandwidth audio code
 OPAL_SIMPLE_PLUGIN([ISAC],     [isac],     [iSAC audio codec],                      [$PLUGIN_SRC_DIR/audio/iSAC])
 
 
+HAVE_G7221=no
 OPAL_SIMPLE_PLUGIN([G7221],    [g.722.1],  [G.722.1 wideband audio codec],          [$PLUGIN_SRC_DIR/audio/G.722.1],[
    if test -n "${srcdir}" && test `cd ${srcdir} ; pwd` != `pwd`; then
       HAVE_G7221="no (internal libg722_1 does not support out-of-source configure)"
