@@ -47,7 +47,7 @@ install: $(TARGET) | $(BINDIR) $(ETCDIR)
 	if [ ! -e "$(INIFILE)" ]; then install default.ini "$(INIFILE)"; fi
 
 $(BINDIR) $(ETCDIR):
-	mkdir $@
+	$(MKDIR_P) $@
 
 
 # End of Makefile
