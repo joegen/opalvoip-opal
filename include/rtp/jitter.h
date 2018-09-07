@@ -286,7 +286,15 @@ class OpalAudioJitterBuffer : public OpalJitterBuffer
   protected:
     void InternalReset();
     RTP_Timestamp CalculateRequiredTimestamp(RTP_Timestamp playOutTimestamp) const;
-    bool AdjustCurrentJitterDelay(int delta);
+    enum AdjustResult {
+      e_Unchanged,
+      e_Decreased,
+      e_Increased,
+      e_ReachedMinimum,
+      e_ReachedMaximum
+    };
+    friend ostream & operator<<(ostream & strm, const AdjustResult adjusted);
+    AdjustResult AdjustCurrentJitterDelay(int delta);
 
     int           m_jitterGrowTime;      ///< Amount to increase jitter delay by when get "late" packet
     RTP_Timestamp m_jitterShrinkPeriod;  ///< Period (in timestamp units) over which buffer is
