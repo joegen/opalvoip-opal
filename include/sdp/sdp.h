@@ -476,6 +476,7 @@ class SDPRTPAVPMediaDescription : public SDPMediaDescription
     virtual bool FromSession(OpalMediaSession * session, const SDPMediaDescription * offer, RTP_SyncSourceId ssrc);
     virtual bool ToSession(OpalMediaSession * session, RTP_SyncSourceArray & ssrcs) const;
 
+    // RFC5576
     typedef std::map<RTP_SyncSourceId, PStringOptions> SsrcInfo;
     const SsrcInfo & GetSsrcInfo() const { return m_ssrcInfo; }
 
@@ -500,7 +501,7 @@ class SDPRTPAVPMediaDescription : public SDPMediaDescription
     };
 
     PCaselessString               m_transportType;
-    SsrcInfo                      m_ssrcInfo;
+    SsrcInfo                      m_ssrcInfo;  // RFC5576
     PString                       m_label;
     PString                       m_msid;
     vector<RTP_SyncSourceArray>   m_flowSSRC;
