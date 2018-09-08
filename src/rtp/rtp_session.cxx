@@ -167,7 +167,7 @@ RTP_SyncSourceId OpalRTPSession::AddSyncSource(RTP_SyncSourceId id, Direction di
   else {
     SyncSourceMap::iterator it = m_SSRC.find(id);
     if (it != m_SSRC.end()) {
-      if (cname == NULL || it->second->m_canonicalName == cname)
+      if (cname == NULL || (it->second->m_direction == dir && it->second->m_canonicalName == cname))
         return id;
       PTRACE(2, *this << "could not add SSRC=" << RTP_TRACE_SRC(id) << ","
                 " probable clash with " << it->second->m_direction << ","
