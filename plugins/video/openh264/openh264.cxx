@@ -755,7 +755,8 @@ class H264_Encoder : public PluginVideoEncoder<MY_CODEC>
       int err = m_encoder->InitializeExt(&param);
       switch (err) {
         case cmResultSuccess :
-          PTRACE(4, MY_CODEC_LOG, "Initialised encoder: " << m_width <<'x' << m_height << '@' << param.fMaxFrameRate);
+          PTRACE(4, MY_CODEC_LOG, "Initialised encoder: " << m_width <<'x' << m_height << '@' << param.fMaxFrameRate << ", "
+                 << m_maxBitRate << "bps, ""NALU=" << m_maxNALUSize << ", profile=" << m_profile << ", level=" << m_level);
           return true;
 
         case cmInitParaError :
