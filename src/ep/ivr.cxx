@@ -215,12 +215,19 @@ PString OpalIVRConnection::GetLocalPartyURL() const
 }
 
 
-void OpalIVRConnection::OnEstablished()
+void OpalIVRConnection::OnStartMediaPatch(OpalMediaPatch & patch)
 {
-  OpalConnection::OnEstablished();
+  OpalLocalConnection::OnStartMediaPatch(patch);
 
-  if (!m_vxmlSession.IsLoaded())
-    StartVXML(m_vxmlScript);
+  for (StreamDict::const_iterator it = m_mediaStreams.begin(); it != m_mediaStreams.end(); ++it) {
+    OpalMediaStreamPtr mediaStream = it->second;
+    if (mediaStream != NULL && !mediaStream->IsEstablished()) {
+      PTRACE(4, "Delayed starting VXML, not yet established " << *mediaStream);
+      return;
+    }
+  }
+
+  StartVXML(m_vxmlScript);
 }
 
 
