@@ -190,6 +190,7 @@ OpalIVRConnection::OpalIVRConnection(OpalCall & call,
   , endpoint(ep)
   , m_vxmlScript(vxml)
   , P_DISABLE_MSVC_WARNINGS(4355, m_vxmlSession(*this, PFactory<PTextToSpeech>::CreateInstance(ep.GetDefaultTextToSpeech()), true))
+  , m_vxmlStarted(false)
 {
 #if P_VIDEO
   m_autoStartInfo[OpalMediaType::Video()] = OpalMediaType::DontOffer;
@@ -227,7 +228,8 @@ void OpalIVRConnection::OnStartMediaPatch(OpalMediaPatch & patch)
     }
   }
 
-  StartVXML(m_vxmlScript);
+  if (!m_vxmlStarted.exchange(true))
+    StartVXML(m_vxmlScript);
 }
 
 

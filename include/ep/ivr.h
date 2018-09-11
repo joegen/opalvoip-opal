@@ -338,6 +338,7 @@ class OpalIVRConnection : public OpalLocalConnection
     OpalIVREndPoint   & endpoint;
     PString             m_vxmlScript;
     OpalVXMLSession     m_vxmlSession;
+    atomic<bool>        m_vxmlStarted;
 };
 
 
