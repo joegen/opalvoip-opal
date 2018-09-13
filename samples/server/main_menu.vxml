@@ -145,7 +145,7 @@
       
       <!-- Transfer to the calculated expression. Note that we only support string
            concatenation ('+' operator) at this time. -->
-      <transfer type="false" destexpr="'mcu:'+enteredDigits" />
+      <transfer bridge="false" destexpr="'mcu:'+enteredDigits" />
     </filled>
 
     <!-- This happens if a timeout occurs -->

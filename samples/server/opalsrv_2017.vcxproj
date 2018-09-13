@@ -316,6 +316,7 @@
     <ClInclude Include="version.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="main_menu.vxml" />
     <None Include="messages.bin" />
     <None Include="opalsrv.ico" />
     <None Include="webrtc_test.html" />

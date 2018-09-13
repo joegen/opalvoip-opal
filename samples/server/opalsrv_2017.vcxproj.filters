@@ -61,6 +61,9 @@
     <None Include="webrtc_test.html">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="main_menu.vxml">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="svcproc.rc">
