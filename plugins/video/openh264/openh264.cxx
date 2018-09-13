@@ -736,12 +736,12 @@ class H264_Encoder : public PluginVideoEncoder<MY_CODEC>
       unsigned mode = m_isH323 ? m_packetisationModeH323 : m_packetisationModeSDP;
       switch (mode) {
         case 0 :
-          param.sSpatialLayers[0].sSliceCfg.uiSliceMode = SM_DYN_SLICE;
-          param.sSpatialLayers[0].sSliceCfg.sSliceArgument.uiSliceSizeConstraint = param.uiMaxNalSize = m_maxNALUSize;
+          param.sSpatialLayers[0].sSliceArgument.uiSliceMode = SM_SIZELIMITED_SLICE;
+          param.sSpatialLayers[0].sSliceArgument.uiSliceSizeConstraint = param.uiMaxNalSize = m_maxNALUSize;
           break;
 
         case 1 :
-          param.sSpatialLayers[0].sSliceCfg.uiSliceMode = SM_SINGLE_SLICE;
+          param.sSpatialLayers[0].sSliceArgument.uiSliceMode = SM_SINGLE_SLICE;
           break;
 
         default :
@@ -925,7 +925,6 @@ class H264_Decoder : public PluginVideoDecoder<MY_CODEC>
 
       SDecodingParam param;
       memset(&param, 0, sizeof(param));
-      param.eOutputColorFormat = videoFormatI420;// color space format to be outputed, EVideoFormatType specified in codec_def.h
       param.eEcActiveIdc = ERROR_CON_DISABLE;		// Whether active error concealment feature in decoder
       param.sVideoProperty.size = sizeof(param.sVideoProperty);
       param.sVideoProperty.eVideoBsType = VIDEO_BITSTREAM_DEFAULT;
