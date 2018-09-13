@@ -229,7 +229,13 @@ xcopy /y/f "$(TargetDir)$(TargetName).*d*" "C:\Program Files (x86)\PTLib Plug In
     </ResourceCompile>
     <PostBuildEvent>
       <Message>Copying codec and debug information to plug in directory</Message>
-      <Command>if exist "C:\Program Files\PTLib Plug Ins" xcopy /y/f "$(TargetDir)$(TargetName).*d*" "C:\Program Files\PTLib Plug Ins"</Command>
+      <Command>cd "C:\Program Files\PTLib Plug Ins"
+if errorlevel 1 goto no_copy
+xcopy /y/f "$(TargetDir)$(TargetName).*d*" .
+cscript /nologo "$(ProjectDir)..\..\..\make\downloader.vbs" GetUnzip http://ciscobinary.openh264.org/openh264-1.8.0-win64.dll.bz2 .
+if errorlevel 1 goto no_copy
+ren openh264-1.8.0-win64.dll openh264_x64.dll
+:no_copy</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>

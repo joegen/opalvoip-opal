@@ -85,6 +85,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libtiff", "fax\fax_spandsp\
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libspandsp", "fax\fax_spandsp\libspandsp_2017.vcxproj", "{1CBB0077-18C5-455F-801C-0A0CE7B0BBF5}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{2EEC5029-37C2-4DFD-AB45-F9D83DA1B737}"
+	ProjectSection(SolutionItems) = preProject
+		..\make\downloader.vbs = ..\make\downloader.vbs
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug (licensed)|Win32 = Debug (licensed)|Win32
