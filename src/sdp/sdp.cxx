@@ -3027,12 +3027,12 @@ bool SDPSessionDescription::Decode(const PStringArray & lines, const OpalMediaFo
     for (PINDEX i = 0; i < mediaDescriptions.GetSize(); ++i) {
       SDPMediaDescription & md = mediaDescriptions[i];
       if (md.HasICE()) {
+        PTRACE(3, "ICE detected, not using 0.0.0.0 as HOLD request on media desciption " << (i+1));
         // Set it to something, doesn't matter what, just needs to be legal
         OpalTransportAddress addr(PIPAddress(), mediaDescriptions[i].GetPort(), OpalTransportAddress::UdpPrefix());
         mediaDescriptions[i].SetAddresses(addr, addr);
         if (defaultConnectAddress.IsEmpty())
           defaultConnectAddress = addr;
-        PTRACE(3, "ICE detected, not using 0.0.0.0 as HOLD request.");
       }
     }
   }

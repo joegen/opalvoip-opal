@@ -1027,9 +1027,11 @@ SDPMediaDescription * OpalSDPConnection::OnSendAnswerSDPSession(SDPMediaDescript
       otherSidesDir = (otherSidesDir&SDPMediaDescription::SendOnly) != 0 ? SDPMediaDescription::SendOnly : SDPMediaDescription::Inactive;
     if ((autoStart&OpalMediaType::Receive) == 0)
       otherSidesDir = (otherSidesDir&SDPMediaDescription::RecvOnly) != 0 ? SDPMediaDescription::RecvOnly : SDPMediaDescription::Inactive;
+    PTRACE(4, "Answering initial offer for media type " << mediaType << ", directions=" << otherSidesDir << ", autoStart=" << autoStart);
   }
-
-  PTRACE(4, "Answering offer for media type " << mediaType << ", directions=" << otherSidesDir);
+  else {
+    PTRACE(4, "Answering offer for media type " << mediaType << ", directions=" << otherSidesDir);
+  }
 
   SDPMediaDescription::Direction newDirection = SDPMediaDescription::Inactive;
 
