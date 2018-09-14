@@ -966,14 +966,6 @@ bool SDPMediaDescription::PostDecode(const OpalMediaFormatList & mediaFormats)
       m_formats.erase(format++);
   }
 
-#if OPAL_ICE
-  // Do not confuse ICE with "old style" hold
-  if (m_mediaAddress.IsEmpty() && HasICE()) {
-    m_controlAddress = m_mediaAddress = OpalTransportAddress(PIPAddress(), m_port, OpalTransportAddress::UdpPrefix());
-    PTRACE(3, "ICE detected, not using 0.0.0.0 as HOLD request.");
-  }
-#endif
-
   return true;
 }
 
@@ -3008,17 +3000,43 @@ bool SDPSessionDescription::Decode(const PStringArray & lines, const OpalMediaFo
   }
 
 #if OPAL_ICE
-  // Do not confuse ICE with "old style" hold
-  if (defaultConnectAddress.IsEmpty()) {
+  // Locate the "bundled" description that has the ICE, usually the first one
+  // but lets not assume that.
+  bool hasICE = false;
+  const SDPMediaDescription * mdBundledICE = NULL;
+  for (PINDEX i = 0; i < mediaDescriptions.GetSize(); ++i) {
+    const SDPMediaDescription & md = mediaDescriptions[i];
+    if (md.HasICE()) {
+      if (md.IsGroupMember(OpalMediaSession::GetBundleGroupId()))
+        mdBundledICE = &md;
+      hasICE = true;
+    }
+  }
+
+  if (hasICE) {
+    if (mdBundledICE != NULL) {
+      // Make sure all our descriptions have the ICE params for the bundle
+      for (PINDEX i = 0; i < mediaDescriptions.GetSize(); ++i) {
+        SDPMediaDescription & md = mediaDescriptions[i];
+        if (md.IsGroupMember(OpalMediaSession::GetBundleGroupId()) && !md.HasICE())
+          md.SetICE(mdBundledICE->GetUsername(), mdBundledICE->GetPassword(), mdBundledICE->GetCandidates());
+      }
+    }
+
+    // Do not confuse ICE having 0.0.0.0 with "old style" hold
     for (PINDEX i = 0; i < mediaDescriptions.GetSize(); ++i) {
-      if (mediaDescriptions[i].HasICE()) {
-        defaultConnectAddress = mediaDescriptions[i].GetMediaAddress();
-        PTRACE(3, "ICE detected, not using 0.0.0.0 as HOLD request as default.");
-        break;
+      SDPMediaDescription & md = mediaDescriptions[i];
+      if (md.HasICE()) {
+        // Set it to something, doesn't matter what, just needs to be legal
+        OpalTransportAddress addr(PIPAddress(), mediaDescriptions[i].GetPort(), OpalTransportAddress::UdpPrefix());
+        mediaDescriptions[i].SetAddresses(addr, addr);
+        if (defaultConnectAddress.IsEmpty())
+          defaultConnectAddress = addr;
+        PTRACE(3, "ICE detected, not using 0.0.0.0 as HOLD request.");
       }
     }
   }
-#endif
+#endif // OPAL_ICE
 
   // Match up groups and mid's
   for (PINDEX i = 0; i < mediaDescriptions.GetSize(); ++i)
