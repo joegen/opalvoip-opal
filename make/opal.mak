@@ -40,11 +40,13 @@ else ifndef OPALDIR
   OPAL_LIBDIR := $(shell pkg-config opal --variable=libdir)
 else
   ifeq (,$(target))
-    ifneq (,$(OS))
-      ifneq (,$(CPU))
-        target = $(OS)_$(CPU)
-      endif
+    ifeq (,$(OS))
+      OS:=$(shell uname -s)
     endif
+    ifeq (,$(CPU))
+      CPU=$(shell uname -m)
+    endif
+    target = $(OS)_$(CPU)
   endif
   ifneq (,$(wildcard $(OPALDIR)/lib_$(target)/make/$(OPAL_CONFIG_MAK)))
     include $(OPALDIR)/lib_$(target)/make/$(OPAL_CONFIG_MAK)
