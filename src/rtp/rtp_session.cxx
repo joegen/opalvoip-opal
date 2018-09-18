@@ -419,7 +419,7 @@ OpalRTPSession::SyncSource::SyncSource(OpalRTPSession & session, RTP_SyncSourceI
   , m_lastSequenceNumber(0)
   , m_firstSequenceNumber(0)
   , m_extendedSequenceNumber(0)
-  , m_lastFIRSequenceNumber(256) // Impossible value
+  , m_lastFIRSequenceNumber(0)
   , m_lastTSTOSequenceNumber(0)
   , m_consecutiveOutOfOrderPackets(0)
   , m_nextOutOfOrderPacket(0)
