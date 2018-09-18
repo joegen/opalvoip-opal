@@ -2341,7 +2341,8 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
                        " last-sn=" << ssrc->m_lastFIRSequenceNumber << ","
                        " receiver SSRC=" << RTP_TRACE_SRC(targetSSRC) << ","
                        " sender SSRC=" << RTP_TRACE_SRC(senderSSRC));
-                if (ssrc->m_lastFIRSequenceNumber != sequenceNumber) {
+                // Allow for SN always zero from some brain dead endpoints.
+                if (sequenceNumber == 0 || ssrc->m_lastFIRSequenceNumber != sequenceNumber) {
                   ssrc->m_lastFIRSequenceNumber = sequenceNumber;
                   m_connection.ExecuteMediaCommand(OpalVideoUpdatePicture(m_sessionId, targetSSRC), true);
                 }
