@@ -1067,6 +1067,8 @@ MyLyncEndPoint::MyLyncEndPoint(MyManager & mgr)
 
 bool MyLyncEndPoint::Configure(PConfig & cfg, PConfigPage * rsrc)
 {
+  bool disabled = !rsrc->AddBooleanField("Lync Enabled", true);
+
   enum {
     UserRegistrationMode,
     ApplicationRegistrationMode,
@@ -1112,49 +1114,54 @@ bool MyLyncEndPoint::Configure(PConfig & cfg, PConfigPage * rsrc)
   PString provisioningID = rsrc->AddStringField(LyncProvisioningIdKey, 0, PString::Empty(),
                                                     "Lync Provisioning Identifier. Note, 'Registration Mode' must be set to 'Provisioned'.", 1, 30);
 
-  switch (registrationMode) {
-    case UserRegistrationMode:
-      if (!registrationsArray->LoadFromConfig(cfg)) {
-        for (PINDEX i = 0; i < registrationsArray->GetSize(); ++i) {
-          PHTTPCompositeField & item = dynamic_cast<PHTTPCompositeField &>((*registrationsArray)[i]);
-
-          OpalLyncEndPoint::UserParams info;
-          info.m_uri = item[0].GetValue();
-          if (!info.m_uri.IsEmpty()) {
-            info.m_authID = item[1].GetValue();
-            info.m_domain = item[2].GetValue();
-            info.m_password = PHTTPPasswordField::Decrypt(item[3].GetValue());
-            if (RegisterUser(info).IsEmpty())
-              PSYSTEMLOG(Error, "Could not register Lync user " << info.m_uri);
-            else
-              PSYSTEMLOG(Info, "Registered Lync user " << info.m_uri);
-          }
-        }
-      }
-      break;
-
-    case ApplicationRegistrationMode:
-      if (!pparam.m_localHost.empty()) {
-        if (RegisterApplication(pparam, aparam))
-          PSYSTEMLOG(Info, "Registered Lync application " << pparam.m_localHost);
-        else
-          PSYSTEMLOG(Error, "Could not register Lync application " << pparam.m_localHost);
-      }
-      break;
-
-    case ProvisionedRegistrationMode:
-      if (!provisioningID.empty()) {
-        if (Register(provisioningID))
-          PSYSTEMLOG(Info, "Registered Lync via provisioning ID \"" << provisioningID << '"');
-        else
-          PSYSTEMLOG(Error, "Could not register Lync via provisioning ID \"" << provisioningID << '"');
-      }
-      break;
-  }
-
   m_transferDelay = rsrc->AddIntegerField(LyncCompleteTransferDelayKey, 0, 65535, 500, "milliseconds",
                                           "Optional delay before completing consultative transfer");
   PTRACE(4, "Config: m_transferDelay=" << m_transferDelay);
+
+  if (disabled) {
+    PSYSTEMLOG(Info, "Disabled Lync");
+  }
+  else {
+    switch (registrationMode) {
+      case UserRegistrationMode:
+        if (!registrationsArray->LoadFromConfig(cfg)) {
+          for (PINDEX i = 0; i < registrationsArray->GetSize(); ++i) {
+            PHTTPCompositeField & item = dynamic_cast<PHTTPCompositeField &>((*registrationsArray)[i]);
+
+            OpalLyncEndPoint::UserParams info;
+            info.m_uri = item[0].GetValue();
+            if (!info.m_uri.IsEmpty()) {
+              info.m_authID = item[1].GetValue();
+              info.m_domain = item[2].GetValue();
+              info.m_password = PHTTPPasswordField::Decrypt(item[3].GetValue());
+              if (RegisterUser(info).IsEmpty())
+                PSYSTEMLOG(Error, "Could not register Lync user " << info.m_uri);
+              else
+                PSYSTEMLOG(Info, "Registered Lync user " << info.m_uri);
+            }
+          }
+        }
+        break;
+
+      case ApplicationRegistrationMode:
+        if (!pparam.m_localHost.empty()) {
+          if (RegisterApplication(pparam, aparam))
+            PSYSTEMLOG(Info, "Registered Lync application " << pparam.m_localHost);
+          else
+            PSYSTEMLOG(Error, "Could not register Lync application " << pparam.m_localHost);
+        }
+        break;
+
+      case ProvisionedRegistrationMode:
+        if (!provisioningID.empty()) {
+          if (Register(provisioningID))
+            PSYSTEMLOG(Info, "Registered Lync via provisioning ID \"" << provisioningID << '"');
+          else
+            PSYSTEMLOG(Error, "Could not register Lync via provisioning ID \"" << provisioningID << '"');
+        }
+        break;
+    }
+  }
 
   return true;
 }
