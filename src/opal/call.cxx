@@ -950,10 +950,12 @@ void OpalCall::SetPartyNames()
   if (networkA) {
     m_partyA = connectionA->GetRemotePartyURL();
     m_nameA = connectionA->GetRemotePartyName();
+    m_identityA = connectionA->GetRemoteIdentity();
   }
   if (!networkA || m_partyA.IsEmpty()) {
     m_partyA = connectionA->GetLocalPartyURL();
-    m_nameA = connectionA->GetLocalPartyName();
+    m_nameA = connectionA->GetDisplayName();
+    m_identityA = connectionA->GetLocalPartyName();
   }
 
   PSafePtr<OpalConnection> connectionB = m_connectionsActive.GetAt(1, PSafeReadOnly);
@@ -967,6 +969,7 @@ void OpalCall::SetPartyNames()
       connectionA->CopyPartyNames(*connectionB);
     m_partyB = connectionB->GetRemotePartyURL();
     m_nameB = connectionB->GetRemotePartyName();
+    m_identityB = connectionB->GetRemoteIdentity();
   }
   else {
     if (networkA) {
@@ -977,7 +980,8 @@ void OpalCall::SetPartyNames()
     }
     if (m_partyB.IsEmpty())
       m_partyB = connectionB->GetLocalPartyURL();
-    m_nameB = connectionB->GetLocalPartyName();
+    m_nameB = connectionB->GetDisplayName();
+    m_identityB = connectionB->GetLocalPartyName();
   }
 }
 

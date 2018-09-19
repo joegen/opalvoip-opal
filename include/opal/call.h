@@ -524,6 +524,19 @@ class OpalCall : public PSafeObject
      */
     const PString & GetNameB() const { return m_nameB; }
 
+    /**Get the A party identity for the call.
+       Note this will be available even after the A party connection has been
+       released from the call.
+     */
+    const PString & GetIdentityA() const { return m_identityA; }
+
+    /**Get the B party URI for the call.
+       Note this will be available even after the B party connection has been
+       released from the call. Also this will only be the first B party if the
+       object represents a conference call with more that 2 parties.
+     */
+    const PString & GetIdentityB() const { return m_identityB; }
+
     /**Get indication that A-Party is the network.
        This will indicate if the call is "incoming" or "outgoing" by looking at
        the type of the A-party connection.
@@ -631,6 +644,8 @@ class OpalCall : public PSafeObject
     PString m_partyB;
     PString m_nameA;
     PString m_nameB;
+    PString m_identityA;
+    PString m_identityB;
     bool    m_networkOriginated;
     PTime   m_startTime;
     PTime   m_establishedTime;
