@@ -1,0 +1,35 @@
+{
+    "version": 4,
+    "configurations": [
+        {
+            "name": "Mac",
+            "includePath": [
+                "${workspaceFolder}/lib_Darwin_x86_64/include/",
+                "${workspaceFolder}/include/**",
+                "${workspaceFolder}/../ptlib/lib_Darwin_x86_64/include/",
+                "${workspaceFolder}/../ptlib/include/**",
+                "/usr/local/include/**"
+            ],
+            "macFrameworkPath": [
+                "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.13.sdk/System/Library/Frameworks"
+            ],
+            "compilerPath": "/usr/bin/clang",
+            "cStandard": "c11",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "clang-x64"
+        },
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/lib_linux_x86_64/include/",
+                "${workspaceFolder}/include/**",
+                "${workspaceFolder}/../ptlib/lib_linux_x86_64/include/",
+                "${workspaceFolder}/../ptlib/include/**"
+            ],
+            "compilerPath": "/usr/bin/g++",
+            "cStandard": "c11",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "gcc-x64"
+        }
+    ]
+}
