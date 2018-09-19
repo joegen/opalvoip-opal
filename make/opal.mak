@@ -41,18 +41,21 @@ else ifndef OPALDIR
 else
   ifeq (,$(target))
     ifeq (,$(OS))
-      OS:=$(shell uname -s)
+      OS := $(shell uname -s)
     endif
     ifeq (,$(CPU))
-      CPU=$(shell uname -m)
+      CPU := $(shell uname -m)
     endif
-    target = $(OS)_$(CPU)
+    target := $(OS)_$(CPU)
   endif
-  ifneq (,$(wildcard $(OPALDIR)/lib_$(target)/make/$(OPAL_CONFIG_MAK)))
-    include $(OPALDIR)/lib_$(target)/make/$(OPAL_CONFIG_MAK)
-  else
-    include $(OPALDIR)/make/$(OPAL_CONFIG_MAK)
+
+  OPAL_CONFIG_MAK_PATH := $(OPALDIR)/lib_$(target)/make/$(OPAL_CONFIG_MAK)
+  ifeq (,$(wildcard $(OPAL_CONFIG_MAK_PATH)))
+    OPAL_CONFIG_MAK_PATH := $(OPALDIR)/make/$(OPAL_CONFIG_MAK)
   endif
+  #$(info Including $(OPAL_CONFIG_MAK_PATH))
+  include $(OPAL_CONFIG_MAK_PATH)
+
   OPAL_INCFLAGS := -I$(OPALDIR)/include
   OPAL_LIBDIR = $(OPALDIR)/lib_$(target)
   LIBDIRS := $(OPALDIR) $(LIBDIRS)  # Submodules built with make lib
