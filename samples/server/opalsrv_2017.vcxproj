@@ -136,6 +136,10 @@
       <TargetMachine>MachineX86</TargetMachine>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <PostBuildEvent>
+      <Command>copy "$(ProjectDir)webrtc_test.html" "$(OutDir)webrtc_test.html"</Command>
+      <Message>Copying WebRTC test page.</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Midl>
@@ -176,6 +180,10 @@
       </DataExecutionPrevention>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <PostBuildEvent>
+      <Command>copy "$(ProjectDir)webrtc_test.html" "$(OutDir)webrtc_test.html"</Command>
+      <Message>Copying WebRTC test page.</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Midl>
@@ -218,6 +226,10 @@
       <TargetMachine>MachineX86</TargetMachine>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
+    <PostBuildEvent>
+      <Command>copy "$(ProjectDir)webrtc_test.html" "$(OutDir)webrtc_test.html"</Command>
+      <Message>Copying WebRTC test page.</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Midl>
@@ -257,6 +269,12 @@
       <DataExecutionPrevention>
       </DataExecutionPrevention>
     </Link>
+    <PostBuildEvent>
+      <Command>copy "$(ProjectDir)webrtc_test.html" "$(OutDir)webrtc_test.html"</Command>
+    </PostBuildEvent>
+    <PostBuildEvent>
+      <Message>Copying WebRTC test page.</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\ptlib\src\ptlib\msos\PTLib_2017.vcxproj">

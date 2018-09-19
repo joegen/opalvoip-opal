@@ -5,7 +5,7 @@
   <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
   <script>
     function WebRTC() {
-      this.dest = "ivr:";
+      this.dest = "";
       this.remoteVideo = null;
       this.preview = null;
       this.peerConnection = null;
@@ -132,7 +132,7 @@
 
     window.onload = function () {
       destFld = document.getElementById("dest");
-      destFld.value = "ivr:";
+      destFld.value = "";
       startBtn = document.getElementById("startBtn");
       endBtn = document.getElementById("endBtn");
     };
@@ -141,6 +141,10 @@
     window.onunload = function () {
       if (webrtc)
         webrtc.stop();
+    }
+
+    function destChanged() {
+      startBtn.disabled = destFld.value.search(":") < 0;
     }
 
     function startCall() {
@@ -170,9 +174,15 @@
   <table border="2">
     <tr>
       <th colspan="2">
-        Destination:&nbsp;<input type="text" size=150 id="dest" />
+        Destination:&nbsp;
+        <input list="destinationList" size=150 id="dest" onchange="destChanged();" onselect="destChanged();" />
+        <datalist id="destinationList">
+          <option value="ivr:">
+          <option value="loopback:">
+          <option value="mcu:*">
+        </datalist>
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-        <input type="button" value="Start Call" id="startBtn" onClick="startCall();" />
+        <input type="button" value="Start Call" id="startBtn" onClick="startCall();" disabled />
         &nbsp;&nbsp;
         <input type="button" value="End Call" id="endBtn" onClick="endCall();" disabled />
       </th>
