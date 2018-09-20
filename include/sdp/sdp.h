@@ -335,12 +335,14 @@ class SDPMediaDescription : public PObject, public SDPCommonAttributes
     virtual PStringArray GetGroups() const { return m_groups.GetKeys(); }
     virtual PString GetGroupMediaId(const PString & groupId) const { return m_groups(groupId); }
     virtual void MatchGroupInfo(const GroupDict & groups);
+    bool IsBundleOnly() const { return m_bundleOnly; }
 
     const OpalTransportAddress & GetMediaAddress() const { return m_mediaAddress; }
     const OpalTransportAddress & GetControlAddress() const { return m_controlAddress; }
     bool SetAddresses(const OpalTransportAddress & media, const OpalTransportAddress & control);
 
-    virtual WORD GetPort() const { return m_port; }
+    WORD GetPort() const { return m_port; }
+    void SetPort(WORD port) { m_port = port; }
 
 #if OPAL_ICE
     PNatCandidateList GetCandidates() const { return m_candidates; }
@@ -373,7 +375,7 @@ class SDPMediaDescription : public PObject, public SDPCommonAttributes
     WORD                 m_port;
     WORD                 m_portCount;
     OpalMediaType        m_mediaType;
-    bool                 m_reducedSizeRTCP;
+    bool                 m_bundleOnly; // draft-ietf-mmusic-sdp-bundle-negotiation-52
     PStringList          m_mids;
     PStringToString      m_groups;
 #if OPAL_ICE
@@ -501,6 +503,7 @@ class SDPRTPAVPMediaDescription : public SDPMediaDescription
     };
 
     PCaselessString               m_transportType;
+    bool                          m_reducedSizeRTCP;
     SsrcInfo                      m_ssrcInfo;  // RFC5576
     PString                       m_label;
     PString                       m_msid;

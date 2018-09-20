@@ -741,7 +741,7 @@ void SDPCommonAttributes::OutputAttributes(ostream & strm) const
 SDPMediaDescription::SDPMediaDescription()
   : m_port(0)
   , m_portCount(1)
-  , m_reducedSizeRTCP(false)
+  , m_bundleOnly(false)
 {
 }
 
@@ -751,7 +751,7 @@ SDPMediaDescription::SDPMediaDescription(const OpalTransportAddress & address, c
   , m_port(0)
   , m_portCount(1)
   , m_mediaType(type)
-  , m_reducedSizeRTCP(false)
+  , m_bundleOnly(false)
 {
   PIPSocket::Address ip;
   if (m_mediaAddress.GetIpAndPort(ip, m_port))
@@ -794,7 +794,7 @@ bool SDPMediaDescription::FromSession(OpalMediaSession * session,
   if (offer != NULL ? offer->HasICE() : m_stringOptions.GetBoolean(OPAL_OPT_OFFER_ICE)) {
     OpalMediaTransportPtr transport = session->GetTransport();
     if (transport == NULL) {
-        PTRACE(2, "Could not do ICE offer as no transport avaiable.");
+        PTRACE(2, "Could not do ICE offer as no transport available.");
         return false;
     }
 
@@ -1012,6 +1012,11 @@ void SDPMediaDescription::SetAttribute(const PString & attr, const PString & val
     return;
   }
 
+  if (attr *= "bundle-only") {
+    m_bundleOnly = true;
+    return;
+  }
+
 #if OPAL_ICE
   if (attr *= "candidate") {
     PStringArray words = value.Tokenise(WhiteSpace, false); // Spec says space only, but lets be forgiving
@@ -1145,7 +1150,7 @@ void SDPMediaDescription::Encode(const OpalTransportAddress & commonAddr, ostrea
     return;
 
   PIPSocket::Address commonIP, transportIP;
-  if (m_mediaAddress.GetIpAddress(transportIP) && commonAddr.GetIpAddress(commonIP) && commonIP != transportIP)
+  if (m_mediaAddress.GetIpAddress(transportIP) && (!commonAddr.GetIpAddress(commonIP) || commonIP != transportIP))
     strm << "c=" << GetConnectAddressString(m_mediaAddress) << CRLF;
 
   strm << m_bandwidth;
@@ -1566,6 +1571,7 @@ void SDPCryptoSuite::PrintOn(ostream & strm) const
 
 SDPRTPAVPMediaDescription::SDPRTPAVPMediaDescription(const OpalTransportAddress & address, const OpalMediaType & mediaType)
   : SDPMediaDescription(address, mediaType)
+  , m_reducedSizeRTCP(false)
 {
 }
 
@@ -2999,6 +3005,31 @@ bool SDPSessionDescription::Decode(const PStringArray & lines, const OpalMediaFo
               " ok=" << boolalpha << ok);
   }
 
+  {
+    // Match up groups and mid's
+    for (PINDEX i = 0; i < mediaDescriptions.GetSize(); ++i)
+      mediaDescriptions[i].MatchGroupInfo(m_groups);
+
+    WORD firstBundledPort = 0;
+    for (PINDEX i = 0; i < mediaDescriptions.GetSize(); ++i) {
+      const SDPMediaDescription & md = mediaDescriptions[i];
+      if (md.GetPort() != 0 && md.IsGroupMember(OpalMediaSession::GetBundleGroupId())) {
+        firstBundledPort = md.GetPort();
+        break;
+      }
+    }
+
+    if (firstBundledPort != 0) {
+      for (PINDEX i = 0; i < mediaDescriptions.GetSize(); ++i) {
+        SDPMediaDescription & md = mediaDescriptions[i];
+        if (md.GetPort() == 0 && md.IsBundleOnly() && md.IsGroupMember(OpalMediaSession::GetBundleGroupId())) {
+          md.SetPort(firstBundledPort);
+          PTRACE(4, "Setting port " << firstBundledPort << " on bundle-only session " << (i + 1));
+        }
+      }
+    }
+  }
+
 #if OPAL_ICE
   // Locate the "bundled" description that has the ICE, usually the first one
   // but lets not assume that.
@@ -3037,10 +3068,6 @@ bool SDPSessionDescription::Decode(const PStringArray & lines, const OpalMediaFo
     }
   }
 #endif // OPAL_ICE
-
-  // Match up groups and mid's
-  for (PINDEX i = 0; i < mediaDescriptions.GetSize(); ++i)
-    mediaDescriptions[i].MatchGroupInfo(m_groups);
 
   if (m_mediaStreamIds.GetSize() == 1 && m_mediaStreamIds[0] == "*") {
     m_mediaStreamIds.RemoveAll();
