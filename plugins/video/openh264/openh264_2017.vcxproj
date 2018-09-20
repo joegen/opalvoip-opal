@@ -190,12 +190,14 @@
     </ResourceCompile>
     <PostBuildEvent>
       <Message>Copying codec and debug information to plug in directory</Message>
-      <Command>if exist "C:\Program Files (x86)\PTLib Plug Ins" goto copy_x86
-if exist "C:\Program Files\PTLib Plug Ins" xcopy /y/f "$(TargetDir)$(TargetName).*d*" "C:\Program Files\PTLib Plug Ins"
-exit
-:copy_x86
-xcopy /y/f "$(TargetDir)$(TargetName).*d*" "C:\Program Files (x86)\PTLib Plug Ins"
-</Command>
+      <Command>cd "C:\Program Files (x86)\PTLib Plug Ins"
+if errorlevel 1 goto no_copy
+xcopy /y/f "$(TargetDir)$(TargetName).*d*" .
+if exist openh264_x86.dll goto no_copy
+cscript /nologo "$(ProjectDir)..\..\..\make\downloader.vbs" GetUnzip http://ciscobinary.openh264.org/openh264-1.8.0-win32.dll.bz2 .
+if errorlevel 1 goto no_copy
+ren openh264-1.8.0-win32.dll openh264_x86.dll
+:no_copy</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -232,6 +234,7 @@ xcopy /y/f "$(TargetDir)$(TargetName).*d*" "C:\Program Files (x86)\PTLib Plug In
       <Command>cd "C:\Program Files\PTLib Plug Ins"
 if errorlevel 1 goto no_copy
 xcopy /y/f "$(TargetDir)$(TargetName).*d*" .
+if exist openh264_x64.dll goto no_copy
 cscript /nologo "$(ProjectDir)..\..\..\make\downloader.vbs" GetUnzip http://ciscobinary.openh264.org/openh264-1.8.0-win64.dll.bz2 .
 if errorlevel 1 goto no_copy
 ren openh264-1.8.0-win64.dll openh264_x64.dll
