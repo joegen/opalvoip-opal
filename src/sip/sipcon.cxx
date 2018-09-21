@@ -237,9 +237,9 @@ SIPConnection::SIPConnection(const Init & init)
   , m_responseRetryTimer(init.m_endpoint.GetThreadPool(), init.m_endpoint, init.m_token, &SIPConnection::OnInviteResponseRetry)
   , m_responseRetryCount(0)
   , m_inviteCollisionTimer(init.m_endpoint.GetThreadPool(), init.m_endpoint, init.m_token, &SIPConnection::OnInviteCollision)
-  , m_referOfRemoteInProgress(false)
   , m_delayedReferTimer(init.m_endpoint.GetThreadPool(), init.m_endpoint, init.m_token, &SIPConnection::OnDelayedRefer)
   , m_releaseMethod(ReleaseWithNothing)
+  , m_referOfRemoteState(eNoRemoteRefer)
   , m_receivedUserInputMethod(UserInputMethodUnknown)
 {
   SIPURL adjustedDestination = init.m_address;
@@ -452,13 +452,13 @@ void SIPConnection::OnReleased()
   AbortPendingTransactions();
 
   // We have a REFER in progress, wait for a while to get status indication
-  if (m_referOfRemoteInProgress) {
+  if (m_referOfRemoteState == eReferNotifyConfirmed) {
     PTRACE(4, "Waiting for indication REFER completed on " << *this);
     PSimpleTimer timeout = m_sipEndpoint.GetInviteTimeout();
-    while (m_referOfRemoteInProgress && timeout.IsRunning())
+    while (m_referOfRemoteState == eReferNotifyConfirmed && timeout.IsRunning())
       PThread::Sleep(250);
 
-    if (m_referOfRemoteInProgress && PAssert(LockReadWrite(), PLogicError)) {
+    if (m_referOfRemoteState == eReferNotifyConfirmed && PAssert(LockReadWrite(), PLogicError)) {
       PTRACE(2, "Timed out waiting for indication REFER completed on " << *this);
       PStringToString info;
       info.SetAt("result", "blind");
@@ -482,7 +482,7 @@ bool SIPConnection::TransferConnection(const PString & remoteParty)
     return false;
 
   // There is still an ongoing REFER transaction 
-  if (m_referOfRemoteInProgress) {
+  if (m_referOfRemoteState != eNoRemoteRefer) {
     PTRACE(2, "Transfer already in progress for " << *this);
     return false;
   }
@@ -512,8 +512,10 @@ bool SIPConnection::TransferConnection(const PString & remoteParty)
     m_sentReferTo.Sanitise(SIPURL::RedirectURI);
     PTRACE(3, "Blind transfer of " << *this << " to " << m_sentReferTo << ", referSubMode=" << referSubMode);
     PSafePtr<SIPTransaction> referTransaction = new SIPRefer(*this, m_sentReferTo, m_dialog.GetLocalURI(), referSubMode);
-    m_referOfRemoteInProgress = referTransaction->Start();
-    return m_referOfRemoteInProgress;
+    if (!referTransaction->Start())
+      return false;
+    m_referOfRemoteState = eReferStarted;
+    return true;
   }
 
   PSafePtr<OpalCall> call = m_endpoint.GetManager().FindCallWithLock(url.GetHostName(), PSafeReadOnly);
@@ -555,8 +557,10 @@ bool SIPConnection::TransferConnection(const PString & remoteParty)
 
       PSafePtr<SIPTransaction> referTransaction = new SIPRefer(*this, m_sentReferTo, m_dialog.GetLocalURI(), referSubMode);
       referTransaction->GetMIME().AddSupported("replaces");
-      m_referOfRemoteInProgress = referTransaction->Start();
-      return m_referOfRemoteInProgress;
+      if (!referTransaction->Start())
+        return false;
+      m_referOfRemoteState = eReferStarted;
+      return true;
     }
   }
 
@@ -1379,7 +1383,7 @@ void SIPConnection::OnTransactionFailed(SIPTransaction & transaction)
       break;
 
     case SIP_PDU::Method_REFER :
-      m_referOfRemoteInProgress = false;
+      m_referOfRemoteState = eNoRemoteRefer;
       // Do next case
 
     default :
@@ -1929,8 +1933,8 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
           default :
             switch (transaction.GetMethod()) {
               case SIP_PDU::Method_REFER :
-                if (m_referOfRemoteInProgress) {
-                  m_referOfRemoteInProgress = false;
+                if (m_referOfRemoteState != eNoRemoteRefer) {
+                  m_referOfRemoteState = eNoRemoteRefer;
 
                   PStringToString info;
                   info.SetAt("result", "error");
@@ -2436,8 +2440,8 @@ void SIPConnection::OnReceivedReINVITE(SIP_PDU & request)
   SIPURL newRemotePartyID(request.GetMIME(), RemotePartyID);
   if (newRemotePartyID.IsEmpty())
     UpdateRemoteAddresses();
-  else if (m_referOfRemoteInProgress) {
-    m_referOfRemoteInProgress = false;
+  else if (m_referOfRemoteState != eNoRemoteRefer) {
+    m_referOfRemoteState = eNoRemoteRefer;
 
     UpdateRemoteAddresses();
     PStringToString info = m_ciscoRemotePartyID.GetParamVars();
@@ -2561,7 +2565,7 @@ void SIPConnection::OnReceivedNOTIFY(SIP_PDU & request)
     return;
   }
 
-  if (!m_referOfRemoteInProgress) {
+  if (m_referOfRemoteState == eNoRemoteRefer) {
     PTRACE(2, "NOTIFY for REFER we never sent.");
     response->SetStatusCode(SIP_PDU::Failure_TransactionDoesNotExist);
     response->Send();
@@ -2588,12 +2592,12 @@ void SIPConnection::OnReceivedNOTIFY(SIP_PDU & request)
 
   PStringToString info;
   PCaselessString state = mime.GetSubscriptionState(info);
-  m_referOfRemoteInProgress = state != "terminated";
+  m_referOfRemoteState = state != "terminated" ? eReferNotifyConfirmed : eNoRemoteRefer;
   info.SetAt("party", "B"); // We are B party in consultation transfer
   info.SetAt("Refer-To", m_sentReferTo);
   info.SetAt("state", state);
   info.SetAt("code", psprintf("%u", code));
-  info.SetAt("result", m_referOfRemoteInProgress ? "progress" : (code < 300 ? "success" : "failed"));
+  info.SetAt("result", m_referOfRemoteState != eNoRemoteRefer ? "progress" : (code < 300 ? "success" : "failed"));
 
   if (OnTransferNotify(info, this))
     return;
@@ -2981,10 +2985,11 @@ void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & respons
      return;
 
     case SIP_PDU::Method_REFER :
-      if (m_referOfRemoteInProgress && !response.GetMIME().GetBoolean("Refer-Sub", true)) {
+      if (m_referOfRemoteState != eNoRemoteRefer &&
+              (response.GetStatusCode() != SIP_PDU::Successful_Accepted || !response.GetMIME().GetBoolean("Refer-Sub", true))) {
         // Used RFC4488 to indicate we are NOT doing NOTIFYs, release now
         PTRACE(3, "Blind transfer accepted, without NOTIFY so ending local call.");
-        m_referOfRemoteInProgress = false;
+        m_referOfRemoteState = eNoRemoteRefer;
 
         PStringToString info;
         info.SetAt("result", "blind");

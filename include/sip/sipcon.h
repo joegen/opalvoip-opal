@@ -771,7 +771,6 @@ class SIPConnection : public OpalSDPConnection, public SIPTransactionOwner
     PoolTimer             m_responseRetryTimer;
     unsigned              m_responseRetryCount;
     PoolTimer             m_inviteCollisionTimer;
-    bool                  m_referOfRemoteInProgress;
     PoolTimer             m_delayedReferTimer;
     SIPURL                m_delayedReferTo;
     SIPURL                m_sentReferTo;
@@ -785,6 +784,12 @@ class SIPConnection : public OpalSDPConnection, public SIPTransactionOwner
       ReleaseWithResponse,
       ReleaseWithNothing,
     } m_releaseMethod;
+
+    enum {
+      eNoRemoteRefer,
+      eReferStarted,
+      eReferNotifyConfirmed
+    } m_referOfRemoteState;
 
     int SetRemoteMediaFormats(SIP_PDU & pdu);
 
