@@ -197,6 +197,16 @@ class OpalSockConnection : public OpalLocalConnection
     virtual bool TransferConnection(
       const PString & remoteParty   ///<  Remote party to transfer the existing call to
     );
+
+    /** Callback for media commands.
+        Executes OnMediaCommand ont he other connection in call.
+
+       @returns true if command is handled.
+      */
+    virtual bool OnMediaCommand(
+      OpalMediaStream & stream,         ///< Stream command executed on
+      const OpalMediaCommand & command  ///< Media command being executed
+    );
   //@}
 
   /**@name Overrides from OpalLocalConnection */

@@ -27,6 +27,7 @@
 #include <ptlib.h>
 
 #include <ep/sockep.h>
+#include <codec/vidcodec.h>
 
 
 #define PTraceModule() "sock-ep"
@@ -128,7 +129,7 @@ OpalMediaFormatList OpalSockConnection::GetMediaFormats() const
       video.SetOptionInteger(OpalMediaFormat::FrameTimeOption(), static_cast<int>(video.GetClockRate() / fps));
     fmts += video;
   }
-#endif
+#endif // OPAL_VIDEO
   return fmts;
 }
 
@@ -301,3 +302,40 @@ bool OpalSockConnection::OnWriteMediaData(const OpalMediaStream & mediaStream,
   return true;
 }
 
+
+bool OpalSockConnection::OnMediaCommand(OpalMediaStream & stream, const OpalMediaCommand & command)
+{
+#if OPAL_VIDEO
+  if (stream.IsSource() == (&stream.GetConnection() == this)) {
+    const OpalVideoUpdatePicture * vup = dynamic_cast<const OpalVideoUpdatePicture *>(&command);
+    if (vup != NULL) {
+      MediaSockHeader hdr;
+      hdr.m_headerSize = sizeof(hdr);
+      hdr.m_flags = 2;
+      hdr.m_length = 0;
+      if (!m_videoSocket->Write(&hdr, sizeof(hdr))) {
+        PTRACE(2, "Socket write error for video - " << m_videoSocket->GetErrorText());
+      }
+      return true;
+    }
+
+    const OpalMediaFlowControl * flow = dynamic_cast<const OpalMediaFlowControl *>(&command);
+    if (flow != NULL) {
+      struct {
+        MediaSockHeader hdr;
+        PUInt32b rate;
+      } cmd;
+      cmd.hdr.m_headerSize = sizeof(cmd.hdr);
+      cmd.hdr.m_flags = 4;
+      cmd.hdr.m_length = 4;
+      cmd.rate = flow->GetMaxBitRate();
+      if (!m_videoSocket->Write(&cmd, sizeof(cmd))) {
+        PTRACE(2, "Socket write error for video - " << m_videoSocket->GetErrorText());
+      }
+      return true;
+    }
+  }
+#endif // OPAL_VIDEO
+
+  return OpalLocalConnection::OnMediaCommand(stream, command);
+}
