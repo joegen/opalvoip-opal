@@ -334,9 +334,10 @@ bool OpalSDPConnection::SetActiveMediaFormats(const OpalMediaFormatList & format
   // get the remote media formats
   m_activeFormatList = formats;
 
+  OpalMediaFormatList const localMediaFormats = GetLocalMediaFormats(); // Use function to make sure is set
   // Remove anything we never offered
-  while (!m_activeFormatList.IsEmpty() && m_localMediaFormats.FindFormat(m_activeFormatList.front()) == m_localMediaFormats.end())
-    m_activeFormatList.RemoveHead();
+  while (!m_activeFormatList.IsEmpty() && !localMediaFormats.HasFormat(m_activeFormatList.front()))
+    m_activeFormatList.pop_front();
 
   if (!m_activeFormatList.IsEmpty())
     AdjustMediaFormats(false, NULL, m_activeFormatList);
@@ -532,6 +533,7 @@ bool OpalSDPConnection::OnSendOfferSDP(SDPSessionDescription & sdpOut, bool offe
 
   if (offerOpenMediaStreamsOnly && !m_mediaStreams.IsEmpty()) {
     PTRACE(3, "Offering only current media streams");
+    m_activeFormatList = m_remoteFormatList; // Must have this by now
     for (SessionMap::iterator it = m_sessions.begin(); it != m_sessions.end(); ++it) {
       if (OnSendOfferSDPSession(it->first, sdpOut, true))
         sdpOK = true;
@@ -540,15 +542,16 @@ bool OpalSDPConnection::OnSendOfferSDP(SDPSessionDescription & sdpOut, bool offe
     }
   }
   else {
-    PTRACE(3, "Offering all configured media:\n    " << setfill(',') << m_localMediaFormats << setfill(' '));
-
-    if (m_remoteFormatList.IsEmpty()) {
+    m_activeFormatList = m_remoteFormatList;
+    if (m_activeFormatList.IsEmpty()) {
       // Need to fake the remote formats with everything we do,
       // so parts of the offering work correctly
-      m_remoteFormatList = GetLocalMediaFormats();
-      m_remoteFormatList.MakeUnique();
-      AdjustMediaFormats(false, NULL, m_remoteFormatList);
+      m_activeFormatList = GetLocalMediaFormats();
+      m_activeFormatList.MakeUnique();
+      AdjustMediaFormats(false, NULL, m_activeFormatList);
     }
+
+    PTRACE(3, "Offering all configured media:\n    " << setfill(',') << m_activeFormatList << setfill(' '));
 
     // Create media sessions based on available media types and make sure audio and video are first two sessions
     vector<bool> sessions = CreateAllMediaSessions();
@@ -578,6 +581,8 @@ bool OpalSDPConnection::OnSendOfferSDP(SDPSessionDescription & sdpOut, bool offe
       }
     }
   }
+
+  m_activeFormatList = OpalMediaFormatList(); // Don't do RemoveAll() in case of references
 
   return sdpOK && !sdpOut.GetMediaDescriptions().IsEmpty();
 }
@@ -728,9 +733,9 @@ bool OpalSDPConnection::OnSendOfferSDPSession(OpalMediaSession * mediaSession,
   if (mediaType == OpalMediaType::Audio()) {
     // Set format if we have an RTP payload type for RFC2833 and/or NSE
     // Must be after other codecs, as Mediatrix gateways barf if RFC2833 is first
-    SetNxECapabilities(m_rfc2833Handler, m_localMediaFormats, m_remoteFormatList, OpalRFC2833, localMedia);
+    SetNxECapabilities(m_rfc2833Handler, m_localMediaFormats, m_activeFormatList, OpalRFC2833, localMedia);
 #if OPAL_T38_CAPABILITY
-    SetNxECapabilities(m_ciscoNSEHandler, m_localMediaFormats, m_remoteFormatList, OpalCiscoNSE, localMedia);
+    SetNxECapabilities(m_ciscoNSEHandler, m_localMediaFormats, m_activeFormatList, OpalCiscoNSE, localMedia);
 #endif
   }
 

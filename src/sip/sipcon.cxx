@@ -1218,7 +1218,7 @@ void SIPConnection::OnCreatingINVITE(SIPInvite & request)
   PString externalSDP = m_stringOptions(OPAL_OPT_EXTERNAL_SDP);
   if (!externalSDP.IsEmpty())
     request.SetEntityBody(externalSDP);
-  else if ((m_needReINVITE || m_stringOptions.GetBoolean(OPAL_OPT_INITIAL_OFFER, true)) && !m_localMediaFormats.IsEmpty()) {
+  else if ((m_needReINVITE || m_stringOptions.GetBoolean(OPAL_OPT_INITIAL_OFFER, true)) && !GetLocalMediaFormats().IsEmpty()) {
     if (m_needReINVITE)
       ++m_sdpVersion;
 
@@ -1262,10 +1262,6 @@ PBoolean SIPConnection::SetUpConnection()
   }
 
   ++m_sdpVersion;
-
-  m_remoteFormatList = GetLocalMediaFormats();
-  m_remoteFormatList.MakeUnique();
-  AdjustMediaFormats(false, NULL, m_remoteFormatList);
 
   PSafePtr<OpalConnection> other = GetOtherPartyConnection();
   if (other != NULL && other->GetConferenceState(NULL))
