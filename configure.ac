@@ -78,7 +78,7 @@ dnl Check for non-installed "environment variable" mode
 OPAL_DETERMINE_DIRECTORIES([.])
 
 if test "x$INTERNAL_OPALDIR" != "x"; then
-   CPPFLAGS="${CPPFLAGS} -I\${includedir}"
+   CPPFLAGS="${CPPFLAGS} -I\${libdir}/include -I\${includedir}"
 else
    CPPFLAGS="${CPPFLAGS} -I\${includedir}/opal"
 fi
