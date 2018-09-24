@@ -427,6 +427,7 @@ OpalRTPSession::SyncSource::SyncSource(OpalRTPSession & session, RTP_SyncSourceI
   , m_lateOutOfOrderAdaptMax(2)
   , m_lateOutOfOrderAdaptBoost(10)
   , m_lateOutOfOrderAdaptPeriod(0, 1)
+  , m_pendingTxPacketAgeLimit(0, 20)
   , m_reportTimestamp(0)
   , m_reportAbsoluteTime(0)
   , m_synthesizeAbsTime(true)
@@ -994,13 +995,42 @@ bool OpalRTPSession::ResequenceOutOfOrderPackets(SyncSource & receiver) const
 }
 
 
-void OpalRTPSession::SyncSource::SaveSentData(const RTP_DataFrame & /*frame*/, const PTime & /*now*/)
+void OpalRTPSession::SyncSource::SaveSentData(const RTP_DataFrame & frame, const PTime & now)
 {
+  if (IsNackEnabled()) {
+    m_pendingTxPackets.insert(std::make_pair(frame.GetSequenceNumber(), frame));
+    m_pendingTxPacketTime[now] = frame.GetSequenceNumber();
+
+    // Clean old packets
+    const PTime youngEnough = now - m_pendingTxPacketAgeLimit;
+    while (!m_pendingTxPacketTime.empty()) {
+      std::map<PTime, RTP_SequenceNumber>::iterator oldest = m_pendingTxPacketTime.begin();
+      if (oldest->first > youngEnough)
+        break;
+      m_pendingTxPackets.erase(oldest->second);
+      m_pendingTxPacketTime.erase(oldest);
+    }
+  }
 }
 
 
-void OpalRTPSession::SyncSource::OnRxNACK(const RTP_ControlFrame::LostPacketMask & /*lostPackets*/, const PTime &)
+void OpalRTPSession::SyncSource::OnRxNACK(const RTP_ControlFrame::LostPacketMask & lostPackets, const PTime & now)
 {
+  for (RTP_ControlFrame::LostPacketMask::const_iterator itSN = lostPackets.begin(); itSN != lostPackets.end(); ++itSN) {
+    TxPacketMap::iterator itPacket = m_pendingTxPackets.find(*itSN);
+    if (itPacket != m_pendingTxPackets.end()) {
+      RTP_DataFrame rtxFrame(itPacket->second);
+      if (m_rtxSSRC != 0)
+        rtxFrame.MakeUnique();
+
+      if (m_session.WriteData(rtxFrame, itPacket->second.m_rewriteMode, NULL, now) != OpalRTPSession::e_ProcessPacket) {
+        PTRACE(2, &m_session, *this << "could not retransmit packet: sn=" << *itSN);
+        return;
+      }
+
+      itPacket->second.m_rewriteMode = OpalRTPSession::e_RetransmitAgain;
+    }
+  }
 }
 
 
@@ -1010,20 +1040,61 @@ bool OpalRTPSession::SyncSource::IsExpectingRetransmit(RTP_SequenceNumber /*sequ
 }
 
 
+uint32_t OpalRTPSession::SyncSource::ExtendSequenceNumber(RTP_SequenceNumber sequenceNumber) const
+{
+  uint32_t extendedSequenceNumber = sequenceNumber;
+  uint32_t highWord = m_extendedSequenceNumber & 0xffff0000;
+  int lowWord = m_extendedSequenceNumber & 0xffff;
+  RTP_SequenceNumber delta = (RTP_SequenceNumber)(sequenceNumber - lowWord);
+  if ((delta < 0x8000 && (lowWord+delta) < 0x10000) || (delta >= 0x8000 && (lowWord-(0x10000-delta)) >= 0))
+    extendedSequenceNumber |= highWord;
+  else if (lowWord < 0x8000)
+    extendedSequenceNumber |= highWord - 0x10000;
+  else
+    extendedSequenceNumber |= highWord + 0x10000;
+  return extendedSequenceNumber;
+}
+
+
 OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnOutOfOrderPacket(RTP_DataFrame & frame,
                                                                                  ReceiveType &,
                                                                                  const PTime & now)
 {
-  RTP_SequenceNumber sequenceNumber = frame.GetSequenceNumber();
-  RTP_SequenceNumber expectedSequenceNumber = m_lastSequenceNumber + 1;
+  uint32_t sequenceNumber = ExtendSequenceNumber(frame.GetSequenceNumber());
+  uint32_t expectedSequenceNumber = m_extendedSequenceNumber + 1;
+
+  if (IsNackEnabled()) {
+    // Add in all the missing packets
+    uint32_t lostSN = sequenceNumber;
+    while (--lostSN >= expectedSequenceNumber) {
+        if (m_pendingRxPackets.find(lostSN) != m_pendingRxPackets.end())
+            break;
+        m_pendingRxPackets.insert(make_pair(lostSN, now));
+    }
+
+    PTime nackTime = now - PTimeInterval(std::max(m_session.GetRoundTripTime()*2, 40));
+    RTP_ControlFrame::LostPacketMask lostPackets;
+    for (RxPacketMap::iterator it = m_pendingRxPackets.begin(); it != m_pendingRxPackets.end(); ++it) {
+      if (it->second.m_lastNackTime.IsValid() && it->second < nackTime) {
+        lostPackets.insert((RTP_SequenceNumber)it->first);
+        it->second.m_lastNackTime = now;
+      }
+    }
+
+    if (!lostPackets.empty()) {
+      SendReceiveStatus status = m_session.SendNACK(lostPackets, m_sourceIdentifier);
+      if (status != OpalRTPSession::e_ProcessPacket)
+        return status;
+    }
+  }
 
   bool waiting = true;
-  if (m_pendingPackets.empty()) {
+  if (m_pendingRxPackets.empty()) {
     m_endWaitOutOfOrderTime = now + m_session.GetOutOfOrderWaitTime();
     PTRACE(3, &m_session, *this << "first out of order packet, got " << sequenceNumber
            << " expected " << expectedSequenceNumber << ", waiting " << m_session.GetOutOfOrderWaitTime() << 's');
   }
-  else if (m_pendingPackets.GetSize() > m_session.GetMaxOutOfOrderPackets() || now > m_endWaitOutOfOrderTime) {
+  else if (m_pendingRxPackets.size() > m_session.GetMaxOutOfOrderPackets() || now > m_endWaitOutOfOrderTime) {
     waiting = false;
     PTRACE(4, &m_session, *this << "last out of order packet, got " << sequenceNumber
            << " expected " << expectedSequenceNumber << ", waited " << (now - m_endWaitOutOfOrderTime) << 's');
@@ -1033,13 +1104,10 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnOutOfOrderPacket
            << " expected " << expectedSequenceNumber);
   }
 
-  RTP_DataFrameList::iterator it;
-  for (it = m_pendingPackets.begin(); it != m_pendingPackets.end(); ++it) {
-    if (sequenceNumber > it->GetSequenceNumber())
-      break;
-  }
-
-  m_pendingPackets.insert(it, frame);
+  RxPacket rxp(frame);
+  std::pair<RxPacketMap::iterator,bool> result = m_pendingRxPackets.insert(make_pair(sequenceNumber, rxp));
+  if (!result.second)
+    result.first->second = rxp;
   frame.MakeUnique();
 
   if (waiting)
@@ -1048,11 +1116,11 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnOutOfOrderPacket
   // Give up on the packet, probably never coming in. Save current and switch in
   // the lowest numbered packet.
 
-  while (!m_pendingPackets.empty()) {
-    frame = m_pendingPackets.back();
-    m_pendingPackets.pop_back();
+  while (!m_pendingRxPackets.empty()) {
+    frame = m_pendingRxPackets.begin()->second;
+    m_pendingRxPackets.erase(m_pendingRxPackets.begin());
 
-    sequenceNumber = frame.GetSequenceNumber();
+    sequenceNumber = ExtendSequenceNumber(frame.GetSequenceNumber());
     if (sequenceNumber >= expectedSequenceNumber)
       return e_ProcessPacket;
 
@@ -1065,41 +1133,47 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnOutOfOrderPacket
 
 bool OpalRTPSession::SyncSource::HasPendingFrames() const
 {
-  return !m_pendingPackets.empty();
+  return !m_pendingRxPackets.empty();
 }
 
 
 bool OpalRTPSession::SyncSource::HandlePendingFrames(const PTime & now)
 {
-  while (!m_pendingPackets.empty()) {
-    RTP_DataFrame resequencedPacket = m_pendingPackets.back();
+  while (!m_pendingRxPackets.empty()) {
+    RxPacketMap::iterator next = m_pendingRxPackets.begin();
 
-    RTP_SequenceNumber sequenceNumber = resequencedPacket.GetSequenceNumber();
-    RTP_SequenceNumber expectedSequenceNumber = m_lastSequenceNumber + 1;
-    if (sequenceNumber != expectedSequenceNumber)
-      return true;
+    // Have our expectations moved on? Throw it out.
+    if (next->first <= m_extendedSequenceNumber) {
+      m_pendingRxPackets.erase(next);
+      continue;
+    }
 
-    m_pendingPackets.pop_back();
+    // We haven't got it yet?
+    if (next->first > m_extendedSequenceNumber + 1 || next->second.m_lastNackTime.IsValid())
+      break;
 
+    size_t remaining = m_pendingRxPackets.size() - 1;
 #if PTRACING
-    unsigned level = m_pendingPackets.empty() ? 3 : 5;
+    unsigned level = remaining == 0 ? 3 : 5;
     if (PTrace::CanTrace(level)) {
       ostream & trace = PTRACE_BEGIN(level, &m_session);
-      trace << *this << "resequenced out of order packet " << sequenceNumber;
-      if (m_pendingPackets.empty())
+      trace << *this << "resequenced out of order packet " << next->first;
+      if (remaining == 0)
         trace << ", completed. Time to resequence=" << (now - m_endWaitOutOfOrderTime);
       else
-        trace << ", " << m_pendingPackets.size() << " remaining.";
+        trace << ", " << remaining << " remaining.";
       trace << PTrace::End;
     }
 #endif
 
     // Still more packets, reset timer to allow for later out-of-order packets
-    if (!m_pendingPackets.empty())
+    if (remaining > 0)
       m_endWaitOutOfOrderTime = now + m_session.GetOutOfOrderWaitTime();
 
-    if (OnReceiveData(resequencedPacket, e_RxOutOfOrder, now) == e_AbortTransport)
+    if (OnReceiveData(next->second, e_RxOutOfOrder, now) == e_AbortTransport)
       return false;
+
+    m_pendingRxPackets.erase(m_pendingRxPackets.begin());
   }
 
   return true;
@@ -1567,7 +1641,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendData(RewriteMode & rewri
   switch (rewrite) {
     case e_RewriteHeader:
       // For Generic NACK (no rtx) we have to save the encrypted version of the packet
-      if (syncSource->m_rtxSSRC == 0 && HasFeedback(OpalMediaFormat::e_NACK)) {
+      if (syncSource->IsNackEnabled()) {
         SendReceiveStatus status = syncSource->OnSendData(frame, rewrite, now);
         if (status == e_ProcessPacket)
           syncSource->SaveSentData(frame, now);

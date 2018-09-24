@@ -746,6 +746,8 @@ class OpalRTPSession : public OpalMediaSession
 
       bool IsStaleReceiver(const PTime & now) const;
       bool IsRtx() const { return m_rtxPT != RTP_DataFrame::IllegalPayloadType; }
+      bool IsNackEnabled() const { return !IsRtx() && m_session.HasFeedback(OpalMediaFormat::e_NACK); }
+      uint32_t ExtendSequenceNumber(RTP_SequenceNumber sequenceNumber) const;
 
       OpalRTPSession  & m_session;
       Direction         m_direction;
@@ -777,7 +779,24 @@ class OpalRTPSession : public OpalMediaSession
       unsigned           m_lateOutOfOrderAdaptMax;
       PTimeInterval      m_lateOutOfOrderAdaptBoost;
       PTimeInterval      m_lateOutOfOrderAdaptPeriod;
-      RTP_DataFrameList  m_pendingPackets;
+
+      struct RxPacket : RTP_DataFrame {
+        PTime m_lastNackTime; // If lost, this is valid
+        explicit RxPacket(const RTP_DataFrame & pkt) : RTP_DataFrame(pkt), m_lastNackTime(0) { }
+        explicit RxPacket(const PTime & when) : RTP_DataFrame(0), m_lastNackTime(when) { }
+      };
+      typedef std::map<uint32_t, RxPacket> RxPacketMap;
+      RxPacketMap m_pendingRxPackets;
+
+      struct TxPacket : RTP_DataFrame {
+        RewriteMode m_rewriteMode;
+        explicit TxPacket(const RTP_DataFrame & pkt) : RTP_DataFrame(pkt), m_rewriteMode(e_RetransmitFirst) { }
+      };
+      typedef std::map<RTP_SequenceNumber, TxPacket> TxPacketMap;
+      typedef std::map<PTime, RTP_SequenceNumber> TxPacketTimes;
+      TxPacketMap   m_pendingTxPackets;
+      TxPacketTimes m_pendingTxPacketTime;
+      PTimeInterval m_pendingTxPacketAgeLimit;
 
       // Generating real time stamping in RTP packets
       // For e_Receive, times are from last received Sender Report, or Receiver Reference Time Report

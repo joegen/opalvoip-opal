@@ -2086,7 +2086,13 @@ OpalVideoFormatInternal::OpalVideoFormatInternal(const char * fullName,
   FindOption(OpalVideoFormat::MaxBitRateOption())->SetReadOnly(false);
   FindOption(OpalVideoFormat::FrameTimeOption())->SetReadOnly(false);
   FindOption(OpalVideoFormat::FrameTimeOption())->SetMerge(OpalMediaOption::MaxMerge);
-  SetOptionEnum(OpalMediaFormat::RTCPFeedbackOption(), OpalMediaFormat::e_PLI|OpalMediaFormat::e_FIR|OpalMediaFormat::e_TMMBR|OpalMediaFormat::e_TSTR);
+  SetOptionEnum(OpalMediaFormat::RTCPFeedbackOption(),
+                OpalMediaFormat::e_NACK| // Things we support
+                OpalMediaFormat::e_PLI|
+                OpalMediaFormat::e_FIR|
+                OpalMediaFormat::e_TMMBR|
+                OpalMediaFormat::e_REMB|
+                OpalMediaFormat::e_TSTR);
 }
 
 
