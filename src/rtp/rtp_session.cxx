@@ -1094,7 +1094,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnOutOfOrderPacket
     PTRACE(3, &m_session, *this << "first out of order packet, got " << sequenceNumber
            << " expected " << expectedSequenceNumber << ", waiting " << m_session.GetOutOfOrderWaitTime() << 's');
   }
-  else if (m_pendingRxPackets.size() > m_session.GetMaxOutOfOrderPackets() || now > m_endWaitOutOfOrderTime) {
+  else if (m_pendingRxPackets.size() > (size_t)m_session.GetMaxOutOfOrderPackets() || now > m_endWaitOutOfOrderTime) {
     waiting = false;
     PTRACE(4, &m_session, *this << "last out of order packet, got " << sequenceNumber
            << " expected " << expectedSequenceNumber << ", waited " << (now - m_endWaitOutOfOrderTime) << 's');
