@@ -62,6 +62,8 @@ static const PConstCaselessString ApplicationDTMFKey("application/dtmf");
 static const char ApplicationMediaControlXMLKey[] = "application/media_control+xml";
 #endif
 
+static PConstCaselessString const ReferSubHeader("Refer-Sub");
+
 
 static SIP_PDU::StatusCodes GetStatusCodeFromReason(OpalConnection::CallEndReason reason)
 {
@@ -511,6 +513,7 @@ bool SIPConnection::TransferConnection(const PString & remoteParty)
     m_sentReferTo = remoteParty;
     m_sentReferTo.Sanitise(SIPURL::RedirectURI);
     PTRACE(3, "Blind transfer of " << *this << " to " << m_sentReferTo << ", referSubMode=" << referSubMode);
+    m_consultationTransferToken.MakeEmpty();
     PSafePtr<SIPTransaction> referTransaction = new SIPRefer(*this, m_sentReferTo, m_dialog.GetLocalURI(), referSubMode);
     if (!referTransaction->Start())
       return false;
@@ -534,38 +537,51 @@ bool SIPConnection::TransferConnection(const PString & remoteParty)
   for (PSafePtr<OpalConnection> connection = call->GetConnection(0); connection != NULL; ++connection) {
     PSafePtr<SIPConnection> sip = PSafePtrCast<OpalConnection, SIPConnection>(connection);
     if (sip != NULL) {
-      /* Note that the order of to-tag and remote-tag is counter intuitive. This is because
-        the call being referred to by the call token in remoteParty is not the A party in
-        the consultation transfer, but the B party. */
-        PTRACE(4, "Transferring " << *this << " to remote of " << *sip << ", referSubMode=" << referSubMode);
-
-      /* The following is to compensate for Avaya who send a Contact without a
-         username in the URL and then get upset later in th REFER when we use
-         what they told us to use. They can't do the REFER without a username
-         part, but they never gave us a username to give them. Give me a break!
-       */
-      m_sentReferTo = sip->GetRemotePartyURL();
-      m_sentReferTo.Sanitise(SIPURL::RedirectURI);
-      if (m_remoteProductInfo.name == "Avaya" && m_sentReferTo.GetUserName().IsEmpty())
-        m_sentReferTo.SetUserName("anonymous");
-
-      PStringStream id;
-      id <<                 sip->GetDialog().GetCallID()
-         << ";to-tag="   << sip->GetDialog().GetRemoteTag()
-         << ";from-tag=" << sip->GetDialog().GetLocalTag();
-      m_sentReferTo.SetQueryVar("Replaces", id);
-
-      PSafePtr<SIPTransaction> referTransaction = new SIPRefer(*this, m_sentReferTo, m_dialog.GetLocalURI(), referSubMode);
-      referTransaction->GetMIME().AddSupported("replaces");
-      if (!referTransaction->Start())
-        return false;
-      m_referOfRemoteState = eReferStarted;
-      return true;
+      m_consultationTransferToken = sip->GetToken();
+      return ConsultationTransfer(*sip, referSubMode, false);
     }
   }
 
   PTRACE(2, "Consultation transfer requires other party to be SIP.");
   return false;
+}
+
+
+bool SIPConnection::ConsultationTransfer(SIPConnection & referee, SIPRefer::ReferSubMode referSubMode, bool useIdentity)
+{
+  /* Note that the order of to-tag and remote-tag is counter intuitive. This is because
+    the call being referred to by the call token in remoteParty is not the A party in
+    the consultation transfer, but the B party. */
+  PTRACE(4, "Transferring " << *this << " to remote of " << referee << ", referSubMode=" << referSubMode);
+
+  /* Get the base URL to refer. This should normally be the Contact field, which is in
+     GetRemotePartyURL() of the original INVITE, however not everyone gets that right,
+     so if the REFER fails, we try again using GetRemoteIdentity() which is a "best
+     guess" from several header fields in the INVITE. */
+  m_sentReferTo = useIdentity ? referee.GetRemoteIdentity() : referee.GetRemotePartyURL();
+  m_sentReferTo.Sanitise(SIPURL::RedirectURI);
+
+  /* The following is to compensate for Avaya who send a Contact without a
+     username in the URL and then get upset later in th REFER when we use
+     what they told us to use. They can't do the REFER without a username
+     part, but they never gave us a username to give them. Give me a break!
+   */
+  if (m_remoteProductInfo.name == "Avaya" && m_sentReferTo.GetUserName().IsEmpty())
+    m_sentReferTo.SetUserName("anonymous");
+
+  PStringStream id;
+  id << referee.GetDialog().GetCallID()
+    << ";to-tag=" << referee.GetDialog().GetRemoteTag()
+    << ";from-tag=" << referee.GetDialog().GetLocalTag();
+  m_sentReferTo.SetQueryVar("Replaces", id);
+
+  PSafePtr<SIPTransaction> referTransaction = new SIPRefer(*this, m_sentReferTo, m_dialog.GetLocalURI(), referSubMode);
+  referTransaction->GetMIME().AddSupported("replaces");
+  if (!referTransaction->Start())
+    return false;
+
+  m_referOfRemoteState = eReferStarted;
+  return true;
 }
 
 
@@ -1910,6 +1926,7 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
   m_allowedMethods |= response.GetMIME().GetAllowBitMask();
 
   if (transaction.GetMethod() != SIP_PDU::Method_INVITE) {
+    const SIPMIMEInfo & transactionMIME = transaction.GetMIME();
     switch (response.GetStatusCode()) {
       case SIP_PDU::Failure_UnAuthorised :
       case SIP_PDU::Failure_ProxyAuthenticationRequired :
@@ -1929,9 +1946,25 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
           default :
             switch (transaction.GetMethod()) {
               case SIP_PDU::Method_REFER :
+                if (!m_consultationTransferToken.IsEmpty()) {
+                  // Deal with remote (e.g. Broadsoft) not setting Contact field correctly for REFER
+                  PSafePtr<SIPConnection> sip = m_sipEndpoint.GetSIPConnectionWithLock(m_consultationTransferToken, PSafeReadOnly);
+                  if (sip == NULL)
+                    PTRACE(2, "Could not find consultation transfer of " << m_consultationTransferToken << " from " << *this);
+                  else {
+                    m_consultationTransferToken.MakeEmpty(); // Clear token so after one retry, we don't try again
+                    SIPRefer::ReferSubMode referSubMode = SIPRefer::SubModeFromBooleans(!transactionMIME.Has(ReferSubHeader),
+                                                                                         transactionMIME.GetBoolean(ReferSubHeader));
+                    PTRACE(3, "Retry consultation transfer of " <<  *sip << " from " << *this);
+                    if (ConsultationTransfer(*sip, referSubMode, true))
+                      return;
+                  }
+                }
+
                 if (m_referOfRemoteState != eNoRemoteRefer) {
                   m_referOfRemoteState = eNoRemoteRefer;
 
+                  PTRACE(3, "Failed transfer of " << *this);
                   PStringToString info;
                   info.SetAt("result", "error");
                   info.SetAt("party", "B");
@@ -1943,7 +1976,7 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
 
 #if OPAL_VIDEO
               case SIP_PDU::Method_INFO :
-                if (transaction.GetMIME().GetContentType().NumCompare(ApplicationMediaControlXMLKey) == EqualTo) {
+                if (transactionMIME.GetContentType().NumCompare(ApplicationMediaControlXMLKey) == EqualTo) {
                   PTRACE(3, "Error response to video fast update INFO, not sending another.");
                   m_canDoVideoFastUpdateINFO = false;
                 }
@@ -2637,7 +2670,6 @@ void SIPConnection::OnReceivedREFER(SIP_PDU & request)
 
   // Comply to RFC4488
   bool referSub = true;
-  static PConstCaselessString const ReferSubHeader("Refer-Sub");
   if (requestMIME.Contains(ReferSubHeader)) {
     referSub = requestMIME.GetBoolean(ReferSubHeader, true);
     response->GetMIME().SetBoolean(ReferSubHeader, referSub);
@@ -2982,7 +3014,7 @@ void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & respons
 
     case SIP_PDU::Method_REFER :
       if (m_referOfRemoteState != eNoRemoteRefer &&
-              (response.GetStatusCode() != SIP_PDU::Successful_Accepted || !response.GetMIME().GetBoolean("Refer-Sub", true))) {
+              (response.GetStatusCode() != SIP_PDU::Successful_Accepted || !response.GetMIME().GetBoolean(ReferSubHeader, true))) {
         // Used RFC4488 to indicate we are NOT doing NOTIFYs, release now
         PTRACE(3, "Blind transfer accepted, without NOTIFY so ending local call.");
         m_referOfRemoteState = eNoRemoteRefer;

@@ -790,6 +790,8 @@ class SIPConnection : public OpalSDPConnection, public SIPTransactionOwner
       eReferStarted,
       eReferNotifyConfirmed
     } m_referOfRemoteState;
+    PString m_consultationTransferToken;
+    bool ConsultationTransfer(SIPConnection & referee, SIPRefer::ReferSubMode referSubMode, bool useIdentity);
 
     int SetRemoteMediaFormats(SIP_PDU & pdu);
 
