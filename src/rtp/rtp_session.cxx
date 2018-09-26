@@ -998,7 +998,7 @@ bool OpalRTPSession::ResequenceOutOfOrderPackets(SyncSource & receiver) const
 void OpalRTPSession::SyncSource::SaveSentData(const RTP_DataFrame & frame, const PTime & now)
 {
   if (IsNackEnabled()) {
-    m_pendingTxPackets.insert(std::make_pair(frame.GetSequenceNumber(), frame));
+    m_pendingTxPackets.insert(std::make_pair(frame.GetSequenceNumber(), TxPacket(frame)));
     m_pendingTxPacketTime[now] = frame.GetSequenceNumber();
 
     // Clean old packets
@@ -1069,7 +1069,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnOutOfOrderPacket
     while (--lostSN >= expectedSequenceNumber) {
         if (m_pendingRxPackets.find(lostSN) != m_pendingRxPackets.end())
             break;
-        m_pendingRxPackets.insert(make_pair(lostSN, now));
+        m_pendingRxPackets.insert(make_pair(lostSN, RxPacket(now)));
     }
 
     PTime nackTime = now - PTimeInterval(std::max(m_session.GetRoundTripTime()*2, 40));
