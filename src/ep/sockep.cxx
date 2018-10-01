@@ -284,6 +284,7 @@ bool OpalSockConnection::OnWriteMediaData(const OpalMediaStream & mediaStream,
   hdr.m_headerSize = sizeof(hdr);
   hdr.m_flags = mediaStream.GetMarker() ? MediaHeader::Marker : 0;
   hdr.m_length = (uint16_t)length;
+  PWaitAndSignal lock(m_writeMutex);
   if (!socket->Write(&hdr, sizeof(hdr)) || !socket->Write(data, length)) {
     PTRACE(2, "Socket write error for " << mediaType << " - " << socket->GetErrorText());
     return false;
@@ -304,6 +305,7 @@ bool OpalSockConnection::OnMediaCommand(OpalMediaStream & stream, const OpalMedi
       hdr.m_headerSize = sizeof(hdr);
       hdr.m_flags = MediaHeader::Update;
       hdr.m_length = 0;
+      PWaitAndSignal lock(m_writeMutex);
       if (!m_videoSocket->Write(&hdr, sizeof(hdr))) {
         PTRACE(2, "Socket write error for video - " << m_videoSocket->GetErrorText());
       }
@@ -313,10 +315,11 @@ bool OpalSockConnection::OnMediaCommand(OpalMediaStream & stream, const OpalMedi
     const OpalMediaFlowControl * flow = dynamic_cast<const OpalMediaFlowControl *>(&command);
     if (flow != NULL) {
       MediaBitrate cmd;
-      cmd.m_headerSize = sizeof(MediaHeader); // Not siz eof whole thing
+      cmd.m_headerSize = sizeof(MediaHeader); // Not size of whole thing
       cmd.m_flags = MediaHeader::Bitrate;
       cmd.m_length = sizeof(cmd.rate);
       cmd.rate = flow->GetMaxBitRate();
+      PWaitAndSignal lock(m_writeMutex);
       if (!m_videoSocket->Write(&cmd, sizeof(cmd))) {
         PTRACE(2, "Socket write error for video - " << m_videoSocket->GetErrorText());
       }

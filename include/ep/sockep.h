@@ -303,6 +303,7 @@ class OpalSockConnection : public OpalLocalConnection
     PIPSocket        * m_audioSocket;
 #if OPAL_VIDEO
     PIPSocket        * m_videoSocket;
+    PDECLARE_MUTEX(m_writeMutex);
 #endif
 };
 
