@@ -231,13 +231,13 @@ bool OpalSockConnection::OnReadMediaData(OpalMediaStream & mediaStream,
   }
 
   if (socket == NULL || !socket->IsOpen()) {
-    PTRACE(2, "Socket not open for " << mediaType);
+    PTRACE(2, "Not open for " << mediaType);
     return false;
   }
 
   MediaHeader hdr;
   if (!socket->ReadBlock(&hdr, sizeof(hdr))) {
-    PTRACE(2, "Socket read error for " << mediaType << " - " << socket->GetErrorText());
+    PTRACE(2, "Read error for " << mediaType << " - " << socket->GetErrorText());
     return false;
   }
   length = hdr.m_length;
@@ -251,7 +251,7 @@ bool OpalSockConnection::OnReadMediaData(OpalMediaStream & mediaStream,
   if (socket->ReadBlock(data, length))
     return true;
 
-  PTRACE(2, "Socket read error for " << mediaType << " - " << socket->GetErrorText());
+  PTRACE(2, "Read error for " << mediaType << " - " << socket->GetErrorText());
   return false;
 }
 
@@ -276,7 +276,7 @@ bool OpalSockConnection::OnWriteMediaData(const OpalMediaStream & mediaStream,
   }
 
   if (socket == NULL || !socket->IsOpen()) {
-    PTRACE(2, "Socket not open for " << mediaType);
+    PTRACE(2, "Not open for " << mediaType);
     return false;
   }
 
@@ -286,7 +286,7 @@ bool OpalSockConnection::OnWriteMediaData(const OpalMediaStream & mediaStream,
   hdr.m_length = (uint16_t)length;
   PWaitAndSignal lock(m_writeMutex);
   if (!socket->Write(&hdr, sizeof(hdr)) || !socket->Write(data, length)) {
-    PTRACE(2, "Socket write error for " << mediaType << " - " << socket->GetErrorText());
+    PTRACE(2, "Write error for " << mediaType << " - " << socket->GetErrorText());
     return false;
   }
 
@@ -306,8 +306,10 @@ bool OpalSockConnection::OnMediaCommand(OpalMediaStream & stream, const OpalMedi
       hdr.m_flags = MediaHeader::Update;
       hdr.m_length = 0;
       PWaitAndSignal lock(m_writeMutex);
-      if (!m_videoSocket->Write(&hdr, sizeof(hdr))) {
-        PTRACE(2, "Socket write error for video - " << m_videoSocket->GetErrorText());
+      if (m_videoSocket->Write(&hdr, sizeof(hdr)))
+        PTRACE(4, "Write of Video Update");
+      else {
+        PTRACE(2, "Write error for video - " << m_videoSocket->GetErrorText());
       }
       return true;
     }
@@ -320,8 +322,10 @@ bool OpalSockConnection::OnMediaCommand(OpalMediaStream & stream, const OpalMedi
       cmd.m_length = sizeof(cmd.rate);
       cmd.rate = flow->GetMaxBitRate();
       PWaitAndSignal lock(m_writeMutex);
-      if (!m_videoSocket->Write(&cmd, sizeof(cmd))) {
-        PTRACE(2, "Socket write error for video - " << m_videoSocket->GetErrorText());
+      if (m_videoSocket->Write(&cmd, sizeof(cmd)))
+        PTRACE(4, "Write of flow control " << PString(PString::ScaleSI, cmd.rate) << "b/s");
+      else {
+        PTRACE(2, "Write error for video - " << m_videoSocket->GetErrorText());
       }
       return true;
     }
