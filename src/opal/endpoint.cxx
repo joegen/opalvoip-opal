@@ -640,17 +640,21 @@ void OpalEndPoint::OnFailedMediaStream(OpalConnection & connection, bool fromRem
 
 void OpalEndPoint::SetMediaCryptoSuites(const PStringArray & security)
 {
-  m_mediaCryptoSuites = security;
-
   PStringArray valid = GetAllMediaCryptoSuites();
   PAssert(!valid.IsEmpty(), PInvalidParameter);
 
-  PINDEX i = 0;
-  while (i < m_mediaCryptoSuites.GetSize()) {
-    if (valid.GetValuesIndex(m_mediaCryptoSuites[i]) != P_MAX_INDEX)
-      ++i;
-    else
-      m_mediaCryptoSuites.RemoveAt(i);
+  if (security.GetSize() == 1 && security[0] == ('!' + OpalMediaCryptoSuite::ClearText())) {
+    m_mediaCryptoSuites.RemoveAll();
+    for (PINDEX i = 1; i < valid.GetSize(); ++i)
+      m_mediaCryptoSuites.push_back(valid[i]);
+  }
+  else {
+    m_mediaCryptoSuites = security;
+
+    for (PINDEX i = 0; i < m_mediaCryptoSuites.GetSize(); ++i) {
+      if (valid.GetValuesIndex(m_mediaCryptoSuites[i]) == P_MAX_INDEX)
+        m_mediaCryptoSuites.RemoveAt(i--);
+    }
   }
 
   if (m_mediaCryptoSuites.IsEmpty())

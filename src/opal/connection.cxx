@@ -746,7 +746,15 @@ void OpalConnection::AdjustMediaFormats(bool   local,
 PStringArray OpalConnection::GetMediaCryptoSuites() const
 {
   PStringArray overrides = m_stringOptions(OPAL_OPT_CRYPTO_SUITES).Lines();
-  return overrides.IsEmpty() ? m_endpoint.GetMediaCryptoSuites() : overrides;
+  if (overrides.IsEmpty())
+    return m_endpoint.GetMediaCryptoSuites();
+
+  if (overrides.GetSize() == 1 && overrides[0] == ('!' + OpalMediaCryptoSuite::ClearText())) {
+    overrides = m_endpoint.GetAllMediaCryptoSuites();
+    overrides.RemoveAt(0); // First entry is always Clear
+  }
+
+  return overrides;
 }
 
 

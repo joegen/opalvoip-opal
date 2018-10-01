@@ -922,7 +922,9 @@ typedef struct OpalParamProtocol {
                                            string is of the form key=value\nkey=value */
   const char * m_mediaCryptoSuites;   /**< A list of \n separated strings indicated enabled media
                                            crypto suites for this endpoint. Note, order of entries
-                                           indicates priority. */
+                                           indicates priority. The special value of "!Clear" may also
+                                           be used indicating all available crypto suites are offered
+                                           but there must be encryption. */
   const char * m_allMediaCryptoSuites;/**< This is only provided as a return value, and lists all of the
                                            crypto suites supported by this protocol in the form:
                                               "name1=description1\nname2=description2\n" */

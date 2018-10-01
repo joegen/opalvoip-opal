@@ -670,7 +670,9 @@ class OpalEndPoint : public PObject
        The \p security parameter is an array of names for security methods,
        e.g. { "Clear", "AES_CM_128_HMAC_SHA1_80", "AES_CM_128_HMAC_SHA1_32" }.
        Note "Clear" is not compulsory and if absent will mean that a secure
-       media is required or the call will not proceed.
+       media is required or the call will not proceed. The special value of
+       "!Clear" may also be used indicating all available crypto suites are
+       offered but there must be encryption.
 
        An empty list is assumed to be "Clear".
       */
