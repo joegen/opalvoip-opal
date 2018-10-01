@@ -32,7 +32,7 @@
 #include "custom.h"
 #endif
 
-#include "version.h"
+#include "../../version.h"
 
 
 ////////////////////////////////////////////////////

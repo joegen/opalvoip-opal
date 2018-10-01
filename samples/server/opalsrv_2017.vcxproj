@@ -331,7 +331,6 @@
     <ClInclude Include="custom.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="precompile.h" />
-    <ClInclude Include="version.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="main_menu.vxml" />
