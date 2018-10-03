@@ -254,41 +254,40 @@ const PCaselessString & OpalSRTPSession::RTP_SAVPF() { static const PConstCasele
 PFACTORY_CREATE(OpalMediaSessionFactory, OpalSRTPSession, OpalSRTPSession::RTP_SAVP());
 PFACTORY_SYNONYM(OpalMediaSessionFactory, OpalSRTPSession, SAVPF, OpalSRTPSession::RTP_SAVPF());
 
-static PConstCaselessString AES_CM_128_HMAC_SHA1_80("AES_CM_128_HMAC_SHA1_80");
 
-class OpalSRTPCryptoSuite_AES_CM_128_HMAC_SHA1_80 : public OpalSRTPCryptoSuite
+template <const char FactoryName[],
+          const char Description[],
+          PINDEX CipherBits,
+          const char OID[],
+          void (*libFn)(struct srtp_crypto_policy_t *)>
+  class OpalSRTPCryptoSuiteTemplate : public OpalSRTPCryptoSuite
 {
-    PCLASSINFO(OpalSRTPCryptoSuite_AES_CM_128_HMAC_SHA1_80, OpalSRTPCryptoSuite);
+    PCLASSINFO(OpalSRTPCryptoSuiteTemplate, OpalSRTPCryptoSuite);
   public:
-    virtual const PCaselessString & GetFactoryName() const { return AES_CM_128_HMAC_SHA1_80; }
-    virtual const char * GetDescription() const { return "SRTP: AES-128 & SHA1-80"; }
+    static const PCaselessString & MyFactoryName() { static PConstCaselessString const s(FactoryName); return s; }
+    virtual const PCaselessString & GetFactoryName() const { return MyFactoryName(); }
+    virtual const char * GetDescription() const { return Description; }
+    virtual PINDEX OpalSRTPCryptoSuite::GetCipherKeyBits() const { return CipherBits; }
 #if OPAL_H235_6 || OPAL_H235_8
-    virtual const char * GetOID() const { return "0.0.8.235.0.4.91"; }
+    virtual const char * GetOID() const { return OID; }
 #endif
 
     virtual void SetCryptoPolicy(struct srtp_crypto_policy_t & policy) const { srtp_crypto_policy_set_aes_cm_128_hmac_sha1_80(&policy); }
 };
 
-PFACTORY_CREATE(OpalMediaCryptoSuiteFactory, OpalSRTPCryptoSuite_AES_CM_128_HMAC_SHA1_80, AES_CM_128_HMAC_SHA1_80, true);
+#define DEFINE_CRYPTO_SUITE(name, desc, bits, oid, libFn) \
+  namespace OpalSRTPCryptoSuite_##name { \
+    const char FactoryName[] = #name; \
+    const char Description[] = desc; \
+    const char OID[] = oid; \
+    typedef OpalSRTPCryptoSuiteTemplate<FactoryName, Description, bits, OID, libFn> Suite; \
+    PFACTORY_CREATE(OpalMediaCryptoSuiteFactory, Suite, Suite::MyFactoryName(), true); \
+  }
 
-
-static PConstCaselessString AES_CM_128_HMAC_SHA1_32("AES_CM_128_HMAC_SHA1_32");
-
-class OpalSRTPCryptoSuite_AES_CM_128_HMAC_SHA1_32 : public OpalSRTPCryptoSuite
-{
-    PCLASSINFO(OpalSRTPCryptoSuite_AES_CM_128_HMAC_SHA1_32, OpalSRTPCryptoSuite);
-  public:
-    virtual const PCaselessString & GetFactoryName() const { return AES_CM_128_HMAC_SHA1_32; }
-    virtual const char * GetDescription() const { return "SRTP: AES-128 & SHA1-32"; }
-#if OPAL_H235_6 || OPAL_H235_8
-    virtual const char * GetOID() const { return "0.0.8.235.0.4.92"; }
-#endif
-
-    virtual void SetCryptoPolicy(struct srtp_crypto_policy_t & policy) const { srtp_crypto_policy_set_aes_cm_128_hmac_sha1_32(&policy); }
-};
-
-PFACTORY_CREATE(OpalMediaCryptoSuiteFactory, OpalSRTPCryptoSuite_AES_CM_128_HMAC_SHA1_32, AES_CM_128_HMAC_SHA1_32, true);
-
+DEFINE_CRYPTO_SUITE(AES_CM_128_HMAC_SHA1_80, "SRTP: AES-128 & SHA1-80", 128, "0.0.8.235.0.4.91", srtp_crypto_policy_set_rtp_default);
+DEFINE_CRYPTO_SUITE(AES_CM_128_HMAC_SHA1_32, "SRTP: AES-128 & SHA1-32", 128, "0.0.8.235.0.4.92", srtp_crypto_policy_set_aes_cm_128_hmac_sha1_32);
+DEFINE_CRYPTO_SUITE(AES_CM_256_HMAC_SHA1_80, "SRTP: AES-256 & SHA1-80", 256, "0.0.8.235.0.4.93", srtp_crypto_policy_set_aes_cm_256_hmac_sha1_80);
+DEFINE_CRYPTO_SUITE(AES_CM_256_HMAC_SHA1_32, "SRTP: AES-256 & SHA1-32", 256, "0.0.8.235.0.4.94", srtp_crypto_policy_set_aes_cm_256_hmac_sha1_32);
 
 
 ///////////////////////////////////////////////////////
@@ -333,12 +332,6 @@ bool OpalSRTPCryptoSuite::ChangeSessionType(PCaselessString & mediaSession, KeyE
   }
 
   return false;
-}
-
-
-PINDEX OpalSRTPCryptoSuite::GetCipherKeyBits() const
-{
-  return 128;
 }
 
 

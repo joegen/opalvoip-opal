@@ -112,7 +112,6 @@ class OpalSRTPCryptoSuite : public OpalMediaCryptoSuite
     virtual bool Supports(const PCaselessString & proto) const;
     virtual bool ChangeSessionType(PCaselessString & mediaSession, KeyExchangeModes modes) const;
 
-    virtual PINDEX GetCipherKeyBits() const;
     virtual PINDEX GetAuthSaltBits() const;
     virtual OpalMediaCryptoKeyInfo * CreateKeyInfo() const;
 
