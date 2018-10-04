@@ -199,7 +199,7 @@ PStringList SIPEndPoint::GetNetworkURIs(const PString & name) const
 
 void SIPEndPoint::NewIncomingConnection(OpalListener &, const OpalTransportPtr & transport)
 {
-  if (transport == NULL)
+  if (transport == NULL || m_shuttingDown)
     return;
 
   if (!transport->IsReliable()) {
