@@ -160,7 +160,7 @@ class PNatMethod_H46019 : public PNatMethod
   protected:
     virtual bool InternalGetServerAddress(PIPSocketAddressAndPort & ap) const;
     virtual PNATUDPSocket * InternalCreateSocket(Component component, PObject * context);
-    virtual void InternalUpdate();
+    virtual void InternalUpdate(bool);
 };
 
 

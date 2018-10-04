@@ -415,7 +415,7 @@ PString PNatMethod_H46019::GetServer() const
 }
 
 
-void PNatMethod_H46019::InternalUpdate()
+void PNatMethod_H46019::InternalUpdate(bool)
 {
   m_natType = PortRestrictedNat; // Assume worst possible NAT type that can do media at all
 }
