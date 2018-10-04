@@ -76,7 +76,7 @@ typedef struct OpalHandleStruct * OpalHandle;
 typedef struct OpalMessage OpalMessage;
 
 /// Current API version
-#define OPAL_C_API_VERSION 37
+#define OPAL_C_API_VERSION 38
 
 
 ///////////////////////////////////////
@@ -494,6 +494,8 @@ typedef enum OpalMessageType {
                                     more information. */
   OpalIndSentIM,                /**<Get indication of the disposition of a sent instant message. This message
                                     is returned in the OpalGetMessage() function. See the OpalInstantMessage
+                                    structure for more information. */
+  OpalIndProtocolMessage,       /**<Get indication of protocol specific messages. See the OpalProtocolMessage
                                     structure for more information. */
 
 // Always add new messages to ethe end to maintain backward compatibility
@@ -929,6 +931,9 @@ typedef struct OpalParamProtocol {
                                            crypto suites supported by this protocol in the form:
                                               "name1=description1\nname2=description2\n" */
   unsigned m_maxSizeUDP;              /**< Maximum size of signalling UDP packet. */
+  const char * m_protocolMessageIdentifiers; /**< List of \n separated strings for protocol message identifers
+                                                  that OPAL will assume are successfully handled and a
+                                                  OpalIndProtocolMessage executed. */
 } OpalParamProtocol;
 
 
@@ -1581,6 +1586,19 @@ typedef struct OpalStatusIVR {
 } OpalStatusIVR;
 
 
+/**Indication of a protocol specific message.
+   In the case of SIP, this is an INFO message with a package type
+    indicated as the protocol message identifier.
+  */
+typedef struct OpalProtocolMessage {
+  const char * m_protocol;   ///< Protocol this message is from, e.g. "sip".
+  const char * m_callToken;  ///< Call token for context of the message.
+  const char * m_identifier; ///< Protocol specific indentifier for what this message is about.
+  const void * m_payload;    ///< Extra protocol and identifier specific data.
+  unsigned     m_size;       ///< Size of the above data.
+} OpalProtocolMessage;
+
+
 /**Call clearance information for the OpalIndCallCleared indication.
    This is only returned from the OpalGetMessage() function.
   */
@@ -1662,6 +1680,7 @@ union OpalMessageParam {
   OpalStatusIVR            m_ivrStatus;          ///< Used by OpalIndCompletedIVR
   OpalPresenceStatus       m_presenceStatus;     ///< used by OpalCmdAuthorisePresence/OpalCmdSubscribePresence/OpalIndPresenceChange/OpalCmdSetLocalPresence
   OpalInstantMessage       m_instantMessage;     ///< Used by OpalCmdSendIM/OpalIndReceiveIM
+  OpalProtocolMessage      m_protocolMessage;    ///< Used by OpalIndProtocolMessage
 };
 
 

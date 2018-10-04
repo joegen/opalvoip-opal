@@ -3425,6 +3425,11 @@ void SIPConnection::OnReceivedINFO(SIP_PDU & request)
       return;
   }
 #endif
+  else {
+    PString package = mimeInfo("Info-Package");
+    if (!package.IsEmpty() && OnReceivedInfoPackage(package, request.GetEntityBody()))
+      status = SIP_PDU::Successful_OK;
+  }
 
   request.SendResponse(status);
 
@@ -3438,6 +3443,12 @@ void SIPConnection::OnReceivedINFO(SIP_PDU & request)
     }
 #endif
   }
+}
+
+
+bool SIPConnection::OnReceivedInfoPackage(const PString & package, const PString & body)
+{
+  return m_sipEndpoint.OnReceivedInfoPackage(*this, package, body);
 }
 
 

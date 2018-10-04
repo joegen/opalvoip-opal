@@ -162,6 +162,8 @@ public class OPALJNI {
   public final static native String OpalParamProtocol_allMediaCryptoSuites_get(long jarg1, OpalParamProtocol jarg1_);
   public final static native void OpalParamProtocol_maxSizeUDP_set(long jarg1, OpalParamProtocol jarg1_, long jarg2);
   public final static native long OpalParamProtocol_maxSizeUDP_get(long jarg1, OpalParamProtocol jarg1_);
+  public final static native void OpalParamProtocol_protocolMessageIdentifiers_set(long jarg1, OpalParamProtocol jarg1_, String jarg2);
+  public final static native String OpalParamProtocol_protocolMessageIdentifiers_get(long jarg1, OpalParamProtocol jarg1_);
   public final static native long new_OpalParamProtocol();
   public final static native void delete_OpalParamProtocol(long jarg1);
   public final static native String OPAL_MWI_EVENT_PACKAGE_get();
@@ -407,6 +409,18 @@ public class OPALJNI {
   public final static native String OpalStatusIVR_variables_get(long jarg1, OpalStatusIVR jarg1_);
   public final static native long new_OpalStatusIVR();
   public final static native void delete_OpalStatusIVR(long jarg1);
+  public final static native void OpalProtocolMessage_protocol_set(long jarg1, OpalProtocolMessage jarg1_, String jarg2);
+  public final static native String OpalProtocolMessage_protocol_get(long jarg1, OpalProtocolMessage jarg1_);
+  public final static native void OpalProtocolMessage_callToken_set(long jarg1, OpalProtocolMessage jarg1_, String jarg2);
+  public final static native String OpalProtocolMessage_callToken_get(long jarg1, OpalProtocolMessage jarg1_);
+  public final static native void OpalProtocolMessage_identifier_set(long jarg1, OpalProtocolMessage jarg1_, String jarg2);
+  public final static native String OpalProtocolMessage_identifier_get(long jarg1, OpalProtocolMessage jarg1_);
+  public final static native void OpalProtocolMessage_payload_set(long jarg1, OpalProtocolMessage jarg1_, long jarg2);
+  public final static native long OpalProtocolMessage_payload_get(long jarg1, OpalProtocolMessage jarg1_);
+  public final static native void OpalProtocolMessage_size_set(long jarg1, OpalProtocolMessage jarg1_, long jarg2);
+  public final static native long OpalProtocolMessage_size_get(long jarg1, OpalProtocolMessage jarg1_);
+  public final static native long new_OpalProtocolMessage();
+  public final static native void delete_OpalProtocolMessage(long jarg1);
   public final static native void OpalStatusCallCleared_callToken_set(long jarg1, OpalStatusCallCleared jarg1_, String jarg2);
   public final static native String OpalStatusCallCleared_callToken_get(long jarg1, OpalStatusCallCleared jarg1_);
   public final static native void OpalStatusCallCleared_reason_set(long jarg1, OpalStatusCallCleared jarg1_, String jarg2);
@@ -462,6 +476,8 @@ public class OPALJNI {
   public final static native long OpalMessageParam_presenceStatus_get(long jarg1, OpalMessageParam jarg1_);
   public final static native void OpalMessageParam_instantMessage_set(long jarg1, OpalMessageParam jarg1_, long jarg2, OpalInstantMessage jarg2_);
   public final static native long OpalMessageParam_instantMessage_get(long jarg1, OpalMessageParam jarg1_);
+  public final static native void OpalMessageParam_protocolMessage_set(long jarg1, OpalMessageParam jarg1_, long jarg2, OpalProtocolMessage jarg2_);
+  public final static native long OpalMessageParam_protocolMessage_get(long jarg1, OpalMessageParam jarg1_);
   public final static native long new_OpalMessageParam();
   public final static native void delete_OpalMessageParam(long jarg1);
   public final static native void OpalMessage_type_set(long jarg1, int jarg2);

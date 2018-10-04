@@ -46,6 +46,7 @@ public final class OpalMessageType {
   public final static OpalMessageType OpalCmdSendIM = new OpalMessageType("OpalCmdSendIM");
   public final static OpalMessageType OpalIndReceiveIM = new OpalMessageType("OpalIndReceiveIM");
   public final static OpalMessageType OpalIndSentIM = new OpalMessageType("OpalIndSentIM");
+  public final static OpalMessageType OpalIndProtocolMessage = new OpalMessageType("OpalIndProtocolMessage");
   public final static OpalMessageType OpalMessageTypeCount = new OpalMessageType("OpalMessageTypeCount");
 
   public final int swigValue() {
@@ -82,7 +83,7 @@ public final class OpalMessageType {
     swigNext = this.swigValue+1;
   }
 
-  private static OpalMessageType[] swigValues = { OpalIndCommandError, OpalCmdSetGeneralParameters, OpalCmdSetProtocolParameters, OpalCmdRegistration, OpalIndRegistration, OpalCmdSetUpCall, OpalIndIncomingCall, OpalCmdAnswerCall, OpalCmdClearCall, OpalIndAlerting, OpalIndEstablished, OpalIndUserInput, OpalIndCallCleared, OpalCmdHoldCall, OpalCmdRetrieveCall, OpalCmdTransferCall, OpalCmdUserInput, OpalIndMessageWaiting, OpalIndMediaStream, OpalCmdMediaStream, OpalCmdSetUserData, OpalIndLineAppearance, OpalCmdStartRecording, OpalCmdStopRecording, OpalIndProceeding, OpalCmdAlerting, OpalIndOnHold, OpalIndOffHold, OpalIndTransferCall, OpalIndCompletedIVR, OpalCmdAuthorisePresence, OpalCmdSubscribePresence, OpalCmdSetLocalPresence, OpalIndPresenceChange, OpalCmdSendIM, OpalIndReceiveIM, OpalIndSentIM, OpalMessageTypeCount };
+  private static OpalMessageType[] swigValues = { OpalIndCommandError, OpalCmdSetGeneralParameters, OpalCmdSetProtocolParameters, OpalCmdRegistration, OpalIndRegistration, OpalCmdSetUpCall, OpalIndIncomingCall, OpalCmdAnswerCall, OpalCmdClearCall, OpalIndAlerting, OpalIndEstablished, OpalIndUserInput, OpalIndCallCleared, OpalCmdHoldCall, OpalCmdRetrieveCall, OpalCmdTransferCall, OpalCmdUserInput, OpalIndMessageWaiting, OpalIndMediaStream, OpalCmdMediaStream, OpalCmdSetUserData, OpalIndLineAppearance, OpalCmdStartRecording, OpalCmdStopRecording, OpalIndProceeding, OpalCmdAlerting, OpalIndOnHold, OpalIndOffHold, OpalIndTransferCall, OpalIndCompletedIVR, OpalCmdAuthorisePresence, OpalCmdSubscribePresence, OpalCmdSetLocalPresence, OpalIndPresenceChange, OpalCmdSendIM, OpalIndReceiveIM, OpalIndSentIM, OpalIndProtocolMessage, OpalMessageTypeCount };
   private static int swigNext = 0;
   private final int swigValue;
   private final String swigName;

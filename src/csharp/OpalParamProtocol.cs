@@ -140,6 +140,16 @@ public class OpalParamProtocol : global::System.IDisposable {
     } 
   }
 
+  public string protocolMessageIdentifiers {
+    set {
+      OPALPINVOKE.OpalParamProtocol_protocolMessageIdentifiers_set(swigCPtr, value);
+    } 
+    get {
+      string ret = OPALPINVOKE.OpalParamProtocol_protocolMessageIdentifiers_get(swigCPtr);
+      return ret;
+    } 
+  }
+
   public OpalParamProtocol() : this(OPALPINVOKE.new_OpalParamProtocol(), true) {
   }
 

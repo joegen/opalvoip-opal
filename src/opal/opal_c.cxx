@@ -279,9 +279,17 @@ class SIPEndPoint_C : public SIPEndPoint
     virtual void OnDialogInfoReceived(
       const SIPDialogNotification & info  ///< Information on dialog state change
     );
+    virtual bool OnReceivedInfoPackage(
+      SIPConnection & connection,
+      const PString & package,
+      const PString & body
+    );
+
+    void SetMessageIdentifiers(const PString & str) { m_messageIdentifiers = str.Lines(); }
 
   private:
     OpalManager_C & m_manager;
+    PStringSet      m_messageIdentifiers;
 };
 #endif
 
@@ -974,9 +982,32 @@ void SIPEndPoint_C::OnDialogInfoReceived(const SIPDialogNotification & info)
     SET_MESSAGE_STRING(message, m_param.m_lineAppearance.m_partyB, GetParticipantName(info.m_local));
   }
 
-  PTRACE(4, "OnDialogInfoReceived: entity=\"" << message->m_param.m_lineAppearance.m_line
-                                          << "\" callId=" << message->m_param.m_lineAppearance.m_callId);
+  PTRACE(4, "OnDialogInfoReceived: "
+            "entity=\"" << message->m_param.m_lineAppearance.m_line << "\" "
+            "callId=" << message->m_param.m_lineAppearance.m_callId);
   m_manager.PostMessage(message);
+}
+
+
+bool SIPEndPoint_C::OnReceivedInfoPackage(SIPConnection & connection, const PString & package, const PString & body)
+{
+  if (!m_messageIdentifiers.Contains(package))
+    return SIPEndPoint::OnReceivedInfoPackage(connection, package, body);
+
+  OpalMessageBuffer message(OpalIndProtocolMessage);
+  SET_MESSAGE_STRING(message, m_param.m_protocolMessage.m_protocol, connection.GetPrefixName());
+  SET_MESSAGE_STRING(message, m_param.m_protocolMessage.m_callToken, connection.GetCall().GetToken());
+  SET_MESSAGE_STRING(message, m_param.m_protocolMessage.m_identifier, package);
+  SET_MESSAGE_DATA(message, m_param.m_protocolMessage.m_payload, body.GetPointer(), body.GetLength());
+  message->m_param.m_protocolMessage.m_size = body.GetLength();
+
+  PTRACE(4, "OnReceivedInfoPackage: "
+            "package=\"" << message->m_param.m_protocolMessage.m_protocol << "\" "
+            "call-token=" << message->m_param.m_protocolMessage.m_callToken << " "
+            "payload-size=" << message->m_param.m_protocolMessage.m_size);
+  m_manager.PostMessage(message);
+
+  return true;
 }
 
 
@@ -2011,6 +2042,17 @@ void OpalManager_C::HandleSetProtocol(const OpalMessage & command, OpalMessageBu
   response->m_param.m_protocol.m_maxSizeUDP = ep->GetMaxSizeUDP();
   if (command.m_param.m_protocol.m_maxSizeUDP > 0)
     ep->SetMaxSizeUDP(command.m_param.m_protocol.m_maxSizeUDP);
+
+  if (m_apiVersion < 38)
+    return;
+
+#if OPAL_SIP
+  if (!IsNullString(command.m_param.m_protocol.m_protocolMessageIdentifiers)) {
+    SIPEndPoint_C * sipEP = dynamic_cast<SIPEndPoint_C *>(ep);
+    if (sipEP != NULL)
+      sipEP->SetMessageIdentifiers(command.m_param.m_protocol.m_protocolMessageIdentifiers);
+  }
+#endif
 }
 
 

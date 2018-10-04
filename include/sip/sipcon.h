@@ -615,6 +615,13 @@ class SIPConnection : public OpalSDPConnection, public SIPTransactionOwner
       const SIPInfo::Params & params,  ///< Parameters for OPTIONS command
       SIP_PDU * reply = NULL              ///< Reply to message
     );
+
+    /**Call back for received an INFO message with a package.
+      */
+    virtual bool OnReceivedInfoPackage(
+      const PString & package,
+      const PString & body
+    );
   //@}
 
     OpalTransportAddress GetDefaultSDPConnectAddress(WORD port = 0) const;

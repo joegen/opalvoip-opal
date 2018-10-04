@@ -2064,6 +2064,14 @@ void SIPEndPoint::OnRegInfoReceived(const SIPRegNotification & PTRACE_PARAM(info
 }
 
 
+bool SIPEndPoint::OnReceivedInfoPackage(SIPConnection & /*connection*/,
+                                        const PString & /*package*/,
+                                        const PString & /*body*/)
+{
+  return false;
+}
+
+
 void SIPEndPoint::SetProxy(const PString & hostname,
                            const PString & username,
                            const PString & password)

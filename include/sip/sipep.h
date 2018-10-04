@@ -690,6 +690,15 @@ class SIPEndPoint : public OpalSDPEndPoint
     );
 
 
+    /**Call back for received an INFO message with a package.
+      */
+    virtual bool OnReceivedInfoPackage(
+      SIPConnection & connection,
+      const PString & package,
+      const PString & body
+    );
+
+
     /**Send SIP message
      */
     bool SendMESSAGE(

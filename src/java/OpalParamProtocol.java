@@ -116,6 +116,14 @@ public class OpalParamProtocol {
     return OPALJNI.OpalParamProtocol_maxSizeUDP_get(swigCPtr, this);
   }
 
+  public void setProtocolMessageIdentifiers(String value) {
+    OPALJNI.OpalParamProtocol_protocolMessageIdentifiers_set(swigCPtr, this, value);
+  }
+
+  public String getProtocolMessageIdentifiers() {
+    return OPALJNI.OpalParamProtocol_protocolMessageIdentifiers_get(swigCPtr, this);
+  }
+
   public OpalParamProtocol() {
     this(OPALJNI.new_OpalParamProtocol(), true);
   }

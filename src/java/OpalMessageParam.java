@@ -222,6 +222,15 @@ public class OpalMessageParam {
     return (cPtr == 0) ? null : new OpalInstantMessage(cPtr, false);
   }
 
+  public void setProtocolMessage(OpalProtocolMessage value) {
+    OPALJNI.OpalMessageParam_protocolMessage_set(swigCPtr, this, OpalProtocolMessage.getCPtr(value), value);
+  }
+
+  public OpalProtocolMessage getProtocolMessage() {
+    long cPtr = OPALJNI.OpalMessageParam_protocolMessage_get(swigCPtr, this);
+    return (cPtr == 0) ? null : new OpalProtocolMessage(cPtr, false);
+  }
+
   public OpalMessageParam() {
     this(OPALJNI.new_OpalMessageParam(), true);
   }
