@@ -335,6 +335,9 @@ class OpalMediaCryptoSuite : public PObject
     virtual bool ChangeSessionType(PCaselessString & mediaSession, KeyExchangeModes modes) const = 0;
 
     virtual const char * GetDescription() const = 0;
+#if OPAL_SRTP
+    virtual const char * GetDTLSName() const;
+#endif
 #if OPAL_H235_6 || OPAL_H235_8
     virtual H235SecurityCapability * CreateCapability(const H323Capability & mediaCapability) const;
     virtual const char * GetOID() const = 0;

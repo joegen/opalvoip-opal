@@ -48,20 +48,6 @@
 #define PTraceModule() "DTLS"
 
 
-// from srtp_profile_t
-static struct ProfileInfo
-{
-  const char *   m_dtlsName;
-  const char *   m_opalName;
-} const ProfileNames[] = {
-  { "SRTP_AES128_CM_SHA1_80", "AES_CM_128_HMAC_SHA1_80" },
-  { "SRTP_AES128_CM_SHA1_32", "AES_CM_128_HMAC_SHA1_32" },
-  { "SRTP_AES256_CM_SHA1_80", "AES_CM_256_HMAC_SHA1_80" },
-  { "SRTP_AES256_CM_SHA1_32", "AES_CM_256_HMAC_SHA1_32" },
-};
-
-
-
 class OpalDTLSContext : public PSSLContext
 {
     PCLASSINFO(OpalDTLSContext, PSSLContext);
@@ -82,19 +68,20 @@ class OpalDTLSContext : public PSSLContext
       }
 
       PStringStream ext;
-      for (PINDEX i = 0; i < PARRAYSIZE(ProfileNames); ++i) {
-        const OpalMediaCryptoSuite* cryptoSuite = OpalMediaCryptoSuiteFactory::CreateInstance(ProfileNames[i].m_opalName);
-        if (cryptoSuite)
-        {
+      OpalMediaCryptoSuiteFactory::KeyList_T all = OpalMediaCryptoSuiteFactory::GetKeyList();
+      for (OpalMediaCryptoSuiteFactory::KeyList_T::iterator it = all.begin(); it != all.end(); ++it) {
+        PString dtlsName(OpalMediaCryptoSuiteFactory::CreateInstance(*it)->GetDTLSName());
+        if (!dtlsName.IsEmpty()) {
           if (!ext.IsEmpty())
             ext << ':';
-          ext << ProfileNames[i].m_dtlsName;
+          ext << dtlsName;
         }
       }
-      if (!SetExtension(ext))
-      {
-        PTRACE(1, "Could not set TLS extension for SSL context.");
-        return;
+
+      if (SetExtension(ext))
+        PTRACE(4, "Extension set to \"" << ext << '"');
+      else {
+        PTRACE(1, "Could not set extension \"" << ext << "\" for SSL context.");
       }
     }
 };
@@ -358,16 +345,16 @@ bool OpalDTLSMediaTransport::PerformHandshake(DTLSChannel & channel)
 
   PCaselessString profileName = channel.GetSelectedProfile();
   const OpalMediaCryptoSuite* cryptoSuite = NULL;
-  for (PINDEX i = 0; i < PARRAYSIZE(ProfileNames); ++i) {
-    if (profileName == ProfileNames[i].m_dtlsName) {
-      cryptoSuite = OpalMediaCryptoSuiteFactory::CreateInstance(ProfileNames[i].m_opalName);
-      break;
+  OpalMediaCryptoSuiteFactory::KeyList_T all = OpalMediaCryptoSuiteFactory::GetKeyList();
+  for (OpalMediaCryptoSuiteFactory::KeyList_T::iterator it = all.begin(); ; ++it) {
+    if (it == all.end()) {
+      PTRACE(2, *this << "error in SRTP profile (" << profileName << ") after DTLS handshake.");
+      return false;
     }
-  }
 
-  if (cryptoSuite == NULL) {
-    PTRACE(2, *this << "error in SRTP profile (" << profileName << ") after DTLS handshake.");
-    return false;
+    cryptoSuite = OpalMediaCryptoSuiteFactory::CreateInstance(*it);
+    if (profileName == cryptoSuite->GetDTLSName())
+      break;
   }
 
   PINDEX keyLength = cryptoSuite->GetCipherKeyBytes();

@@ -482,6 +482,14 @@ void OpalMediaCryptoSuite::PrintOn(ostream & strm) const
 }
 
 
+#if OPAL_SRTP
+const char * OpalMediaCryptoSuite::GetDTLSName() const
+{
+  return "";
+}
+#endif
+
+
 #if OPAL_H235_6 || OPAL_H235_8
 H235SecurityCapability * OpalMediaCryptoSuite::CreateCapability(const H323Capability &) const
 {
