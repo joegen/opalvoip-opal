@@ -267,7 +267,7 @@ template <const char FactoryName[],
     static const PCaselessString & MyFactoryName() { static PConstCaselessString const s(FactoryName); return s; }
     virtual const PCaselessString & GetFactoryName() const { return MyFactoryName(); }
     virtual const char * GetDescription() const { return Description; }
-    virtual PINDEX OpalSRTPCryptoSuite::GetCipherKeyBits() const { return CipherBits; }
+    virtual PINDEX GetCipherKeyBits() const { return CipherBits; }
 #if OPAL_H235_6 || OPAL_H235_8
     virtual const char * GetOID() const { return OID; }
 #endif
@@ -277,9 +277,9 @@ template <const char FactoryName[],
 
 #define DEFINE_CRYPTO_SUITE(name, desc, bits, oid, libFn) \
   namespace OpalSRTPCryptoSuite_##name { \
-    const char FactoryName[] = #name; \
-    const char Description[] = desc; \
-    const char OID[] = oid; \
+    extern const char FactoryName[] = #name; \
+    extern const char Description[] = desc; \
+    extern const char OID[] = oid; \
     typedef OpalSRTPCryptoSuiteTemplate<FactoryName, Description, bits, OID, libFn> Suite; \
     PFACTORY_CREATE(OpalMediaCryptoSuiteFactory, Suite, Suite::MyFactoryName(), true); \
   }
