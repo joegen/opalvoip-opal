@@ -93,7 +93,7 @@ class OpalSRTPKeyInfo : public OpalMediaCryptoKeyInfo
     const OpalSRTPCryptoSuite & m_cryptoSuite;
     PBYTEArray m_key;
     PBYTEArray m_salt;
-    BYTE       m_key_salt[32]; // libsrtp internal
+    PBYTEArray m_key_salt;
 
   friend class OpalSRTPSession;
 };

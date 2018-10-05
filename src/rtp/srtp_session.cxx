@@ -530,13 +530,15 @@ bool OpalSRTPSession::ApplyKeyToSRTP(const OpalMediaCryptoKeyInfo & keyInfo, Dir
     return false;
   }
 
-  BYTE tmp_key_salt[32];
-  memset(tmp_key_salt, 0, sizeof(tmp_key_salt));
-  memcpy(tmp_key_salt, keyInfo.GetCipherKey(), std::min((PINDEX)16, keyInfo.GetCipherKey().GetSize()));
-  memcpy(&tmp_key_salt[16], keyInfo.GetAuthSalt(), std::min((PINDEX)14, keyInfo.GetAuthSalt().GetSize()));
+  // Need a separate combined structure for libsrtp
+  PINDEX keySize = std::min((PINDEX)16, keyInfo.GetCipherKey().GetSize());
+  PINDEX saltSize = std::min((PINDEX)14, keyInfo.GetAuthSalt().GetSize());
+  PBYTEArray tmp_key_salt(keySize + saltSize);
+  memcpy(tmp_key_salt.GetPointer(), keyInfo.GetCipherKey(), keySize);
+  memcpy(tmp_key_salt.GetPointer()+keySize, keyInfo.GetAuthSalt(), saltSize);
 
   if (m_keyInfo[dir] != NULL) {
-    if (memcmp(tmp_key_salt, m_keyInfo[dir]->m_key_salt, 32) == 0) {
+    if (tmp_key_salt == m_keyInfo[dir]->m_key_salt) {
       PTRACE(3, *this << "crypto key for " << dir << " already set.");
       return true;
     }
@@ -559,7 +561,7 @@ bool OpalSRTPSession::ApplyKeyToSRTP(const OpalMediaCryptoKeyInfo & keyInfo, Dir
   }
 
   m_keyInfo[dir] = new OpalSRTPKeyInfo(*srtpKeyInfo);
-  memcpy(m_keyInfo[dir]->m_key_salt, tmp_key_salt, 32);
+  m_keyInfo[dir]->m_key_salt = tmp_key_salt;
 
   for (SyncSourceMap::iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
     if (it->second->m_direction == dir && !AddStreamToSRTP(it->first, dir))
@@ -626,7 +628,7 @@ bool OpalSRTPSession::AddStreamToSRTP(RTP_SyncSourceId ssrc, Direction dir)
   cryptoSuite.SetCryptoPolicy(policy.rtp);
   cryptoSuite.SetCryptoPolicy(policy.rtcp);
 
-  policy.key = m_keyInfo[dir]->m_key_salt;
+  policy.key = m_keyInfo[dir]->m_key_salt.GetPointer();
 
   if (!CHECK_ERROR(srtp_add_stream, (m_context, &policy), this, ssrc))
     return false;
