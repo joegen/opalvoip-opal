@@ -1784,7 +1784,6 @@
   <ItemGroup>
     <ClInclude Include="..\..\include\ep\lyncep.h" />
     <ClInclude Include="..\..\include\ep\sockep.h" />
-    <ClInclude Include="..\..\include\sdp\bfcpinterface.h" />
     <ClInclude Include="..\..\include\sdp\ice.h" />
     <ClInclude Include="..\..\include\sdp\sdphttpep.h" />
     <ClInclude Include="..\..\include\rtp\rtp_stream.h" />

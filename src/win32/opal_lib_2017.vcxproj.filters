@@ -1316,7 +1316,6 @@
     <ClInclude Include="..\rtp\libsrtp\include\config.h">
       <Filter>Source Files\RTP\libSRTP\Headers</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\sdp\bfcpinterface.h" />
     <ClInclude Include="..\..\include\ep\sockep.h">
       <Filter>Header Files\Endpoints</Filter>
     </ClInclude>
