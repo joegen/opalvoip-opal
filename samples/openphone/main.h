@@ -40,6 +40,10 @@
   #error Cannot compile without PTLib sound channel support!
 #endif
 
+#ifndef OPAL_VIDEO
+  #error Cannot compile without video support!
+#endif
+
 #include <wx/taskbar.h>
 #include <wx/dataobj.h>
 

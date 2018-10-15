@@ -227,10 +227,12 @@ bool OpalMediaFileRecordManager::OpenFile(const PFilePath & fn)
                                 m_options.m_videoRate,
                                 m_options.m_pushThreads);
   PTRACE_CONTEXT_ID_TO(m_videoMixer);
-#endif // OPAL_VIDEO
 
   PTRACE(4, (m_options.m_stereo ? "Stereo" : "Mono") << "-PCM/"
          << m_options.m_videoFormat << "-Video mixers opened for file \"" << fn << '"');
+#else
+  PTRACE(4, (m_options.m_stereo ? "Stereo" : "Mono") << "-PCM mixer opened for file \"" << fn << '"');
+#endif // OPAL_VIDEO
   return true;
 }
 

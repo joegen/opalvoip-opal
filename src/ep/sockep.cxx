@@ -284,7 +284,9 @@ bool OpalSockConnection::OnWriteMediaData(const OpalMediaStream & mediaStream,
   hdr.m_headerSize = sizeof(hdr);
   hdr.m_flags = mediaStream.GetMarker() ? MediaHeader::Marker : 0;
   hdr.m_length = (uint16_t)length;
+#if OPAL_VIDEO
   PWaitAndSignal lock(m_writeMutex);
+#endif
   if (!socket->Write(&hdr, sizeof(hdr)) || !socket->Write(data, length)) {
     PTRACE(2, "Write error for " << mediaType << " - " << socket->GetErrorText());
     return false;

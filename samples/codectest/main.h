@@ -87,7 +87,6 @@ class TranscoderThread : public PThread
       NormalMarkers
     } m_markerHandling;
 
-    PDECLARE_NOTIFIER(OpalMediaCommand, TranscoderThread, OnTranscoderCommand);
     bool m_forceIFrame;
 
     int  m_framesToTranscode;
@@ -130,6 +129,7 @@ class AudioThread : public TranscoderThread
 };
 
 
+#if OPAL_VIDEO
 class VideoThread : public TranscoderThread
 {
   public:
@@ -155,6 +155,7 @@ class VideoThread : public TranscoderThread
     virtual bool Write(const RTP_DataFrame & frame);
     virtual void Stop();
 
+    PDECLARE_NOTIFIER(OpalMediaCommand, VideoThread, OnTranscoderCommand);
     void WriteFrameStats(const PString & str);
 
     PVideoInputDevice  * m_grabber;
@@ -181,6 +182,7 @@ class VideoThread : public TranscoderThread
     double   m_sumCrSNR;
     PInt64   m_snrCount;
 };
+#endif
 
 
 class CodecTest : public PProcess
@@ -196,19 +198,24 @@ class CodecTest : public PProcess
     class TestThreadInfo : public PObject
     {
       public:
-        TestThreadInfo(unsigned num)
-          : m_audio(num)
-          , m_video(num)
-        {
-        }
-
-        bool Initialise(PArgList & args) { return m_audio.Initialise(args)  &&  m_video.Initialise(args); }
-        void Start()                            { m_audio.Start();              m_video.Start(); }
-        void Stop()                             { m_audio.Stop();               m_video.Stop(); }
-        void Wait()                             { m_audio.WaitForTermination(); m_video.WaitForTermination(); }
-
         AudioThread m_audio;
+
+#if OPAL_VIDEO
         VideoThread m_video;
+
+        TestThreadInfo(unsigned num) :            m_audio(num),                 m_video(num) { }
+        bool Initialise(PArgList & args) { return m_audio.Initialise(args)  &&  m_video.Initialise(args); }
+        void Start()                     {        m_audio.Start();              m_video.Start(); }
+        void Stop()                      {        m_audio.Stop();               m_video.Stop(); }
+        void Wait()                      {        m_audio.WaitForTermination(); m_video.WaitForTermination(); }
+
+#else
+        TestThreadInfo(unsigned num) :            m_audio(num) { }
+        bool Initialise(PArgList & args) { return m_audio.Initialise(args); }
+        void Start()                     {        m_audio.Start(); }
+        void Stop()                      {        m_audio.Stop(); }
+        void Wait()                      {        m_audio.WaitForTermination(); }
+#endif
     };
 };
 
