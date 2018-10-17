@@ -739,11 +739,10 @@ class H264_Encoder : public PluginVideoEncoder<MY_CODEC>
           break;
       }
 
-      unsigned h241MBPS = (m_h241MBPS%MAX_MBPS_H241)*500;
-      unsigned sdpMBPS = m_sdpMBPS%MAX_MBPS_SDP;
+      unsigned h241MBPS = m_h241MBPS < MAX_MBPS_H241 ? (m_h241MBPS*500) : 0;
+      unsigned sdpMBPS = m_sdpMBPS < MAX_MBPS_SDP ? m_sdpMBPS : 0;
       unsigned actualMBPS = std::max(LevelInfo[levelIndex].m_MaxMBPS, std::max(h241MBPS, sdpMBPS));
-
-      unsigned minFrameTime = PLUGINCODEC_VIDEO_CLOCK*GetMacroBlocks(m_width, m_height)/actualMBPS;
+      unsigned minFrameTime = std::max(PLUGINCODEC_VIDEO_CLOCK/120U, PLUGINCODEC_VIDEO_CLOCK*GetMacroBlocks(m_width, m_height)/actualMBPS);
 
       PTRACE(4, MY_CODEC_LOG, "For level " << LevelInfo[levelIndex].m_Name << ", "
                               "H.241-MBPS=" << h241MBPS << ", "
