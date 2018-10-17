@@ -481,16 +481,18 @@ class OpusPluginDecoder : public OpusPluginCodec
     OpusDecoder * m_decoder;
 
     enum {
-      AwaitingInitialPacket,
+      AwaitingNonEmptyPacket,
       NoLostPackets,
       UseFEC
     } m_lostPacketState;
+    unsigned m_consecutiveLostPackets;
 
   public:
     OpusPluginDecoder(const PluginCodec_Definition * defn)
       : OpusPluginCodec(defn)
       , m_decoder(NULL)
-      , m_lostPacketState(AwaitingInitialPacket)
+      , m_lostPacketState(AwaitingNonEmptyPacket)
+      , m_consecutiveLostPackets(0)
     {
       PTRACE(4, MY_CODEC_LOG, "Decoder created: version \"" << opus_get_version_string() << '"');
     }
@@ -534,7 +536,7 @@ class OpusPluginDecoder : public OpusPluginCodec
             m_lostPacketState = UseFEC;
             // Do next case
 
-          case AwaitingInitialPacket :
+          case AwaitingNonEmptyPacket :
             toLen = 0;
             return true;
         }
@@ -543,7 +545,8 @@ class OpusPluginDecoder : public OpusPluginCodec
         opus_decoder_ctl(m_decoder, OPUS_GET_LAST_PACKET_DURATION(&samples));
       }
       else {
-        if (m_lostPacketState == AwaitingInitialPacket) {
+        m_consecutiveLostPackets = 0;
+        if (m_lostPacketState == AwaitingNonEmptyPacket) {
           PTRACE(4, MY_CODEC_LOG, "First non-empty packet received for decoding.");
           m_lostPacketState = NoLostPackets;
         }
@@ -566,7 +569,9 @@ class OpusPluginDecoder : public OpusPluginCodec
       if (m_lostPacketState == NoLostPackets)
         return DecodeFrame(packet, fromLen, toPtr, samples, false);
 
-      m_lostPacketState = NoLostPackets;
+      // After a few empty packets, we can't do any meaningful reconstruction, return silence till have data.
+      m_lostPacketState = ++m_consecutiveLostPackets >= 8 ? AwaitingNonEmptyPacket : NoLostPackets;
+
       toLen = outputBytes*2;
 
       if (PacketHasFec(packet, fromLen)) {
