@@ -86,6 +86,8 @@ void srtp_sha1 (const uint8_t *msg,  int octets_in_msg, uint32_t hash_value[5])
 
 }
 
+#ifndef OPENSSL
+
 /*
  *  srtp_sha1_core(M, H) computes the core compression function, where M is
  *  the next part of the message (in network byte order) and H is the
@@ -410,5 +412,4 @@ void srtp_sha1_final (srtp_sha1_ctx_t *ctx, uint32_t *output)
     return;
 }
 
-
-
+#endif
