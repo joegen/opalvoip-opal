@@ -2459,16 +2459,19 @@ bool OpalManager::RunScript(const PString & script, const char * language)
 #if OPAL_PTLIB_NAT
 void OpalManager::OnInterfaceChange(PInterfaceMonitor &, PInterfaceMonitor::InterfaceChange entry)
 {
+  if (entry.GetAddress().GetVersion() != 4)
+    return; // NAT is an IPv4 thing only
+
   PIPSocket::Address addr;
 
   for (PNatMethods::iterator nat = m_natMethods->begin(); nat != m_natMethods->end(); ++nat) {
     if (entry.m_added) {
-      if (!nat->GetInterfaceAddress(addr) || entry.GetAddress() != addr)
-        nat->Open(entry.GetAddress());
+      if (!nat->GetInterfaceAddress(addr) || !addr.IsValid()) // No iface address means it was closed, so,
+        nat->Open(entry.GetAddress());                        // we re-open it on new interface
     }
     else {
       if (nat->GetInterfaceAddress(addr) && entry.GetAddress() == addr)
-        nat->Close();
+        nat->Close(); /// Interface being used disappeared, close this method.
     }
   }
 }
