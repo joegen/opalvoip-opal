@@ -4,7 +4,6 @@ EXPORTS
     ___local_stdio_printf_options @50255 NONAME
     ___local_stdio_scanf_options @50256 NONAME
     ___isa_available_default @35266 NONAME
-    __speex_putc @50212 NONAME
     __vfprintf_l @50248 NONAME
     __vsnprintf_l @50249 NONAME
     __vsprintf_l @50250 NONAME
@@ -17,24 +16,12 @@ EXPORTS
     _alaw2linear @49752 NONAME
     _alaw2ulaw @49753 NONAME
     _be_int @49754 NONAME
-    _bitvector_alloc @49755 NONAME
-    _bitvector_bit_string @49756 NONAME
-    _bitvector_dealloc @49757 NONAME
-    _bitvector_left_shift @49758 NONAME
-    _bitvector_set_to_zero @49759 NONAME
     _ceilf @49760 NONAME
     _crypto_kernel @49761 NONAME
     _expf @49762 NONAME
     _fabsf @49763 NONAME
     _fixed_point @49764 NONAME
     _fprintf @49765 NONAME
-    _kiss_fft @49766 NONAME
-    _kiss_fftr @49767 NONAME
-    _kiss_fftri @49768 NONAME
-    _kiss_fftr_alloc @49769 NONAME
-    _kiss_fft_alloc @49770 NONAME
-    _kiss_fft_cleanup @49771 NONAME
-    _kiss_fft_stride @49772 NONAME
     _le_int @49773 NONAME
     _linear2alaw @49774 NONAME
     _linear2ulaw @49775 NONAME
@@ -48,190 +35,7 @@ EXPORTS
     _powf @49783 NONAME
     _printf @49784 NONAME
     _print_vec @49785 NONAME
-    _SHA_K0 @49786 NONAME
-    _SHA_K1 @49787 NONAME
-    _SHA_K2 @49788 NONAME
-    _SHA_K3 @49789 NONAME
-    _speex_alloc @49790 NONAME
-    _speex_alloc_scratch @49791 NONAME
-    _speex_echo_cancel @49792 NONAME
-    _speex_echo_state_destroy @49793 NONAME
-    _speex_echo_state_init @49794 NONAME
-    _speex_echo_state_reset @49795 NONAME
-    _speex_error @49796 NONAME
-    _speex_free @49797 NONAME
-    _speex_free_scratch @49798 NONAME
-    _speex_memcpy_bytes @49799 NONAME
-    _speex_memset_bytes @49800 NONAME
-    _speex_move @49801 NONAME
-    _speex_preprocess @49802 NONAME
-    _speex_preprocess_ctl @49803 NONAME
-    _speex_preprocess_estimate_update @49804 NONAME
-    _speex_preprocess_state_destroy @49805 NONAME
-    _speex_preprocess_state_init @49806 NONAME
-    _speex_putc @49747 NONAME
-    _speex_rand @49807 NONAME
-    _speex_rand_vec @49808 NONAME
-    _speex_realloc @49809 NONAME
-    _speex_warning @49810 NONAME
-    _speex_warning_int @49811 NONAME
     _sprintf @49812 NONAME
-    _spx_cos @49813 NONAME
-    _spx_drft_backward @49814 NONAME
-    _spx_drft_clear @49815 NONAME
-    _spx_drft_forward @49816 NONAME
-    _spx_drft_init @49817 NONAME
-    _spx_fft @49818 NONAME
-    _spx_fft_destroy @49819 NONAME
-    _spx_fft_float @49820 NONAME
-    _spx_fft_init @49821 NONAME
-    _spx_ifft @49822 NONAME
-    _spx_ifft_float @49823 NONAME
-    _srtcp_ekt_trailer @49824 NONAME
-    _srtp_add_stream @49825 NONAME
-    _srtp_aes_decrypt @49826 NONAME
-    _srtp_aes_encrypt @49827 NONAME
-    _srtp_aes_expand_decryption_key @49828 NONAME
-    _srtp_aes_expand_encryption_key @49829 NONAME
-    _srtp_aes_icm_128 @49830 NONAME
-    _srtp_aes_icm_256 @49831 NONAME
-    _srtp_append_salt_to_key @49832 NONAME
-    _srtp_auth_get_key_length @49833 NONAME
-    _srtp_auth_get_prefix_length @49834 NONAME
-    _srtp_auth_get_tag_length @49835 NONAME
-    _srtp_auth_type_self_test @49836 NONAME
-    _srtp_auth_type_test @49837 NONAME
-    _srtp_cipher_bits_per_second @49838 NONAME
-    _srtp_cipher_dealloc @49839 NONAME
-    _srtp_cipher_decrypt @49840 NONAME
-    _srtp_cipher_encrypt @49841 NONAME
-    _srtp_cipher_get_key_length @49842 NONAME
-    _srtp_cipher_get_tag @49843 NONAME
-    _srtp_cipher_init @49844 NONAME
-    _srtp_cipher_output @49845 NONAME
-    _srtp_cipher_set_aad @49846 NONAME
-    _srtp_cipher_set_iv @49847 NONAME
-    _srtp_cipher_type_alloc @49848 NONAME
-    _srtp_cipher_type_self_test @49849 NONAME
-    _srtp_cipher_type_test @49850 NONAME
-    _srtp_cleanse @49851 NONAME
-    _srtp_create @49852 NONAME
-    _srtp_crypto_alloc @49853 NONAME
-    _srtp_crypto_free @49854 NONAME
-    _srtp_crypto_kernel_alloc_auth @49855 NONAME
-    _srtp_crypto_kernel_alloc_cipher @49856 NONAME
-    _srtp_crypto_kernel_do_load_auth_type @49857 NONAME
-    _srtp_crypto_kernel_get_auth_type @49858 NONAME
-    _srtp_crypto_kernel_get_cipher_type @49859 NONAME
-    _srtp_crypto_kernel_init @49860 NONAME
-    _srtp_crypto_kernel_list_debug_modules @49861 NONAME
-    _srtp_crypto_kernel_load_auth_type @49862 NONAME
-    _srtp_crypto_kernel_load_cipher_type @49863 NONAME
-    _srtp_crypto_kernel_load_debug_module @49864 NONAME
-    _srtp_crypto_kernel_set_debug_module @49865 NONAME
-    _srtp_crypto_kernel_shutdown @49866 NONAME
-    _srtp_crypto_kernel_status @49867 NONAME
-    _srtp_crypto_policy_set_aes_cm_128_hmac_sha1_32 @49868 NONAME
-    _srtp_crypto_policy_set_aes_cm_128_null_auth @49869 NONAME
-    _srtp_crypto_policy_set_aes_cm_256_hmac_sha1_32 @49870 NONAME
-    _srtp_crypto_policy_set_aes_cm_256_hmac_sha1_80 @49871 NONAME
-    _srtp_crypto_policy_set_aes_cm_256_null_auth @49872 NONAME
-    _srtp_crypto_policy_set_from_profile_for_rtcp @49873 NONAME
-    _srtp_crypto_policy_set_from_profile_for_rtp @49874 NONAME
-    _srtp_crypto_policy_set_null_cipher_hmac_null @49875 NONAME
-    _srtp_crypto_policy_set_null_cipher_hmac_sha1_80 @49876 NONAME
-    _srtp_crypto_policy_set_rtcp_default @49877 NONAME
-    _srtp_crypto_policy_set_rtp_default @49878 NONAME
-    _srtp_dealloc @49879 NONAME
-    _srtp_ekt_alloc @49880 NONAME
-    _srtp_ekt_octets_after_base_tag @49881 NONAME
-    _srtp_ekt_stream_init_from_policy @49882 NONAME
-    _srtp_ekt_write_data @49883 NONAME
-    _srtp_err_handler @49884 NONAME
-    _srtp_err_report @49885 NONAME
-    _srtp_err_reporting_init @49886 NONAME
-    _srtp_event_reporter @49887 NONAME
-    _srtp_get_protect_rtcp_trailer_length @49888 NONAME
-    _srtp_get_protect_trailer_length @49889 NONAME
-    _srtp_get_session_keys @49890 NONAME
-    _srtp_get_session_keys_with_mki_index @49891 NONAME
-    _srtp_get_stream @49892 NONAME
-    _srtp_get_stream_roc @49893 NONAME
-    _srtp_get_user_data @49894 NONAME
-    _srtp_get_version @49895 NONAME
-    _srtp_get_version_string @49896 NONAME
-    _srtp_hmac @49897 NONAME
-    _srtp_index_advance @49898 NONAME
-    _srtp_index_guess @49899 NONAME
-    _srtp_index_init @49900 NONAME
-    _srtp_init @49901 NONAME
-    _srtp_inject_mki @49902 NONAME
-    _srtp_install_err_report_handler @49903 NONAME
-    _srtp_install_event_handler @49904 NONAME
-    _srtp_install_log_handler @49905 NONAME
-    _srtp_key_limit_check @49906 NONAME
-    _srtp_key_limit_clone @49907 NONAME
-    _srtp_key_limit_set @49908 NONAME
-    _srtp_key_limit_update @49909 NONAME
-    _srtp_list_debug_modules @49910 NONAME
-    _srtp_log_handler @49911 NONAME
-    _srtp_mod_aes_icm @49912 NONAME
-    _srtp_mod_auth @49913 NONAME
-    _srtp_mod_cipher @49914 NONAME
-    _srtp_mod_crypto_kernel @49915 NONAME
-    _srtp_mod_hmac @49916 NONAME
-    _srtp_mod_sha1 @49917 NONAME
-    _srtp_nibble_to_hex_char @49918 NONAME
-    _srtp_null_auth @49919 NONAME
-    _srtp_null_cipher @49920 NONAME
-    _srtp_octet_string_hex_string @49921 NONAME
-    _srtp_profile_get_master_key_length @49922 NONAME
-    _srtp_profile_get_master_salt_length @49923 NONAME
-    _srtp_protect @49924 NONAME
-    _srtp_protect_mki @49925 NONAME
-    _srtp_protect_rtcp @49926 NONAME
-    _srtp_protect_rtcp_mki @49927 NONAME
-    _srtp_rdbx_add_index @49928 NONAME
-    _srtp_rdbx_check @49929 NONAME
-    _srtp_rdbx_dealloc @49930 NONAME
-    _srtp_rdbx_estimate_index @49931 NONAME
-    _srtp_rdbx_get_packet_index @49932 NONAME
-    _srtp_rdbx_get_roc @49933 NONAME
-    _srtp_rdbx_get_window_size @49934 NONAME
-    _srtp_rdbx_init @49935 NONAME
-    _srtp_rdbx_set_roc @49936 NONAME
-    _srtp_rdbx_set_roc_seq @49937 NONAME
-    _srtp_rdb_add_index @49938 NONAME
-    _srtp_rdb_check @49939 NONAME
-    _srtp_rdb_get_value @49940 NONAME
-    _srtp_rdb_increment @49941 NONAME
-    _srtp_rdb_init @49942 NONAME
-    _srtp_remove_stream @49943 NONAME
-    _srtp_replace_auth_type @49944 NONAME
-    _srtp_replace_cipher_type @49945 NONAME
-    _srtp_set_debug_module @49946 NONAME
-    _srtp_set_stream_roc @49947 NONAME
-    _srtp_set_user_data @49948 NONAME
-    _srtp_sha1 @49949 NONAME
-    _srtp_sha1_core @49950 NONAME
-    _srtp_sha1_final @49951 NONAME
-    _srtp_sha1_init @49952 NONAME
-    _srtp_sha1_update @49953 NONAME
-    _srtp_shutdown @49954 NONAME
-    _srtp_stream_alloc @49955 NONAME
-    _srtp_stream_clone @49956 NONAME
-    _srtp_stream_dealloc @49957 NONAME
-    _srtp_stream_init @49958 NONAME
-    _srtp_stream_init_all_master_keys @49959 NONAME
-    _srtp_stream_init_from_ekt @49960 NONAME
-    _srtp_stream_init_keys @49961 NONAME
-    _srtp_unprotect @49962 NONAME
-    _srtp_unprotect_mki @49963 NONAME
-    _srtp_unprotect_rtcp @49964 NONAME
-    _srtp_unprotect_rtcp_mki @49965 NONAME
-    _srtp_update @49966 NONAME
-    _srtp_update_stream @49967 NONAME
-    _srtp_validate_policy_master_keys @49968 NONAME
     _sscanf @49969 NONAME
     _stat_test_monobit @49970 NONAME
     _stat_test_poker @49971 NONAME
@@ -242,11 +46,6 @@ EXPORTS
     _ut_compar @49976 NONAME
     _ut_init @49977 NONAME
     _ut_next_index @49978 NONAME
-    _v128_bit_string @49979 NONAME
-    _v128_copy_octet_string @49980 NONAME
-    _v128_hex_string @49981 NONAME
-    _v128_left_shift @49982 NONAME
-    _v128_right_shift @49983 NONAME
     _vfprintf @49984 NONAME
     _vsnprintf @49985 NONAME
     _wmemcpy @49986 NONAME
@@ -259,22 +58,10 @@ EXPORTS
     alaw2linear @49514 NONAME
     alaw2ulaw @49515 NONAME
     be_int @49516 NONAME
-    bitvector_alloc @49517 NONAME
-    bitvector_bit_string @49518 NONAME
-    bitvector_dealloc @49519 NONAME
-    bitvector_left_shift @49520 NONAME
-    bitvector_set_to_zero @49521 NONAME
     crypto_kernel @49522 NONAME
     fabsf @49523 NONAME
     fixed_point @49524 NONAME
     fprintf @49525 NONAME
-    kiss_fft @49526 NONAME
-    kiss_fftr @49527 NONAME
-    kiss_fftri @49528 NONAME
-    kiss_fftr_alloc @49529 NONAME
-    kiss_fft_alloc @49530 NONAME
-    kiss_fft_cleanup @49531 NONAME
-    kiss_fft_stride @49532 NONAME
     le_int @49533 NONAME
     linear2alaw @49534 NONAME
     linear2ulaw @49535 NONAME
@@ -287,189 +74,7 @@ EXPORTS
     octet_weight @49542 NONAME
     printf @49543 NONAME
     print_vec @49544 NONAME
-    SHA_K0 @49545 NONAME
-    SHA_K1 @49546 NONAME
-    SHA_K2 @49547 NONAME
-    SHA_K3 @49548 NONAME
-    speex_alloc @49549 NONAME
-    speex_alloc_scratch @49550 NONAME
-    speex_echo_cancel @49551 NONAME
-    speex_echo_state_destroy @49552 NONAME
-    speex_echo_state_init @49553 NONAME
-    speex_echo_state_reset @49554 NONAME
-    speex_error @49555 NONAME
-    speex_free @49556 NONAME
-    speex_free_scratch @49557 NONAME
-    speex_memcpy_bytes @49558 NONAME
-    speex_memset_bytes @49559 NONAME
-    speex_move @49560 NONAME
-    speex_preprocess @49561 NONAME
-    speex_preprocess_ctl @49562 NONAME
-    speex_preprocess_estimate_update @49563 NONAME
-    speex_preprocess_state_destroy @49564 NONAME
-    speex_preprocess_state_init @49565 NONAME
-    speex_rand @49566 NONAME
-    speex_rand_vec @49567 NONAME
-    speex_realloc @49568 NONAME
-    speex_warning @49569 NONAME
-    speex_warning_int @49570 NONAME
     sprintf @49571 NONAME
-    spx_cos @49572 NONAME
-    spx_drft_backward @49573 NONAME
-    spx_drft_clear @49574 NONAME
-    spx_drft_forward @49575 NONAME
-    spx_drft_init @49576 NONAME
-    spx_fft @49577 NONAME
-    spx_fft_destroy @49578 NONAME
-    spx_fft_float @49579 NONAME
-    spx_fft_init @49580 NONAME
-    spx_ifft @49581 NONAME
-    spx_ifft_float @49582 NONAME
-    srtcp_ekt_trailer @49583 NONAME
-    srtp_add_stream @49584 NONAME
-    srtp_aes_decrypt @49585 NONAME
-    srtp_aes_encrypt @49586 NONAME
-    srtp_aes_expand_decryption_key @49587 NONAME
-    srtp_aes_expand_encryption_key @49588 NONAME
-    srtp_aes_icm_128 @49589 NONAME
-    srtp_aes_icm_256 @49590 NONAME
-    srtp_append_salt_to_key @49591 NONAME
-    srtp_auth_get_key_length @49592 NONAME
-    srtp_auth_get_prefix_length @49593 NONAME
-    srtp_auth_get_tag_length @49594 NONAME
-    srtp_auth_type_self_test @49595 NONAME
-    srtp_auth_type_test @49596 NONAME
-    srtp_cipher_bits_per_second @49597 NONAME
-    srtp_cipher_dealloc @49598 NONAME
-    srtp_cipher_decrypt @49599 NONAME
-    srtp_cipher_encrypt @49600 NONAME
-    srtp_cipher_get_key_length @49601 NONAME
-    srtp_cipher_get_tag @49602 NONAME
-    srtp_cipher_init @49603 NONAME
-    srtp_cipher_output @49604 NONAME
-    srtp_cipher_set_aad @49605 NONAME
-    srtp_cipher_set_iv @49606 NONAME
-    srtp_cipher_type_alloc @49607 NONAME
-    srtp_cipher_type_self_test @49608 NONAME
-    srtp_cipher_type_test @49609 NONAME
-    srtp_cleanse @49610 NONAME
-    srtp_create @49611 NONAME
-    srtp_crypto_alloc @49612 NONAME
-    srtp_crypto_free @49613 NONAME
-    srtp_crypto_kernel_alloc_auth @49614 NONAME
-    srtp_crypto_kernel_alloc_cipher @49615 NONAME
-    srtp_crypto_kernel_do_load_auth_type @49616 NONAME
-    srtp_crypto_kernel_get_auth_type @49617 NONAME
-    srtp_crypto_kernel_get_cipher_type @49618 NONAME
-    srtp_crypto_kernel_init @49619 NONAME
-    srtp_crypto_kernel_list_debug_modules @49620 NONAME
-    srtp_crypto_kernel_load_auth_type @49621 NONAME
-    srtp_crypto_kernel_load_cipher_type @49622 NONAME
-    srtp_crypto_kernel_load_debug_module @49623 NONAME
-    srtp_crypto_kernel_set_debug_module @49624 NONAME
-    srtp_crypto_kernel_shutdown @49625 NONAME
-    srtp_crypto_kernel_status @49626 NONAME
-    srtp_crypto_policy_set_aes_cm_128_hmac_sha1_32 @49627 NONAME
-    srtp_crypto_policy_set_aes_cm_128_null_auth @49628 NONAME
-    srtp_crypto_policy_set_aes_cm_256_hmac_sha1_32 @49629 NONAME
-    srtp_crypto_policy_set_aes_cm_256_hmac_sha1_80 @49630 NONAME
-    srtp_crypto_policy_set_aes_cm_256_null_auth @49631 NONAME
-    srtp_crypto_policy_set_from_profile_for_rtcp @49632 NONAME
-    srtp_crypto_policy_set_from_profile_for_rtp @49633 NONAME
-    srtp_crypto_policy_set_null_cipher_hmac_null @49634 NONAME
-    srtp_crypto_policy_set_null_cipher_hmac_sha1_80 @49635 NONAME
-    srtp_crypto_policy_set_rtcp_default @49636 NONAME
-    srtp_crypto_policy_set_rtp_default @49637 NONAME
-    srtp_dealloc @49638 NONAME
-    srtp_ekt_alloc @49639 NONAME
-    srtp_ekt_octets_after_base_tag @49640 NONAME
-    srtp_ekt_stream_init_from_policy @49641 NONAME
-    srtp_ekt_write_data @49642 NONAME
-    srtp_err_handler @49643 NONAME
-    srtp_err_report @49644 NONAME
-    srtp_err_reporting_init @49645 NONAME
-    srtp_event_reporter @49646 NONAME
-    srtp_get_protect_rtcp_trailer_length @49647 NONAME
-    srtp_get_protect_trailer_length @49648 NONAME
-    srtp_get_session_keys @49649 NONAME
-    srtp_get_session_keys_with_mki_index @49650 NONAME
-    srtp_get_stream @49651 NONAME
-    srtp_get_stream_roc @49652 NONAME
-    srtp_get_user_data @49653 NONAME
-    srtp_get_version @49654 NONAME
-    srtp_get_version_string @49655 NONAME
-    srtp_hmac @49656 NONAME
-    srtp_index_advance @49657 NONAME
-    srtp_index_guess @49658 NONAME
-    srtp_index_init @49659 NONAME
-    srtp_init @49660 NONAME
-    srtp_inject_mki @49661 NONAME
-    srtp_install_err_report_handler @49662 NONAME
-    srtp_install_event_handler @49663 NONAME
-    srtp_install_log_handler @49664 NONAME
-    srtp_key_limit_check @49665 NONAME
-    srtp_key_limit_clone @49666 NONAME
-    srtp_key_limit_set @49667 NONAME
-    srtp_key_limit_update @49668 NONAME
-    srtp_list_debug_modules @49669 NONAME
-    srtp_log_handler @49670 NONAME
-    srtp_mod_aes_icm @49671 NONAME
-    srtp_mod_auth @49672 NONAME
-    srtp_mod_cipher @49673 NONAME
-    srtp_mod_crypto_kernel @49674 NONAME
-    srtp_mod_hmac @49675 NONAME
-    srtp_mod_sha1 @49676 NONAME
-    srtp_nibble_to_hex_char @49677 NONAME
-    srtp_null_auth @49678 NONAME
-    srtp_null_cipher @49679 NONAME
-    srtp_octet_string_hex_string @49680 NONAME
-    srtp_profile_get_master_key_length @49681 NONAME
-    srtp_profile_get_master_salt_length @49682 NONAME
-    srtp_protect @49683 NONAME
-    srtp_protect_mki @49684 NONAME
-    srtp_protect_rtcp @49685 NONAME
-    srtp_protect_rtcp_mki @49686 NONAME
-    srtp_rdbx_add_index @49687 NONAME
-    srtp_rdbx_check @49688 NONAME
-    srtp_rdbx_dealloc @49689 NONAME
-    srtp_rdbx_estimate_index @49690 NONAME
-    srtp_rdbx_get_packet_index @49691 NONAME
-    srtp_rdbx_get_roc @49692 NONAME
-    srtp_rdbx_get_window_size @49693 NONAME
-    srtp_rdbx_init @49694 NONAME
-    srtp_rdbx_set_roc @49695 NONAME
-    srtp_rdbx_set_roc_seq @49696 NONAME
-    srtp_rdb_add_index @49697 NONAME
-    srtp_rdb_check @49698 NONAME
-    srtp_rdb_get_value @49699 NONAME
-    srtp_rdb_increment @49700 NONAME
-    srtp_rdb_init @49701 NONAME
-    srtp_remove_stream @49702 NONAME
-    srtp_replace_auth_type @49703 NONAME
-    srtp_replace_cipher_type @49704 NONAME
-    srtp_set_debug_module @49705 NONAME
-    srtp_set_stream_roc @49706 NONAME
-    srtp_set_user_data @49707 NONAME
-    srtp_sha1 @49708 NONAME
-    srtp_sha1_core @49709 NONAME
-    srtp_sha1_final @49710 NONAME
-    srtp_sha1_init @49711 NONAME
-    srtp_sha1_update @49712 NONAME
-    srtp_shutdown @49713 NONAME
-    srtp_stream_alloc @49714 NONAME
-    srtp_stream_clone @49715 NONAME
-    srtp_stream_dealloc @49716 NONAME
-    srtp_stream_init @49717 NONAME
-    srtp_stream_init_all_master_keys @49718 NONAME
-    srtp_stream_init_from_ekt @49719 NONAME
-    srtp_stream_init_keys @49720 NONAME
-    srtp_unprotect @49721 NONAME
-    srtp_unprotect_mki @49722 NONAME
-    srtp_unprotect_rtcp @49723 NONAME
-    srtp_unprotect_rtcp_mki @49724 NONAME
-    srtp_update @49725 NONAME
-    srtp_update_stream @49726 NONAME
-    srtp_validate_policy_master_keys @49727 NONAME
     sscanf @49728 NONAME
     stat_test_monobit @49729 NONAME
     stat_test_poker @49730 NONAME
@@ -480,10 +85,21 @@ EXPORTS
     ut_compar @49735 NONAME
     ut_init @49736 NONAME
     ut_next_index @49737 NONAME
-    v128_bit_string @49738 NONAME
-    v128_copy_octet_string @49739 NONAME
-    v128_hex_string @49740 NONAME
-    v128_left_shift @49741 NONAME
-    v128_right_shift @49742 NONAME
     vfprintf @49743 NONAME
     vsnprintf @49744 NONAME
+    bitvector_*
+    _bitvector_*
+    kiss_*
+    _kiss_*
+    speex_*
+    _speex_*
+    spx_*
+    _spx_*
+    srtcp_*
+    _srtcp_*
+    srtp_*
+    _srtp_*
+    SHA_*
+    _SHA_*
+    v128_*
+    _v128_*
