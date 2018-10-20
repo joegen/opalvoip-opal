@@ -180,6 +180,7 @@ dnl ########################################################################
 dnl SRTP
 dnl MSWIN_DISPLAY libsrtp,Cisco libSRTP support
 dnl MSWIN_DEFINE  libsrtp,OPAL_SRTP=2
+dnl MSWIN_DEFINE  libsrtp,OPAL_AEAD_CRYPTO_SUITES=1
 
 SRTP_MSG="no"
 OPAL_MODULE_OPTION(
@@ -196,9 +197,11 @@ OPAL_MODULE_OPTION(
    ],
    AS_VAR_IF([SRTP_SYSTEM],[yes],[
       AC_DEFINE(HAS_SRTP_SRTP_H,1)
+      AC_DEFINE(OPAL_AEAD_CRYPTO_SUITES,0)
       SRTP_MSG="yes (system)"
    ],[
       AC_CONFIG_SUBDIRS(src/rtp/libsrtp)
+      AC_DEFINE(OPAL_AEAD_CRYPTO_SUITES,1)
       AC_DEFINE(HAS_SRTP_SRTP_H,0)
       SRTP_MSG="yes (internal)"
    ])

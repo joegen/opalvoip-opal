@@ -291,7 +291,7 @@ DEFINE_CRYPTO_SUITE(AES_CM_128_HMAC_SHA1_80, "SRTP: AES-128 & SHA1-80", 128, "SR
 DEFINE_CRYPTO_SUITE(AES_CM_128_HMAC_SHA1_32, "SRTP: AES-128 & SHA1-32", 128, "SRTP_AES128_CM_SHA1_32", "0.0.8.235.0.4.92", srtp_crypto_policy_set_aes_cm_128_hmac_sha1_32);
 DEFINE_CRYPTO_SUITE(AES_CM_256_HMAC_SHA1_80, "SRTP: AES-256 & SHA1-80", 256, "",                       "0.0.8.235.0.4.93", srtp_crypto_policy_set_aes_cm_256_hmac_sha1_80);
 DEFINE_CRYPTO_SUITE(AES_CM_256_HMAC_SHA1_32, "SRTP: AES-256 & SHA1-32", 256, "",                       "0.0.8.235.0.4.94", srtp_crypto_policy_set_aes_cm_256_hmac_sha1_32);
-#ifndef P_MACOSX  // libsrtp2 from "brew" is broken, header says these are there, but doesn't link
+#if OPAL_AEAD_CRYPTO_SUITES  // libsrtp2 header says these are there, but doesn't link
 DEFINE_CRYPTO_SUITE(AEAD_AES_128_GCM,        "SRTP: AES-128 GCM",       128, "",                       "0.0.8.235.0.4.95", srtp_crypto_policy_set_aes_gcm_128_16_auth);
 DEFINE_CRYPTO_SUITE(AEAD_AES_256_GCM,        "SRTP: AES-256 GCM",       256, "",                       "0.0.8.235.0.4.96", srtp_crypto_policy_set_aes_gcm_256_16_auth);
 #endif
