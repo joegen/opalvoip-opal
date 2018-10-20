@@ -606,7 +606,7 @@ class MyManager : public MyManagerParent
   protected:
     PSystemLog m_systemLog;
 
-    unsigned          m_maxCalls;
+    PINDEX            m_maxCalls;
     MediaTransferMode m_mediaTransferMode;
     OpalProductInfo   m_savedProductInfo;
 

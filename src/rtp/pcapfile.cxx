@@ -502,11 +502,11 @@ struct OpalPCAPFile::DiscoveryInfo
         OpalVideoFormat m_format;
         OpalVideoFormat::FrameDetectorPtr m_detector;
       } VideoCodecs[] = {
-        { OPAL_H263 },
-        { OPAL_H263plus },
-        { OPAL_MPEG4 },
-        { OPAL_H264 },
-        { OPAL_VP8 },
+        { OPAL_H263,     OpalVideoFormat::FrameDetectorPtr() },
+        { OPAL_H263plus, OpalVideoFormat::FrameDetectorPtr() },
+        { OPAL_MPEG4,    OpalVideoFormat::FrameDetectorPtr() },
+        { OPAL_H264,     OpalVideoFormat::FrameDetectorPtr() },
+        { OPAL_VP8,      OpalVideoFormat::FrameDetectorPtr() },
       };
 
       // try and identify media by inspection
