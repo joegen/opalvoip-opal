@@ -306,7 +306,7 @@ PBoolean MyProcess::Initialise(const char * initMsg)
   m_httpNameSpace.AddResource(new CDRPage(*m_manager, params.m_authority), PHTTPSpace::Overwrite);
 
   // Create the home page
-  static const char welcomeHtml[] = "welcome.html";
+  PString welcomeHtml = GetFile().GetDirectory() + "welcome.html";
   if (PFile::Exists(welcomeHtml))
     m_httpNameSpace.AddResource(new PServiceHTTPFile(welcomeHtml, true), PHTTPSpace::Overwrite);
   else {
