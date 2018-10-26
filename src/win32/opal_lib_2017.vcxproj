@@ -1940,6 +1940,7 @@
     <ClInclude Include="..\..\lib\Win32\include\opal_config.h" />
     <ClInclude Include="..\..\lib\x64\include\opal_config.h" />
     <ClInclude Include="..\..\revision.h" />
+    <ClInclude Include="..\..\version.h" />
     <ClInclude Include="..\lids\capi_linux.h" />
     <ClInclude Include="..\lids\capi_win32.h" />
     <ClInclude Include="..\rtp\libsrtp\crypto\include\aes.h" />
