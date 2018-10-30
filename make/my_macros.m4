@@ -701,10 +701,13 @@ MY_COMPILE_IFELSE(
 
 
 dnl Warn about everything, well, nearly everything
+dnl Note: g++ does not raise an immediate error when disabling unknown warnings,
+dnl so we also throw in the option to enable the same warning just to check that
+dnl the warning is recognised.
 
 MY_COMPILE_IFELSE(
    [Disable unknown-pragmas warning (-Wno-unknown-pragmas)],
-   [-Werror -Wno-unknown-pragmas],
+   [-Werror -Wunknown-pragmas -Wno-unknown-pragmas],
    [],
    [],
    [CPPFLAGS="-Wno-unknown-pragmas $CPPFLAGS"]
@@ -714,7 +717,7 @@ AC_LANG_PUSH(C++)
 
 MY_COMPILE_IFELSE(
    [Disable unused-private-field warning (-Wno-unused-private-field)],
-   [-Werror -Wno-unused-private-field],
+   [-Werror -Wunused-private-field -Wno-unused-private-field],
    [],
    [],
    [CXXFLAGS="-Wno-unused-private-field $CXXFLAGS"]
@@ -722,7 +725,7 @@ MY_COMPILE_IFELSE(
 
 MY_COMPILE_IFELSE(
    [Disable overloaded-virtual warning (-Wno-overloaded-virtual)],
-   [-Werror -Wno-overloaded-virtual],
+   [-Werror -Woverloaded-virtual -Wno-overloaded-virtual],
    [],
    [],
    [CXXFLAGS="-Wno-overloaded-virtual $CXXFLAGS"]
@@ -730,7 +733,7 @@ MY_COMPILE_IFELSE(
 
 MY_COMPILE_IFELSE(
    [Disable deprecated-declarations warning (-Wno-deprecated-declarations)],
-   [-Werror -Wno-deprecated-declarations],
+   [-Werror -Wdeprecated-declarations -Wno-deprecated-declarations],
    [],
    [],
    [CXXFLAGS="$CXXFLAGS -Wno-deprecated-declarations"]
@@ -738,7 +741,7 @@ MY_COMPILE_IFELSE(
 
 MY_COMPILE_IFELSE(
    [Disable potentially evaluated expression warning (-Wno-potentially-evaluated-expression)],
-   [-Werror -Wno-potentially-evaluated-expression],
+   [-Werror -Wpotentially-evaluated-expression -Wno-potentially-evaluated-expression],
    [],
    [],
    [CXXFLAGS="$CXXFLAGS -Wno-potentially-evaluated-expression"]
