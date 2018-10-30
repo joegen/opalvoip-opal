@@ -543,7 +543,7 @@ install:
 	           $(OPAL_DEBUG_STATIC_FILE) ; \
 	do \
 	   if test -e $$lib ; then \
-	      $(INSTALL) -m 644 $$lib $(DESTDIR)$(libdir); \
+	      $(INSTALL) -m 755 $$lib $(DESTDIR)$(libdir); \
 	   fi \
 	done
 	cd $(DESTDIR)$(libdir) ; \
