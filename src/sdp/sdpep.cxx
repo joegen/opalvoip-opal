@@ -624,13 +624,15 @@ bool OpalSDPConnection::OnSendOfferSDPSession(unsigned   sessionId,
       RTP_SyncSourceArray ssrcs = rtpSession->GetSyncSources(OpalRTPSession::e_Sender);
       size_t count = 0;
       for (RTP_SyncSourceArray::iterator ssrc = ssrcs.begin(); ssrc != ssrcs.end(); ++ssrc) {
-        if (!rtpSession->GetMediaStreamId(*ssrc, OpalRTPSession::e_Sender).IsEmpty())
+        if (!rtpSession->GetMediaStreamId(*ssrc, OpalRTPSession::e_Sender).IsEmpty() &&
+             rtpSession->GetRtxSyncSource(*ssrc, OpalRTPSession::e_Sender, false) == 0)
           ++count;
       }
       PTRACE(4, "Bundled session has msid for " << count << " of " << ssrcs.size() << " SSRCs");
       if (count > 0) {
         for (RTP_SyncSourceArray::iterator ssrc = ssrcs.begin(); ssrc != ssrcs.end(); ++ssrc) {
-          if (!rtpSession->GetMediaStreamId(*ssrc, OpalRTPSession::e_Sender).IsEmpty()) {
+          if (!rtpSession->GetMediaStreamId(*ssrc, OpalRTPSession::e_Sender).IsEmpty() &&
+               rtpSession->GetRtxSyncSource(*ssrc, OpalRTPSession::e_Sender, false) == 0) {
             SDPMediaDescription * localMedia = mediaSession->CreateSDPMediaDescription();
             PTRACE_CONTEXT_ID_TO(localMedia);
             if (!OnSendOfferSDPSession(mediaSession, localMedia, offerOpenMediaStreamOnly, *ssrc))
