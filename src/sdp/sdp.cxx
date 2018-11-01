@@ -834,7 +834,7 @@ void SDPMediaDescription::MatchGroupInfo(const GroupDict & groups)
   for (PStringList::iterator mid = m_mids.begin(); mid != m_mids.end(); ++mid) {
     GroupDict::const_iterator it;
     for (it = groups.begin(); it != groups.end(); ++it) {
-      if (it->second.Contains(*mid)) {
+      if (it->second.GetValuesIndex(*mid) != P_MAX_INDEX) {
         m_groups.SetAt(it->first, *mid);
         break;
       }
@@ -2797,15 +2797,15 @@ void SDPSessionDescription::PrintOn(ostream & strm) const
         if (git != groups.end())
           git->second += mid;
         else
-          groups.SetAt(gid, new PStringSet(mid));
+          groups.SetAt(gid, new PStringArray(mid));
       }
     }
   }
   if (!groups.IsEmpty()) {
     for (GroupDict::iterator git = groups.begin(); git != groups.end(); ++git) {
       strm << "a=group:" << git->first;
-      for (PStringSet::iterator mit = git->second.begin(); mit != git->second.end(); ++mit)
-        strm << ' ' << *mit;
+      for (PINDEX mit = 0; mit < git->second.GetSize(); ++mit)
+        strm << ' ' << git->second[mit];
       strm << CRLF;
     }
   }
@@ -3100,7 +3100,7 @@ void SDPSessionDescription::SetAttribute(const PString & attr, const PString & v
     if (tokens.GetSize() > 2) {
       PString name = tokens[0];
       tokens.RemoveAt(0);
-      m_groups.SetAt(name, new PStringSet(tokens));
+      m_groups.SetAt(name, new PStringArray(tokens));
     }
     return;
   }
