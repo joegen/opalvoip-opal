@@ -1020,12 +1020,13 @@ class OpalTransport : public PSafeObject
   protected:
     PDECLARE_NOTIFIER(PTimer, OpalTransport, KeepAlive);
 
-    OpalEndPoint & m_endpoint;
-    PChannel     * m_channel;
-    PThread      * m_thread;      ///<  Thread handling the transport
-    PTimer         m_keepAliveTimer;
-    PBYTEArray     m_keepAliveData;
-    PSimpleTimer   m_idleTimer;
+    OpalEndPoint   & m_endpoint;
+    PChannel       * m_channel;
+    PThread        * m_thread;      ///<  Thread handling the transport
+    PCriticalSection m_threadMutex;
+    PTimer           m_keepAliveTimer;
+    PBYTEArray       m_keepAliveData;
+    PSimpleTimer     m_idleTimer;
     atomic<unsigned> m_referenceCount;
 
   private:

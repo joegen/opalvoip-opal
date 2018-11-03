@@ -1067,16 +1067,7 @@ void OpalTransport::CloseWait()
   PTRACE_IF(3, m_thread != NULL, "Transport clean up on termination for " << *this);
 
   Close();
-
-  if (!LockReadWrite())
-    return;
-  PThread * exitingThread = m_thread;
-  m_thread = NULL;
-  UnlockReadWrite();
-
-  m_keepAliveTimer.Stop();
-
-  PThread::WaitAndDelete(exitingThread, m_endpoint.GetManager().GetSignalingTimeout()+2000);
+  AttachThread(NULL);
 }
 
 
@@ -1116,18 +1107,24 @@ void OpalTransport::AttachThread(PThread * thrd)
 {
   PTRACE_CONTEXT_ID_TO(thrd);
 
-  PThread::WaitAndDelete(m_thread);
+  // Can't use atomic<> due to IsRunning()
+  m_threadMutex.Wait();
+  PThread * oldThread = m_thread;
+  m_thread = NULL;
+  m_threadMutex.Signal();
 
+  PThread::WaitAndDelete(oldThread, m_endpoint.GetManager().GetSignalingTimeout()+2000);
+
+  m_threadMutex.Wait();
   m_thread = thrd;
+  m_threadMutex.Signal();
 }
 
 
 PBoolean OpalTransport::IsRunning() const
 {
-  if (m_thread == NULL)
-    return false;
-
-  return !m_thread->IsTerminated();
+  PWaitAndSignal lock(m_threadMutex);
+  return m_thread != NULL && !m_thread->IsTerminated();
 }
 
 
