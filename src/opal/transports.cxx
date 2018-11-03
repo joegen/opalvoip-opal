@@ -48,32 +48,35 @@
 #include <ptclib/http.h>
 
 
-const PCaselessString & OpalTransportAddress::IpPrefix()  { static PConstCaselessString s("ip$" ); return s; }  // For backward compatibility with OpenH323
-PFACTORY_CREATE(PFactory<OpalInternalTransport>, OpalInternalTCPTransport, OpalTransportAddress::IpPrefix(), true);
-
-const PCaselessString & OpalTransportAddress::UdpPrefix() { static PConstCaselessString s("udp$"); return s; }
-PFACTORY_CREATE(PFactory<OpalInternalTransport>, OpalInternalUDPTransport, OpalTransportAddress::UdpPrefix(), true);
-
-const PCaselessString & OpalTransportAddress::TcpPrefix() { static PConstCaselessString s("tcp$"); return s; }
-PFACTORY_SYNONYM(PFactory<OpalInternalTransport>, OpalInternalTCPTransport, TCP, OpalTransportAddress::TcpPrefix ());
+typedef PFactory<OpalInternalTransport, PCaselessString> OpalInternalTransportFactory;
 
 #if OPAL_PTLIB_SSL
 
 #include <ptclib/pssl.h>
-const PCaselessString & OpalTransportAddress::TlsPrefix() { static PConstCaselessString s("tls$"); return s; }
-PFACTORY_CREATE(PFactory<OpalInternalTransport>, OpalInternalTLSTransport, OpalTransportAddress::TlsPrefix(), true);
+const PCaselessString & OpalTransportAddress::TlsPrefix() { static PConstCaselessString const s("tls$"); return s; }
+PFACTORY_CREATE(OpalInternalTransportFactory, OpalInternalTLSTransport, OpalTransportAddress::TlsPrefix(), true);
 
 #if OPAL_PTLIB_HTTP
 
-const PCaselessString & OpalTransportAddress::WsPrefix()  { static PConstCaselessString s("ws$");  return s; }
-PFACTORY_CREATE(PFactory<OpalInternalTransport>, OpalInternalWSTransport, OpalTransportAddress::WsPrefix(), true);
+const PCaselessString & OpalTransportAddress::WsPrefix()  { static PConstCaselessString const s("ws$");  return s; }
+PFACTORY_CREATE(OpalInternalTransportFactory, OpalInternalWSTransport, OpalTransportAddress::WsPrefix(), true);
 
-const PCaselessString & OpalTransportAddress::WssPrefix() { static PConstCaselessString s("wss$"); return s; }
-PFACTORY_CREATE(PFactory<OpalInternalTransport>, OpalInternalWSSTransport, OpalTransportAddress::WssPrefix(), true);
+const PCaselessString & OpalTransportAddress::WssPrefix() { static PConstCaselessString const s("wss$"); return s; }
+PFACTORY_CREATE(OpalInternalTransportFactory, OpalInternalWSSTransport, OpalTransportAddress::WssPrefix(), true);
 
 #endif // OPAL_PTLIB_HTTP
 
 #endif // OPAL_PTLIB_SSL
+
+const PCaselessString & OpalTransportAddress::UdpPrefix() { static PConstCaselessString const s("udp$"); return s; }
+PFACTORY_CREATE(OpalInternalTransportFactory, OpalInternalUDPTransport, OpalTransportAddress::UdpPrefix(), true);
+
+const PCaselessString & OpalTransportAddress::TcpPrefix() { static PConstCaselessString const s("tcp$"); return s; }
+PFACTORY_CREATE(OpalInternalTransportFactory, OpalInternalTCPTransport, OpalTransportAddress::TcpPrefix(), true);
+
+const PCaselessString & OpalTransportAddress::IpPrefix()  { static PConstCaselessString const s("ip$" ); return s; }  // For backward compatibility with OpenH323
+PFACTORY_SYNONYM(OpalInternalTransportFactory, OpalInternalTCPTransport, IP, OpalTransportAddress::IpPrefix());
+
 
 /////////////////////////////////////////////////////////////////
 
@@ -1067,16 +1070,7 @@ void OpalTransport::CloseWait()
   PTRACE_IF(3, m_thread != NULL, "Transport clean up on termination for " << *this);
 
   Close();
-
-  if (!LockReadWrite())
-    return;
-  PThread * exitingThread = m_thread;
-  m_thread = NULL;
-  UnlockReadWrite();
-
-  m_keepAliveTimer.Stop();
-
-  PThread::WaitAndDelete(exitingThread, m_endpoint.GetManager().GetSignalingTimeout()+2000);
+  AttachThread(NULL);
 }
 
 
@@ -1116,18 +1110,24 @@ void OpalTransport::AttachThread(PThread * thrd)
 {
   PTRACE_CONTEXT_ID_TO(thrd);
 
-  PThread::WaitAndDelete(m_thread);
+  // Can't use atomic<> due to IsRunning()
+  m_threadMutex.Wait();
+  PThread * oldThread = m_thread;
+  m_thread = NULL;
+  m_threadMutex.Signal();
 
+  PThread::WaitAndDelete(oldThread, m_endpoint.GetManager().GetSignalingTimeout()+2000);
+
+  m_threadMutex.Wait();
   m_thread = thrd;
+  m_threadMutex.Signal();
 }
 
 
 PBoolean OpalTransport::IsRunning() const
 {
-  if (m_thread == NULL)
-    return false;
-
-  return !m_thread->IsTerminated();
+  PWaitAndSignal lock(m_threadMutex);
+  return m_thread != NULL && !m_thread->IsTerminated();
 }
 
 
