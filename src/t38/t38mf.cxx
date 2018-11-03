@@ -90,16 +90,6 @@ const OpalMediaFormat & GetOpalT38()
 }
 
 
-/////////////////////////////////////////////////////////////////////////////
-
-const char * OpalFaxMediaDefinition::Name() { return "fax"; }
-
-OpalFaxMediaDefinition::OpalFaxMediaDefinition()
-  : OpalMediaTypeDefinition(Name(), UDPTL(), 3) // Must be 3 for H.323 operation
-{
-}
-
-
 #endif // OPAL_T38_CAPABILITY
 
 

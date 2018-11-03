@@ -192,7 +192,7 @@ OpalIVRConnection::OpalIVRConnection(OpalCall & call,
   , P_DISABLE_MSVC_WARNINGS(4355, m_vxmlSession(*this, PFactory<PTextToSpeech>::CreateInstance(ep.GetDefaultTextToSpeech()), true))
   , m_vxmlStarted(false)
 {
-#if P_VIDEO
+#if OPAL_VIDEO
   m_autoStartInfo[OpalMediaType::Video()] = OpalMediaType::DontOffer;
 #endif
 
