@@ -408,7 +408,12 @@ void OpalRTPConnection::ReplaceMediaSession(unsigned sessionId, OpalMediaSession
 
     mediaSession->SetRemoteAddress(remoteMedia, true);
     mediaSession->SetRemoteAddress(remoteCtrl, false);
-    PTRACE(4, "Replacing session " << sessionId << " media=" << remoteMedia << " ctrl=" << remoteCtrl);
+    PTRACE(3, "Replacing " << it->second->GetMediaType() << " session " << sessionId
+           << " (" << it->second->GetSessionType() << ")"
+	      " with " << mediaSession->GetMediaType()
+           << " (" << mediaSession->GetSessionType() << ")"
+	      " using media=" << remoteMedia << ","
+              " ctrl=" << remoteCtrl);
   }
 
   OpalRTPSession * rtpSession = dynamic_cast<OpalRTPSession *>(mediaSession);

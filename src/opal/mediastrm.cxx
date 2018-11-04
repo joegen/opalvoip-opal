@@ -227,14 +227,18 @@ bool OpalMediaStream::IsEstablished() const
 
 PBoolean OpalMediaStream::Start()
 {
-  if (!Open())
+  if (!Open()) {
+    PTRACE(4, "Can't start as not open: " << *this);
     return false;
+  }
 
   // We make referenced copy of pointer so can't be deleted out from under us
   OpalMediaPatchPtr mediaPatch = m_mediaPatch;
 
-  if (mediaPatch == NULL)
+  if (mediaPatch == NULL) {
+    PTRACE(4, "Can't start as no media patch: " << *this);
     return false;
+  }
 
   if (IsPaused()) {
     PTRACE(4, "Starting (paused) stream " << *this);
