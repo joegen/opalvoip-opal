@@ -17,9 +17,9 @@ else
   mkdir $RESULT_DIR || exit $?
 fi
 
-IFACE=`/sbin/ifconfig | head -1 | cut -d ' ' -f 1`
+IFACE=`/sbin/ifconfig | head -1 | cut -d ' ' -f 1 | sed "s/://"`
 if [ -n "$IFACE" ]; then
-  HOST=`/sbin/ifconfig $IFACE 2>/dev/null | grep 'inet addr' | sed -e 's/ *inet addr://' -e 's/ *Bcast.*$//'`
+  HOST=`/sbin/ifconfig $IFACE 2>/dev/null | grep 'inet ' | sed -E 's/ *inet[^0-9]*([0-9\.]+).*/\1/'`
 fi
 if [ -z "$HOST" ]; then
   HOST=`hostname`
