@@ -1532,6 +1532,7 @@ bool OpalMediaSession::SetRemoteAddress(const OpalTransportAddress & remoteAddre
 void OpalMediaSession::AttachTransport(const OpalMediaTransportPtr & transport)
 {
   m_transport = transport;
+  PTRACE_IF(3, transport != NULL, *this << "attaching transport \"" << transport->GetName() << '"');
 }
 
 
@@ -1541,7 +1542,7 @@ OpalMediaTransportPtr OpalMediaSession::DetachTransport()
   m_transport.SetNULL();
 
   if (transport != NULL) {
-    PTRACE(3, *transport << "detaching from session " << GetSessionID());
+    PTRACE(3, *this << "detaching transport \"" << transport->GetName() << '"');
     transport->RemoveReadNotifier(this, e_AllSubChannels);
   }
 

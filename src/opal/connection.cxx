@@ -924,13 +924,20 @@ PBoolean OpalConnection::RemoveMediaStream(OpalMediaStream & stream)
 
 void OpalConnection::StartMediaStreams()
 {
+#if PTRACING
+  unsigned startCount = 0;
+#endif
   for (StreamDict::iterator it = m_mediaStreams.begin(); it != m_mediaStreams.end(); ++it) {
     OpalMediaStreamPtr mediaStream = it->second;
-    if (mediaStream.SetSafetyMode(PSafeReadWrite))
+    if (mediaStream.SetSafetyMode(PSafeReadWrite)) {
       mediaStream->Start();
+#if PTRACING
+      ++startCount;
+#endif
+    }
   }
 
-  PTRACE(3, "Media stream threads started for " << *this);
+  PTRACE(3, "Started " << startCount << " media stream threads for " << *this);
 }
 
 

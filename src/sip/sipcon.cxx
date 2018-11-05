@@ -867,7 +867,6 @@ OpalMediaStream * SIPConnection::CreateMediaStream(const OpalMediaFormat & media
   }
 
   if (mediaSession->GetMediaType() != mediaType) {
-    PTRACE(3, "Replacing " << mediaSession->GetMediaType() << " session " << sessionID << " with " << mediaType);
     mediaSession = CreateMediaSession(sessionID, mediaType, sessionType);
     ReplaceMediaSession(sessionID, mediaSession);
   }

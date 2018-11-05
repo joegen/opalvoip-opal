@@ -268,7 +268,7 @@ void OpalTransportAddress::SetInternalTransport(WORD port, const char * proto)
 #endif
 
   // use factory to create transport types
-  m_transport = PFactory<OpalInternalTransport>::CreateInstance(GetProtoPrefix().ToLower());
+  m_transport = OpalInternalTransportFactory::CreateInstance(GetProtoPrefix().ToLower());
   if (m_transport != NULL && m_transport->Parse(*this, port))
     return;
 

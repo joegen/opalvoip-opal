@@ -158,8 +158,9 @@ void OpalFaxSession::ApplyMediaOptions(const OpalMediaFormat & mediaFormat)
 
 void OpalFaxSession::AttachTransport(const OpalMediaTransportPtr & transport)
 {
-  m_transport = transport;
-  m_transport->AddReadNotifier(PCREATE_NOTIFIER(OnReadPacket));
+  OpalMediaSession::AttachTransport(transport);
+  if (m_transport != NULL)
+    m_transport->AddReadNotifier(PCREATE_NOTIFIER(OnReadPacket));
 }
 
 
@@ -965,7 +966,7 @@ OpalFaxMediaStream::OpalFaxMediaStream(OpalConnection & conn,
 PBoolean OpalFaxMediaStream::Open()
 {
   if (m_isOpen)
-    return false;
+    return true;
 
   P_INSTRUMENTED_LOCK_READ_WRITE(return false);
 
