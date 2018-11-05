@@ -35,6 +35,7 @@ PCREATE_PROCESS(MyProcess);
 const WORD DefaultHTTPPort = 1719;
 const WORD DefaultTelnetPort = 1718;
 static const PConstString TelnetPortKey("Console Port");
+static const PConstString AllowedOriginsKey("Allowed Origins");
 static const PConstString DisplayNameKey("Display Name");
 static const PConstString MaxSimultaneousCallsKey("Maximum Simultaneous Calls");
 static const PConstString MediaTransferModeKey("Media Transfer Mode");
@@ -262,6 +263,9 @@ PBoolean MyProcess::Initialise(const char * initMsg)
   if (!InitialiseBase(params))
     return false;
 
+  PString allowedOrigins = params.m_configPage->AddStringField(AllowedOriginsKey, 80, NULL,
+                                                               "Cross-Origin Resource Sharing (CORS) Allowed Origins");
+
   // Configure the core of the system
   PConfig cfg(params.m_section);
   if (!m_manager->Configure(cfg, params.m_configPage))
@@ -278,7 +282,9 @@ PBoolean MyProcess::Initialise(const char * initMsg)
 #endif // OPAL_PTLIB_HTTP && OPAL_PTLIB_SSL
 
 #if OPAL_SDP
-  m_httpNameSpace.AddResource(new OpalSDPHTTPResource(*m_manager->FindEndPointAs<OpalSDPHTTPEndPoint>(OPAL_PREFIX_SDP), "/sdp", params.m_authority), PHTTPSpace::Overwrite);
+  OpalSDPHTTPResource * sdp_http = new OpalSDPHTTPResource(*m_manager->FindEndPointAs<OpalSDPHTTPEndPoint>(OPAL_PREFIX_SDP), "/sdp", params.m_authority);
+  sdp_http->SetAllowedOrigins(allowedOrigins);
+  m_httpNameSpace.AddResource(sdp_http, PHTTPSpace::Overwrite);
   PHTTPFile * webrtcTest = new PHTTPFile("/webrtc_test.html", GetFile().GetDirectory() + "webrtc_test.html", params.m_authority);
   m_httpNameSpace.AddResource(webrtcTest, PHTTPSpace::Overwrite);
   new OpalSockEndPoint(*m_manager);

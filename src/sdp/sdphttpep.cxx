@@ -111,20 +111,20 @@ OpalSDPHTTPConnection * OpalSDPHTTPEndPoint::CreateConnection(OpalCall & call,
 }
 
 
-bool OpalSDPHTTPEndPoint::OnReceivedHTTP(PHTTPServer & server, const PHTTPConnectionInfo & connectInfo)
+bool OpalSDPHTTPEndPoint::OnReceivedHTTP(PHTTPRequest & request, const PStringToString & parameters)
 {
   OpalCall * call = m_manager.InternalCreateCall();
   if (call == NULL)
-    return server.OnError(PHTTP::InternalServerError, "Could not create call", connectInfo);
+    return request.server.OnError(PHTTP::InternalServerError, "Could not create call", request);
 
   PTRACE_CONTEXT_ID_PUSH_THREAD(call);
 
   OpalSDPHTTPConnection *connection = CreateConnection(*call, NULL, 0, NULL);
   if (AddConnection(connection) != NULL)
-    return connection->OnReceivedHTTP(server, connectInfo);
+    return connection->OnReceivedHTTP(request, parameters);
 
   m_manager.DestroyCall(call);
-  return server.OnError(PHTTP::InternalServerError, "Could not create connection", connectInfo);
+  return request.server.OnError(PHTTP::InternalServerError, "Could not create connection", request);
 }
 
 
@@ -144,15 +144,15 @@ OpalSDPHTTPResource::OpalSDPHTTPResource(OpalSDPHTTPEndPoint & ep, const PURL & 
 }
 
 
-bool OpalSDPHTTPResource::OnGET(PHTTPServer & server, const PHTTPConnectionInfo & conInfo)
+bool OpalSDPHTTPResource::OnGETData(PHTTPRequest & request)
 {
-  return m_endpoint.OnReceivedHTTP(server, conInfo);
+  return m_endpoint.OnReceivedHTTP(request, request.url.GetQueryVars());
 }
 
 
-bool OpalSDPHTTPResource::OnPOST(PHTTPServer & server, const PHTTPConnectionInfo & conInfo)
+bool OpalSDPHTTPResource::OnPOSTData(PHTTPRequest & request, const PStringToString & data)
 {
-  return m_endpoint.OnReceivedHTTP(server, conInfo);
+  return m_endpoint.OnReceivedHTTP(request, data);
 }
 
 
@@ -206,35 +206,35 @@ void OpalSDPHTTPConnection::OnReleased()
 }
 
 
-bool OpalSDPHTTPConnection::OnReceivedHTTP(PHTTPServer & server, const PHTTPConnectionInfo & connectInfo)
+bool OpalSDPHTTPConnection::OnReceivedHTTP(PHTTPRequest & request, const PStringToString & parameters)
 {
-  m_destination = connectInfo.GetURL().GetQueryVars()("destination");
+  m_destination = parameters("destination");
   if (m_destination.IsEmpty()) {
     PTRACE(1, "HTTP URL does not have a destination query parameter");
-    return server.OnError(PHTTP::NotFound, "Must have a destination query parameter", connectInfo);
+    return request.OnError(PHTTP::NotFound, "Must have a destination query parameter");
   }
 
-  if (OpalSDPEndPoint::ContentType() != connectInfo.GetMIME().Get(PHTTP::ContentTypeTag())) {
+  if (OpalSDPEndPoint::ContentType() != request.inMIME.Get(PHTTP::ContentTypeTag())) {
     PTRACE(1, "HTTP does not have " << PHTTP::ContentTypeTag() << " of " << OpalSDPEndPoint::ContentType());
-    return server.OnError(PHTTP::NoneAcceptable, "Must be " + OpalSDPEndPoint::ContentType(), connectInfo);
+    return request.OnError(PHTTP::NoneAcceptable, "Must be " + OpalSDPEndPoint::ContentType());
   }
 
   SetPhase(SetUpPhase);
   OnApplyStringOptions();
   if (!OnIncomingConnection(0, NULL))
-    return server.OnError(PHTTP::NotFound, "Invalid destination query parameter", connectInfo);
+    return request.OnError(PHTTP::NotFound, "Invalid destination query parameter");
 
-  InternalSetMediaAddresses(server);
+  InternalSetMediaAddresses(request.server);
 
-  PTRACE(4, "Received SDP:\n" << connectInfo.GetEntityBody());
+  PTRACE(4, "Received SDP:\n" << request.GetEntityBody());
   m_offerSDP = m_endpoint.CreateSDP(0, 0, OpalTransportAddress());
-  if (!m_offerSDP->Decode(connectInfo.GetEntityBody(), GetLocalMediaFormats()) || m_offerSDP->GetMediaDescriptions().IsEmpty()) {
+  if (!m_offerSDP->Decode(request.GetEntityBody(), GetLocalMediaFormats()) || m_offerSDP->GetMediaDescriptions().IsEmpty()) {
     PTRACE(1, "HTTP body does not have acceptable SDP");
-    return server.OnError(PHTTP::BadRequest, "HTTP body does not have acceptable SDP", connectInfo);
+    return request.OnError(PHTTP::BadRequest, "HTTP body does not have acceptable SDP");
   }
 
   if (!m_ownerCall.OnSetUp(*this))
-    return server.OnError(PHTTP::BadGateway, "Could not set up secondary connection", connectInfo);
+    return request.OnError(PHTTP::BadGateway, "Could not set up secondary connection");
 
   m_connected.Wait();
 
@@ -243,7 +243,7 @@ bool OpalSDPHTTPConnection::OnReceivedHTTP(PHTTPServer & server, const PHTTPConn
 
   if (m_answerSDP == NULL) {
     PTRACE(1, "SDP over HTTP call not answered");
-    return server.OnError(PHTTP::ServiceUnavailable, "No answer", connectInfo);
+    return request.OnError(PHTTP::ServiceUnavailable, "No answer");
   }
 
   PString answer = m_answerSDP->Encode();
@@ -252,10 +252,10 @@ bool OpalSDPHTTPConnection::OnReceivedHTTP(PHTTPServer & server, const PHTTPConn
 
   PTRACE(4, "Sending SDP:\n" << answer);
 
-  PMIMEInfo headers;
-  headers.Set(PHTTP::ContentTypeTag(), OpalSDPEndPoint::ContentType());
-  server.StartResponse(PHTTP::RequestOK, headers, answer.GetLength());
-  return server.WriteString(answer);
+  request.outMIME.Set(PHTTP::ContentTypeTag(), OpalSDPEndPoint::ContentType());
+  request.contentSize = answer.GetLength();
+  request.m_resource->StartResponse(request);
+  return request.server.WriteString(answer);
 }
 
 
