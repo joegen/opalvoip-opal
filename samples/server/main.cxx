@@ -306,9 +306,9 @@ PBoolean MyProcess::Initialise(const char * initMsg)
   m_httpNameSpace.AddResource(new CDRPage(*m_manager, params.m_authority), PHTTPSpace::Overwrite);
 
   // Create the home page
-  static const char welcomeHtml[] = "welcome.html";
+  PFilePath welcomeHtml = GetFile().GetDirectory() + "welcome.html";
   if (PFile::Exists(welcomeHtml))
-    m_httpNameSpace.AddResource(new PServiceHTTPFile(welcomeHtml, true), PHTTPSpace::Overwrite);
+    m_httpNameSpace.AddResource(new PServiceHTTPFile(welcomeHtml), PHTTPSpace::Overwrite);
   else {
     PHTML html;
     html << PHTML::Title("Welcome to " + GetName())
@@ -349,7 +349,7 @@ PBoolean MyProcess::Initialise(const char * initMsg)
     html << PHTML::HRule()
          << GetCopyrightText()
          << PHTML::Body();
-    m_httpNameSpace.AddResource(new PServiceHTTPString(welcomeHtml, html), PHTTPSpace::Overwrite);
+    m_httpNameSpace.AddResource(new PServiceHTTPString(welcomeHtml.GetFileName(), html), PHTTPSpace::Overwrite);
   }
 
   // set up the HTTP port for listening & start the first HTTP thread
