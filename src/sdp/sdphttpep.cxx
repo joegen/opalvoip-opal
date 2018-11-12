@@ -1,5 +1,5 @@
 /*
- * sdpep.cxx
+ * sdphttpep.cxx
  *
  * Open Phone Abstraction Library (OPAL)
  *
@@ -111,7 +111,7 @@ OpalSDPHTTPConnection * OpalSDPHTTPEndPoint::CreateConnection(OpalCall & call,
 }
 
 
-bool OpalSDPHTTPEndPoint::OnReceivedHTTP(PHTTPRequest & request, const PStringToString & parameters)
+bool OpalSDPHTTPEndPoint::OnReceivedHTTP(PHTTPRequest & request)
 {
   OpalCall * call = m_manager.InternalCreateCall();
   if (call == NULL)
@@ -121,7 +121,7 @@ bool OpalSDPHTTPEndPoint::OnReceivedHTTP(PHTTPRequest & request, const PStringTo
 
   OpalSDPHTTPConnection *connection = CreateConnection(*call, NULL, 0, NULL);
   if (AddConnection(connection) != NULL)
-    return connection->OnReceivedHTTP(request, parameters);
+    return connection->OnReceivedHTTP(request);
 
   m_manager.DestroyCall(call);
   return request.server.OnError(PHTTP::InternalServerError, "Could not create connection", request);
@@ -146,13 +146,13 @@ OpalSDPHTTPResource::OpalSDPHTTPResource(OpalSDPHTTPEndPoint & ep, const PURL & 
 
 bool OpalSDPHTTPResource::OnGETData(PHTTPRequest & request)
 {
-  return m_endpoint.OnReceivedHTTP(request, request.url.GetQueryVars());
+  return m_endpoint.OnReceivedHTTP(request);
 }
 
 
-bool OpalSDPHTTPResource::OnPOSTData(PHTTPRequest & request, const PStringToString & data)
+bool OpalSDPHTTPResource::OnPOSTData(PHTTPRequest & request, const PStringToString &)
 {
-  return m_endpoint.OnReceivedHTTP(request, data);
+  return m_endpoint.OnReceivedHTTP(request);
 }
 
 
@@ -206,8 +206,9 @@ void OpalSDPHTTPConnection::OnReleased()
 }
 
 
-bool OpalSDPHTTPConnection::OnReceivedHTTP(PHTTPRequest & request, const PStringToString & parameters)
+bool OpalSDPHTTPConnection::OnReceivedHTTP(PHTTPRequest & request)
 {
+  const PStringToString & parameters = request.url.GetQueryVars();
   m_destination = parameters("destination");
   if (m_destination.IsEmpty()) {
     PTRACE(1, "HTTP URL does not have a destination query parameter");
