@@ -281,34 +281,11 @@ PBoolean OpalIVRConnection::StartVXML(const PString & vxml)
   m_vxmlSession.SetVar("session.connection.remote.port", remoteURL.GetPort());
   m_vxmlSession.SetVar("session.time", PTime().AsString());
 
-  bool ok;
+  if (!m_vxmlSession.Load(vxmlToLoad) && !StartScript(vxmlToLoad))
+    return false;
 
-  PCaselessString vxmlHead = vxmlToLoad.LeftTrim().Left(5);
-  if (vxmlHead == "<?xml" || vxmlHead == "<vxml") {
-    PTRACE(4, "Started using raw VXML:\n" << vxmlToLoad);
-    ok = m_vxmlSession.LoadVXML(vxmlToLoad);
-  }
-  else {
-    PURL vxmlURL(vxmlToLoad, NULL);
-    if (vxmlURL.IsEmpty()) {
-      PFilePath vxmlFile = vxmlToLoad;
-      if (vxmlFile.GetType() != ".vxml")
-        ok = StartScript(vxmlToLoad);
-      else {
-        PTRACE(4, "Started using VXML file: " << vxmlFile);
-        ok = m_vxmlSession.LoadFile(vxmlFile);
-      }
-    }
-    else if (vxmlURL.GetScheme() == "file" && (vxmlURL.AsFilePath().GetType() *= ".vxml"))
-      ok = m_vxmlSession.LoadURL(vxmlURL);
-    else
-      ok = StartScript(vxmlToLoad);
-  }
-
-  if (ok)
-    m_vxmlScript = vxmlToLoad;
-
-  return ok;
+  m_vxmlScript = vxmlToLoad;
+  return true;
 }
 
 
