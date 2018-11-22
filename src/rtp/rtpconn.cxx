@@ -618,6 +618,7 @@ void OpalRTPConnection::AdjustMediaFormats(bool   local,
       rtxList.Remove(m_stringOptions(OPAL_OPT_REMOVE_CODEC).Lines());
       rtxList.Remove(GetEndPoint().GetManager().GetMediaFormatMask());
       mediaFormats += rtxList;
+      mediaFormats.OptimisePayloadTypes();
     }
     else {
       OpalMediaFormatList::iterator fmt = mediaFormats.begin();
