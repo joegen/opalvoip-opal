@@ -231,9 +231,14 @@ void OpalICEMediaTransport::SetCandidates(const PString & user, const PString & 
              itOld->m_protocol   == itNew->m_protocol &&
              itOld->m_baseTransportAddress == itNew->m_baseTransportAddress)
         {
-          PTRACE(4, *this << "ICE candidate merged:\n"
+          bool earlySelection = m_selectedCandidate.m_component  == itNew->m_component &&
+                                m_selectedCandidate.m_protocol   == itNew->m_protocol  &&
+                                m_selectedCandidate.m_baseTransportAddress == itNew->m_baseTransportAddress;
+
+          PTRACE(4, *this << "ICE " << (earlySelection ? "selected" : "unused") << " early candidate merged:\n"
                              "  New ICE candidate: " << setw(-1) << *itNew << "\n"
                              "  Old ICE candidate: " << setw(-1) << *itOld);
+
           /* Update the fields. For some, the SDP value is "better" and for
              others, like networkCost, the value in the STUN request is
              "better". */
@@ -247,9 +252,7 @@ void OpalICEMediaTransport::SetCandidates(const PString & user, const PString & 
           itOld->m_localTransportAddress = itNew->m_localTransportAddress;
 
           // Update the early USE-CANDIDATE as well
-          if (m_selectedCandidate.m_component  == itOld->m_component &&
-              m_selectedCandidate.m_protocol == itOld->m_protocol &&
-              m_selectedCandidate.m_baseTransportAddress == itOld->m_baseTransportAddress)
+          if (earlySelection)
             m_selectedCandidate = *itOld;
 
           add = false;
@@ -580,7 +583,7 @@ bool OpalICEMediaTransport::InternalHandleICE(SubChannels subchannel, const void
        to implement at least that small part of full ICE. So, we check for if we
        already have a selected candidate, and ignore any others unless one with a
        higher priority arrives. */
-    if (m_state == e_Completed) {
+    if (m_selectedCandidate.m_type != PNatCandidate::EndTypes) {
       bool useNewCandidate;
       if (!m_useNetworkCost)
         useNewCandidate = candidate->m_priority > m_selectedCandidate.m_priority;
@@ -593,6 +596,9 @@ bool OpalICEMediaTransport::InternalHandleICE(SubChannels subchannel, const void
       if (!useNewCandidate)
         return false;
       PTRACE(3, *this << subchannel << ", ICE found better candidate: " << *candidate);
+    }
+    else {
+      PTRACE(3, *this << subchannel << ", ICE found initial candidate: " << *candidate);
     }
   }
   else if (message.IsSuccessResponse()) {
