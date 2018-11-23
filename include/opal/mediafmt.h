@@ -289,6 +289,14 @@ class OpalMediaFormatList : public OpalMediaFormatBaseList
     /**Remove all the non-transportable formats specified.
       */
     void RemoveNonTransportable();
+
+    /**Optimise payload types in list.
+       This renumbers the payload types so they are all above 96, if possible,
+       and if not starts allocating from 95 down. This avoid issues with some
+       platforms not dealing with low numbers when lots of codecs are available
+       in OPAL, but you are not actualy offering them all.
+      */
+     void OptimisePayloadTypes();
   //@}
 
   private:
