@@ -23,7 +23,6 @@
 
 #include "precompile.h"
 #include "main.h"
-#include "version.h"
 
 #include <ptclib/pvidfile.h>
 #include <opal/transcoders.h>

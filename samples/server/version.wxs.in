@@ -2,5 +2,6 @@
    <?define OPAL_MAJOR ?>
    <?define OPAL_MINOR ?>
    <?define OPAL_PATCH ?>
+   <?define OPAL_OEM ?>
    <?define OPAL_VERSION ?>
 </Include>

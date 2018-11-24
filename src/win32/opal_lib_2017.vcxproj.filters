@@ -944,9 +944,6 @@
     <ClInclude Include="..\..\include\iax2\transmit.h">
       <Filter>Header Files\IAX2</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\iax2\version.h">
-      <Filter>Header Files\IAX2</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\include\im\im.h">
       <Filter>Header Files\IM</Filter>
     </ClInclude>

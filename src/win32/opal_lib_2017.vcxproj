@@ -1884,7 +1884,6 @@
     <ClInclude Include="..\..\include\iax2\sound.h" />
     <ClInclude Include="..\..\include\iax2\specialprocessor.h" />
     <ClInclude Include="..\..\include\iax2\transmit.h" />
-    <ClInclude Include="..\..\include\iax2\version.h" />
     <ClInclude Include="..\..\include\im\im.h" />
     <ClInclude Include="..\..\include\im\msrp.h" />
     <ClInclude Include="..\..\include\im\rfc4103.h" />
