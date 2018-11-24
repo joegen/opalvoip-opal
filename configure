@@ -6607,22 +6607,27 @@ fi
    if ${OPAL_PATCH+:} false; then :
   patch=${OPAL_PATCH}
 else
-  build=`cat $VERSION_DIR/version.h | grep PATCH_VERSION | cut -f3 -d' ' | sed 's/0x[1-9]*0*//'`
+  patch=`cat $VERSION_DIR/version.h | grep PATCH_VERSION | cut -f3 -d' '`
 fi
    if { as_var=OPAL_OEM  ; eval \${$as_var+:} false; }; then :
-  oem=${OPAL_OEM}
+    oem=${OPAL_OEM}
 else
-  build=`cat $VERSION_DIR/version.h | grep OEM_VERSION   | cut -f3 -d' ' | sed 's/0x[1-9]*0*//'`
+    oem=`cat $VERSION_DIR/version.h | grep OEM_VERSION   | cut -f3 -d' '`
 fi
    if ${OPAL_STAGE+:} false; then :
   stage=${OPAL_STAGE}
 else
-  stage=`cat $VERSION_DIR/version.h | grep BUILD_TYPE    | cut -f 3 -d ' ' | sed 's/BetaCode/-beta/' | sed 's/AlphaCode/-alpha/' | sed 's/ReleaseCode/\./'`
+  stage=`cat $VERSION_DIR/version.h | grep BUILD_TYPE    | cut -f3 -d' ' | sed 's/BetaCode/-beta/' | sed 's/AlphaCode/-alpha/' | sed 's/ReleaseCode/\./'`
 fi
-   version="${major}.${minor}.${build}"
 
-   if test -z "$major" -o -z "$minor" -o -z "$build"; then :
+   if test -z "$major" -o -z "$minor" -o -z "$patch"; then :
   as_fn_error $? "Could not determine version number from $VERSION_DIR/version.h" "$LINENO" 5
+fi
+
+   if test "x$oem" = x0; then :
+  version="${major}.${minor}.${patch}"
+else
+  version="${major}.${minor}.${patch}-${oem}"
 fi
 
    OPAL_MAJOR=$major

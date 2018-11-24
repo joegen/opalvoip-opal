@@ -30,7 +30,8 @@
 
 
 /* WARNING: You MUST NOT add any comments to the #defines which follow
-   or add extra commented out #defines as this will confuse the parser
+   or add extra commented out #defines, or have more than one space
+   between the name and the value, as this will confuse the parser
    which extracts the version numbers
  */
 
@@ -38,7 +39,7 @@
 #define MINOR_VERSION 18
 #define BUILD_TYPE BetaCode
 #define PATCH_VERSION 1
-#define OEM_VERSION   0
+#define OEM_VERSION 0
 
 
 #endif  // _OPAL_VERSION_H
