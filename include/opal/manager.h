@@ -2190,10 +2190,8 @@ class OpalManager : public PObject
 };
 
 
-PString  OpalGetVersion();
-unsigned OpalGetMajorVersion();
-unsigned OpalGetMinorVersion();
-unsigned OpalGetBuildNumber();
+void OpalGetVersion(PProcess::VersionInfo version);
+PString OpalGetVersion();
 
 
 #endif // OPAL_OPAL_MANAGER_H

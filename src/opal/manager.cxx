@@ -151,26 +151,17 @@ ostream & operator<<(ostream & strm, OpalConferenceState::ChangeType type)
 
 /////////////////////////////////////////////////////////////////////////////
 
+static const PProcess::VersionInfo MyVersion = { MAJOR_VERSION, MINOR_VERSION, PProcess::BUILD_TYPE, PATCH_VERSION, OEM_VERSION, 0, GIT_COMMIT };
+
+void OpalGetVersion(PProcess::VersionInfo version)
+{
+  version = MyVersion;
+}
+
+
 PString OpalGetVersion()
 {
-  static const PProcess::VersionInfo ver = { MAJOR_VERSION, MINOR_VERSION, PProcess::BUILD_TYPE, BUILD_NUMBER, 0, GIT_COMMIT };
-  return ver.AsString();
-}
-
-
-unsigned OpalGetMajorVersion()
-{
-  return MAJOR_VERSION;
-}
-
-unsigned OpalGetMinorVersion()
-{
-  return MINOR_VERSION;
-}
-
-unsigned OpalGetBuildNumber()
-{
-  return BUILD_NUMBER;
+  return MyVersion.AsString();
 }
 
 

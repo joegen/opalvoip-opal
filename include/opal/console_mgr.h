@@ -597,14 +597,15 @@ template <class Manager,                   ///< Class of OpalManagerConsole deri
           unsigned MajorVersion = OPAL_MAJOR,  ///< Major version number of the product
           unsigned MinorVersion = OPAL_MINOR,  ///< Minor version number of the product
           PProcess::CodeStatus Status = PProcess::ReleaseCode, ///< Development status of the product
-          unsigned BuildNumber = OPAL_BUILD,   ///< Build number of the product
+          unsigned PatchVersion = OPAL_PATCH,   ///< Patch version number of the product
+          unsigned OemVersion = OPAL_OEM,
           bool Verbose = true>
 class OpalConsoleProcess : public PProcess
 {
     PCLASSINFO(OpalConsoleProcess, PProcess)
   public:
     OpalConsoleProcess()
-      : PProcess(Manuf, Name, MajorVersion, MinorVersion, Status, BuildNumber)
+      : PProcess(Manuf, Name, MajorVersion, MinorVersion, Status, PatchVersion, false, false, OemVersion)
       , m_manager(NULL)
     {
     }

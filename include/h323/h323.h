@@ -37,11 +37,6 @@
 #include <h323/gkclient.h>
 #include <opal_config.h>
 
-PString  OpalGetVersion();
-unsigned OpalGetMajorVersion();
-unsigned OpalGetMinorVersion();
-unsigned OpalGetBuildNumber();
-
 
 #endif // OPAL_H323_H323_H
 

@@ -1884,7 +1884,6 @@
     <ClInclude Include="..\..\include\iax2\sound.h" />
     <ClInclude Include="..\..\include\iax2\specialprocessor.h" />
     <ClInclude Include="..\..\include\iax2\transmit.h" />
-    <ClInclude Include="..\..\include\iax2\version.h" />
     <ClInclude Include="..\..\include\im\im.h" />
     <ClInclude Include="..\..\include\im\msrp.h" />
     <ClInclude Include="..\..\include\im\rfc4103.h" />
@@ -1940,6 +1939,7 @@
     <ClInclude Include="..\..\lib\Win32\include\opal_config.h" />
     <ClInclude Include="..\..\lib\x64\include\opal_config.h" />
     <ClInclude Include="..\..\revision.h" />
+    <ClInclude Include="..\..\version.h" />
     <ClInclude Include="..\lids\capi_linux.h" />
     <ClInclude Include="..\lids\capi_win32.h" />
     <ClInclude Include="..\rtp\libsrtp\crypto\include\aes.h" />
