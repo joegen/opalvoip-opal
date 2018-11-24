@@ -84,24 +84,7 @@ PSafePtr<OpalConnection> OpalIVREndPoint::MakeConnection(OpalCall & call,
                                                        unsigned int options,
                                     OpalConnection::StringOptions * stringOptions)
 {
-  PString ivrString = remoteParty;
-
-  // First strip of the prefix if present
-  PINDEX prefixLength = 0;
-  if (ivrString.Find(GetPrefixName()+":") == 0)
-    prefixLength = GetPrefixName().GetLength()+1;
-
-  PString vxml = ivrString.Mid(prefixLength);
-  if (vxml.Left(2) == "//")
-    vxml = vxml.Mid(2);
-  if (vxml.IsEmpty() || vxml == "*") {
-    m_defaultsMutex.Wait();
-    vxml = m_defaultVXML;
-    vxml.MakeUnique();
-    m_defaultsMutex.Signal();
-  }
-
-  return AddConnection(CreateConnection(call, userData, vxml, options, stringOptions));
+  return AddConnection(CreateConnection(call, userData, remoteParty, options, stringOptions));
 }
 
 
@@ -183,22 +166,22 @@ void OpalIVREndPoint::OnEndDialog(OpalIVRConnection & connection)
 OpalIVRConnection::OpalIVRConnection(OpalCall & call,
                                      OpalIVREndPoint & ep,
                                      void * userData,
-                                     const PString & vxml,
+                                     const PString & remoteParty,
                                      unsigned int options,
                                      OpalConnection::StringOptions * stringOptions)
   : OpalLocalConnection(call, ep, userData, options, stringOptions, 'I')
   , endpoint(ep)
-  , m_vxmlScript(vxml)
   , P_DISABLE_MSVC_WARNINGS(4355, m_vxmlSession(*this, PFactory<PTextToSpeech>::CreateInstance(ep.GetDefaultTextToSpeech()), true))
   , m_vxmlStarted(false)
 {
+  SetVXML(remoteParty);
+
 #if OPAL_VIDEO
   m_autoStartInfo[OpalMediaType::Video()] = OpalMediaType::DontOffer;
 #endif
 
   m_vxmlSession.SetCache(ep.GetTextToSpeechCache());
   m_vxmlSession.SetRecordDirectory(ep.GetRecordDirectory());
-  m_stringOptions.Merge(ExtractOptionsFromVXML(vxml), PStringOptions::e_MergeOverwrite);
 
   PTRACE(4, "Constructed");
 }
@@ -229,7 +212,7 @@ void OpalIVRConnection::OnStartMediaPatch(OpalMediaPatch & patch)
   }
 
   if (!m_vxmlStarted.exchange(true))
-    StartVXML(m_vxmlScript);
+    StartVXML();
 }
 
 
@@ -246,30 +229,34 @@ bool OpalIVRConnection::OnTransferNotify(const PStringToString & info,
 
 bool OpalIVRConnection::TransferConnection(const PString & remoteParty)
 {
-  // First strip off the prefix if present
-  PINDEX prefixLength = 0;
-  if (remoteParty.Find(GetPrefixName()+":") == 0)
-    prefixLength = GetPrefixName().GetLength()+1;
-
-  PString vxml = remoteParty.Mid(prefixLength);
-  m_stringOptions.Merge(ExtractOptionsFromVXML(vxml), PStringOptions::e_MergeOverwrite);
-  return StartVXML(vxml);
+  SetVXML(remoteParty);
+  return StartVXML();
 }
 
 
-PBoolean OpalIVRConnection::StartVXML(const PString & vxml)
+void OpalIVRConnection::SetVXML(const PString & vxml)
 {
+  // First strip off the prefix if present
+  PINDEX prefixLength = 0;
+  if (vxml.Find(GetPrefixName()+":") == 0)
+    prefixLength = GetPrefixName().GetLength()+1;
+
+  m_vxmlScript = vxml.Mid(prefixLength);
+  if (m_vxmlScript.IsEmpty() || m_vxmlScript == "*")
+    m_vxmlScript = endpoint.GetDefaultVXML();
+
+  m_stringOptions.Merge(ExtractOptionsFromVXML(m_vxmlScript), PStringOptions::e_MergeOverwrite);
+}
+
+
+PBoolean OpalIVRConnection::StartVXML()
+{
+  if (m_vxmlScript.IsEmpty())
+    return false;
+
   PSafeLockReadWrite mutex(*this);
   if (!mutex.IsLocked())
     return false;
-
-  PString vxmlToLoad = vxml;
-
-  if (vxmlToLoad.IsEmpty() || vxmlToLoad == "*") {
-    vxmlToLoad = endpoint.GetDefaultVXML();
-    if (vxmlToLoad.IsEmpty())
-      return false;
-  }
 
   PURL remoteURL = GetRemotePartyURL();
   m_vxmlSession.SetVar("session.connection.local.uri", GetLocalPartyURL());
@@ -281,24 +268,20 @@ PBoolean OpalIVRConnection::StartVXML(const PString & vxml)
   m_vxmlSession.SetVar("session.connection.remote.port", remoteURL.GetPort());
   m_vxmlSession.SetVar("session.time", PTime().AsString());
 
-  if (!m_vxmlSession.Load(vxmlToLoad) && !StartScript(vxmlToLoad))
-    return false;
-
-  m_vxmlScript = vxmlToLoad;
-  return true;
+  return m_vxmlSession.Load(m_vxmlScript) || StartScript();
 }
 
 
-bool OpalIVRConnection::StartScript(const PString & script)
+bool OpalIVRConnection::StartScript()
 {
   PINDEX repeat = 1;
   PINDEX delay = 0;
   PString voice;
 
-  PTRACE(4, "Started using simplified script: " << script);
+  PTRACE(4, "Started using simplified script: " << m_vxmlScript);
 
   PINDEX i;
-  PStringArray tokens = script.Tokenise(';', false);
+  PStringArray tokens = m_vxmlScript.Tokenise(';', false);
   for (i = 0; i < tokens.GetSize(); ++i) {
     PString str(tokens[i]);
 
@@ -365,7 +348,7 @@ bool OpalIVRConnection::StartScript(const PString & script)
       m_vxmlSession.PlaySilence(msecs);
     }
     else {
-      PTRACE(2, "Invalid command in \"" << script << '"');
+      PTRACE(2, "Invalid command \"" << key << "\" in \"" << m_vxmlScript << '"');
       return false;
     }
   }
