@@ -203,6 +203,7 @@ OPAL_MODULE_OPTION(
       SRTP_MSG="yes (system)"
    ],[
       AC_CONFIG_SUBDIRS(src/rtp/libsrtp)
+      ac_configure_args="$ac_configure_args --enable-openssl"
       AC_DEFINE(OPAL_AEAD_CRYPTO_SUITES,1)
       AC_DEFINE(HAS_SRTP_SRTP_H,0)
       SRTP_MSG="yes (internal)"

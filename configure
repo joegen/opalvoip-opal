@@ -7283,6 +7283,7 @@ else
 
 subdirs="$subdirs src/rtp/libsrtp"
 
+      ac_configure_args="$ac_configure_args --enable-openssl"
       $as_echo "#define OPAL_AEAD_CRYPTO_SUITES 1" >>confdefs.h
 
       $as_echo "#define HAS_SRTP_SRTP_H 0" >>confdefs.h
