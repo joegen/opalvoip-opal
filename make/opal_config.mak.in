@@ -25,7 +25,8 @@
 OPAL_MAJOR :=@OPAL_MAJOR@
 OPAL_MINOR :=@OPAL_MINOR@
 OPAL_STAGE :=@OPAL_STAGE@
-OPAL_BUILD :=@OPAL_BUILD@
+OPAL_PATCH :=@OPAL_PATCH@
+OPAL_OEM   :=@OPAL_OEM@
 
 # detected platform
 target_cpu       := @target_cpu@

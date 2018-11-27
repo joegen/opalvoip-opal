@@ -33,7 +33,7 @@
 PCREATE_PROCESS(H224Test);
 
 H224Test::H224Test()
-  : PProcess("OPAL H.224 Test", "H224Test", OPAL_MAJOR, OPAL_MINOR, ReleaseCode, OPAL_BUILD)
+  : PProcess("OPAL H.224 Test", "H224Test")
   , m_manager(NULL)
 {
 }

@@ -25,8 +25,8 @@
  *
  */
 
-#ifndef OPAL_BUILDOPTS_H
-#define OPAL_BUILDOPTS_H
+#ifndef _OPAL_CONFIG_H
+#define _OPAL_CONFIG_H
 
 #include <ptlib_config.h>
 
@@ -41,8 +41,10 @@
 #undef OPAL_OEM
 #undef OPAL_VERSION
 
-#define OPAL_CHECK_VERSION(major,minor,build) \
-          (PTLIB_VERSION_INT(OPAL_MAJOR,OPAL_MINOR,OPAL_BUILD) >= PTLIB_VERSION_INT(major,minor,build))
+#define OPAL_CHECK_VERSION_OEM(major,minor,patch,oem) \
+          (PTLIB_VERSION_INT_OEM(OPAL_MAJOR,OPAL_MINOR,OPAL_PATCH,OPAL_OEM) >= PTLIB_VERSION_INT_OEM(major,minor,patch,oem))
+#define OPAL_CHECK_VERSION(major,minor,patch) \
+          (PTLIB_VERSION_INT(OPAL_MAJOR,OPAL_MINOR,OPAL_PATCH) >= PTLIB_VERSION_INT(major,minor,patch))
 
 #undef  OPAL_PTLIB_SSL
 #undef  OPAL_PTLIB_ASN
@@ -467,7 +469,7 @@
 #endif
 
 
-#endif // OPAL_BUILDOPTS_H
+#endif // _OPAL_CONFIG_H
 
 
 // End Of File ///////////////////////////////////////////////////////////////
