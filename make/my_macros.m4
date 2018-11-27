@@ -325,7 +325,7 @@ AC_DEFUN([MY_VERSION_FILE],[
    AC_DEFINE_UNQUOTED([$2[_OEM]],     [${oem}],    [OEM version])
    AC_DEFINE_UNQUOTED([$2[_VERSION]], ["$version"],[PTLib version])
 
-   AC_MSG_NOTICE([$2 version is $version])
+   AC_MSG_NOTICE([$2 version is $version (${major}.${minor}${stage}${patch}-${oem})])
 ])
 
 

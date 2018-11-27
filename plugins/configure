@@ -7019,8 +7019,8 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 
-   { $as_echo "$as_me:${as_lineno-$LINENO}: OPAL version is $version" >&5
-$as_echo "$as_me: OPAL version is $version" >&6;}
+   { $as_echo "$as_me:${as_lineno-$LINENO}: OPAL version is $version (${major}.${minor}${stage}${patch}-${oem})" >&5
+$as_echo "$as_me: OPAL version is $version (${major}.${minor}${stage}${patch}-${oem})" >&6;}
 
 
 
