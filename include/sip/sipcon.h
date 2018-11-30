@@ -800,7 +800,7 @@ class SIPConnection : public OpalSDPConnection, public SIPTransactionOwner
     PString m_consultationTransferToken;
     bool ConsultationTransfer(SIPConnection & referee, SIPRefer::ReferSubMode referSubMode, bool useIdentity);
 
-    int SetRemoteMediaFormats(SIP_PDU & pdu);
+    int SetRemoteMediaFormatsFromPDU(SIP_PDU & pdu);
 
     std::map<std::string, SIP_PDU *> m_responses;
 

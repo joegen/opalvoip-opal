@@ -292,6 +292,9 @@ class OpalSDPConnection : public OpalRTPConnection
       SDPMediaDescription * sdp
     );
 
+    virtual bool SetRemoteMediaFormats(
+      const OpalMediaFormatList & formats
+    );
     virtual bool SetActiveMediaFormats(
       const OpalMediaFormatList & formats
     );

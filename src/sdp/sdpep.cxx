@@ -324,6 +324,31 @@ SDPSessionDescription * OpalSDPConnection::CreateSDP(const PString & sdpStr)
 }
 
 
+bool OpalSDPConnection::SetRemoteMediaFormats(const OpalMediaFormatList & formats)
+{
+  m_remoteFormatList = formats;
+  m_remoteFormatList.MakeUnique();
+
+#if OPAL_T38_CAPABILITY
+  /* We default to having T.38 included as most UAs do not actually
+     tell you that they support it or not. For the re-INVITE mechanism
+     to work correctly, the rest ofthe system has to assume that the
+     UA is capable of it, even it it isn't. */
+  m_remoteFormatList += OpalT38;
+#endif
+
+  AdjustMediaFormats(false, NULL, m_remoteFormatList);
+
+  if (m_remoteFormatList.IsEmpty()) {
+    PTRACE(2, "All possible remote media formats were removed.");
+    return false;
+  }
+
+  PTRACE(4, "Remote media formats set:\n    " << setfill(',') << m_remoteFormatList << setfill(' '));
+  return true;
+}
+
+
 bool OpalSDPConnection::SetActiveMediaFormats(const OpalMediaFormatList & formats)
 {
   if (formats.IsEmpty()) {
@@ -348,10 +373,8 @@ bool OpalSDPConnection::SetActiveMediaFormats(const OpalMediaFormatList & format
   }
 
   // Remember the initial set of media formats remote has told us about
-  if (m_remoteFormatList.IsEmpty()) {
-    m_remoteFormatList = formats;
-    m_remoteFormatList.MakeUnique();
-  }
+  if (m_remoteFormatList.IsEmpty())
+    SetRemoteMediaFormats(formats);
 
   return true;
 }
@@ -546,9 +569,7 @@ bool OpalSDPConnection::OnSendOfferSDP(SDPSessionDescription & sdpOut, bool offe
     if (m_activeFormatList.IsEmpty()) {
       // Need to fake the remote formats with everything we do,
       // so parts of the offering work correctly
-      m_activeFormatList = GetLocalMediaFormats();
-      m_activeFormatList.MakeUnique();
-      AdjustMediaFormats(false, NULL, m_activeFormatList);
+      SetRemoteMediaFormats(GetLocalMediaFormats());
     }
 
     PTRACE(3, "Offering all configured media:\n    " << setfill(',') << m_activeFormatList << setfill(' '));
