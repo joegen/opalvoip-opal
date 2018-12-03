@@ -168,12 +168,12 @@
       <SubType>Designer</SubType>
       <FileType>Document</FileType>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">PATH "$(WIX)\bin";%PATH%
-candle -nologo -dMSVCRT_VER=$(PlatformToolsetVersion) -dPlatform=$(Platform) -dArchitecture=$(PlatformTargetAsMSBuildArchitecture) -out "$(IntDir)%(Filename).wixobj" "%(FullPath)"
+candle -nologo -dProjectDir=$(ProjectDir) -dMSVCRT_VER=$(PlatformToolsetVersion) -dPlatform=$(Platform) -dArchitecture=$(PlatformTargetAsMSBuildArchitecture) -out "$(IntDir)%(Filename).wixobj" "%(FullPath)"
 light -nologo -sice:ICE03 -sice:ICE60 -sice:ICE61 -sice:ICE82 -ext WixUIExtension -pdbout "$(IntDir)%(Filename).wixpdb" -out "$(OutDir)$(TargetName).msi" "$(IntDir)%(Filename).wixobj"</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)$(TargetName).msi</Outputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ProjectDir)version.wxs;$(ProjectDir)config.wxs</AdditionalInputs>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">PATH "$(WIX)\bin";%PATH%
-candle -nologo -dMSVCRT_VER=$(PlatformToolsetVersion) -dPlatform=$(Platform) -dArchitecture=$(PlatformTargetAsMSBuildArchitecture) -out "$(IntDir)%(Filename).wixobj" "%(FullPath)"
+candle -nologo -dProjectDir=$(ProjectDir) -dMSVCRT_VER=$(PlatformToolsetVersion) -dPlatform=$(Platform) -dArchitecture=$(PlatformTargetAsMSBuildArchitecture) -out "$(IntDir)%(Filename).wixobj" "%(FullPath)"
 light -nologo -sice:ICE03 -sice:ICE60 -sice:ICE61 -sice:ICE82 -ext WixUIExtension -pdbout "$(IntDir)%(Filename).wixpdb" -out "$(OutDir)$(TargetName).msi" "$(IntDir)%(Filename).wixobj"</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)$(TargetName).msi</Outputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)version.wxs;$(ProjectDir)config.wxs</AdditionalInputs>

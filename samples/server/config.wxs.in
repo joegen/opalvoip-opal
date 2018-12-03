@@ -1,5 +1,6 @@
 <Include>
-    <?include version.wxs ?>
+  <?include $(var.ProjectDir)\version.wxs ?>
+  <?define OPAL_VERSION = "$(var.OPAL_MAJOR).$(var.OPAL_MINOR).$(var.OPAL_PATCH).$(var.OPAL_OEM)" ?>
 
     <?define ProductName = "OPAL Server" ?>
     <?define ProductDescription = "VoIP gateway and IVR server for OPAL" ?>
