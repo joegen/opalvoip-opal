@@ -2165,27 +2165,45 @@ copy "%(RootDir)%(Directory)\csharp_swig_wrapper.cxx"+nul "%(RootDir)%(Directory
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">cd "%(RootDir)%(Directory)"
 PATH=%PATH%;"$(DevEnvDir)\CommonExtensions\Microsoft\TeamFoundation\Team Explorer\Git\usr\bin"
 sh -c '../ptlib/tools/get_revision.sh %(FileName)'
-if errorlevel 1 copy "%(FullPath)"+nul "%(RootDir)%(Directory)%(FileName)"</Command>
+if not errorlevel 1 exit
+copy "%(FullPath)"+nul "%(RootDir)%(Directory)%(FileName)"
+if not exist "%(RootDir)%(Directory).git" mkdir "%(RootDir)%(Directory).git"
+copy nul "%(RootDir)%(Directory).git\index"</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">cd "%(RootDir)%(Directory)"
 PATH=%PATH%;"$(DevEnvDir)\CommonExtensions\Microsoft\TeamFoundation\Team Explorer\Git\usr\bin"
 sh -c '../ptlib/tools/get_revision.sh %(FileName)'
-if errorlevel 1 copy "%(FullPath)"+nul "%(RootDir)%(Directory)%(FileName)"</Command>
+if not errorlevel 1 exit
+copy "%(FullPath)"+nul "%(RootDir)%(Directory)%(FileName)"
+if not exist "%(RootDir)%(Directory).git" mkdir "%(RootDir)%(Directory).git"
+copy nul "%(RootDir)%(Directory).git\index"</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">cd "%(RootDir)%(Directory)"
 PATH=%PATH%;"$(DevEnvDir)\CommonExtensions\Microsoft\TeamFoundation\Team Explorer\Git\usr\bin"
 sh -c '../ptlib/tools/get_revision.sh %(FileName)'
-if errorlevel 1 copy "%(FullPath)"+nul "%(RootDir)%(Directory)%(FileName)"</Command>
+if not errorlevel 1 exit
+copy "%(FullPath)"+nul "%(RootDir)%(Directory)%(FileName)"
+if not exist "%(RootDir)%(Directory).git" mkdir "%(RootDir)%(Directory).git"
+copy nul "%(RootDir)%(Directory).git\index"</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">cd "%(RootDir)%(Directory)"
 PATH=%PATH%;"$(DevEnvDir)\CommonExtensions\Microsoft\TeamFoundation\Team Explorer\Git\usr\bin"
 sh -c '../ptlib/tools/get_revision.sh %(FileName)'
-if errorlevel 1 copy "%(FullPath)"+nul "%(RootDir)%(Directory)%(FileName)"</Command>
+if not errorlevel 1 exit
+copy "%(FullPath)"+nul "%(RootDir)%(Directory)%(FileName)"
+if not exist "%(RootDir)%(Directory).git" mkdir "%(RootDir)%(Directory).git"
+copy nul "%(RootDir)%(Directory).git\index"</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">cd "%(RootDir)%(Directory)"
 PATH=%PATH%;"$(DevEnvDir)\CommonExtensions\Microsoft\TeamFoundation\Team Explorer\Git\usr\bin"
 sh -c '../ptlib/tools/get_revision.sh %(FileName)'
-if errorlevel 1 copy "%(FullPath)"+nul "%(RootDir)%(Directory)%(FileName)"</Command>
+if not errorlevel 1 exit
+copy "%(FullPath)"+nul "%(RootDir)%(Directory)%(FileName)"
+if not exist "%(RootDir)%(Directory).git" mkdir "%(RootDir)%(Directory).git"
+copy nul "%(RootDir)%(Directory).git\index"</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">cd "%(RootDir)%(Directory)"
 PATH=%PATH%;"$(DevEnvDir)\CommonExtensions\Microsoft\TeamFoundation\Team Explorer\Git\usr\bin"
 sh -c '../ptlib/tools/get_revision.sh %(FileName)'
-if errorlevel 1 copy "%(FullPath)"+nul "%(RootDir)%(Directory)%(FileName)"</Command>
+if not errorlevel 1 exit
+copy "%(FullPath)"+nul "%(RootDir)%(Directory)%(FileName)"
+if not exist "%(RootDir)%(Directory).git" mkdir "%(RootDir)%(Directory).git"
+copy nul "%(RootDir)%(Directory).git\index"</Command>
     </CustomBuild>
     <None Include="..\asn\gcc.asn" />
     <None Include="..\asn\h225.asn" />
