@@ -1,6 +1,6 @@
 <?xml version='1.0'?>
 
-<?include $(sys.CURRENTDIR)\config.wxs ?>
+<?include $(var.ProjectDir)\config.wxs ?>
 
 <?if $(var.Architecture) = "x86" ?>
     <?define IsWin64 = "no" ?>
