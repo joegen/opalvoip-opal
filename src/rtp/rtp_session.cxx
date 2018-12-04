@@ -1641,7 +1641,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendData(RewriteMode & rewri
   switch (rewrite) {
     case e_RewriteHeader:
       // For Generic NACK (no rtx) we have to save the encrypted version of the packet
-      if (syncSource->IsNackEnabled()) {
+      if (syncSource->m_rtxSSRC == 0 && HasFeedback(OpalMediaFormat::e_NACK)) {
         SendReceiveStatus status = syncSource->OnSendData(frame, rewrite, now);
         if (status == e_ProcessPacket)
           syncSource->SaveSentData(frame, now);
