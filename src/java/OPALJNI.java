@@ -427,11 +427,12 @@ public class OPALJNI {
   public final static native String OpalStatusCallCleared_reason_get(long jarg1, OpalStatusCallCleared jarg1_);
   public final static native long new_OpalStatusCallCleared();
   public final static native void delete_OpalStatusCallCleared(long jarg1);
-  public final static native int OpalCallEndedWithQ931Code_get();
   public final static native void OpalParamCallCleared_callToken_set(long jarg1, OpalParamCallCleared jarg1_, String jarg2);
   public final static native String OpalParamCallCleared_callToken_get(long jarg1, OpalParamCallCleared jarg1_);
   public final static native void OpalParamCallCleared_reason_set(long jarg1, OpalParamCallCleared jarg1_, int jarg2);
   public final static native int OpalParamCallCleared_reason_get(long jarg1, OpalParamCallCleared jarg1_);
+  public final static native void OpalParamCallCleared_custom_set(long jarg1, OpalParamCallCleared jarg1_, long jarg2);
+  public final static native long OpalParamCallCleared_custom_get(long jarg1, OpalParamCallCleared jarg1_);
   public final static native long new_OpalParamCallCleared();
   public final static native void delete_OpalParamCallCleared(long jarg1);
   public final static native void OpalMessageParam_commandError_set(long jarg1, OpalMessageParam jarg1_, String jarg2);

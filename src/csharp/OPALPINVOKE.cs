@@ -1444,6 +1444,12 @@ class OPALPINVOKE {
   [global::System.Runtime.InteropServices.DllImport("OPAL", EntryPoint="CSharp_OpalParamCallCleared_reason_get")]
   public static extern int OpalParamCallCleared_reason_get(global::System.Runtime.InteropServices.HandleRef jarg1);
 
+  [global::System.Runtime.InteropServices.DllImport("OPAL", EntryPoint="CSharp_OpalParamCallCleared_custom_set")]
+  public static extern void OpalParamCallCleared_custom_set(global::System.Runtime.InteropServices.HandleRef jarg1, uint jarg2);
+
+  [global::System.Runtime.InteropServices.DllImport("OPAL", EntryPoint="CSharp_OpalParamCallCleared_custom_get")]
+  public static extern uint OpalParamCallCleared_custom_get(global::System.Runtime.InteropServices.HandleRef jarg1);
+
   [global::System.Runtime.InteropServices.DllImport("OPAL", EntryPoint="CSharp_new_OpalParamCallCleared")]
   public static extern global::System.IntPtr new_OpalParamCallCleared();
 

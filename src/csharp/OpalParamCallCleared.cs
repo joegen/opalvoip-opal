@@ -59,6 +59,16 @@ public class OpalParamCallCleared : global::System.IDisposable {
     } 
   }
 
+  public uint custom {
+    set {
+      OPALPINVOKE.OpalParamCallCleared_custom_set(swigCPtr, value);
+    } 
+    get {
+      uint ret = OPALPINVOKE.OpalParamCallCleared_custom_get(swigCPtr);
+      return ret;
+    } 
+  }
+
   public OpalParamCallCleared() : this(OPALPINVOKE.new_OpalParamCallCleared(), true) {
   }
 
