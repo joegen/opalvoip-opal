@@ -326,7 +326,7 @@ SWIGEXPORT jint JNICALL Java_org_opalvoip_opal_OPALJNI_OPAL_1C_1API_1VERSION_1ge
   
   (void)jenv;
   (void)jcls;
-  result = (int)(38);
+  result = (int)(39);
   jresult = (jint)result; 
   return jresult;
 }
@@ -7170,18 +7170,6 @@ SWIGEXPORT void JNICALL Java_org_opalvoip_opal_OPALJNI_delete_1OpalStatusCallCle
 }
 
 
-SWIGEXPORT jint JNICALL Java_org_opalvoip_opal_OPALJNI_OpalCallEndedWithQ931Code_1get(JNIEnv *jenv, jclass jcls) {
-  jint jresult = 0 ;
-  OpalCallEndReason result;
-  
-  (void)jenv;
-  (void)jcls;
-  result = (OpalCallEndReason)OpalCallEndedWithQ931Code;
-  jresult = (jint)result; 
-  return jresult;
-}
-
-
 SWIGEXPORT void JNICALL Java_org_opalvoip_opal_OPALJNI_OpalParamCallCleared_1callToken_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   OpalParamCallCleared *arg1 = (OpalParamCallCleared *) 0 ;
   char *arg2 = (char *) 0 ;
@@ -7246,6 +7234,34 @@ SWIGEXPORT jint JNICALL Java_org_opalvoip_opal_OPALJNI_OpalParamCallCleared_1rea
   arg1 = *(OpalParamCallCleared **)&jarg1; 
   result = (OpalCallEndReason) ((arg1)->m_reason);
   jresult = (jint)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void JNICALL Java_org_opalvoip_opal_OPALJNI_OpalParamCallCleared_1custom_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
+  OpalParamCallCleared *arg1 = (OpalParamCallCleared *) 0 ;
+  unsigned int arg2 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(OpalParamCallCleared **)&jarg1; 
+  arg2 = (unsigned int)jarg2; 
+  if (arg1) (arg1)->m_custom = arg2;
+}
+
+
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_opal_OPALJNI_OpalParamCallCleared_1custom_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+  jlong jresult = 0 ;
+  OpalParamCallCleared *arg1 = (OpalParamCallCleared *) 0 ;
+  unsigned int result;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(OpalParamCallCleared **)&jarg1; 
+  result = (unsigned int) ((arg1)->m_custom);
+  jresult = (jlong)result; 
   return jresult;
 }
 

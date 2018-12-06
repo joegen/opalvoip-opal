@@ -306,7 +306,7 @@ SWIGEXPORT int SWIGSTDCALL CSharp_OPAL_C_API_VERSION_get() {
   int jresult ;
   int result;
   
-  result = (int)(38);
+  result = (int)(39);
   jresult = result; 
   return jresult;
 }
@@ -5533,6 +5533,28 @@ SWIGEXPORT int SWIGSTDCALL CSharp_OpalParamCallCleared_reason_get(void * jarg1) 
   arg1 = (OpalParamCallCleared *)jarg1; 
   result = (OpalCallEndReason) ((arg1)->m_reason);
   jresult = (int)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_OpalParamCallCleared_custom_set(void * jarg1, unsigned int jarg2) {
+  OpalParamCallCleared *arg1 = (OpalParamCallCleared *) 0 ;
+  unsigned int arg2 ;
+  
+  arg1 = (OpalParamCallCleared *)jarg1; 
+  arg2 = (unsigned int)jarg2; 
+  if (arg1) (arg1)->m_custom = arg2;
+}
+
+
+SWIGEXPORT unsigned int SWIGSTDCALL CSharp_OpalParamCallCleared_custom_get(void * jarg1) {
+  unsigned int jresult ;
+  OpalParamCallCleared *arg1 = (OpalParamCallCleared *) 0 ;
+  unsigned int result;
+  
+  arg1 = (OpalParamCallCleared *)jarg1; 
+  result = (unsigned int) ((arg1)->m_custom);
+  jresult = result; 
   return jresult;
 }
 

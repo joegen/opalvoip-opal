@@ -39,7 +39,12 @@ public final class OpalCallEndReason {
   public final static OpalCallEndReason OpalCallEndedByNoRingBackTone = new OpalCallEndReason("OpalCallEndedByNoRingBackTone");
   public final static OpalCallEndReason OpalCallEndedByOutOfService = new OpalCallEndReason("OpalCallEndedByOutOfService");
   public final static OpalCallEndReason OpalCallEndedByAcceptingCallWaiting = new OpalCallEndReason("OpalCallEndedByAcceptingCallWaiting");
-  public final static OpalCallEndReason OpalCallEndedWithQ931Code = new OpalCallEndReason("OpalCallEndedWithQ931Code", OPALJNI.OpalCallEndedWithQ931Code_get());
+  public final static OpalCallEndReason OpalCallEndedByGkAdmissionFailed = new OpalCallEndReason("OpalCallEndedByGkAdmissionFailed");
+  public final static OpalCallEndReason OpalCallEndedByMediaFailed = new OpalCallEndReason("OpalCallEndedByMediaFailed");
+  public final static OpalCallEndReason OpalCallEndedByCallCompletedElsewhere = new OpalCallEndReason("OpalCallEndedByCallCompletedElsewhere");
+  public final static OpalCallEndReason OpalCallEndedByCertificateAuthority = new OpalCallEndReason("OpalCallEndedByCertificateAuthority");
+  public final static OpalCallEndReason OpalCallEndedByIllegalAddress = new OpalCallEndReason("OpalCallEndedByIllegalAddress");
+  public final static OpalCallEndReason OpalCallEndedByCustomCode = new OpalCallEndReason("OpalCallEndedByCustomCode");
 
   public final int swigValue() {
     return swigValue;
@@ -75,7 +80,7 @@ public final class OpalCallEndReason {
     swigNext = this.swigValue+1;
   }
 
-  private static OpalCallEndReason[] swigValues = { OpalCallEndedByLocalUser, OpalCallEndedByNoAccept, OpalCallEndedByAnswerDenied, OpalCallEndedByRemoteUser, OpalCallEndedByRefusal, OpalCallEndedByNoAnswer, OpalCallEndedByCallerAbort, OpalCallEndedByTransportFail, OpalCallEndedByConnectFail, OpalCallEndedByGatekeeper, OpalCallEndedByNoUser, OpalCallEndedByNoBandwidth, OpalCallEndedByCapabilityExchange, OpalCallEndedByCallForwarded, OpalCallEndedBySecurityDenial, OpalCallEndedByLocalBusy, OpalCallEndedByLocalCongestion, OpalCallEndedByRemoteBusy, OpalCallEndedByRemoteCongestion, OpalCallEndedByUnreachable, OpalCallEndedByNoEndPoint, OpalCallEndedByHostOffline, OpalCallEndedByTemporaryFailure, OpalCallEndedByQ931Cause, OpalCallEndedByDurationLimit, OpalCallEndedByInvalidConferenceID, OpalCallEndedByNoDialTone, OpalCallEndedByNoRingBackTone, OpalCallEndedByOutOfService, OpalCallEndedByAcceptingCallWaiting, OpalCallEndedWithQ931Code };
+  private static OpalCallEndReason[] swigValues = { OpalCallEndedByLocalUser, OpalCallEndedByNoAccept, OpalCallEndedByAnswerDenied, OpalCallEndedByRemoteUser, OpalCallEndedByRefusal, OpalCallEndedByNoAnswer, OpalCallEndedByCallerAbort, OpalCallEndedByTransportFail, OpalCallEndedByConnectFail, OpalCallEndedByGatekeeper, OpalCallEndedByNoUser, OpalCallEndedByNoBandwidth, OpalCallEndedByCapabilityExchange, OpalCallEndedByCallForwarded, OpalCallEndedBySecurityDenial, OpalCallEndedByLocalBusy, OpalCallEndedByLocalCongestion, OpalCallEndedByRemoteBusy, OpalCallEndedByRemoteCongestion, OpalCallEndedByUnreachable, OpalCallEndedByNoEndPoint, OpalCallEndedByHostOffline, OpalCallEndedByTemporaryFailure, OpalCallEndedByQ931Cause, OpalCallEndedByDurationLimit, OpalCallEndedByInvalidConferenceID, OpalCallEndedByNoDialTone, OpalCallEndedByNoRingBackTone, OpalCallEndedByOutOfService, OpalCallEndedByAcceptingCallWaiting, OpalCallEndedByGkAdmissionFailed, OpalCallEndedByMediaFailed, OpalCallEndedByCallCompletedElsewhere, OpalCallEndedByCertificateAuthority, OpalCallEndedByIllegalAddress, OpalCallEndedByCustomCode };
   private static int swigNext = 0;
   private final int swigValue;
   private final String swigName;

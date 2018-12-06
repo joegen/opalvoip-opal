@@ -51,6 +51,14 @@ public class OpalParamCallCleared {
     return OpalCallEndReason.swigToEnum(OPALJNI.OpalParamCallCleared_reason_get(swigCPtr, this));
   }
 
+  public void setCustom(long value) {
+    OPALJNI.OpalParamCallCleared_custom_set(swigCPtr, this, value);
+  }
+
+  public long getCustom() {
+    return OPALJNI.OpalParamCallCleared_custom_get(swigCPtr, this);
+  }
+
   public OpalParamCallCleared() {
     this(OPALJNI.new_OpalParamCallCleared(), true);
   }
