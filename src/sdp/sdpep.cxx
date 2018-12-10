@@ -106,6 +106,7 @@ OpalSDPConnection::OpalSDPConnection(OpalCall & call,
   , m_offerPending(false)
   , m_sdpSessionId(PTime().GetTimeInSeconds())
   , m_sdpVersion(0)
+  , m_sdpVersionFromRemote(UINT_MAX)
   , m_holdToRemote(eHoldOff)
   , m_holdFromRemote(false)
 {
@@ -349,6 +350,20 @@ bool OpalSDPConnection::SetRemoteMediaFormats(const OpalMediaFormatList & format
 }
 
 
+bool OpalSDPConnection::OnReceivedSDP(const SDPSessionDescription & sdp)
+{
+  if (!SetActiveMediaFormats(sdp.GetMediaFormats()))
+    return false;
+
+  // Remember the initial set of media formats remote has told us about
+  if (m_sdpVersionFromRemote == UINT_MAX || m_remoteFormatList.IsEmpty())
+    SetRemoteMediaFormats(m_activeFormatList);
+
+  m_sdpVersionFromRemote = sdp.GetOwnerVersion();
+  return true;
+}
+
+
 bool OpalSDPConnection::SetActiveMediaFormats(const OpalMediaFormatList & formats)
 {
   if (formats.IsEmpty()) {
@@ -371,10 +386,6 @@ bool OpalSDPConnection::SetActiveMediaFormats(const OpalMediaFormatList & format
     PTRACE(3, "All media formats in remotes SDP have been removed.");
     return false;
   }
-
-  // Remember the initial set of media formats remote has told us about
-  if (m_remoteFormatList.IsEmpty())
-    SetRemoteMediaFormats(formats);
 
   return true;
 }
@@ -565,12 +576,11 @@ bool OpalSDPConnection::OnSendOfferSDP(SDPSessionDescription & sdpOut, bool offe
     }
   }
   else {
-    m_activeFormatList = m_remoteFormatList;
-    if (m_activeFormatList.IsEmpty()) {
-      // Need to fake the remote formats with everything we do,
-      // so parts of the offering work correctly
+    // If not got remote media format yet, we need to fake them,
+    // so parts of the offering work correctly
+    if (m_remoteFormatList.IsEmpty())
       SetRemoteMediaFormats(GetLocalMediaFormats());
-    }
+    m_activeFormatList = m_remoteFormatList;
 
     PTRACE(3, "Offering all configured media:\n    " << setfill(',') << m_activeFormatList << setfill(' '));
 
@@ -809,7 +819,8 @@ bool OpalSDPConnection::OnSendOfferSDPSession(OpalMediaSession * mediaSession,
 
 bool OpalSDPConnection::OnSendAnswerSDP(const SDPSessionDescription & sdpOffer, SDPSessionDescription & sdpOut, bool transfer)
 {
-  SetActiveMediaFormats(sdpOffer.GetMediaFormats());
+  if (!OnReceivedSDP(sdpOffer))
+    return false;
 
   size_t sessionCount = sdpOffer.GetMediaDescriptions().GetSize();
   vector<SDPMediaDescription *> sdpMediaDescriptions(sessionCount+1);
@@ -1212,7 +1223,8 @@ SDPMediaDescription * OpalSDPConnection::OnSendAnswerSDPSession(SDPMediaDescript
 
 bool OpalSDPConnection::OnReceivedAnswerSDP(const SDPSessionDescription & sdp, bool & multipleFormats)
 {
-  SetActiveMediaFormats(sdp.GetMediaFormats());
+  if (!OnReceivedSDP(sdp))
+    return false;
 
   unsigned mediaDescriptionCount = sdp.GetMediaDescriptions().GetSize();
 
