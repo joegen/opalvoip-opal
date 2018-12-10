@@ -287,6 +287,10 @@ class OpalSDPConnection : public OpalRTPConnection
       BundleMergeInfo & bundleMergeInfo
     );
 
+    virtual bool OnReceivedSDP(
+      const SDPSessionDescription & sdp
+    );
+
     virtual void FinaliseRtx(
       const OpalMediaStreamPtr & stream,
       SDPMediaDescription * sdp
@@ -321,6 +325,7 @@ class OpalSDPConnection : public OpalRTPConnection
     atomic<bool> m_offerPending;
     time_t       m_sdpSessionId;
     unsigned     m_sdpVersion; // Really a sequence number
+    unsigned     m_sdpVersionFromRemote;
 
     enum HoldState {
       eHoldOff,
