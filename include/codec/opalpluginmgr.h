@@ -220,6 +220,7 @@ class OpalPluginTranscoder
     }
 
   protected:
+    bool CreateContext();
     bool SetCodecOption(const PString & optionName, const PString & optionValue);
 
     const PluginCodec_Definition * codecDef;
@@ -272,6 +273,9 @@ class OpalPluginFramedAudioTranscoder : public OpalFramedTranscoder, public Opal
     virtual PBoolean ConvertSilentFrame(BYTE * buffer);
     virtual bool AcceptComfortNoise() const { return comfortNoise; }
   protected:
+    virtual bool OnCreated(const OpalMediaFormat & srcFormat,
+                           const OpalMediaFormat & destFormat,
+                           const BYTE * instance, unsigned instanceLen);
     bool comfortNoise;
 };
 
@@ -286,6 +290,9 @@ class OpalPluginStreamedAudioTranscoder : public OpalStreamedTranscoder, public 
     virtual bool AcceptComfortNoise() const { return comfortNoise; }
     virtual int ConvertOne(int from) const;
   protected:
+    virtual bool OnCreated(const OpalMediaFormat & srcFormat,
+                           const OpalMediaFormat & destFormat,
+                           const BYTE * instance, unsigned instanceLen);
     bool comfortNoise;
 };
 
@@ -326,6 +333,9 @@ class OpalPluginVideoTranscoder : public OpalVideoTranscoder, public OpalPluginT
     PBoolean ExecuteCommand(const OpalMediaCommand & command);
 
   protected:
+    virtual bool OnCreated(const OpalMediaFormat & srcFormat,
+                           const OpalMediaFormat & destFormat,
+                           const BYTE * instance, unsigned instanceLen);
     bool EncodeFrames(const RTP_DataFrame & src, RTP_DataFrameList & dstList);
     bool DecodeFrames(const RTP_DataFrame & src, RTP_DataFrameList & dstList);
     bool DecodeFrame(const RTP_DataFrame & src, RTP_DataFrameList & dstList);
