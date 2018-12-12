@@ -589,6 +589,7 @@ bool OpalPluginVideoFormatInternal::ToCustomisedOptions()
 OpalPluginTranscoder::OpalPluginTranscoder(const PluginCodec_Definition * defn, bool isEnc)
   : codecDef(defn)
   , isEncoder(isEnc)
+  , context(NULL)
   , m_maxPayloadSize(PluginCodec_RTP_MaxPayloadSize)
   , setCodecOptionsControl(defn, PLUGINCODEC_CONTROL_SET_CODEC_OPTIONS)
   , getActiveOptionsControl(defn, PLUGINCODEC_CONTROL_GET_ACTIVE_OPTIONS)
@@ -600,12 +601,6 @@ OpalPluginTranscoder::OpalPluginTranscoder(const PluginCodec_Definition * defn, 
   m_firstLoggedUpdateOptions[true] = m_firstLoggedUpdateOptions[false] = true;
 #endif
 
-  if (codecDef->createCodec == NULL)
-    context = NULL;
-  else {
-    context = (*codecDef->createCodec)(codecDef);
-    PTRACE_IF(1, context == NULL, "Failed to create context for \"" << codecDef->descr << '"');
-  }
 }
 
 
@@ -613,6 +608,16 @@ OpalPluginTranscoder::~OpalPluginTranscoder()
 {
   if (codecDef != NULL && codecDef->destroyCodec != NULL)
     (*codecDef->destroyCodec)(codecDef, context);
+}
+
+
+bool OpalPluginTranscoder::CreateContext()
+{
+  if (PAssert(codecDef->createCodec != NULL, PUnimplementedFunction) && (context = (*codecDef->createCodec)(codecDef)) != NULL)
+    return true;
+
+  PTRACE(1, "Failed to create context for \"" << codecDef->descr << '"');
+  return false;
 }
 
 
@@ -724,6 +729,14 @@ OpalPluginFramedAudioTranscoder::OpalPluginFramedAudioTranscoder(const OpalTrans
   comfortNoise        = (codecDef->flags & PluginCodec_ComfortNoiseMask) == PluginCodec_ComfortNoise;
   acceptEmptyPayload  = (codecDef->flags & PluginCodec_EmptyPayloadMask) == PluginCodec_EmptyPayload;
   acceptOtherPayloads = (codecDef->flags & PluginCodec_OtherPayloadMask) == PluginCodec_OtherPayload;
+}
+
+
+bool OpalPluginFramedAudioTranscoder::OnCreated(const OpalMediaFormat & srcFormat,
+                                                const OpalMediaFormat & destFormat,
+                                                const BYTE * instance, unsigned instanceLen)
+{
+    return CreateContext() && OpalFramedTranscoder::OnCreated(srcFormat, destFormat, instance, instanceLen);
 }
 
 
@@ -844,6 +857,14 @@ OpalPluginStreamedAudioTranscoder::OpalPluginStreamedAudioTranscoder(const OpalT
 }
 
 
+bool OpalPluginStreamedAudioTranscoder::OnCreated(const OpalMediaFormat & srcFormat,
+                                                  const OpalMediaFormat & destFormat,
+                                                  const BYTE * instance, unsigned instanceLen)
+{
+    return CreateContext() && OpalStreamedTranscoder::OnCreated(srcFormat, destFormat, instance, instanceLen);
+}
+
+
 PBoolean OpalPluginStreamedAudioTranscoder::UpdateMediaFormats(const OpalMediaFormat & input, const OpalMediaFormat & output)
 {
   PWaitAndSignal mutex(updateMutex);
@@ -900,6 +921,14 @@ OpalPluginVideoTranscoder::OpalPluginVideoTranscoder(const OpalTranscoderKey & k
 OpalPluginVideoTranscoder::~OpalPluginVideoTranscoder()
 { 
   delete m_bufferRTP;
+}
+
+
+bool OpalPluginVideoTranscoder::OnCreated(const OpalMediaFormat & srcFormat,
+                                                  const OpalMediaFormat & destFormat,
+                                                  const BYTE * instance, unsigned instanceLen)
+{
+    return CreateContext() && OpalVideoTranscoder::OnCreated(srcFormat, destFormat, instance, instanceLen);
 }
 
 
@@ -1403,12 +1432,19 @@ class OpalFaxTranscoder : public OpalTranscoder, public OpalPluginTranscoder
       delete bufferRTP;
     }
 
-    virtual void SetInstanceID(const BYTE * instance, unsigned instanceLen)
+    virtual bool OnCreated(const OpalMediaFormat & srcFormat,
+                           const OpalMediaFormat & destFormat,
+                           const BYTE * instance, unsigned instanceLen)
     {
+      if (!CreateContext())
+        return false;
+
       if (instance != NULL && instanceLen > 0) {
         OpalPluginControl ctl(codecDef, PLUGINCODEC_CONTROL_SET_INSTANCE_ID);
         ctl.Call((void *)instance, instanceLen, context);
       }
+
+      return OpalTranscoder::OnCreated(srcFormat, destFormat, instance, instanceLen);
     }
 
     virtual PINDEX GetOptimalDataFrameSize(PBoolean input) const
@@ -3223,4 +3259,3 @@ PFACTORY_CREATE(H323StaticPluginCodecFactory, H323StaticPluginCodec_##name, #nam
 INCLUDE_STATIC_CODEC(GSM_0610)
 
 #endif
-
