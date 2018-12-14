@@ -67,15 +67,22 @@ class OpalDTLSContext : public PSSLContext
         return;
       }
 
-      PStringStream ext;
+      /* Place into the DTLS negotiation extension the crypto suites we support in order
+        of their strength. Especially 80 bit salt over 32 bit salt. */
+      std::map<unsigned, PString> cryptoSuitesByStrength;
       OpalMediaCryptoSuiteFactory::KeyList_T all = OpalMediaCryptoSuiteFactory::GetKeyList();
       for (OpalMediaCryptoSuiteFactory::KeyList_T::iterator it = all.begin(); it != all.end(); ++it) {
-        PString dtlsName(OpalMediaCryptoSuiteFactory::CreateInstance(*it)->GetDTLSName());
-        if (!dtlsName.IsEmpty()) {
-          if (!ext.IsEmpty())
-            ext << ':';
-          ext << dtlsName;
-        }
+        OpalMediaCryptoSuite & cryptoSuite = *OpalMediaCryptoSuiteFactory::CreateInstance(*it);
+        cryptoSuitesByStrength[cryptoSuite.GetCipherKeyBits()+cryptoSuite.GetAuthSaltBits()*1000] = cryptoSuite.GetDTLSName();
+      }
+
+      PStringStream ext;
+      for (std::map<unsigned, PString>::reverse_iterator it = cryptoSuitesByStrength.rbegin(); it != cryptoSuitesByStrength.rend(); ++it) {
+        if (it->second.IsEmpty())
+          continue;
+        if (!ext.IsEmpty())
+          ext << ':';
+        ext << it->second;
       }
 
       if (SetExtension(ext))
