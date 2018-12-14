@@ -534,12 +534,12 @@ bool OpalSRTPSession::ApplyKeyToSRTP(const OpalMediaCryptoKeyInfo & keyInfo, Dir
     return false;
   }
 
-  // Need a separate combined structure for libsrtp
-  PINDEX keySize = std::min((PINDEX)16, keyInfo.GetCipherKey().GetSize());
-  PINDEX saltSize = std::min((PINDEX)14, keyInfo.GetAuthSalt().GetSize());
-  PBYTEArray tmp_key_salt(keySize + saltSize);
-  memcpy(tmp_key_salt.GetPointer(), keyInfo.GetCipherKey(), keySize);
-  memcpy(tmp_key_salt.GetPointer()+keySize, keyInfo.GetAuthSalt(), saltSize);
+  // Need a separate, combined, structure for libsrtp to use
+  PINDEX keySize = keyInfo.GetCryptoSuite().GetCipherKeyBytes();
+  PINDEX saltSize = keyInfo.GetCryptoSuite().GetAuthSaltBytes();
+  PBYTEArray tmp_key_salt(std::max((PINDEX)32, keySize + saltSize)); // libsrtp assumes at least 32 bytes
+  memcpy(tmp_key_salt.GetPointer(), keyInfo.GetCipherKey(), std::min(keySize, keyInfo.GetCipherKey().GetSize()));
+  memcpy(tmp_key_salt.GetPointer()+keySize, keyInfo.GetAuthSalt(), std::min(saltSize, keyInfo.GetAuthSalt().GetSize()));
 
   if (m_keyInfo[dir] != NULL) {
     if (tmp_key_salt == m_keyInfo[dir]->m_key_salt) {
