@@ -706,6 +706,13 @@ bool OpalMediaTransport::SetRemoteAddress(const OpalTransportAddress &, SubChann
 }
 
 
+PChannel::Errors OpalMediaTransport::GetLastError(SubChannels subchannel) const
+{
+  P_INSTRUMENTED_LOCK_READ_ONLY();
+  return lock.IsLocked() && (size_t)subchannel < m_subchannels.size() ? m_subchannels[subchannel].m_lastError : PChannel::NotFound;
+}
+
+
 void OpalMediaTransport::SetCandidates(const PString &, const PString &, const PNatCandidateList &)
 {
 }
@@ -794,7 +801,8 @@ OpalMediaTransport::ChannelInfo::ChannelInfo(OpalMediaTransport & owner, SubChan
   , m_thread(NULL)
   , m_consecutiveUnavailableErrors(0)
   , m_remoteAddressSource(e_RemoteAddressUnknown)
-  PTRACE_PARAM(, m_logFirstRead(true))
+  , m_lastError(PChannel::NoError)
+  , m_receivedData(false)
 {
 }
 
@@ -814,9 +822,9 @@ void OpalMediaTransport::ChannelInfo::ThreadMain()
 
     if (m_channel->Read(data.GetPointer(), data.GetSize())) {
       data.SetSize(m_channel->GetLastReadCount());
-      PTRACE_IF(4, m_logFirstRead, &m_owner, m_owner << m_subchannel << " first receive data: sz=" << data.GetSize());
-      PTRACE_PARAM(m_logFirstRead = false);
-      m_owner.InternalRxData(m_subchannel, data);
+      PTRACE_IF(4, !m_receivedData, &m_owner, m_owner << m_subchannel << " first receive data: sz=" << data.GetSize());
+      if (m_owner.InternalRxData(m_subchannel, data))
+        m_receivedData = true;
     }
     else {
       P_INSTRUMENTED_LOCK_READ_ONLY2(lock, m_owner);
@@ -850,10 +858,12 @@ void OpalMediaTransport::ChannelInfo::ThreadMain()
           else {
             PTRACE(1, &m_owner, m_owner << m_subchannel << " timed out (" << m_owner.m_mediaTimeout << "s), closing");
             m_owner.InternalClose();
+            m_lastError = m_receivedData ? PChannel::Timeout : PChannel::ProtocolFailure;
           }
           break;
 
         default:
+          m_lastError = m_channel->GetErrorCode(PChannel::LastReadError);
           PTRACE(1, &m_owner, m_owner << m_subchannel
                  << " read error (" << m_channel->GetErrorNumber(PChannel::LastReadError) << "): "
                  << m_channel->GetErrorText(PChannel::LastReadError));
@@ -895,6 +905,7 @@ bool OpalMediaTransport::ChannelInfo::HandleUnavailableError()
   PTRACE(2, &m_owner, m_owner << m_subchannel << ' ' << m_owner.m_maxNoTransmitTime
          << " seconds of transmit fails to " << m_owner.GetRemoteAddress(m_subchannel));
   m_owner.InternalClose();
+  m_lastError = m_receivedData ? PChannel::Timeout : PChannel::ProtocolFailure;
   return false;
 }
 
@@ -923,14 +934,14 @@ void OpalMediaTransport::InternalClose()
 }
 
 
-void OpalMediaTransport::InternalRxData(SubChannels subchannel, const PBYTEArray & data)
+bool OpalMediaTransport::InternalRxData(SubChannels subchannel, const PBYTEArray & data)
 {
   // An empty packet indicates transport was closed, so don't send it here.
   if (data.IsEmpty())
-    return;
+    return false;
 
   if (!LockReadOnly(P_DEBUG_LOCATION))
-    return;
+    return false;
 
   ChannelInfo::NotifierList notifiers = m_subchannels[subchannel].m_notifiers;
   UnlockReadOnly(P_DEBUG_LOCATION);
@@ -938,6 +949,7 @@ void OpalMediaTransport::InternalRxData(SubChannels subchannel, const PBYTEArray
   notifiers(*this, data);
 
   m_mediaTimer = m_mediaTimeout;
+  return true;
 }
 
 
@@ -1080,7 +1092,7 @@ bool OpalUDPMediaTransport::SetRemoteAddress(const OpalTransportAddress & remote
 }
 
 
-void OpalUDPMediaTransport::InternalRxData(SubChannels subchannel, const PBYTEArray & data)
+bool OpalUDPMediaTransport::InternalRxData(SubChannels subchannel, const PBYTEArray & data)
 {
   if (m_remoteBehindNAT) {
     // If remote address never set from higher levels, then try and figure
@@ -1098,7 +1110,7 @@ void OpalUDPMediaTransport::InternalRxData(SubChannels subchannel, const PBYTEAr
     }
   }
 
-  OpalMediaTransport::InternalRxData(subchannel, data);
+  return OpalMediaTransport::InternalRxData(subchannel, data);
 }
 
 
@@ -1809,4 +1821,3 @@ OpalMediaStream * OpalDummySession::CreateMediaStream(const OpalMediaFormat & me
 
 
 /////////////////////////////////////////////////////////////////////////////
-

@@ -450,7 +450,8 @@ class OpalConnection : public PSafeObject
       EndedByCallCompletedElsewhere, ///< Call cleared because it was answered by another extension.
       EndedByCertificateAuthority,   ///< When using TLS, the remote certifcate was not authenticated
       EndedByIllegalAddress,         ///< Destination Address  format was incorrect format
-      EndedByCustomCode              ///< End call with custom protocol specific code (e.g. SIP)
+      EndedByCustomCode,             ///< End call with custom protocol specific code (e.g. SIP)
+      EndedByMediaTransportFail      ///< End call due to media transport failure, typically ICE error
     );
 
     struct CallEndReason {
@@ -1301,7 +1302,8 @@ class OpalConnection : public PSafeObject
        @Return true if the specific media session is to be aborted.
       */
     virtual bool OnMediaFailed(
-      unsigned sessionId   ///< Session ID of media that stopped.
+      unsigned sessionId,    ///< Session ID of media that stopped.
+      PChannel::Errors error ///< Error code for failure
     );
 
     /**Indicate all media sessions have failed.
@@ -2076,6 +2078,7 @@ class OpalConnection : public PSafeObject
     P_REMOVE_VIRTUAL(bool,Hold(bool,bool),false);
     P_REMOVE_VIRTUAL(bool,ExecuteMediaCommand(const OpalMediaCommand &,unsigned,const OpalMediaType &) const,0);
     P_REMOVE_VIRTUAL(bool,OnMediaFailed(unsigned,bool),false);
+    P_REMOVE_VIRTUAL(bool,OnMediaFailed(unsigned),false);
 };
 
 #endif // OPAL_OPAL_CONNECTION_H

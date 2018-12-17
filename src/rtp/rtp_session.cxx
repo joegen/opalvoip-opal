@@ -3403,11 +3403,13 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::WriteControl(RTP_ControlFrame 
 
 void OpalRTPSession::SessionFailed(SubChannels subchannel PTRACE_PARAM(, const char * reason))
 {
-  PTRACE(4, *this << subchannel << " subchannel failed " << reason);
+  OpalMediaTransportPtr transport = m_transport;
+  PChannel::Errors error = transport != NULL ? transport->GetLastError(subchannel) : PChannel::NotOpen;
+  PTRACE(4, *this << subchannel << " subchannel failed " << reason << ", code=" << error);
 
   /* Really should test if both data and control fail, but as it is unlikely we would
      get one failed without the other, we don't bother. */
-  if (subchannel == e_Data && m_connection.OnMediaFailed(m_sessionId)) {
+  if (subchannel == e_Data && m_connection.OnMediaFailed(m_sessionId, error)) {
     PTRACE(2, *this << "aborting transport, queuing close of media session.");
     m_manager.QueueDecoupledEvent(new PSafeWorkNoArg<OpalRTPSession, bool>(this, &OpalRTPSession::Close));
   }

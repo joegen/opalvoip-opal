@@ -139,12 +139,12 @@ bool OpalICEMediaTransport::IsEstablished() const
 }
 
 
-void OpalICEMediaTransport::InternalRxData(SubChannels subchannel, const PBYTEArray & data)
+bool OpalICEMediaTransport::InternalRxData(SubChannels subchannel, const PBYTEArray & data)
 {
   if (m_state == e_Disabled)
-    OpalUDPMediaTransport::InternalRxData(subchannel, data);
-  else
-    OpalMediaTransport::InternalRxData(subchannel, data);
+    return OpalUDPMediaTransport::InternalRxData(subchannel, data);
+
+  return OpalMediaTransport::InternalRxData(subchannel, data) && m_state == e_Completed;
 }
 
 

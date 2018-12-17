@@ -1239,7 +1239,8 @@ class OpalManager : public PObject
       */
     virtual bool OnMediaFailed(
       OpalConnection & connection,  ///< Connection session is in
-      unsigned sessionId            ///< Session ID of media that stopped.
+      unsigned sessionId,           ///< Session ID of media that stopped.
+      PChannel::Errors error        ///< Error code for failure
     );
   //@}
 
@@ -2187,6 +2188,7 @@ class OpalManager : public PObject
     P_REMOVE_VIRTUAL(bool,OnLocalIncomingCall(OpalCall &),false);
     P_REMOVE_VIRTUAL(bool,OnLocalOutgoingCall(OpalCall &),false);
     P_REMOVE_VIRTUAL(bool,OnMediaFailed(OpalConnection &,unsigned,bool),false);
+    P_REMOVE_VIRTUAL(bool,OnMediaFailed(OpalConnection &,unsigned),false);
 };
 
 

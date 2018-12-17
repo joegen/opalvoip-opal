@@ -94,7 +94,7 @@ class OpalICEMediaTransport : public OpalUDPMediaTransport
         SubChannels             m_subchannel;
     };
     bool InternalHandleICE(SubChannels subchannel, const void * buf, PINDEX len);
-    virtual void InternalRxData(SubChannels subchannel, const PBYTEArray & data);
+    virtual bool InternalRxData(SubChannels subchannel, const PBYTEArray & data);
     virtual bool InternalOpenPinHole(PUDPSocket & socket);
     virtual PChannel * AddWrapperChannels(SubChannels subchannel, PChannel * channel);
 

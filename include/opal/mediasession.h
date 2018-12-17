@@ -472,6 +472,9 @@ class OpalMediaTransport : public PSafeObject, public OpalMediaTransportChannelT
       int * mtu = NULL
     ) = 0;
 
+    /// Get the error code for the last read operation on transport
+    PChannel::Errors GetLastError(SubChannels subchannel) const;
+
 #if OPAL_SRTP
     /**Get encryption keys.
       */
@@ -534,7 +537,7 @@ class OpalMediaTransport : public PSafeObject, public OpalMediaTransportChannelT
   protected:
     virtual void InternalClose();
     virtual void InternalStop();
-    virtual void InternalRxData(SubChannels subchannel, const PBYTEArray & data);
+    virtual bool InternalRxData(SubChannels subchannel, const PBYTEArray & data);
 
     PString       m_name;
     bool          m_remoteBehindNAT;
@@ -585,9 +588,10 @@ class OpalMediaTransport : public PSafeObject, public OpalMediaTransportChannelT
       OpalTransportAddress m_localAddress;
       OpalTransportAddress m_remoteAddress;
       RemoteAddressSources m_remoteAddressSource;
+      PChannel::Errors     m_lastError;
+      bool                 m_receivedData;
 
       PTRACE_THROTTLE(m_throttleReadPacket,4,60000);
-      PTRACE_PARAM(bool m_logFirstRead);
 
 #if defined(__GNUC__) && __cplusplus < 201103
       void operator=(const ChannelInfo &) { }
@@ -631,7 +635,7 @@ class OpalUDPMediaTransport : public OpalMediaTransport
     PUDPSocket * GetSubChannelAsSocket(SubChannels subchannel = e_Media) const;
 
   protected:
-    virtual void InternalRxData(SubChannels subchannel, const PBYTEArray & data);
+    virtual bool InternalRxData(SubChannels subchannel, const PBYTEArray & data);
     virtual bool InternalSetRemoteAddress(const PIPSocket::AddressAndPort & ap, SubChannels subchannel, RemoteAddressSources source);
     virtual bool InternalOpenPinHole(PUDPSocket & socket);
 

@@ -1797,7 +1797,7 @@ void OpalConnection::OnStopMediaPatch(OpalMediaPatch & patch)
 }
 
 
-bool OpalConnection::OnMediaFailed(unsigned sessionId)
+bool OpalConnection::OnMediaFailed(unsigned sessionId, PChannel::Errors error)
 {
   if (IsReleased())
     return false;
@@ -1806,7 +1806,7 @@ bool OpalConnection::OnMediaFailed(unsigned sessionId)
   m_mediaSessionFailed.insert(sessionId);
   m_mediaSessionFailedMutex.Signal();
 
-  return GetEndPoint().GetManager().OnMediaFailed(*this, sessionId);
+  return GetEndPoint().GetManager().OnMediaFailed(*this, sessionId, error);
 }
 
 
