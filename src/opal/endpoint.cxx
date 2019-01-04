@@ -136,8 +136,11 @@ bool OpalEndPoint::SetInitialBandwidth(OpalBandwidth::Direction dir, OpalBandwid
 PBoolean OpalEndPoint::GarbageCollection()
 {
   for (ConnectionDict::iterator it = m_connectionsActive.begin(); it != m_connectionsActive.end(); ++it) {
-    PTRACE_CONTEXT_ID_PUSH_THREAD(it->second);
-    it->second->GarbageCollection();
+    PSafePtr<OpalConnection> conn = it->second;
+    if (conn != NULL) {
+      PTRACE_CONTEXT_ID_PUSH_THREAD(*conn);
+      conn->GarbageCollection();
+    }
   }
 
   return m_connectionsActive.DeleteObjectsToBeRemoved();

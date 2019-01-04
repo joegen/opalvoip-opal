@@ -198,17 +198,25 @@ void OpalMediaPatch::Close()
       return;
   }
 
-  while (m_sinks.GetSize() > 0) {
+  while (!m_sinks.empty()) {
     OpalMediaStreamPtr stream = m_sinks.front().m_stream;
-    UnlockReadWrite(P_DEBUG_LOCATION);
-    if (stream == NULL || !stream->Close()) {
-      // The only way we can get here is if the sink is in the proccess of being closed
-      // but is blocked on the mutex waiting to remove the sink from this patch.
-      // Se we unlock it, and wait for it to do it in the other thread.
-      PThread::Sleep(10);
+    if (stream == NULL)
+      m_sinks.pop_front(); // Not sure how this is possible
+    else {
+      UnlockReadWrite(P_DEBUG_LOCATION);
+
+      // Do outside mutex to avoid possible deadlocks
+      stream->Close();
+
+      if (!LockReadWrite(P_DEBUG_LOCATION))
+        return;
+
+      /* The stream->Close() will usually remove the sink, but sometimes
+         can get blocked on some mutexes. So, if it is still there, we remove
+         it now. */
+      if (!m_sinks.empty() && m_sinks.front().m_stream == stream)
+        m_sinks.pop_front();
     }
-    if (!LockReadWrite(P_DEBUG_LOCATION))
-      return;
   }
   UnlockReadWrite(P_DEBUG_LOCATION);
 
