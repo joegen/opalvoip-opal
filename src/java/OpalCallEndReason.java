@@ -45,6 +45,7 @@ public final class OpalCallEndReason {
   public final static OpalCallEndReason OpalCallEndedByCertificateAuthority = new OpalCallEndReason("OpalCallEndedByCertificateAuthority");
   public final static OpalCallEndReason OpalCallEndedByIllegalAddress = new OpalCallEndReason("OpalCallEndedByIllegalAddress");
   public final static OpalCallEndReason OpalCallEndedByCustomCode = new OpalCallEndReason("OpalCallEndedByCustomCode");
+  public final static OpalCallEndReason OpalCallEndedByMediaTransportFail = new OpalCallEndReason("OpalCallEndedByMediaTransportFail");
 
   public final int swigValue() {
     return swigValue;
@@ -80,7 +81,7 @@ public final class OpalCallEndReason {
     swigNext = this.swigValue+1;
   }
 
-  private static OpalCallEndReason[] swigValues = { OpalCallEndedByLocalUser, OpalCallEndedByNoAccept, OpalCallEndedByAnswerDenied, OpalCallEndedByRemoteUser, OpalCallEndedByRefusal, OpalCallEndedByNoAnswer, OpalCallEndedByCallerAbort, OpalCallEndedByTransportFail, OpalCallEndedByConnectFail, OpalCallEndedByGatekeeper, OpalCallEndedByNoUser, OpalCallEndedByNoBandwidth, OpalCallEndedByCapabilityExchange, OpalCallEndedByCallForwarded, OpalCallEndedBySecurityDenial, OpalCallEndedByLocalBusy, OpalCallEndedByLocalCongestion, OpalCallEndedByRemoteBusy, OpalCallEndedByRemoteCongestion, OpalCallEndedByUnreachable, OpalCallEndedByNoEndPoint, OpalCallEndedByHostOffline, OpalCallEndedByTemporaryFailure, OpalCallEndedByQ931Cause, OpalCallEndedByDurationLimit, OpalCallEndedByInvalidConferenceID, OpalCallEndedByNoDialTone, OpalCallEndedByNoRingBackTone, OpalCallEndedByOutOfService, OpalCallEndedByAcceptingCallWaiting, OpalCallEndedByGkAdmissionFailed, OpalCallEndedByMediaFailed, OpalCallEndedByCallCompletedElsewhere, OpalCallEndedByCertificateAuthority, OpalCallEndedByIllegalAddress, OpalCallEndedByCustomCode };
+  private static OpalCallEndReason[] swigValues = { OpalCallEndedByLocalUser, OpalCallEndedByNoAccept, OpalCallEndedByAnswerDenied, OpalCallEndedByRemoteUser, OpalCallEndedByRefusal, OpalCallEndedByNoAnswer, OpalCallEndedByCallerAbort, OpalCallEndedByTransportFail, OpalCallEndedByConnectFail, OpalCallEndedByGatekeeper, OpalCallEndedByNoUser, OpalCallEndedByNoBandwidth, OpalCallEndedByCapabilityExchange, OpalCallEndedByCallForwarded, OpalCallEndedBySecurityDenial, OpalCallEndedByLocalBusy, OpalCallEndedByLocalCongestion, OpalCallEndedByRemoteBusy, OpalCallEndedByRemoteCongestion, OpalCallEndedByUnreachable, OpalCallEndedByNoEndPoint, OpalCallEndedByHostOffline, OpalCallEndedByTemporaryFailure, OpalCallEndedByQ931Cause, OpalCallEndedByDurationLimit, OpalCallEndedByInvalidConferenceID, OpalCallEndedByNoDialTone, OpalCallEndedByNoRingBackTone, OpalCallEndedByOutOfService, OpalCallEndedByAcceptingCallWaiting, OpalCallEndedByGkAdmissionFailed, OpalCallEndedByMediaFailed, OpalCallEndedByCallCompletedElsewhere, OpalCallEndedByCertificateAuthority, OpalCallEndedByIllegalAddress, OpalCallEndedByCustomCode, OpalCallEndedByMediaTransportFail };
   private static int swigNext = 0;
   private final int swigValue;
   private final String swigName;

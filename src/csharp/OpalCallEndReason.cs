@@ -45,5 +45,6 @@ public enum OpalCallEndReason {
   OpalCallEndedByCallCompletedElsewhere,
   OpalCallEndedByCertificateAuthority,
   OpalCallEndedByIllegalAddress,
-  OpalCallEndedByCustomCode
+  OpalCallEndedByCustomCode,
+  OpalCallEndedByMediaTransportFail
 }
