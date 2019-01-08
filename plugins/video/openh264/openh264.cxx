@@ -915,6 +915,7 @@ class H264_Encoder : public PluginVideoEncoder<MY_CODEC>
 
           case videoFrameTypeSkip :
             PTRACE(5, MY_CODEC_LOG, "Output frame skipped.");
+            flags |= PluginCodec_ReturnCoderLastFrame;
             toLen = 0;
             return true;
 
