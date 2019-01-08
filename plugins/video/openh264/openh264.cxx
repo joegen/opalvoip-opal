@@ -418,10 +418,56 @@ static struct PluginCodec_Option const PacketizationModeSDP_1 =
   "2"                                 // Maximum value
 };
 
+#define CAMERA_VIDEO_REAL_TIME_STR       "Camera"
+#define SCREEN_CONTENT_REAL_TIME_STR     "Screen"
+#define CAMERA_VIDEO_NON_REAL_TIME_STR   "NonRealTimeCamera"
+#define SCREEN_CONTENT_NON_REAL_TIME_STR "NonRealTimeScreen"
+#define INPUT_CONTENT_TYPE_ALL_STR       "InputContent"
+
+static struct PluginCodec_Option const EncodingType =
+{
+  PluginCodec_EnumOption,             // Option type
+  "EncodingType",                     // User visible name
+  false,                              // User Read/Only flag
+  PluginCodec_NoMerge,                // Merge mode
+  "Camera",                           // Initial value
+  NULL,                               // FMTP option name
+  NULL,                               // FMTP default value
+  0,                                  // H.245 generic capability code and bit mask
+  // Enum values, single string of value separated by colons
+  CAMERA_VIDEO_REAL_TIME_STR ":"
+  SCREEN_CONTENT_REAL_TIME_STR ":"
+  CAMERA_VIDEO_NON_REAL_TIME_STR ":"
+  SCREEN_CONTENT_NON_REAL_TIME_STR ":"
+  INPUT_CONTENT_TYPE_ALL_STR
+};
+
+#define LOW_COMPLEXITY_STR    "Low"
+#define MEDIUM_COMPLEXITY_STR "Medium"
+#define HIGH_COMPLEXITY_STR   "High"
+
+static struct PluginCodec_Option const EncodingComplexity =
+{
+  PluginCodec_EnumOption,             // Option type
+  "EncodingComplexity",               // User visible name
+  false,                              // User Read/Only flag
+  PluginCodec_NoMerge,                // Merge mode
+  "Low",                              // Initial value
+  NULL,                               // FMTP option name
+  NULL,                               // FMTP default value
+  0,                                  // H.245 generic capability code and bit mask
+  // Enum values, single string of value separated by colons
+  LOW_COMPLEXITY_STR ":"
+  MEDIUM_COMPLEXITY_STR ":"
+  HIGH_COMPLEXITY_STR
+};
+
 static struct PluginCodec_Option const * const MyOptionTable_0[] = {
   &Profile,
   &Level,
   &ConstraintFlags,
+  &EncodingType,
+  &EncodingComplexity,
   &H241Profiles,
   &H241Level,
   &SDPProfileAndLevel,
@@ -445,6 +491,8 @@ static struct PluginCodec_Option const * const MyOptionTable_1[] = {
   &Profile,
   &Level,
   &ConstraintFlags,
+  &EncodingType,
+  &EncodingComplexity,
   &H241Profiles,
   &H241Level,
   &SDPProfileAndLevel,
@@ -582,6 +630,8 @@ class H264_Encoder : public PluginVideoEncoder<MY_CODEC>
     EProfileIdc m_profile;
     ELevelIdc   m_level;
     unsigned    m_constraints;
+    EUsageType  m_usageType;
+    ECOMPLEXITY_MODE m_complexityMode;
     unsigned    m_sdpMBPS;
     unsigned    m_h241MBPS;
     unsigned    m_maxNALUSize;
@@ -599,6 +649,8 @@ class H264_Encoder : public PluginVideoEncoder<MY_CODEC>
       , m_profile((EProfileIdc)DefaultProfileInt)
       , m_level(LEVEL_3_1)
       , m_constraints(0)
+      , m_usageType(CAMERA_VIDEO_REAL_TIME)
+      , m_complexityMode(LOW_COMPLEXITY)
       , m_sdpMBPS(MAX_MBPS_SDP)
       , m_h241MBPS(MAX_MBPS_H241)
       , m_maxNALUSize(H241_MAX_NALU_SIZE)
@@ -669,6 +721,28 @@ class H264_Encoder : public PluginVideoEncoder<MY_CODEC>
       if (strcasecmp(optionName, ConstraintFlags.m_name) == 0)
         return SetOptionUnsigned(m_constraints, optionValue, 0, 255);
 
+      if (strcasecmp(optionName, EncodingType.m_name) == 0) {
+        static const char * const UsageTypes[] = {
+          CAMERA_VIDEO_REAL_TIME_STR,
+          SCREEN_CONTENT_REAL_TIME_STR,
+          CAMERA_VIDEO_NON_REAL_TIME_STR,
+          SCREEN_CONTENT_NON_REAL_TIME_STR,
+          INPUT_CONTENT_TYPE_ALL_STR,
+          NULL
+        };
+        return SetOptionEnum(m_usageType, UsageTypes, optionValue);
+      }
+
+      if (strcasecmp(optionName, EncodingComplexity.m_name) == 0) {
+        static const char * const ComplexityNames[] = {
+          LOW_COMPLEXITY_STR,
+          MEDIUM_COMPLEXITY_STR,
+          HIGH_COMPLEXITY_STR,
+          NULL
+        };
+        return SetOptionEnum(m_complexityMode, ComplexityNames, optionValue);
+      }
+
       if (
 #ifdef PLUGIN_CODEC_VERSION_INTERSECT
           strcasecmp(optionName, PLUGINCODEC_MEDIA_PACKETIZATIONS) == 0 ||
@@ -701,7 +775,7 @@ class H264_Encoder : public PluginVideoEncoder<MY_CODEC>
         return true;
       }
 
-      if (strcasecmp(optionName, "Protocol") == 0) {
+      if (strcasecmp(optionName, PLUGINCODEC_OPTION_PROTOCOL) == 0) {
         m_isH323 = strstr(optionValue, "323") != NULL;
         return true;
       }
@@ -717,27 +791,31 @@ class H264_Encoder : public PluginVideoEncoder<MY_CODEC>
 
       SEncParamExt param;
       m_encoder->GetDefaultParams(&param);
-      param.iUsageType = CAMERA_VIDEO_REAL_TIME;
+      param.iUsageType = m_usageType;
+      param.iComplexityMode = m_complexityMode;
       param.iPicWidth = m_width;
       param.iPicHeight = m_height;
-      param.iTargetBitrate = param.iMaxBitrate = m_maxBitRate;
+      param.iMaxBitrate = UNSPECIFIED_BIT_RATE;
+      param.iTargetBitrate = m_maxBitRate;
       param.iRCMode = RC_BITRATE_MODE;
       param.fMaxFrameRate = (float)PLUGINCODEC_VIDEO_CLOCK/m_frameTime;
       param.uiIntraPeriod = m_keyFramePeriod;
       param.bPrefixNalAddingCtrl = false;
+      param.uiMaxNalSize = m_maxNALUSize;
 
       param.sSpatialLayers[0].uiProfileIdc = m_profile;
       param.sSpatialLayers[0].uiLevelIdc = m_level;
       param.sSpatialLayers[0].iVideoWidth = m_width;
       param.sSpatialLayers[0].iVideoHeight = m_height;
       param.sSpatialLayers[0].fFrameRate = param.fMaxFrameRate;
-      param.sSpatialLayers[0].iMaxSpatialBitrate = param.sSpatialLayers[0].iSpatialBitrate = m_maxBitRate;
+      param.sSpatialLayers[0].iMaxSpatialBitrate = param.iMaxBitrate;
+      param.sSpatialLayers[0].iSpatialBitrate = param.iTargetBitrate;
 
       unsigned mode = m_isH323 ? m_packetisationModeH323 : m_packetisationModeSDP;
       switch (mode) {
         case 0 :
           param.sSpatialLayers[0].sSliceArgument.uiSliceMode = SM_SIZELIMITED_SLICE;
-          param.sSpatialLayers[0].sSliceArgument.uiSliceSizeConstraint = param.uiMaxNalSize = m_maxNALUSize;
+          param.sSpatialLayers[0].sSliceArgument.uiSliceSizeConstraint = param.uiMaxNalSize;
           break;
 
         case 1 :

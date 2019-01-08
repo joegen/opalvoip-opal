@@ -854,6 +854,22 @@ class PluginCodec : public PluginCodec_Utilities
     }
 
 
+    template <typename T>
+    bool SetOptionEnum(T & oldValue, const char * const * names, const char * optionValue)
+    {
+      for (int newValue = 0; names[newValue] != NULL; ++newValue) {
+        if (strcasecmp(optionValue, names[newValue]) == 0) {
+          if (oldValue != newValue) {
+            oldValue = static_cast<T>(newValue);
+            this->m_optionsSame = false;
+          }
+          return true;
+        }
+      }
+      return false;
+    }
+
+
     template <class CodecClass> static void * Create_s(const PluginCodec_Definition * defn)
     {
       CodecClass * codec = new CodecClass(defn);
