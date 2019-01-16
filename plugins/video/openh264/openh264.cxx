@@ -970,7 +970,7 @@ class H264_Decoder : public PluginVideoDecoder<MY_CODEC>
         return true;
 
       if (m_encapsulation.GetLength() > 0) {
-        DECODING_STATE status = m_decoder->DecodeFrame2(m_encapsulation.GetBuffer(),
+        DECODING_STATE status = m_decoder->DecodeFrameNoDelay(m_encapsulation.GetBuffer(),
                                                         (int)m_encapsulation.GetLength(),
                                                         m_bufferData,
                                                         &m_bufferInfo);
