@@ -459,7 +459,11 @@ class OpalLocalEndPoint : public OpalEndPoint
 
     CallbackMap m_useCallback;
 
-    typedef map<OpalMediaType, Synchronicity[2]> SynchronicityMap;
+    // Need this stupid structure because some compilers barf when array in std::map directly
+    struct SynchronicityWrap {
+      Synchronicity m_default[2];
+    };
+    typedef std::map<OpalMediaType, SynchronicityWrap> SynchronicityMap;
     SynchronicityMap m_defaultSynchronicity;
 
 #if OPAL_HAS_H281

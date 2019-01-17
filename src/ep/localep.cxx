@@ -252,13 +252,13 @@ bool OpalLocalEndPoint::CreateVideoOutputDevice(const OpalConnection & connectio
 OpalLocalEndPoint::Synchronicity OpalLocalEndPoint::GetDefaultSynchronicity(const OpalMediaType & mediaType, bool isSource) const
 {
   SynchronicityMap::const_iterator it = m_defaultSynchronicity.find(mediaType);
-  return it != m_defaultSynchronicity.end() ? it->second[isSource] : e_Asynchronous;
+  return it != m_defaultSynchronicity.end() ? it->second.m_default[isSource] : e_Asynchronous;
 }
 
 
 void OpalLocalEndPoint::SetDefaultSynchronicity(const OpalMediaType & mediaType, bool isSource, Synchronicity sync)
 {
-  m_defaultSynchronicity[mediaType][isSource] = sync;
+  m_defaultSynchronicity[mediaType].m_default[isSource] = sync;
 }
 
 
@@ -271,7 +271,8 @@ OpalLocalEndPoint::Synchronicity OpalLocalEndPoint::GetDefaultAudioSynchronicity
 
 void OpalLocalEndPoint::SetDefaultAudioSynchronicity(Synchronicity sync)
 {
-  m_defaultSynchronicity[OpalMediaType::Audio()][false] = m_defaultSynchronicity[OpalMediaType::Audio()][true] = sync;
+  SetDefaultSynchronicity(OpalMediaType::Audio(), false, sync);
+  SetDefaultSynchronicity(OpalMediaType::Audio(), true,  sync);
 }
 
 
