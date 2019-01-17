@@ -884,13 +884,20 @@ class H264_Encoder : public PluginVideoEncoder<MY_CODEC>
         PluginCodec_RTP from(fromPtr, fromLen);
         PluginCodec_Video_FrameHeader * header = from.GetVideoHeader();
 
+        // if the incoming data has changed size, tell the encoder
+        if (header->width != m_width || header->height != m_height) {
+            m_width = header->width;
+            m_height = header->height;
+            OnChangedOptions();
+        }
+
         unsigned planeWidth = (header->width+1)&~1;
         unsigned planeHeight = (header->height+1)&~1;
 
         SSourcePicture picture;
         picture.iColorFormat = videoFormatI420;	// color space type
-        picture.iPicWidth = m_width = header->width;
-        picture.iPicHeight = m_height = header->height;
+        picture.iPicWidth = header->width;
+        picture.iPicHeight = header->height;
         picture.iStride[0] = planeWidth;
         picture.iStride[1] = picture.iStride[2] = planeWidth/2;
         picture.pData[0] = from.GetVideoFrameData();
@@ -1042,7 +1049,7 @@ class H264_Decoder : public PluginVideoDecoder<MY_CODEC>
         return true;
 
       if (m_encapsulation.GetLength() > 0) {
-        DECODING_STATE status = m_decoder->DecodeFrame2(m_encapsulation.GetBuffer(),
+        DECODING_STATE status = m_decoder->DecodeFrameNoDelay(m_encapsulation.GetBuffer(),
                                                         (int)m_encapsulation.GetLength(),
                                                         m_bufferData,
                                                         &m_bufferInfo);
