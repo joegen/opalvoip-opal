@@ -35,10 +35,8 @@
 
 
 OpalSockEndPoint::OpalSockEndPoint(OpalManager & manager, const char * prefix)
-  : OpalLocalEndPoint(manager, prefix)
+  : OpalLocalEndPoint(manager, prefix, true, e_Asynchronous)
 {
-  m_defaultAudioSynchronicity = e_Asynchronous;
-  m_defaultVideoSourceSynchronicity = e_Asynchronous;
 }
 
 

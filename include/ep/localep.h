@@ -64,6 +64,35 @@ class OpalLocalEndPoint : public OpalEndPoint
 {
     PCLASSINFO(OpalLocalEndPoint, OpalEndPoint);
   public:
+    /** Indicate the synchronous mode for I/O.
+        This indicates that the OnReadMediaXXX and OnWriteMediaXXX functions
+        will execute blocking to the correct real time synchronisation.
+        If GetSynchronicity() returns e_Synchronous, then, for example, when
+        OnWriteMediaData() is sent 320 bytes of PCM data, it will block for
+        20 milliseconds.
+
+        If GetSynchronicity() returns e_SimulateSynchronous, then the system will try and
+        simulate the correct timing using the operating system sleep function.
+        This is not desirable as this function is notoriously inaccurate, and
+        OPAL does it's best to compensate, but very often there is no other
+        choice.
+
+        Note, it is important for the correct oeprating of the jitter buffer
+        that one of the above two modes is used for audio.
+
+        If GetSynchronicity() returns e_Asynchronous, then the system will indicate
+        that blocking is not required in any way. For example, when playing video,
+        this is done as fast as data comes in from the network and there is no
+        real time pacing required.
+    */
+    enum Synchronicity {
+      e_Synchronous,        ///< Functions will block for correct real time
+      e_Asynchronous,       ///< Functions will not block, and do not require any real time handling.
+      e_SimulateSynchronous,///< Functions wlll not block, but do require real time handling.
+      e_PushSynchronous     /**< For source media streams, no callback is made and no media patch
+                            thread is used. For sink stream this is treated like e_Synchonous */
+    };
+
   /**@name Construction */
   //@{
     /**Create a new endpoint.
@@ -71,7 +100,8 @@ class OpalLocalEndPoint : public OpalEndPoint
     OpalLocalEndPoint(
       OpalManager & manager,         ///<  Manager of all endpoints.
       const char * prefix = OPAL_LOCAL_PREFIX, ///<  Prefix for URL style address strings
-      bool useCallbacks = true       ///<  Indicate all media is directed to the callback virtual functions
+      bool useCallbacks = true,      ///<  Indicate all media is directed to the callback virtual functions
+      Synchronicity defaultSynchronicity = e_Synchronous  ///< Default synchonicity for audio/video
     );
 
     /**Destroy endpoint.
@@ -337,33 +367,6 @@ class OpalLocalEndPoint : public OpalEndPoint
     );
 #endif
 
-    /**Indicate the synchronous mode for I/O.
-       This indicates that the OnReadMediaXXX and OnWriteMediaXXX functions
-       will execute blocking to the correct real time synchronisation.
-       If GetSynchronicity() returns e_Synchronous, then, for example, when
-       OnWriteMediaData() is sent 320 bytes of PCM data, it will block for
-       20 milliseconds.
-
-       If GetSynchronicity() returns e_SimulateSynchronous, then the system will try and
-       simulate the correct timing using the operating system sleep function.
-       This is not desirable as this function is notoriously inaccurate, and
-       OPAL does it's best to compensate, but very often there is no other
-       choice.
-
-       Note, it is important for the correct oeprating of the jitter buffer
-       that one of the above two modes is used for audio.
-
-       If GetSynchronicity() returns e_Asynchronous, then the system will indicate
-       that blocking is not required in any way. For example, when playing video,
-       this is done as fast as data comes in from the network and there is no
-       real time pacing required.
-      */
-    enum Synchronicity {
-      e_Synchronous,        ///< Functions will block for correct real time
-      e_Asynchronous,       ///< Functions will not block, and do not require any real time handling.
-      e_SimulateSynchronous ///< Functions wlll not block, but do require real time handling.
-    };
-
     /**Indicate the I/O synchronous mode.
        See Synchronicity for more details.
 
@@ -380,21 +383,33 @@ class OpalLocalEndPoint : public OpalEndPoint
 
   /**@name Member access */
   //@{
+    /**Get default synchronous mode for media sources/sinks.
+    */
+    Synchronicity GetDefaultSynchronicity(const OpalMediaType & mediaType, bool isSource) const;
+
+    /**Set default synchronous mode for media sources/sinks.
+    */
+    void SetDefaultSynchronicity(const OpalMediaType & mediaType, bool isSource, Synchronicity sync);
+
     /**Get default synchronous mode for audio sources and sinks.
-      */
-    Synchronicity GetDefaultAudioSynchronicity() const { return m_defaultAudioSynchronicity; }
+       For backward combatibility, should use GetDefaultSynchronicity().
+    */
+    Synchronicity GetDefaultAudioSynchronicity() const;
 
     /**Set default synchronous mode for audio sources and sinks.
-      */
-    void SetDefaultAudioSynchronicity(Synchronicity sync) { m_defaultAudioSynchronicity = sync; }
+       For backward combatibility, should use SetDefaultSynchronicity().
+    */
+    void SetDefaultAudioSynchronicity(Synchronicity sync);
 
     /**Get default synchronous mode for video sources.
-      */
-    Synchronicity GetDefaultVideoSourceSynchronicity() const { return m_defaultVideoSourceSynchronicity; }
+       For backward combatibility, should use GetDefaultSynchronicity().
+    */
+    Synchronicity GetDefaultVideoSourceSynchronicity() const;
 
     /**Set default synchronous mode for video sources.
-      */
-    void SetDefaultVideoSourceSynchronicity(Synchronicity sync) { m_defaultVideoSourceSynchronicity = sync; }
+       For backward combatibility, should use SetDefaultSynchronicity().
+    */
+    void SetDefaultVideoSourceSynchronicity(Synchronicity sync);
 
     /**Indicate OnAlerting() is be deferred or immediate.
       */
@@ -444,8 +459,8 @@ class OpalLocalEndPoint : public OpalEndPoint
 
     CallbackMap m_useCallback;
 
-    Synchronicity m_defaultAudioSynchronicity;
-    Synchronicity m_defaultVideoSourceSynchronicity;
+    typedef map<OpalMediaType, Synchronicity[2]> SynchronicityMap;
+    SynchronicityMap m_defaultSynchronicity;
 
 #if OPAL_HAS_H281
     PNotifier m_farEndCameraCapabilityChangedNotifier;
@@ -898,7 +913,20 @@ class OpalLocalMediaStream : public OpalMediaStream, public OpalMediaStreamPacin
        Returns true for LID streams.
       */
     virtual PBoolean IsSynchronous() const;
-  //@}
+
+    /**Indicate if the media stream requires a OpalMediaPatch thread (active patch).
+    This is called on the source/sink stream and is passed the sink/source
+    stream that the patch will initially be using. The function could
+    conditionally require the patch thread to execute a thread reading and
+    writing data, or prevent  it from doing so as it can do so in hardware
+    in some way, e.g. both streams are on the same OpalLineInterfaceDevice.
+
+    The default behaviour simply returns true.
+    */
+    virtual PBoolean RequiresPatchThread(
+      OpalMediaStream * stream  ///< Other stream in patch
+    ) const;
+    //@}
 
   protected:
     virtual void InternalClose() { }
