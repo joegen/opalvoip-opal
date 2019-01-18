@@ -37,7 +37,7 @@
 #include "svc/codec_ver.h"
 
 #include <iomanip>
-
+#include <algorithm>
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -801,7 +801,6 @@ class H264_Encoder : public PluginVideoEncoder<MY_CODEC>
       param.fMaxFrameRate = (float)PLUGINCODEC_VIDEO_CLOCK/m_frameTime;
       param.uiIntraPeriod = m_keyFramePeriod;
       param.bPrefixNalAddingCtrl = false;
-      param.uiMaxNalSize = m_maxNALUSize;
 
       param.sSpatialLayers[0].uiProfileIdc = m_profile;
       param.sSpatialLayers[0].uiLevelIdc = m_level;
@@ -815,11 +814,14 @@ class H264_Encoder : public PluginVideoEncoder<MY_CODEC>
       switch (mode) {
         case 0 :
           param.sSpatialLayers[0].sSliceArgument.uiSliceMode = SM_SIZELIMITED_SLICE;
-          param.sSpatialLayers[0].sSliceArgument.uiSliceSizeConstraint = param.uiMaxNalSize;
+          param.sSpatialLayers[0].sSliceArgument.uiSliceSizeConstraint = param.uiMaxNalSize =
+                           std::min(m_maxRTPSize-PluginCodec_RTP_MinHeaderSize, m_maxNALUSize);
+
           break;
 
         case 1 :
           param.sSpatialLayers[0].sSliceArgument.uiSliceMode = SM_SINGLE_SLICE;
+          param.uiMaxNalSize = m_maxNALUSize;
           break;
 
         default :
