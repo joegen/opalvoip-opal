@@ -658,7 +658,7 @@ class H264_Encoder : public PluginVideoEncoder<MY_CODEC>
       if (strcasecmp(optionName, Level.m_name) == 0) {
         for (size_t i = 0; i < sizeof(LevelInfo)/sizeof(LevelInfo[0]); i++) {
           if (strcasecmp(optionValue, LevelInfo[i].m_Name) == 0) {
-            m_level = (ELevelIdc)(i+1);
+            m_level = (ELevelIdc)LevelInfo[i].m_H264;
             m_optionsSame = false;
             return true;
           }
