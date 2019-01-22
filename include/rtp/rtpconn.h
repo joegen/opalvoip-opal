@@ -278,6 +278,10 @@ class OpalRTPConnection : public OpalConnection
     virtual void AddAudioVideoGroup(
       const PString & id = OpalMediaSession::GetBundleGroupId()
     );
+
+    /**Set the media stream identifiers for the audio/video sessions
+      */
+    virtual void SetAudioVideoMediaStreamIDs(OpalRTPSession::Direction direction);
 #endif
 
     /**Set QoS on session.

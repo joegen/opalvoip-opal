@@ -78,6 +78,7 @@ PStringList OpalSDPEndPoint::GetAvailableStringOptions() const
       OPAL_OPT_OFFER_ICE,
     #endif
     OPAL_OPT_AV_BUNDLE,
+    OPAL_OPT_USE_MEDIA_STREAMS,
     OPAL_OPT_INACTIVE_AUDIO_FLOW,
     OPAL_OPT_MULTI_SSRC
   };
@@ -590,6 +591,8 @@ bool OpalSDPConnection::OnSendOfferSDP(SDPSessionDescription & sdpOut, bool offe
 #if OPAL_VIDEO
     if (m_stringOptions.GetBoolean(OPAL_OPT_AV_BUNDLE))
       AddAudioVideoGroup();
+    if (m_stringOptions.GetBoolean(OPAL_OPT_USE_MEDIA_STREAMS))
+      SetAudioVideoMediaStreamIDs(OpalRTPSession::e_Sender);
 #endif
 
     OpalMediaTransportPtr bundledTransport;
@@ -865,6 +868,11 @@ bool OpalSDPConnection::OnSendAnswerSDP(const SDPSessionDescription & sdpOffer, 
 #endif // OPAL_SRTP
 
   bundleMergeInfo.RemoveSessionSSRCs(m_sessions);
+
+#if OPAL_VIDEO
+  if (m_stringOptions.GetBoolean(OPAL_OPT_USE_MEDIA_STREAMS))
+    SetAudioVideoMediaStreamIDs(OpalRTPSession::e_Sender);
+#endif // OPAL_VIDEO
 
   // Fill in refusal for media sessions we didn't like
   bool gotNothing = true;
