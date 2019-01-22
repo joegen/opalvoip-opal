@@ -2518,7 +2518,7 @@ namespace OpalRtx
 #if OPAL_VIDEO
                                                     mediaType == OpalMediaType::Video() ? VideoClockRate :
 #endif
-                                                    AudioClockRate), true)
+                                                    AudioClockRate, 0, true), true)
     {
       OpalMediaOptionUnsigned * opt = new OpalMediaOptionUnsigned(AssociatedPayloadTypeOption(),
                                           true, OpalMediaOption::EqualMerge, 0, 0, RTP_DataFrame::MaxPayloadType);
