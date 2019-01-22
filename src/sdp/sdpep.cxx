@@ -1196,6 +1196,7 @@ SDPMediaDescription * OpalSDPConnection::OnSendAnswerSDPSession(SDPMediaDescript
     }
   }
 
+  FinaliseRtx(sendStream, localMedia.get());
   FinaliseRtx(recvStream, localMedia.get());
 
   if (mediaType == OpalMediaType::Audio()) {
@@ -1406,6 +1407,7 @@ bool OpalSDPConnection::OnReceivedAnswerSDPSession(const SDPMediaDescription * m
   }
 
   FinaliseRtx(sendStream, NULL);
+  FinaliseRtx(recvStream, NULL);
 
   PINDEX maxFormats = 1;
   if (mediaType == OpalMediaType::Audio()) {
