@@ -50,6 +50,14 @@ class OpalSDPHTTPConnection;
 */
 #define OPAL_OPT_AV_BUNDLE "AV-Bundle"
 
+/**Enable audio/video media stream identifiers to SDP.
+   This flag places meda stream identifiers into the SDP so that corresponding
+   audio and video streams can be linked, e.g. for lip sync.
+
+   Defaults to false.
+*/
+#define OPAL_OPT_USE_MEDIA_STREAMS "Use-Media-Stream"
+
 /**Enable multiple sync sources in single session.
    This allows multiple SSRC values to be attached to a single SDP media
    descriptor, m= line. Each SSRC must use the same media format selected for
