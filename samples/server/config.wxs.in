@@ -32,11 +32,11 @@
         <?define ImageMagickDir = "$(env.ProgramW6432)\imagemagick-7.0.5-q16" ?>
   <?endif?>
 
-    <?define AVFORMATVer = "57" ?>
-    <?define AVCODECVer = "57" ?>
-    <?define AVUTILVer = "55" ?>
-    <?define SWRESAMPLEVer = "2" ?>
-    <?define SWSCALEVer = "4" ?>
+    <?define AVFORMATVer = "58" ?>
+    <?define AVCODECVer = "58" ?>
+    <?define AVUTILVer = "56" ?>
+    <?define SWRESAMPLEVer = "3" ?>
+    <?define SWSCALEVer = "5" ?>
   
     <?define PTLibDir = "..\..\..\ptlib" ?>
     <?define OPALDir = "..\.." ?>
