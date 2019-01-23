@@ -756,7 +756,7 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
           "Interactive Voice Response directory to cache Text To Speech phrases", 1, 50));
     ivrEP->SetRecordDirectory(rsrc->AddStringField(IVRRecordDirKey, 0, ivrEP->GetRecordDirectory(),
           "Interactive Voice Response directory to save recorded messages", 1, 50));
-#if OPAL_VXML_VIDEO
+#if P_VXML_VIDEO
     m_signLanguageAnalyserDLL = rsrc->AddStringField(SignLanguageAnalyserDLLKey, 0, m_signLanguageAnalyserDLL,
           "Interactive Voice Response Sign Language Library", 1, 50);
     PVXMLSession::SetSignLanguageAnalyser(m_signLanguageAnalyserDLL);
