@@ -2824,9 +2824,12 @@ void OpalManager_C::OnUserInputTone(OpalConnection & connection, char tone, int 
     PostMessage(message);
   }
 
-  connection.GetStringOptions().SetBoolean(AllowOnUserInputString, false);
+  OpalConnection::StringOptions options = connection.GetStringOptions();
+  options.SetBoolean(AllowOnUserInputString, false);
+  connection.SetStringOptions(options, true);
   OpalManager::OnUserInputTone(connection, tone, duration);
-  connection.GetStringOptions().Remove(AllowOnUserInputString);
+  options.Remove(AllowOnUserInputString);
+  connection.SetStringOptions(options, true);
 }
 
 

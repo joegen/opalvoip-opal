@@ -458,7 +458,7 @@ OpalConnection * OpalEndPoint::AddConnection(OpalConnection * connection)
     return NULL;
   }
 
-  connection->SetStringOptions(m_defaultStringOptions, false);
+  connection->OnApplyStringOptions();
 
   m_connectionsActive.SetAt(token, connection);
 
