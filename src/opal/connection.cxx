@@ -159,8 +159,10 @@ OpalConnection::OpalConnection(OpalCall & call,
 
   m_ownerCall.m_connectionsActive.Append(this);
 
+  m_stringOptions = ep.GetDefaultStringOptions();
+  m_stringOptions.MakeUnique();
   if (stringOptions != NULL)
-    m_stringOptions = *stringOptions;
+    m_stringOptions.Merge(*stringOptions, PStringOptions::e_MergeOverwrite);
 
 #if OPAL_PTLIB_DTMF
   switch (options&DetectInBandDTMFOptionMask) {
@@ -1687,23 +1689,25 @@ void OpalConnection::SetPhase(Phases phaseToSet)
 
 void OpalConnection::SetStringOptions(const StringOptions & options, bool overwrite)
 {
-  if (overwrite)
+  if (overwrite) {
     m_stringOptions = options;
+    m_stringOptions.MakeUnique();
+  }
   else {
     if (options.IsEmpty())
       return;
-    for (PStringToString::const_iterator it = options.begin(); it != options.end(); ++it)
-      m_stringOptions.SetAt(it->first, it->second);
+    m_stringOptions.Merge(options, PStringOptions::e_MergeOverwrite);
   }
 
   OnApplyStringOptions();
 }
 
+
 void OpalConnection::OnApplyStringOptions()
 {
   m_endpoint.GetManager().OnApplyStringOptions(*this, m_stringOptions);
 
-  PTRACE_IF(4, !m_stringOptions.IsEmpty(), "Applying string options:\n" << m_stringOptions);
+  PTRACE_IF(4, !m_stringOptions.IsEmpty(), "Applying string options to " << *this << ":\n" << m_stringOptions);
 
   if (LockReadWrite()) {
     PCaselessString str;

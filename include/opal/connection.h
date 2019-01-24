@@ -1905,7 +1905,6 @@ class OpalConnection : public PSafeObject
 
     /// Get the string options associated with this connection.
     const StringOptions & GetStringOptions() const { return m_stringOptions; }
-          StringOptions & GetStringOptions()       { return m_stringOptions; }
 
     /// Set the string options associated with this connection.
     void SetStringOptions(
