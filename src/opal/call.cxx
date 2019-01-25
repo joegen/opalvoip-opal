@@ -164,6 +164,7 @@ void OpalCall::OnReleased(OpalConnection & connection)
 {
   PTRACE(3, "OnReleased " << connection);
   m_connectionsActive.Remove(&connection);
+  m_isEstablished = false;
 
   PSafePtr<OpalConnection> other = m_connectionsActive.GetAt(0, PSafeReference);
   if (other != NULL && other->GetPhase() == OpalConnection::ReleasingPhase) {
