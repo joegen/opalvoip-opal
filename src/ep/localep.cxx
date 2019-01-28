@@ -315,7 +315,7 @@ void OpalLocalConnection::OnApplyStringOptions()
 
   PSafePtr<OpalConnection> otherConnection = GetOtherPartyConnection();
   if (otherConnection != NULL && dynamic_cast<OpalLocalConnection*>(&*otherConnection) == NULL) {
-    PTRACE(4, "Passing string options to " << *otherConnection);
+    PTRACE(4, "Passing " << m_stringOptions.size() << " string options to " << *otherConnection);
     otherConnection->SetStringOptions(m_stringOptions, false);
   }
 }

@@ -362,7 +362,7 @@ void OpalRTPConsoleEndPoint::CmdStringOption(PCLI::Arguments & args, P_INT_PTR)
   }
 
   if (args.HasOption('c'))
-    m_endpoint.SetDefaultStringOptions(OpalConnection::StringOptions());
+    m_endpoint.SetDefaultStringOptions(OpalConnection::StringOptions(), true);
 
   if (args.GetCount() > 0)
     m_endpoint.SetDefaultStringOption(args[0], args.GetParameters(1).ToString());
