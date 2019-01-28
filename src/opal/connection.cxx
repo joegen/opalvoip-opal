@@ -1707,7 +1707,19 @@ void OpalConnection::OnApplyStringOptions()
 {
   m_endpoint.GetManager().OnApplyStringOptions(*this, m_stringOptions);
 
-  PTRACE_IF(4, !m_stringOptions.IsEmpty(), "Applying string options to " << *this << ":\n" << m_stringOptions);
+#if PTRACING
+  static unsigned const Level = 4;
+  if (PTrace::CanTrace(Level)) {
+    ostream & trace = PTRACE_BEGIN(Level);
+    trace << "Applying ";
+    if (m_stringOptions.IsEmpty())
+      trace << "default ";
+    trace << "string options to " << *this;
+    if (!m_stringOptions.IsEmpty())
+      trace << ":\n" << m_stringOptions;
+    trace << PTrace::End;
+  }
+#endif
 
   if (LockReadWrite()) {
     PCaselessString str;

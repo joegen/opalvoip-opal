@@ -811,6 +811,15 @@ void OpalEndPoint::OnMessageReceived(const OpalIM & message)
 #endif // OPAL_HAS_IM
 
 
+void OpalEndPoint::SetDefaultStringOptions(const OpalConnection::StringOptions & opts, bool overwrite)
+{
+  if (overwrite)
+    m_defaultStringOptions = opts;
+  else
+    m_defaultStringOptions.Merge(opts, PStringOptions::e_MergeOverwrite);
+}
+
+
 PStringList OpalEndPoint::GetAvailableStringOptions() const
 {
   static char const * const StringOpts[] = {

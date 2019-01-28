@@ -897,7 +897,10 @@ class OpalEndPoint : public PObject
 
     /**Set the default options for created connections.
       */
-    void SetDefaultStringOptions(const OpalConnection::StringOptions & opts) { m_defaultStringOptions = opts; }
+    void SetDefaultStringOptions(
+      const OpalConnection::StringOptions & opts, ///< Options to set
+      bool overwrite = false
+    );
 
     /**Set the default option for created connections.
       */
