@@ -52,12 +52,7 @@ PSafePtr<OpalConnection> OpalSockEndPoint::MakeConnection(OpalCall & call,
                                      OpalConnection::StringOptions * stringOptions)
 {
   OpalConnection::StringOptions localStringOptions;
-
-  // First strip of the prefix if present
-  if (remoteParty.Find(GetPrefixName() + ":") == 0)
-    PURL::SplitVars(remoteParty.Mid(GetPrefixName().GetLength() + 1), localStringOptions, ',', '=');
-  else
-    PURL::SplitVars(remoteParty, localStringOptions, ',', '=');
+  PURL::SplitVars(StripPrefixName(remoteParty), localStringOptions, ',', '=');
 
   if (stringOptions != NULL)
     localStringOptions.Merge(*stringOptions, PStringToString::e_MergeAppend);

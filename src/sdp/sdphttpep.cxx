@@ -101,7 +101,7 @@ PSafePtr<OpalConnection> OpalSDPHTTPEndPoint::MakeConnection(OpalCall & call,
     return NULL;
   }
 
-  connection->m_destination = party;
+  connection->m_destination = StripPrefixName(party);
   return connection;
 }
 
@@ -182,6 +182,8 @@ OpalSDPHTTPConnection::~OpalSDPHTTPConnection()
 
 PBoolean OpalSDPHTTPConnection::SetUpConnection()
 {
+  PTRACE(3, "Setting up SDP over HTTP connection to " << m_destination << " on " << *this);
+
   PHTTPClient http;
   if (!http.ConnectURL(m_destination))
     return false;

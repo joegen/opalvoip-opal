@@ -899,12 +899,7 @@ bool OpalMixerEndPoint::GetConferenceStates(OpalConferenceStates & states, const
     }
   }
   else {
-    PSafePtr<OpalMixerNode> node;
-    if (name.NumCompare(GetPrefixName()+':') == EqualTo)
-      node = m_nodesByUID.Find(name.Mid(GetPrefixName().GetLength()+1), PSafeReadOnly);
-    else
-      node = m_nodesByName.Find(name, PSafeReadOnly);
-
+    PSafePtr<OpalMixerNode> node = m_nodesByName.Find(StripPrefixName(name), PSafeReadOnly);
     if (node != NULL) {
       states.push_back(OpalConferenceState());
       node->GetConferenceState(states.back());

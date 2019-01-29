@@ -758,6 +758,16 @@ PStringList OpalEndPoint::GetNetworkURIs(const PString & name) const
 }
 
 
+PString OpalEndPoint::StripPrefixName(const PString & partyName) const
+{
+  PINDEX prefixLength = m_prefixName.GetLength();
+  return partyName.GetLength() > prefixLength &&
+         partyName[prefixLength] == ':' &&
+         partyName.NumCompare(m_prefixName, prefixLength) == EqualTo
+       ? partyName.Mid(prefixLength+1) : partyName;
+}
+
+
 bool OpalEndPoint::FindListenerForProtocol(const char * protoPrefix, OpalTransportAddress & addr)
 {
   OpalTransportAddress compatibleTo("*", 0, protoPrefix);

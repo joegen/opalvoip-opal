@@ -825,6 +825,9 @@ class OpalEndPoint : public PObject
       const PString & name
     ) const;
 
+    /// Strip the prefix off the party name.
+    PString StripPrefixName(const PString & partyName) const;
+
     /** Execute garbage collection for endpoint.
         Returns true if all garbage has been collected.
         Default behaviour deletes the objects in the connectionsActive list.
