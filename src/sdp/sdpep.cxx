@@ -592,7 +592,7 @@ bool OpalSDPConnection::OnSendOfferSDP(SDPSessionDescription & sdpOut, bool offe
     if (m_stringOptions.GetBoolean(OPAL_OPT_AV_BUNDLE))
       AddAudioVideoGroup();
     if (m_stringOptions.GetBoolean(OPAL_OPT_USE_MEDIA_STREAMS))
-      SetAudioVideoMediaStreamIDs(OpalRTPSession::e_Receiver);
+      SetAudioVideoMediaStreamIDs(OpalRTPSession::e_Sender);
 #endif
 
     OpalMediaTransportPtr bundledTransport;

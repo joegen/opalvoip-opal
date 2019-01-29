@@ -478,9 +478,9 @@ void OpalRTPConnection::SetAudioVideoMediaStreamIDs(OpalRTPSession::Direction di
     return;
 
   PString id = PGloballyUniqueID().AsString();
+  PTRACE(3, "Setting " << direction << " A/V media stream ID to \"" << id << "\" on " << *this);
   audioSession->SetMediaStreamId(id, 0, direction);
   videoSession->SetMediaStreamId(id, 0, direction);
-  PTRACE(4, "Setting A/V media stream ID to " << id);
 }
 
 #endif // OPAL_VIDEO

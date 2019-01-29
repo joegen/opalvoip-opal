@@ -1340,7 +1340,8 @@ void OpalRTPSession::SetMediaStreamId(const PString & id, RTP_SyncSourceId ssrc,
       info->m_mediaTrackId = PSTRSTRM(id << '+' << m_mediaType);
     info->m_mediaStreamId = id;
     info->m_mediaStreamId.MakeUnique();
-    PTRACE(4, *this << "set MediaStream id for SSRC=" << RTP_TRACE_SRC(ssrc) << " to \"" << id << '"');
+    PTRACE(4, *this << "set MediaStream id for " << dir <<
+           " SSRC=" << RTP_TRACE_SRC(info->m_sourceIdentifier) << " to \"" << id << '"');
   }
 }
 
@@ -1360,7 +1361,8 @@ void OpalRTPSession::SetMediaTrackId(const PString & id, RTP_SyncSourceId ssrc, 
   if (GetSyncSource(ssrc, dir, info)) {
     info->m_mediaTrackId = id;
     info->m_mediaTrackId.MakeUnique();
-    PTRACE(4, *this << "set MediaStreamTrack id for SSRC=" << RTP_TRACE_SRC(ssrc) << " to \"" << id << '"');
+    PTRACE(4, *this << "set MediaStreamTrack id for " << dir <<
+           " SSRC=" << RTP_TRACE_SRC(info->m_sourceIdentifier) << " to \"" << id << '"');
   }
 }
 
@@ -1416,7 +1418,7 @@ bool OpalRTPSession::AddHeaderExtension(const RTPHeaderExtensionInfo & ext)
   P_INSTRUMENTED_LOCK_READ_WRITE(return false);
 
   if (m_headerExtensions.Contains(ext)) {
-    PTRACE(4, "Header extension already present: " << ext);
+    PTRACE(4, *this << "header extension already present: " << ext);
     return true;
   }
 
@@ -1434,7 +1436,7 @@ bool OpalRTPSession::AddHeaderExtension(const RTPHeaderExtensionInfo & ext)
     return true;
   }
 
-  PTRACE(3, "Unsupported header extension: " << ext);
+  PTRACE(3, *this << "unsupported header extension: " << ext);
   return false;
 }
 
