@@ -1450,24 +1450,24 @@ void OpalSDPConnection::FinaliseRtx(const OpalMediaStreamPtr & stream, SDPMediaD
 
   // Make sure rtx has correct PT
   RTP_DataFrame::PayloadTypes primaryPT = stream->GetMediaFormat().GetPayloadType();
-  RTP_DataFrame::PayloadTypes newPT = RTP_DataFrame::IllegalPayloadType;
+  RTP_DataFrame::PayloadTypes rtxPT = RTP_DataFrame::IllegalPayloadType;
   PString rtxName = OpalRtx::GetName(rtpSession->GetMediaType());
   OpalMediaFormatList remoteFormats = GetMediaFormats();
   for (OpalMediaFormatList::iterator it = remoteFormats.begin(); it != remoteFormats.end(); ++it) {
     if (it->GetName() == rtxName && it->GetOptionPayloadType(OpalRtx::AssociatedPayloadTypeOption()) == primaryPT) {
-      newPT = it->GetPayloadType();
+      rtxPT = it->GetPayloadType();
       if (sdp != NULL)
         sdp->AddMediaFormat(*it);
       break;
     }
   }
 
-  if (newPT == RTP_DataFrame::IllegalPayloadType) {
+  if (rtxPT == RTP_DataFrame::IllegalPayloadType) {
     PTRACE(4, "No RTX present for stream " << *stream);
     return;
   }
 
-  PTRACE(4, "Finalising RTX as " << newPT << " for primary " << primaryPT << " on stream " << *stream);
+  PTRACE(4, "Finalising RTX as " << rtxPT << " for primary " << primaryPT << " on stream " << *stream);
 
   OpalRTPSession::Direction dir = stream->IsSource() ? OpalRTPSession::e_Receiver : OpalRTPSession::e_Sender;
 
@@ -1476,8 +1476,13 @@ void OpalSDPConnection::FinaliseRtx(const OpalMediaStreamPtr & stream, SDPMediaD
   for (RTP_SyncSourceArray::iterator it = ssrcs.begin(); it != ssrcs.end(); ++it) {
     RTP_SyncSourceId primarySSRC = *it;
     RTP_SyncSourceId rtxSSRC = rtpSession->GetRtxSyncSource(primarySSRC, dir, true);
-    if (rtxSSRC != 0)
-      rtpSession->EnableSyncSourceRtx(primarySSRC, dir == OpalRTPSession::e_Receiver ? primaryPT : newPT, rtxSSRC);
+    if (dir == OpalRTPSession::e_Sender)
+      rtpSession->EnableSyncSourceRtx(primarySSRC, rtxPT, rtxSSRC); // If no rtxSSRC (==0), create one
+    else if (rtxSSRC != 0)
+      rtpSession->EnableSyncSourceRtx(primarySSRC, primaryPT, rtxSSRC);
+    else {
+      PTRACE(3, "Primary receiver SSRC=" << RTP_TRACE_SRC(primarySSRC) << " has no RTX SSRC, invalid SDP");
+    }
   }
 }
 
