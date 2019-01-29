@@ -43,11 +43,22 @@
 class OpalRTPEndPoint;
 
 
-/**OpalConnection::StringOption key to an enum indicating that silence
-   detection on the sound recording is to be executed.
+/**OpalConnection::StringOption key to a boolean indicating that the NAT
+   heuristic is not to be used. NAT is assumed not to be present.
    Default false.
   */
 #define OPAL_OPT_DISABLE_NAT  "Disable-NAT"
+
+  /**OpalConnection::StringOption key to an enum indicating the cryptographic
+     exchange mode to use for the RTP connection. This is a list of strings:
+     "AllowClear", "SecureSignalling" and "InBandKeyEchange".
+
+     Default "AllowClear".
+  */
+#define OPAL_OPT_CRYPTO_EXCHANGE  "Crypto-Exchange"
+#define OPAL_OPT_CRYPTO_EXCHANGE_ALLOW_CLEAR         "AllowClear"
+#define OPAL_OPT_CRYPTO_EXCHANGE_SECURE_SIGNALLING   "SecureSignalling"
+#define OPAL_OPT_CRYPTO_EXCHANGE_INBAND_KEY_EXCHANGE "InBandKeyEchange"
 
 
 /**This is the base class for OpalConnections that use RTP sessions, 

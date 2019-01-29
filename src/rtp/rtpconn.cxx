@@ -125,7 +125,15 @@ unsigned OpalRTPConnection::GetNextSessionID(const OpalMediaType & mediaType, bo
 
 OpalMediaCryptoSuite::KeyExchangeModes OpalRTPConnection::GetMediaCryptoKeyExchangeModes() const
 {
-  return OpalMediaCryptoSuite::KeyExchangeModes::All();
+  PCaselessString modeStr = m_stringOptions.GetString(OPAL_OPT_CRYPTO_EXCHANGE, OPAL_OPT_CRYPTO_EXCHANGE_ALLOW_CLEAR);
+  OpalMediaCryptoSuite::KeyExchangeModes modes = OpalMediaCryptoSuite::e_NoMode;
+  if (modeStr.Find(OPAL_OPT_CRYPTO_EXCHANGE_ALLOW_CLEAR) != P_MAX_INDEX)
+    modes |= OpalMediaCryptoSuite::e_AllowClear;
+  if (modeStr.Find(OPAL_OPT_CRYPTO_EXCHANGE_SECURE_SIGNALLING) != P_MAX_INDEX)
+    modes |= OpalMediaCryptoSuite::e_SecureSignalling;
+  if (modeStr.Find(OPAL_OPT_CRYPTO_EXCHANGE_INBAND_KEY_EXCHANGE) != P_MAX_INDEX)
+    modes |= OpalMediaCryptoSuite::e_InBandKeyEchange;
+  return modes;
 }
 
 
