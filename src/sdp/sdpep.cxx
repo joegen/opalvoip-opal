@@ -232,8 +232,13 @@ bool OpalSDPConnection::GetOfferSDP(SDPSessionDescription & offer, bool offerOpe
 PString OpalSDPConnection::GetOfferSDP(bool offerOpenMediaStreamsOnly)
 {
   std::auto_ptr<SDPSessionDescription> sdp(CreateSDP(PString::Empty()));
-  PTRACE_CONTEXT_ID_TO(sdp.get());
-  return sdp.get() != NULL && GetOfferSDP(*sdp, offerOpenMediaStreamsOnly) ? sdp->Encode() : PString::Empty();
+  if (sdp.get() == NULL) {
+    PTRACE(2, "Could not create SDP");
+    return false;
+  }
+
+  PTRACE_CONTEXT_ID_TO(*sdp);
+  return GetOfferSDP(*sdp, offerOpenMediaStreamsOnly) ? sdp->Encode() : PString::Empty();
 }
 
 

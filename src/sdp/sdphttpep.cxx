@@ -186,8 +186,11 @@ PBoolean OpalSDPHTTPConnection::SetUpConnection()
   PTRACE(3, "Setting up SDP over HTTP connection to " << m_destination << " on " << *this);
 
   PHTTPClient http;
-  if (!http.ConnectURL(m_destination))
+  if (!http.ConnectURL(m_destination)) {
+    PTRACE(2, "Could not connect to " << m_destination << ": "
+           << http.GetLastResponseCode() << " - " << http.GetLastResponseInfo());
     return false;
+  }
 
   InternalSetMediaAddresses(http);
 
@@ -199,8 +202,11 @@ PBoolean OpalSDPHTTPConnection::SetUpConnection()
   outMIME.SetAt(PHTTP::ContentTypeTag(), OpalSDPEndPoint::ContentType());
 
   PString answer;
-  if (!http.PostData(m_destination, outMIME, offer, replyMIME, answer))
+  if (!http.PostData(m_destination, outMIME, offer, replyMIME, answer)) {
+    PTRACE(2, "Could not POST to " << m_destination << ": "
+           << http.GetLastResponseCode() << " - " << http.GetLastResponseInfo());
     return false;
+  }
 
   return HandleAnswerSDP(answer);
 }
