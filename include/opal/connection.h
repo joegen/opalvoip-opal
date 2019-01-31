@@ -1862,6 +1862,10 @@ class OpalConnection : public PSafeObject
       */
     virtual PString GetSupportedFeatures() const;
 
+    /**Get the audio jitter parameters.
+    */
+    const OpalJitterBuffer::Params & GetJitterParameters() const { return m_jitterParams; }
+
     /**Get the default maximum audio jitter delay parameter.
        Defaults to 50ms
      */

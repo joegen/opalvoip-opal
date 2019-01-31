@@ -229,10 +229,10 @@ ostream & operator<<(ostream & strm, const OpalAudioJitterBuffer::AdjustResult a
 
 /////////////////////////////////////////////////////////////////////////////
 
-OpalJitterBuffer::Init::Init(const OpalManager & manager, unsigned timeUnits)
-  : Params(manager.GetJitterParameters())
+OpalJitterBuffer::Init::Init(const Params & params, unsigned timeUnits, PINDEX packetSize)
+  : Params(params)
   , m_timeUnits(timeUnits)
-  , m_packetSize(manager.GetMaxRtpPacketSize())
+  , m_packetSize(packetSize)
 {
 }
 

@@ -86,8 +86,9 @@ class OpalJitterBuffer : public PObject
     struct Init : Params
     {
       Init(
-        const OpalManager & manager,
-        unsigned timeUnits
+        const Params & params,
+        unsigned timeUnits,
+        PINDEX packetSize
       );
       Init(
         const OpalMediaType & mediaType,
