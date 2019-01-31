@@ -240,7 +240,7 @@ bool OpalSDPHTTPConnection::OnReceivedHTTP(PHTTPRequest & request)
 
   InternalSetMediaAddresses(request.server);
 
-  PTRACE(4, "Received SDP:\n" << request.GetEntityBody());
+  PTRACE(4, "Received SDP on " << *this << ":\n" << request.GetEntityBody());
   m_offerSDP = m_endpoint.CreateSDP(0, 0, OpalTransportAddress());
   if (!m_offerSDP->Decode(request.GetEntityBody(), GetLocalMediaFormats()) || m_offerSDP->GetMediaDescriptions().IsEmpty()) {
     PTRACE(1, "HTTP body does not have acceptable SDP");
@@ -250,13 +250,14 @@ bool OpalSDPHTTPConnection::OnReceivedHTTP(PHTTPRequest & request)
   if (!m_ownerCall.OnSetUp(*this))
     return request.OnError(PHTTP::BadGateway, "Could not set up secondary connection");
 
+  PTRACE(3, "Awaiting SetConnected on " << *this);
   m_connected.Wait();
 
   delete m_offerSDP;
   m_offerSDP = NULL;
 
   if (m_answerSDP == NULL) {
-    PTRACE(1, "SDP over HTTP call not answered");
+    PTRACE(1, "SDP over HTTP call not answered on " << *this);
     return request.OnError(PHTTP::ServiceUnavailable, "No answer");
   }
 
@@ -264,12 +265,16 @@ bool OpalSDPHTTPConnection::OnReceivedHTTP(PHTTPRequest & request)
   delete m_answerSDP;
   m_answerSDP = NULL;
 
-  PTRACE(4, "Sending SDP:\n" << answer);
+  PTRACE(4, "Sending SDP on " << *this << ":\n" << answer);
 
   request.outMIME.Set(PHTTP::ContentTypeTag(), OpalSDPEndPoint::ContentType());
   request.contentSize = answer.GetLength();
   request.m_resource->StartResponse(request);
-  return request.server.WriteString(answer);
+  if (request.server.WriteString(answer))
+    return true;
+
+  Release(EndedByTransportFail);
+  return false;
 }
 
 
@@ -280,11 +285,13 @@ PBoolean OpalSDPHTTPConnection::SetConnected()
   bool ok = OnSendAnswerSDP(*m_offerSDP, *answerSDP);
   if (ok)
     m_answerSDP = answerSDP;
-  else
+  else {
     delete answerSDP;
+    Release(EndedByCapabilityExchange);
+  }
 
   m_connected.Signal();
-  return ok;
+  return ok && OpalSDPConnection::SetConnected();
 }
 
 

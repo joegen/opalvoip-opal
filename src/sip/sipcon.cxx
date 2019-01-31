@@ -676,7 +676,7 @@ bool SIPConnection::InternalSetConnected(bool transfer)
   NotifyDialogState(SIPDialogNotification::Confirmed);
 
   // switch phase and if media was previously set up, then move to Established
-  return OpalConnection::SetConnected();
+  return OpalSDPConnection::SetConnected();
 }
 
 
