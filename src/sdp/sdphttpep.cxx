@@ -208,7 +208,8 @@ OpalSDPHTTPConnection::~OpalSDPHTTPConnection()
 PBoolean OpalSDPHTTPConnection::SetUpConnection()
 {
   PURL url = m_calledPartyName;
-  url.SetParamVar(OPAL_SDP_HTTP_ID_QUERY_PARAM, m_guid.AsString());
+  url.SetQueryVar(OPAL_SDP_HTTP_OP_QUERY_PARAM, OPAL_SDP_HTTP_OP_CONNECT);
+  url.SetQueryVar(OPAL_SDP_HTTP_ID_QUERY_PARAM, m_guid.AsString());
   PTRACE(3, "Setting up SDP over HTTP connection to " << url << " on " << *this);
 
   InternalSetAsOriginating();
@@ -251,9 +252,9 @@ void OpalSDPHTTPConnection::OnReleased()
   if (IsOriginating()) {
     PURL url;
     if (url.Parse(m_calledPartyName, "http")) {
-      url.SetParamVar(OPAL_SDP_HTTP_DEST_QUERY_PARAM, PString::Empty());
-      url.SetParamVar(OPAL_SDP_HTTP_OP_QUERY_PARAM, OPAL_SDP_HTTP_OP_DISCONNECT);
-      url.SetParamVar(OPAL_SDP_HTTP_ID_QUERY_PARAM, m_guid.AsString());
+      url.SetQueryVar(OPAL_SDP_HTTP_DEST_QUERY_PARAM, PString::Empty());
+      url.SetQueryVar(OPAL_SDP_HTTP_OP_QUERY_PARAM, OPAL_SDP_HTTP_OP_DISCONNECT);
+      url.SetQueryVar(OPAL_SDP_HTTP_ID_QUERY_PARAM, m_guid.AsString());
 
       PHTTPClient http;
       PMIMEInfo outMIME;
