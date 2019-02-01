@@ -534,6 +534,9 @@ class OpalEndPoint : public PObject
        OpalCall instance. The first connection in that call that has this
        endpoint as it's endpoint is returned.
 
+       The \p string may also be the protocol specific identifier used, as
+       returned by OpalConnection::GetIdentifier().
+
        Finally, the \p token string may also be of the form prefix:name,
        e.g. ivr:fred, and the GetLocalPartyName() is used to locate the
        connection.

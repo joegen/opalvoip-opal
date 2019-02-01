@@ -416,12 +416,13 @@ PSafePtr<OpalConnection> OpalEndPoint::GetConnectionWithLock(const PString & tok
     }
   }
 
-  if (token.NumCompare(GetPrefixName()+':') != EqualTo)
-    return NULL;
-
-  PString name = token.Mid(GetPrefixName().GetLength()+1);
-  for (connection = PSafePtr<OpalConnection>(m_connectionsActive, PSafeReference); connection != NULL; ++connection) {
-    if (connection->GetLocalPartyName() == name)
+  PString name = StripPrefixName(token);
+  for (ConnectionDict::const_iterator it = m_connectionsActive.begin(); it != m_connectionsActive.end(); ++it) {
+    connection = it->second;
+    if (connection != NULL && (
+          connection->GetIdentifier()     == name ||
+          connection->GetLocalPartyName() == name ||
+          connection->GetLocalPartyName() == token))
       return connection.SetSafetyMode(mode) ? connection : NULL;
   }
 
