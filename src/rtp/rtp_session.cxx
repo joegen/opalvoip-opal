@@ -500,7 +500,7 @@ OpalRTPSession::SyncSource::~SyncSource()
                "    total packets        = " << m_packets << "\n"
                "    total octets         = " << m_octets << "\n"
                "    bit rate             = " << (8 * m_octets / duration) << "\n"
-               "    missing packets      = " << m_packetsMissing << '\n' << "\n"
+               "    missing packets      = " << m_packetsMissing << "\n"
                "    RTX packets          = " << m_rtxPackets << '\n';
     if (m_direction == e_Receiver) {
       OpalJitterBuffer * jb = GetJitterBuffer();
