@@ -249,16 +249,6 @@ class OpalSDPHTTPConnection : public OpalSDPConnection
     */
     virtual PString GetIdentifier() const;
 
-    /**Get the destination address of an incoming connection.
-       This will, for example, collect a phone number from a POTS line, or
-       get the fields from the H.225 SETUP pdu in a H.323 connection, or
-       INVITE for SIP connection.
-
-       The default behaviour returns "*", which by convention means any
-       address the endpoint/connection can get to.
-      */
-    virtual PString GetDestinationAddress();
-
     /// Get the media local interface to initialise the RTP session.
     virtual PString GetMediaInterface();
 
@@ -277,7 +267,6 @@ class OpalSDPHTTPConnection : public OpalSDPConnection
   protected:
     void InternalSetMediaAddresses(PIndirectChannel & channel);
 
-    PURL                    m_destination;
     PString                 m_mediaInterface;
     OpalTransportAddress    m_remoteAddress;
     SDPSessionDescription * m_offerSDP;

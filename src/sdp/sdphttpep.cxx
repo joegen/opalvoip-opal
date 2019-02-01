@@ -109,7 +109,7 @@ PSafePtr<OpalConnection> OpalSDPHTTPEndPoint::MakeConnection(OpalCall & call,
     return NULL;
   }
 
-  connection->m_destination = destURL;
+  connection->m_remotePartyName = connection->m_calledPartyName = destURL.AsString();
   return connection;
 }
 
@@ -202,13 +202,14 @@ OpalSDPHTTPConnection::~OpalSDPHTTPConnection()
 
 PBoolean OpalSDPHTTPConnection::SetUpConnection()
 {
-  PTRACE(3, "Setting up SDP over HTTP connection to " << m_destination << " on " << *this);
+  PURL url = m_calledPartyName;
+  PTRACE(3, "Setting up SDP over HTTP connection to " << url << " on " << *this);
 
   InternalSetAsOriginating();
 
   PHTTPClient http;
-  if (!http.ConnectURL(m_destination)) {
-    PTRACE(2, "Could not connect to " << m_destination << ": "
+  if (!http.ConnectURL(url)) {
+    PTRACE(2, "Could not connect to " << url << ": "
            << http.GetLastResponseCode() << " - " << http.GetLastResponseInfo());
     return false;
   }
@@ -223,8 +224,8 @@ PBoolean OpalSDPHTTPConnection::SetUpConnection()
   outMIME.SetAt(PHTTP::ContentTypeTag(), OpalSDPEndPoint::ContentType());
 
   PString answer;
-  if (!http.PostData(m_destination, outMIME, offer, replyMIME, answer)) {
-    PTRACE(2, "Could not POST to " << m_destination << ": "
+  if (!http.PostData(url, outMIME, offer, replyMIME, answer)) {
+    PTRACE(2, "Could not POST to " << url << ": "
            << http.GetLastResponseCode() << " - " << http.GetLastResponseInfo());
     return false;
   }
@@ -237,17 +238,19 @@ void OpalSDPHTTPConnection::OnReleased()
 {
   m_connected.Signal(); // Break block if waiting
 
-  if (IsOriginating() && !m_destination.IsEmpty()) {
-    PURL stop = m_destination;
-    stop.SetParamVar("operation", "stop");
+  if (IsOriginating()) {
+    PURL stop;
+    if (stop.Parse(m_calledPartyName, "http")) {
+      stop.SetParamVar("operation", "stop");
 
-    PHTTPClient http;
-    PString reply;
-    if (http.GetTextDocument(stop, reply))
-      PTRACE(3, "Sent stop command to " << m_destination);
-    else
-      PTRACE(2, "Could not send stop command to " << m_destination << ": "
-             << http.GetLastResponseCode() << ' ' << http.GetLastResponseInfo());
+      PHTTPClient http;
+      PString reply;
+      if (http.GetTextDocument(stop, reply))
+        PTRACE(3, "Sent stop command to " << stop);
+      else
+        PTRACE(2, "Could not send stop command to " << stop << ": "
+               << http.GetLastResponseCode() << ' ' << http.GetLastResponseInfo());
+    }
   }
 
   OpalSDPConnection::OnReleased();
@@ -280,7 +283,10 @@ bool OpalSDPHTTPConnection::OnReceivedHTTP(PHTTPRequest & request)
     return request.SendResponse(html);
   }
 
-  if (m_destination.Parse(parameters("destination"), "http")) {
+  m_remotePartyName = request.origin.AsString();
+  m_remoteAddress = OpalTransportAddress(m_remotePartyName, OpalTransportAddress::TcpPrefix());
+  m_calledPartyName = parameters("destination");
+  if (m_calledPartyName.IsEmpty()) {
     PTRACE(1, "HTTP URL does not have a destination query parameter");
     return request.OnError(PHTTP::NotFound, "Must have a destination query parameter");
   }
@@ -293,7 +299,7 @@ bool OpalSDPHTTPConnection::OnReceivedHTTP(PHTTPRequest & request)
   SetPhase(SetUpPhase);
   OnApplyStringOptions();
   if (!OnIncomingConnection(0, NULL))
-    return request.OnError(PHTTP::NotFound, "Invalid destination query parameter");
+    return request.OnError(PHTTP::NotFound, "Invalid destination query parameter: " + m_calledPartyName);
 
   InternalSetMediaAddresses(request.server);
 
@@ -314,7 +320,7 @@ bool OpalSDPHTTPConnection::OnReceivedHTTP(PHTTPRequest & request)
   m_offerSDP = NULL;
 
   if (m_answerSDP == NULL) {
-    PTRACE(1, "SDP over HTTP call not answered on " << *this);
+    PTRACE(1, "SDP over HTTP call not answered by " << m_calledPartyName << " on " << *this);
     return request.OnError(PHTTP::ServiceUnavailable, "No answer");
   }
 
@@ -354,12 +360,6 @@ PBoolean OpalSDPHTTPConnection::SetConnected()
 PString OpalSDPHTTPConnection::GetIdentifier() const
 {
   return m_guid.AsString();
-}
-
-
-PString OpalSDPHTTPConnection::GetDestinationAddress()
-{
-  return m_destination.AsString();
 }
 
 
