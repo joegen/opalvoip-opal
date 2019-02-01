@@ -244,6 +244,11 @@ class OpalSDPHTTPConnection : public OpalSDPConnection
       */
     virtual void OnReleased();
 
+    /**Get the protocol-specific unique identifier for this connection.
+    Default behaviour just returns the connection token.
+    */
+    virtual PString GetIdentifier() const;
+
     /**Get the destination address of an incoming connection.
        This will, for example, collect a phone number from a POTS line, or
        get the fields from the H.225 SETUP pdu in a H.323 connection, or
@@ -272,12 +277,13 @@ class OpalSDPHTTPConnection : public OpalSDPConnection
   protected:
     void InternalSetMediaAddresses(PIndirectChannel & channel);
 
-    PString                 m_destination;
+    PURL                    m_destination;
     PString                 m_mediaInterface;
     OpalTransportAddress    m_remoteAddress;
     SDPSessionDescription * m_offerSDP;
     SDPSessionDescription * m_answerSDP;
     PSyncPoint              m_connected;
+    PGloballyUniqueID       m_guid;
 
   friend class OpalSDPHTTPEndPoint;
 };
