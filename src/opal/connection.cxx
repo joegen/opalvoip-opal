@@ -635,8 +635,9 @@ bool OpalConnection::InternalOnConnected()
 
 bool OpalConnection::InternalOnEstablished()
 {
-  if (GetPhase() != ConnectedPhase) {
-    PTRACE(5, "Not in ConnectedPhase, cannot move to EstablishedPhase on " << *this);
+  Phases phase = GetPhase();
+  if (phase != ConnectedPhase) {
+    PTRACE_IF(4, phase != EstablishedPhase, "In " << phase << ", cannot move to EstablishedPhase on " << *this);
     return false;
   }
 
