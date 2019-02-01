@@ -38,6 +38,39 @@
 #include <opal.h>
 
 
+/** This query parameter on the HTTP POST indicates the operation to execute.
+    If missing then this is treated as a "connect".
+  */
+#define OPAL_SDP_HTTP_OP_QUERY_PARAM   "operation"
+
+/** This operation will start a new connection. It is expected the body of the
+    HTTP POST contains the offer SDP, and has content-type application/sdp.
+    There should also be a "destination" query parameter for what to connect
+    to within OPAL. This can be another protocol such as sip or internal
+    endpoints such as "pcss" */
+#define OPAL_SDP_HTTP_OP_CONNECT       "connect"
+
+/** This operation disconnects an existing connection. The "connection-id"
+    query parameter is required to identify the connection to disconnect. The
+    "connect" operation will return this value in the
+    "X-OPAL-Connection-Id" HTTP header. */
+#define OPAL_SDP_HTTP_OP_DISCONNECT    "disconnect"
+
+/** This operation returns a short HTML indication of the call status.
+    The "connection-id" query parameter is required to identify the
+    connection*/
+#define OPAL_SDP_HTTP_OP_STATUS        "status"
+
+/// THe connnection identifier query parameter used by some operations
+#define OPAL_SDP_HTTP_ID_QUERY_PARAM   "connection-id"
+
+/// The HTTP header that returns the connection identifier
+#define OPAL_SDP_HTTP_ID_HEADER        "X-OPAL-Connection-Id"
+
+/// The destination query parameter for the "connect" operation.
+#define OPAL_SDP_HTTP_DEST_QUERY_PARAM "destination"
+
+
 /**Endpoint for SDP over HTTP POST command (used for WebRTC).
   */
 class OpalSDPHTTPEndPoint : public OpalSDPEndPoint

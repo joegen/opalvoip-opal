@@ -127,7 +127,9 @@ bool OpalSDPHTTPEndPoint::OnReceivedHTTP(PHTTPRequest & request)
 {
   PSafePtr<OpalSDPHTTPConnection> connection;
 
-  if (request.url.GetQueryVars().Get("operation", "start") *= "start") {
+  const PStringToString & parameters = request.url.GetQueryVars();
+  PCaselessString operation = parameters(OPAL_SDP_HTTP_OP_QUERY_PARAM);
+  if (operation.IsEmpty() || operation == OPAL_SDP_HTTP_OP_CONNECT) {
     OpalCall * call = m_manager.InternalCreateCall();
     if (call == NULL)
       return request.OnError("Could not create internal call");
@@ -143,9 +145,12 @@ bool OpalSDPHTTPEndPoint::OnReceivedHTTP(PHTTPRequest & request)
     connection = newConn;
   }
   else {
-    connection = GetConnectionWithLockAs<OpalSDPHTTPConnection>(request.url.GetQueryVars().Get("connection-id"));
-    if (connection == NULL)
-      return request.OnError(PHTTP::NotFound, "Could not find connection id");
+    PString guid = parameters(OPAL_SDP_HTTP_ID_QUERY_PARAM);
+    connection = GetConnectionWithLockAs<OpalSDPHTTPConnection>(guid);
+    if (connection == NULL) {
+      PTRACE(2, "Could not find connection with id " << guid);
+      return request.OnError(PHTTP::NotFound, "Could not find connection id " + guid);
+    }
   }
 
   return connection->OnReceivedHTTP(request);
@@ -203,6 +208,7 @@ OpalSDPHTTPConnection::~OpalSDPHTTPConnection()
 PBoolean OpalSDPHTTPConnection::SetUpConnection()
 {
   PURL url = m_calledPartyName;
+  url.SetParamVar(OPAL_SDP_HTTP_ID_QUERY_PARAM, m_guid.AsString());
   PTRACE(3, "Setting up SDP over HTTP connection to " << url << " on " << *this);
 
   InternalSetAsOriginating();
@@ -230,6 +236,10 @@ PBoolean OpalSDPHTTPConnection::SetUpConnection()
     return false;
   }
 
+  PString id = replyMIME(OPAL_SDP_HTTP_ID_HEADER);
+  if (!id.IsEmpty())
+    m_guid = id;
+
   return HandleAnswerSDP(answer);
 }
 
@@ -239,16 +249,18 @@ void OpalSDPHTTPConnection::OnReleased()
   m_connected.Signal(); // Break block if waiting
 
   if (IsOriginating()) {
-    PURL stop;
-    if (stop.Parse(m_calledPartyName, "http")) {
-      stop.SetParamVar("operation", "stop");
+    PURL url;
+    if (url.Parse(m_calledPartyName, "http")) {
+      url.SetParamVar(OPAL_SDP_HTTP_DEST_QUERY_PARAM, PString::Empty());
+      url.SetParamVar(OPAL_SDP_HTTP_OP_QUERY_PARAM, OPAL_SDP_HTTP_OP_DISCONNECT);
+      url.SetParamVar(OPAL_SDP_HTTP_ID_QUERY_PARAM, m_guid.AsString());
 
       PHTTPClient http;
-      PString reply;
-      if (http.GetTextDocument(stop, reply))
-        PTRACE(3, "Sent stop command to " << stop);
+      PMIMEInfo outMIME;
+      if (http.PostData(url, outMIME, PString::Empty()))
+        PTRACE(3, "Sent disconnect command: " << url);
       else
-        PTRACE(2, "Could not send stop command to " << stop << ": "
+        PTRACE(2, "Could not send disconnect command " << url << ": "
                << http.GetLastResponseCode() << ' ' << http.GetLastResponseInfo());
     }
   }
@@ -260,13 +272,13 @@ void OpalSDPHTTPConnection::OnReleased()
 bool OpalSDPHTTPConnection::OnReceivedHTTP(PHTTPRequest & request)
 {
   const PStringToString & parameters = request.url.GetQueryVars();
-  PCaselessString operation = parameters("operation");
-  if (operation == "stop" || operation == "release" || operation == "disconnect") {
+  PCaselessString operation = parameters(OPAL_SDP_HTTP_OP_QUERY_PARAM);
+  if (operation == OPAL_SDP_HTTP_OP_DISCONNECT) {
     Release();
     return request.SendResponse("Releasing connection " + GetIdentifier());
   }
 
-  if (operation == "status") {
+  if (operation == OPAL_SDP_HTTP_OP_STATUS) {
     PHTML html;
     html << PHTML::HTML()
          << PHTML::Title() << "Status for connection " << GetIdentifier() << PHTML::Title()
@@ -283,9 +295,13 @@ bool OpalSDPHTTPConnection::OnReceivedHTTP(PHTTPRequest & request)
     return request.SendResponse(html);
   }
 
+  PString id = parameters(OPAL_SDP_HTTP_ID_QUERY_PARAM);
+  if (!id.IsEmpty())
+    m_guid = id;
+
   m_remotePartyName = request.origin.AsString();
   m_remoteAddress = OpalTransportAddress(m_remotePartyName, OpalTransportAddress::TcpPrefix());
-  m_calledPartyName = parameters("destination");
+  m_calledPartyName = parameters(OPAL_SDP_HTTP_DEST_QUERY_PARAM);
   if (m_calledPartyName.IsEmpty()) {
     PTRACE(1, "HTTP URL does not have a destination query parameter");
     return request.OnError(PHTTP::NotFound, "Must have a destination query parameter");
@@ -331,7 +347,7 @@ bool OpalSDPHTTPConnection::OnReceivedHTTP(PHTTPRequest & request)
   PTRACE(4, "Sending SDP on " << *this << ":\n" << answer);
 
   request.outMIME.Set(PHTTP::ContentTypeTag(), OpalSDPEndPoint::ContentType());
-  request.outMIME.Set("X-OPAL-Connection-Id", GetIdentifier());
+  request.outMIME.Set(OPAL_SDP_HTTP_ID_HEADER, GetIdentifier());
   if (request.SendResponse(answer))
     return true;
 
