@@ -1794,7 +1794,7 @@ void SDPRTPAVPMediaDescription::OutputAttributes(ostream & strm) const
   else if (!m_controlAddress.IsEmpty()) {
     PIPSocket::Address ip;
     WORD port = 0;
-    if (m_controlAddress.GetIpAndPort(ip, port) && port != (m_port+1))
+    if (m_controlAddress.GetIpAndPort(ip, port) && port != (m_port + 1))
       strm << "a=rtcp:" << port << ' ' << GetConnectAddressString(m_mediaAddress) << CRLF;
   }
 
@@ -1805,22 +1805,31 @@ void SDPRTPAVPMediaDescription::OutputAttributes(ostream & strm) const
     strm << "a=label:" << m_label << CRLF;
 
   /* Specification does not seem to say to do this, but all the RFC examples group
-     the FID ssrc parameters together, so we do the same to maximise interoperability */
+   the FID ssrc parameters together, so we do the same to maximise interoperability */
   std::set<RTP_SyncSourceId> ssrcInfoDone;
 
-  for (vector<RTP_SyncSourceArray>::const_iterator it1 = m_flowSSRC.begin(); it1 != m_flowSSRC.end(); ++it1) {
-    strm << "a=ssrc-group:FID";
-    for (RTP_SyncSourceArray::const_iterator it2 = it1->begin(); it2 != it1->end(); ++it2)
-      strm << ' ' << *it2;
-    strm << CRLF;
+  if (m_direction&SendOnly) {
+    for (vector<RTP_SyncSourceArray>::const_iterator it1 = m_flowSSRC.begin(); it1 != m_flowSSRC.end(); ++it1) {
+      strm << "a=ssrc-group:FID";
+      for (RTP_SyncSourceArray::const_iterator it2 = it1->begin(); it2 != it1->end(); ++it2)
+        strm << ' ' << *it2;
+      strm << CRLF;
 
-    for (RTP_SyncSourceArray::const_iterator it2 = it1->begin(); it2 != it1->end(); ++it2) {
-      SsrcInfo::const_iterator it3 = m_ssrcInfo.find(*it2);
-      if (it3 != m_ssrcInfo.end()) {
-        for (PStringOptions::const_iterator it4 = it3->second.begin(); it4 != it3->second.end(); ++it4)
-          strm << "a=ssrc:" << *it2 << ' ' << it4->first << ':' << it4->second << CRLF;
-        ssrcInfoDone.insert(*it2);
+      for (RTP_SyncSourceArray::const_iterator it2 = it1->begin(); it2 != it1->end(); ++it2) {
+        SsrcInfo::const_iterator it3 = m_ssrcInfo.find(*it2);
+        if (it3 != m_ssrcInfo.end()) {
+          for (PStringOptions::const_iterator it4 = it3->second.begin(); it4 != it3->second.end(); ++it4)
+            strm << "a=ssrc:" << *it2 << ' ' << it4->first << ':' << it4->second << CRLF;
+          ssrcInfoDone.insert(*it2);
+        }
       }
+    }
+  }
+  else {
+    // We have no senders, but still want to output the primary SSRC for RTCP purposes
+    for (vector<RTP_SyncSourceArray>::const_iterator it1 = m_flowSSRC.begin(); it1 != m_flowSSRC.end(); ++it1) {
+      for (RTP_SyncSourceArray::const_iterator it2 = ++it1->begin(); it2 != it1->end(); ++it2)
+        ssrcInfoDone.insert(*it2); // Don't output these
     }
   }
 
