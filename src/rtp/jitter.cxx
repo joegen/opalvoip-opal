@@ -389,7 +389,6 @@ void OpalAudioJitterBuffer::InternalReset()
 {
   m_frameTimeCount    = 0;
   m_frameTimeSum      = 0;
-  m_packetTime = 0;
   m_lastSequenceNum   = USHRT_MAX;
   m_lastTimestamp     = UINT_MAX;
   m_lastBufferSize    = 0;
@@ -453,6 +452,7 @@ PBoolean OpalAudioJitterBuffer::WriteData(const RTP_DataFrame & frame, const PTi
               << RTP_TRACE_SRC(m_lastSyncSource) << " to " << RTP_TRACE_SRC(newSyncSource)
               << " at sn=" << currentSequenceNum << m_ssrcChangedThrottle);
     InternalReset();
+    m_packetTime = 0;
     m_packetsTooLate = m_bufferOverruns = 0; // Reset these stats for new SSRC
     m_lastSyncSource = newSyncSource;
   }
