@@ -49,6 +49,7 @@ OpalSDPHTTPEndPoint::OpalSDPHTTPEndPoint(OpalManager & manager, const PCaselessS
 
   // This is almost always for WebRTC, so turn on some advanced features by default.
   m_defaultStringOptions.SetBoolean(OPAL_OPT_AV_BUNDLE, true);
+  m_defaultStringOptions.SetBoolean(OPAL_OPT_RTCP_MUX, true);
   m_defaultStringOptions.SetBoolean(OPAL_OPT_USE_MEDIA_STREAMS, true);
 }
 
