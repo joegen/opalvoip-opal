@@ -118,6 +118,16 @@ static const PConstString SignLanguageAnalyserDLLKey("Sign Language Analyser DLL
 static const PConstString ConfAudioOnlyKey("Conference Audio Only");
 static const PConstString ConfMediaPassThruKey("Conference Media Pass Through");
 static const PConstString ConfVideoResolutionKey("Conference Video Resolution");
+
+static const PConstString RecordAllCallsKey("Record All Calls");
+static const PConstString RecordFileTemplateKey("Record File Template");
+static const PConstString RecordStereoKey("Record Stereo");
+static const PConstString RecordAudioFormatKey("Record Audio Format");
+#if OPAL_VIDEO
+static const PConstString RecordVideoFormatKey("Record Video Format");
+static const PConstString RecordVideoMixingModeKey("Record Video Mixing Mode");
+static const PConstString RecordVideoResolutionKey("Record Video Resolution");
+#endif
 #endif
 
 #if OPAL_SCRIPT
@@ -540,6 +550,37 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
     PARRAYSIZE(MediaTransferModeValues), MediaTransferModeValues, MediaTransferModeTitles,
     m_mediaTransferMode, "How media is to be routed between the endpoints."));
 
+#if OPAL_HAS_MIXER
+  m_recordingEnabled = rsrc->AddBooleanField(RecordAllCallsKey, false, "Enable recording of all calls");
+  m_recordingTemplate = rsrc->AddStringField(RecordFileTemplateKey, 50, ".\\%DATE%_%TIME%_%FROM_%TO%.avi",
+                "Template for where recording files are placed, and what meta-information is used in it's name."
+                " Meta information is: %DATE%, %TIME%, %FROM%, %TO%, %HOST%"
+                " The file extension dictates the file container format, e.g. .avi, .mp4, etc.");
+  m_recordingOptions.m_stereo = rsrc->AddBooleanField(RecordStereoKey, m_recordingOptions.m_stereo,
+                "Record the two parties, each in their own channel of stereo audio. Otherwise mix them together in mono.");
+  m_recordingOptions.m_audioFormat = rsrc->AddStringField(RecordAudioFormatKey, 10, m_recordingOptions.m_audioFormat,
+                "Audio format: PCM-16, MP3, AAC etc. Note, not all file formats may be able to encode a given format.");
+#if OPAL_VIDEO
+  m_recordingOptions.m_videoFormat = rsrc->AddStringField(RecordVideoFormatKey, 10, m_recordingOptions.m_videoFormat,
+                "Video format: VC1, MPEG, H.264 etc. Note, not all file formats may be able to encode a given format.");
+
+  static const char * const MixingModes[] = { "SideBySideLetterbox", "SideBySideScaled", "StackedPillarbox", "StackedScaled" };
+  PString mode = rsrc->AddSelectField(RecordVideoMixingModeKey, PStringArray(PARRAYSIZE(MixingModes), MixingModes),
+                MixingModes[m_recordingOptions.m_videoMixing], "Video mixing mode.");
+  for (PINDEX i = 0; i < PARRAYSIZE(MixingModes); ++i) {
+    if (mode == MixingModes[i]) {
+      m_recordingOptions.m_videoMixing = (OpalRecordManager::VideoMode)i;
+      break;
+    }
+  }
+
+  PVideoFrameInfo::ParseSize(rsrc->AddStringField(RecordVideoResolutionKey, 10,
+                                  PVideoFrameInfo::AsString(m_recordingOptions.m_videoWidth, m_recordingOptions.m_videoHeight),
+                                  "Video resolution for recording, after mixing via the above mode"),
+                             m_recordingOptions.m_videoWidth, m_recordingOptions.m_videoHeight);
+#endif
+#endif
+
   {
     OpalMediaTypeList mediaTypes = OpalMediaType::GetList();
     for (OpalMediaTypeList::iterator it = mediaTypes.begin(); it != mediaTypes.end(); ++it) {
@@ -927,6 +968,39 @@ void MyManager::OnStopMediaPatch(OpalConnection & connection, OpalMediaPatch & p
 {
   dynamic_cast<MyCall &>(connection.GetCall()).OnStopMediaPatch(patch);
   OpalManager::OnStopMediaPatch(connection, patch);
+}
+
+
+static PString SanitiseForFilename(const PString & str)
+{
+  PString sanitised;
+  for (PINDEX i = 0; i < str.GetLength(); ++i) {
+    if (!PFilePath::IsValid(str[i]))
+      sanitised += '_';
+    else if (str[i] == '.')
+      sanitised += '-';
+    else
+      sanitised += str[i];
+  }
+  return sanitised;
+}
+
+
+void MyManager::StartRecordingCall(MyCall & call) const
+{
+  if (!m_recordingEnabled)
+    return;
+
+  PCaselessString filename = m_recordingTemplate;
+
+  PTime now;
+  filename.Replace("%DATE%", now.AsString("yyyyMMdd"), true);
+  filename.Replace("%TIME%", now.AsString("hhmmss"), true);
+  filename.Replace("%FROM%", SanitiseForFilename(call.GetPartyA()), true);
+  filename.Replace("%TO%", SanitiseForFilename(call.GetPartyB()), true);
+  filename.Replace("%HOST%", SanitiseForFilename(PIPSocket::GetHostName()), true);
+
+  call.StartRecording(filename, m_recordingOptions);
 }
 
 
