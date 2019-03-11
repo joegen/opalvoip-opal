@@ -746,7 +746,7 @@ PBoolean OpalLocalMediaStream::ReadData(BYTE * data, PINDEX size, PINDEX & lengt
          m_readLogThrottle);
 
   if (m_marker || !m_timeOnMarkers)
-    m_timestamp += OpalMediaStream::m_frameTime;
+    m_timestamp += (OpalMediaStream::m_frameTime*length + OpalMediaStream::m_frameSize - 1) / OpalMediaStream::m_frameSize;
 
   if (m_synchronicity == OpalLocalEndPoint::e_SimulateSynchronous)
     Pace(false, size, m_marker);

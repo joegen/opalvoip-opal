@@ -603,12 +603,20 @@ class MyManager : public MyManagerParent
     bool NotEndCDR(const CDRList::const_iterator & it);
     bool FindCDR(const PString & guid, CallDetailRecord & cdr);
 
+    void StartRecordingCall(MyCall & call) const;
+
   protected:
     PSystemLog m_systemLog;
 
     PINDEX            m_maxCalls;
     MediaTransferMode m_mediaTransferMode;
     OpalProductInfo   m_savedProductInfo;
+
+#if OPAL_HAS_MIXER
+    bool                       m_recordingEnabled;
+    PString                    m_recordingTemplate;
+    OpalRecordManager::Options m_recordingOptions;
+#endif
 
 #if OPAL_CAPI
     bool m_enableCAPI;
