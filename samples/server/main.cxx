@@ -318,7 +318,7 @@ PBoolean MyProcess::Initialise(const char * initMsg)
   // Create the home page
   PFilePath welcomeHtml = GetFile().GetDirectory() + "welcome.html";
   if (PFile::Exists(welcomeHtml))
-    m_httpNameSpace.AddResource(new PServiceHTTPFile(welcomeHtml), PHTTPSpace::Overwrite);
+    m_httpNameSpace.AddResource(new PServiceHTTPFile(welcomeHtml.GetFileName(), welcomeHtml), PHTTPSpace::Overwrite);
   else {
     PHTML html;
     html << PHTML::Title("Welcome to " + GetName())
