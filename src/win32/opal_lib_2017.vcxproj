@@ -2370,6 +2370,12 @@ copy "%(RootDir)%(Directory)java_swig_wrapper.cxx"+nul "%(RootDir)%(Directory)ja
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">copy /Y %(FullPath) $(ProjectDir)..\rtp\libsrtp\include\config.h &gt; NUL</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Creating SRTP config.h from config.hw</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)..\rtp\libsrtp\include\config.h</Outputs>
+      <BuildInParallel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</BuildInParallel>
+      <BuildInParallel Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">true</BuildInParallel>
+      <BuildInParallel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</BuildInParallel>
+      <BuildInParallel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</BuildInParallel>
+      <BuildInParallel Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">true</BuildInParallel>
+      <BuildInParallel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</BuildInParallel>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
