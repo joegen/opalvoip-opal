@@ -324,7 +324,7 @@ PBoolean MyProcess::Initialise(const char * initMsg)
   // Create the home page
   PFilePath welcomeHtml = GetFile().GetDirectory() + "welcome.html";
   if (PFile::Exists(welcomeHtml))
-    m_httpNameSpace.AddResource(new PServiceHTTPFile(welcomeHtml), PHTTPSpace::Overwrite);
+    m_httpNameSpace.AddResource(new PServiceHTTPFile(welcomeHtml.GetFileName(), welcomeHtml), PHTTPSpace::Overwrite);
   else {
     PHTML html;
     html << PHTML::Title("Welcome to " + GetName())
@@ -556,37 +556,6 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
     PARRAYSIZE(MediaTransferModeValues), MediaTransferModeValues, MediaTransferModeTitles,
     m_mediaTransferMode, "How media is to be routed between the endpoints."));
 
-#if OPAL_HAS_MIXER
-  m_recordingEnabled = rsrc->AddBooleanField(RecordAllCallsKey, false, "Enable recording of all calls");
-  m_recordingTemplate = rsrc->AddStringField(RecordFileTemplateKey, 50, ".\\%DATE%_%TIME%_%FROM_%TO%.avi",
-                "Template for where recording files are placed, and what meta-information is used in it's name."
-                " Meta information is: %DATE%, %TIME%, %FROM%, %TO%, %HOST%"
-                " The file extension dictates the file container format, e.g. .avi, .mp4, etc.");
-  m_recordingOptions.m_stereo = rsrc->AddBooleanField(RecordStereoKey, m_recordingOptions.m_stereo,
-                "Record the two parties, each in their own channel of stereo audio. Otherwise mix them together in mono.");
-  m_recordingOptions.m_audioFormat = rsrc->AddStringField(RecordAudioFormatKey, 10, m_recordingOptions.m_audioFormat,
-                "Audio format: PCM-16, MP3, AAC etc. Note, not all file formats may be able to encode a given format.");
-#if OPAL_VIDEO
-  m_recordingOptions.m_videoFormat = rsrc->AddStringField(RecordVideoFormatKey, 10, m_recordingOptions.m_videoFormat,
-                "Video format: VC1, MPEG, H.264 etc. Note, not all file formats may be able to encode a given format.");
-
-  static const char * const MixingModes[] = { "SideBySideLetterbox", "SideBySideScaled", "StackedPillarbox", "StackedScaled" };
-  PString mode = rsrc->AddSelectField(RecordVideoMixingModeKey, PStringArray(PARRAYSIZE(MixingModes), MixingModes),
-                MixingModes[m_recordingOptions.m_videoMixing], "Video mixing mode.");
-  for (PINDEX i = 0; i < PARRAYSIZE(MixingModes); ++i) {
-    if (mode == MixingModes[i]) {
-      m_recordingOptions.m_videoMixing = (OpalRecordManager::VideoMode)i;
-      break;
-    }
-  }
-
-  PVideoFrameInfo::ParseSize(rsrc->AddStringField(RecordVideoResolutionKey, 10,
-                                  PVideoFrameInfo::AsString(m_recordingOptions.m_videoWidth, m_recordingOptions.m_videoHeight),
-                                  "Video resolution for recording, after mixing via the above mode"),
-                             m_recordingOptions.m_videoWidth, m_recordingOptions.m_videoHeight);
-#endif
-#endif
-
   {
     OpalMediaTypeList mediaTypes = OpalMediaType::GetList();
     for (OpalMediaTypeList::iterator it = mediaTypes.begin(); it != mediaTypes.end(); ++it) {
@@ -701,6 +670,38 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
                 rsrc->AddIntegerField(RTPPortMaxKey, 0, 65535, GetRtpIpPortMax(), "", "Maximum of port range for allocating RTP/UDP streams"));
 
   SetMediaTypeOfService(rsrc->AddIntegerField(RTPTOSKey, 0, 255, GetMediaTypeOfService(), "", "Value for DIFSERV Quality of Service"));
+
+#if OPAL_HAS_MIXER
+  rsrc->Add(new PHTTPDividerField());
+  m_recordingEnabled = rsrc->AddBooleanField(RecordAllCallsKey, false, "Enable recording of all calls");
+  m_recordingTemplate = rsrc->AddStringField(RecordFileTemplateKey, P_MAX_PATH, ".\\%DATE%_%TIME%_%FROM_%TO%.avi",
+    "Template for where recording files are placed, and what meta-information is used in it's name."
+    " Meta information is: %DATE%, %TIME%, %FROM%, %TO%, %HOST%"
+    " The file extension dictates the file container format, e.g. .avi, .mp4, etc.", 1, 50);
+  m_recordingOptions.m_stereo = rsrc->AddBooleanField(RecordStereoKey, m_recordingOptions.m_stereo,
+    "Record the two parties, each in their own channel of stereo audio. Otherwise mix them together in mono.");
+  m_recordingOptions.m_audioFormat = rsrc->AddStringField(RecordAudioFormatKey, 10, m_recordingOptions.m_audioFormat,
+    "Audio format: PCM-16, MP3, AAC etc. Note, not all file formats may be able to encode a given format.");
+#if OPAL_VIDEO
+  m_recordingOptions.m_videoFormat = rsrc->AddStringField(RecordVideoFormatKey, 10, m_recordingOptions.m_videoFormat,
+    "Video format: VC1, MPEG, H.264 etc. Note, not all file formats may be able to encode a given format.");
+
+  static const char * const MixingModes[] = { "SideBySideLetterbox", "SideBySideScaled", "StackedPillarbox", "StackedScaled" };
+  PString mode = rsrc->AddSelectField(RecordVideoMixingModeKey, PStringArray(PARRAYSIZE(MixingModes), MixingModes),
+    MixingModes[m_recordingOptions.m_videoMixing], "Video mixing mode.");
+  for (PINDEX i = 0; i < PARRAYSIZE(MixingModes); ++i) {
+    if (mode == MixingModes[i]) {
+      m_recordingOptions.m_videoMixing = (OpalRecordManager::VideoMode)i;
+      break;
+    }
+  }
+
+  PVideoFrameInfo::ParseSize(rsrc->AddStringField(RecordVideoResolutionKey, 10,
+    PVideoFrameInfo::AsString(m_recordingOptions.m_videoWidth, m_recordingOptions.m_videoHeight),
+    "Video resolution for recording, after mixing via the above mode"),
+    m_recordingOptions.m_videoWidth, m_recordingOptions.m_videoHeight);
+#endif
+#endif
 
 #if P_STUN
   rsrc->Add(new PHTTPDividerField());

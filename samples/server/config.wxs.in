@@ -1,6 +1,6 @@
 <Include>
-  <?include $(var.ProjectDir)\version.wxs ?>
-  <?define OPAL_VERSION = "$(var.OPAL_MAJOR).$(var.OPAL_MINOR).$(var.OPAL_PATCH).$(var.OPAL_OEM)" ?>
+    <?include $(var.ProjectDir)\version.wxs ?>
+    <?define OPAL_VERSION = "$(var.OPAL_MAJOR).$(var.OPAL_MINOR).$(var.OPAL_PATCH).$(var.OPAL_OEM)" ?>
 
     <?define ProductName = "OPAL Server" ?>
     <?define ProductDescription = "VoIP gateway and IVR server for OPAL" ?>
@@ -10,6 +10,7 @@
     <?define ProductGUID = "c972f876-ca15-43e4-8e0e-f8a74c5f925a" ?>
 
     <?define CustomWXS = "$(sys.CURRENTDIR)\custom.wxs" ?>
+    <?define CustomHTML = "" ?>
     <?define CustomProgramMenuFolder = "yes" ?>
 
     <?if $(var.Architecture) = "x86" ?>
@@ -30,7 +31,7 @@
         <?define OpenH264Dir = "$(env.ProgramW6432)\PTLib Plug Ins" ?>
         <?define SpanDspDir = "..\..\..\external\spandsp-0.0.6\src\x64\Release" ?>
         <?define ImageMagickDir = "$(env.ProgramW6432)\imagemagick-7.0.5-q16" ?>
-  <?endif?>
+    <?endif?>
 
     <?define AVFORMATVer = "58" ?>
     <?define AVCODECVer = "58" ?>
