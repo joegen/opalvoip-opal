@@ -1271,6 +1271,7 @@ class MyManager : public wxFrame, public OpalManager, public PAsyncNotifierTarge
     MySIPEndPoint  * sipEP;
     bool             m_SIPProxyUsed;
     RegistrationList m_registrations;
+    PMutex           m_registrationsMutex;
 
     void StartRegistrations();
     void ReplaceRegistrations(const RegistrationList & newRegistrations);
