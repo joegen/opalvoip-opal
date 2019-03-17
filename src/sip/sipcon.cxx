@@ -3367,8 +3367,14 @@ void SIPConnection::OnReceivedINFO(SIP_PDU & request)
           if (tokens.GetSize() > 1)
             val = tokens[1].Trim();
           if (tokens.GetSize() > 0) {
-            if (tokens[0] *= "signal")
-              tone = val[0];   // DTMF relay does not use RFC2833 encoding
+            if (tokens[0] *= "signal") {
+              if (val == "10")
+                tone = '*';
+              else if (val == "11")
+                tone = '#';
+              else
+                tone = val[0];   // DTMF relay does not use RFC2833 encoding
+            }
             else if (tokens[0] *= "duration")
               duration = val.AsInteger();
           }
