@@ -1948,6 +1948,7 @@
     <ClInclude Include="..\rtp\libsrtp\crypto\include\alloc.h" />
     <ClInclude Include="..\rtp\libsrtp\crypto\include\auth.h" />
     <ClInclude Include="..\rtp\libsrtp\crypto\include\cipher.h" />
+    <ClInclude Include="..\rtp\libsrtp\crypto\include\cipher_types.h" />
     <ClInclude Include="..\rtp\libsrtp\crypto\include\crypto.h" />
     <ClInclude Include="..\rtp\libsrtp\crypto\include\cryptoalg.h" />
     <ClInclude Include="..\rtp\libsrtp\crypto\include\crypto_kernel.h" />
