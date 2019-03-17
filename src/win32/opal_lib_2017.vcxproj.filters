@@ -732,13 +732,13 @@
     <ClCompile Include="..\rtp\libsrtp\crypto\hash\null_auth.c">
       <Filter>Source Files\RTP\libSRTP\Source</Filter>
     </ClCompile>
-    <ClCompile Include="..\rtp\libsrtp\crypto\hash\sha1.c">
+    <ClCompile Include="..\rtp\libsrtp\crypto\hash\sha1_opal.c">
       <Filter>Source Files\RTP\libSRTP\Source</Filter>
     </ClCompile>
     <ClCompile Include="..\rtp\libsrtp\crypto\cipher\aes.c">
       <Filter>Source Files\RTP\libSRTP\Source</Filter>
     </ClCompile>
-    <ClCompile Include="..\rtp\libsrtp\crypto\cipher\aes_icm.c">
+    <ClCompile Include="..\rtp\libsrtp\crypto\cipher\aes_icm_opal.c">
       <Filter>Source Files\RTP\libSRTP\Source</Filter>
     </ClCompile>
     <ClCompile Include="..\rtp\libsrtp\crypto\cipher\cipher.c">

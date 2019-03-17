@@ -148,9 +148,7 @@ xcopy /y/f "$(ProjectDir)opus\win32\VS2017\$(Platform)\DebugDLL\opus.dll" "C:\Pr
     </Link>
     <PostBuildEvent>
       <Message>Copying codec and debug information to plug in directory</Message>
-      <Command>if not exist "C:\Program Files\PTLib Plug Ins" exit 0
-xcopy /y/f "$(TargetDir)$(TargetName).*d*" "C:\Program Files\PTLib Plug Ins"
-xcopy /y/f "$(ProjectDir)opus\win32\VS2017\$(Platform)\DebugDLL\opus.dll" "C:\Program Files\PTLib Plug Ins"
+      <Command>if exist "C:\Program Files\PTLib Plug Ins" xcopy /y/f "$(TargetDir)$(TargetName).*d*" "C:\Program Files\PTLib Plug Ins"
 </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>

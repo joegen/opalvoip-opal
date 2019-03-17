@@ -612,7 +612,7 @@
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">HAVE_CONFIG_H;_LIB;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">HAVE_CONFIG_H;_LIB;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\rtp\libsrtp\crypto\cipher\aes_icm.c">
+    <ClCompile Include="..\rtp\libsrtp\crypto\cipher\aes_icm_opal.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -912,7 +912,7 @@
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">HAVE_CONFIG_H;_LIB;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">HAVE_CONFIG_H;_LIB;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\rtp\libsrtp\crypto\hash\sha1.c">
+    <ClCompile Include="..\rtp\libsrtp\crypto\hash\sha1_opal.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -2163,42 +2163,42 @@ copy "%(RootDir)%(Directory)\csharp_swig_wrapper.cxx"+nul "%(RootDir)%(Directory
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Updating revision include file.</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Updating revision include file.</Message>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">cd "%(RootDir)%(Directory)"
-PATH=%PATH%;"$(DevEnvDir)\CommonExtensions\Microsoft\TeamFoundation\Team Explorer\Git\usr\bin"
+PATH=$(PATH);"$(DevEnvDir)\CommonExtensions\Microsoft\TeamFoundation\Team Explorer\Git\usr/bin";"$(DevEnvDir)\CommonExtensions\Microsoft\TeamFoundation\Team Explorer\Git\cmd";"C:\Program Files\git\bin"
 sh -c '../ptlib/tools/get_revision.sh %(FileName)'
 if not errorlevel 1 exit
 copy "%(FullPath)"+nul "%(RootDir)%(Directory)%(FileName)"
 if not exist "%(RootDir)%(Directory).git" mkdir "%(RootDir)%(Directory).git"
 copy nul "%(RootDir)%(Directory).git\index"</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">cd "%(RootDir)%(Directory)"
-PATH=%PATH%;"$(DevEnvDir)\CommonExtensions\Microsoft\TeamFoundation\Team Explorer\Git\usr\bin"
+PATH=$(PATH);"$(DevEnvDir)\CommonExtensions\Microsoft\TeamFoundation\Team Explorer\Git\usr/bin";"$(DevEnvDir)\CommonExtensions\Microsoft\TeamFoundation\Team Explorer\Git\cmd";"C:\Program Files\git\bin"
 sh -c '../ptlib/tools/get_revision.sh %(FileName)'
 if not errorlevel 1 exit
 copy "%(FullPath)"+nul "%(RootDir)%(Directory)%(FileName)"
 if not exist "%(RootDir)%(Directory).git" mkdir "%(RootDir)%(Directory).git"
 copy nul "%(RootDir)%(Directory).git\index"</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">cd "%(RootDir)%(Directory)"
-PATH=%PATH%;"$(DevEnvDir)\CommonExtensions\Microsoft\TeamFoundation\Team Explorer\Git\usr\bin"
+PATH=$(PATH);"$(DevEnvDir)\CommonExtensions\Microsoft\TeamFoundation\Team Explorer\Git\usr/bin";"$(DevEnvDir)\CommonExtensions\Microsoft\TeamFoundation\Team Explorer\Git\cmd";"C:\Program Files\git\bin"
 sh -c '../ptlib/tools/get_revision.sh %(FileName)'
 if not errorlevel 1 exit
 copy "%(FullPath)"+nul "%(RootDir)%(Directory)%(FileName)"
 if not exist "%(RootDir)%(Directory).git" mkdir "%(RootDir)%(Directory).git"
 copy nul "%(RootDir)%(Directory).git\index"</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">cd "%(RootDir)%(Directory)"
-PATH=%PATH%;"$(DevEnvDir)\CommonExtensions\Microsoft\TeamFoundation\Team Explorer\Git\usr\bin"
+PATH=$(PATH);"$(DevEnvDir)\CommonExtensions\Microsoft\TeamFoundation\Team Explorer\Git\usr/bin";"$(DevEnvDir)\CommonExtensions\Microsoft\TeamFoundation\Team Explorer\Git\cmd";"C:\Program Files\git\bin"
 sh -c '../ptlib/tools/get_revision.sh %(FileName)'
 if not errorlevel 1 exit
 copy "%(FullPath)"+nul "%(RootDir)%(Directory)%(FileName)"
 if not exist "%(RootDir)%(Directory).git" mkdir "%(RootDir)%(Directory).git"
 copy nul "%(RootDir)%(Directory).git\index"</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">cd "%(RootDir)%(Directory)"
-PATH=%PATH%;"$(DevEnvDir)\CommonExtensions\Microsoft\TeamFoundation\Team Explorer\Git\usr\bin"
+PATH=$(PATH);"$(DevEnvDir)\CommonExtensions\Microsoft\TeamFoundation\Team Explorer\Git\usr/bin";"$(DevEnvDir)\CommonExtensions\Microsoft\TeamFoundation\Team Explorer\Git\cmd";"C:\Program Files\git\bin"
 sh -c '../ptlib/tools/get_revision.sh %(FileName)'
 if not errorlevel 1 exit
 copy "%(FullPath)"+nul "%(RootDir)%(Directory)%(FileName)"
 if not exist "%(RootDir)%(Directory).git" mkdir "%(RootDir)%(Directory).git"
 copy nul "%(RootDir)%(Directory).git\index"</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">cd "%(RootDir)%(Directory)"
-PATH=%PATH%;"$(DevEnvDir)\CommonExtensions\Microsoft\TeamFoundation\Team Explorer\Git\usr\bin"
+PATH=$(PATH);"$(DevEnvDir)\CommonExtensions\Microsoft\TeamFoundation\Team Explorer\Git\usr/bin";"$(DevEnvDir)\CommonExtensions\Microsoft\TeamFoundation\Team Explorer\Git\cmd";"C:\Program Files\git\bin"
 sh -c '../ptlib/tools/get_revision.sh %(FileName)'
 if not errorlevel 1 exit
 copy "%(FullPath)"+nul "%(RootDir)%(Directory)%(FileName)"
