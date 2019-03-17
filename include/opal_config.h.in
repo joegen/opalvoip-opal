@@ -291,7 +291,9 @@
 #if OPAL_PTLIB_SSL
   #undef OPAL_SRTP
   #undef OPAL_SRTP_ERROR_CONST
-  #undef OPAL_AEAD_CRYPTO_SUITES
+  #if P_SSL
+    #undef OPAL_AEAD_CRYPTO_SUITES
+  #endif
   #undef HAS_SRTP_SRTP_H
 #endif
 
