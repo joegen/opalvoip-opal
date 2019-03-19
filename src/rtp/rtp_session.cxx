@@ -495,8 +495,8 @@ OpalRTPSession::SyncSource::~SyncSource()
     trace << m_session
           << m_direction << " statistics:\n"
                "    Sync Source ID       = " << RTP_TRACE_SRC(m_sourceIdentifier) << "\n"
-               "    first packet         = " << m_firstPacketTime << "\n"
-               "    last packet          = " << m_lastPacketAbsTime << "\n"
+               "    first packet         = " << m_firstPacketTime.AsString(PTime::LoggingFormat, PTrace::GetTimeZone()) << "\n"
+               "    last packet          = " << m_lastPacketAbsTime.AsString(PTime::LoggingFormat, PTrace::GetTimeZone()) << "\n"
                "    total packets        = " << m_packets << "\n"
                "    total octets         = " << m_octets << "\n"
                "    bit rate             = " << (8 * m_octets / duration) << "\n"
@@ -911,7 +911,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveData(RTP_
              " sn=" << frame.GetSequenceNumber() << ","
              " hdr=0x" << std::hex << setfill('0') << setw(6) << ts << ","
              " delta=0x" << setw(6) << delta << setfill(' ') << std::dec << ","
-             " time=" << frame.GetMetaData().m_transmitTime.AsString(PTime::TodayFormat));
+             " time=" << frame.GetMetaData().m_transmitTime.AsString(PTime::TodayFormat, PTrace::GetTimeZone()));
     }
 
     CalculateStatistics(frame, now);

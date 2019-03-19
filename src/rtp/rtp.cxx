@@ -601,7 +601,7 @@ void RTP_DataFrame::PrintOn(ostream & strm) const
        << " PT=" << GetPayloadType()
        << " SN=" << GetSequenceNumber()
        << " TS=" << GetTimestamp()
-       << " absT=" << GetAbsoluteTime().AsString(PTime::TodayFormat);
+       << " absT=" << GetAbsoluteTime().AsString(PTime::TodayFormat, PTrace::GetTimeZone());
   if (csrcCount > 0)
     strm  << " CSRS=" << csrcCount;
   strm << " hdr-sz=" << m_headerSize
@@ -701,7 +701,7 @@ void RTP_ReceiverReport::PrintOn(ostream & strm) const
        << " lost=" << totalLost
        << " last_seq=" << lastSequenceNumber
        << " jitter=" << jitter
-       << " lsr=" << lastTimestamp.AsString(PTime::TodayFormat)
+       << " lsr=" << lastTimestamp.AsString(PTime::TodayFormat PTRACE_PARAM(, PTrace::GetTimeZone()))
        << " dlsr=" << delay;
 }
 
@@ -709,7 +709,7 @@ void RTP_ReceiverReport::PrintOn(ostream & strm) const
 void RTP_SenderReport::PrintOn(ostream & strm) const
 {
   strm << "SSRC=" << RTP_TRACE_SRC(sourceIdentifier)
-       << " ntp=" << realTimestamp.AsString(PTime::TodayFormat)
+       << " ntp=" << realTimestamp.AsString(PTime::TodayFormat PTRACE_PARAM(, PTrace::GetTimeZone()))
        << " (" << (realTimestamp - PTime()) << ")"
           " rtp=" << rtpTimestamp
        << " psent=" << packetsSent
@@ -719,7 +719,7 @@ void RTP_SenderReport::PrintOn(ostream & strm) const
 
 void RTP_DelayLastReceiverReport::PrintOn(ostream & strm) const
 {
-  strm << "DLRR: lrr=" << m_lastTimestamp.AsString(PTime::LoggingFormat) << ", dlrr=" << m_delay;
+  strm << "DLRR: lrr=" << m_lastTimestamp.AsString(PTime::LoggingFormat PTRACE_PARAM(, PTrace::GetTimeZone())) << ", dlrr=" << m_delay;
 }
 
 
