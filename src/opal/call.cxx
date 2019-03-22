@@ -875,6 +875,30 @@ bool OpalCall::StartRecording(const PFilePath & fn, const OpalRecordManager::Opt
   return true;
 }
 
+
+bool OpalCall::StartRecording(const PDirectory & outputDir,
+                              const PString & fileTemplate,
+                              const PString & fileType,
+                              const OpalRecordManager::Options & options)
+{
+  PTime now;
+  PCaselessString filename = fileTemplate;
+
+  filename.Replace("%CALL-ID%", PFilePath::Sanitise(GetConnection(0)->GetIdentifier()), true)
+          .Replace("%FROM%", PFilePath::Sanitise(GetPartyA()), true)
+          .Replace("%TO%", PFilePath::Sanitise(GetPartyB()), true)
+          .Replace("%REMOTE%", PFilePath::Sanitise(GetRemoteParty()), true)
+          .Replace("%LOCAL%", PFilePath::Sanitise(GetLocalParty()), true)
+          .Replace("%DATE%", now.AsString("yyyyMMdd"), true)
+          .Replace("%TIME%", now.AsString("hhmmss"), true)
+          .Replace("%TIMESTAMP%", now.AsString(PTime::ShortISO8601), true)
+          .Replace("%HOST%", PFilePath::Sanitise(PIPSocket::GetHostName()), true);
+
+  PFilePath filepath(filename, outputDir, fileType); // Make sure is unique
+  return StartRecording(filepath, options);
+}
+
+
 bool OpalCall::IsRecording() const
 {
   PSafeLockReadOnly lock(*this);

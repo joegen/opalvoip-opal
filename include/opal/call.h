@@ -579,6 +579,24 @@ class OpalCall : public PSafeObject
       const OpalRecordManager::Options & options = false ///< Record mixing options
     );
 
+    /**Start recording a call using a template.
+        %CALL-ID%   Call identifier
+        %FROM%      Calling party
+        %TO%        Answer party
+        %REMOTE%    Remote party
+        %LOCAL%     Local party
+        %DATE%      Date for call
+        %TIME%      Time for call
+        %TIMESTAMP% Date/Time for call in ISO9660 format
+        %HOST%      Host name of machine
+      */
+    bool StartRecording(
+      const PDirectory & outputDir, ///< Directory for output file
+      const PString & fileTemplate, ///< File template for output file
+      const PString & fileType,     ///< Output container type, e.g ".wav"
+      const OpalRecordManager::Options & options = false ///< Record mixing options
+    );
+
     /**Indicate if recording is currently active on call.
       */
     bool IsRecording() const;
