@@ -465,6 +465,9 @@ bool OpalICEMediaTransport::InternalHandleICE(SubChannels subchannel, const void
   if (m_state == e_Disabled)
     return true;
 
+  if (m_subchannels[subchannel].m_remoteGoneError == PChannel::Unavailable)
+    m_subchannels[subchannel].m_remoteGoneError = PChannel::ProtocolFailure;
+
   PUDPSocket * socket = GetSubChannelAsSocket(subchannel);
   PIPAddressAndPort ap;
   socket->GetLastReceiveAddress(ap);

@@ -589,7 +589,7 @@ class OpalMediaTransport : public PSafeObject, public OpalMediaTransportChannelT
       OpalTransportAddress m_remoteAddress;
       RemoteAddressSources m_remoteAddressSource;
       PChannel::Errors     m_lastError;
-      bool                 m_receivedData;
+      PChannel::Errors     m_remoteGoneError;  // Error to report if remote disappears
 
       PTRACE_THROTTLE(m_throttleReadPacket,4,60000);
 

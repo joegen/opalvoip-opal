@@ -3424,7 +3424,7 @@ void OpalRTPSession::SessionFailed(SubChannels subchannel PTRACE_PARAM(, const c
   /* Really should test if both data and control fail, but as it is unlikely we would
      get one failed without the other, we don't bother. */
   if (subchannel == e_Data && m_connection.OnMediaFailed(m_sessionId, error)) {
-    PTRACE(2, *this << "aborting transport, queuing close of media session.");
+    PTRACE(2, *this << "aborting transport, error " << error << ", queuing close of media session.");
     m_manager.QueueDecoupledEvent(new PSafeWorkNoArg<OpalRTPSession, bool>(this, &OpalRTPSession::Close));
   }
 }
