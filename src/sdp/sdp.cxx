@@ -774,14 +774,9 @@ PBoolean SDPMediaDescription::SetAddresses(const OpalTransportAddress & media,
 }
 
 
-bool SDPMediaDescription::FromSession(OpalMediaSession * session,
-                                      const SDPMediaDescription *
-#if OPAL_ICE
-                                                                  offer
-#endif
-                                      , RTP_SyncSourceId)
+bool SDPMediaDescription::FromSession(OpalMediaSession * session, const SDPMediaDescription * offer, RTP_SyncSourceId)
 {
-  if (session == NULL) {
+  if (session == NULL || (offer != NULL && offer->GetPort() == 0)) {
     m_port = 0;
     m_mediaAddress = OpalTransportAddress();
     m_controlAddress = OpalTransportAddress();
@@ -871,7 +866,7 @@ bool SDPMediaDescription::Decode(const PStringArray & tokens)
   // check everything
   switch (m_port) {
     case 0 :
-      PTRACE(3, "Ignoring media session " << m_mediaType << " with port=0");
+      PTRACE(3, "Disabling media session " << m_mediaType << " with port=0");
       m_direction = Inactive;
       m_mediaAddress = m_controlAddress = OpalTransportAddress();
       break;
