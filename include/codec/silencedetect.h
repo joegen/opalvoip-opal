@@ -162,6 +162,20 @@ class OpalSilenceDetector : public PObject
       PINDEX size           ///<  Size of payload buffer
     ) = 0;
 
+    /**Get the average signal level in the stream.
+       This is called from within the silence detection algorithm to
+       calculate the average signal level of the last data frame read from
+       the stream.
+
+       The default behaviour returns UINT_MAX which indicates that the
+       average signal has no meaning for the stream.
+      */
+    static unsigned GetAverageSignalLevelPCM16(
+      const BYTE * buffer,  ///<  RTP payload being detected
+      PINDEX size,          ///<  Size of payload buffer
+      bool asPercentage     ///<  Return as percentage on logarithmic scale
+    );
+
   private:
     /**Reset the adaptive filter
      */
@@ -203,19 +217,11 @@ class OpalPCM16SilenceDetector : public OpalSilenceDetector
 
   /**@name Overrides from OpalSilenceDetector */
   //@{
-    /**Get the average signal level in the stream.
-       This is called from within the silence detection algorithm to
-       calculate the average signal level of the last data frame read from
-       the stream.
-
-       The default behaviour returns UINT_MAX which indicates that the
-       average signal has no meaning for the stream.
-      */
     virtual unsigned GetAverageSignalLevel(
       const BYTE * buffer,  ///<  RTP payload being detected
       PINDEX size           ///<  Size of payload buffer
     );
-  //@}
+    //@}
 };
 
 

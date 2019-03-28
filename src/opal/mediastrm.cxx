@@ -1429,7 +1429,7 @@ PBoolean OpalVideoMediaStream::WriteData(const BYTE * data, PINDEX length, PINDE
   frameData.height = frame->height;
   frameData.pixels = OpalVideoFrameDataPtr(frame);
   frameData.partialFrame = !m_marker;
-  frameData.timestamp = m_timestamp * 1000LL / m_mediaFormat.GetTimeUnits();
+  frameData.sampleTime.SetMicroSeconds(m_timestamp * 1000LL / m_mediaFormat.GetTimeUnits());
   if (!m_outputDevice->SetFrameData(frameData))
     return false;
 

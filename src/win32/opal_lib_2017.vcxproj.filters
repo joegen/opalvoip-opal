@@ -1319,6 +1319,9 @@
     <ClInclude Include="..\..\version.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\rtp\libsrtp\crypto\include\cipher_types.h">
+      <Filter>Source Files\RTP\libSRTP\Headers\Crypto</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="..\..\include\opal_config.h.in">

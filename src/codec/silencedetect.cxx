@@ -318,9 +318,7 @@ OpalSilenceDetector::Result OpalSilenceDetector::Detect(const BYTE * audioPtr, P
 }
 
 
-/////////////////////////////////////////////////////////////////////////////
-
-unsigned OpalPCM16SilenceDetector::GetAverageSignalLevel(const BYTE * buffer, PINDEX size)
+unsigned OpalSilenceDetector::GetAverageSignalLevelPCM16(const BYTE * buffer, PINDEX size, bool asPercentage)
 {
   // Calculate the average signal level of this frame
   int sum = 0;
@@ -334,7 +332,16 @@ unsigned OpalPCM16SilenceDetector::GetAverageSignalLevel(const BYTE * buffer, PI
       sum += *pcm++;
   }
 
-  return sum/samples;
+  unsigned average = sum / samples;
+  return asPercentage ? ((linear2ulaw(average) ^ 0xff) * 100 / 127) : average;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+unsigned OpalPCM16SilenceDetector::GetAverageSignalLevel(const BYTE * buffer, PINDEX size)
+{
+  return GetAverageSignalLevelPCM16(buffer, size, false);
 }
 
 

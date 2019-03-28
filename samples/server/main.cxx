@@ -684,7 +684,7 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
     "Audio format: PCM-16, MP3, AAC etc. Note, not all file formats may be able to encode a given format.");
 #if OPAL_VIDEO
   m_recordingOptions.m_videoFormat = rsrc->AddStringField(RecordVideoFormatKey, 10, m_recordingOptions.m_videoFormat,
-    "Video format: VC1, MPEG, H.264 etc. Note, not all file formats may be able to encode a given format.");
+    "Video format: mpeg4video, h.264 etc. Note, not all file formats may be able to encode a given format.");
 
   static const char * const MixingModes[] = { "SideBySideLetterbox", "SideBySideScaled", "StackedPillarbox", "StackedScaled" };
   PString mode = rsrc->AddSelectField(RecordVideoMixingModeKey, PStringArray(PARRAYSIZE(MixingModes), MixingModes),
@@ -978,36 +978,13 @@ void MyManager::OnStopMediaPatch(OpalConnection & connection, OpalMediaPatch & p
 }
 
 
-static PString SanitiseForFilename(const PString & str)
-{
-  PString sanitised;
-  for (PINDEX i = 0; i < str.GetLength(); ++i) {
-    if (!PFilePath::IsValid(str[i]))
-      sanitised += '_';
-    else if (str[i] == '.')
-      sanitised += '-';
-    else
-      sanitised += str[i];
-  }
-  return sanitised;
-}
-
-
 void MyManager::StartRecordingCall(MyCall & call) const
 {
   if (!m_recordingEnabled)
     return;
 
-  PCaselessString filename = m_recordingTemplate;
-
-  PTime now;
-  filename.Replace("%DATE%", now.AsString("yyyyMMdd"), true);
-  filename.Replace("%TIME%", now.AsString("hhmmss"), true);
-  filename.Replace("%FROM%", SanitiseForFilename(call.GetPartyA()), true);
-  filename.Replace("%TO%", SanitiseForFilename(call.GetPartyB()), true);
-  filename.Replace("%HOST%", SanitiseForFilename(PIPSocket::GetHostName()), true);
-
-  call.StartRecording(filename, m_recordingOptions);
+  PFilePath filepath = m_recordingTemplate;
+  call.StartRecording(filepath.GetDirectory(), filepath.GetTitle(), filepath.GetType(), m_recordingOptions);
 }
 
 

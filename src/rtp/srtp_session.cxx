@@ -56,7 +56,7 @@ static const unsigned MaxConsecutiveErrors = 100;
     uint64_t index = item|(dir<<3)|(subchannel<<5)|((uint64_t)ssrc<<8);
     map<uint64_t, PTrace::ThrottleBase>::iterator it = m_throttle.find(index);
     if (it == m_throttle.end())
-      it = m_throttle.insert(make_pair(index, PTrace::ThrottleBase(level))).first;
+      it = m_throttle.insert(make_pair(index, PTrace::ThrottleBase(level, item == 3 ? 3600000 : 60000))).first;
     return it->second;
   }
 #else
