@@ -244,11 +244,9 @@ copy $(ProjectDir)$(Configuration)\libspandsp.pdb c:\ptlib_plugins
     </Link>
     <PostBuildEvent>
       <Message>Copying fax plug in and debug files</Message>
-      <Command>if not exist c:\ptlib_plugins exit
-copy $(TargetPath) c:\ptlib_plugins
-copy $(TargetDir)\$(TargetName).pdb c:\ptlib_plugins
-copy $(ProjectDir)$(Configuration)\libspandsp.dll c:\ptlib_plugins
-copy $(ProjectDir)$(Configuration)\libspandsp.pdb c:\ptlib_plugins
+      <Command>if not exist "$(ProgramW6432)\PTLib Plug Ins" exit
+xcopy /y/f "$(TargetDir)$(TargetName).*d*" "$(ProgramW6432)\PTLib Plug Ins"
+xcopy /y/f "$(OutDir)libspandsp\spandsp.*d*" "$(ProgramW6432)\PTLib Plug Ins"
 </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
