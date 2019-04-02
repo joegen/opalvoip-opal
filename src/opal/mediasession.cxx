@@ -599,15 +599,20 @@ OpalMediaTransport::OpalMediaTransport(const PString & name)
   , m_congestionControl(NULL)
 {
   m_ccTimer.SetNotifier(PCREATE_NOTIFIER(ProcessCongestionControl), "RTP-CC");
+  PTRACE(5, "Created OpalMediaTransport " << this);
 }
 
 
 OpalMediaTransport::~OpalMediaTransport()
 {
-  m_ccTimer.Stop();
+  for (vector<ChannelInfo>::iterator it = m_subchannels.begin(); it != m_subchannels.end(); ++it) {
+    delete it->m_channel;
+    delete it->m_thread;
+  }
+
   delete m_congestionControl.exchange(NULL);
 
-  InternalStop();
+  PTRACE(5, "Destroyed OpalMediaTransport " << this);
 }
 
 
@@ -965,24 +970,22 @@ void OpalMediaTransport::Start()
 }
 
 
-void OpalMediaTransport::InternalStop()
+bool OpalMediaTransport::GarbageCollection()
 {
-  if (m_subchannels.empty())
-    return;
+  if (m_opened) {
+    PTRACE(4, *this << "stopping " << m_subchannels.size() << " subchannel(s).");
+    InternalClose();
+  }
 
-  PTRACE(4, *this << "stopping " << m_subchannels.size() << " subchannels.");
-  InternalClose();
+  m_ccTimer.Stop();
 
-  for (vector<ChannelInfo>::iterator it = m_subchannels.begin(); it != m_subchannels.end(); ++it)
-    PThread::WaitAndDelete(it->m_thread);
+  for (vector<ChannelInfo>::iterator it = m_subchannels.begin(); it != m_subchannels.end(); ++it) {
+    if (!it->m_thread->IsTerminated())
+      return false;
+  }
 
-  P_INSTRUMENTED_LOCK_READ_WRITE();
-
-  for (vector<ChannelInfo>::iterator it = m_subchannels.begin(); it != m_subchannels.end(); ++it)
-    delete it->m_channel;
-  m_subchannels.clear();
-
-  PTRACE(4, *this << "stopped");
+  PTRACE(4, *this << "stopped " << m_subchannels.size() << " subchannel(s).");
+  return true;
 }
 
 

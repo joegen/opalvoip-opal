@@ -259,7 +259,22 @@ void OpalConnection::PrintOn(ostream & strm) const
 
 bool OpalConnection::GarbageCollection()
 {
-  return m_mediaStreams.DeleteObjectsToBeRemoved();
+    /* This looks a bit weird, but is designed to make sure the OpalMediaTransport objects
+       are not deleted inside the media read thread. The media transports can be attached
+       and detached to an OpalMediaSession at any time, in particular with T.38 fax, and
+       thus we really do not know exactly when it is not in use any more. Which makes it
+       hard to manage. The PSafeObject does keep track of all the references, which means
+       we can do a sneaky thing by adding the transport to a collection, then when it is
+       the only reference left, we remove it from the collection and clean it up in
+       DeleteObjectsToBeRemoved(). */
+  for (OpalMediaTransportPtr mtp(m_mediaTransports, PSafeReference); mtp != NULL; ) {
+    if (mtp->GetSafeReferenceCount() <= 3)
+      m_mediaTransports.Remove(mtp++);
+    else
+      ++mtp;
+  }
+
+  return m_mediaStreams.DeleteObjectsToBeRemoved() && m_mediaTransports.DeleteObjectsToBeRemoved();
 }
 
 

@@ -39,6 +39,7 @@
 
 #include <opal/mediafmt.h>
 #include <opal/mediastrm.h>
+#include <opal/mediasession.h>
 #include <opal/guid.h>
 #include <opal/transports.h>
 #include <ptclib/dtmf.h>
@@ -1938,6 +1939,8 @@ class OpalConnection : public PSafeObject
     void InternalOnReleased();
     void InternalExecuteMediaCommand(OpalMediaCommand * command);
 
+    void InternalCreatedMediaTransport(const OpalMediaTransportPtr & transport) { m_mediaTransports.Append(transport); }
+
   protected:
   // Member variables
     OpalCall           & m_ownerCall;
@@ -1986,6 +1989,8 @@ class OpalConnection : public PSafeObject
     };
     typedef PSafeDictionary<StreamKey, OpalMediaStream> StreamDict;
     StreamDict m_mediaStreams;
+
+    PSafeList<OpalMediaTransport> m_mediaTransports;
 
     OpalJitterBuffer::Params m_jitterParams;
 

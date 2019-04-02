@@ -533,7 +533,7 @@ class OpalMediaTransport : public PSafeObject, public OpalMediaTransportChannelT
 
   protected:
     virtual void InternalClose();
-    virtual void InternalStop();
+    virtual bool GarbageCollection(); // Override from PSafeObject
     virtual void InternalRxData(SubChannels subchannel, const PBYTEArray & data);
 
     PString       m_name;
@@ -607,7 +607,6 @@ class OpalTCPMediaTransport : public OpalMediaTransport
 {
   public:
     OpalTCPMediaTransport(const PString & name);
-    ~OpalTCPMediaTransport() { InternalStop(); }
 
     virtual bool Open(OpalMediaSession & session, PINDEX count, const PString & localInterface, const OpalTransportAddress & remoteAddress);
     virtual bool SetRemoteAddress(const OpalTransportAddress & remoteAddress, PINDEX = e_Media);
@@ -622,7 +621,6 @@ class OpalUDPMediaTransport : public OpalMediaTransport
     PCLASSINFO(OpalUDPMediaTransport, OpalMediaTransport);
   public:
     OpalUDPMediaTransport(const PString & name);
-    ~OpalUDPMediaTransport() { InternalStop(); }
 
     virtual bool Open(OpalMediaSession & session, PINDEX count, const PString & localInterface, const OpalTransportAddress & remoteAddress);
     virtual bool SetRemoteAddress(const OpalTransportAddress & remoteAddress, SubChannels subchannel = e_Media);

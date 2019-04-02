@@ -87,12 +87,6 @@ OpalICEMediaTransport::OpalICEMediaTransport(const PString & name)
 }
 
 
-OpalICEMediaTransport::~OpalICEMediaTransport()
-{
-  InternalStop();
-}
-
-
 bool OpalICEMediaTransport::Open(OpalMediaSession & session,
                                  PINDEX count,
                                  const PString & localInterface,
