@@ -302,6 +302,7 @@ OpalAudioJitterBuffer::OpalAudioJitterBuffer(const Init & init)
   , m_consecutiveLatePackets(0)
   , m_consecutiveOverflows(0)
   , m_consecutiveEmpty(0)
+  , m_packetTime(0)
   , m_lastSyncSource(0)
 #if PTRACING
   , m_lastRemoveTick(PTimer::Tick())
