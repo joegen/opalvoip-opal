@@ -941,25 +941,34 @@ bool SIPEndPoint::OnReceivedREGISTER(SIP_PDU & request)
 SIP_PDU::StatusCodes SIPEndPoint::InternalHandleREGISTER(SIP_PDU & request, SIP_PDU * response)
 {
   PSafePtr<RegistrarAoR> ua = m_registeredUAs.Find(request.GetMIME().GetTo());
-  if (ua == NULL) {
-    if (request.GetMIME().GetExpires(0) == 0)
+  if (ua != NULL) {
+    SIP_PDU::StatusCodes status = ua->OnReceivedREGISTER(*this, request);
+    if (status != SIP_PDU::Successful_OK)
+      return status;
+  }
+  else {
+    if (request.GetMIME().GetExpires() == 0)
       return SIP_PDU::Failure_NotFound;
 
     ua = CreateRegistrarAoR(request);
     if (ua == NULL)
       return SIP_PDU::Failure_Forbidden;
 
+    SIP_PDU::StatusCodes status = ua->OnReceivedREGISTER(*this, request);
+    if (status != SIP_PDU::Successful_OK)
+      return status;
+
+    if (!ua->HasBindings())
+      return SIP_PDU::Failure_NotFound;
+
     PTRACE(3, "SIP-Reg", "Created new Registered UA: " << *ua);
     m_registeredUAs.SetAt(ua->GetAoR(), ua);
   }
 
-  SIP_PDU::StatusCodes status = ua->OnReceivedREGISTER(*this, request);
-  if (status == SIP_PDU::Successful_OK) {
-    OnChangedRegistrarAoR(*ua);
-    if (response != NULL && ua->HasBindings())
-      response->GetMIME().SetContact(ua->GetContacts().ToString());
-  }
-  return status;
+  OnChangedRegistrarAoR(*ua);
+  if (response != NULL && ua->HasBindings())
+    response->GetMIME().SetContact(ua->GetContacts().ToString());
+  return SIP_PDU::Successful_OK;
 }
 
 

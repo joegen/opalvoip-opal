@@ -3093,8 +3093,13 @@ bool OpalRTPSession::Open(const PString & localInterface, const OpalTransportAdd
     transportName += "bundle";
   else
     transportName.sprintf("Session %u", m_sessionId);
+
   OpalMediaTransportPtr transport = CreateMediaTransport(transportName);
+  if (transport == NULL)
+    return false;
+
   PTRACE_CONTEXT_ID_TO(*transport);
+  m_connection.InternalCreatedMediaTransport(transport);
 
   if (!transport->Open(*this, m_singlePortRx ? 1 : 2, localInterface, remoteAddress))
     return false;

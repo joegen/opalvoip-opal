@@ -71,7 +71,6 @@ class OpalICEMediaTransport : public OpalUDPMediaTransport
     PCLASSINFO(OpalICEMediaTransport, OpalUDPMediaTransport);
   public:
     OpalICEMediaTransport(const PString & name);
-    ~OpalICEMediaTransport();
 
     virtual bool Open(OpalMediaSession & session, PINDEX count, const PString & localInterface, const OpalTransportAddress & remoteAddress);
     virtual bool IsEstablished() const;
