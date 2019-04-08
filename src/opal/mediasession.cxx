@@ -980,7 +980,7 @@ bool OpalMediaTransport::GarbageCollection()
   m_ccTimer.Stop();
 
   for (vector<ChannelInfo>::iterator it = m_subchannels.begin(); it != m_subchannels.end(); ++it) {
-    if (!it->m_thread->IsTerminated())
+    if (it->m_thread != NULL && !it->m_thread->IsTerminated())
       return false;
   }
 
