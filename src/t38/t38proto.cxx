@@ -175,6 +175,7 @@ bool OpalFaxSession::Open(const PString & localInterface, const OpalTransportAdd
   else
     m_transport = new OpalTCPMediaTransport("T.38-TCP");
   PTRACE_CONTEXT_ID_TO(m_transport);
+  m_connection.InternalCreatedMediaTransport(m_transport);
 
   PIPSocket::Address localIP(localInterface);
   if (!localIP.IsValid() || !m_transport->Open(*this, 1, localIP, remoteAddress)) {
