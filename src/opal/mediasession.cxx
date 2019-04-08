@@ -1415,7 +1415,7 @@ bool OpalUDPMediaTransport::Write(const void * data, PINDEX length, SubChannels 
     socket->GetSendAddress(sendAddr);
 
   if (!sendAddr.IsValid()) {
-    PTRACE(4, "UDP write has no destination address on subchannel " << subchannel);
+    PTRACE(4, *this << "UDP write has no destination address on subchannel " << subchannel);
     /* The following makes not having destination address yet be processed the
        same as if the remote is not yet listening on the port (ICMP errors) so it
        will keep trying for a while, then give up and close the media transport. */
@@ -1423,6 +1423,8 @@ bool OpalUDPMediaTransport::Write(const void * data, PINDEX length, SubChannels 
     return false;
   }
 
+  PTRACE(m_subchannels[subchannel].m_throttleWritePacket,
+         *this << "writing UDP media data: subchannel=" << subchannel << ", size=" << length << ", dest=" << sendAddr);
   if (socket->WriteTo(data, length, sendAddr))
     return true;
 
