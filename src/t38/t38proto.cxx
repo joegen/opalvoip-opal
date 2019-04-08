@@ -970,6 +970,13 @@ PBoolean OpalFaxMediaStream::Open()
 }
 
 
+PBoolean OpalFaxMediaStream::Start()
+{
+  m_session.Start();
+  return OpalMediaStream::Start();
+}
+
+
 bool OpalFaxMediaStream::InternalUpdateMediaFormat(const OpalMediaFormat & mediaFormat)
 {
   if (!IsOpen())
