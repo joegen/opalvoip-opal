@@ -1245,7 +1245,7 @@ bool OpalSDPConnection::OnReceivedAnswerSDP(const SDPSessionDescription & sdp, b
       return false;
 
     unsigned sessionId;
-    if (!mediaDescription->IsGroupMember(OpalMediaSession::GetBundleGroupId()))
+    if (mediaDescriptionCount == 1 || !mediaDescription->IsGroupMember(OpalMediaSession::GetBundleGroupId()))
       sessionId = index;
     else {
       /* When using BUNDLE, sessionId not 1 to 1 with media description any

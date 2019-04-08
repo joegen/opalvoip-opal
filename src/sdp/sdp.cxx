@@ -3009,7 +3009,7 @@ bool SDPSessionDescription::Decode(const PStringArray & lines, const OpalMediaFo
               " ok=" << boolalpha << ok);
   }
 
-  {
+  if (mediaDescriptions.GetSize() > 1) {
     // Match up groups and mid's
     for (PINDEX i = 0; i < mediaDescriptions.GetSize(); ++i)
       mediaDescriptions[i].MatchGroupInfo(m_groups);
