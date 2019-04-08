@@ -906,7 +906,7 @@ bool OpalMediaTransport::ChannelInfo::HandleUnavailableError()
 
 void OpalMediaTransport::InternalClose()
 {
-  P_INSTRUMENTED_LOCK_READ_ONLY(return);
+  P_INSTRUMENTED_LOCK_READ_ONLY();
 
   m_opened = m_established = false;
 
