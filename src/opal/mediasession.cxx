@@ -1076,8 +1076,10 @@ OpalUDPMediaTransport::OpalUDPMediaTransport(const PString & name)
 bool OpalUDPMediaTransport::SetRemoteAddress(const OpalTransportAddress & remoteAddress, SubChannels subchannel)
 {
   PIPAddressAndPort ap;
-  if (!remoteAddress.GetIpAndPort(ap))
+  if (!remoteAddress.GetIpAndPort(ap)) {
+    PTRACE(2, "Illegal IP address, or no prt specified: " << remoteAddress);
     return false;
+  }
 
   return InternalSetRemoteAddress(ap, subchannel, e_RemoteAddressFromSignalling);
 }

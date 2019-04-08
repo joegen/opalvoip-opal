@@ -182,11 +182,6 @@ bool OpalFaxSession::Open(const PString & localInterface, const OpalTransportAdd
     return false;
   }
 
-  if (!remoteAddress.IsEmpty() && !m_transport->SetRemoteAddress(remoteAddress.GetHostName(true))) {
-    PTRACE(2, "Could conect to " << remoteAddress);
-    return false;
-  }
-
   m_transport->AddReadNotifier(PCREATE_NOTIFIER(OnReadPacket));
 
   PTRACE(3, "Opened transport to " << remoteAddress);
