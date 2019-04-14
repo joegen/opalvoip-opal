@@ -129,6 +129,7 @@ class Tag
 
 static const char L16Format[] = "L16";
 static const char T38Format[] = "T.38";
+static const char T38RTPFormat[] = "T.38-RTP";
 static const char TIFFFormat[] = "TIFF-File";
 static const char T38sdp[]    = "t38";
 
@@ -205,7 +206,7 @@ static struct PluginCodec_Option const T38FaxVersion =
   false,                      // Read Only flag
   PluginCodec_MinMerge,       // Merge mode
   "0",                        // Initial value
-  NULL,                       // SIP/SDP FMTP name
+  "T38FaxVersion",            // SIP/SDP FMTP name
   "0",                        // SIP/SDP FMTP default value (option not included in FMTP if have this value)
   0,                          // H.245 Generic Capability number and scope bits
   "0",                        // Minimum value
@@ -223,7 +224,7 @@ static struct PluginCodec_Option const T38FaxRateManagement =
   false,                      // Read Only flag
   PluginCodec_AlwaysMerge,    // Merge mode
   "transferredTCF",           // Initial value
-  NULL,                       // SIP/SDP FMTP name
+  "T38FaxRateManagement",     // SIP/SDP FMTP name
   NULL,                       // SIP/SDP FMTP default value (option not included in FMTP if have this value)
   0,                          // H.245 Generic Capability number and scope bits
   "localTCF:transferredTCF"   // enum values
@@ -241,8 +242,8 @@ static struct PluginCodec_Option const T38MaxBitRate =
   false,                      // Read Only flag
   PluginCodec_NoMerge,        // Merge mode
   "14400",                    // Initial value
-  NULL,                       // SIP/SDP FMTP name
-  NULL,                       // SIP/SDP FMTP default value (option not included in FMTP if have this value)
+  "T38MaxBitRate",            // SIP/SDP FMTP name
+  "14400",                    // SIP/SDP FMTP default value (option not included in FMTP if have this value)
   0,                          // H.245 Generic Capability number and scope bits
   "300",                      // Minimum value
   "56000"                     // Maximum value
@@ -262,8 +263,8 @@ static struct PluginCodec_Option const T38FaxMaxBuffer =
   false,                      // Read Only flag
   PluginCodec_NoMerge,        // Merge mode
   "2000",                     // Initial value
-  NULL,                       // SIP/SDP FMTP name
-  "528",                      // SIP/SDP FMTP default value (option not included in FMTP if have this value)
+  "T38FaxMaxBuffer",          // SIP/SDP FMTP name
+  "2000",                     // SIP/SDP FMTP default value (option not included in FMTP if have this value)
   0,                          // H.245 Generic Capability number and scope bits
   "100",                      // Minimum value
   "9999"                      // Maximum value
@@ -283,9 +284,9 @@ static struct PluginCodec_Option const T38FaxMaxDatagram =
   "T38FaxMaxDatagram",        // Generic (human readable) option name
   false,                      // Read Only flag
   PluginCodec_NoMerge,        // Merge mode
-  "1400",                     // Initial value
-  NULL,                       // SIP/SDP FMTP name
-  "528",                      // SIP/SDP FMTP default value (option not included in FMTP if have this value)
+  "1500",                     // Initial value
+  "T38FaxMaxDatagram",        // SIP/SDP FMTP name
+  "1500",                     // SIP/SDP FMTP default value (option not included in FMTP if have this value)
   0,                          // H.245 Generic Capability number and scope bits
   "10",                       // Minimum value
   "1500"                      // Maximum value
@@ -322,7 +323,7 @@ static struct PluginCodec_Option const T38FaxFillBitRemoval =
   false,                      // Read Only flag
   PluginCodec_AndMerge,       // Merge mode
   "0",                        // Initial value
-  NULL,                       // SIP/SDP FMTP name
+  "T38FaxFillBitRemoval",     // SIP/SDP FMTP name
   "0",                        // SIP/SDP FMTP default value (option not included in FMTP if have this value)
   0                           // H.245 Generic Capability number and scope bits
 };
@@ -339,7 +340,7 @@ static struct PluginCodec_Option const T38FaxTranscodingMMR =
   false,                      // Read Only flag
   PluginCodec_AndMerge,       // Merge mode
   "0",                        // Initial value
-  NULL,                       // SIP/SDP FMTP name
+  "T38FaxTranscodingMMR",     // SIP/SDP FMTP name
   "0",                        // SIP/SDP FMTP default value (option not included in FMTP if have this value)
   0                           // H.245 Generic Capability number and scope bits
 };
@@ -356,7 +357,7 @@ static struct PluginCodec_Option const T38FaxTranscodingJBIG =
   false,                      // Read Only flag
   PluginCodec_AndMerge,       // Merge mode
   "0",                        // Initial value
-  NULL,                       // SIP/SDP FMTP name
+  "T38FaxTranscodingJBIG",    // SIP/SDP FMTP name
   "0",                        // SIP/SDP FMTP default value (option not included in FMTP if have this value)
   0                           // H.245 Generic Capability number and scope bits
 };
@@ -1541,12 +1542,12 @@ class FaxCodecContext
       }
       else {
         if (m_definition->sourceFormat == TIFFFormat) {
-          if (m_definition->destFormat == T38Format)
+          if (strncmp(m_definition->destFormat, T38Format, sizeof(T38Format)-1) == 0)
             m_instance = new TIFF_T38(PTRACE_PARAM(key));
           else
             m_instance = new TIFF_PCM(PTRACE_PARAM(key));
         }
-        else if (m_definition->sourceFormat == T38Format) {
+        else if (strncmp(m_definition->sourceFormat, T38Format, sizeof(T38Format)-1) == 0) {
           if (m_definition->destFormat == TIFFFormat)
             m_instance = new TIFF_T38(PTRACE_PARAM(key));
           else
@@ -1633,7 +1634,7 @@ static int get_codec_options(const PluginCodec_Definition * ,
     return false;
 
   if (context != NULL) {
-    if (strcasecmp((char *)context, T38Format) == 0) {
+    if (strncasecmp((char *)context, T38Format, sizeof(T38Format)-1) == 0) {
       *(struct PluginCodec_Option const * const * *)parm = OptionTableT38;
       return true;
     }
@@ -1744,242 +1745,63 @@ static int Decode(const PluginCodec_Definition * /*codec*/,
 
 /////////////////////////////////////////////////////////////////////////////
 
-static struct PluginCodec_information LicenseInfo = {
-  1081086550,                              // timestamp = Sun 04 Apr 2004 01:49:10 PM UTC = 
-
-  "Craig Southeren, Post Increment",                           // source code author
-  "1.0",                                                       // source code version
+PLUGINCODEC_LICENSE(
+  "Craig Southeren & Robert Jongbloed",                        // source code author
+  "2.0",                                                       // source code version
   "craigs@postincrement.com",                                  // source code email
   "http://www.postincrement.com",                              // source code URL
   "Copyright (C) 2007 by Post Increment, All Rights Reserved", // source code copyright
   "MPL 1.0",                                                   // source code license
   PluginCodec_License_MPL,                                     // source code license
-  
-  "T.38 Fax Codec",                                            // codec description
-  "Craig Southeren",                                           // codec author
+  "T.38 SpanDSP Fax Codec",                                    // codec description
+  "Steve Underwood ",                                          // codec author
   "Version 1",                                                 // codec version
-  "craigs@postincrement.com",                                  // codec email
-  "",                                                          // codec URL
+  "steveu@coppice.org",                                        // codec email
+  "https://www.soft-switch.org/",                              // codec URL
   "",                                                          // codec copyright information
   NULL,                                                        // codec license
   PluginCodec_License_MPL                                      // codec license code
-};
+);
 
 #define MY_API_VERSION PLUGIN_CODEC_VERSION_OPTIONS
 
+#define FAX_CODEC(dir, src, dst, desc, flags) \
+  { \
+    MY_API_VERSION, \
+    &MyLicenseInfo, \
+    (flags), \
+    desc, \
+    src, \
+    dst, \
+    NULL, \
+    8000, \
+    BITS_PER_SECOND, \
+    MICROSECONDS_PER_FRAME, \
+    SAMPLES_PER_FRAME, \
+    BYTES_PER_FRAME, \
+    PREF_FRAMES_PER_PACKET, \
+    MAX_FRAMES_PER_PACKET, \
+    T38_PAYLOAD_CODE, \
+    T38sdp, \
+    Create, \
+    Destroy, \
+    dir, \
+    Controls, \
+    PluginCodec_H323T38Codec, \
+    NULL \
+  }
+
 static PluginCodec_Definition faxCodecDefn[] = {
-
-  { 
-    // encoder
-    MY_API_VERSION,                     // codec API version
-    &LicenseInfo,                       // license information
-
-    PluginCodec_MediaTypeFax |          // audio codec
-    PluginCodec_InputTypeRaw |          // raw input data
-    PluginCodec_OutputTypeRTP |         // RTP output data
-    PluginCodec_RTPTypeExplicit,        // explicit RTP type
-
-    "SpanDSP - PCM to T.38 Codec",      // text decription
-    L16Format,                          // source format
-    T38Format,                          // destination format
-
-    NULL,                               // user data
-
-    8000,                               // samples per second
-    BITS_PER_SECOND,                    // raw bits per second
-    MICROSECONDS_PER_FRAME,             // microseconds per frame
-    SAMPLES_PER_FRAME,                  // samples per frame
-    BYTES_PER_FRAME,                    // bytes per frame
-    PREF_FRAMES_PER_PACKET,             // recommended number of frames per packet
-    MAX_FRAMES_PER_PACKET,              // maximum number of frames per packe
-    T38_PAYLOAD_CODE,                   // internal RTP payload code
-    T38sdp,                             // RTP payload name
-
-    Create,                             // create codec function
-    Destroy,                            // destroy codec
-    Encode,                             // encode/decode
-    Controls,                           // codec controls
-
-    PluginCodec_H323T38Codec,           // h323CapabilityType 
-    NULL                                // h323CapabilityData
-  },
-
-  { 
-    // decoder
-    MY_API_VERSION,                     // codec API version
-    &LicenseInfo,                       // license information
-
-    PluginCodec_EmptyPayload |
-    PluginCodec_MediaTypeFax |          // audio codec
-    PluginCodec_InputTypeRTP |          // RTP input data
-    PluginCodec_OutputTypeRaw |         // raw output data
-    PluginCodec_RTPTypeExplicit,        // explicit RTP type
-
-    "SpanDSP - T.38 to PCM Codec",      // text decription
-    T38Format,                          // source format
-    L16Format,                          // destination format
-
-    NULL,                               // user data
-
-    8000,                               // samples per second
-    BITS_PER_SECOND,                    // raw bits per second
-    MICROSECONDS_PER_FRAME,             // microseconds per frame
-    SAMPLES_PER_FRAME,                  // samples per frame
-    BYTES_PER_FRAME,                    // bytes per frame
-    PREF_FRAMES_PER_PACKET,             // recommended number of frames per packet
-    MAX_FRAMES_PER_PACKET,              // maximum number of frames per packe
-    T38_PAYLOAD_CODE,                   // internal RTP payload code
-    T38sdp,                             // RTP payload name
-
-    Create,                             // create codec function
-    Destroy,                            // destroy codec
-    Decode,                             // encode/decode
-    Controls,                           // codec controls
-
-    PluginCodec_H323T38Codec,           // h323CapabilityType 
-    NULL                                // h323CapabilityData
-  },
-
-  { 
-    // encoder
-    MY_API_VERSION,                     // codec API version
-    &LicenseInfo,                       // license information
-
-    PluginCodec_MediaTypeFax |          // audio codec
-    PluginCodec_InputTypeRaw |          // raw input data
-    PluginCodec_OutputTypeRTP |         // RTP output data
-    PluginCodec_RTPTypeDynamic,         // dynamic RTP type
-
-    "SpanDSP - TIFF to T.38 Codec",     // text decription
-    TIFFFormat,                         // source format
-    T38Format,                          // destination format
-
-    NULL,                               // user data
-
-    8000,                               // samples per second
-    BITS_PER_SECOND,                    // raw bits per second
-    MICROSECONDS_PER_FRAME,             // microseconds per frame
-    SAMPLES_PER_FRAME,                  // samples per frame
-    BYTES_PER_FRAME,                    // bytes per frame
-    PREF_FRAMES_PER_PACKET,             // recommended number of frames per packet
-    MAX_FRAMES_PER_PACKET,              // maximum number of frames per packe
-    0,                                  // dynamic payload
-    NULL,                               // RTP payload name
-
-    Create,                             // create codec function
-    Destroy,                            // destroy codec
-    Encode,                             // encode/decode
-    Controls,                           // codec controls
-
-    PluginCodec_H323T38Codec,           // h323CapabilityType 
-    NULL                                // h323CapabilityData
-  },
-
-  { 
-    // decoder
-    MY_API_VERSION,                     // codec API version
-    &LicenseInfo,                       // license information
-
-    PluginCodec_MediaTypeFax |          // audio codec
-    PluginCodec_InputTypeRTP |          // RTP input data
-    PluginCodec_OutputTypeRaw |         // raw output data
-    PluginCodec_RTPTypeDynamic,         // dynamic RTP type
-
-    "SpanDSP - T.38 to TIFF Codec",     // text decription
-    T38Format,                          // source format
-    TIFFFormat,                         // destination format
-
-    NULL,                               // user data
-
-    8000,                               // samples per second
-    BITS_PER_SECOND,                    // raw bits per second
-    MICROSECONDS_PER_FRAME,             // microseconds per frame
-    SAMPLES_PER_FRAME,                  // samples per frame
-    BYTES_PER_FRAME,                    // bytes per frame
-    PREF_FRAMES_PER_PACKET,             // recommended number of frames per packet
-    MAX_FRAMES_PER_PACKET,              // maximum number of frames per packe
-    0,                                  // dynamic payload
-    NULL,                               // RTP payload name
-
-    Create,                             // create codec function
-    Destroy,                            // destroy codec
-    Decode,                             // encode/decode
-    Controls,                           // codec controls
-
-    PluginCodec_H323T38Codec,           // h323CapabilityType 
-    NULL                                // h323CapabilityData
-  },
-
-  { 
-    // encoder
-    MY_API_VERSION,                     // codec API version
-    &LicenseInfo,                       // license information
-
-    PluginCodec_MediaTypeFax |          // audio codec
-    PluginCodec_InputTypeRaw |          // raw input data
-    PluginCodec_OutputTypeRaw |         // raw output data
-    PluginCodec_RTPTypeDynamic,         // dynamic RTP type
-
-    "SpanDSP - PCM to TIFF Codec",      // text decription
-    L16Format,                          // source format
-    TIFFFormat,                         // destination format
-
-    NULL,                               // user data
-
-    8000,                               // samples per second
-    BITS_PER_SECOND,                    // raw bits per second
-    MICROSECONDS_PER_FRAME,             // microseconds per frame
-    SAMPLES_PER_FRAME,                  // samples per frame
-    BYTES_PER_FRAME,                    // bytes per frame
-    PREF_FRAMES_PER_PACKET,             // recommended number of frames per packet
-    MAX_FRAMES_PER_PACKET,              // maximum number of frames per packe
-    0,                                  // dynamic payload
-    NULL,                               // RTP payload name
-
-    Create,                             // create codec function
-    Destroy,                            // destroy codec
-    Encode,                             // encode/decode
-    Controls,                           // codec controls
-
-    0,                                  // h323CapabilityType 
-    NULL                                // h323CapabilityData
-  },
-
-  { 
-    // decoder
-    MY_API_VERSION,                     // codec API version
-    &LicenseInfo,                       // license information
-
-    PluginCodec_MediaTypeFax |          // audio codec
-    PluginCodec_InputTypeRaw |          // raw input data
-    PluginCodec_OutputTypeRaw |         // raw output data
-    PluginCodec_RTPTypeDynamic,         // dynamic RTP type
-
-    "SpanDSP - TIFF to PCM Codec",      // text decription
-    TIFFFormat,                         // source format
-    L16Format,                          // destination format
-
-    NULL,                               // user data
-
-    8000,                               // samples per second
-    BITS_PER_SECOND,                    // raw bits per second
-    MICROSECONDS_PER_FRAME,             // microseconds per frame
-    SAMPLES_PER_FRAME,                  // samples per frame
-    BYTES_PER_FRAME,                    // bytes per frame
-    PREF_FRAMES_PER_PACKET,             // recommended number of frames per packet
-    MAX_FRAMES_PER_PACKET,              // maximum number of frames per packe
-    0,                                  // dynamic payload
-    NULL,                               // RTP payload name
-
-    Create,                             // create codec function
-    Destroy,                            // destroy codec
-    Decode,                             // encode/decode
-    Controls,                           // codec controls
-
-    0,                                  // h323CapabilityType 
-    NULL                                // h323CapabilityData
-  },
-
+  FAX_CODEC(Encode, L16Format,    T38Format,    "SpanDSP - PCM to T.38 UDPTL Codec",  PluginCodec_InputTypeRaw|PluginCodec_OutputTypeRTP|PluginCodec_RTPTypeExplicit|PluginCodec_MediaTypeFax  ),
+  FAX_CODEC(Encode, L16Format,    T38RTPFormat, "SpanDSP - PCM to T.38 RTP Codec",    PluginCodec_InputTypeRaw|PluginCodec_OutputTypeRTP|PluginCodec_RTPTypeDynamic |PluginCodec_MediaTypeAudio),
+  FAX_CODEC(Decode, T38Format,    L16Format,    "SpanDSP - T.38 UDPTL to PCM Codec",  PluginCodec_InputTypeRTP|PluginCodec_OutputTypeRaw|PluginCodec_RTPTypeExplicit|PluginCodec_MediaTypeFax  |PluginCodec_EmptyPayload),
+  FAX_CODEC(Decode, T38RTPFormat, L16Format,    "SpanDSP - T.38 RTP to PCM Codec",    PluginCodec_InputTypeRTP|PluginCodec_OutputTypeRaw|PluginCodec_RTPTypeExplicit|PluginCodec_MediaTypeAudio|PluginCodec_EmptyPayload),
+  FAX_CODEC(Encode, TIFFFormat,   T38Format,    "SpanDSP - TIFF to T.38 UDPTL Codec", PluginCodec_InputTypeRaw|PluginCodec_OutputTypeRTP|PluginCodec_RTPTypeDynamic |PluginCodec_MediaTypeFax),
+  FAX_CODEC(Encode, TIFFFormat,   T38RTPFormat, "SpanDSP - TIFF to T.38 RTP Codec",   PluginCodec_InputTypeRaw|PluginCodec_OutputTypeRTP|PluginCodec_RTPTypeDynamic |PluginCodec_MediaTypeAudio),
+  FAX_CODEC(Decode, T38Format,    TIFFFormat,   "SpanDSP - T.38 UDPTL to TIFF Codec", PluginCodec_InputTypeRTP|PluginCodec_OutputTypeRaw|PluginCodec_RTPTypeExplicit|PluginCodec_MediaTypeFax),
+  FAX_CODEC(Decode, T38RTPFormat, TIFFFormat,   "SpanDSP - T.38 RTP to TIFF Codec",   PluginCodec_InputTypeRTP|PluginCodec_OutputTypeRaw|PluginCodec_RTPTypeExplicit|PluginCodec_MediaTypeAudio),
+  FAX_CODEC(Encode, L16Format,    TIFFFormat,   "SpanDSP - PCM to TIFF Codec",        PluginCodec_InputTypeRaw|PluginCodec_OutputTypeRaw|PluginCodec_RTPTypeDynamic |PluginCodec_MediaTypeFax),
+  FAX_CODEC(Decode, TIFFFormat,   L16Format,    "SpanDSP - TIFF to PCM Codec",        PluginCodec_InputTypeRaw|PluginCodec_OutputTypeRaw|PluginCodec_RTPTypeDynamic |PluginCodec_MediaTypeFax),
 };
 
 /////////////////////////////////////////////////////////////////////////////

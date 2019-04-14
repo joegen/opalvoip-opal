@@ -1223,6 +1223,10 @@ bool OpalMediaFormat::RegisterKnownMediaFormats(const PString & name)
     KNOWN(MPEG4),
     KNOWN(VP8),
 #endif
+#if OPAL_T38_CAPABILITY
+    KNOWN(T38),
+    KNOWN(T38_RTP),
+#endif
   };
 
   bool atLeastOne = false;

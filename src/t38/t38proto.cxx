@@ -490,6 +490,9 @@ OpalFaxEndPoint::OpalFaxEndPoint(OpalManager & mgr, const char * g711Prefix, con
   if (t38Prefix != NULL)
     mgr.AttachEndPoint(this, m_t38Prefix);
 
+  GetOpalT38();
+  GetOpalT38_RTP();
+
   PTRACE(3, "Created Fax endpoint");
 }
 
@@ -583,6 +586,7 @@ OpalMediaFormatList OpalFaxEndPoint::GetMediaFormats() const
 {
   OpalMediaFormatList formats;
   formats += OpalT38;
+  formats += OpalT38_RTP;
   formats += TIFF_File_FormatName;
   return formats;
 }
@@ -680,7 +684,7 @@ void OpalFaxConnection::AdjustMediaFormats(bool   local,
     if ((!m_ownerCall.IsSwitchingToT38() && it->GetMediaType() == OpalMediaType::Audio())
          || *it == OpalG711_ULAW_64K || *it == OpalG711_ALAW_64K || *it == OpalRFC2833 || *it == OpalCiscoNSE)
       ++it;
-    else if (it->GetMediaType() != OpalMediaType::Fax() || (m_disableT38 && *it == OpalT38))
+    else if (it->GetMediaType() != OpalMediaType::Fax() || (m_disableT38 && it->GetName().NumCompare(OPAL_T38) == EqualTo))
       mediaFormats -= *it++;
     else
       SetFaxMediaFormatOptions(*it++);

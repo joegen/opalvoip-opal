@@ -91,6 +91,9 @@ static const char * const DefaultMediaFormatOrder[] = {
   OPAL_H263,
   OPAL_H261,
 #endif
+#if OPAL_T38_CAPABILITY
+  OPAL_T38_RTP,
+#endif
 #if OPAL_HAS_SIPIM
   OPAL_SIPIM,
 #endif

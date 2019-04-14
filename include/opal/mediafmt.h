@@ -1726,6 +1726,7 @@ extern const OpalMediaFormat & GetOpalRFC2833();
 #if OPAL_T38_CAPABILITY
 extern const OpalMediaFormat & GetOpalCiscoNSE();
 extern const OpalMediaFormat & GetOpalT38();
+extern const OpalMediaFormat & GetOpalT38_RTP();
 #endif
 
 
@@ -1793,6 +1794,7 @@ extern const OpalMediaFormat & GetOpalT38();
 #define OpalRFC2833        GetOpalRFC2833()
 #define OpalCiscoNSE       GetOpalCiscoNSE()
 #define OpalT38            GetOpalT38()
+#define OpalT38_RTP        GetOpalT38_RTP()
 
 #if OPAL_VIDEO
 #define OpalH261       GetOpalH261()

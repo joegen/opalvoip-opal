@@ -67,6 +67,9 @@ extern "C" {
 #if !defined(strcasecmp)
 #define strcasecmp stricmp
 #endif
+#if !defined(strncasecmp)
+#define strncasecmp strnicmp
+#endif
 
 #else
 
