@@ -917,7 +917,7 @@ bool OpalMediaTransport::ChannelInfo::HandleUnavailableError()
 
 void OpalMediaTransport::InternalClose()
 {
-  P_INSTRUMENTED_LOCK_READ_ONLY(return);
+  P_INSTRUMENTED_LOCK_READ_ONLY();
 
   m_opened = m_established = false;
 
@@ -992,7 +992,7 @@ bool OpalMediaTransport::GarbageCollection()
   m_ccTimer.Stop();
 
   for (vector<ChannelInfo>::iterator it = m_subchannels.begin(); it != m_subchannels.end(); ++it) {
-    if (!it->m_thread->IsTerminated())
+    if (it->m_thread != NULL && !it->m_thread->IsTerminated())
       return false;
   }
 
@@ -1088,8 +1088,10 @@ OpalUDPMediaTransport::OpalUDPMediaTransport(const PString & name)
 bool OpalUDPMediaTransport::SetRemoteAddress(const OpalTransportAddress & remoteAddress, SubChannels subchannel)
 {
   PIPAddressAndPort ap;
-  if (!remoteAddress.GetIpAndPort(ap))
+  if (!remoteAddress.GetIpAndPort(ap)) {
+    PTRACE(2, "Illegal IP address, or no prt specified: " << remoteAddress);
     return false;
+  }
 
   return InternalSetRemoteAddress(ap, subchannel, e_RemoteAddressFromSignalling);
 }
@@ -1425,7 +1427,7 @@ bool OpalUDPMediaTransport::Write(const void * data, PINDEX length, SubChannels 
     socket->GetSendAddress(sendAddr);
 
   if (!sendAddr.IsValid()) {
-    PTRACE(4, "UDP write has no destination address on subchannel " << subchannel);
+    PTRACE(4, *this << "UDP write has no destination address on subchannel " << subchannel);
     /* The following makes not having destination address yet be processed the
        same as if the remote is not yet listening on the port (ICMP errors) so it
        will keep trying for a while, then give up and close the media transport. */
@@ -1433,6 +1435,8 @@ bool OpalUDPMediaTransport::Write(const void * data, PINDEX length, SubChannels 
     return false;
   }
 
+  PTRACE(m_subchannels[subchannel].m_throttleWritePacket,
+         *this << "writing UDP media data: subchannel=" << subchannel << ", size=" << length << ", dest=" << sendAddr);
   if (socket->WriteTo(data, length, sendAddr))
     return true;
 

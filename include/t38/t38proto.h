@@ -368,6 +368,7 @@ class OpalFaxMediaStream : public OpalMediaStream
                        OpalFaxSession & session);
 
     virtual PBoolean Open();
+    virtual PBoolean Start();
     virtual PBoolean ReadPacket(RTP_DataFrame & packet);
     virtual PBoolean WritePacket(RTP_DataFrame & packet);
     virtual PString GetPatchThreadName() const;

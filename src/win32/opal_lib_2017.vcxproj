@@ -2413,6 +2413,9 @@ copy "%(RootDir)%(Directory)java_swig_wrapper.cxx"+nul "%(RootDir)%(Directory)ja
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="opal.natvis" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
