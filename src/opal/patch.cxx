@@ -126,13 +126,13 @@ bool OpalMediaPatch::CanStart() const
   if (connection == NULL) {
     PTRACE(4, "Allow patch start as connection not RTP: " << *this);
     return true;
-	}
+  }
 
   OpalMediaSession * session = connection->GetMediaSession(m_source.GetSessionID());
   if (session == NULL) {
-    PTRACE(4, "Allow patch start as does not have session " << session->GetSessionID() << ": " << *this);
-    return true;
-	}
+    PTRACE(4, "Delaying patch start as does not have session " << m_source.GetSessionID() << ": " << *this);
+    return false;
+  }
 
   if (session->IsOpen())
     return true;
@@ -149,7 +149,7 @@ bool OpalMediaPatch::CanStart() const
 void OpalMediaPatch::Start()
 {
   PWaitAndSignal m(m_patchThreadMutex);
-	
+
   if(m_patchThread != NULL && !m_patchThread->IsTerminated()) {
     PTRACE(5, "Already started thread " << m_patchThread->GetThreadName());
     return;
@@ -715,7 +715,7 @@ bool OpalMediaPatch::EnableJitterBuffer(bool enab)
 void OpalMediaPatch::Main()
 {
   PTRACE(4, "Thread started for " << *this);
-	
+
 #if OPAL_STATISTICS
   m_patchThreadId = PThread::GetCurrentThreadId();
 #endif
