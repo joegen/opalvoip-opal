@@ -114,6 +114,7 @@ bool MyManager::Initialise(PArgList & args, bool, const PString &)
 
   static char const * FormatMask[] = { "!G.711*", "!T.38*", "!@fax", "!@userinput" };
   SetMediaFormatMask(PStringArray(PARRAYSIZE(FormatMask), FormatMask));
+  SetMediaFormatOrder(GetOpalT38_RTP().GetName()); // Prefer direct T.38 over RTP, if available.
 
   PString prefix = args.HasOption('a') && !args.HasOption('A') ?  "fax" : "t38";
 
