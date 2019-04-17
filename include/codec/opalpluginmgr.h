@@ -220,7 +220,7 @@ class OpalPluginTranscoder
     }
 
   protected:
-    bool CreateContext();
+    bool CreateContext(const BYTE * instance, unsigned instanceLen);
     bool SetCodecOption(const PString & optionName, const PString & optionValue);
 
     const PluginCodec_Definition * codecDef;
@@ -233,6 +233,7 @@ class OpalPluginTranscoder
     OpalPluginControl freeOptionsControl;
     OpalPluginControl getOutputDataSizeControl;
     OpalPluginControl getCodecStatistics;
+    OpalPluginControl setInstanceId;
 #if PTRACING
     bool m_firstLoggedUpdateOptions[2];
 #endif

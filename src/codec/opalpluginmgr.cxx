@@ -596,6 +596,7 @@ OpalPluginTranscoder::OpalPluginTranscoder(const PluginCodec_Definition * defn, 
   , freeOptionsControl(defn, PLUGINCODEC_CONTROL_FREE_CODEC_OPTIONS)
   , getOutputDataSizeControl(defn, PLUGINCODEC_CONTROL_GET_OUTPUT_DATA_SIZE)
   , getCodecStatistics(defn, PLUGINCODEC_CONTROL_GET_STATISTICS)
+  , setInstanceId(defn, PLUGINCODEC_CONTROL_SET_INSTANCE_ID)
 {
 #if PTRACING
   m_firstLoggedUpdateOptions[true] = m_firstLoggedUpdateOptions[false] = true;
@@ -611,13 +612,20 @@ OpalPluginTranscoder::~OpalPluginTranscoder()
 }
 
 
-bool OpalPluginTranscoder::CreateContext()
+bool OpalPluginTranscoder::CreateContext(const BYTE * instance, unsigned instanceLen)
 {
-  if (PAssert(codecDef->createCodec != NULL, PUnimplementedFunction) && (context = (*codecDef->createCodec)(codecDef)) != NULL)
-    return true;
+  if (!PAssert(codecDef->createCodec != NULL, PUnimplementedFunction))
+    return false;
 
-  PTRACE(1, "Failed to create context for \"" << codecDef->descr << '"');
-  return false;
+  if ((context = (*codecDef->createCodec)(codecDef)) == NULL) {
+    PTRACE(1, "Failed to create context for \"" << codecDef->descr << '"');
+    return false;
+  }
+
+  if (instance != NULL && instanceLen > 0)
+    setInstanceId.Call((void *)instance, instanceLen, context);
+
+  return true;
 }
 
 
@@ -736,7 +744,7 @@ bool OpalPluginFramedAudioTranscoder::OnCreated(const OpalMediaFormat & srcForma
                                                 const OpalMediaFormat & destFormat,
                                                 const BYTE * instance, unsigned instanceLen)
 {
-    return CreateContext() && OpalFramedTranscoder::OnCreated(srcFormat, destFormat, instance, instanceLen);
+    return CreateContext(instance, instanceLen) && OpalFramedTranscoder::OnCreated(srcFormat, destFormat, instance, instanceLen);
 }
 
 
@@ -861,7 +869,7 @@ bool OpalPluginStreamedAudioTranscoder::OnCreated(const OpalMediaFormat & srcFor
                                                   const OpalMediaFormat & destFormat,
                                                   const BYTE * instance, unsigned instanceLen)
 {
-    return CreateContext() && OpalStreamedTranscoder::OnCreated(srcFormat, destFormat, instance, instanceLen);
+    return CreateContext(instance, instanceLen) && OpalStreamedTranscoder::OnCreated(srcFormat, destFormat, instance, instanceLen);
 }
 
 
@@ -928,7 +936,7 @@ bool OpalPluginVideoTranscoder::OnCreated(const OpalMediaFormat & srcFormat,
                                                   const OpalMediaFormat & destFormat,
                                                   const BYTE * instance, unsigned instanceLen)
 {
-    return CreateContext() && OpalVideoTranscoder::OnCreated(srcFormat, destFormat, instance, instanceLen);
+    return CreateContext(instance, instanceLen) && OpalVideoTranscoder::OnCreated(srcFormat, destFormat, instance, instanceLen);
 }
 
 
@@ -1436,15 +1444,7 @@ class OpalFaxTranscoder : public OpalTranscoder, public OpalPluginTranscoder
                            const OpalMediaFormat & destFormat,
                            const BYTE * instance, unsigned instanceLen)
     {
-      if (!CreateContext())
-        return false;
-
-      if (instance != NULL && instanceLen > 0) {
-        OpalPluginControl ctl(codecDef, PLUGINCODEC_CONTROL_SET_INSTANCE_ID);
-        ctl.Call((void *)instance, instanceLen, context);
-      }
-
-      return OpalTranscoder::OnCreated(srcFormat, destFormat, instance, instanceLen);
+      return CreateContext(instance, instanceLen) && OpalTranscoder::OnCreated(srcFormat, destFormat, instance, instanceLen);
     }
 
     virtual PINDEX GetOptimalDataFrameSize(PBoolean input) const
