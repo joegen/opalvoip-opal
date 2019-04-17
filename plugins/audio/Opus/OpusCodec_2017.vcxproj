@@ -114,6 +114,7 @@
       </DataExecutionPrevention>
       <ImportLibrary>$(IntDir)$(TargetName).lib</ImportLibrary>
       <TargetMachine>MachineX86</TargetMachine>
+      <ProgramDatabaseFile>$(TargetDir)/$(TargetName).pdb</ProgramDatabaseFile>
     </Link>
     <PostBuildEvent>
       <Message>Copying codec and debug information to plug in directory</Message>
@@ -143,6 +144,7 @@ xcopy /y/f "$(ProjectDir)opus\win32\VS2017\$(Platform)\DebugDLL\opus.dll" "C:\Pr
       <ImportLibrary>$(IntDir)$(TargetName).lib</ImportLibrary>
       <ModuleDefinitionFile>
       </ModuleDefinitionFile>
+      <ProgramDatabaseFile>$(TargetDir)/$(TargetName).pdb</ProgramDatabaseFile>
     </Link>
     <PostBuildEvent>
       <Message>Copying codec and debug information to plug in directory</Message>
@@ -161,7 +163,7 @@ xcopy /y/f "$(ProjectDir)opus\win32\VS2017\$(Platform)\DebugDLL\opus.dll" "C:\Pr
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <PrecompiledHeader>
       </PrecompiledHeader>
-      <ProgramDataBaseFileName>$(IntDir)$(TargetName).pdb</ProgramDataBaseFileName>
+      <ProgramDataBaseFileName>$(TargetDir)/$(TargetName).pdb</ProgramDataBaseFileName>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>
       </DebugInformationFormat>
@@ -172,6 +174,7 @@ xcopy /y/f "$(ProjectDir)opus\win32\VS2017\$(Platform)\DebugDLL\opus.dll" "C:\Pr
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <ImportLibrary>$(IntDir)$(TargetName).lib</ImportLibrary>
       <TargetMachine>MachineX86</TargetMachine>
+      <ProgramDatabaseFile>$(TargetDir)/$(TargetName).pdb</ProgramDatabaseFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -185,7 +188,7 @@ xcopy /y/f "$(ProjectDir)opus\win32\VS2017\$(Platform)\DebugDLL\opus.dll" "C:\Pr
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <PrecompiledHeader>
       </PrecompiledHeader>
-      <ProgramDataBaseFileName>$(IntDir)$(TargetName).pdb</ProgramDataBaseFileName>
+      <ProgramDataBaseFileName>$(TargetDir)/$(TargetName).pdb</ProgramDataBaseFileName>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>
       </DebugInformationFormat>
@@ -197,6 +200,7 @@ xcopy /y/f "$(ProjectDir)opus\win32\VS2017\$(Platform)\DebugDLL\opus.dll" "C:\Pr
       <ImportLibrary>$(IntDir)$(TargetName).lib</ImportLibrary>
       <ModuleDefinitionFile>
       </ModuleDefinitionFile>
+      <ProgramDatabaseFile>$(TargetDir)/$(TargetName).pdb</ProgramDatabaseFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
