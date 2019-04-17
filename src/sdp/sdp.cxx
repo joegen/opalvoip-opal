@@ -831,6 +831,7 @@ void SDPMediaDescription::MatchGroupInfo(const GroupDict & groups)
     for (it = groups.begin(); it != groups.end(); ++it) {
       if (it->second.GetValuesIndex(*mid) != P_MAX_INDEX) {
         m_groups.SetAt(it->first, *mid);
+        PTRACE(4, "Adding mid \"" << *mid << "\" to group \"" << it->first << '"');
         break;
       }
     }
@@ -3009,7 +3010,7 @@ bool SDPSessionDescription::Decode(const PStringArray & lines, const OpalMediaFo
               " ok=" << boolalpha << ok);
   }
 
-  if (mediaDescriptions.GetSize() > 1) {
+  if (!m_groups.IsEmpty() || mediaDescriptions.GetSize() > 1) {
     // Match up groups and mid's
     for (PINDEX i = 0; i < mediaDescriptions.GetSize(); ++i)
       mediaDescriptions[i].MatchGroupInfo(m_groups);
@@ -3101,7 +3102,9 @@ void SDPSessionDescription::SetAttribute(const PString & attr, const PString & v
 {
   if (attr *= "group") {
     PStringArray tokens = value.Tokenise(WhiteSpace, false); // Spec says space only, but lets be forgiving
-    if (tokens.GetSize() > 2) {
+    if (tokens.GetSize() < 2)
+      PTRACE(3, "Invalid group attribute: \"" << value << '"');
+    else {
       PString name = tokens[0];
       tokens.RemoveAt(0);
       m_groups.SetAt(name, new PStringArray(tokens));
