@@ -4547,6 +4547,7 @@ unsigned int srtp_profile_get_master_salt_length(srtp_profile_t profile)
     }
 }
 
+static
 srtp_err_status_t stream_get_protect_trailer_length(srtp_stream_ctx_t *stream,
                                                     uint32_t is_rtp,
                                                     uint32_t use_mki,
@@ -4578,6 +4579,7 @@ srtp_err_status_t stream_get_protect_trailer_length(srtp_stream_ctx_t *stream,
     return srtp_err_status_ok;
 }
 
+static
 srtp_err_status_t get_protect_trailer_length(srtp_t session,
                                              uint32_t is_rtp,
                                              uint32_t use_mki,

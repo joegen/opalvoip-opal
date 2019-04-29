@@ -660,7 +660,7 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
   SetTxMediaTimeout(PTimeInterval(0, rsrc->AddIntegerField(TxMediaTimeoutKey, 1, 365*24*60*60, GetTxMediaTimeout().GetSeconds(),
                                                            "seconds", "Clear call when no media can be sent to remote for this time")));
   SetTransportIdleTime(PTimeInterval(0, rsrc->AddIntegerField(TransportIdleTimeoutKey, 1, 365*24*60*60, GetTransportIdleTime().GetSeconds(),
-                                                              "seconds", "Disconnect cached singalling transport after no use for this time")));
+                                                              "seconds", "Disconnect cached signalling transport after no use for this time")));
 
   SetTCPPorts(rsrc->AddIntegerField(TCPPortBaseKey, 0, 65535, GetTCPPortBase(), "", "Base of port range for allocating TCP streams, e.g. H.323 signalling channel"),
               rsrc->AddIntegerField(TCPPortMaxKey, 0, 65535, GetTCPPortMax(), "", "Maximum of port range for allocating TCP streams"));
