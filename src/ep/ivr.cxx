@@ -430,31 +430,41 @@ PBoolean OpalIVRMediaStream::Open()
 
   P_INSTRUMENTED_LOCK_READ_WRITE(return false);
 
-  if (m_vxmlSession.IsOpen()) {
-    PTRACE(3, "Re-opening");
-    PVXMLChannel * vxmlChannel = m_vxmlSession.GetAndLockVXMLChannel();
-    if (vxmlChannel == NULL) {
-      PTRACE(1, "VXML engine not really open");
-      return false;
-    }
+  if (!m_vxmlSession.IsOpen()) {
+    PTRACE(3, "Opening VXML sesion via " << *this);
+    if (m_vxmlSession.Open(m_mediaFormat.IsTransportable() ? m_mediaFormat.GetName() : PString(VXML_PCM16),
+                           m_mediaFormat.GetClockRate(),
+                           m_mediaFormat.GetOptionInteger(OpalAudioFormat::ChannelsOption(), 1)))
+      return true;
 
-    PString vxmlChannelMediaFormat = vxmlChannel->GetMediaFormat();
-    m_vxmlSession.UnLockVXMLChannel();
-    
-    if (m_mediaFormat.GetName() != vxmlChannelMediaFormat) {
-      PTRACE(1, "Cannot use VXML engine: asymmetrical media formats: " << m_mediaFormat << " <-> " << vxmlChannelMediaFormat);
-      return false;
-    }
-
-    return OpalMediaStream::Open();
+    PTRACE(1, "Cannot open VXML engine, incompatible media format: " << m_mediaFormat);
+    return false;
   }
 
-  PTRACE(3, "Opening");
-  if (m_vxmlSession.Open(m_mediaFormat))
-    return OpalMediaStream::Open();
+  PTRACE(3, "Re-opening VXML sesion via " << *this);
 
-  PTRACE(1, "Cannot open VXML engine: incompatible media format");
-  return false;
+  PVXMLChannel * vxmlChannel = m_vxmlSession.GetAndLockVXMLChannel();
+  if (vxmlChannel == NULL) {
+    PTRACE(1, "VXML engine not really open");
+    return false;
+  }
+
+  bool ok = false;
+  if (m_mediaFormat.GetName().NumCompare(vxmlChannel->GetAudioFormat()) != EqualTo)
+    PTRACE(1, "Cannot use VXML engine, asymmetrical media formats:"
+           " strm=" << m_mediaFormat << ", VXML=" << vxmlChannel->GetAudioFormat());
+  else if (!vxmlChannel->SetSampleRate(m_mediaFormat.GetClockRate()))
+    PTRACE(1, "Cannot use VXML engine, asymmetrical sample rate:"
+           " strm=" << m_mediaFormat.GetClockRate() << ", VXML=" << vxmlChannel->GetSampleRate());
+  else if (!vxmlChannel->SetChannels(m_mediaFormat.GetOptionInteger(OpalAudioFormat::ChannelsOption(), 1)))
+    PTRACE(1, "Cannot use VXML engine, asymmetrical channels:"
+           " strm=" << m_mediaFormat.GetOptionInteger(OpalAudioFormat::ChannelsOption(), 1) << ", VXML=" << vxmlChannel->GetChannels());
+  else
+    ok = true;
+
+  m_vxmlSession.UnLockVXMLChannel();
+
+  return ok && OpalMediaStream::Open();
 }
 
 
