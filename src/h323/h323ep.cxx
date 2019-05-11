@@ -1550,7 +1550,7 @@ void H323EndPoint::SetDefaultLocalPartyName(const PString & name)
 
 bool H323EndPoint::SetAliasNames(const PStringList & names)
 {
-  if (!PAssert(!names.IsEmpty() && !names.front().IsEmpty(), "Must have non-empty string in AliasAddress!"))
+  if (!PAssert(!names.IsEmpty() && !names.front().IsEmpty(), "Must have non-empty string in first AliasAddress!"))
     return false;
 
   m_aliasMutex.Wait();

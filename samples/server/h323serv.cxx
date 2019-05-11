@@ -149,7 +149,7 @@ bool MyH323EndPoint::Configure(PConfig & cfg, PConfigPage * rsrc)
       if (newAliases.GetValuesIndex(m_configuredAliases[i]) == P_MAX_INDEX)
         RemoveAliasName(m_configuredAliases[i]);
     }
-    if (m_firstConfig)
+    if (m_firstConfig && !newAliases.IsEmpty())
       SetAliasNames(newAliases);
     else
       AddAliasNames(newAliases);
