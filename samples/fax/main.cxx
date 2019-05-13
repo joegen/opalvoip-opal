@@ -58,6 +58,7 @@ PString MyManager::GetArgumentSpec() const
          "d-directory: Set default directory for fax receive.\n"
          "-station-id: Set T.30 Station Identifier string.\n"
          "-header-info: Set transmitted fax page header string.\n"
+         "R-RTP. Enable T-38 over RTP.\n"
          "a-audio. Send fax as G.711 audio.\n"
          "A-no-audio. No audio phase at all, starts T.38 immediately.\n"
          "F-no-fallback. Do not fall back to audio if T.38 switch fails.\n"
@@ -112,8 +113,11 @@ bool MyManager::Initialise(PArgList & args, bool, const PString &)
     return false;
   }
 
-  static char const * FormatMask[] = { "!G.711*", "!T.38*", "!@fax", "!@userinput" };
-  SetMediaFormatMask(PStringArray(PARRAYSIZE(FormatMask), FormatMask));
+  static char const * FormatMask[] = { "!T.38", "!G.711*", "!@fax", "!@userinput" };
+  PStringArray mask(PARRAYSIZE(FormatMask), FormatMask);
+  if (args.HasOption('R'))
+    mask[0] = "!T.38*";
+  SetMediaFormatMask(mask);
   SetMediaFormatOrder(GetOpalT38_RTP().GetName()); // Prefer direct T.38 over RTP, if available.
 
   PString prefix = args.HasOption('a') && !args.HasOption('A') ?  "fax" : "t38";

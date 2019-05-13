@@ -54,10 +54,14 @@ function test_fax()
 
   if [ "$2" = "g711" ]; then
     TX_ARG+=" --audio"
+  elif [ "$2" = "rtp" ]; then
+    TX_ARG+=" --RTP"
   fi
 
   if [ "$3" = "g711" ]; then
     RX_ARG+=" --audio"
+  elif [ "$3" = "rtp" ]; then
+    RX_ARG+=" --RTP"
   fi
 
   if [ "$4" = "slow" ]; then
@@ -110,6 +114,10 @@ elif [ $# = 0 ]; then
   test_fax sip g711 t38
   test_fax sip t38  g711
   test_fax sip g711 g711
+  test_fax sip rtp  t38
+  test_fax sip t38  rtp
+  test_fax sip g711 rtp
+  test_fax sip rtp  g711
 
   test_fax h323 t38  t38  fast
   test_fax h323 g711 t38  fast
