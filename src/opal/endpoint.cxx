@@ -646,17 +646,16 @@ void OpalEndPoint::SetMediaCryptoSuites(const PStringArray & security)
   PStringArray valid = GetAllMediaCryptoSuites();
   PAssert(!valid.IsEmpty(), PInvalidParameter);
 
-  if (security.GetSize() == 1 && security[0] == ('!' + OpalMediaCryptoSuite::ClearText())) {
+  if (security.GetSize() == 1 && (security[0] *= ('!' + OpalMediaCryptoSuite::ClearText()))) {
     m_mediaCryptoSuites.RemoveAll();
     for (PINDEX i = 1; i < valid.GetSize(); ++i)
-      m_mediaCryptoSuites.push_back(valid[i]);
+      m_mediaCryptoSuites.AppendString(valid[i]);
   }
   else {
-    m_mediaCryptoSuites = security;
-
-    for (PINDEX i = 0; i < m_mediaCryptoSuites.GetSize(); ++i) {
-      if (valid.GetValuesIndex(m_mediaCryptoSuites[i]) == P_MAX_INDEX)
-        m_mediaCryptoSuites.RemoveAt(i--);
+    for (PINDEX i = 0; i < security.GetSize(); ++i) {
+      PINDEX found = valid.GetValuesIndex(security[i]);
+      if (found != P_MAX_INDEX)
+        m_mediaCryptoSuites.AppendString(valid[found]);
     }
   }
 
@@ -674,7 +673,7 @@ PStringArray OpalEndPoint::GetAllMediaCryptoSuites() const
   OpalMediaCryptoSuiteFactory::KeyList_T all = OpalMediaCryptoSuiteFactory::GetKeyList();
   for  (OpalMediaCryptoSuiteFactory::KeyList_T::iterator it = all.begin(); it != all.end(); ++it) {
     if (*it != OpalMediaCryptoSuite::ClearText() && OpalMediaCryptoSuiteFactory::CreateInstance(*it)->Supports(GetPrefixName()))
-      cryptoSuites.AppendString(*it);
+      cryptoSuites.AppendString(PCaselessString(*it));
   }
 
   return cryptoSuites;
