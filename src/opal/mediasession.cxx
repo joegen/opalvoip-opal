@@ -912,11 +912,8 @@ void OpalMediaTransport::InternalClose()
 
   for (vector<ChannelInfo>::iterator it = m_subchannels.begin(); it != m_subchannels.end(); ++it) {
     if (it->m_channel != NULL) {
-      PChannel * base = it->m_channel->GetBaseReadChannel();
-      if (base != NULL) {
+      if (it->m_channel->CloseBaseReadChannel())
         PTRACE(4, *this << it->m_subchannel << " closing.");
-        base->Close();
-      }
       else {   
         PTRACE(3, *this << it->m_subchannel << " already closed.");
       }
