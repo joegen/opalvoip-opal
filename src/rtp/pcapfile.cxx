@@ -118,6 +118,8 @@ bool OpalPCAPFile::InternalOpen(OpenMode mode, OpenOptions opts, PFileInfo::Perm
     REVERSE(m_fileHeader.network);
   }
 
+  m_rawPacket.SetDataLinkType(m_fileHeader.network);
+
   return true;
 }
 
