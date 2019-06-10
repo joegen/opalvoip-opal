@@ -3007,8 +3007,13 @@ void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & respons
      return;
 
     case SIP_PDU::Method_REFER :
-      if (m_referOfRemoteState != eNoRemoteRefer &&
-              (response.GetStatusCode() != SIP_PDU::Successful_Accepted || !response.GetMIME().GetBoolean(ReferSubHeader, true))) {
+      if (m_referOfRemoteState == eNoRemoteRefer)
+        return; // Ignore
+      if (response.GetStatusCode() == SIP_PDU::Successful_Accepted && response.GetMIME().GetBoolean(ReferSubHeader, true)) {
+        PTRACE(3, "Transfer accepted, with NOTIFY.");
+        m_referOfRemoteState = eReferNotifyConfirmed;
+      }
+      else {
         // Used RFC4488 to indicate we are NOT doing NOTIFYs, release now
         PTRACE(3, "Blind transfer accepted, without NOTIFY so ending local call.");
         m_referOfRemoteState = eNoRemoteRefer;
