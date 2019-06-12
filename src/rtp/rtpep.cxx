@@ -258,33 +258,38 @@ bool OpalRTPEndPoint::OnLocalRTP(OpalConnection & connection1,
 bool OpalRTPEndPoint::CheckForLocalRTP(const OpalRTPMediaStream & stream)
 {
   OpalRTPSession * rtp = GetRTPFromStream(stream);
-  if (rtp == NULL)
+  if (rtp == NULL) {
+    PTRACE(4, "RTPEp", "Session " << stream.GetSessionID() << " is not RTP.");
     return false;
+  }
 
   OpalConnection & connection = stream.GetConnection();
 
   OpalTransportAddress remoteAddr = rtp->GetRemoteAddress();
   PIPSocket::Address remoteIP;
-  if (!remoteAddr.GetIpAddress(remoteIP))
+  if (!remoteAddr.GetIpAddress(remoteIP)) {
+    PTRACE(4, "RTPEp", "Session " << stream.GetSessionID() << " has no remote address.");
     return false;
+  }
 
   if (!PIPSocket::IsLocalHost(remoteIP)) {
-    PTRACE(5, "RTPEp\tSession " << stream.GetSessionID() << ", "
+    PTRACE(4, "RTPEp", "Session " << stream.GetSessionID() << ", "
               "remote RTP address " << rtp->GetRemoteAddress() << " not local (different host).");
     CheckEndLocalRTP(connection, rtp);
     return false;
   }
 
+  OpalTransportAddress localAddr = rtp->GetLocalAddress();
+
   PWaitAndSignal mutex(m_connectionsByRtpMutex);
 
-  OpalTransportAddress localAddr = rtp->GetLocalAddress();
   LocalRtpInfoMap::iterator itLocal = m_connectionsByRtpLocalAddr.find(localAddr);
   if (itLocal == m_connectionsByRtpLocalAddr.end())
     return false;
 
   LocalRtpInfoMap::iterator itRemote = m_connectionsByRtpLocalAddr.find(remoteAddr);
   if (itRemote == m_connectionsByRtpLocalAddr.end()) {
-    PTRACE(4, "RTPEp\tSession " << stream.GetSessionID() << ", "
+    PTRACE(4, "RTPEp", "Session " << stream.GetSessionID() << ", "
               "remote RTP address " << remoteAddr << " not local (different process).");
     return false;
   }
@@ -299,7 +304,7 @@ bool OpalRTPEndPoint::CheckForLocalRTP(const OpalRTPMediaStream & stream)
     itRemote->second.m_previousResult = result;
   }
 
-  PTRACE(3, "RTPEp\tSession " << stream.GetSessionID() << ", "
+  PTRACE(3, "RTPEp", "Session " << stream.GetSessionID() << ", "
             "RTP at " << localAddr << " and " << remoteAddr
          << ' ' << (cached ? "cached" : "flagged") << " as "
          << (result ? "bypassed" : "normal")
