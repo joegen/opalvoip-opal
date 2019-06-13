@@ -3135,8 +3135,8 @@ bool OpalRTPSession::Close()
 {
   PTRACE(3, *this << "closing RTP.");
 
-  m_reportTimer.Stop(true);
   m_endpoint.RegisterLocalRTP(this, true);
+  m_reportTimer.Stop(true);
 
   if (IsOpen() && LockReadOnly(P_DEBUG_LOCATION)) {
     for (SyncSourceMap::iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
