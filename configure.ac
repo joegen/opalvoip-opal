@@ -132,7 +132,7 @@ AC_ARG_WITH(
 
 PKG_CHECK_MODULES(
    [PTLIB],
-   [ptlib >= 2.14.1],
+   [ptlib >= 2.19.3],
    [],
    [AC_MSG_ERROR([
       Cannot continue without PTLib!

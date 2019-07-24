@@ -1524,8 +1524,9 @@ class OpalManager : public PObject
     /**Determine if the address is "local", ie does not need any address
        translation (fixed or via STUN) to access.
 
-       The default behaviour checks if remoteAddress is a RFC1918 private
-       IP address: 10.x.x.x, 172.16.x.x or 192.168.x.x.
+       The default behaviour checks if remoteAddress is a private, non-routable,
+       IP, e.g. 10.x.x.x, 127.x.x.x etc, the "any" or "broadcast" IP, or the IP
+       of a local interface.
      */
     virtual PBoolean IsLocalAddress(
       const PIPSocket::Address & remoteAddress

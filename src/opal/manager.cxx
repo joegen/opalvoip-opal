@@ -1933,7 +1933,7 @@ PBoolean OpalManager::IsLocalAddress(const PIPSocket::Address & ip) const
   return m_natMethods->IsLocalAddress(ip);
 #else
   /* Check if the remote address is a private IP, broadcast, or us */
-  return ip.IsAny() || ip.IsBroadcast() || ip.IsRFC1918() || PIPSocket::IsLocalHost(ip);
+  return ip.IsAny() || ip.IsBroadcast() || ip.IsPrivate() || PIPSocket::IsLocalHost(ip);
 #endif
 }
 
@@ -1971,12 +1971,12 @@ PBoolean OpalManager::IsRTPNATEnabled(OpalConnection & /*conn*/,
   if (peerAddr == sigAddr)
     return false;
 
-  /* Next test is to see if BOTH addresses are "public", non RFC1918. There are
+  /* Next test is to see if BOTH addresses are "public". There are
      some cases with proxies, particularly with SIP, where this is possible. We
      will assume that NAT never occurs between two public addresses though it
      could occur between two private addresses */
 
-  if (!peerAddr.IsRFC1918() && !sigAddr.IsRFC1918())
+  if (!peerAddr.IsPrivate() && !sigAddr.IsPrivate())
     return false;
 
   /* So now we have a remote that is confused in some way, so needs help. Our
@@ -1990,7 +1990,7 @@ PBoolean OpalManager::IsRTPNATEnabled(OpalConnection & /*conn*/,
      need to check if we are actually ABLE to help. We test if the local end
      of the connection is public, i.e. no NAT at this end so we can help.
      */
-  if (!localAddr.IsRFC1918())
+  if (!localAddr.IsPrivate())
     return true;
 
   /* Another test for if we can help, we are behind a NAT too, but the user has
@@ -2005,7 +2005,7 @@ PBoolean OpalManager::IsRTPNATEnabled(OpalConnection & /*conn*/,
   /* This looks for seriously confused systems were NAT is between two private
       networks. Unfortunately, we don't have a netmask so we can only guess based
       on the IP address class. */
-  if ( peerAddr.IsRFC1918() && sigAddr.IsRFC1918() &&
+  if ( peerAddr.IsPrivate() && sigAddr.IsPrivate() &&
       !peerAddr.IsSubNet(sigAddr, PIPAddress::GetAny(peerAddr.GetVersion())))
     return true;
 
