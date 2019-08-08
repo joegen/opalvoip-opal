@@ -97,6 +97,11 @@
 */
 #define OPAL_OPT_OFFER_ICE "Offer-ICE"
 
+/**Enable detection of music on hold in SDP.
+   Defaults to true.
+*/
+#define OPAL_OPT_ALLOW_MUSIC_ON_HOLD "SDP-Music-On-Hold"
+
 
 /////////////////////////////////////////////////////////
 
@@ -643,7 +648,7 @@ class SDPSessionDescription : public PObject, public SDPCommonAttributes
     void AddMediaDescription(SDPMediaDescription * md);
     
     virtual SDPMediaDescription::Direction GetDirection(unsigned) const;
-    bool IsHold() const;
+    bool IsHold(bool allowMusicOnHold) const;
     bool HasActiveSend() const;
 
     const OpalTransportAddress & GetDefaultConnectAddress() const { return defaultConnectAddress; }
