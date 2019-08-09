@@ -1356,6 +1356,16 @@ PString SIPConnection::GetSupportedFeatures() const
 }
 
 
+bool SIPConnection::AllowMusicOnHold() const
+{
+  for (PMultiPartList::const_iterator it = m_multiPartMIME.begin(); it != m_multiPartMIME.end(); ++it) {
+    if (it->m_disposition == "recording-session")
+      return false;
+  }
+  return OpalSDPConnection::AllowMusicOnHold();
+}
+
+
 bool SIPConnection::OnHoldStateChanged(bool PTRACE_PARAM(placeOnHold))
 {
   return SendReINVITE(PTRACE_PARAM(placeOnHold ? "put connection on hold" : "retrieve connection from hold"));

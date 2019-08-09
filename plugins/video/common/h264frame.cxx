@@ -293,7 +293,7 @@ bool H264Frame::AddPacket(const PluginCodec_RTP & frame, unsigned & flags)
       return true;
 
     case e_AwaitingIntra :
-      if (curNALType != H264_NAL_TYPE_SEQ_PARAM && (curNALType != H264_NAL_TYPE_STAP || payloadPtr[3] != H264_NAL_TYPE_SEQ_PARAM))
+      if (curNALType != H264_NAL_TYPE_SEQ_PARAM && (curNALType != H264_NAL_TYPE_STAP || (payloadSize > 3 && (payloadPtr[3]&0x1f) != H264_NAL_TYPE_SEQ_PARAM)))
         return true;
 
       m_receiverState = e_NormalProcessing;

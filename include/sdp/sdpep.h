@@ -321,6 +321,7 @@ class OpalSDPConnection : public OpalRTPConnection
 
     bool PauseOrCloseMediaStream(OpalMediaStreamPtr & stream, bool changed, bool paused);
 
+    virtual bool AllowMusicOnHold() const;
     void RetryHoldRemote(bool placeOnHold);
     virtual bool OnHoldStateChanged(bool placeOnHold);
     virtual void OnMediaStreamOpenFailed(bool rx);

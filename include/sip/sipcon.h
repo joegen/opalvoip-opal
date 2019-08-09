@@ -693,6 +693,7 @@ class SIPConnection : public OpalSDPConnection, public SIPTransactionOwner
     void OnInviteResponseTimeout();
     void OnInviteCollision();
     void OnDelayedRefer();
+    virtual bool AllowMusicOnHold() const;
     virtual bool OnHoldStateChanged(bool placeOnHold);
     virtual void OnMediaStreamOpenFailed(bool rx);
 

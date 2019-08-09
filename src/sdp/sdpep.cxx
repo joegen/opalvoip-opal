@@ -77,6 +77,7 @@ PStringList OpalSDPEndPoint::GetAvailableStringOptions() const
     #ifdef OPAL_ICE
       OPAL_OPT_OFFER_ICE,
     #endif
+    OPAL_OPT_ALLOW_MUSIC_ON_HOLD,
     OPAL_OPT_AV_BUNDLE,
     OPAL_OPT_USE_MEDIA_STREAMS,
     OPAL_OPT_INACTIVE_AUDIO_FLOW,
@@ -928,7 +929,7 @@ bool OpalSDPConnection::OnSendAnswerSDP(const SDPSessionDescription & sdpOffer, 
     }
   }
 
-  bool holdFromRemote = sdpOffer.IsHold();
+  bool holdFromRemote = sdpOffer.IsHold(AllowMusicOnHold());
   if (m_holdFromRemote != holdFromRemote) {
     PTRACE(3, "Remote " << (holdFromRemote ? "" : "retrieve from ") << "hold detected");
     m_holdFromRemote = holdFromRemote;
@@ -938,6 +939,12 @@ bool OpalSDPConnection::OnSendAnswerSDP(const SDPSessionDescription & sdpOffer, 
   StartMediaStreams();
 
   return true;
+}
+
+
+bool OpalSDPConnection::AllowMusicOnHold() const
+{
+  return m_stringOptions.GetBoolean(OPAL_OPT_ALLOW_MUSIC_ON_HOLD, true);
 }
 
 
