@@ -2044,6 +2044,11 @@ bool SDPRTPAVPMediaDescription::FromSession(OpalMediaSession * session,
         SetHeaderExtension(ext);
       }
 
+      if (m_stringOptions.GetBoolean(OPAL_OPT_RTP_AUDIO_LEVEL) && m_mediaType == OpalMediaType::Audio()) {
+        RTPHeaderExtensionInfo ext(OpalRTPSession::GetAudioLevelHdrExtURI());
+        SetHeaderExtension(ext);
+      }
+
       if (m_stringOptions.GetBoolean(OPAL_OPT_TRANSPORT_WIDE_CONGESTION_CONTROL)) {
         RTPHeaderExtensionInfo ext(OpalRTPSession::GetTransportWideSeqNumHdrExtURI());
         SetHeaderExtension(ext);

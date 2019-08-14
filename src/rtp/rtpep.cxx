@@ -173,6 +173,7 @@ PStringList OpalRTPEndPoint::GetAvailableStringOptions() const
       OPAL_OPT_DTLS_TIMEOUT,
     #endif
     OPAL_OPT_RTP_ABS_SEND_TIME,
+    OPAL_OPT_RTP_AUDIO_LEVEL,
     OPAL_OPT_TRANSPORT_WIDE_CONGESTION_CONTROL
   };
 
@@ -368,4 +369,3 @@ void OpalRTPEndPoint::RegisterLocalRTP(OpalRTPSession * rtp, bool removed)
   }
   m_connectionsByRtpMutex.Signal();
 }
-
