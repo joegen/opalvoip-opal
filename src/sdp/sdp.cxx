@@ -3200,8 +3200,19 @@ bool SDPSessionDescription::IsHold(bool allowMusicOnHold) const
   PINDEX i;
   for (i = 0; i < mediaDescriptions.GetSize(); i++) {
     Direction dir = mediaDescriptions[i].GetDirection();
-    if (dir != Inactive && allowMusicOnHold && (dir == Undefined || (dir & RecvOnly) != 0))
-      return false;
+    if (dir == Undefined)
+      return false; // If undefined, then cannot be hold
+
+    if (allowMusicOnHold) {
+      // Here hold is Inactive or SendOnly
+      if (dir != Inactive && dir != SendOnly)
+        return false;
+    }
+    else {
+      // Here hold is only when Inactive
+      if (dir != Inactive)
+        return false;
+    }
   }
 
   return true;
