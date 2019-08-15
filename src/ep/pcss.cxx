@@ -718,13 +718,13 @@ bool OpalPCSSConnection::GetAudioMute(bool source, bool & mute)
 }
 
 
-unsigned OpalPCSSConnection::GetAudioSignalLevel(PBoolean source)
+int OpalPCSSConnection::GetAudioLevelDB(bool source)
 {
   PSafePtr<OpalAudioMediaStream> stream = PSafePtrCast<OpalMediaStream, OpalAudioMediaStream>(GetMediaStream(OpalMediaType::Audio(), source));
   if (stream == NULL)
-    return UINT_MAX;
+    return INT_MAX;
 
-  return stream->GetAverageSignalLevel();
+  return stream->GetAudioLevelDB();
 }
 
 

@@ -38,6 +38,7 @@
 
 #include <opal/mediafmt.h>
 #include <opal/mediacmd.h>
+#include <codec/silencedetect.h>
 #include <rtp/jitter.h>
 #include <ptlib/safecoll.h>
 #include <ptclib/guid.h>
@@ -648,9 +649,10 @@ class OpalRawMediaStream : public OpalMediaStream
       bool autoDelete = true  ///< Auto delete channel on exit or replacement
     );
 
-    /**Get average signal level in last frame.
+    /**Get average signal level in last frame as dBov (-127 to 0).
+       @return INT_MAX if not supported
       */
-    virtual unsigned GetAverageSignalLevel();
+    virtual int GetAudioLevelDB();
   //@}
 
   protected:
@@ -662,11 +664,8 @@ class OpalRawMediaStream : public OpalMediaStream
 
     PBYTEArray m_silence;
 
-    PUInt64    m_averageSignalSum;
-    unsigned   m_averageSignalSamples;
-    PDECLARE_MUTEX(m_averagingMutex);
-
-    void CollectAverage(const BYTE * buffer, PINDEX size);
+    OpalSilenceDetector::CalculateDB m_dbCalculator;
+    PDECLARE_MUTEX(m_dbCalculatorMutex);
 };
 
 

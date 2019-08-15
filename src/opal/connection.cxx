@@ -1266,9 +1266,9 @@ bool OpalConnection::GetAudioMute(bool /*source*/, bool & /*mute*/)
 }
 
 
-unsigned OpalConnection::GetAudioSignalLevel(PBoolean /*source*/)
+int OpalConnection::GetAudioLevelDB(bool /*source*/)
 {
-    return UINT_MAX;
+    return INT_MAX;
 }
 
 

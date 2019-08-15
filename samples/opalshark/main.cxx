@@ -847,6 +847,7 @@ struct Analyser
   OpalAudioFormat::FrameDetectorPtr m_audioFrameDetector;
   OpalVideoFormat m_videoFormat;
   OpalVideoFormat::FrameDetectorPtr m_videoFrameDetector;
+  OpalSilenceDetector::CalculateDB m_dbCaclulator;
 
   Analyser(MyPlayer & player, bool async, const OpalMediaFormat & mediaFormat)
     : m_player(player)
@@ -914,8 +915,8 @@ struct Analyser
       if (!decoded.IsEmpty()) {
         if (!notes.empty())
           notes << ", ";
-        notes << "Energy="
-              << OpalSilenceDetector::GetAverageSignalLevelPCM16(decoded.GetPayloadPtr(), decoded.GetPayloadSize(), true);
+        notes << "dBov="
+              << m_dbCaclulator.Accumulate(decoded.GetPayloadPtr(), decoded.GetPayloadSize()).Finalise();
       }
 
       if (m_audioFormat.GetFrameType(encoded.GetPayloadPtr(),

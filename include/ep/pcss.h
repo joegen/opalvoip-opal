@@ -556,11 +556,11 @@ class OpalPCSSConnection : public OpalLocalConnection
       bool & mute         ///< Flag for muted audio
     );
 
-    /**Get the average signal level (0..32767) for the audio media channel.
-       A return value of UINT_MAX indicates no valid signal, eg no audio channel opened.
+    /**Get the signal level in dBov (-127 to 0) for the audio media channel.
+       A return value of INT_MAX indicates no valid signal, eg no audio channel opened.
       */
-    virtual unsigned GetAudioSignalLevel(
-      PBoolean source                   ///< true for source (microphone), false for sink (speaker)
+    virtual int GetAudioLevelDB(
+      bool source   ///< true for source (microphone), false for sink (speaker)
     );
 
     /**Indicate alerting for the incoming connection.

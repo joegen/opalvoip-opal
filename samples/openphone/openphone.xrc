@@ -408,7 +408,7 @@
 												<border>8</border>
 												<object class="wxGauge" name="SpeakerGauge">
 													<style>wxGA_VERTICAL|wxGA_SMOOTH</style>
-													<range>100</range>
+													<range>127</range>
 													<value>0</value>
 												</object>
 											</object>
@@ -460,7 +460,7 @@
 												<border>8</border>
 												<object class="wxGauge" name="MicrophoneGauge">
 													<style>wxGA_VERTICAL|wxGA_SMOOTH</style>
-													<range>100</range>
+													<range>127</range>
 													<value>0</value>
 												</object>
 											</object>

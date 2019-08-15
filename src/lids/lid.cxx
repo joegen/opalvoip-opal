@@ -314,9 +314,9 @@ PBoolean OpalLineInterfaceDevice::WriteBlock(unsigned line, const void * buffer,
 }
 
 
-unsigned OpalLineInterfaceDevice::GetAverageSignalLevel(unsigned, PBoolean)
+int OpalLineInterfaceDevice::GetAudioLevelDB(unsigned, bool)
 {
-  return UINT_MAX;
+  return INT_MAX;
 }
 
 

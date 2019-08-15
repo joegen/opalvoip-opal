@@ -370,11 +370,12 @@ class OpalLineInterfaceDevice : public PObject
     );
 
 
-    /**Get average signal level in last frame.
+    /**Get average signal level in last frame as dBov (-127 to 0).
+       @return INT_MAX if not supported
       */
-    virtual unsigned GetAverageSignalLevel(
+    virtual int GetAudioLevelDB(
       unsigned line,  ///<  Number of line
-      PBoolean playback   ///<  Get average playback or record level.
+      bool playback   ///<  Get average playback or record level.
     );
 
 
@@ -1150,11 +1151,12 @@ class OpalLine : public PObject
     ) { return m_device.WriteBlock(m_lineNumber, buf, count); }
 
 
-    /**Get average signal level in last frame.
+    /**Get average signal level in last frame as dBov (-127 to 0).
+       @return INT_MAX if not supported
       */
-    virtual unsigned GetAverageSignalLevel(
-      PBoolean playback   ///<  Get average playback or record level.
-    ) { return m_device.GetAverageSignalLevel(m_lineNumber, playback); }
+    virtual int GetAudioLevelDB(
+      bool playback   ///<  Get average playback or record level.
+    ) { return m_device.GetAudioLevelDB(m_lineNumber, playback); }
 
 
     /**Enable audio for the line.

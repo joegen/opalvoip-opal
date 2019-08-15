@@ -455,11 +455,11 @@ class OpalLineConnection : public OpalConnection
       unsigned percentage           ///< Gain, 0=silent, 100=maximun
     );
 
-    /**Get the average signal level (0..32767) for the audio media channel.
-       A return value of UINT_MAX indicates no valid signal, eg no audio channel opened.
+    /**Get the signal level in dBov (-127 to 0) for the audio media channel.
+       A return value of INT_MAX indicates no valid signal, eg no audio channel opened.
       */
-    virtual unsigned GetAudioSignalLevel(
-      PBoolean source                   ///< true for source (microphone), false for sink (speaker)
+    virtual int GetAudioLevelDB(
+      bool source   ///< true for source (microphone), false for sink (speaker)
     );
 
     /**Send a user input indication to the remote endpoint.
@@ -690,7 +690,7 @@ class OpalLineSilenceDetector : public OpalSilenceDetector
        The default behaviour returns UINT_MAX which indicates that the
        average signal has no meaning for the stream.
       */
-    virtual unsigned GetAverageSignalLevel(
+    virtual int GetAudioLevelDB(
       const BYTE * buffer,  ///<  RTP payload being detected
       PINDEX size           ///<  Size of payload buffer
     );

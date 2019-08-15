@@ -623,14 +623,14 @@ PBoolean OpalLineConnection::SetAudioVolume(PBoolean source, unsigned percentage
 }
 
 
-unsigned OpalLineConnection::GetAudioSignalLevel(PBoolean source)
+int OpalLineConnection::GetAudioLevelDB(bool source)
 {
   PSafePtr<OpalLineMediaStream> stream = PSafePtrCast<OpalMediaStream, OpalLineMediaStream>(GetMediaStream(OpalMediaType::Audio(), source));
   if (stream == NULL)
-    return UINT_MAX;
+    return INT_MAX;
 
   OpalLine & line = stream->GetLine();
-  return line.GetAverageSignalLevel(!source);
+  return line.GetAudioLevelDB(!source);
 }
 
 
@@ -1168,8 +1168,8 @@ OpalLineSilenceDetector::OpalLineSilenceDetector(OpalLine & theLine, const Param
 }
 
 
-unsigned OpalLineSilenceDetector::GetAverageSignalLevel(const BYTE *, PINDEX)
+int OpalLineSilenceDetector::GetAudioLevelDB(const BYTE *, PINDEX)
 {
-  return m_line.GetAverageSignalLevel(true);
+  return m_line.GetAudioLevelDB(true);
 }
 #endif // OPAL_LID
