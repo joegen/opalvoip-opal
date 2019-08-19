@@ -1,0 +1,83 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{da436f47-f208-4243-bc8b-b0cc8e3a6577}</UniqueIdentifier>
+      <Extensions>cpp;c;cxx;rc;def;r;odl;idl;hpj;bat</Extensions>
+    </Filter>
+    <Filter Include="GSM Files">
+      <UniqueIdentifier>{fcca93a3-48c6-4773-9b4e-68e0c05a7c2d}</UniqueIdentifier>
+      <Extensions>.c</Extensions>
+    </Filter>
+    <Filter Include="GSM Files\GSM Source">
+      <UniqueIdentifier>{cc83bc4a-0cba-433b-a646-115ee30c3aa0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="GSM Files\GSM Headers">
+      <UniqueIdentifier>{72ac11bc-d3bb-4f1b-8e3a-ae300ed64355}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="gsm06_10_codec.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\add.c">
+      <Filter>GSM Files\GSM Source</Filter>
+    </ClCompile>
+    <ClCompile Include="src\code.c">
+      <Filter>GSM Files\GSM Source</Filter>
+    </ClCompile>
+    <ClCompile Include="src\decode.c">
+      <Filter>GSM Files\GSM Source</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gsm_create.c">
+      <Filter>GSM Files\GSM Source</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gsm_decode.c">
+      <Filter>GSM Files\GSM Source</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gsm_destroy.c">
+      <Filter>GSM Files\GSM Source</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gsm_encode.c">
+      <Filter>GSM Files\GSM Source</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gsm_lpc.c">
+      <Filter>GSM Files\GSM Source</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gsm_option.c">
+      <Filter>GSM Files\GSM Source</Filter>
+    </ClCompile>
+    <ClCompile Include="src\long_term.c">
+      <Filter>GSM Files\GSM Source</Filter>
+    </ClCompile>
+    <ClCompile Include="src\preprocess.c">
+      <Filter>GSM Files\GSM Source</Filter>
+    </ClCompile>
+    <ClCompile Include="src\rpe.c">
+      <Filter>GSM Files\GSM Source</Filter>
+    </ClCompile>
+    <ClCompile Include="src\short_term.c">
+      <Filter>GSM Files\GSM Source</Filter>
+    </ClCompile>
+    <ClCompile Include="src\table.c">
+      <Filter>GSM Files\GSM Source</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\gsm\inc\config.h">
+      <Filter>GSM Files\GSM Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="src\gsm\inc\gsm.h">
+      <Filter>GSM Files\GSM Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="src\gsm\inc\private.h">
+      <Filter>GSM Files\GSM Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="src\gsm\inc\proto.h">
+      <Filter>GSM Files\GSM Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="src\gsm\inc\unproto.h">
+      <Filter>GSM Files\GSM Headers</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

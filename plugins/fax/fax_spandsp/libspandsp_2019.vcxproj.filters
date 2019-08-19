@@ -1,0 +1,769 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{f125b8d7-89b1-4e05-b835-c7bc3bed2569}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Private">
+      <UniqueIdentifier>{c187c595-d4a2-4235-a426-49616fb29559}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Public">
+      <UniqueIdentifier>{44db031e-558e-421f-86fc-124fdc7d53d5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Compatibility">
+      <UniqueIdentifier>{59067a75-4578-47b0-acd4-eefb69b6cfb9}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="spandsp-0.0.6\src\ademco_contactid.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\adsi.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\async.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\at_interpreter.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\awgn.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\bell_r2_mf.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\bert.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\bitstream.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\bit_operations.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\complex_filters.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\complex_vector_float.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\complex_vector_int.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\crc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\dds_float.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\dds_int.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\dtmf.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\echo.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\fax.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\fax_modems.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\fsk.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\g711.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\g722.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\g726.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\gsm0610_decode.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\gsm0610_encode.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\gsm0610_long_term.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\gsm0610_lpc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\gsm0610_preprocess.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\gsm0610_rpe.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\gsm0610_short_term.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\hdlc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\image_translate.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\ima_adpcm.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\logging.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\lpc10_analyse.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\lpc10_decode.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\lpc10_encode.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\lpc10_placev.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\lpc10_voicing.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\math_fixed.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\modem_connect_tones.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\modem_echo.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\msvc\gettimeofday.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\noise.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\oki_adpcm.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\playout.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\plc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\power_meter.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\queue.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\schedule.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\sig_tone.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\silence_gen.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\super_tone_rx.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\super_tone_tx.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\swept_tone.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\t30.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\t30_api.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\t30_logging.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\t31.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\t35.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\t38_core.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\t38_gateway.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\t38_non_ecm_buffer.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\t38_terminal.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\t4_rx.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\t4_tx.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\testcpuid.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\timezone.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\time_scale.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\tone_detect.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\tone_generate.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\v17rx.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\v17tx.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\v18.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\v22bis_rx.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\v22bis_tx.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\v27ter_rx.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\v27ter_tx.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\v29rx.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\v29tx.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\v42.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\v42bis.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\v8.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\vector_float.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spandsp-0.0.6\src\vector_int.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\ademco_contactid.h">
+      <Filter>Header Files\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\adsi.h">
+      <Filter>Header Files\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\async.h">
+      <Filter>Header Files\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\at_interpreter.h">
+      <Filter>Header Files\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\awgn.h">
+      <Filter>Header Files\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\bell_r2_mf.h">
+      <Filter>Header Files\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\bert.h">
+      <Filter>Header Files\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\bitstream.h">
+      <Filter>Header Files\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\echo.h">
+      <Filter>Header Files\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\fax.h">
+      <Filter>Header Files\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\fax_modems.h">
+      <Filter>Header Files\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\fsk.h">
+      <Filter>Header Files\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\g711.h">
+      <Filter>Header Files\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\g722.h">
+      <Filter>Header Files\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\g726.h">
+      <Filter>Header Files\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\gsm0610.h">
+      <Filter>Header Files\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\hdlc.h">
+      <Filter>Header Files\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\ima_adpcm.h">
+      <Filter>Header Files\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\image_translate.h">
+      <Filter>Header Files\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\logging.h">
+      <Filter>Header Files\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\lpc10.h">
+      <Filter>Header Files\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\modem_connect_tones.h">
+      <Filter>Header Files\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\modem_echo.h">
+      <Filter>Header Files\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\noise.h">
+      <Filter>Header Files\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\oki_adpcm.h">
+      <Filter>Header Files\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\queue.h">
+      <Filter>Header Files\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\schedule.h">
+      <Filter>Header Files\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\sig_tone.h">
+      <Filter>Header Files\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\silence_gen.h">
+      <Filter>Header Files\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\super_tone_rx.h">
+      <Filter>Header Files\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\super_tone_tx.h">
+      <Filter>Header Files\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\swept_tone.h">
+      <Filter>Header Files\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\t4_rx.h">
+      <Filter>Header Files\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\t4_t6_decode.h">
+      <Filter>Header Files\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\t4_t6_encode.h">
+      <Filter>Header Files\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\t4_tx.h">
+      <Filter>Header Files\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\t30.h">
+      <Filter>Header Files\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\t30_dis_dtc_dcs_bits.h">
+      <Filter>Header Files\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\t31.h">
+      <Filter>Header Files\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\t38_core.h">
+      <Filter>Header Files\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\t38_gateway.h">
+      <Filter>Header Files\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\t38_non_ecm_buffer.h">
+      <Filter>Header Files\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\t38_terminal.h">
+      <Filter>Header Files\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\time_scale.h">
+      <Filter>Header Files\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\timezone.h">
+      <Filter>Header Files\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\tone_detect.h">
+      <Filter>Header Files\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\tone_generate.h">
+      <Filter>Header Files\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\v8.h">
+      <Filter>Header Files\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\v17rx.h">
+      <Filter>Header Files\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\v17tx.h">
+      <Filter>Header Files\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\v18.h">
+      <Filter>Header Files\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\v22bis.h">
+      <Filter>Header Files\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\v27ter_rx.h">
+      <Filter>Header Files\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\v27ter_tx.h">
+      <Filter>Header Files\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\v29rx.h">
+      <Filter>Header Files\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\v29tx.h">
+      <Filter>Header Files\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\v42.h">
+      <Filter>Header Files\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\v42bis.h">
+      <Filter>Header Files\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\ademco_contactid.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\adsi.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\arctan2.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\async.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\at_interpreter.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\awgn.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\bell_r2_mf.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\bert.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\biquad.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\bit_operations.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\bitstream.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\complex.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\complex_filters.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\complex_vector_float.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\complex_vector_int.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\crc.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\dc_restore.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\dds.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\dtmf.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\dtmf.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\echo.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\expose.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\fast_convert.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\fax.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\fax_modems.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\fir.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\fsk.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\g168models.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\g711.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\g722.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\g726.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\gsm0610.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\hdlc.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\ima_adpcm.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\image_translate.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\logging.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\lpc10.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\math_fixed.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\modem_connect_tones.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\modem_echo.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\noise.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\oki_adpcm.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\playout.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\plc.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\power_meter.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\queue.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\saturated.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\schedule.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\sig_tone.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\silence_gen.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\stdbool.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\super_tone_rx.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\super_tone_tx.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\swept_tone.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\t4_rx.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\t4_t6_decode.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\t4_t6_encode.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\t4_tx.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\t30.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\t30_api.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\t30_fcf.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\t30_logging.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\t31.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\t35.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\t38_core.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\t38_gateway.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\t38_non_ecm_buffer.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\t38_terminal.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\telephony.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\time_scale.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\timezone.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\timing.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\tone_detect.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\tone_generate.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\v8.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\v17rx.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\v17tx.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\v18.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\v22bis.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\v27ter_rx.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\v27ter_tx.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\v29rx.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\v29tx.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\v42.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\v42bis.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\vector_float.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\vector_int.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\version.h">
+      <Filter>Header Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="compat_headers\config.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="compat_headers\spandsp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="compat_headers\at_interpreter_dictionary.h">
+      <Filter>Header Files\Compatibility</Filter>
+    </ClInclude>
+    <ClInclude Include="compat_headers\math_fixed_tables.h">
+      <Filter>Header Files\Compatibility</Filter>
+    </ClInclude>
+    <ClInclude Include="compat_headers\tgmath.h">
+      <Filter>Header Files\Compatibility</Filter>
+    </ClInclude>
+    <ClInclude Include="compat_headers\unistd.h">
+      <Filter>Header Files\Compatibility</Filter>
+    </ClInclude>
+    <ClInclude Include="compat_headers\v17_v32bis_rx_floating_rrc.h">
+      <Filter>Header Files\Compatibility</Filter>
+    </ClInclude>
+    <ClInclude Include="compat_headers\v17_v32bis_tx_floating_rrc.h">
+      <Filter>Header Files\Compatibility</Filter>
+    </ClInclude>
+    <ClInclude Include="compat_headers\v22bis_rx_1200_floating_rrc.h">
+      <Filter>Header Files\Compatibility</Filter>
+    </ClInclude>
+    <ClInclude Include="compat_headers\v22bis_rx_2400_floating_rrc.h">
+      <Filter>Header Files\Compatibility</Filter>
+    </ClInclude>
+    <ClInclude Include="compat_headers\v22bis_tx_floating_rrc.h">
+      <Filter>Header Files\Compatibility</Filter>
+    </ClInclude>
+    <ClInclude Include="compat_headers\v27ter_rx_2400_floating_rrc.h">
+      <Filter>Header Files\Compatibility</Filter>
+    </ClInclude>
+    <ClInclude Include="compat_headers\v27ter_rx_4800_floating_rrc.h">
+      <Filter>Header Files\Compatibility</Filter>
+    </ClInclude>
+    <ClInclude Include="compat_headers\v27ter_tx_2400_floating_rrc.h">
+      <Filter>Header Files\Compatibility</Filter>
+    </ClInclude>
+    <ClInclude Include="compat_headers\v27ter_tx_4800_floating_rrc.h">
+      <Filter>Header Files\Compatibility</Filter>
+    </ClInclude>
+    <ClInclude Include="compat_headers\v29rx_floating_rrc.h">
+      <Filter>Header Files\Compatibility</Filter>
+    </ClInclude>
+    <ClInclude Include="compat_headers\v29tx_floating_rrc.h">
+      <Filter>Header Files\Compatibility</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
