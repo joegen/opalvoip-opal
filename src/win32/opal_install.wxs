@@ -47,7 +47,7 @@
         <Package Description='$(var.ProductName)'
                  Comments='$(var.Platform) $(var.ProductDescription), Version $(var.ProductVersion)'
                  Manufacturer='$(var.ProductManufacturer)'
-                 Platform="$(var.Architecture)"
+                 Platform='$(var.Architecture)'
                  InstallScope="perMachine"
                  InstallerVersion='405'
                  Compressed='yes' />
@@ -122,7 +122,7 @@
                                   Guid='*'>
                             <File Id='openH264_DLL'
                                   Name='openh264_$(var.Architecture).dll'
-                                  Source='$(var.OpenH264Dir)\openh264_$(var.Architecture).dll'
+                                  Source='$(var.PluginReleaseDir)\openh264_$(var.Architecture).dll'
                                   KeyPath='yes' />
                         </Component>
                         <Component Id='G.722'
@@ -637,7 +637,7 @@
 
         <DirectoryRef Id="TARGETDIR">
             <Merge Id="VCRedist"
-                   SourceFile="$(env.ProgramFiles)\Common Files\Merge Modules\Microsoft_VC$(var.MSVCRT_VER)_CRT_$(var.Architecture).msm"
+                   SourceFile="$(env.ProgramW6432)\Common Files\Merge Modules\Microsoft_VC$(var.MSVCRT_VER)_CRT_$(var.Architecture).msm"
                    DiskId="1"
                    Language="0"/>
         </DirectoryRef>
