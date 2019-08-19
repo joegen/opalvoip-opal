@@ -123,6 +123,12 @@
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <Culture>0x0c09</Culture>
     </ResourceCompile>
+    <PreBuildEvent>
+      <Command>if exist "$(OutDir)openh264_$(PlatformTarget).dll" exit 0
+cscript /nologo "$(ProjectDir)..\..\..\make\downloader.vbs" GetUnzip http://ciscobinary.openh264.org/openh264-2.0.0-win$(PlatformArchitecture).dll.bz2 "$(OutDir)"
+ren $(OutDir)openh264-2.0.0-win$(PlatformArchitecture).dll openh264_$(PlatformTarget).dll</Command>
+      <Message>Download Cisco OpenH264 DLL</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -156,6 +162,12 @@
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <Culture>0x0c09</Culture>
     </ResourceCompile>
+    <PreBuildEvent>
+      <Message>Download Cisco OpenH264 DLL</Message>
+      <Command>if exist "$(OutDir)openh264_$(PlatformTarget).dll" exit 0
+cscript /nologo "$(ProjectDir)..\..\..\make\downloader.vbs" GetUnzip http://ciscobinary.openh264.org/openh264-2.0.0-win$(PlatformArchitecture).dll.bz2 "$(OutDir)"
+ren $(OutDir)openh264-2.0.0-win$(PlatformArchitecture).dll openh264_$(PlatformTarget).dll</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -190,15 +202,16 @@
     </ResourceCompile>
     <PostBuildEvent>
       <Message>Copying codec and debug information to plug in directory</Message>
-      <Command>cd "C:\Program Files (x86)\PTLib Plug Ins"
-if errorlevel 1 goto no_copy
-xcopy /y/f "$(TargetDir)$(TargetName).*d*" .
-if exist openh264_x86.dll goto no_copy
-cscript /nologo "$(ProjectDir)..\..\..\make\downloader.vbs" GetUnzip http://ciscobinary.openh264.org/openh264-1.8.0-win32.dll.bz2 .
-if errorlevel 1 goto no_copy
-ren openh264-1.8.0-win32.dll openh264_x86.dll
-:no_copy</Command>
+      <Command>if not exist "$(ProgramFiles)\PTLib Plug Ins" exit 0
+xcopy /y/f "$(TargetDir)$(TargetName).*d*" "$(ProgramFiles)\PTLib Plug Ins"
+xcopy /y/f "$OutDir)openh264_x64.dll" "$(ProgramFiles)\PTLib Plug Ins"</Command>
     </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>if exist "$(OutDir)openh264_$(PlatformTarget).dll" exit 0
+cscript /nologo "$(ProjectDir)..\..\..\make\downloader.vbs" GetUnzip http://ciscobinary.openh264.org/openh264-2.0.0-win$(PlatformArchitecture).dll.bz2 "$(OutDir)"
+ren $(OutDir)openh264-2.0.0-win$(PlatformArchitecture).dll openh264_$(PlatformTarget).dll</Command>
+      <Message>Download Cisco OpenH264 DLL</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -231,14 +244,16 @@ ren openh264-1.8.0-win32.dll openh264_x86.dll
     </ResourceCompile>
     <PostBuildEvent>
       <Message>Copying codec and debug information to plug in directory</Message>
-      <Command>if not exist "C:\Program Files\PTLib Plug Ins" exit
-cd "C:\Program Files\PTLib Plug Ins"
-xcopy /y/f "$(TargetDir)$(TargetName).*d*" .
-if exist openh264_x64.dll exit
-cscript /nologo "$(ProjectDir)..\..\..\make\downloader.vbs" GetUnzip http://ciscobinary.openh264.org/openh264-1.8.0-win64.dll.bz2 .
-if errorlevel 1 exit 1
-ren openh264-1.8.0-win64.dll openh264_x64.dll</Command>
+      <Command>if not exist "$(ProgramW6432)\PTLib Plug Ins" exit 0
+xcopy /y/f "$(TargetDir)$(TargetName).*d*" "$(ProgramW6432)\PTLib Plug Ins"
+xcopy /y/f "$OutDir)openh264_x64.dll" "$(ProgramW6432)\PTLib Plug Ins"</Command>
     </PostBuildEvent>
+    <PreBuildEvent>
+      <Message>Download Cisco OpenH264 DLL</Message>
+      <Command>if exist "$(OutDir)openh264_$(PlatformTarget).dll" exit 0
+cscript /nologo "$(ProjectDir)..\..\..\make\downloader.vbs" GetUnzip http://ciscobinary.openh264.org/openh264-2.0.0-win$(PlatformArchitecture).dll.bz2 "$(OutDir)"
+ren $(OutDir)openh264-2.0.0-win$(PlatformArchitecture).dll openh264_$(PlatformTarget).dll</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\common\encframe.cxx" />
