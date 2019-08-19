@@ -6,7 +6,7 @@
             <name>zsdk-opal</name>
             <c-extensions>c,i,m</c-extensions>
             <cpp-extensions>cpp,cxx</cpp-extensions>
-            <header-extensions>h,hpp</header-extensions>
+            <header-extensions>def,h,hpp</header-extensions>
             <sourceEncoding>UTF-8</sourceEncoding>
             <make-dep-projects>
                 <make-dep-project>../zsdk-ptlib</make-dep-project>

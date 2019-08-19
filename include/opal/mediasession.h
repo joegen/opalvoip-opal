@@ -501,7 +501,7 @@ class OpalMediaTransport : public PSafeObject, public OpalMediaTransportChannelT
     PChannel * GetChannel(SubChannels subchannel = e_Media) const;
 
     void SetMediaTimeout(const PTimeInterval & t);
-    void SetRemoteBehindNAT();
+    void SetRemoteBehindNAT(bool nat = true);
     void ResetHasSetRemoteMediaAddress();
 
     /// Congestion control handling
@@ -782,7 +782,7 @@ class OpalMediaSession : public PSafeObject, public OpalMediaTransportChannelTyp
 #endif
 
     /// Indicate remote is behind NAT
-    void SetRemoteBehindNAT();
+    void SetRemoteBehindNAT(bool nat = true);
     void ResetHasSetRemoteMediaAddress();
     bool IsRemoteBehindNAT() const { return m_remoteBehindNAT; }
 
