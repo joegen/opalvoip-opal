@@ -115,13 +115,11 @@
       </DataExecutionPrevention>
       <ImportLibrary>$(IntDir)$(TargetName).lib</ImportLibrary>
       <TargetMachine>MachineX86</TargetMachine>
+      <IgnoreSpecificDefaultLibraries>libcmt</IgnoreSpecificDefaultLibraries>
     </Link>
     <PostBuildEvent>
       <Message>Copying codec and debug information to plug in directory</Message>
-      <Command>if not exist "$(ProgramFiles)\PTLib Plug Ins" exit 0
-xcopy /y/f "$(TargetDir)$(TargetName).*d*" "$(ProgramFiles)\PTLib Plug Ins"
-xcopy /y/f "$(ProjectDir)opus\win32\VS2017\$(Platform)\DebugDLL\opus.dll" "$(ProgramFiles)\PTLib Plug Ins"
-</Command>
+      <Command>if exist "$(ProgramFiles)\PTLib Plug Ins" xcopy /y/f "$(TargetDir)$(TargetName).*d*" "$(ProgramFiles)\PTLib Plug Ins"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -148,10 +146,7 @@ xcopy /y/f "$(ProjectDir)opus\win32\VS2017\$(Platform)\DebugDLL\opus.dll" "$(Pro
     </Link>
     <PostBuildEvent>
       <Message>Copying codec and debug information to plug in directory</Message>
-      <Command>if not exist "$(ProgramW6432)\PTLib Plug Ins" exit 0
-xcopy /y/f "$(TargetDir)$(TargetName).*d*" "$(ProgramW6432)\PTLib Plug Ins"
-xcopy /y/f "$(ProjectDir)opus\win32\VS2019\$(Platform)\DebugDLL\opus.dll" "$(ProgramW6432)\PTLib Plug Ins"
-</Command>
+      <Command>if exist "$(ProgramW6432)\PTLib Plug Ins" xcopy /y/f "$(TargetDir)$(TargetName).*d*" "$(ProgramW6432)\PTLib Plug Ins"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -177,6 +172,7 @@ xcopy /y/f "$(ProjectDir)opus\win32\VS2019\$(Platform)\DebugDLL\opus.dll" "$(Pro
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <ImportLibrary>$(IntDir)$(TargetName).lib</ImportLibrary>
       <TargetMachine>MachineX86</TargetMachine>
+      <IgnoreSpecificDefaultLibraries>libcmt</IgnoreSpecificDefaultLibraries>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
