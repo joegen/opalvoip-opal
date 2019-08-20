@@ -21,16 +21,13 @@
         <?define SaslDir = "C:\Tools\bin" ?>
         <?define LDAPDir = "C:\Tools\bin" ?>
         <?define FFMPEGDir = "..\..\..\external\ffmpeg-win32-dev\bin" ?>
-        <?define OpenH264Dir = "$(env.ProgramFiles)\PTLib Plug Ins" ?>
         <?define SpanDspDir = "..\..\..\external\spandsp-0.0.6\src\Release" ?>
     <?else?>
         <?define SSLDir = "$(env.ProgramW6432)\OpenSSL-Win64\bin" ?>
         <?define LuaDir = "..\..\..\external\Lua-win64" ?>
         <?define V8Dir = "..\..\..\external\v8\v8\out.gn\x64.release" ?>
         <?define FFMPEGDir = "..\..\..\external\ffmpeg-win64-dev\bin" ?>
-        <?define OpenH264Dir = "$(env.ProgramW6432)\PTLib Plug Ins" ?>
         <?define SpanDspDir = "..\..\..\external\spandsp-0.0.6\src\x64\Release" ?>
-        <?define ImageMagickDir = "$(env.ProgramW6432)\imagemagick-7.0.5-q16" ?>
     <?endif?>
 
     <?define AVFORMATVer = "58" ?>
