@@ -2404,17 +2404,12 @@ copy "%(RootDir)%(Directory)java_swig_wrapper.cxx"+nul "%(RootDir)%(Directory)ja
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\ptlib\src\ptlib\msos\Console_2017.vcxproj">
-      <Project>{d11e1c9d-406c-4d7c-8f37-913c0bfd9e0d}</Project>
-      <Private>false</Private>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
-      <LinkLibraryDependencies>false</LinkLibraryDependencies>
-      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
-    </ProjectReference>
+    <Natvis Include="opal.natvis" />
   </ItemGroup>
   <ItemGroup>
-    <Natvis Include="opal.natvis" />
+    <ProjectReference Include="..\..\..\ptlib\src\ptlib\msos\Console_2019.vcxproj">
+      <Project>{d11e1c9d-406c-4d7c-8f37-913c0bfd9e0d}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
