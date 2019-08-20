@@ -205,7 +205,7 @@
     <ClCompile Include="OpusCodec.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="opus\win32\VS2017\opus.vcxproj">
+    <ProjectReference Include="opus\win32\VS2019\opus.vcxproj">
       <Project>{219ec965-228a-1824-174d-96449d05f88a}</Project>
     </ProjectReference>
   </ItemGroup>
