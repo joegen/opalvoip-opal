@@ -65,7 +65,7 @@ void OpalSilenceDetector::AdaptiveReset()
   m_silenceReceivedTime = 0;
 
   // Restart in silent mode, unless not detecting
-  m_lastResult = m_mode == NoSilenceDetection ? VoiceActive : IsSilent;
+  m_lastResult = m_mode == NoSilenceDetection ? VoiceActive : VoiceInactive;
   m_lastTimestamp = 0;
   m_receivedTime = 0;
 }
@@ -166,7 +166,8 @@ OpalSilenceDetector::Result OpalSilenceDetector::GetResult(int * currentThreshol
 void OpalSilenceDetector::ReceivedPacket(RTP_DataFrame & frame, P_INT_PTR)
 {
   switch (Detect(frame)) {
-    case IsSilent :
+    case VoiceDeactivated :
+    case VoiceInactive :
       frame.SetPayloadSize(0); // Not in talk burst so silence the frame
       break;
 
@@ -188,7 +189,7 @@ OpalSilenceDetector::Result OpalSilenceDetector::Detect(const BYTE * audioPtr, P
 {
   // Already silent
   if (audioLen == 0)
-    return m_lastResult = IsSilent;
+    return m_lastResult = VoiceInactive;
 
   PWaitAndSignal mutex(m_inUse);
 
@@ -211,33 +212,40 @@ OpalSilenceDetector::Result OpalSilenceDetector::Detect(const BYTE * audioPtr, P
   if (m_lastSignalLevel == INT_MAX)
     return m_lastResult = VoiceActive;
 
+  // Switch last result to steady state values if were transitional ones
+  switch (m_lastResult) {
+    case VoiceDeactivated :
+      m_lastResult = VoiceInactive;
+      break;
+    case VoiceActivated :
+      m_lastResult = VoiceActive;
+      break;
+    default :
+      break;
+  }
+
   // Now if signal level above threshold we are "talking"
   bool haveSignal = m_lastSignalLevel > m_levelThreshold;
+  bool hadSignal = m_lastResult > VoiceInactive;
 
   // If no change ie still talking or still silent, reset frame counter
-  if ((m_lastResult != IsSilent) == haveSignal) {
+  if (hadSignal == haveSignal)
     m_receivedTime = 0;
-    if (m_lastResult == VoiceActivated)
-      m_lastResult = VoiceActive;
-  }
   else {
     m_receivedTime += timeSinceLastFrame;
     // If have had enough consecutive frames talking/silent, swap modes.
-    if (m_receivedTime >= (m_lastResult != IsSilent ? m_silenceDeadband : m_signalDeadband)) {
-      m_lastResult = m_lastResult != IsSilent ? IsSilent : VoiceActivated;
-      PTRACE(4, "Detector transition: "
-             << (m_lastResult != IsSilent ? "Talk" : "Silent")
-             << " level=" << m_lastSignalLevel << "dBov, threshold=" << m_levelThreshold << "dBov");
+    if (m_receivedTime >= (hadSignal ? m_silenceDeadband : m_signalDeadband)) {
+      m_lastResult = hadSignal ? VoiceDeactivated : VoiceActivated;
+      PTRACE(4, "Detector transition:"
+                " " << m_lastResult << ","
+                " level=" << m_lastSignalLevel << "dBov,"
+                " threshold=" << m_levelThreshold << "dBov");
 
       // If we had talk/silence transition restart adaptive threshold measurements
       m_signalMinimum = MaxAudioLevel;
       m_silenceMaximum = MinAudioLevel;
       m_signalReceivedTime = 0;
       m_silenceReceivedTime = 0;
-    }
-    else {
-      if (m_lastResult == VoiceActivated)
-        m_lastResult = VoiceActive;
     }
   }
 

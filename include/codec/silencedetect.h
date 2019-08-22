@@ -132,12 +132,13 @@ class OpalSilenceDetector : public PObject
       */
     unsigned GetClockRate() const { return m_clockRate; }
 
-    enum Result
-    {
-      IsSilent,
+    P_DECLARE_STREAMABLE_ENUM(Result,
+      VoiceDeactivated, // Note, order is important
+      VoiceInactive,
       VoiceActivated,
       VoiceActive
-    };
+    );
+    enum { IsSilent = VoiceInactive }; // For backward compatibility (mostly)
 
     /**Get silence detection status
       */
@@ -231,8 +232,9 @@ class OpalPCM16SilenceDetector : public OpalSilenceDetector
     /** Construct new silence detector for PCM-16/8000
       */
     OpalPCM16SilenceDetector(
-      const Params & newParam ///<  New parameters for silence detector
-    ) : OpalSilenceDetector(newParam) { }
+      const Params & newParam = Params(), ///<  New parameters for silence detector
+      unsigned clockRate = 8000
+    ) : OpalSilenceDetector(newParam, clockRate) { }
 
   /**@name Overrides from OpalSilenceDetector */
   //@{
