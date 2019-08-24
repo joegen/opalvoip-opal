@@ -1070,26 +1070,7 @@ void OpalTransport::CloseWait()
   PTRACE_IF(3, m_thread != NULL, "Transport clean up on termination for " << *this);
 
   Close();
-<<<<<<< HEAD
-
-  if (!LockReadWrite())
-    return;
-  
-  if (!m_thread) {
-    UnlockReadWrite();
-    return;
-  }
-  
-  PThread * exitingThread = m_thread;
-  m_thread = NULL;
-  UnlockReadWrite();
-
-  m_keepAliveTimer.Stop();
-
-  PThread::WaitAndDelete(exitingThread, m_endpoint.GetManager().GetSignalingTimeout()+2000);
-=======
   AttachThread(NULL);
->>>>>>> master
 }
 
 

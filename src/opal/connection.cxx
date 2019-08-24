@@ -954,18 +954,12 @@ void OpalConnection::CloseMediaStreams()
   bool someOpen = true;
   while (someOpen) {
     someOpen = false;
-<<<<<<< HEAD
-    for (OpalMediaStreamPtr mediaStream(m_mediaStreams, PSafeReference); mediaStream != NULL; ++mediaStream) {
-      someOpen = someOpen || mediaStream->IsOpen();
-      CloseMediaStream(mediaStream);
-=======
     for (StreamDict::iterator it = m_mediaStreams.begin(); it != m_mediaStreams.end(); ++it) {
       OpalMediaStreamPtr mediaStream = it->second;
       if (mediaStream != NULL && mediaStream->IsOpen()) {
         someOpen = true;
         mediaStream->Close();
       }
->>>>>>> master
     }
   }
   PTRACE(1, "All media streams CLOSED");

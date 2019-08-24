@@ -895,21 +895,12 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveData(RTP_
     status = OnReceiveRedundantFrame(frame);
 #endif
 
-<<<<<<< HEAD
-  CalculateStatistics(frame);
-  
-  // Send Report every 200 packets
-  if (m_packets % 200 == 0) {
-    m_session.SendReport(0, false);
-  }
-=======
   if (rxType != e_RxFromRTX) {
     PINDEX hdrlen;
     BYTE * exthdr = frame.GetHeaderExtension(RTP_DataFrame::RFC5285_OneByte, m_session.m_absSendTimeHdrExtId, hdrlen);
     if (exthdr != NULL) {
       // 24 bits in middle of NTP time, as per http://webrtc.org/experiments/rtp-hdrext/abs-send-time/
       uint32_t ts = (exthdr[0] << 16) | (exthdr[1] << 8) | exthdr[2];
->>>>>>> master
 
       if (m_absSendTimeHighBits == 0) {
         m_absSendTimeHighBits = now.GetNTP() & (~0ULL << 38);
@@ -3212,10 +3203,6 @@ bool OpalRTPSession::Close()
 {
   PTRACE(3, *this << "closing RTP.");
 
-<<<<<<< HEAD
-  //m_reportTimer.Stop(true);
-=======
->>>>>>> master
   m_endpoint.RegisterLocalRTP(this, true);
   m_reportTimer.Stop(true);
 
@@ -3370,17 +3357,13 @@ void OpalRTPSession::OnRxDataPacket(OpalMediaTransport &, PBYTEArray data)
   }
   else {
     RTP_DataFrame frame(data);
-<<<<<<< HEAD
+
     // Ignore comfort noise sent by NetSapiens
     if (frame.GetSyncSource() == 2602817036 && frame.GetPayloadType() == 13) {
       return;
     }
-    if (OnPreReceiveData(frame) == e_AbortTransport)
-      CheckMediaFailed(e_Data);
-=======
     if (OnPreReceiveData(frame, PTime()) == e_AbortTransport)
       SessionFailed(e_Data PTRACE_PARAM(, "OnReceiveData abort"));
->>>>>>> master
   }
 }
 

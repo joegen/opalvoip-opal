@@ -589,12 +589,9 @@ OpalMediaTransport::OpalMediaTransport(const PString & name)
   : PSafeObject(m_instrumentedMutex)
   , m_name(name)
   , m_remoteBehindNAT(false)
-<<<<<<< HEAD
   , m_hasSetNATControlAddress(false)
   , m_hasSetNATMediaAddress(false)
   , m_remoteAddressSet(false)
-=======
->>>>>>> master
   , m_packetSize(2048)
   , m_mtuDiscoverMode(-1)
   , m_mediaTimeout(0, 0, 5)       // Nothing received for 5 minutes
@@ -1006,29 +1003,7 @@ void OpalMediaTransport::Start()
   }
 }
 
-<<<<<<< HEAD
-void OpalMediaTransport::CloseWait()
-{
-  PWaitAndSignal lock(m_closeMutex);
-  
-  if (m_closeInvoked) {
-    return;
-  }
-  m_closeInvoked = true;
-  PTRACE(4, *this << "stopping " << m_subchannels.size() << " subchannels.");
-  InternalClose();
 
-  for (vector<ChannelInfo>::iterator it = m_subchannels.begin(); it != m_subchannels.end(); ++it)
-    PThread::WaitAndDelete(it->m_thread);
-}
-
-void OpalMediaTransport::InternalStop()
-{
-  if (m_subchannels.empty())
-    return;
-
-  CloseWait();
-=======
 
 bool OpalMediaTransport::GarbageCollection()
 {
@@ -1036,7 +1011,6 @@ bool OpalMediaTransport::GarbageCollection()
     PTRACE(4, *this << "stopping " << m_subchannels.size() << " subchannel(s).");
     InternalClose();
   }
->>>>>>> master
 
   m_ccTimer.Stop();
 
@@ -1160,29 +1134,14 @@ bool OpalUDPMediaTransport::InternalRxData(SubChannels subchannel, const PBYTEAr
     // it out from the first packet received.
     PIPAddressAndPort ap;
     GetSubChannelAsSocket(subchannel)->GetLastReceiveAddress(ap);
-<<<<<<< HEAD
-    if (subchannel == e_Control && !m_hasSetNATControlAddress) {
-      m_hasSetNATControlAddress = InternalSetRemoteAddress(ap, subchannel, false PTRACE_PARAM(, "first PDU"));
-      //if (m_hasSetNATControlAddress && !m_hasSetNATMediaAddress) {
-      //  ap.SetPort(ap.GetPort() - 1);
-      //  InternalSetRemoteAddress(ap, e_Media, false PTRACE_PARAM(, "first PDU"));
-      //}
-    } else if (subchannel == e_Media && !m_hasSetNATMediaAddress) {
-      m_hasSetNATMediaAddress = InternalSetRemoteAddress(ap, subchannel, false PTRACE_PARAM(, "first PDU"));
-      //if (m_hasSetNATMediaAddress && !m_hasSetNATControlAddress) {
-      //  ap.SetPort(ap.GetPort() + 1);
-      //  InternalSetRemoteAddress(ap, e_Control, false PTRACE_PARAM(, "first PDU"));
-      //}
-=======
     InternalSetRemoteAddress(ap, subchannel, e_RemoteAddressFromFirstPacket);
-    if (subchannel == e_Control) {
+    if (subchannel == e_Control && !m_hasSetNATControlAddress) {
       ap.SetPort(ap.GetPort() - 1);
-      InternalSetRemoteAddress(ap, e_Data, e_RemoteAddressFromProvisionalPair);
+      m_hasSetNATControlAddress = InternalSetRemoteAddress(ap, e_Data, e_RemoteAddressFromProvisionalPair);
     }
-    else if (subchannel == e_Data && m_subchannels.size() > e_Control) {
+    else if (subchannel == e_Data && m_subchannels.size() > e_Control && !m_hasSetNATMediaAddress) {
       ap.SetPort(ap.GetPort() + 1);
-      InternalSetRemoteAddress(ap, e_Control, e_RemoteAddressFromProvisionalPair);
->>>>>>> master
+      m_hasSetNATMediaAddress = InternalSetRemoteAddress(ap, e_Control, e_RemoteAddressFromProvisionalPair);
     }
   }
 
@@ -1633,16 +1592,13 @@ OpalMediaTransportPtr OpalMediaSession::DetachTransport()
   m_transport.SetNULL();
 
   if (transport != NULL) {
-<<<<<<< HEAD
-    PTRACE(3, *transport << "detaching from session " << GetSessionID());
+
+    PTRACE(3, *this << "detaching transport \"" << transport->GetName() << '"');
     // Closing the transport to avoid race condition where the notifier
     // is called by the transport while it is in the process of being removed
     transport->CloseWait();
     // Only remove the notifier after we know that the thread has ended.  
     // CloseWait guaraties this.
-=======
-    PTRACE(3, *this << "detaching transport \"" << transport->GetName() << '"');
->>>>>>> master
     transport->RemoveReadNotifier(this, e_AllSubChannels);
   }
   return transport;

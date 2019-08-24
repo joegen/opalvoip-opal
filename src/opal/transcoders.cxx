@@ -253,23 +253,7 @@ OpalTranscoder * OpalTranscoder::Create(const OpalMediaFormat & srcFormat,
     return NULL;
   }
 
-<<<<<<< HEAD
-  transcoder->SetInstanceID(instance, instanceLen); // Make sure this is done first
-
-  /* Set the actual media formats used to create the transcoder.
-     This information got lost as OpalTranscoderKey is just two PStrings
-     and not OpalMediaFormats. Need to copy all of the actual options
-     over the top of the global ones just created. */
-  transcoder->inputMediaFormat = srcFormat;
-  transcoder->outputMediaFormat = destFormat;
-
-  // This is called to make sure options are sent to plug ins.
-  if (transcoder->UpdateMediaFormats(srcFormat, destFormat))
-  {
-    PTRACE2(5, NULL, "Created transcoder instance from " << srcFormat << " to " << destFormat);
-=======
-  if (transcoder->OnCreated(srcFormat, destFormat, instance, instanceLen))
->>>>>>> master
+  if (transcoder->OnCreated(srcFormat, destFormat, instance, instanceLen)) {
     return transcoder;
   }
 

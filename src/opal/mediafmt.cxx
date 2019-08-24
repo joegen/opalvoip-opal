@@ -1090,28 +1090,18 @@ bool OpalMediaFormat::Update(const OpalMediaFormat & mediaFormat)
   }
 
   if (!IsValid()) {
-<<<<<<< HEAD
-=======
     PTRACE(4, "Update (initial) of " << *this);
->>>>>>> master
     *this = mediaFormat;
     return true;
   }
 
   if (*this != mediaFormat) {
-<<<<<<< HEAD
-    MakeUnique();
-    return m_info->OpalMediaFormatInternal::Merge(*mediaFormat.m_info);
-  }
-
-=======
     PTRACE(4, "Update (merge) of " << *this << " from " << mediaFormat);
     SetPayloadType(mediaFormat.GetPayloadType()); // Does MakeUnique()
     return m_info->OpalMediaFormatInternal::Merge(*mediaFormat.m_info);
   }
 
   PTRACE(4, "Update (overwrite) of " << *this);
->>>>>>> master
   *this = mediaFormat;
   return true;
 }

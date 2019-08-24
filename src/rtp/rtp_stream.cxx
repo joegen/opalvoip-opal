@@ -411,11 +411,7 @@ PBoolean OpalRTPMediaStream::WritePacket(RTP_DataFrame & packet)
   if (m_syncSource != 0)
     packet.SetSyncSource(m_syncSource);
 
-<<<<<<< HEAD
-  //PSimpleTimer failsafe(0, 5);
-=======
-  PSimpleTimer failsafe(m_connection.GetEndPoint().GetManager().GetTxMediaTimeout());
->>>>>>> master
+  //PSimpleTimer failsafe(m_connection.GetEndPoint().GetManager().GetTxMediaTimeout());
   while (IsOpen()) {
     switch (m_rtpSession.WriteData(packet, m_rewriteHeaders ? OpalRTPSession::e_RewriteHeader : OpalRTPSession::e_RewriteSSRC)) {
       case OpalRTPSession::e_AbortTransport :
