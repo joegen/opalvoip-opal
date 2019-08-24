@@ -40,6 +40,10 @@
   #error Cannot compile without PTLib sound channel support!
 #endif
 
+#ifndef OPAL_VIDEO
+  #error Cannot compile without video support!
+#endif
+
 #include <wx/taskbar.h>
 #include <wx/dataobj.h>
 
@@ -88,7 +92,7 @@ class MyPCSSEndPoint : public OpalPCSSEndPoint
   public:
     MyPCSSEndPoint(MyManager & manager);
 
-    virtual PSoundChannel * CreateSoundChannel(const OpalPCSSConnection & connection, const OpalMediaFormat & mediaFormat, PBoolean isSource);
+    virtual PSoundChannel * CreateSoundChannel(const OpalPCSSConnection & connection, const OpalMediaFormat & mediaFormat, unsigned sessionID, bool isSource);
 
   private:
     virtual PBoolean OnShowIncoming(const OpalPCSSConnection & connection);
@@ -1267,6 +1271,7 @@ class MyManager : public wxFrame, public OpalManager, public PAsyncNotifierTarge
     MySIPEndPoint  * sipEP;
     bool             m_SIPProxyUsed;
     RegistrationList m_registrations;
+    PMutex           m_registrationsMutex;
 
     void StartRegistrations();
     void ReplaceRegistrations(const RegistrationList & newRegistrations);

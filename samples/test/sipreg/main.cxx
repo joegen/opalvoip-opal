@@ -75,7 +75,7 @@ PCREATE_PROCESS(RegTest);
 
 
 RegTest::RegTest()
-  : PProcess("OPAL RegTest", "RegTest", OPAL_MAJOR, OPAL_MINOR, ReleaseCode, OPAL_BUILD)
+  : PProcess("OPAL RegTest", "RegTest", OPAL_MAJOR, OPAL_MINOR, ReleaseCode, OPAL_PATCH, false, false, OPAL_OEM)
 {
 }
 

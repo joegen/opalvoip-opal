@@ -727,10 +727,10 @@ PBoolean OpalPluginLID::WriteFrame(unsigned line, const void * buffer, PINDEX co
 }
 
 
-unsigned OpalPluginLID::GetAverageSignalLevel(unsigned line, PBoolean playback)
+int OpalPluginLID::GetAudioLevelDB(unsigned line, bool playback)
 {
-  unsigned signal = UINT_MAX;
-  CHECK_FN(GetAverageSignalLevel, (m_context, line, playback, &signal));
+  int signal = INT_MAX;
+  CHECK_FN(GetAudioLevelDB, (m_context, line, playback, &signal));
   return signal;
 }
 

@@ -1181,7 +1181,7 @@ class IAX2FrameList : public PList<IAX2Frame>
   
  protected:
   /**Local variable which protects access. */
-  PMutex mutex;
+  PDECLARE_MUTEX(mutex);
 };
 
 /////////////////////////////////////////////////////////////////////////////

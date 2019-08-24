@@ -137,14 +137,14 @@ static struct GstInitInfo {
 #if P_GSTREAMER_1_0_API
   { OPAL_H261,          "",              "avdec_h261",  "",                   "avenc_h261" },
   { OPAL_H263,          "rtph263depay",  "avdec_h263",  "rtph263pay",         "avenc_h263"
-                                                                              " rtp-payload-size={"OPAL_GST_MTU"}"
+                                                                              " rtp-payload-size={" OPAL_GST_MTU "}"
                                                                               " max-key-interval=125"
                                                                               " me-method=5"
                                                                               " max-bframes=0"
                                                                               " gop-size=125"
                                                                               " rc-buffer-size=65536000"
                                                                               " rc-min-rate=0"
-                                                                              " rc-max-rate={"OPAL_GST_BIT_RATE"}"
+                                                                              " rc-max-rate={" OPAL_GST_BIT_RATE "}"
                                                                               " rc-qsquish=0"
                                                                               " rc-eq=1"
                                                                               " max-qdiff=10"
@@ -155,14 +155,14 @@ static struct GstInitInfo {
                                                                               " qmin=2"
   },
   { OPAL_H263plus,      "rtph263pdepay", "avdec_h263",  "rtph263ppay",        "avenc_h263p"
-                                                                             " rtp-payload-size={"OPAL_GST_MTU"}"
+                                                                             " rtp-payload-size={" OPAL_GST_MTU "}"
                                                                              " max-key-interval=125"
                                                                              " me-method=5"
                                                                              " max-bframes=0"
                                                                              " gop-size=125"
                                                                              " rc-buffer-size=65536000"
                                                                              " rc-min-rate=0"
-                                                                             " rc-max-rate={"OPAL_GST_BIT_RATE"}"
+                                                                             " rc-max-rate={" OPAL_GST_BIT_RATE "}"
                                                                              " rc-qsquish=0"
                                                                              " rc-eq=1"
                                                                              " max-qdiff=10"
@@ -177,7 +177,7 @@ static struct GstInitInfo {
                                                                               " byte-stream=true"
                                                                               " bframes=0"
                                                                               " b-adapt=0"
-                                                                              " bitrate={"OPAL_GST_BIT_RATE_K"}"
+                                                                              " bitrate={" OPAL_GST_BIT_RATE_K "}"
                                                                               " tune=0x4"
                                                                               " speed-preset=3"
                                                                               " sliced-threads=false"
@@ -981,7 +981,15 @@ bool GstEndPoint::ConfigurePipeline(PGstPipeline & pipeline, const GstMediaStrea
   PGstElement el;
   PINDEX i;
 
-  P_INT_PTR rtpHandle = session->GetDataSocket().GetHandle();
+  OpalMediaTransportPtr transport = session->GetTransport();
+  if (transport == NULL)
+    return false;
+
+  PChannel * channel = transport->GetChannel(OpalMediaTransport::e_Media);
+  if (channel == NULL)
+    return false;
+
+  P_INT_PTR rtpHandle = channel->GetHandle();
   PString media(stream.GetMediaFormat().GetMediaType());
   const char *rtp_suffixes[] = { "TxRTP", "RxRTP", };
   for (i = 0; i < PARRAYSIZE(rtp_suffixes); i++) {
@@ -992,8 +1000,13 @@ bool GstEndPoint::ConfigurePipeline(PGstPipeline & pipeline, const GstMediaStrea
     }
   }
 
-  P_INT_PTR rtcpHandle = session->GetLocalDataPort() == session->GetLocalControlPort()
-                              ? session->GetDataSocket().GetHandle() : session->GetControlSocket().GetHandle();
+  P_INT_PTR rtcpHandle = rtpHandle;
+  if (session->GetLocalDataPort() != session->GetLocalControlPort()) {
+    channel = transport->GetChannel(OpalMediaTransport::e_Control);
+    if (channel != NULL)
+      rtcpHandle = channel->GetHandle();
+  }
+
   const char *rtcp_suffixes[] = { "TxRTCP", "RxRTCP", };
   for (i = 0; i < PARRAYSIZE(rtcp_suffixes); i++) {
     PString name = media + rtcp_suffixes[i];

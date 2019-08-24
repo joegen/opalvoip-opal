@@ -31,4 +31,23 @@ ifeq ($(OPAL_MAKE_DIR),)
 endif
 include $(OPAL_MAKE_DIR)/opal.mak
 
+ifndef DESTDIR
+  DESTDIR=/opt/opalsrv
+endif
+
+BINDIR=$(DESTDIR)/bin
+ETCDIR=$(DESTDIR)/etc
+INIFILE=$(ETCDIR)/opalsrv.ini
+
+install: $(TARGET) | $(BINDIR) $(ETCDIR)
+	install $(TARGET) $(BINDIR)
+	install start.sh $(BINDIR)
+	install webrtc_test.html $(BINDIR)
+	install main_menu.vxml $(ETCDIR)
+	if [ ! -e "$(INIFILE)" ]; then install default.ini "$(INIFILE)"; fi
+
+$(BINDIR) $(ETCDIR):
+	$(MKDIR_P) $@
+
+
 # End of Makefile

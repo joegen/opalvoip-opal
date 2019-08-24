@@ -50,6 +50,14 @@ class OpalSDPHTTPConnection;
 */
 #define OPAL_OPT_AV_BUNDLE "AV-Bundle"
 
+/**Enable audio/video media stream identifiers to SDP.
+   This flag places meda stream identifiers into the SDP so that corresponding
+   audio and video streams can be linked, e.g. for lip sync.
+
+   Defaults to false.
+*/
+#define OPAL_OPT_USE_MEDIA_STREAMS "Use-Media-Stream"
+
 /**Enable multiple sync sources in single session.
    This allows multiple SSRC values to be attached to a single SDP media
    descriptor, m= line. Each SSRC must use the same media format selected for
@@ -60,6 +68,16 @@ class OpalSDPHTTPConnection;
    Defaults to false.
 */
 #define OPAL_OPT_MULTI_SSRC "Multi-SSRC"
+
+/**Indicate audio will continue to flow when audio is inactive.
+   Usually, the media patch thread for received audio is halted completely
+   when the remote indicates no media will flow, via the SDP "recvonly" or
+   "inactive" states. If set to false, then the patch thread continues to run,
+   and silence, out of the jitter buffer, is tranferred to the sink stream.
+
+   Defaults to false.
+  */
+#define OPAL_OPT_INACTIVE_AUDIO_FLOW "Inactive-Audio-Flow"
 
 
 /**Base class for endpoint types that use SDP for media transport.
@@ -277,11 +295,18 @@ class OpalSDPConnection : public OpalRTPConnection
       BundleMergeInfo & bundleMergeInfo
     );
 
+    virtual bool OnReceivedSDP(
+      const SDPSessionDescription & sdp
+    );
+
     virtual void FinaliseRtx(
       const OpalMediaStreamPtr & stream,
       SDPMediaDescription * sdp
     );
 
+    virtual bool SetRemoteMediaFormats(
+      const OpalMediaFormatList & formats
+    );
     virtual bool SetActiveMediaFormats(
       const OpalMediaFormatList & formats
     );
@@ -294,6 +319,9 @@ class OpalSDPConnection : public OpalRTPConnection
       BundleMergeInfo & bundleMergeInfo
     );
 
+    bool PauseOrCloseMediaStream(OpalMediaStreamPtr & stream, bool changed, bool paused);
+
+    virtual bool AllowMusicOnHold() const;
     void RetryHoldRemote(bool placeOnHold);
     virtual bool OnHoldStateChanged(bool placeOnHold);
     virtual void OnMediaStreamOpenFailed(bool rx);
@@ -306,6 +334,7 @@ class OpalSDPConnection : public OpalRTPConnection
     atomic<bool> m_offerPending;
     time_t       m_sdpSessionId;
     unsigned     m_sdpVersion; // Really a sequence number
+    unsigned     m_sdpVersionFromRemote;
 
     enum HoldState {
       eHoldOff,

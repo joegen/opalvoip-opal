@@ -54,20 +54,24 @@ class PlayRTP : public PProcess
 
     PFile     m_payloadFile;
     PTextFile m_eventLog;
-    PYUVFile  m_yuvFile;
     PFilePath m_encodedFileName;
-    PString   m_extraText;
-    int       m_extraHeight;
+
+    unsigned m_packetCount;
 
     OpalTranscoder     * m_transcoder;
     PSoundChannel      * m_player;
-    PVideoOutputDevice * m_display;
 
-    unsigned m_packetCount;
+#if OPAL_VIDEO
+    PYUVFile  m_yuvFile;
+    PString   m_extraText;
+    int       m_extraHeight;
+
+    PVideoOutputDevice * m_display;
 
     bool     m_vfu;
     bool     m_videoError;
     unsigned m_videoFrames;
+#endif
 };
 
 

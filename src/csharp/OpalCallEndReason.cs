@@ -40,5 +40,11 @@ public enum OpalCallEndReason {
   OpalCallEndedByNoRingBackTone,
   OpalCallEndedByOutOfService,
   OpalCallEndedByAcceptingCallWaiting,
-  OpalCallEndedWithQ931Code = 0x100
+  OpalCallEndedByGkAdmissionFailed,
+  OpalCallEndedByMediaFailed,
+  OpalCallEndedByCallCompletedElsewhere,
+  OpalCallEndedByCertificateAuthority,
+  OpalCallEndedByIllegalAddress,
+  OpalCallEndedByCustomCode,
+  OpalCallEndedByMediaTransportFail
 }

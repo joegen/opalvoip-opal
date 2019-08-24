@@ -1,79 +1,31 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Express 2015 for Windows Desktop
-VisualStudioVersion = 12.0.21005.1
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.168
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OpenPhone", "OpenPhone_2017.vcxproj", "{56E04FF6-6AEB-4917-B8FC-6C0C1F5831F1}"
-	ProjectSection(WebsiteProperties) = preProject
-		Debug.AspNetCompiler.Debug = "True"
-		Release.AspNetCompiler.Debug = "False"
-	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PTLib Static", "..\..\..\ptlib\src\ptlib\msos\Console_2017.vcxproj", "{D11E1C9D-406C-4D7C-8F37-913C0BFD9E0D}"
-	ProjectSection(WebsiteProperties) = preProject
-		Debug.AspNetCompiler.Debug = "True"
-		Release.AspNetCompiler.Debug = "False"
-	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PTLib DLL", "..\..\..\ptlib\src\ptlib\msos\PTLib_2017.vcxproj", "{85F4F26A-1A5D-4685-A48A-448102C5C5BC}"
-	ProjectSection(WebsiteProperties) = preProject
-		Debug.AspNetCompiler.Debug = "True"
-		Release.AspNetCompiler.Debug = "False"
-	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OPAL Static", "..\..\src\win32\opal_lib_2017.vcxproj", "{11FB12B5-B5EB-4DFF-BD6F-2A0BDF187C22}"
-	ProjectSection(WebsiteProperties) = preProject
-		Debug.AspNetCompiler.Debug = "True"
-		Release.AspNetCompiler.Debug = "False"
-	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OPAL DLL", "..\..\src\win32\opal_dll_2017.vcxproj", "{B2830E08-B1F1-492F-8849-F3D8461E450F}"
-	ProjectSection(WebsiteProperties) = preProject
-		Debug.AspNetCompiler.Debug = "True"
-		Release.AspNetCompiler.Debug = "False"
-	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Video - H.261 (Vic)", "..\..\plugins\video\H.261-vic\h261vic_2017.vcxproj", "{4A1B92CB-CA8E-4511-A1D5-B0A322FDE67C}"
-	ProjectSection(WebsiteProperties) = preProject
-		Debug.AspNetCompiler.Debug = "True"
-		Release.AspNetCompiler.Debug = "False"
-	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Audio - GSM 06.10", "..\..\plugins\audio\GSM0610\gsm0610_2017.vcxproj", "{E6897206-9765-4B73-9A98-DAC5787814CE}"
-	ProjectSection(WebsiteProperties) = preProject
-		Debug.AspNetCompiler.Debug = "True"
-		Release.AspNetCompiler.Debug = "False"
-	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Audio - GSM-AMR", "..\..\plugins\audio\gsm-amr\gsmamr_2017.vcxproj", "{92E9FA1E-2925-42FD-8226-A07CBD237E18}"
-	ProjectSection(WebsiteProperties) = preProject
-		Debug.AspNetCompiler.Debug = "True"
-		Release.AspNetCompiler.Debug = "False"
-	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Audio - iLBC", "..\..\plugins\audio\iLBC\ilbccodec_2017.vcxproj", "{F1C13640-A056-4280-B1C6-6582E5890B89}"
-	ProjectSection(WebsiteProperties) = preProject
-		Debug.AspNetCompiler.Debug = "True"
-		Release.AspNetCompiler.Debug = "False"
-	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Audio - Speex", "..\..\plugins\audio\Speex\Speex_2017.vcxproj", "{02AFB070-A9D5-4FB7-A041-311722C9F8D4}"
-	ProjectSection(WebsiteProperties) = preProject
-		Debug.AspNetCompiler.Debug = "True"
-		Release.AspNetCompiler.Debug = "False"
-	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Video - H.263-1998 (FFMPEG)", "..\..\plugins\video\H.263-1998\h263_2017.vcxproj", "{E75AF717-C8A6-40E7-82CB-80D67CE01611}"
-	ProjectSection(WebsiteProperties) = preProject
-		Debug.AspNetCompiler.Debug = "True"
-		Release.AspNetCompiler.Debug = "False"
-	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SpanDSP Fax Codec", "..\..\plugins\fax\fax_spandsp\spandsp_fax_2017.vcxproj", "{D875EC01-6BBF-48EE-93F8-800BD6D76443}"
-	ProjectSection(WebsiteProperties) = preProject
-		Debug.AspNetCompiler.Debug = "True"
-		Release.AspNetCompiler.Debug = "False"
-	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Audio - G.722.2", "..\..\plugins\audio\G.722.2\G.722.2_2017.vcxproj", "{B68CA250-5801-4F0C-87CD-BB9A73FA934A}"
 EndProject
@@ -95,13 +47,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Audio - Opus", "..\..\plugi
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Audio - iSAC", "..\..\plugins\audio\iSAC\isaccodec_2017.vcxproj", "{851A8648-5021-4FC3-ACED-40D2802D9C5E}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "celt", "..\..\plugins\audio\Opus\opus\win32\VS2017\celt.vcxproj", "{245603E3-F580-41A5-9632-B25FE3372CBF}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "opus", "..\..\plugins\audio\Opus\opus\win32\VS2017\opus.vcxproj", "{219EC965-228A-1824-174D-96449D05F88A}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "silk_common", "..\..\plugins\audio\Opus\opus\win32\VS2017\silk_common.vcxproj", "{C303D2FC-FF97-49B8-9DDD-467B4C9A0B16}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "silk_float", "..\..\plugins\audio\Opus\opus\win32\VS2017\silk_float.vcxproj", "{9C4961D2-5DDB-40C7-9BE8-CA918DC4E782}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Video - H.264 (Cisco OpenH264)", "..\..\plugins\video\openh264\openh264_2017.vcxproj", "{E513A4F2-5341-4CAE-A643-D47975AE291C}"
 EndProject
@@ -374,18 +320,6 @@ Global
 		{851A8648-5021-4FC3-ACED-40D2802D9C5E}.Release|Win32.Build.0 = Release|Win32
 		{851A8648-5021-4FC3-ACED-40D2802D9C5E}.Release|x64.ActiveCfg = Release|x64
 		{851A8648-5021-4FC3-ACED-40D2802D9C5E}.Release|x64.Build.0 = Release|x64
-		{245603E3-F580-41A5-9632-B25FE3372CBF}.Debug|Win32.ActiveCfg = Debug|Win32
-		{245603E3-F580-41A5-9632-B25FE3372CBF}.Debug|Win32.Build.0 = Debug|Win32
-		{245603E3-F580-41A5-9632-B25FE3372CBF}.Debug|x64.ActiveCfg = Debug|x64
-		{245603E3-F580-41A5-9632-B25FE3372CBF}.Debug|x64.Build.0 = Debug|x64
-		{245603E3-F580-41A5-9632-B25FE3372CBF}.No Trace|Win32.ActiveCfg = Release|Win32
-		{245603E3-F580-41A5-9632-B25FE3372CBF}.No Trace|Win32.Build.0 = Release|Win32
-		{245603E3-F580-41A5-9632-B25FE3372CBF}.No Trace|x64.ActiveCfg = Release|x64
-		{245603E3-F580-41A5-9632-B25FE3372CBF}.No Trace|x64.Build.0 = Release|x64
-		{245603E3-F580-41A5-9632-B25FE3372CBF}.Release|Win32.ActiveCfg = Release|Win32
-		{245603E3-F580-41A5-9632-B25FE3372CBF}.Release|Win32.Build.0 = Release|Win32
-		{245603E3-F580-41A5-9632-B25FE3372CBF}.Release|x64.ActiveCfg = Release|x64
-		{245603E3-F580-41A5-9632-B25FE3372CBF}.Release|x64.Build.0 = Release|x64
 		{219EC965-228A-1824-174D-96449D05F88A}.Debug|Win32.ActiveCfg = Debug|Win32
 		{219EC965-228A-1824-174D-96449D05F88A}.Debug|Win32.Build.0 = Debug|Win32
 		{219EC965-228A-1824-174D-96449D05F88A}.Debug|x64.ActiveCfg = Debug|x64
@@ -398,30 +332,6 @@ Global
 		{219EC965-228A-1824-174D-96449D05F88A}.Release|Win32.Build.0 = Release|Win32
 		{219EC965-228A-1824-174D-96449D05F88A}.Release|x64.ActiveCfg = Release|x64
 		{219EC965-228A-1824-174D-96449D05F88A}.Release|x64.Build.0 = Release|x64
-		{C303D2FC-FF97-49B8-9DDD-467B4C9A0B16}.Debug|Win32.ActiveCfg = Debug|Win32
-		{C303D2FC-FF97-49B8-9DDD-467B4C9A0B16}.Debug|Win32.Build.0 = Debug|Win32
-		{C303D2FC-FF97-49B8-9DDD-467B4C9A0B16}.Debug|x64.ActiveCfg = Debug|x64
-		{C303D2FC-FF97-49B8-9DDD-467B4C9A0B16}.Debug|x64.Build.0 = Debug|x64
-		{C303D2FC-FF97-49B8-9DDD-467B4C9A0B16}.No Trace|Win32.ActiveCfg = Release|Win32
-		{C303D2FC-FF97-49B8-9DDD-467B4C9A0B16}.No Trace|Win32.Build.0 = Release|Win32
-		{C303D2FC-FF97-49B8-9DDD-467B4C9A0B16}.No Trace|x64.ActiveCfg = Release|x64
-		{C303D2FC-FF97-49B8-9DDD-467B4C9A0B16}.No Trace|x64.Build.0 = Release|x64
-		{C303D2FC-FF97-49B8-9DDD-467B4C9A0B16}.Release|Win32.ActiveCfg = Release|Win32
-		{C303D2FC-FF97-49B8-9DDD-467B4C9A0B16}.Release|Win32.Build.0 = Release|Win32
-		{C303D2FC-FF97-49B8-9DDD-467B4C9A0B16}.Release|x64.ActiveCfg = Release|x64
-		{C303D2FC-FF97-49B8-9DDD-467B4C9A0B16}.Release|x64.Build.0 = Release|x64
-		{9C4961D2-5DDB-40C7-9BE8-CA918DC4E782}.Debug|Win32.ActiveCfg = Debug|Win32
-		{9C4961D2-5DDB-40C7-9BE8-CA918DC4E782}.Debug|Win32.Build.0 = Debug|Win32
-		{9C4961D2-5DDB-40C7-9BE8-CA918DC4E782}.Debug|x64.ActiveCfg = Debug|x64
-		{9C4961D2-5DDB-40C7-9BE8-CA918DC4E782}.Debug|x64.Build.0 = Debug|x64
-		{9C4961D2-5DDB-40C7-9BE8-CA918DC4E782}.No Trace|Win32.ActiveCfg = Release|Win32
-		{9C4961D2-5DDB-40C7-9BE8-CA918DC4E782}.No Trace|Win32.Build.0 = Release|Win32
-		{9C4961D2-5DDB-40C7-9BE8-CA918DC4E782}.No Trace|x64.ActiveCfg = Release|x64
-		{9C4961D2-5DDB-40C7-9BE8-CA918DC4E782}.No Trace|x64.Build.0 = Release|x64
-		{9C4961D2-5DDB-40C7-9BE8-CA918DC4E782}.Release|Win32.ActiveCfg = Release|Win32
-		{9C4961D2-5DDB-40C7-9BE8-CA918DC4E782}.Release|Win32.Build.0 = Release|Win32
-		{9C4961D2-5DDB-40C7-9BE8-CA918DC4E782}.Release|x64.ActiveCfg = Release|x64
-		{9C4961D2-5DDB-40C7-9BE8-CA918DC4E782}.Release|x64.Build.0 = Release|x64
 		{E513A4F2-5341-4CAE-A643-D47975AE291C}.Debug|Win32.ActiveCfg = Debug|Win32
 		{E513A4F2-5341-4CAE-A643-D47975AE291C}.Debug|Win32.Build.0 = Debug|Win32
 		{E513A4F2-5341-4CAE-A643-D47975AE291C}.Debug|x64.ActiveCfg = Debug|x64
@@ -437,5 +347,8 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {F8CDBED0-0ECA-4AB6-ABF3-A8B6859AAA26}
 	EndGlobalSection
 EndGlobal

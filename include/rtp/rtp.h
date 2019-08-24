@@ -647,7 +647,8 @@ class RTP_DataFrame : public PBYTEArray
     enum HeaderExtensionType {
       RFC3550,
       RFC5285_OneByte,
-      RFC5285_TwoByte
+      RFC5285_TwoByte,
+      RFC5285_Auto  /// Automatically choose OneByte or TwoByte depending on id value
     };
 
     static const unsigned MaxHeaderExtensionId = 65535;
@@ -697,6 +698,11 @@ class RTP_DataFrame : public PBYTEArray
     // Get the packet size including headers, padding etc.
     PINDEX GetPacketSize() const;
 
+    enum VAD {
+        UnknownVAD,
+        InactiveVAD,
+        ActiveVAD
+    };
     struct MetaData
     {
         MetaData();
@@ -707,11 +713,17 @@ class RTP_DataFrame : public PBYTEArray
         PTime    m_receivedTime; // Wall clock time packet physically read from socket
         unsigned m_discontinuity;
         PString  m_lipSyncId;
+        int      m_audioLevel;   // Audio level for this packet in dBov (-127..0) as per RFC6464, INT_MAX means not used
+        VAD      m_vad;          // Indicate Voice Activity Detect has detected voice.
     };
 
     /**Get meta data for RTP packet.
       */
     const MetaData & GetMetaData() const { return m_metaData; }
+
+    /**Get writable meta data for RTP packet.
+      */
+    MetaData & GetWritableMetaData() { return m_metaData; }
 
     /**Set meta data for RTP packet.
       */

@@ -63,11 +63,8 @@ class H323_G728Capability : public H323AudioCapability
 
 const OpalAudioFormat & GetOpalG728()
 {
-  static OpalAudioFormat const plugin(OPAL_G728);
-  if (plugin.IsValid())
-    return plugin;
-
-  static const OpalAudioFormat G728_Format(OPAL_G728, RTP_DataFrame::G728,  "G728", 5, 20, 100, 10, 256, 8000);
+  static const OpalMediaFormatStatic<OpalAudioFormat> G728_Format(new OpalAudioFormatInternal(
+                           OPAL_G728, RTP_DataFrame::G728,  "G728", 5, 20, 100, 10, 256, 8000));
 
 #if OPAL_H323
   static H323CapabilityFactory::Worker<H323_G728Capability> G728_Factory(OPAL_G728, true);

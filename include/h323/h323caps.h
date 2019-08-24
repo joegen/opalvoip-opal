@@ -2826,8 +2826,6 @@ class H323Capabilities : public PObject
 
 /* New capability registration macros based on abstract factories
  */
-typedef PFactory<H323Capability, std::string> H323CapabilityFactory;
-
 #define H323_REGISTER_CAPABILITY(cls, capName) PFACTORY_CREATE(H323CapabilityFactory, cls, capName, true)
 
 

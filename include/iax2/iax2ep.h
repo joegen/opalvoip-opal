@@ -423,7 +423,7 @@ class IAX2EndPoint : public OpalEndPoint
   int m_callnumbs;
   
   /** lock on access to call numbers variable */
-  PMutex m_callNumbLock;
+  PDECLARE_MUTEX(m_callNumbLock);
   
   /**Time when a call was started */
   PTime m_callStartTime;
@@ -441,7 +441,7 @@ class IAX2EndPoint : public OpalEndPoint
   PINDEX m_statusQueryCounter;
   
   /**Mutex for the statusQueryCounter */
-  PMutex m_statusQueryMutex;
+  PDECLARE_MUTEX(m_statusQueryMutex);
   
   /**Pointer to the Processor class which handles special packets (eg lagrq) that have no 
      destination call to handle them. */
@@ -501,7 +501,7 @@ class IAX2EndPoint : public OpalEndPoint
   OpalMediaFormatList localMediaFormats;
   
    /**A mutex to protect the registerProcessors collection*/
-  PMutex m_regProcessorsMutex;
+  PDECLARE_MUTEX(m_regProcessorsMutex);
   
   /**An array of register processors.  These are created when
      another class calls register and deleted when another class

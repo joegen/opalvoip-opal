@@ -612,12 +612,18 @@ PCREATE_SERVICE_MACRO(CallCount, resource, P_EMPTY)
 }
 
 
-static PString BuildPartyStatus(const PString & party, const PString & name)
+static PString BuildPartyStatus(const PString & party, const PString & name, const PString & identity)
 {
-  if (name.IsEmpty())
+  if (name.IsEmpty() && identity.IsEmpty())
     return party;
 
-  return PSTRSTRM(name << "<BR>" << party);
+  if (identity.IsEmpty() || party == identity)
+    return PSTRSTRM(name << "<BR>" << party);
+
+  if (name.IsEmpty() || name == identity)
+    return PSTRSTRM(identity << "<BR>" << party);
+
+  return PSTRSTRM(name << "<BR>" << identity << "<BR>" << party);
 }
 
 
@@ -640,8 +646,8 @@ PCREATE_SERVICE_MACRO_BLOCK(CallStatus,resource,P_EMPTY,htmlBlock)
     PString insert = htmlBlock;
 
     PServiceHTML::SpliceMacro(insert, "status Token",    call->GetToken());
-    PServiceHTML::SpliceMacro(insert, "status A-Party",  BuildPartyStatus(call->GetPartyA(), call->GetNameA()));
-    PServiceHTML::SpliceMacro(insert, "status B-Party",  BuildPartyStatus(call->GetPartyB(), call->GetNameB()));
+    PServiceHTML::SpliceMacro(insert, "status A-Party",  BuildPartyStatus(call->GetPartyA(), call->GetNameA(), call->GetIdentityA()));
+    PServiceHTML::SpliceMacro(insert, "status B-Party",  BuildPartyStatus(call->GetPartyB(), call->GetNameB(), call->GetIdentityB()));
 
     PStringStream duration;
     duration.precision(0);

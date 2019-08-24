@@ -482,14 +482,14 @@ class OpalManagerConsole : public OpalManager
     bool       m_interrupted;
     bool       m_verbose;
     ostream  * m_outputStream;
-    PMutex     m_outputMutex;
+    PDECLARE_MUTEX(m_outputMutex, OpalConsoleOutput);
 
 #if OPAL_STATISTICS
     PTimeInterval m_statsPeriod;
     PFilePath     m_statsFile;
     typedef map<PString, OpalMediaStatistics> StatsMap;
     StatsMap m_statistics;
-    PMutex   m_statsMutex;
+    PDECLARE_MUTEX(m_statsMutex, OpalConsoleStats);
     virtual bool OutputStatistics();
     virtual bool OutputStatistics(ostream & strm);
     virtual bool OutputCallStatistics(ostream & strm, OpalCall & call);
@@ -597,14 +597,15 @@ template <class Manager,                   ///< Class of OpalManagerConsole deri
           unsigned MajorVersion = OPAL_MAJOR,  ///< Major version number of the product
           unsigned MinorVersion = OPAL_MINOR,  ///< Minor version number of the product
           PProcess::CodeStatus Status = PProcess::ReleaseCode, ///< Development status of the product
-          unsigned BuildNumber = OPAL_BUILD,   ///< Build number of the product
+          unsigned PatchVersion = OPAL_PATCH,   ///< Patch version number of the product
+          unsigned OemVersion = OPAL_OEM,
           bool Verbose = true>
 class OpalConsoleProcess : public PProcess
 {
     PCLASSINFO(OpalConsoleProcess, PProcess)
   public:
     OpalConsoleProcess()
-      : PProcess(Manuf, Name, MajorVersion, MinorVersion, Status, BuildNumber)
+      : PProcess(Manuf, Name, MajorVersion, MinorVersion, Status, PatchVersion, false, false, OemVersion)
       , m_manager(NULL)
     {
     }

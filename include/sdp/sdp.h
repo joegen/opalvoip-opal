@@ -99,6 +99,11 @@
 */
 #define OPAL_OPT_OFFER_ICE "Offer-ICE"
 
+/**Enable detection of music on hold in SDP.
+   Defaults to true.
+*/
+#define OPAL_OPT_ALLOW_MUSIC_ON_HOLD "SDP-Music-On-Hold"
+
 
 /////////////////////////////////////////////////////////
 
@@ -207,7 +212,7 @@ class SDPCommonAttributes
     };
 #endif
 
-    typedef PDictionary<PString, PStringSet> GroupDict;
+    typedef PDictionary<PString, PStringArray> GroupDict;
 
     SDPCommonAttributes()
       : m_direction(Undefined)
@@ -337,26 +342,23 @@ class SDPMediaDescription : public PObject, public SDPCommonAttributes
     virtual PStringArray GetGroups() const { return m_groups.GetKeys(); }
     virtual PString GetGroupMediaId(const PString & groupId) const { return m_groups(groupId); }
     virtual void MatchGroupInfo(const GroupDict & groups);
+    bool IsBundleOnly() const { return m_bundleOnly; }
 
     const OpalTransportAddress & GetMediaAddress() const { return m_mediaAddress; }
     const OpalTransportAddress & GetControlAddress() const { return m_controlAddress; }
     bool SetAddresses(const OpalTransportAddress & media, const OpalTransportAddress & control);
 
-    virtual WORD GetPort() const { return m_port; }
+    WORD GetPort() const { return m_port; }
+    void SetPort(WORD port) { m_port = port; }
 
 #if OPAL_ICE
     PNatCandidateList GetCandidates() const { return m_candidates; }
     bool HasICE() const;
     void SetICE(
-      const PString & username,
-      const PString & password,
-      const PNatCandidateList & candidates
-    )
-    {
-      m_username = username;
-      m_password = password;
-      m_candidates = candidates;
-    }
+        const PString & username,
+        const PString & password,
+        const PNatCandidateList & candidates
+    );
 #endif //OPAL_ICE
 
     virtual OpalMediaType GetMediaType() const { return m_mediaType; }
@@ -380,7 +382,7 @@ class SDPMediaDescription : public PObject, public SDPCommonAttributes
     WORD                 m_port;
     WORD                 m_portCount;
     OpalMediaType        m_mediaType;
-    bool                 m_reducedSizeRTCP;
+    bool                 m_bundleOnly; // draft-ietf-mmusic-sdp-bundle-negotiation-52
     PStringList          m_mids;
     PStringToString      m_groups;
 #if OPAL_ICE
@@ -483,6 +485,7 @@ class SDPRTPAVPMediaDescription : public SDPMediaDescription
     virtual bool FromSession(OpalMediaSession * session, const SDPMediaDescription * offer, RTP_SyncSourceId ssrc);
     virtual bool ToSession(OpalMediaSession * session, RTP_SyncSourceArray & ssrcs) const;
 
+    // RFC5576
     typedef std::map<RTP_SyncSourceId, PStringOptions> SsrcInfo;
     const SsrcInfo & GetSsrcInfo() const { return m_ssrcInfo; }
 
@@ -507,7 +510,9 @@ class SDPRTPAVPMediaDescription : public SDPMediaDescription
     };
 
     PCaselessString               m_transportType;
-    SsrcInfo                      m_ssrcInfo;
+    bool                          m_reducedSizeRTCP;
+    SsrcInfo                      m_ssrcInfo;  // RFC5576
+    PString                       m_label;
     PString                       m_msid;
     vector<RTP_SyncSourceArray>   m_flowSSRC;
     OpalMediaFormat::RTCPFeedback m_rtcp_fb;
@@ -645,7 +650,7 @@ class SDPSessionDescription : public PObject, public SDPCommonAttributes
     void AddMediaDescription(SDPMediaDescription * md);
     
     virtual SDPMediaDescription::Direction GetDirection(unsigned) const;
-    bool IsHold() const;
+    bool IsHold(bool allowMusicOnHold) const;
     bool HasActiveSend() const;
 
     const OpalTransportAddress & GetDefaultConnectAddress() const { return defaultConnectAddress; }

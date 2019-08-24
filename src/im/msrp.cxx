@@ -90,18 +90,18 @@ DECLARE_MSRP_ENCODING(HTML, "message/html");
 
 const OpalMediaFormat & GetOpalMSRP() 
 { 
-  static class IMMSRPMediaFormat : public OpalMediaFormat { 
+  class OpalIMMSRPMediaFormatInternal : public OpalMediaFormatInternal {
     public: 
-      IMMSRPMediaFormat() 
-        : OpalMediaFormat(OPAL_MSRP, 
-                          OpalMSRPMediaType(),
-                          RTP_DataFrame::MaxPayloadType, 
-                          "+", 
-                          false,  
-                          1440, 
-                          512, 
-                          0, 
-                          1000)
+      OpalIMMSRPMediaFormatInternal() 
+        : OpalMediaFormatInternal(OPAL_MSRP, 
+                                  OpalMSRPMediaType(),
+                                  RTP_DataFrame::MaxPayloadType, 
+                                  "+", 
+                                  false,  
+                                  1440, 
+                                  512, 
+                                  0, 
+                                  1000)
       { 
         SetOptionString(OpalMediaFormat::DescriptionOption(), "RFC 4975 (MSRP) Instant Message Relay");
 
@@ -123,8 +123,9 @@ const OpalMediaFormat & GetOpalMSRP()
         option->SetMerge(OpalMediaOption::MaxMerge);
         AddOption(option);
       } 
-  } const f; 
-  return f; 
+  };
+  static OpalMediaFormatStatic<OpalMediaFormat> MSRP(new OpalIMMSRPMediaFormatInternal);
+  return MSRP;
 } 
 
 
@@ -272,42 +273,20 @@ void SDPMSRPMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-class MSRPInitialiser : public PProcessStartup
+static OpalMSRPManager & GetOpalMSRPManager(OpalManager & opal)
 {
-  PCLASSINFO(MSRPInitialiser, PProcessStartup)
-  public:
-    virtual void OnShutdown()
-    {
-      PWaitAndSignal m(mutex);
-      delete manager;
-      manager = NULL;
-    }
-
-    static OpalMSRPManager & KickStart(OpalManager & opalManager)
-    {
-      PWaitAndSignal m(mutex);
-      if (manager == NULL) 
-        manager = new OpalMSRPManager(opalManager, OpalMSRPManager::DefaultPort);
-
-      return * manager;
-    }
-
-protected:
-    static PMutex mutex;
-    static OpalMSRPManager * manager;
-};
-
-PMutex MSRPInitialiser::mutex;
-OpalMSRPManager * MSRPInitialiser::manager = NULL;
-
-PFACTORY_CREATE_SINGLETON(PProcessStartupFactory, MSRPInitialiser);
+  static PCriticalSection mutex;
+  PWaitAndSignal lock(mutex);
+  static OpalMSRPManager mgr(opal);
+  return mgr;
+}
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
 OpalMSRPMediaSession::OpalMSRPMediaSession(const Init & init)
   : OpalMediaSession(init)
-  , m_manager(MSRPInitialiser::KickStart(init.m_connection.GetEndPoint().GetManager()))
+  , m_manager(GetOpalMSRPManager(init.m_connection.GetEndPoint().GetManager()))
 {
 }
 

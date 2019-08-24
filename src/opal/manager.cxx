@@ -91,6 +91,9 @@ static const char * const DefaultMediaFormatOrder[] = {
   OPAL_H263,
   OPAL_H261,
 #endif
+#if OPAL_T38_CAPABILITY
+  OPAL_T38_RTP,
+#endif
 #if OPAL_HAS_SIPIM
   OPAL_SIPIM,
 #endif
@@ -151,26 +154,17 @@ ostream & operator<<(ostream & strm, OpalConferenceState::ChangeType type)
 
 /////////////////////////////////////////////////////////////////////////////
 
+static const PProcess::VersionInfo MyVersion = { MAJOR_VERSION, MINOR_VERSION, PProcess::BUILD_TYPE, PATCH_VERSION, OEM_VERSION, 0, GIT_COMMIT };
+
+void OpalGetVersion(PProcess::VersionInfo version)
+{
+  version = MyVersion;
+}
+
+
 PString OpalGetVersion()
 {
-  static const PProcess::VersionInfo ver = { MAJOR_VERSION, MINOR_VERSION, PProcess::BUILD_TYPE, BUILD_NUMBER, 0, GIT_COMMIT };
-  return ver.AsString();
-}
-
-
-unsigned OpalGetMajorVersion()
-{
-  return MAJOR_VERSION;
-}
-
-unsigned OpalGetMinorVersion()
-{
-  return MINOR_VERSION;
-}
-
-unsigned OpalGetBuildNumber()
-{
-  return BUILD_NUMBER;
+  return MyVersion.AsString();
 }
 
 
@@ -415,6 +409,8 @@ OpalManager::~OpalManager()
   PInterfaceMonitor::GetInstance().RemoveNotifier(m_onInterfaceChange);
   delete m_natMethods;
 #endif
+
+  OpalMediaFormat::RemoveRegisteredMediaFormats("*");
 
   PTRACE(4, "Deleted manager.");
 }
@@ -751,7 +747,7 @@ void OpalManager::OnEstablishedCall(OpalCall & /*call*/)
 
 PBoolean OpalManager::IsCallEstablished(const PString & token)
 {
-  PSafePtr<OpalCall> call = m_activeCalls.FindWithLock(token, PSafeReadOnly);
+  PSafePtr<OpalCall> call = m_activeCalls.Find(token, PSafeReadOnly);
   if (call == NULL)
     return false;
 
@@ -772,7 +768,7 @@ PBoolean OpalManager::ClearCall(const PString & token,
    */
 
   // Find the call by token, callid or conferenceid
-  PSafePtr<OpalCall> call = m_activeCalls.FindWithLock(token, PSafeReference);
+  PSafePtr<OpalCall> call = m_activeCalls.Find(token, PSafeReference);
   if (call == NULL) {
     PTRACE(2, "Could not find/lock call token \"" << token << '"');
     return false;
@@ -1468,11 +1464,11 @@ void OpalManager::OnStopMediaPatch(OpalConnection & connection, OpalMediaPatch &
 }
 
 
-bool OpalManager::OnMediaFailed(OpalConnection & connection, unsigned)
+bool OpalManager::OnMediaFailed(OpalConnection & connection, unsigned, PChannel::Errors error)
 {
   if (connection.AllMediaFailed()) {
     PTRACE(2, "All media failed, releasing " << connection);
-    connection.Release(OpalConnection::EndedByMediaFailed);
+    connection.Release(error == PChannel::Timeout ? OpalConnection::EndedByMediaFailed : OpalConnection::EndedByMediaTransportFail);
   }
   return true;
 }
@@ -1937,7 +1933,7 @@ PBoolean OpalManager::IsLocalAddress(const PIPSocket::Address & ip) const
   return m_natMethods->IsLocalAddress(ip);
 #else
   /* Check if the remote address is a private IP, broadcast, or us */
-  return ip.IsAny() || ip.IsBroadcast() || ip.IsRFC1918() || PIPSocket::IsLocalHost(ip);
+  return ip.IsAny() || ip.IsBroadcast() || ip.IsPrivate() || PIPSocket::IsLocalHost(ip);
 #endif
 }
 
@@ -1975,12 +1971,12 @@ PBoolean OpalManager::IsRTPNATEnabled(OpalConnection & /*conn*/,
   if (peerAddr == sigAddr)
     return false;
 
-  /* Next test is to see if BOTH addresses are "public", non RFC1918. There are
+  /* Next test is to see if BOTH addresses are "public". There are
      some cases with proxies, particularly with SIP, where this is possible. We
      will assume that NAT never occurs between two public addresses though it
      could occur between two private addresses */
 
-  if (!peerAddr.IsRFC1918() && !sigAddr.IsRFC1918())
+  if (!peerAddr.IsPrivate() && !sigAddr.IsPrivate())
     return false;
 
   /* So now we have a remote that is confused in some way, so needs help. Our
@@ -1994,7 +1990,7 @@ PBoolean OpalManager::IsRTPNATEnabled(OpalConnection & /*conn*/,
      need to check if we are actually ABLE to help. We test if the local end
      of the connection is public, i.e. no NAT at this end so we can help.
      */
-  if (!localAddr.IsRFC1918())
+  if (!localAddr.IsPrivate())
     return true;
 
   /* Another test for if we can help, we are behind a NAT too, but the user has
@@ -2009,7 +2005,7 @@ PBoolean OpalManager::IsRTPNATEnabled(OpalConnection & /*conn*/,
   /* This looks for seriously confused systems were NAT is between two private
       networks. Unfortunately, we don't have a netmask so we can only guess based
       on the IP address class. */
-  if ( peerAddr.IsRFC1918() && sigAddr.IsRFC1918() &&
+  if ( peerAddr.IsPrivate() && sigAddr.IsPrivate() &&
       !peerAddr.IsSubNet(sigAddr, PIPAddress::GetAny(peerAddr.GetVersion())))
     return true;
 
@@ -2050,7 +2046,11 @@ PBoolean OpalManager::TranslateIPAddress(PIPSocket::Address & localAddress,
 
 #if OPAL_PTLIB_NAT
 
-bool OpalManager::SetNATServer(const PString & method, const PString & server, bool activate, unsigned priority)
+bool OpalManager::SetNATServer(const PString & method,
+                               const PString & server,
+                               bool activate,
+                               unsigned priority,
+                               const PString & iface)
 {
   PNatMethod * natMethod = m_natMethods->GetMethodByName(method);
   if (natMethod == NULL) {
@@ -2068,12 +2068,20 @@ bool OpalManager::SetNATServer(const PString & method, const PString & server, b
     return false;
   }
 
-  if (!natMethod->Open(PIPSocket::GetDefaultIpAny())) {
-    PTRACE(2, "Could not open server \"" << server << " for " << method << " NAT method");
-    return false;
+  if (activate) {
+    PIPSocket::Address ifaceIP = PIPSocket::GetDefaultIpAny();
+    if (!iface.IsEmpty() && !ifaceIP.FromString(iface)) {
+      PTRACE(2, "Invalid interface \"" << iface << "\" for " << method << " NAT method");
+      return false;
+    }
+
+    if (!natMethod->Open(ifaceIP)) {
+      PTRACE(2, "Could not open server \"" << server << " for " << method << " NAT method");
+      return false;
+    }
   }
 
-  PTRACE(3, "NAT " << *natMethod);
+  PTRACE(3, "NAT: " << *natMethod);
   return true;
 }
 
@@ -2254,7 +2262,7 @@ bool OpalManager::StartRecording(const PString & callToken,
                                  const PFilePath & fn,
                                  const OpalRecordManager::Options & options)
 {
-  PSafePtr<OpalCall> call = m_activeCalls.FindWithLock(callToken, PSafeReadWrite);
+  PSafePtr<OpalCall> call = m_activeCalls.Find(callToken, PSafeReadWrite);
   if (call == NULL)
     return false;
 
@@ -2271,7 +2279,7 @@ bool OpalManager::IsRecording(const PString & callToken)
 
 bool OpalManager::StopRecording(const PString & callToken)
 {
-  PSafePtr<OpalCall> call = m_activeCalls.FindWithLock(callToken, PSafeReadWrite);
+  PSafePtr<OpalCall> call = m_activeCalls.Find(callToken, PSafeReadWrite);
   if (call == NULL)
     return false;
 
@@ -2298,7 +2306,7 @@ PSafePtr<OpalPresentity> OpalManager::AddPresentity(const PString & presentity)
   if (presentity.IsEmpty())
     return NULL;
 
-  PSafePtr<OpalPresentity> oldPresentity = m_presentities.FindWithLock(presentity, PSafeReadWrite);
+  PSafePtr<OpalPresentity> oldPresentity = m_presentities.Find(presentity, PSafeReadWrite);
   if (oldPresentity != NULL)
     return oldPresentity;
 
@@ -2314,7 +2322,7 @@ PSafePtr<OpalPresentity> OpalManager::AddPresentity(const PString & presentity)
 
 PSafePtr<OpalPresentity> OpalManager::GetPresentity(const PString & presentity, PSafetyMode mode)
 {
-  return m_presentities.FindWithLock(presentity, mode);
+  return m_presentities.Find(presentity, mode);
 }
 
 
@@ -2445,16 +2453,19 @@ bool OpalManager::RunScript(const PString & script, const char * language)
 #if OPAL_PTLIB_NAT
 void OpalManager::OnInterfaceChange(PInterfaceMonitor &, PInterfaceMonitor::InterfaceChange entry)
 {
+  if (entry.GetAddress().GetVersion() != 4)
+    return; // NAT is an IPv4 thing only
+
   PIPSocket::Address addr;
 
   for (PNatMethods::iterator nat = m_natMethods->begin(); nat != m_natMethods->end(); ++nat) {
     if (entry.m_added) {
-      if (!nat->GetInterfaceAddress(addr) || entry.GetAddress() != addr)
-        nat->Open(entry.GetAddress());
+      if (!nat->GetInterfaceAddress(addr) || !addr.IsValid()) // No iface address means it was closed, so,
+        nat->Open(entry.GetAddress());                        // we re-open it on new interface
     }
     else {
       if (nat->GetInterfaceAddress(addr) && entry.GetAddress() == addr)
-        nat->Close();
+        nat->Close(); /// Interface being used disappeared, close this method.
     }
   }
 }

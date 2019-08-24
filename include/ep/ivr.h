@@ -247,12 +247,13 @@ class OpalIVRConnection : public OpalLocalConnection
       */
     virtual PString GetLocalPartyURL() const;
 
-    /**A call back function whenever a connection is "established".
-       This indicates that a connection to an endpoint was established. This
-       usually occurs after OnConnected() and indicates that the connection
-       is both connected and media can flow.
-     */
-    void OnEstablished();
+    /**Call back when media stream patch thread starts.
+
+       Default behaviour calls OpalManager function of same name.
+      */
+    virtual void OnStartMediaPatch(
+      OpalMediaPatch & patch    ///< Patch being started
+    );
     
     /**A call back function to monitor the progress of a transfer.
 
@@ -322,6 +323,7 @@ class OpalIVRConnection : public OpalLocalConnection
       */
     virtual void OnEndDialog();
 
+    void SetVXML(const PString & vxml);
     const PString & GetVXML() const { return m_vxmlScript; }
     const OpalVXMLSession & GetVXMLSession() const { return m_vxmlSession; }
     OpalVXMLSession & GetVXMLSession() { return m_vxmlSession; }
@@ -331,12 +333,13 @@ class OpalIVRConnection : public OpalLocalConnection
     PTextToSpeech * SetTextToSpeech(PTextToSpeech * tts, PBoolean autoDelete = false) { return m_vxmlSession.SetTextToSpeech(tts, autoDelete); }
 
   protected:
-    virtual bool StartVXML(const PString & vxml);
-    virtual bool StartScript(const PString & script);
+    virtual bool StartVXML();
+    virtual bool StartScript();
 
     OpalIVREndPoint   & endpoint;
     PString             m_vxmlScript;
     OpalVXMLSession     m_vxmlSession;
+    atomic<bool>        m_vxmlStarted;
 };
 
 

@@ -125,7 +125,7 @@ class MSRPProtocol : public PInternetProtocol
 
     //typedef std::map<std::string, Message> MessageMap;
     //MessageMap m_messageMap;
-    PMutex m_mutex;
+    PDECLARE_MUTEX(m_mutex);
 };
 
 ////////////////////////////////////////////////////////////////////////////
@@ -241,17 +241,17 @@ class OpalMSRPManager : public PObject
   protected:
     OpalManager & opalManager;
     WORD m_listenerPort;
-    PMutex mutex;
+    PDECLARE_MUTEX(mutex);
     PTCPSocket m_listenerSocket;
     PThread * m_listenerThread;
 
-    PMutex m_connectionInfoMapAddMutex;
+    PDECLARE_MUTEX(m_connectionInfoMapAddMutex);
     typedef std::map<PString, PSafePtr<Connection> > ConnectionInfoMapType;
     ConnectionInfoMapType m_connectionInfoMap;
 
     typedef std::map<PString, CallBack> CallBackMap;
     CallBackMap m_callBacks;
-    PMutex m_callBacksMutex;
+    PDECLARE_MUTEX(m_callBacksMutex);
 
   private:
     static OpalMSRPManager * msrp;

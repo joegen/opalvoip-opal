@@ -197,11 +197,11 @@ class OpalIMEndPoint : public OpalEndPoint
     typedef PSafeDictionary<PString, OpalIMContext> ContextsByConversationId;
     ContextsByConversationId m_contextsByConversationId;
 
-    PMutex m_contextsByNamesMutex;
+    PDECLARE_MUTEX(m_contextsByNamesMutex);
     typedef std::multimap<PString, PString> ContextsByNames;
     ContextsByNames m_contextsByNames;
 
-    PMutex m_notifierMutex;
+    PDECLARE_MUTEX(m_notifierMutex);
     typedef std::multimap<PString, ConversationNotifier> ConversationMap;
     ConversationMap m_notifiers;
 

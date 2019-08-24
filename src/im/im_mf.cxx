@@ -116,6 +116,7 @@ bool OpalIMContext::Open(bool)
 
 void OpalIMContext::Close()
 {
+  PSafeLockReadWrite lock(*this);
   if (m_weStartedCall && m_call != NULL)
     m_call->Clear();
   if (m_endpoint != NULL)
@@ -502,9 +503,8 @@ void OpalIMEndPoint::OnConversation(const OpalIMContext::ConversationInfo & info
 void OpalIMEndPoint::ShutDown()
 {
   PTRACE(3, "OpalIM\tShutting down all IM contexts");
-  PSafePtr<OpalIMContext> context(m_contextsByConversationId, PSafeReadWrite);
-  while (context != NULL)
-    (context++)->Close();
+  for (ContextsByConversationId::iterator it = m_contextsByConversationId.begin(); it != m_contextsByConversationId.end(); ++it)
+    it->second->Close();
 }
 
 
@@ -513,12 +513,9 @@ bool OpalIMEndPoint::GarbageCollection()
   PTime now;
 
   if ((now - m_lastGarbageCollection).GetSeconds() > 30) {
-    PSafePtr<OpalIMContext> context(m_contextsByConversationId, PSafeReadWrite);
-    while (context != NULL) {
-      if ((now - context->m_lastUsed).GetSeconds() < context->GetAttributes().GetInteger("timeout", 3600))
-        ++context;
-      else
-        (context++)->Close();
+    for (ContextsByConversationId::iterator it = m_contextsByConversationId.begin(); it != m_contextsByConversationId.end(); ++it) {
+      if ((now - it->second->m_lastUsed).GetSeconds() > it->second->GetAttributes().GetInteger("timeout", 3600))
+        it->second->Close();
     }
   }
 
@@ -529,7 +526,7 @@ bool OpalIMEndPoint::GarbageCollection()
 
 PSafePtr<OpalIMContext> OpalIMEndPoint::FindContextByIdWithLock(const PString & id, PSafetyMode mode) 
 {
-  return m_contextsByConversationId.FindWithLock(id, mode);
+  return m_contextsByConversationId.Find(id, mode);
 }
 
 

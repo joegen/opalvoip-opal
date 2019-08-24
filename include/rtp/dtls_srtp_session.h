@@ -62,7 +62,6 @@ class OpalDTLSMediaTransport : public OpalDTLSMediaTransportParent
     PCLASSINFO(OpalDTLSMediaTransport, OpalDTLSMediaTransportParent);
   public:
     OpalDTLSMediaTransport(const PString & name, bool passiveMode, const PSSLCertificateFingerprint& fp);
-    ~OpalDTLSMediaTransport() { InternalStop(); }
 
     virtual bool Open(OpalMediaSession & session, PINDEX count, const PString & localInterface, const OpalTransportAddress & remoteAddress);
     virtual bool IsEstablished() const;

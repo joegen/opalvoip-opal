@@ -86,8 +86,9 @@ class OpalJitterBuffer : public PObject
     struct Init : Params
     {
       Init(
-        const OpalManager & manager,
-        unsigned timeUnits
+        const Params & params,
+        unsigned timeUnits,
+        PINDEX packetSize
       );
       Init(
         const OpalMediaType & mediaType,
@@ -286,7 +287,15 @@ class OpalAudioJitterBuffer : public OpalJitterBuffer
   protected:
     void InternalReset();
     RTP_Timestamp CalculateRequiredTimestamp(RTP_Timestamp playOutTimestamp) const;
-    bool AdjustCurrentJitterDelay(int delta);
+    enum AdjustResult {
+      e_Unchanged,
+      e_Decreased,
+      e_Increased,
+      e_ReachedMinimum,
+      e_ReachedMaximum
+    };
+    friend ostream & operator<<(ostream & strm, const AdjustResult adjusted);
+    AdjustResult AdjustCurrentJitterDelay(int delta);
 
     int           m_jitterGrowTime;      ///< Amount to increase jitter delay by when get "late" packet
     RTP_Timestamp m_jitterShrinkPeriod;  ///< Period (in timestamp units) over which buffer is
@@ -332,6 +341,8 @@ class OpalAudioJitterBuffer : public OpalJitterBuffer
     PTimeInterval m_lastInsertTick;
 #if PTRACING
     PTimeInterval m_lastRemoveTick;
+    PTRACE_THROTTLE(m_ssrcChangedThrottle, 2, 10000, 4);
+    PTRACE_THROTTLE(m_packetTimeChangedThrottle, 2, 10000, 4);
   public:
     static unsigned sm_EveryPacketLogLevel;
 #endif

@@ -43,27 +43,20 @@ const OpalMediaType & OpalH224MediaType();
 // H.224 Media Format
 //
 
-class OpalH224MediaFormatInternal : public OpalMediaFormatInternal
-{
-    PCLASSINFO(OpalH224MediaFormatInternal, OpalMediaFormatInternal);
-  public:
-    OpalH224MediaFormatInternal(
-      const char * fullName,
-      const char * description,
-      bool hdlcTunneling
-    );
-
-    virtual bool IsValidForProtocol(const PString & protocol) const;
-};
-
-
 class OpalH224MediaFormat : public OpalMediaFormat
 {
     PCLASSINFO(OpalH224MediaFormat, OpalMediaFormat);
   public:
-    OpalH224MediaFormat(
-      OpalH224MediaFormatInternal * info
-    ) : OpalMediaFormat(info) { }
+    class Internal : public OpalMediaFormatInternal
+    {
+        PCLASSINFO(Internal, OpalMediaFormatInternal);
+      public:
+        Internal(const char * fullName, const char * description, bool hdlcTunneling);
+        virtual bool IsValidForProtocol(const PString & protocol) const;
+    };
+
+    OpalH224MediaFormat(Internal * info, bool dynamic) : OpalMediaFormat(info, dynamic) { }
+    OpalH224MediaFormat(const PString & name) : OpalMediaFormat(name) { }
 
     static const PString & HDLCTunnelingOption();
 };

@@ -338,7 +338,7 @@ void MyCall::OnEstablishedCall()
   m_CallState = MyCall::CallEstablished;
 
   m_manager.DropCDR(*this, false);
-
+  m_manager.StartRecordingCall(*this);
   OpalCall::OnEstablishedCall();
 }
 

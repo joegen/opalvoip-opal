@@ -73,31 +73,21 @@ class JesterProcess : public PProcess
     void Main();
 
   protected:
+    void NonRealTimeSimulation();
+    void NonRealTimePCAP();
+    void RealTimePlay();
 
-#ifdef DOC_PLUS_PLUS
     /**Generate the Udp packets that we could have read from the internet. In
        other words, place packets in the jitter buffer. */
-    virtual void GeneratePackets(PThread &, INT);
-#else
-    PDECLARE_NOTIFIER(PThread, JesterProcess, GeneratePackets);
-#endif
+    void GeneratePackets();
 
-#ifdef DOC_PLUS_PLUS
     /**Read in the Udp packets (from the output of the jitter buffer), that we
        could have read from the internet. In other words, extract packets from
        the jitter buffer. */
-    virtual void ConsumePackets(PThread &, INT);
-#else
-    PDECLARE_NOTIFIER(PThread, JesterProcess, ConsumePackets);
-#endif
+    void ConsumePackets();
 
     void Report();
     bool GenerateFrame(RTP_DataFrame & frame, PTimeInterval & delay);
-
-    /**Handle user input, which is keys to describe the status of the program,
-       while the different loops run. The program will not finish until this
-       method is completed.*/
-    void ManageUserInput();
 
     unsigned m_sampleRate;
 

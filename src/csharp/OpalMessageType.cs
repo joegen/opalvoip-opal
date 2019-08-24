@@ -47,5 +47,6 @@ public enum OpalMessageType {
   OpalCmdSendIM,
   OpalIndReceiveIM,
   OpalIndSentIM,
+  OpalIndProtocolMessage,
   OpalMessageTypeCount
 }

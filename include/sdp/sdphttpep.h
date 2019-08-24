@@ -1,5 +1,5 @@
 /*
- * sdpep.h
+ * sdphttpep.h
  *
  * Open Phone Abstraction Library (OPAL)
  *
@@ -35,6 +35,40 @@
 #if OPAL_SDP_HTTP
 
 #include <sdp/sdpep.h>
+#include <opal.h>
+
+
+/** This query parameter on the HTTP POST indicates the operation to execute.
+    If missing then this is treated as a "connect".
+  */
+#define OPAL_SDP_HTTP_OP_QUERY_PARAM   "operation"
+
+/** This operation will start a new connection. It is expected the body of the
+    HTTP POST contains the offer SDP, and has content-type application/sdp.
+    There should also be a "destination" query parameter for what to connect
+    to within OPAL. This can be another protocol such as sip or internal
+    endpoints such as "pcss" */
+#define OPAL_SDP_HTTP_OP_CONNECT       "connect"
+
+/** This operation disconnects an existing connection. The "connection-id"
+    query parameter is required to identify the connection to disconnect. The
+    "connect" operation will return this value in the
+    "X-OPAL-Connection-Id" HTTP header. */
+#define OPAL_SDP_HTTP_OP_DISCONNECT    "disconnect"
+
+/** This operation returns a short HTML indication of the call status.
+    The "connection-id" query parameter is required to identify the
+    connection*/
+#define OPAL_SDP_HTTP_OP_STATUS        "status"
+
+/// THe connnection identifier query parameter used by some operations
+#define OPAL_SDP_HTTP_ID_QUERY_PARAM   "connection-id"
+
+/// The HTTP header that returns the connection identifier
+#define OPAL_SDP_HTTP_ID_HEADER        "X-OPAL-Connection-Id"
+
+/// The destination query parameter for the "connect" operation.
+#define OPAL_SDP_HTTP_DEST_QUERY_PARAM "destination"
 
 
 /**Endpoint for SDP over HTTP POST command (used for WebRTC).
@@ -55,7 +89,7 @@ class OpalSDPHTTPEndPoint : public OpalSDPEndPoint
      */
     OpalSDPHTTPEndPoint(
       OpalManager & manager,          ///<  Manager of all endpoints.
-      const PCaselessString & prefix = "sdp" ///<  Prefix for URL style address strings
+      const PCaselessString & prefix = OPAL_PREFIX_SDP ///<  Prefix for URL style address strings
     );
 
     /**Destroy the endpoint.
@@ -136,8 +170,7 @@ class OpalSDPHTTPEndPoint : public OpalSDPEndPoint
 
     /// Handle incoming HTTP from OpalSDPHTTPResource
     virtual bool OnReceivedHTTP(
-      PHTTPServer & server,         ///< HTTP server that received the request
-      const PHTTPConnectionInfo & conInfo  ///< HTTP connection information
+      PHTTPRequest & request  ///< HTTP request information
     );
   //@}
 
@@ -165,13 +198,12 @@ class OpalSDPHTTPResource : public PHTTPResource
       const PHTTPAuthority & auth ///< Authorisation for the resource.
     );
 
-    virtual bool OnGET(
-      PHTTPServer & server,         ///< HTTP server that received the request
-      const PHTTPConnectionInfo & conInfo  ///< HTTP connection information
+    virtual PBoolean OnGETData(
+      PHTTPRequest & request                      ///< request state information
     );
-    virtual bool OnPOST(
-      PHTTPServer & server,         ///< HTTP server that received the request
-      const PHTTPConnectionInfo & conInfo  ///< HTTP connection information
+    virtual PBoolean OnPOSTData(
+      PHTTPRequest & request,        ///< request information
+      const PStringToString & data   ///< Variables in the POST data.
     );
 
   protected:
@@ -245,15 +277,10 @@ class OpalSDPHTTPConnection : public OpalSDPConnection
       */
     virtual void OnReleased();
 
-    /**Get the destination address of an incoming connection.
-       This will, for example, collect a phone number from a POTS line, or
-       get the fields from the H.225 SETUP pdu in a H.323 connection, or
-       INVITE for SIP connection.
-
-       The default behaviour returns "*", which by convention means any
-       address the endpoint/connection can get to.
-      */
-    virtual PString GetDestinationAddress();
+    /**Get the protocol-specific unique identifier for this connection.
+    Default behaviour just returns the connection token.
+    */
+    virtual PString GetIdentifier() const;
 
     /// Get the media local interface to initialise the RTP session.
     virtual PString GetMediaInterface();
@@ -266,20 +293,19 @@ class OpalSDPHTTPConnection : public OpalSDPConnection
   //@{
     /// Handle incoming HTTP from OpalSDPHTTPResource
     virtual bool OnReceivedHTTP(
-      PHTTPServer & server,         ///< HTTP server that received the request
-      const PHTTPConnectionInfo & conInfo  ///< HTTP connection information
+      PHTTPRequest & request  ///< HTTP request information
     );
   //@}
 
   protected:
     void InternalSetMediaAddresses(PIndirectChannel & channel);
 
-    PString                 m_destination;
     PString                 m_mediaInterface;
     OpalTransportAddress    m_remoteAddress;
     SDPSessionDescription * m_offerSDP;
     SDPSessionDescription * m_answerSDP;
     PSyncPoint              m_connected;
+    PGloballyUniqueID       m_guid;
 
   friend class OpalSDPHTTPEndPoint;
 };

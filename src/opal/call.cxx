@@ -164,6 +164,7 @@ void OpalCall::OnReleased(OpalConnection & connection)
 {
   PTRACE(3, "OnReleased " << connection);
   m_connectionsActive.Remove(&connection);
+  m_isEstablished = false;
 
   PSafePtr<OpalConnection> other = m_connectionsActive.GetAt(0, PSafeReference);
   if (other != NULL && other->GetPhase() == OpalConnection::ReleasingPhase) {
@@ -874,6 +875,30 @@ bool OpalCall::StartRecording(const PFilePath & fn, const OpalRecordManager::Opt
   return true;
 }
 
+
+bool OpalCall::StartRecording(const PDirectory & outputDir,
+                              const PString & fileTemplate,
+                              const PString & fileType,
+                              const OpalRecordManager::Options & options)
+{
+  PTime now;
+  PCaselessString filename = fileTemplate;
+
+  filename.Replace("%CALL-ID%", PFilePath::Sanitise(GetConnection(0)->GetIdentifier()), true)
+          .Replace("%FROM%", PFilePath::Sanitise(GetPartyA()), true)
+          .Replace("%TO%", PFilePath::Sanitise(GetPartyB()), true)
+          .Replace("%REMOTE%", PFilePath::Sanitise(GetRemoteParty()), true)
+          .Replace("%LOCAL%", PFilePath::Sanitise(GetLocalParty()), true)
+          .Replace("%DATE%", now.AsString("yyyyMMdd"), true)
+          .Replace("%TIME%", now.AsString("hhmmss"), true)
+          .Replace("%TIMESTAMP%", now.AsString(PTime::ShortISO8601), true)
+          .Replace("%HOST%", PFilePath::Sanitise(PIPSocket::GetHostName()), true);
+
+  PFilePath filepath(filename, outputDir, fileType); // Make sure is unique
+  return StartRecording(filepath, options);
+}
+
+
 bool OpalCall::IsRecording() const
 {
   PSafeLockReadOnly lock(*this);
@@ -950,10 +975,12 @@ void OpalCall::SetPartyNames()
   if (networkA) {
     m_partyA = connectionA->GetRemotePartyURL();
     m_nameA = connectionA->GetRemotePartyName();
+    m_identityA = connectionA->GetRemoteIdentity();
   }
   if (!networkA || m_partyA.IsEmpty()) {
     m_partyA = connectionA->GetLocalPartyURL();
-    m_nameA = connectionA->GetLocalPartyName();
+    m_nameA = connectionA->GetDisplayName();
+    m_identityA = connectionA->GetLocalPartyName();
   }
 
   PSafePtr<OpalConnection> connectionB = m_connectionsActive.GetAt(1, PSafeReadOnly);
@@ -967,6 +994,7 @@ void OpalCall::SetPartyNames()
       connectionA->CopyPartyNames(*connectionB);
     m_partyB = connectionB->GetRemotePartyURL();
     m_nameB = connectionB->GetRemotePartyName();
+    m_identityB = connectionB->GetRemoteIdentity();
   }
   else {
     if (networkA) {
@@ -977,7 +1005,8 @@ void OpalCall::SetPartyNames()
     }
     if (m_partyB.IsEmpty())
       m_partyB = connectionB->GetLocalPartyURL();
-    m_nameB = connectionB->GetLocalPartyName();
+    m_nameB = connectionB->GetDisplayName();
+    m_identityB = connectionB->GetLocalPartyName();
   }
 }
 

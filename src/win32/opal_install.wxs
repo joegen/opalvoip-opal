@@ -1,6 +1,6 @@
 <?xml version='1.0'?>
 
-<?include $(sys.CURRENTDIR)\config.wxs ?>
+<?include $(var.ProjectDir)\config.wxs ?>
 
 <?if $(var.Architecture) = "x86" ?>
     <?define IsWin64 = "no" ?>
@@ -47,7 +47,7 @@
         <Package Description='$(var.ProductName)'
                  Comments='$(var.Platform) $(var.ProductDescription), Version $(var.ProductVersion)'
                  Manufacturer='$(var.ProductManufacturer)'
-                 Platform="$(var.Architecture)"
+                 Platform='$(var.Architecture)'
                  InstallScope="perMachine"
                  InstallerVersion='405'
                  Compressed='yes' />
@@ -122,7 +122,7 @@
                                   Guid='*'>
                             <File Id='openH264_DLL'
                                   Name='openh264_$(var.Architecture).dll'
-                                  Source='$(var.OpenH264Dir)\openh264_$(var.Architecture).dll'
+                                  Source='$(var.PluginReleaseDir)\openh264_$(var.Architecture).dll'
                                   KeyPath='yes' />
                         </Component>
                         <Component Id='G.722'
@@ -297,6 +297,72 @@
                                   Source='$(var.PTLibDir)\lib\$(var.PTLibName).DLL'
                                   KeyPath='yes' />
                         </Component>
+                        <?ifdef ImageMagickDir ?>
+                            <Component Id='ImageMagickWand'
+                                       Win64="$(var.IsWin64)"
+                                       Guid='*'>
+                                <File Id='CORE_RL_MAGICKWAND_DLL'
+                                      Name='CORE_RL_MAGICKWAND_.DLL'
+                                      Source='$(var.ImageMagickDir)\CORE_RL_MAGICKWAND_.DLL'
+                                      KeyPath='yes' />
+                            </Component>
+                            <Component Id='ImageMagickCore'
+                                       Win64="$(var.IsWin64)"
+                                       Guid='*'>
+                                <File Id='CORE_RL_MAGICKCORE_DLL'
+                                      Name='CORE_RL_MAGICKCORE_.DLL'
+                                      Source='$(var.ImageMagickDir)\CORE_RL_MAGICKCORE_.DLL'
+                                      KeyPath='yes' />
+                            </Component>
+                            <Component Id='ImageMagickBZLIB'
+                                       Win64="$(var.IsWin64)"
+                                       Guid='*'>
+                                <File Id='CORE_RL_BZLIB_DLL'
+                                      Name='CORE_RL_BZLIB_.DLL'
+                                      Source='$(var.ImageMagickDir)\CORE_RL_BZLIB_.DLL'
+                                      KeyPath='yes' />
+                            </Component>
+                            <Component Id='ImageMagickZLIB'
+                                       Win64="$(var.IsWin64)"
+                                       Guid='*'>
+                                <File Id='CORE_RL_ZLIB_DLL'
+                                      Name='CORE_RL_ZLIB_.DLL'
+                                      Source='$(var.ImageMagickDir)\CORE_RL_ZLIB_.DLL'
+                                      KeyPath='yes' />
+                            </Component>
+                            <Component Id='ImageMagickTTF'
+                                       Win64="$(var.IsWin64)"
+                                       Guid='*'>
+                                <File Id='CORE_RL_TTF_DLL'
+                                      Name='CORE_RL_TTF_.DLL'
+                                      Source='$(var.ImageMagickDir)\CORE_RL_TTF_.DLL'
+                                      KeyPath='yes' />
+                            </Component>
+                            <Component Id='ImageMagickLCMS'
+                                       Win64="$(var.IsWin64)"
+                                       Guid='*'>
+                                <File Id='CORE_RL_LCMS_DLL'
+                                      Name='CORE_RL_LCMS_.DLL'
+                                      Source='$(var.ImageMagickDir)\CORE_RL_LCMS_.DLL'
+                                      KeyPath='yes' />
+                            </Component>
+                            <Component Id='ImageMagickLQR'
+                                       Win64="$(var.IsWin64)"
+                                       Guid='*'>
+                                <File Id='CORE_RL_LQR_DLL'
+                                      Name='CORE_RL_LQR_.DLL'
+                                      Source='$(var.ImageMagickDir)\CORE_RL_LQR_.DLL'
+                                      KeyPath='yes' />
+                            </Component>
+                            <Component Id='ImageMagickGLIB'
+                                       Win64="$(var.IsWin64)"
+                                       Guid='*'>
+                                <File Id='CORE_RL_GLIB_DLL'
+                                      Name='CORE_RL_GLIB_.DLL'
+                                      Source='$(var.ImageMagickDir)\CORE_RL_GLIB_.DLL'
+                                      KeyPath='yes' />
+                            </Component>
+                        <?endif?>
                         <?ifdef LuaDir ?>
                             <Component Id='Lua'
                                        Win64="$(var.IsWin64)"
@@ -516,6 +582,16 @@
                  Display="hidden"
                  Level='1'>
             <ComponentRef Id='PTLib' />
+            <?ifdef ImageMagickDir ?>
+                <ComponentRef Id='ImageMagickWand' />
+                <ComponentRef Id='ImageMagickCore' />
+                <ComponentRef Id='ImageMagickBZLIB' />
+                <ComponentRef Id='ImageMagickZLIB' />
+                <ComponentRef Id='ImageMagickTTF' />
+                <ComponentRef Id='ImageMagickLCMS' />
+                <ComponentRef Id='ImageMagickLQR' />
+                <ComponentRef Id='ImageMagickGLIB' />
+            <?endif?>
             <?ifdef LuaDir ?>
                 <ComponentRef Id='Lua' />
             <?endif?>
@@ -561,7 +637,7 @@
 
         <DirectoryRef Id="TARGETDIR">
             <Merge Id="VCRedist"
-                   SourceFile="$(env.ProgramFiles)\Common Files\Merge Modules\Microsoft_VC$(var.MSVCRT_VER)_CRT_$(var.Architecture).msm"
+                   SourceFile="$(env.ProgramW6432)\Common Files\Merge Modules\Microsoft_VC$(var.MSVCRT_VER)_CRT_$(var.Architecture).msm"
                    DiskId="1"
                    Language="0"/>
         </DirectoryRef>

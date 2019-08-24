@@ -171,7 +171,8 @@ class OpalPCSSEndPoint : public OpalLocalEndPoint
     virtual PSoundChannel * CreateSoundChannel(
       const OpalPCSSConnection & connection, ///<  Connection needing created sound channel
       const OpalMediaFormat & mediaFormat,   ///<  Media format for the connection
-      PBoolean isSource                          ///<  Direction for channel
+      unsigned sessionID,                    ///<  Session number for stream
+      bool isSource                          ///<  Direction for channel
     );
 
     /**Create an PSoundChannel based media stream.
@@ -179,8 +180,9 @@ class OpalPCSSEndPoint : public OpalLocalEndPoint
     virtual PSoundChannel * CreateSoundChannel(
       const OpalPCSSConnection & connection, ///<  Connection needing created sound channel
       const OpalMediaFormat & mediaFormat,   ///<  Media format for the connection
-      const PString & device,                ///<  Name of audio device to create
-      bool isSource                          ///<  Direction for channel
+      unsigned sessionID,                    ///<  Session number for stream
+      bool isSource,                         ///<  Direction for channel
+      const PString & device                 ///<  Name of audio device to create
     );
   //@}
 
@@ -409,6 +411,8 @@ class OpalPCSSEndPoint : public OpalLocalEndPoint
 
   private:
     P_REMOVE_VIRTUAL(OpalPCSSConnection *, CreateConnection(OpalCall &, const PString &, const PString &, void *), 0)
+    P_REMOVE_VIRTUAL(PSoundChannel *,CreateSoundChannel(const OpalPCSSConnection&,const OpalMediaFormat&,PBoolean),NULL);
+    P_REMOVE_VIRTUAL(PSoundChannel *,CreateSoundChannel(const OpalPCSSConnection&,const OpalMediaFormat&,const PString&,bool),NULL);
 };
 
 
@@ -552,11 +556,11 @@ class OpalPCSSConnection : public OpalLocalConnection
       bool & mute         ///< Flag for muted audio
     );
 
-    /**Get the average signal level (0..32767) for the audio media channel.
-       A return value of UINT_MAX indicates no valid signal, eg no audio channel opened.
+    /**Get the signal level in dBov (-127 to 0) for the audio media channel.
+       A return value of INT_MAX indicates no valid signal, eg no audio channel opened.
       */
-    virtual unsigned GetAudioSignalLevel(
-      PBoolean source                   ///< true for source (microphone), false for sink (speaker)
+    virtual int GetAudioLevelDB(
+      bool source   ///< true for source (microphone), false for sink (speaker)
     );
 
     /**Indicate alerting for the incoming connection.
@@ -578,7 +582,8 @@ class OpalPCSSConnection : public OpalLocalConnection
       */
     virtual PSoundChannel * CreateSoundChannel(
       const OpalMediaFormat & mediaFormat, ///<  Media format for the connection
-      PBoolean isSource                        ///<  Direction for channel
+      unsigned sessionID,                  ///<  Session number for stream
+      bool isSource                        ///<  Direction for channel
     );
 
     /**Change a PVideoInputDevice for a source media stream.
@@ -586,7 +591,11 @@ class OpalPCSSConnection : public OpalLocalConnection
     virtual bool ChangeSoundChannel(
       const PString & device,   ///< Device to change to
       bool isSource,            ///< Change source (recorder) or sink (player)
-      unsigned sessionID = 0    ///< Session for media stream, 0 indicates first audio stream
+      unsigned sessionID = 0    ///< Session for media stream, 0 indicates all audio streams
+    );
+    virtual bool ChangeSoundChannel(
+      const PString & device,       ///< Device to change to
+      OpalAudioMediaStream * stream ///< Audio stream to change
     );
 
     /**Read characters from the channel and produce User Input Indications.
@@ -681,6 +690,8 @@ class OpalPCSSConnection : public OpalLocalConnection
     PChannel * m_userInputChannel;
     bool       m_userInputAutoDelete;
     void UserInputMain();
+
+    P_REMOVE_VIRTUAL(PSoundChannel *,CreateSoundChannel(const OpalMediaFormat&,PBoolean),NULL);
 };
 
 #else

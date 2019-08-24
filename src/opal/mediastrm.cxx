@@ -74,6 +74,9 @@ OpalMediaStream::OpalMediaStream(OpalConnection & conn, const OpalMediaFormat & 
   PTRACE_CONTEXT_ID_FROM(conn);
   PTRACE_CONTEXT_ID_TO(m_identifier);
 
+  if (m_defaultDataSize == 0)
+    m_defaultDataSize = m_connection.GetEndPoint().GetManager().GetMaxRtpPayloadSize();
+
   m_connection.SafeReference();
   PTRACE(5, "Created " << (IsSource() ? "Source" : "Sink") << ' ' << this);
 }
@@ -224,14 +227,18 @@ bool OpalMediaStream::IsEstablished() const
 
 PBoolean OpalMediaStream::Start()
 {
-  if (!Open())
+  if (!Open()) {
+    PTRACE(4, "Can't start as not open: " << *this);
     return false;
+  }
 
   // We make referenced copy of pointer so can't be deleted out from under us
   OpalMediaPatchPtr mediaPatch = m_mediaPatch;
 
-  if (mediaPatch == NULL)
+  if (mediaPatch == NULL) {
+    PTRACE(4, "Can't start as no media patch: " << *this);
     return false;
+  }
 
   if (IsPaused()) {
     PTRACE(4, "Starting (paused) stream " << *this);
@@ -403,8 +410,10 @@ PBoolean OpalMediaStream::PushPacket(RTP_DataFrame & packet)
 
 PBoolean OpalMediaStream::SetDataSize(PINDEX dataSize, PINDEX /*frameTime*/)
 {
-  if (dataSize <= 0)
+  if (dataSize <= 0) {
+    PTRACE(4, "Ignoring set data size of " << dataSize << ", leaving as " << GetDataSize() << " on " << *this);
     return false;
+  }
 
   PTRACE_IF(4, GetDataSize() != dataSize, "Set data size from "
             << GetDataSize() << " to " << dataSize << " on " << *this);
@@ -436,10 +445,15 @@ bool OpalMediaStream::EnableJitterBuffer(bool enab)
   if (!IsOpen())
     return false;
 
-  PTRACE(4, (enab ? "En" : "Dis") << "abling jitter buffer on " << *this);
-  OpalJitterBuffer::Init init(m_connection.GetEndPoint().GetManager(), m_mediaFormat.GetTimeUnits());
+  OpalJitterBuffer::Init init(m_connection.GetJitterParameters(),
+                              m_mediaFormat.GetTimeUnits(),
+                              m_connection.GetEndPoint().GetManager().GetMaxRtpPacketSize());
   if (!enab)
     init.m_minJitterDelay = init.m_maxJitterDelay = 0;
+  else
+    enab = init.m_minJitterDelay > 0 && init.m_maxJitterDelay > 0;
+
+  PTRACE(4, (enab ? "En" : "Dis") << "abling jitter buffer on " << *this);
   return InternalSetJitterBuffer(init);
 }
 
@@ -779,8 +793,6 @@ OpalRawMediaStream::OpalRawMediaStream(OpalConnection & conn,
   , m_channel(chan)
   , m_autoDelete(autoDelete)
   , m_silence(10*sizeof(short)*mediaFormat.GetTimeUnits()) // At least 10ms
-  , m_averageSignalSum(0)
-  , m_averageSignalSamples(0)
 {
 }
 
@@ -842,7 +854,9 @@ PBoolean OpalRawMediaStream::ReadData(BYTE * buffer, PINDEX size, PINDEX & lengt
       return false;
     }
 
-    CollectAverage(buffer, lastReadCount);
+    m_dbCalculatorMutex.Wait();
+    m_dbCalculator.Accumulate(buffer, lastReadCount);
+    m_dbCalculatorMutex.Signal();
 
     m_timestamp += lastReadCount / sizeof(short);
     buffer += lastReadCount;
@@ -901,7 +915,9 @@ PBoolean OpalRawMediaStream::WriteData(const BYTE * buffer, PINDEX length, PINDE
   }
 
   written = m_channel->GetLastWriteCount();
-  CollectAverage(buffer, written);
+  m_dbCalculatorMutex.Wait();
+  m_dbCalculator.Accumulate(buffer, written);
+  m_dbCalculatorMutex.Signal();
   return true;
 }
 
@@ -938,31 +954,10 @@ void OpalRawMediaStream::InternalClose()
 }
 
 
-unsigned OpalRawMediaStream::GetAverageSignalLevel()
+int OpalRawMediaStream::GetAudioLevelDB()
 {
-  PWaitAndSignal mutex(m_averagingMutex);
-
-  if (m_averageSignalSamples == 0)
-    return UINT_MAX;
-
-  unsigned average = (unsigned)(m_averageSignalSum/m_averageSignalSamples);
-  m_averageSignalSum = average;
-  m_averageSignalSamples = 1;
-  return average;
-}
-
-
-void OpalRawMediaStream::CollectAverage(const BYTE * buffer, PINDEX size)
-{
-  PWaitAndSignal mutex(m_averagingMutex);
-
-  size = size/2;
-  m_averageSignalSamples += size;
-  const short * pcm = (const short *)buffer;
-  while (size-- > 0) {
-    m_averageSignalSum += PABS(*pcm);
-    pcm++;
-  }
+  PWaitAndSignal mutex(m_dbCalculatorMutex);
+  return m_dbCalculator.Finalise();
 }
 
 
@@ -1408,14 +1403,18 @@ PBoolean OpalVideoMediaStream::WriteData(const BYTE * data, PINDEX length, PINDE
     return false;
   }
 
-  bool keyFrameNeeded = false;
-  if (!m_outputDevice->SetFrameData(frame->x, frame->y,
-                                    frame->width, frame->height,
-                                    OpalVideoFrameDataPtr(frame),
-                                    m_marker, keyFrameNeeded))
+  PVideoOutputDevice::FrameData frameData;
+  frameData.x = frame->x;
+  frameData.y = frame->y;
+  frameData.width = frame->width;
+  frameData.height = frame->height;
+  frameData.pixels = OpalVideoFrameDataPtr(frame);
+  frameData.partialFrame = !m_marker;
+  frameData.sampleTime.SetMicroSeconds(m_timestamp * 1000LL / m_mediaFormat.GetTimeUnits());
+  if (!m_outputDevice->SetFrameData(frameData))
     return false;
 
-  if (keyFrameNeeded)
+  if (frameData.keyFrameNeeded)
     ExecuteCommand(OpalVideoUpdatePicture());
 
   return true;
@@ -1608,6 +1607,22 @@ OpalMediaPacketLoss::OpalMediaPacketLoss(unsigned packetLoss,
 PString OpalMediaPacketLoss::GetName() const
 {
   return "Packet Loss";
+}
+
+
+OpalMediaMaxPayload::OpalMediaMaxPayload(unsigned payloadSize,
+                                         const OpalMediaType & mediaType,
+                                         unsigned sessionID,
+                                         unsigned ssrc)
+  : OpalMediaCommand(mediaType, sessionID, ssrc)
+  , m_payloadSize(payloadSize)
+{
+}
+
+
+PString OpalMediaMaxPayload::GetName() const
+{
+  return "Max Payload Size";
 }
 
 

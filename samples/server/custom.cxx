@@ -32,7 +32,7 @@
 #include "custom.h"
 #endif
 
-#include "version.h"
+#include "../../version.h"
 
 
 ////////////////////////////////////////////////////
@@ -86,12 +86,10 @@
 #define MkStr2(s) #s
 #define MkStr(s) MkStr2(s)
 
-#if BUILD_NUMBER==0
-#define VERSION_STRING \
-    MkStr(MAJOR_VERSION) "." MkStr(MINOR_VERSION)
+#if OEM_VERSION > 0
+  #define VERSION_STRING MkStr(MAJOR_VERSION) "." MkStr(MINOR_VERSION) MkStr(BUILD_TYPE) MkStr(PATCH_VERSION) "-" MkStr(OEM_VERSION)
 #else
-#define VERSION_STRING \
-    MkStr(MAJOR_VERSION) "." MkStr(MINOR_VERSION) MkStr(BUILD_TYPE) MkStr(BUILD_NUMBER)
+  #define VERSION_STRING MkStr(MAJOR_VERSION) "." MkStr(MINOR_VERSION) MkStr(BUILD_TYPE) MkStr(PATCH_VERSION)
 #endif
 
 
@@ -99,8 +97,8 @@ VS_VERSION_INFO VERSIONINFO
 #define alpha 1
 #define beta 2
 #define pl 3
-  FILEVERSION     MAJOR_VERSION,MINOR_VERSION,BUILD_TYPE,BUILD_NUMBER
-  PRODUCTVERSION  MAJOR_VERSION,MINOR_VERSION,BUILD_TYPE,BUILD_NUMBER
+  FILEVERSION     MAJOR_VERSION,MINOR_VERSION,PATCH_VERSION,OEM_VERSION
+  PRODUCTVERSION  MAJOR_VERSION,MINOR_VERSION,PATCH_VERSION,OEM_VERSION
 #undef alpha
 #undef beta
 #undef pl
@@ -139,7 +137,7 @@ END
 PHTTPServiceProcess::Info ProductInfo = {
     PRODUCT_NAME_TEXT,
     MANUFACTURER_TEXT,
-    MAJOR_VERSION, MINOR_VERSION, PProcess::BUILD_TYPE, BUILD_NUMBER, __TIME__ __DATE__,
+    MAJOR_VERSION, MINOR_VERSION, PProcess::BUILD_TYPE, PATCH_VERSION, __TIME__ __DATE__,
 
     {{ 0 }}, { NULL }, 0, {{ 0 }},  // Only relevent for commercial apps
 

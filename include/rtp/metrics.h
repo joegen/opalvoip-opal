@@ -51,14 +51,14 @@ class RTP_MetricsReport : public PObject
 #endif
 
     RTP_SyncSourceId sourceIdentifier;
-    unsigned         lossRate;            /* fraction of RTP data packets lost */ 
-    unsigned         discardRate;         /* fraction of RTP data packets discarded */
-    unsigned         burstDensity;        /* fraction of RTP data packets within burst periods */
-    unsigned         gapDensity;          /* fraction of RTP data packets within inter-burst gaps */
-    unsigned         roundTripDelay;  /* the most recently calculated round trip time */    
-    unsigned         RFactor;            /* voice quality metric of the call */
-    unsigned         mosLQ;               /* MOS for listen quality */
-    unsigned         mosCQ;               /* MOS for conversational quality */
+    float            lossRate;       /* percentage of RTP data packets lost */ 
+    float            discardRate;    /* percentage of RTP data packets discarded */
+    float            burstDensity;   /* percentage of RTP data packets within burst periods */
+    float            gapDensity;     /* percentage of RTP data packets within inter-burst gaps */
+    unsigned         roundTripDelay; /* the most recently calculated round trip time */    
+    unsigned         RFactor;        /* voice quality metric of the call */
+    unsigned         mosLQ;          /* MOS for listen quality */
+    unsigned         mosCQ;          /* MOS for conversational quality */
     unsigned         jbNominal;      /* current nominal jitter buffer delay, in ms */ 
     unsigned         jbMaximum;      /* current maximum jitter buffer delay, in ms */
     unsigned         jbAbsolute;     /* current absolute maximum jitter buffer delay, in ms */

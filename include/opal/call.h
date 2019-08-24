@@ -524,6 +524,19 @@ class OpalCall : public PSafeObject
      */
     const PString & GetNameB() const { return m_nameB; }
 
+    /**Get the A party identity for the call.
+       Note this will be available even after the A party connection has been
+       released from the call.
+     */
+    const PString & GetIdentityA() const { return m_identityA; }
+
+    /**Get the B party URI for the call.
+       Note this will be available even after the B party connection has been
+       released from the call. Also this will only be the first B party if the
+       object represents a conference call with more that 2 parties.
+     */
+    const PString & GetIdentityB() const { return m_identityB; }
+
     /**Get indication that A-Party is the network.
        This will indicate if the call is "incoming" or "outgoing" by looking at
        the type of the A-party connection.
@@ -563,6 +576,24 @@ class OpalCall : public PSafeObject
       */
     bool StartRecording(
       const PFilePath & filename, ///< File into which to record
+      const OpalRecordManager::Options & options = false ///< Record mixing options
+    );
+
+    /**Start recording a call using a template.
+        %CALL-ID%   Call identifier
+        %FROM%      Calling party
+        %TO%        Answer party
+        %REMOTE%    Remote party
+        %LOCAL%     Local party
+        %DATE%      Date for call
+        %TIME%      Time for call
+        %TIMESTAMP% Date/Time for call in ISO9660 format
+        %HOST%      Host name of machine
+      */
+    bool StartRecording(
+      const PDirectory & outputDir, ///< Directory for output file
+      const PString & fileTemplate, ///< File template for output file
+      const PString & fileType,     ///< Output container type, e.g ".wav"
       const OpalRecordManager::Options & options = false ///< Record mixing options
     );
 
@@ -631,6 +662,8 @@ class OpalCall : public PSafeObject
     PString m_partyB;
     PString m_nameA;
     PString m_nameB;
+    PString m_identityA;
+    PString m_identityB;
     bool    m_networkOriginated;
     PTime   m_startTime;
     PTime   m_establishedTime;
@@ -642,7 +675,7 @@ class OpalCall : public PSafeObject
     OpalConnection::CallEndReason m_callEndReason;
     std::list<PSyncPoint *> m_endCallSyncPoint;
 
-    PSafeList<OpalConnection> m_connectionsActive;
+    PSafeArray<OpalConnection> m_connectionsActive;
 
 #if OPAL_HAS_MIXER
     OpalRecordManager * m_recordManager;

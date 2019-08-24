@@ -268,6 +268,17 @@ public class OpalMessageParam : global::System.IDisposable {
     } 
   }
 
+  public OpalProtocolMessage protocolMessage {
+    set {
+      OPALPINVOKE.OpalMessageParam_protocolMessage_set(swigCPtr, OpalProtocolMessage.getCPtr(value));
+    } 
+    get {
+      global::System.IntPtr cPtr = OPALPINVOKE.OpalMessageParam_protocolMessage_get(swigCPtr);
+      OpalProtocolMessage ret = (cPtr == global::System.IntPtr.Zero) ? null : new OpalProtocolMessage(cPtr, false);
+      return ret;
+    } 
+  }
+
   public OpalMessageParam() : this(OPALPINVOKE.new_OpalMessageParam(), true) {
   }
 

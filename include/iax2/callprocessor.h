@@ -694,7 +694,7 @@ class IAX2CallProcessor : public IAX2Processor
   PString password;
   
   /**A mutex to make the transfer related fields atomic*/
-  PMutex transferMutex;
+  PDECLARE_MUTEX(transferMutex);
   
   /**Whether we want a transfer event to occur or not*/
   PBoolean doTransfer;

@@ -741,7 +741,7 @@ void SDPCommonAttributes::OutputAttributes(ostream & strm) const
 SDPMediaDescription::SDPMediaDescription()
   : m_port(0)
   , m_portCount(1)
-  , m_reducedSizeRTCP(false)
+  , m_bundleOnly(false)
 {
 }
 
@@ -751,7 +751,7 @@ SDPMediaDescription::SDPMediaDescription(const OpalTransportAddress & address, c
   , m_port(0)
   , m_portCount(1)
   , m_mediaType(type)
-  , m_reducedSizeRTCP(false)
+  , m_bundleOnly(false)
 {
   PIPSocket::Address ip;
   if (m_mediaAddress.GetIpAndPort(ip, m_port))
@@ -762,63 +762,41 @@ SDPMediaDescription::SDPMediaDescription(const OpalTransportAddress & address, c
 PBoolean SDPMediaDescription::SetAddresses(const OpalTransportAddress & media,
                                            const OpalTransportAddress & control)
 {
-  PIPSocket::Address ip;
-  if (!media.GetIpAndPort(ip, m_port))
+  PIPSocket::Address dummy;
+  if (!media.GetIpAndPort(dummy, m_port))
     return false;
 
-  m_mediaAddress = OpalTransportAddress(ip, m_port, OpalTransportAddress::UdpPrefix());
+  PTRACE(3, "Set addresses: media=" << media << ", control=" << control);
+  m_mediaAddress = media;
   m_controlAddress = control;
 
   return true;
 }
 
 
-#if OPAL_ICE
-static bool CanUseCandidate(const PNatCandidate & candidate)
+bool SDPMediaDescription::FromSession(OpalMediaSession * session, const SDPMediaDescription * offer, RTP_SyncSourceId)
 {
-  return !candidate.m_foundation.IsEmpty() &&
-          candidate.m_component > 0 &&
-         !candidate.m_protocol.IsEmpty() &&
-          candidate.m_priority > 0 &&
-          candidate.m_baseTransportAddress.IsValid() &&
-          candidate.m_type < PNatCandidate::NumTypes;
-}
-#endif //OPAL_ICE
-
-
-bool SDPMediaDescription::FromSession(OpalMediaSession * session,
-                                      const SDPMediaDescription *
-#if OPAL_ICE
-                                                                  offer
-#endif
-                                      , RTP_SyncSourceId)
-{
-  if (session == NULL) {
+  if (session == NULL || (offer != NULL && offer->GetPort() == 0)) {
     m_port = 0;
     m_mediaAddress = OpalTransportAddress();
     m_controlAddress = OpalTransportAddress();
     return true;
   }
 
-  m_mediaAddress = session->GetLocalAddress(true);
-  m_controlAddress = session->GetLocalAddress(false);
-
-  PIPSocket::Address dummy;
-  if (!m_mediaAddress.GetIpAndPort(dummy, m_port))
-    return false;
+  SetAddresses(session->GetLocalAddress(true), session->GetLocalAddress(false));
 
 #if OPAL_ICE
   if (offer != NULL ? offer->HasICE() : m_stringOptions.GetBoolean(OPAL_OPT_OFFER_ICE)) {
     OpalMediaTransportPtr transport = session->GetTransport();
     if (transport == NULL) {
-        PTRACE(2, "Could not do ICE offer as no transport avaiable.");
+        PTRACE(2, "Could not do ICE offer as no transport available.");
         return false;
     }
 
     PString user, pass;
     PNatCandidateList candidates;
-    transport->GetCandidates(user, pass, candidates, offer == NULL);
-    SetICE(user, pass, candidates);
+    if (transport->GetCandidates(user, pass, candidates, offer == NULL))
+      SetICE(user, pass, candidates);
   }
 #endif // OPAL_ICE
 
@@ -851,8 +829,9 @@ void SDPMediaDescription::MatchGroupInfo(const GroupDict & groups)
   for (PStringList::iterator mid = m_mids.begin(); mid != m_mids.end(); ++mid) {
     GroupDict::const_iterator it;
     for (it = groups.begin(); it != groups.end(); ++it) {
-      if (it->second.Contains(*mid)) {
+      if (it->second.GetValuesIndex(*mid) != P_MAX_INDEX) {
         m_groups.SetAt(it->first, *mid);
+        PTRACE(4, "Adding mid \"" << *mid << "\" to group \"" << it->first << '"');
         break;
       }
     }
@@ -891,9 +870,9 @@ bool SDPMediaDescription::Decode(const PStringArray & tokens)
   // check everything
   switch (m_port) {
     case 0 :
-      PTRACE(3, "Ignoring media session " << m_mediaType << " with port=0");
+      PTRACE(3, "Disabling media session " << m_mediaType << " with port=0");
       m_direction = Inactive;
-      m_mediaAddress = m_controlAddress = PString::Empty();
+      m_mediaAddress = m_controlAddress = OpalTransportAddress();
       break;
 
     case 65535 :
@@ -1032,6 +1011,11 @@ void SDPMediaDescription::SetAttribute(const PString & attr, const PString & val
     return;
   }
 
+  if (attr *= "bundle-only") {
+    m_bundleOnly = true;
+    return;
+  }
+
 #if OPAL_ICE
   if (attr *= "candidate") {
     PStringArray words = value.Tokenise(WhiteSpace, false); // Spec says space only, but lets be forgiving
@@ -1165,7 +1149,7 @@ void SDPMediaDescription::Encode(const OpalTransportAddress & commonAddr, ostrea
     return;
 
   PIPSocket::Address commonIP, transportIP;
-  if (m_mediaAddress.GetIpAddress(transportIP) && commonAddr.GetIpAddress(commonIP) && commonIP != transportIP)
+  if (m_mediaAddress.GetIpAddress(transportIP) && (!commonAddr.GetIpAddress(commonIP) || commonIP != transportIP))
     strm << "c=" << GetConnectAddressString(m_mediaAddress) << CRLF;
 
   strm << m_bandwidth;
@@ -1184,34 +1168,40 @@ void SDPMediaDescription::OutputAttributes(ostream & strm) const
   if (m_username.IsEmpty() || m_password.IsEmpty())
     return;
 
-  bool haveCandidate = false;
   for (PNatCandidateList::const_iterator it = m_candidates.begin(); it != m_candidates.end(); ++it) {
-    if (CanUseCandidate(*it)) {
-      strm << "a=candidate:"
-           << it->m_foundation << ' '
-           << it->m_component << ' '
-           << it->m_protocol << ' '
-           << it->m_priority << ' '
-           << it->m_baseTransportAddress.GetAddress() << ' '
-           << it->m_baseTransportAddress.GetPort()
-           << " typ " << CandidateTypeNames[it->m_type];
-      if (it->m_localTransportAddress.IsValid())
-        strm << "raddr " << it->m_localTransportAddress.GetAddress() << " rport " << it->m_localTransportAddress.GetPort();
-      if (it->m_networkCost > 0 && it->m_networkId > 0)
-        strm << " network-cost " << it->m_networkCost << " network-id " << it->m_networkId;
-      strm << CRLF;
-      haveCandidate = true;
-    }
+    strm << "a=candidate:"
+          << it->m_foundation << ' '
+          << it->m_component << ' '
+          << it->m_protocol << ' '
+          << it->m_priority << ' '
+          << it->m_baseTransportAddress.GetAddress() << ' '
+          << it->m_baseTransportAddress.GetPort()
+          << " typ " << CandidateTypeNames[it->m_type];
+    if (it->m_localTransportAddress.IsValid())
+      strm << "raddr " << it->m_localTransportAddress.GetAddress() << " rport " << it->m_localTransportAddress.GetPort();
+    if (it->m_networkCost > 0 && it->m_networkId > 0)
+      strm << " network-cost " << it->m_networkCost << " network-id " << it->m_networkId;
+    strm << CRLF;
   }
 
-  if (haveCandidate)
-    strm << "a=ice-ufrag:" << m_username << CRLF
-         << "a=ice-pwd:" << m_password << CRLF;
+  strm << "a=ice-ufrag:" << m_username << CRLF
+       << "a=ice-pwd:" << m_password << CRLF;
 #endif //OPAL_ICE
 }
 
 
 #if OPAL_ICE
+static bool CanUseCandidate(const PNatCandidate & candidate)
+{
+  return !candidate.m_foundation.IsEmpty() &&
+          candidate.m_component > 0 &&
+         !candidate.m_protocol.IsEmpty() &&
+          candidate.m_priority > 0 &&
+          candidate.m_baseTransportAddress.IsValid() &&
+          candidate.m_type < PNatCandidate::NumTypes;
+}
+
+
 bool SDPMediaDescription::HasICE() const
 {
   if (m_username.IsEmpty())
@@ -1227,7 +1217,7 @@ bool SDPMediaDescription::HasICE() const
     return true;
 
   if (m_candidates.IsEmpty())
-    return false;
+    return true; // Either renegotiate without change, or trickle
 
   for (PNatCandidateList::const_iterator it = m_candidates.begin(); it != m_candidates.end(); ++it) {
     if (CanUseCandidate(*it))
@@ -1235,6 +1225,19 @@ bool SDPMediaDescription::HasICE() const
   }
 
   return false;
+}
+
+
+void SDPMediaDescription::SetICE(const PString & username, const PString & password, const PNatCandidateList & candidates)
+{
+    m_username = username;
+    m_password = password;
+
+    m_candidates.clear();
+    for (PNatCandidateList::const_iterator it = candidates.begin(); it != candidates.end(); ++it) {
+      if (CanUseCandidate(*it))
+        m_candidates.push_back(*it);
+    }
 }
 #endif //OPAL_ICE
 
@@ -1303,10 +1306,6 @@ void SDPMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat)
     return;
   }
 
-  SDPMediaFormat * sdpFormat = CreateSDPMediaFormat();
-  if (sdpFormat == NULL)
-    return; // Probably dummy, no formats
-
   RTP_DataFrame::PayloadTypes payloadType = mediaFormat.GetPayloadType();
   const char * encodingName = mediaFormat.GetEncodingName();
   unsigned clockRate = mediaFormat.GetClockRate();
@@ -1325,6 +1324,10 @@ void SDPMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat)
       return;
     }
   }
+
+  SDPMediaFormat * sdpFormat = CreateSDPMediaFormat();
+  if (sdpFormat == NULL)
+    return; // Probably dummy, no formats
 
   sdpFormat->FromMediaFormat(mediaFormat);
   AddSDPMediaFormat(sdpFormat);
@@ -1567,6 +1570,7 @@ void SDPCryptoSuite::PrintOn(ostream & strm) const
 
 SDPRTPAVPMediaDescription::SDPRTPAVPMediaDescription(const OpalTransportAddress & address, const OpalMediaType & mediaType)
   : SDPMediaDescription(address, mediaType)
+  , m_reducedSizeRTCP(false)
 {
 }
 
@@ -1579,7 +1583,7 @@ bool SDPRTPAVPMediaDescription::Decode(const PStringArray & tokens)
   PIPSocket::Address ip;
   if (m_mediaAddress.GetIpAddress(ip)) {
     m_controlAddress = OpalTransportAddress(ip, m_port+1, OpalTransportAddress::UdpPrefix());
-    PTRACE(4, "Setting rtcp connection address " << m_controlAddress);
+    PTRACE(4, "Setting control connection address " << m_controlAddress);
   }
 
   m_transportType = tokens[2];
@@ -1789,30 +1793,42 @@ void SDPRTPAVPMediaDescription::OutputAttributes(ostream & strm) const
   else if (!m_controlAddress.IsEmpty()) {
     PIPSocket::Address ip;
     WORD port = 0;
-    if (m_controlAddress.GetIpAndPort(ip, port) && port != (m_port+1))
+    if (m_controlAddress.GetIpAndPort(ip, port) && port != (m_port + 1))
       strm << "a=rtcp:" << port << ' ' << GetConnectAddressString(m_mediaAddress) << CRLF;
   }
 
   if (m_reducedSizeRTCP)
     strm << "a=rtcp-rsize\r\n";
 
+  if (!m_label.IsEmpty())
+    strm << "a=label:" << m_label << CRLF;
+
   /* Specification does not seem to say to do this, but all the RFC examples group
-     the FID ssrc parameters together, so we do the same to maximise interoperability */
+   the FID ssrc parameters together, so we do the same to maximise interoperability */
   std::set<RTP_SyncSourceId> ssrcInfoDone;
 
-  for (vector<RTP_SyncSourceArray>::const_iterator it1 = m_flowSSRC.begin(); it1 != m_flowSSRC.end(); ++it1) {
-    strm << "a=ssrc-group:FID";
-    for (RTP_SyncSourceArray::const_iterator it2 = it1->begin(); it2 != it1->end(); ++it2)
-      strm << ' ' << *it2;
-    strm << CRLF;
+  if (m_direction&SendOnly) {
+    for (vector<RTP_SyncSourceArray>::const_iterator it1 = m_flowSSRC.begin(); it1 != m_flowSSRC.end(); ++it1) {
+      strm << "a=ssrc-group:FID";
+      for (RTP_SyncSourceArray::const_iterator it2 = it1->begin(); it2 != it1->end(); ++it2)
+        strm << ' ' << *it2;
+      strm << CRLF;
 
-    for (RTP_SyncSourceArray::const_iterator it2 = it1->begin(); it2 != it1->end(); ++it2) {
-      SsrcInfo::const_iterator it3 = m_ssrcInfo.find(*it2);
-      if (it3 != m_ssrcInfo.end()) {
-        for (PStringOptions::const_iterator it4 = it3->second.begin(); it4 != it3->second.end(); ++it4)
-          strm << "a=ssrc:" << *it2 << ' ' << it4->first << ':' << it4->second << CRLF;
-        ssrcInfoDone.insert(*it2);
+      for (RTP_SyncSourceArray::const_iterator it2 = it1->begin(); it2 != it1->end(); ++it2) {
+        SsrcInfo::const_iterator it3 = m_ssrcInfo.find(*it2);
+        if (it3 != m_ssrcInfo.end()) {
+          for (PStringOptions::const_iterator it4 = it3->second.begin(); it4 != it3->second.end(); ++it4)
+            strm << "a=ssrc:" << *it2 << ' ' << it4->first << ':' << it4->second << CRLF;
+          ssrcInfoDone.insert(*it2);
+        }
       }
+    }
+  }
+  else {
+    // We have no senders, but still want to output the primary SSRC for RTCP purposes
+    for (vector<RTP_SyncSourceArray>::const_iterator it1 = m_flowSSRC.begin(); it1 != m_flowSSRC.end(); ++it1) {
+      for (RTP_SyncSourceArray::const_iterator it2 = ++it1->begin(); it2 != it1->end(); ++it2)
+        ssrcInfoDone.insert(*it2); // Don't output these
     }
   }
 
@@ -1961,11 +1977,16 @@ void SDPRTPAVPMediaDescription::SetAttribute(const PString & attr, const PString
     return;
   }
 
+  if (attr *= "label") {
+    m_label = value;
+    PTRACE(4, "m level label: \"" << m_label << '"');
+  }
+
   if (attr *= "msid") {
     m_msid = value;
     for (SsrcInfo::iterator it = m_ssrcInfo.begin(); it != m_ssrcInfo.end(); ++it) {
       SetMediaStreamAndTrackIds(value, it->second);
-      PTRACE(2, "SSRC: " << RTP_TRACE_SRC(it->first) << " m level msid: \"" << m_msid << '"');
+      PTRACE(4, "SSRC: " << RTP_TRACE_SRC(it->first) << " m level msid: \"" << m_msid << '"');
     }
     return;
   }
@@ -1980,7 +2001,7 @@ void SDPRTPAVPMediaDescription::SetAttribute(const PString & attr, const PString
     else {
       if (!m_msid.IsEmpty()) {
         SetMediaStreamAndTrackIds(m_msid, m_ssrcInfo[ssrc]);
-        PTRACE(2, "SSRC: " << RTP_TRACE_SRC(ssrc) << " m level msid: \"" << m_msid << '"');
+        PTRACE(4, "SSRC: " << RTP_TRACE_SRC(ssrc) << " m level msid: \"" << m_msid << '"');
       }
 
       PCaselessString key = value(space + 1, endToken - 1);
@@ -2015,6 +2036,8 @@ bool SDPRTPAVPMediaDescription::FromSession(OpalMediaSession * session,
   OpalRTPSession * rtpSession = dynamic_cast<OpalRTPSession *>(session);
   if (rtpSession != NULL) {
     PTRACE(4, "Setting SDP from RTP session " << *rtpSession);
+    m_label = rtpSession->GetLabel();
+
     if (offer != NULL) {
       m_headerExtensions = rtpSession->GetHeaderExtensions();
       m_reducedSizeRTCP = rtpSession->UseReducedSizeRTCP();
@@ -2022,6 +2045,11 @@ bool SDPRTPAVPMediaDescription::FromSession(OpalMediaSession * session,
     else {
       if (m_stringOptions.GetBoolean(OPAL_OPT_RTP_ABS_SEND_TIME)) {
         RTPHeaderExtensionInfo ext(OpalRTPSession::GetAbsSendTimeHdrExtURI());
+        SetHeaderExtension(ext);
+      }
+
+      if (m_stringOptions.GetBoolean(OPAL_OPT_RTP_AUDIO_LEVEL) && m_mediaType == OpalMediaType::Audio()) {
+        RTPHeaderExtensionInfo ext(OpalRTPSession::GetAudioLevelHdrExtURI());
         SetHeaderExtension(ext);
       }
 
@@ -2091,7 +2119,7 @@ bool SDPRTPAVPMediaDescription::FromSession(OpalMediaSession * session,
     }
 
     PStringList groups = rtpSession->GetGroups();
-    PTRACE(4, "Adding groups: " << setfill(',') << groups);
+    PTRACE_IF(4, !groups.empty(), "Adding groups: " << setfill(',') << groups);
     for (PStringList::iterator it = groups.begin(); it != groups.end(); ++it) {
       if (singleSSRC != 0)
         m_groups.SetAt(*it, PSTRSTRM(rtpSession->GetGroupMediaId(*it) << '_' << singleSSRC));
@@ -2127,11 +2155,12 @@ bool SDPRTPAVPMediaDescription::ToSession(OpalMediaSession * session, RTP_SyncSo
 
     /* Set single port or disjoint RTCP port, must be done before Open()
        and before SDPMediaDescription::ToSession() */
-    rtpSession->SetSinglePortTx(m_controlAddress == m_mediaAddress);
-    if (m_stringOptions.GetBoolean(OPAL_OPT_RTCP_MUX))
-      rtpSession->SetSinglePortRx();
+    bool singlePort = m_controlAddress == m_mediaAddress;
+    rtpSession->SetSinglePortTx(singlePort);
+    rtpSession->SetSinglePortRx(singlePort && m_stringOptions.GetBoolean(OPAL_OPT_RTCP_MUX));
     rtpSession->SetReducedSizeRTCP(m_reducedSizeRTCP);
     rtpSession->SetHeaderExtensions(GetHeaderExtensions());
+    rtpSession->SetLabel(m_label);
 
     for (SsrcInfo::const_iterator it = m_ssrcInfo.begin(); it != m_ssrcInfo.end(); ++it) {
       RTP_SyncSourceId ssrc = it->first;
@@ -2142,10 +2171,13 @@ bool SDPRTPAVPMediaDescription::ToSession(OpalMediaSession * session, RTP_SyncSo
         if (!oldCname.IsEmpty() && oldCname != cname)
           rtpSession->RemoveSyncSource(ssrc PTRACE_PARAM(, "cname changed"));
         if (rtpSession->AddSyncSource(ssrc, OpalRTPSession::e_Receiver, cname) == ssrc) {
+<<<<<<< HEAD
           //
           // Joegen: We dont want to police RTP.  Let the human ear handle stray packets (for now)
           //
           // rtpSession->SetAnySyncSource(false);
+=======
+>>>>>>> master
           PTRACE(4, "Session " << session->GetSessionID() << ", added receiver SSRC " << RTP_TRACE_SRC(ssrc));
         }
         rtpSession->SetMediaTrackId(it->second.GetString("label"), ssrc, OpalRTPSession::e_Receiver);
@@ -2167,7 +2199,7 @@ bool SDPRTPAVPMediaDescription::ToSession(OpalMediaSession * session, RTP_SyncSo
       // Verify it matches the primary codec
       for (SDPMediaFormatList::const_iterator assocFmtIter = m_formats.begin(); assocFmtIter != m_formats.end(); ++assocFmtIter) {
         if (assocFmtIter->GetMediaFormat().GetPayloadType() == assocPT) {
-          rtxPT = rtxMediaFormat.GetPayloadType();
+          rtxPT = assocPT;
           break;
         }
       }
@@ -2791,15 +2823,15 @@ void SDPSessionDescription::PrintOn(ostream & strm) const
         if (git != groups.end())
           git->second += mid;
         else
-          groups.SetAt(gid, new PStringSet(mid));
+          groups.SetAt(gid, new PStringArray(mid));
       }
     }
   }
   if (!groups.IsEmpty()) {
     for (GroupDict::iterator git = groups.begin(); git != groups.end(); ++git) {
       strm << "a=group:" << git->first;
-      for (PStringSet::iterator mit = git->second.begin(); mit != git->second.end(); ++mit)
-        strm << ' ' << *mit;
+      for (PINDEX mit = 0; mit < git->second.GetSize(); ++mit)
+        strm << ' ' << git->second[mit];
       strm << CRLF;
     }
   }
@@ -2999,9 +3031,69 @@ bool SDPSessionDescription::Decode(const PStringArray & lines, const OpalMediaFo
               " ok=" << boolalpha << ok);
   }
 
-  // Match up groups and mid's
-  for (PINDEX i = 0; i < mediaDescriptions.GetSize(); ++i)
-    mediaDescriptions[i].MatchGroupInfo(m_groups);
+  if (!m_groups.IsEmpty() || mediaDescriptions.GetSize() > 1) {
+    // Match up groups and mid's
+    for (PINDEX i = 0; i < mediaDescriptions.GetSize(); ++i)
+      mediaDescriptions[i].MatchGroupInfo(m_groups);
+
+    WORD firstBundledPort = 0;
+    for (PINDEX i = 0; i < mediaDescriptions.GetSize(); ++i) {
+      const SDPMediaDescription & md = mediaDescriptions[i];
+      if (md.GetPort() != 0 && md.IsGroupMember(OpalMediaSession::GetBundleGroupId())) {
+        firstBundledPort = md.GetPort();
+        break;
+      }
+    }
+
+    if (firstBundledPort != 0) {
+      for (PINDEX i = 0; i < mediaDescriptions.GetSize(); ++i) {
+        SDPMediaDescription & md = mediaDescriptions[i];
+        if (md.GetPort() == 0 && md.IsBundleOnly() && md.IsGroupMember(OpalMediaSession::GetBundleGroupId())) {
+          md.SetPort(firstBundledPort);
+          PTRACE(4, "Setting port " << firstBundledPort << " on bundle-only session " << (i + 1));
+        }
+      }
+    }
+  }
+
+#if OPAL_ICE
+  // Locate the "bundled" description that has the ICE, usually the first one
+  // but lets not assume that.
+  bool hasICE = false;
+  const SDPMediaDescription * mdBundledICE = NULL;
+  for (PINDEX i = 0; i < mediaDescriptions.GetSize(); ++i) {
+    const SDPMediaDescription & md = mediaDescriptions[i];
+    if (md.HasICE()) {
+      if (md.IsGroupMember(OpalMediaSession::GetBundleGroupId()))
+        mdBundledICE = &md;
+      hasICE = true;
+    }
+  }
+
+  if (hasICE) {
+    if (mdBundledICE != NULL) {
+      // Make sure all our descriptions have the ICE params for the bundle
+      for (PINDEX i = 0; i < mediaDescriptions.GetSize(); ++i) {
+        SDPMediaDescription & md = mediaDescriptions[i];
+        if (md.IsGroupMember(OpalMediaSession::GetBundleGroupId()) && !md.HasICE())
+          md.SetICE(mdBundledICE->GetUsername(), mdBundledICE->GetPassword(), mdBundledICE->GetCandidates());
+      }
+    }
+
+    // Do not confuse ICE having 0.0.0.0 with "old style" hold
+    for (PINDEX i = 0; i < mediaDescriptions.GetSize(); ++i) {
+      SDPMediaDescription & md = mediaDescriptions[i];
+      if (md.HasICE()) {
+        PTRACE(3, "ICE detected, not using 0.0.0.0 as HOLD request on media desciption " << (i+1));
+        // Set it to something, doesn't matter what, just needs to be legal
+        OpalTransportAddress addr(PIPAddress(), mediaDescriptions[i].GetPort(), OpalTransportAddress::UdpPrefix());
+        mediaDescriptions[i].SetAddresses(addr, addr);
+        if (defaultConnectAddress.IsEmpty())
+          defaultConnectAddress = addr;
+      }
+    }
+  }
+#endif // OPAL_ICE
 
   if (m_mediaStreamIds.GetSize() == 1 && m_mediaStreamIds[0] == "*") {
     m_mediaStreamIds.RemoveAll();
@@ -3031,10 +3123,12 @@ void SDPSessionDescription::SetAttribute(const PString & attr, const PString & v
 {
   if (attr *= "group") {
     PStringArray tokens = value.Tokenise(WhiteSpace, false); // Spec says space only, but lets be forgiving
-    if (tokens.GetSize() > 2) {
+    if (tokens.GetSize() < 2)
+      PTRACE(3, "Invalid group attribute: \"" << value << '"');
+    else {
       PString name = tokens[0];
       tokens.RemoveAt(0);
-      m_groups.SetAt(name, new PStringSet(tokens));
+      m_groups.SetAt(name, new PStringArray(tokens));
     }
     return;
   }
@@ -3116,7 +3210,7 @@ SDPMediaDescription::Direction SDPSessionDescription::GetDirection(unsigned sess
 }
 
 
-bool SDPSessionDescription::IsHold() const
+bool SDPSessionDescription::IsHold(bool allowMusicOnHold) const
 {
   if (defaultConnectAddress.IsEmpty()) // Old style "hold"
     return true;
@@ -3126,9 +3220,20 @@ bool SDPSessionDescription::IsHold() const
 
   PINDEX i;
   for (i = 0; i < mediaDescriptions.GetSize(); i++) {
-    SDPMediaDescription::Direction dir = mediaDescriptions[i].GetDirection();
-    if ((dir == SDPMediaDescription::Undefined) || ((dir & SDPMediaDescription::RecvOnly) != 0))
-      return false;
+    Direction dir = mediaDescriptions[i].GetDirection();
+    if (dir == Undefined)
+      return false; // If undefined, then cannot be hold
+
+    if (allowMusicOnHold) {
+      // Here hold is Inactive or SendOnly
+      if (dir != Inactive && dir != SendOnly)
+        return false;
+    }
+    else {
+      // Here hold is only when Inactive
+      if (dir != Inactive)
+        return false;
+    }
   }
 
   return true;

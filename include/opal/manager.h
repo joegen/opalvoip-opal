@@ -323,7 +323,7 @@ class OpalManager : public PObject
       */
     virtual PBoolean HasCall(
       const PString & token  ///<  Token for identifying call
-    ) { return m_activeCalls.FindWithLock(token, PSafeReference) != NULL; }
+    ) { return m_activeCalls.Find(token, PSafeReference) != NULL; }
 
     /**Return the number of active calls.
       */
@@ -344,7 +344,7 @@ class OpalManager : public PObject
     PSafePtr<OpalCall> FindCallWithLock(
       const PString & token,  ///<  Token to identify connection
       PSafetyMode mode = PSafeReadWrite ///< Lock mode
-    ) const { return m_activeCalls.FindWithLock(token, mode); }
+    ) const { return m_activeCalls.Find(token, mode); }
 
     /**A call back function whenever a call is being terminated locally.
        An application may use this function to auto-answer an incoming call
@@ -1239,7 +1239,8 @@ class OpalManager : public PObject
       */
     virtual bool OnMediaFailed(
       OpalConnection & connection,  ///< Connection session is in
-      unsigned sessionId            ///< Session ID of media that stopped.
+      unsigned sessionId,           ///< Session ID of media that stopped.
+      PChannel::Errors error        ///< Error code for failure
     );
   //@}
 
@@ -1523,8 +1524,9 @@ class OpalManager : public PObject
     /**Determine if the address is "local", ie does not need any address
        translation (fixed or via STUN) to access.
 
-       The default behaviour checks if remoteAddress is a RFC1918 private
-       IP address: 10.x.x.x, 172.16.x.x or 192.168.x.x.
+       The default behaviour checks if remoteAddress is a private, non-routable,
+       IP, e.g. 10.x.x.x, 127.x.x.x etc, the "any" or "broadcast" IP, or the IP
+       of a local interface.
      */
     virtual PBoolean IsLocalAddress(
       const PIPSocket::Address & remoteAddress
@@ -1577,7 +1579,8 @@ class OpalManager : public PObject
       const PString & method,
       const PString & server,
       bool active = true,
-      unsigned priority = 0 // Zero is no change
+      unsigned priority = 0, // Zero is no change
+      const PString & iface = PString::Empty() // Any interface
     );
 
     /**Get the current host name and optional port for the NAT server.
@@ -1671,7 +1674,7 @@ class OpalManager : public PObject
     void SetMediaQoS(const OpalMediaType & type, const PIPSocket::QoS & qos);
 
     /**Get the maximum transmitted RTP payload size.
-       Defaults to maximum safe MTU size (576 bytes as per RFC879) minus the
+       Defaults to maximum safe MTU size (1400 bytes) minus the
        typical size of the IP, UDP an RTP headers.
       */
     PINDEX GetMaxRtpPayloadSize() const { return m_rtpPayloadSizeMax; }
@@ -2131,7 +2134,7 @@ class OpalManager : public PObject
 #endif
 
     RouteTable m_routeTable;
-    PMutex     m_routeMutex;
+    PDECLARE_MUTEX(m_routeMutex);
 
     // Dynamic variables
     PDECLARE_READ_WRITE_MUTEX(m_endpointsMutex);
@@ -2153,7 +2156,7 @@ class OpalManager : public PObject
 #endif // OPAL_HAS_PRESENCE
 
     atomic<PINDEX> m_clearingAllCallsCount;
-    PMutex         m_clearingAllCallsMutex;
+    PDECLARE_MUTEX(m_clearingAllCallsMutex);
     PSyncPoint     m_allCallsCleared;
     void InternalClearAllCalls(OpalConnection::CallEndReason reason, bool wait, bool first);
 
@@ -2186,13 +2189,12 @@ class OpalManager : public PObject
     P_REMOVE_VIRTUAL(bool,OnLocalIncomingCall(OpalCall &),false);
     P_REMOVE_VIRTUAL(bool,OnLocalOutgoingCall(OpalCall &),false);
     P_REMOVE_VIRTUAL(bool,OnMediaFailed(OpalConnection &,unsigned,bool),false);
+    P_REMOVE_VIRTUAL(bool,OnMediaFailed(OpalConnection &,unsigned),false);
 };
 
 
-PString  OpalGetVersion();
-unsigned OpalGetMajorVersion();
-unsigned OpalGetMinorVersion();
-unsigned OpalGetBuildNumber();
+void OpalGetVersion(PProcess::VersionInfo version);
+PString OpalGetVersion();
 
 
 #endif // OPAL_OPAL_MANAGER_H

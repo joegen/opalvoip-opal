@@ -135,7 +135,7 @@ class H460_FeatureStd24AnnexA : public H460_Feature
     void StartProbe();
     void SendProbe();
 
-    PMutex                  m_mutex;
+    PDECLARE_MUTEX(         m_mutex);
     OpalRTPSession        * m_session;
     PString                 m_localCUI;
     PIPSocketAddressAndPort m_directMediaAddress;

@@ -21,7 +21,7 @@
   <PropertyGroup Label="Globals">
     <ProjectName>OPAL Server</ProjectName>
     <ProjectGuid>{48A0E613-0A49-4C11-900D-FDBBCA2B0591}</ProjectGuid>
-    <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -136,6 +136,10 @@
       <TargetMachine>MachineX86</TargetMachine>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <PostBuildEvent>
+      <Command>copy "$(ProjectDir)webrtc_test.html" "$(OutDir)webrtc_test.html"</Command>
+      <Message>Copying WebRTC test page.</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Midl>
@@ -176,6 +180,10 @@
       </DataExecutionPrevention>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <PostBuildEvent>
+      <Command>copy "$(ProjectDir)webrtc_test.html" "$(OutDir)webrtc_test.html"</Command>
+      <Message>Copying WebRTC test page.</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Midl>
@@ -218,6 +226,10 @@
       <TargetMachine>MachineX86</TargetMachine>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
+    <PostBuildEvent>
+      <Command>copy "$(ProjectDir)webrtc_test.html" "$(OutDir)webrtc_test.html"</Command>
+      <Message>Copying WebRTC test page.</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Midl>
@@ -257,6 +269,12 @@
       <DataExecutionPrevention>
       </DataExecutionPrevention>
     </Link>
+    <PostBuildEvent>
+      <Command>copy "$(ProjectDir)webrtc_test.html" "$(OutDir)webrtc_test.html"</Command>
+    </PostBuildEvent>
+    <PostBuildEvent>
+      <Message>Copying WebRTC test page.</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\ptlib\src\ptlib\msos\PTLib_2017.vcxproj">
@@ -313,11 +331,12 @@
     <ClInclude Include="custom.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="precompile.h" />
-    <ClInclude Include="version.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="main_menu.vxml" />
     <None Include="messages.bin" />
     <None Include="opalsrv.ico" />
+    <None Include="webrtc_test.html" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="svcproc.rc" />

@@ -103,7 +103,9 @@ PBoolean OpalRTPMediaStream::Open()
 
   if (IsSource()) {
     delete m_jitterBuffer;
-    OpalJitterBuffer::Init init(m_connection.GetEndPoint().GetManager(), m_mediaFormat.GetTimeUnits());
+    OpalJitterBuffer::Init init(m_connection.GetJitterParameters(),
+                                m_mediaFormat.GetTimeUnits(),
+                                m_connection.GetEndPoint().GetManager().GetMaxRtpPayloadSize());
     m_jitterBuffer = OpalJitterBuffer::Create(m_mediaFormat.GetMediaType(), init);
     m_rtpSession.SetJitterBuffer(m_jitterBuffer, m_syncSource);
     m_rtpSession.AddDataNotifier(m_notifierPriority, m_receiveNotifier, m_syncSource);
@@ -226,7 +228,7 @@ void OpalRTPMediaStream::SetReadTimeout(const PTimeInterval & timeout)
   if (m_readTimeout != timeout) {
     m_readTimeout = timeout;
     // If jitter buffer off, and want complete non-blocking read, force unblock immediately on change.
-    if (m_jitterBuffer->GetCurrentJitterDelay() == 0 && timeout == 0)
+    if (m_jitterBuffer != NULL && m_jitterBuffer->GetCurrentJitterDelay() == 0 && timeout == 0)
       m_jitterBuffer->WriteData(RTP_DataFrame());
   }
 }
@@ -409,7 +411,11 @@ PBoolean OpalRTPMediaStream::WritePacket(RTP_DataFrame & packet)
   if (m_syncSource != 0)
     packet.SetSyncSource(m_syncSource);
 
+<<<<<<< HEAD
   //PSimpleTimer failsafe(0, 5);
+=======
+  PSimpleTimer failsafe(m_connection.GetEndPoint().GetManager().GetTxMediaTimeout());
+>>>>>>> master
   while (IsOpen()) {
     switch (m_rtpSession.WriteData(packet, m_rewriteHeaders ? OpalRTPSession::e_RewriteHeader : OpalRTPSession::e_RewriteSSRC)) {
       case OpalRTPSession::e_AbortTransport :
@@ -540,9 +546,12 @@ void OpalRTPMediaStream::PrintDetail(ostream & strm, const char * prefix, Detail
 
 #if OPAL_PTLIB_NAT
   if ((details & DetailNAT) && m_rtpSession.IsOpen()) {
-    PString sockName = m_rtpSession.GetDataSocket().GetName();
-    if (sockName.NumCompare("udp") != PObject::EqualTo)
-      strm << ", " << sockName.Left(sockName.Find(':'));
+    OpalMediaTransportPtr transport = m_rtpSession.GetTransport();
+    if (transport != NULL) {
+      PCaselessString type = transport->GetType();
+      if (type != "udp")
+        strm << ", " << type; // e.g. "STUN"
+    }
   }
 #endif // OPAL_PTLIB_NAT
 

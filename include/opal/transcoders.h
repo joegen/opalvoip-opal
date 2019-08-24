@@ -321,13 +321,6 @@ class OpalTranscoder : public OpalMediaFormatPair
     /// Set session ID for the transcoder (from OpalMediaStream)
     void SetSessionID(unsigned id) { m_sessionID = id; }
 
-    /** Set the unique instance identifier for transcoder
-      */
-    virtual void SetInstanceID(
-      const BYTE * instance,              ///<  Unique instance identifier for transcoder
-      unsigned instanceLen                ///<  Length of instance identifier
-    );
-
     RTP_DataFrame::PayloadTypes GetPayloadType(
       PBoolean input      ///<  Flag for input or output data size
     ) const;
@@ -344,6 +337,15 @@ class OpalTranscoder : public OpalMediaFormatPair
   //@}
 
   protected:
+    /** Initialise the just created transcoder
+      */
+    virtual bool OnCreated(
+      const OpalMediaFormat & srcFormat,  ///< Source media format
+      const OpalMediaFormat & destFormat, ///< Destination media format
+      const BYTE * instance,              ///<  Unique instance identifier for transcoder
+      unsigned instanceLen                ///<  Length of instance identifier
+    );
+
     PINDEX    maxOutputSize;
     PNotifier commandNotifier;
     PDECLARE_MUTEX(updateMutex);

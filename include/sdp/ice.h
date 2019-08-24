@@ -71,7 +71,6 @@ class OpalICEMediaTransport : public OpalUDPMediaTransport
     PCLASSINFO(OpalICEMediaTransport, OpalUDPMediaTransport);
   public:
     OpalICEMediaTransport(const PString & name);
-    ~OpalICEMediaTransport();
 
     virtual bool Open(OpalMediaSession & session, PINDEX count, const PString & localInterface, const OpalTransportAddress & remoteAddress);
     virtual bool IsEstablished() const;
@@ -94,7 +93,7 @@ class OpalICEMediaTransport : public OpalUDPMediaTransport
         SubChannels             m_subchannel;
     };
     bool InternalHandleICE(SubChannels subchannel, const void * buf, PINDEX len);
-    virtual void InternalRxData(SubChannels subchannel, const PBYTEArray & data);
+    virtual bool InternalRxData(SubChannels subchannel, const PBYTEArray & data);
     virtual bool InternalOpenPinHole(PUDPSocket & socket);
     virtual PChannel * AddWrapperChannels(SubChannels subchannel, PChannel * channel);
 
@@ -134,7 +133,7 @@ class OpalICEMediaTransport : public OpalUDPMediaTransport
     };
     typedef std::list<CandidateState> CandidateStateList;
     typedef std::vector<CandidateStateList> CandidatesArray;
-    friend bool operator==(const CandidatesArray & left, const CandidatesArray & right);
+    friend bool operator!=(const CandidatesArray & left, const CandidatesArray & right);
 
     CandidatesArray m_localCandidates;
     CandidatesArray m_remoteCandidates;
@@ -150,7 +149,7 @@ class OpalICEMediaTransport : public OpalUDPMediaTransport
     PSTUNServer m_server;
     PSTUNClient m_client;
 
-    CandidateState * m_selectedCandidate;
+    PNatCandidate m_selectedCandidate;
 };
 
 

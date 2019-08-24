@@ -92,7 +92,7 @@ class SafeStrings :  public PObject
   //@}
  protected:
   /**Lock on this string array*/
-  PMutex accessMutex;
+  PDECLARE_MUTEX(accessMutex);
   
   /**Internal String array */
   PStringArray data;
@@ -137,7 +137,7 @@ class SafeString : public PObject
   PString internal;
   
   /**The lock, which is used to safeguard access to this variable */
-  PMutex mutex;
+  PDECLARE_MUTEX(mutex);
 };
 
 ////////////////////////////////////////////////////////////////////////////////

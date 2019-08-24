@@ -45,7 +45,9 @@ PlayRTP::PlayRTP()
   : PProcess("OPAL Audio/Video Codec Tester", "PlayRTP", 1, 0, ReleaseCode, 0)
   , m_transcoder(NULL)
   , m_player(NULL)
+#if OPAL_VIDEO
   , m_display(NULL)
+#endif
 {
 }
 
@@ -69,13 +71,15 @@ void PlayRTP::Main()
              "d-dst-port: Destination UDP port, default is any\n"
              "A-audio-driver: Audio player driver.\n"
              "a-audio-device: Audio player device.\n"
+#if OPAL_VIDEO
              "V-video-driver: Video display driver to use.\n"
              "v-video-device: Video display device to use.\n"
+             "Y-video-file: write decoded video to file\n"
+#endif
              "p-singlestep. Single step through input data.\n"
              "P-payload-file: write RTP payload to file\n"
              "i-info. Display per-frame information.\n"
              "f-find. find and display list of RTP sessions.\n"
-             "Y-video-file: write decoded video to file\n"
              "E: write event log to file\n"
              "T: put text in extra video information\n"
              "X. enable extra video information\n"
@@ -228,6 +232,7 @@ void PlayRTP::Main()
     cout << "Dumping RTP payload to \"" << m_payloadFile.GetFilePath() << '\"' << endl;
   }
 
+#if OPAL_VIDEO
   if (args.HasOption('Y')) {
     PFilePath yuvFileName = args.GetOptionString('Y');
     m_extraText = yuvFileName.GetFileName();
@@ -249,6 +254,7 @@ void PlayRTP::Main()
       m_extraText = args.GetOptionString('T').Trim();
     m_extraHeight = g_extraHeight + ((m_extraText.GetLength() == 0) ? 0 : 17);
   }
+#endif
 
   // Audio player
   {
@@ -294,6 +300,7 @@ void PlayRTP::Main()
     cout << "device \"" << m_player->GetName() << "\" opened." << endl;
   }
 
+#if OPAL_VIDEO
   // Video display
   PString driverName = args.GetOptionString('V');
   PString deviceName = args.GetOptionString('v');
@@ -321,6 +328,7 @@ void PlayRTP::Main()
   if (!driverName.IsEmpty())
     cout << "driver \"" << driverName << "\" and ";
   cout << "device \"" << m_display->GetDeviceName() << "\" opened." << endl;
+#endif
 
   Play(pcap);
 
@@ -331,6 +339,7 @@ void PlayRTP::Main()
 }
 
 
+#if OPAL_VIDEO
 static void DrawText(unsigned x, unsigned y, unsigned frameWidth, unsigned frameHeight, BYTE * frame, const char * text)
 {
   BYTE * output  = frame + ((y * frameWidth) + x);
@@ -354,6 +363,7 @@ static void DrawText(unsigned x, unsigned y, unsigned frameWidth, unsigned frame
     }
   }
 }
+#endif
 
 
 void PlayRTP::Play(OpalPCAPFile & pcap)
@@ -382,8 +392,10 @@ void PlayRTP::Play(OpalPCAPFile & pcap)
   m_packetCount = 0;
 
   RTP_DataFrame extendedData;
+#if OPAL_VIDEO
   m_videoError = false;
   m_videoFrames = 0;
+#endif
 
   bool isAudio = false;
   bool needInfoHeader = true;
@@ -440,10 +452,12 @@ void PlayRTP::Play(OpalPCAPFile & pcap)
         m_player->SetFormat(dstFmt.GetOptionInteger(OpalAudioFormat::ChannelsOption()), dstFmt.GetClockRate());
         m_player->SetBuffers(frame*2, 2000/frame); // 250ms of buffering or Vista goes funny
       }
+#if OPAL_VIDEO
       else if (srcFmt.GetMediaType() == OpalMediaType::Video()) {
         dstFmt = OpalYUV420P;
         m_display->Start();
       }
+#endif
       else {
         cout << "Unsupported Media Type " << srcFmt.GetMediaType() << " in file \"" << pcap.GetFilePath() << '"' << endl;
         return;
@@ -557,7 +571,10 @@ void PlayRTP::Play(OpalPCAPFile & pcap)
 
     totalBytes += rtp.GetPayloadSize();
 
+#if OPAL_VIDEO
     m_vfu = false;
+#endif
+
     RTP_DataFrameList output;
     if (!m_transcoder->ConvertFrames(rtp, output)) {
       cout << "Transcoder error decoding file \"" << pcap.GetFilePath() << '"' << endl;
@@ -581,6 +598,7 @@ void PlayRTP::Play(OpalPCAPFile & pcap)
           if (m_info > 1)
             cout << ',' << data.GetPayloadSize();
         }
+#if OPAL_VIDEO
         else {
           ++m_videoFrames;
 
@@ -674,6 +692,7 @@ void PlayRTP::Play(OpalPCAPFile & pcap)
           if (m_info > 1)
             cout << ',' << frame->width << ',' << frame->height;
         }
+#endif
       }
     }
 
@@ -708,8 +727,10 @@ void PlayRTP::Play(OpalPCAPFile & pcap)
   const unsigned TitleWidth = 18;
   const char Colon[] = ": ";
 
+#if OPAL_VIDEO
   if (m_yuvFile.IsOpen())
     cout << setw(TitleWidth) << "Written file" << Colon << m_yuvFile.GetFilePath() << '\n';
+#endif
 
   cout << setw(TitleWidth) << "Payload Type" << Colon << rtpStreamPayloadType;
   if (m_transcoder != NULL)
@@ -724,12 +745,17 @@ void PlayRTP::Play(OpalPCAPFile & pcap)
        << setw(TitleWidth) << "Total bytes"     << Colon << totalBytes << '\n';
 
   PTimeInterval playTime = PTime() - playStartTime;
-  if (!m_yuvFile.IsOpen() && playTime > 0) {
+  if (
+#if OPAL_VIDEO
+    !m_yuvFile.IsOpen() &&
+#endif
+        playTime > 0) {
     cout << setw(TitleWidth) << "Duration (real)" << Colon << playTime << " seconds\n"
          << setw(TitleWidth) << "Duration (file)" << Colon << (lastFrameTime - firstFrameTime) << " seconds\n"
          << setw(TitleWidth) << "Bit rate"        << Colon << fixed << setprecision(1) << (totalBytes*8/playTime.GetMilliSeconds()) << "kbps\n";
   }
 
+#if OPAL_VIDEO
   if (m_videoFrames > 0) {
     cout << setw(TitleWidth) << "Resolution"    << Colon << m_yuvFile.GetFrameWidth() << "x" << m_yuvFile.GetFrameHeight() << '\n'
          << setw(TitleWidth) << "Video frames"  << Colon << m_videoFrames << '\n'
@@ -739,7 +765,9 @@ void PlayRTP::Play(OpalPCAPFile & pcap)
     if (!m_yuvFile.IsOpen() && playTime > 0)
       cout << setw(TitleWidth) << "Frame rate"  << Colon << fixed << setprecision(1) << (m_videoFrames*1000.0/playTime.GetMilliSeconds()) << "fps\n";
   }
-  else {
+  else
+#endif
+  {
     if (playTime > 0)
       cout << setw(TitleWidth) << "Frame time (real)" << Colon << setprecision(3) << (playTime/m_packetCount) << " seconds\n";
   }
@@ -751,6 +779,7 @@ void PlayRTP::Play(OpalPCAPFile & pcap)
 
   cout << endl;
 
+#if OPAL_VIDEO
   if (!m_encodedFileName.IsEmpty()) {
     PStringStream args; 
     args << "ffmpeg -r 10 -y -s " << m_yuvFile.GetFrameWidth() << 'x' << m_yuvFile.GetFrameHeight()
@@ -763,6 +792,7 @@ void PlayRTP::Play(OpalPCAPFile & pcap)
     cmd.WaitForTermination();
     cout << "done" << endl;
   }
+#endif
 
   // Clean up
   delete m_transcoder;
@@ -772,6 +802,7 @@ void PlayRTP::Play(OpalPCAPFile & pcap)
 
 void PlayRTP::OnTranscoderCommand(OpalMediaCommand & command, P_INT_PTR /*extra*/)
 {
+#if OPAL_VIDEO
   if (PIsDescendant(&command, OpalVideoUpdatePicture)) {
     PStringStream msg;
     msg << "Packet " << m_packetCount << ", frame " << m_videoFrames << ": decoding error";
@@ -783,6 +814,7 @@ void PlayRTP::OnTranscoderCommand(OpalMediaCommand & command, P_INT_PTR /*extra*
     cout << msg << endl;
     m_videoError = m_vfu = true;
   }
+#endif
 }
 
 

@@ -77,7 +77,10 @@ PStringList OpalSDPEndPoint::GetAvailableStringOptions() const
     #ifdef OPAL_ICE
       OPAL_OPT_OFFER_ICE,
     #endif
+    OPAL_OPT_ALLOW_MUSIC_ON_HOLD,
     OPAL_OPT_AV_BUNDLE,
+    OPAL_OPT_USE_MEDIA_STREAMS,
+    OPAL_OPT_INACTIVE_AUDIO_FLOW,
     OPAL_OPT_MULTI_SSRC
   };
 
@@ -105,6 +108,7 @@ OpalSDPConnection::OpalSDPConnection(OpalCall & call,
   , m_offerPending(false)
   , m_sdpSessionId(PTime().GetTimeInSeconds())
   , m_sdpVersion(0)
+  , m_sdpVersionFromRemote(UINT_MAX)
   , m_holdToRemote(eHoldOff)
   , m_holdFromRemote(false)
 {
@@ -229,8 +233,13 @@ bool OpalSDPConnection::GetOfferSDP(SDPSessionDescription & offer, bool offerOpe
 PString OpalSDPConnection::GetOfferSDP(bool offerOpenMediaStreamsOnly)
 {
   std::auto_ptr<SDPSessionDescription> sdp(CreateSDP(PString::Empty()));
-  PTRACE_CONTEXT_ID_TO(sdp.get());
-  return sdp.get() != NULL && GetOfferSDP(*sdp, offerOpenMediaStreamsOnly) ? sdp->Encode() : PString::Empty();
+  if (sdp.get() == NULL) {
+    PTRACE(2, "Could not create SDP");
+    return false;
+  }
+
+  PTRACE_CONTEXT_ID_TO(*sdp);
+  return GetOfferSDP(*sdp, offerOpenMediaStreamsOnly) ? sdp->Encode() : PString::Empty();
 }
 
 
@@ -323,6 +332,45 @@ SDPSessionDescription * OpalSDPConnection::CreateSDP(const PString & sdpStr)
 }
 
 
+bool OpalSDPConnection::SetRemoteMediaFormats(const OpalMediaFormatList & formats)
+{
+  m_remoteFormatList = formats;
+  m_remoteFormatList.MakeUnique();
+
+#if OPAL_T38_CAPABILITY
+  /* We default to having T.38 included as most UAs do not actually
+     tell you that they support it or not. For the re-INVITE mechanism
+     to work correctly, the rest ofthe system has to assume that the
+     UA is capable of it, even it it isn't. */
+  m_remoteFormatList += OpalT38;
+#endif
+
+  AdjustMediaFormats(false, NULL, m_remoteFormatList);
+
+  if (m_remoteFormatList.IsEmpty()) {
+    PTRACE(2, "All possible remote media formats were removed.");
+    return false;
+  }
+
+  PTRACE(4, "Remote media formats set:\n    " << setfill(',') << m_remoteFormatList << setfill(' '));
+  return true;
+}
+
+
+bool OpalSDPConnection::OnReceivedSDP(const SDPSessionDescription & sdp)
+{
+  if (!SetActiveMediaFormats(sdp.GetMediaFormats()))
+    return false;
+
+  // Remember the initial set of media formats remote has told us about
+  if (m_sdpVersionFromRemote == UINT_MAX || m_remoteFormatList.IsEmpty())
+    SetRemoteMediaFormats(m_activeFormatList);
+
+  m_sdpVersionFromRemote = sdp.GetOwnerVersion();
+  return true;
+}
+
+
 bool OpalSDPConnection::SetActiveMediaFormats(const OpalMediaFormatList & formats)
 {
   if (formats.IsEmpty()) {
@@ -333,9 +381,10 @@ bool OpalSDPConnection::SetActiveMediaFormats(const OpalMediaFormatList & format
   // get the remote media formats
   m_activeFormatList = formats;
 
+  OpalMediaFormatList const localMediaFormats = GetLocalMediaFormats(); // Use function to make sure is set
   // Remove anything we never offered
-  while (!m_activeFormatList.IsEmpty() && m_localMediaFormats.FindFormat(m_activeFormatList.front()) == m_localMediaFormats.end())
-    m_activeFormatList.RemoveHead();
+  while (!m_activeFormatList.IsEmpty() && !localMediaFormats.HasFormat(m_activeFormatList.front()))
+    m_activeFormatList.pop_front();
 
   if (!m_activeFormatList.IsEmpty())
     AdjustMediaFormats(false, NULL, m_activeFormatList);
@@ -343,12 +392,6 @@ bool OpalSDPConnection::SetActiveMediaFormats(const OpalMediaFormatList & format
   if (m_activeFormatList.IsEmpty()) {
     PTRACE(3, "All media formats in remotes SDP have been removed.");
     return false;
-  }
-
-  // Remember the initial set of media formats remote has told us about
-  if (m_remoteFormatList.IsEmpty()) {
-    m_remoteFormatList = formats;
-    m_remoteFormatList.MakeUnique();
   }
 
   return true;
@@ -485,10 +528,7 @@ static bool SetNxECapabilities(OpalRFC2833Proto * handler,
 }
 
 
-static bool PauseOrCloseMediaStream(OpalMediaStreamPtr & stream,
-                                    const OpalMediaFormatList & answerFormats,
-                                    bool changed,
-                                    bool paused)
+bool OpalSDPConnection::PauseOrCloseMediaStream(OpalMediaStreamPtr & stream, bool changed, bool paused)
 {
   if (stream == NULL)
     return false;
@@ -500,9 +540,17 @@ static bool PauseOrCloseMediaStream(OpalMediaStreamPtr & stream,
   }
 
   if (!changed) {
-    OpalMediaFormatList::const_iterator fmt = answerFormats.FindFormat(stream->GetMediaFormat());
-    if (fmt != answerFormats.end() && stream->UpdateMediaFormat(*fmt, true)) {
-      PTRACE2(4, &*stream, "Answer SDP change needs to " << (paused ? "pause" : "resume") << " stream " << *stream);
+    OpalMediaFormatList::const_iterator fmt = m_activeFormatList.FindFormat(stream->GetMediaFormat());
+    if (fmt != m_activeFormatList.end() && stream->UpdateMediaFormat(*fmt, true)) {
+      if (paused &&
+          m_stringOptions.GetBoolean(OPAL_OPT_INACTIVE_AUDIO_FLOW) &&
+          stream->IsSource() &&
+          stream->GetMediaFormat().GetMediaType() == OpalMediaType::Audio())
+      {
+        PTRACE(4, "Answer SDP change pause ignored on stream " << *stream);
+        return true;
+      }
+      PTRACE(4, "Answer SDP change needs to " << (paused ? "pause" : "resume") << " stream " << *stream);
       stream->InternalSetPaused(paused, false, false);
       return !paused;
     }
@@ -526,6 +574,7 @@ bool OpalSDPConnection::OnSendOfferSDP(SDPSessionDescription & sdpOut, bool offe
 
   if (offerOpenMediaStreamsOnly && !m_mediaStreams.IsEmpty()) {
     PTRACE(3, "Offering only current media streams");
+    m_activeFormatList = m_remoteFormatList; // Must have this by now
     for (SessionMap::iterator it = m_sessions.begin(); it != m_sessions.end(); ++it) {
       if (OnSendOfferSDPSession(it->first, sdpOut, true))
         sdpOK = true;
@@ -534,15 +583,13 @@ bool OpalSDPConnection::OnSendOfferSDP(SDPSessionDescription & sdpOut, bool offe
     }
   }
   else {
-    PTRACE(3, "Offering all configured media:\n    " << setfill(',') << m_localMediaFormats << setfill(' '));
+    // If not got remote media format yet, we need to fake them,
+    // so parts of the offering work correctly
+    if (m_remoteFormatList.IsEmpty())
+      SetRemoteMediaFormats(GetLocalMediaFormats());
+    m_activeFormatList = m_remoteFormatList;
 
-    if (m_remoteFormatList.IsEmpty()) {
-      // Need to fake the remote formats with everything we do,
-      // so parts of the offering work correctly
-      m_remoteFormatList = GetLocalMediaFormats();
-      m_remoteFormatList.MakeUnique();
-      AdjustMediaFormats(false, NULL, m_remoteFormatList);
-    }
+    PTRACE(3, "Offering all configured media:\n    " << setfill(',') << m_activeFormatList << setfill(' '));
 
     // Create media sessions based on available media types and make sure audio and video are first two sessions
     vector<bool> sessions = CreateAllMediaSessions();
@@ -550,6 +597,8 @@ bool OpalSDPConnection::OnSendOfferSDP(SDPSessionDescription & sdpOut, bool offe
 #if OPAL_VIDEO
     if (m_stringOptions.GetBoolean(OPAL_OPT_AV_BUNDLE))
       AddAudioVideoGroup();
+    if (m_stringOptions.GetBoolean(OPAL_OPT_USE_MEDIA_STREAMS))
+      SetAudioVideoMediaStreamIDs(OpalRTPSession::e_Sender);
 #endif
 
     OpalMediaTransportPtr bundledTransport;
@@ -572,6 +621,8 @@ bool OpalSDPConnection::OnSendOfferSDP(SDPSessionDescription & sdpOut, bool offe
       }
     }
   }
+
+  m_activeFormatList = OpalMediaFormatList(); // Don't do RemoveAll() in case of references
 
   return sdpOK && !sdpOut.GetMediaDescriptions().IsEmpty();
 }
@@ -613,13 +664,15 @@ bool OpalSDPConnection::OnSendOfferSDPSession(unsigned   sessionId,
       RTP_SyncSourceArray ssrcs = rtpSession->GetSyncSources(OpalRTPSession::e_Sender);
       size_t count = 0;
       for (RTP_SyncSourceArray::iterator ssrc = ssrcs.begin(); ssrc != ssrcs.end(); ++ssrc) {
-        if (!rtpSession->GetMediaStreamId(*ssrc, OpalRTPSession::e_Sender).IsEmpty())
+        if (!rtpSession->GetMediaStreamId(*ssrc, OpalRTPSession::e_Sender).IsEmpty() &&
+             rtpSession->GetRtxSyncSource(*ssrc, OpalRTPSession::e_Sender, false) == 0)
           ++count;
       }
       PTRACE(4, "Bundled session has msid for " << count << " of " << ssrcs.size() << " SSRCs");
       if (count > 0) {
         for (RTP_SyncSourceArray::iterator ssrc = ssrcs.begin(); ssrc != ssrcs.end(); ++ssrc) {
-          if (!rtpSession->GetMediaStreamId(*ssrc, OpalRTPSession::e_Sender).IsEmpty()) {
+          if (!rtpSession->GetMediaStreamId(*ssrc, OpalRTPSession::e_Sender).IsEmpty() &&
+               rtpSession->GetRtxSyncSource(*ssrc, OpalRTPSession::e_Sender, false) == 0) {
             SDPMediaDescription * localMedia = mediaSession->CreateSDPMediaDescription();
             PTRACE_CONTEXT_ID_TO(localMedia);
             if (!OnSendOfferSDPSession(mediaSession, localMedia, offerOpenMediaStreamOnly, *ssrc))
@@ -722,9 +775,9 @@ bool OpalSDPConnection::OnSendOfferSDPSession(OpalMediaSession * mediaSession,
   if (mediaType == OpalMediaType::Audio()) {
     // Set format if we have an RTP payload type for RFC2833 and/or NSE
     // Must be after other codecs, as Mediatrix gateways barf if RFC2833 is first
-    SetNxECapabilities(m_rfc2833Handler, m_localMediaFormats, m_remoteFormatList, OpalRFC2833, localMedia);
+    SetNxECapabilities(m_rfc2833Handler, m_localMediaFormats, m_activeFormatList, OpalRFC2833, localMedia);
 #if OPAL_T38_CAPABILITY
-    SetNxECapabilities(m_ciscoNSEHandler, m_localMediaFormats, m_remoteFormatList, OpalCiscoNSE, localMedia);
+    SetNxECapabilities(m_ciscoNSEHandler, m_localMediaFormats, m_activeFormatList, OpalCiscoNSE, localMedia);
 #endif
   }
 
@@ -775,7 +828,8 @@ bool OpalSDPConnection::OnSendOfferSDPSession(OpalMediaSession * mediaSession,
 
 bool OpalSDPConnection::OnSendAnswerSDP(const SDPSessionDescription & sdpOffer, SDPSessionDescription & sdpOut, bool transfer)
 {
-  SetActiveMediaFormats(sdpOffer.GetMediaFormats());
+  if (!OnReceivedSDP(sdpOffer))
+    return false;
 
   size_t sessionCount = sdpOffer.GetMediaDescriptions().GetSize();
   vector<SDPMediaDescription *> sdpMediaDescriptions(sessionCount+1);
@@ -821,6 +875,11 @@ bool OpalSDPConnection::OnSendAnswerSDP(const SDPSessionDescription & sdpOffer, 
 
   bundleMergeInfo.RemoveSessionSSRCs(m_sessions);
 
+#if OPAL_VIDEO
+  if (m_stringOptions.GetBoolean(OPAL_OPT_USE_MEDIA_STREAMS))
+    SetAudioVideoMediaStreamIDs(OpalRTPSession::e_Sender);
+#endif // OPAL_VIDEO
+
   // Fill in refusal for media sessions we didn't like
   bool gotNothing = true;
   for (sessionId = 1; sessionId <= sessionCount; ++sessionId) {
@@ -861,13 +920,16 @@ bool OpalSDPConnection::OnSendAnswerSDP(const SDPSessionDescription & sdpOffer, 
   /* Shut down any media that is in a session not mentioned in answer.
       While the SIP/SDP specification says this shouldn't happen, it does
       anyway so we need to deal. */
-  for (OpalMediaStreamPtr stream(m_mediaStreams, PSafeReference); stream != NULL; ++stream) {
-    unsigned session = stream->GetSessionID();
-    if (session > sessionCount || sdpMediaDescriptions[session] == NULL)
-      stream->Close();
+  for (StreamDict::iterator it = m_mediaStreams.begin(); it != m_mediaStreams.end(); ++it) {
+    OpalMediaStreamPtr stream = it->second;
+    if (stream != NULL) {
+      unsigned session = stream->GetSessionID();
+      if (session > sessionCount || sdpMediaDescriptions[session] == NULL)
+        stream->Close();
+    }
   }
 
-  bool holdFromRemote = sdpOffer.IsHold();
+  bool holdFromRemote = sdpOffer.IsHold(AllowMusicOnHold());
   if (m_holdFromRemote != holdFromRemote) {
     PTRACE(3, "Remote " << (holdFromRemote ? "" : "retrieve from ") << "hold detected");
     m_holdFromRemote = holdFromRemote;
@@ -877,6 +939,12 @@ bool OpalSDPConnection::OnSendAnswerSDP(const SDPSessionDescription & sdpOffer, 
   StartMediaStreams();
 
   return true;
+}
+
+
+bool OpalSDPConnection::AllowMusicOnHold() const
+{
+  return m_stringOptions.GetBoolean(OPAL_OPT_ALLOW_MUSIC_ON_HOLD, true);
 }
 
 
@@ -1018,20 +1086,22 @@ SDPMediaDescription * OpalSDPConnection::OnSendAnswerSDPSession(SDPMediaDescript
       otherSidesDir = (otherSidesDir&SDPMediaDescription::SendOnly) != 0 ? SDPMediaDescription::SendOnly : SDPMediaDescription::Inactive;
     if ((autoStart&OpalMediaType::Receive) == 0)
       otherSidesDir = (otherSidesDir&SDPMediaDescription::RecvOnly) != 0 ? SDPMediaDescription::RecvOnly : SDPMediaDescription::Inactive;
+    PTRACE(4, "Answering initial offer for media type " << mediaType << ", directions=" << otherSidesDir << ", autoStart=" << autoStart);
   }
-
-  PTRACE(4, "Answering offer for media type " << mediaType << ", directions=" << otherSidesDir);
+  else {
+    PTRACE(4, "Answering offer for media type " << mediaType << ", directions=" << otherSidesDir);
+  }
 
   SDPMediaDescription::Direction newDirection = SDPMediaDescription::Inactive;
 
   // Check if we had a stream and the remote has either changed the codec or
   // changed the direction of the stream
   OpalMediaStreamPtr sendStream = GetMediaStream(sessionId, false);
-  if (PauseOrCloseMediaStream(sendStream, m_activeFormatList, replaceSession, (otherSidesDir&SDPMediaDescription::RecvOnly) == 0))
+  if (PauseOrCloseMediaStream(sendStream, replaceSession, (otherSidesDir&SDPMediaDescription::RecvOnly) == 0))
     newDirection = SDPMediaDescription::SendOnly;
 
   OpalMediaStreamPtr recvStream = GetMediaStream(sessionId, true);
-  if (PauseOrCloseMediaStream(recvStream, m_activeFormatList, replaceSession,
+  if (PauseOrCloseMediaStream(recvStream, replaceSession,
                               m_holdToRemote >= eHoldOn || (otherSidesDir&SDPMediaDescription::SendOnly) == 0))
     newDirection = newDirection != SDPMediaDescription::Inactive ? SDPMediaDescription::SendRecv : SDPMediaDescription::RecvOnly;
 
@@ -1154,6 +1224,7 @@ SDPMediaDescription * OpalSDPConnection::OnSendAnswerSDPSession(SDPMediaDescript
     }
   }
 
+  FinaliseRtx(sendStream, localMedia.get());
   FinaliseRtx(recvStream, localMedia.get());
 
   if (mediaType == OpalMediaType::Audio()) {
@@ -1181,7 +1252,8 @@ SDPMediaDescription * OpalSDPConnection::OnSendAnswerSDPSession(SDPMediaDescript
 
 bool OpalSDPConnection::OnReceivedAnswerSDP(const SDPSessionDescription & sdp, bool & multipleFormats)
 {
-  SetActiveMediaFormats(sdp.GetMediaFormats());
+  if (!OnReceivedSDP(sdp))
+    return false;
 
   unsigned mediaDescriptionCount = sdp.GetMediaDescriptions().GetSize();
 
@@ -1232,8 +1304,9 @@ bool OpalSDPConnection::OnReceivedAnswerSDP(const SDPSessionDescription & sdp, b
   /* Shut down any media that is in a session not mentioned in answer to our offer.
      While the SIP/SDP specification says this shouldn't happen, it does
      anyway so we need to deal. */
-  for (OpalMediaStreamPtr stream(m_mediaStreams, PSafeReference); stream != NULL; ++stream) {
-    if (stream->GetSessionID() > mediaDescriptionCount)
+  for (StreamDict::iterator it = m_mediaStreams.begin(); it != m_mediaStreams.end(); ++it) {
+    OpalMediaStreamPtr stream = it->second;
+    if (stream != NULL && stream->GetSessionID() > mediaDescriptionCount)
       stream->Close();
   }
 
@@ -1314,12 +1387,12 @@ bool OpalSDPConnection::OnReceivedAnswerSDPSession(const SDPMediaDescription * m
   OpalMediaStreamPtr sendStream = GetMediaStream(sessionId, false);
   bool sendDisabled = bundleMergeInfo.m_allowPauseSendMediaStream[sessionId] && (otherSidesDir&SDPMediaDescription::RecvOnly) == 0;
   bundleMergeInfo.m_allowPauseSendMediaStream[sessionId] = sendDisabled;
-  PauseOrCloseMediaStream(sendStream, m_activeFormatList, false, sendDisabled);
+  PauseOrCloseMediaStream(sendStream, false, sendDisabled);
 
   OpalMediaStreamPtr recvStream = GetMediaStream(sessionId, true);
   bool recvDisabled = bundleMergeInfo.m_allowPauseRecvMediaStream[sessionId] && (otherSidesDir&SDPMediaDescription::SendOnly) == 0;
   bundleMergeInfo.m_allowPauseRecvMediaStream[sessionId] = recvDisabled;
-  PauseOrCloseMediaStream(recvStream, m_activeFormatList, false, recvDisabled);
+  PauseOrCloseMediaStream(recvStream, false, recvDisabled);
 
   /* After (possibly) closing streams, we now open them again if necessary,
      OpenSourceMediaStreams will just return true if they are already open.
@@ -1362,6 +1435,7 @@ bool OpalSDPConnection::OnReceivedAnswerSDPSession(const SDPMediaDescription * m
   }
 
   FinaliseRtx(sendStream, NULL);
+  FinaliseRtx(recvStream, NULL);
 
   PINDEX maxFormats = 1;
   if (mediaType == OpalMediaType::Audio()) {
@@ -1396,24 +1470,24 @@ void OpalSDPConnection::FinaliseRtx(const OpalMediaStreamPtr & stream, SDPMediaD
 
   // Make sure rtx has correct PT
   RTP_DataFrame::PayloadTypes primaryPT = stream->GetMediaFormat().GetPayloadType();
-  RTP_DataFrame::PayloadTypes newPT = RTP_DataFrame::IllegalPayloadType;
+  RTP_DataFrame::PayloadTypes rtxPT = RTP_DataFrame::IllegalPayloadType;
   PString rtxName = OpalRtx::GetName(rtpSession->GetMediaType());
   OpalMediaFormatList remoteFormats = GetMediaFormats();
   for (OpalMediaFormatList::iterator it = remoteFormats.begin(); it != remoteFormats.end(); ++it) {
     if (it->GetName() == rtxName && it->GetOptionPayloadType(OpalRtx::AssociatedPayloadTypeOption()) == primaryPT) {
-      newPT = it->GetPayloadType();
+      rtxPT = it->GetPayloadType();
       if (sdp != NULL)
         sdp->AddMediaFormat(*it);
       break;
     }
   }
 
-  if (newPT == RTP_DataFrame::IllegalPayloadType) {
+  if (rtxPT == RTP_DataFrame::IllegalPayloadType) {
     PTRACE(4, "No RTX present for stream " << *stream);
     return;
   }
 
-  PTRACE(4, "Finalising RTX as " << newPT << " for primary " << primaryPT << " on stream " << *stream);
+  PTRACE(4, "Finalising RTX as " << rtxPT << " for primary " << primaryPT << " on stream " << *stream);
 
   OpalRTPSession::Direction dir = stream->IsSource() ? OpalRTPSession::e_Receiver : OpalRTPSession::e_Sender;
 
@@ -1422,8 +1496,13 @@ void OpalSDPConnection::FinaliseRtx(const OpalMediaStreamPtr & stream, SDPMediaD
   for (RTP_SyncSourceArray::iterator it = ssrcs.begin(); it != ssrcs.end(); ++it) {
     RTP_SyncSourceId primarySSRC = *it;
     RTP_SyncSourceId rtxSSRC = rtpSession->GetRtxSyncSource(primarySSRC, dir, true);
-    if (rtxSSRC != 0)
-      rtpSession->EnableSyncSourceRtx(primarySSRC, newPT, rtxSSRC);
+    if (dir == OpalRTPSession::e_Sender)
+      rtpSession->EnableSyncSourceRtx(primarySSRC, rtxPT, rtxSSRC); // If no rtxSSRC (==0), create one
+    else if (rtxSSRC != 0)
+      rtpSession->EnableSyncSourceRtx(primarySSRC, primaryPT, rtxSSRC);
+    else {
+      PTRACE(3, "Primary receiver SSRC=" << RTP_TRACE_SRC(primarySSRC) << " has no RTX SSRC, invalid SDP");
+    }
   }
 }
 

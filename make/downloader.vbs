@@ -12,7 +12,7 @@
 Set WshShell = CreateObject("WScript.Shell")
 Set FSO = CreateObject("Scripting.FileSystemObject")
 Set WshSysEnv = WshShell.Environment("SYSTEM")
-Set xml = CreateObject("Microsoft.XMLHTTP")
+Set xml = CreateObject("MSXML2.ServerXMLHTTP")
 Dim UseWgetEXE
 
 On Error Resume Next
@@ -69,6 +69,7 @@ Sub WgetUnCompress(URL, DestFolder)
 	Else
 		UnCompress Destfolder & filename, DestFolder	
 	End If
+    FSO.DeleteFile Destfolder & filename, True
 End Sub
 
 Sub GetCompressionTools(DestFolder)
@@ -97,86 +98,91 @@ Sub GetWgetEXE(DestFolder)
 	End If	
 End Sub
 
-Sub UnCompress(Archive, DestFolder)
-	batname = "tmp" & CStr(Int(10000*Rnd)) & ".bat"
-	wscript.echo("Extracting: " & Archive)
-	Set MyFile = fso.CreateTextFile(UtilsDir & batname, True)
-	MyFile.WriteLine("@" & quote & UtilsDir & "7za.exe" & quote & " x " & quote & Archive & quote & " -y -o" & quote & DestFolder & quote )
-	MyFile.Close
-	Set oExec = WshShell.Exec(UtilsDir & batname)
+Sub UnCompress(CompressedArchive, DestFolder)
+	wscript.echo("Decompressing: " & CompressedArchive)
+
+	Set oExec = WshShell.Exec(quote & UtilsDir & "7za.exe" & quote & " x " & quote & CompressedArchive & quote & " -y -o" & quote & DestFolder & quote)
 	Do
 		WScript.Echo OExec.StdOut.ReadLine()
 	Loop While Not OExec.StdOut.atEndOfStream
-	If FSO.FileExists(Left(Archive, Len(Archive)-3))Then  
-		Set MyFile = fso.CreateTextFile(UtilsDir & batname, True)
-		MyFile.WriteLine("@" & quote & UtilsDir & "7za.exe" & quote & " x " & quote & Left(Archive, Len(Archive)-3) & quote & " -y -o" & quote & DestFolder & quote )
-		MyFile.Close
-		Set oExec = WshShell.Exec(UtilsDir & batname)
-		Do
-			WScript.Echo OExec.StdOut.ReadLine()
-		Loop While Not OExec.StdOut.atEndOfStream
-		WScript.Sleep(500)
-		FSO.DeleteFile Left(Archive, Len(Archive)-3) ,true 
-	End If
-	If FSO.FileExists(Left(Archive, Len(Archive)-3) & "tar")Then  
-		Set MyFile = fso.CreateTextFile(UtilsDir & batname, True)
-		MyFile.WriteLine("@" & quote & UtilsDir & "7za.exe" & quote & " x " & quote & Left(Archive, Len(Archive)-3) & "tar" & quote & " -y -o" & quote & DestFolder & quote )
-		MyFile.Close
-		Set oExec = WshShell.Exec(UtilsDir & batname)
-		Do
-			WScript.Echo OExec.StdOut.ReadLine()
-		Loop While Not OExec.StdOut.atEndOfStream
-		WScript.Sleep(500)
-		FSO.DeleteFile Left(Archive, Len(Archive)-3) & "tar",true 
-	End If
-	
+
 	WScript.Sleep(500)
-	If FSO.FileExists(UtilsDir & batname)Then  
-		FSO.DeleteFile UtilsDir & batname, True
+
+	BaseArchive = Left(CompressedArchive, InStrRev(CompressedArchive, ".")-1)
+	ExtractArchive BaseArchive, DestFolder
+	ExtractArchive BaseArchive & "tar", DestFolder	
+End Sub
+
+Sub ExtractArchive(Archive, DestFolder)
+	If FSO.FileExists(Archive)Then
+		wscript.echo("Unpacking: " & Archive)
+        IsArchive = True
+
+		Set oExec = WshShell.Exec(quote & UtilsDir & "7za.exe" & quote & " x " & quote & Archive & quote & " -y -o" & quote & DestFolder & quote)
+		Do
+            Line = OExec.StdOut.ReadLine()
+            If InStr(Line, "not supported archive") > 0 Then
+                IsArchive = False
+            Else
+			    WScript.Echo Line
+            End If
+		Loop While Not OExec.StdOut.atEndOfStream
+
+	    WScript.Sleep(500)
+
+        If IsArchive Then
+		    FSO.DeleteFile Archive, True
+		    wscript.echo("Unpacked: " & Archive & " to " & DestFolder)
+        Else
+            FSO.MoveFile Archive, DestFolder
+		    wscript.echo("Moved: " & Archive & " to " & DestFolder)
+        End If
 	End If
 End Sub
 
 Sub Wget(URL, DestFolder)
-	StartPos = InstrRev(URL, "/", -1, 1)   
+	StartPos = InStrRev(URL, "/", -1, 1)   
 	strlength = Len(URL)
 	filename=Right(URL,strlength-StartPos)
-	If Right(DestFolder, 1) <> "\" Then DestFolder = DestFolder & "\" End If
+	If Right(DestFolder, 1) <> "\" Then
+		DestFolder = DestFolder & "\"
+	End If
 
 	Wscript.echo("Downloading: " & URL)
 	
-If UseWgetEXE Then
-	batname = "tmp" & CStr(Int(10000*Rnd)) & ".bat"
-	Set MyFile = fso.CreateTextFile(UtilsDir & batname, True)
-	MyFile.WriteLine("@cd " & quote & DestFolder & quote)
-	MyFile.WriteLine("@" & quote & UtilsDir & "wget.exe" & quote & " " & URL)
-	MyFile.Close
-	Set oExec = WshShell.Exec(UtilsDir & batname)
-	Do
-		WScript.Echo OExec.StdOut.ReadLine()
-	Loop While Not OExec.StdOut.atEndOfStream
-
-Else
-	xml.Open "GET", URL, False
-	xml.Send
+	If UseWgetEXE Then
+		batname = "tmp" & CStr(Int(10000*Rnd)) & ".bat"
+		Set MyFile = fso.CreateTextFile(UtilsDir & batname, True)
+		MyFile.WriteLine("@cd " & quote & DestFolder & quote)
+		MyFile.WriteLine("@" & quote & UtilsDir & "wget.exe" & quote & " " & URL)
+		MyFile.Close
+		Set oExec = WshShell.Exec(UtilsDir & batname)
+		Do
+			WScript.Echo OExec.StdOut.ReadLine()
+		Loop While Not OExec.StdOut.atEndOfStream
+	Else
+		xml.Open "GET", URL, False
+		xml.Send
 	
-	Const adTypeBinary = 1
-	Const adSaveCreateOverWrite = 2
-	Const adSaveCreateNotExist = 1 
+		Const adTypeBinary = 1
+		Const adSaveCreateOverWrite = 2
+		Const adSaveCreateNotExist = 1 
 
-	oStream.type = adTypeBinary
-	oStream.open
-	oStream.write xml.responseBody
-	oStream.savetofile DestFolder & filename, adSaveCreateOverWrite
-	oStream.close
-End If
-
+		oStream.type = adTypeBinary
+		oStream.open
+		oStream.write xml.responseBody
+		oStream.savetofile DestFolder & filename, adSaveCreateOverWrite
+		oStream.close
+	End If
 End Sub
 
 Sub Slow_Wget(URL, DestFolder)
 	StartPos = InstrRev(URL, "/", -1, 1)   
 	strlength = Len(URL)
 	filename=Right(URL,strlength-StartPos)
-	If Right(DestFolder, 1) <> "\" Then DestFolder = DestFolder & "\" End If
+	If Right(DestFolder, 1) <> "\" Then
+        DestFolder = DestFolder & "\"
+    End If
 
 	Wscript.echo("Downloading: " & URL)
 	xml.Open "GET", URL, False

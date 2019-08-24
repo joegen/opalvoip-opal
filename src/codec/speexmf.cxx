@@ -73,8 +73,7 @@ class OpalSpeexFormat : public OpalAudioFormatInternal
 #define FORMAT(type) \
   const OpalAudioFormat & GetOpalSpeex##type() \
   { \
-    static OpalAudioFormat const plugin(OPAL_SPEEX_##type); if (plugin.IsValid()) return plugin; \
-    static OpalAudioFormat const format(PNEW OpalSpeexFormat(OPAL_SPEEX_##type, FRAME_SIZE_##type, SAMPLE_RATE_##type)); \
+    static OpalMediaFormatStatic<OpalAudioFormat> const format(PNEW OpalSpeexFormat(OPAL_SPEEX_##type, FRAME_SIZE_##type, SAMPLE_RATE_##type)); \
     return format; \
   }
 

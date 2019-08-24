@@ -13,9 +13,9 @@ known version, compatible with OPAL, is available from the following URL:
 Building on Windows
 -------------------
 
-The pligins build solutionm opal\plugins\plugins_XXXX.sln, has been set up
-to automatically downlaod and build the necessary libraries. Note that this
-means you need to be connected to the internet to dot eh first time build.
+The plugins build solution, opal\plugins\plugins_XXXX.sln, has been set up
+to automatically download and build the necessary libraries. Note that this
+means you need to be connected to the internet to do the first time build.
 
 After building, copy the following two files from:
 

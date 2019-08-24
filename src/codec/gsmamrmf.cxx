@@ -47,10 +47,10 @@ enum
 
 /////////////////////////////////////////////////////////////////////////////
 
-class OpalGSMAMRFormat : public OpalAudioFormatInternal
+class OpalGSMAMRFormatInternal : public OpalAudioFormatInternal
 {
   public:
-    OpalGSMAMRFormat()
+    OpalGSMAMRFormatInternal()
       : OpalAudioFormatInternal(OPAL_GSMAMR, RTP_DataFrame::DynamicBase, "AMR",  31, 160, 1, 1, 1, 8000, 0)
     {
       OpalMediaOption * option = new OpalMediaOptionInteger("Initial Mode", false, OpalMediaOption::MinMerge, 7);
@@ -73,23 +73,15 @@ class OpalGSMAMRFormat : public OpalAudioFormatInternal
 
 #if OPAL_H323
 extern const char GSM_AMR_Identifier[] = OpalPluginCodec_Identifer_AMR;
+typedef OpalMediaFormatStaticH323<OpalAudioFormat, H323GenericAudioCapabilityTemplate<GSM_AMR_Identifier, GetOpalGSMAMR> > OpalGSMAMRFormat;
+#else
+typedef OpalMediaFormatStatic<OpalAudioFormat> OpalGSMAMRFormat;
 #endif
 
 
 const OpalAudioFormat & GetOpalGSMAMR()
 {
-  static OpalAudioFormat const plugin(OPAL_GSMAMR);
-  if (plugin.IsValid())
-    return plugin;
-
-  static OpalAudioFormat const format(new OpalGSMAMRFormat);
-
-#if OPAL_H323
-  static H323CapabilityFactory::Worker<
-    H323GenericAudioCapabilityTemplate<GSM_AMR_Identifier, GetOpalGSMAMR>
-  > capability(OPAL_GSMAMR, true);
-#endif // OPAL_H323
-
+  static OpalGSMAMRFormat const format(new OpalGSMAMRFormatInternal);
   return format;
 }
 

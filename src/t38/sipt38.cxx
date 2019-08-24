@@ -1,5 +1,5 @@
 /*
- * t38proto.cxx
+ * sipt38.cxx
  *
  * T.38 protocol handler
  *

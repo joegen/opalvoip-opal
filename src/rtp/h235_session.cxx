@@ -281,10 +281,10 @@ OpalMediaCryptoKeyInfo * H2356_Session::IsCryptoSecured(bool rx) const
 }
 
 
-OpalRTPSession::SendReceiveStatus H2356_Session::OnSendData(RTP_DataFrame & frame, RewriteMode rewrite)
+OpalRTPSession::SendReceiveStatus H2356_Session::OnSendData(RewriteMode & rewrite, RTP_DataFrame & frame, const PTime & now)
 {
-  SendReceiveStatus status = OpalRTPSession::OnSendData(frame, rewrite);
-  if (status == e_ProcessPacket) {
+  SendReceiveStatus status = OpalRTPSession::OnSendData(rewrite, frame, now);
+  if (status == e_ProcessPacket && rewrite != e_RewriteNothing) {
     if (!m_tx.Encrypt(frame))
       return e_IgnorePacket;
   }
@@ -293,13 +293,13 @@ OpalRTPSession::SendReceiveStatus H2356_Session::OnSendData(RTP_DataFrame & fram
 
 
 #if !H235_6_CODED_TO_CORRECT_SPECIFICATION
-OpalRTPSession::SendReceiveStatus H2356_Session::OnPreReceiveData(RTP_DataFrame & frame)
+OpalRTPSession::SendReceiveStatus H2356_Session::OnPreReceiveData(RTP_DataFrame & frame, const PTime & now)
 {
   // Allow for broken implementations that set padding bit but do not set the padding length!
   bool padding = frame.GetPadding();
   frame.SetPadding(false);
 
-  SendReceiveStatus status = OpalRTPSession::OnPreReceiveData(frame);
+  SendReceiveStatus status = OpalRTPSession::OnPreReceiveData(frame, now);
 
   frame.SetPadding(padding);
 
@@ -308,9 +308,9 @@ OpalRTPSession::SendReceiveStatus H2356_Session::OnPreReceiveData(RTP_DataFrame 
 #endif
 
 
-OpalRTPSession::SendReceiveStatus H2356_Session::OnReceiveData(RTP_DataFrame & frame, ReceiveType rxType)
+OpalRTPSession::SendReceiveStatus H2356_Session::OnReceiveData(RTP_DataFrame & frame, ReceiveType rxType, const PTime & now)
 {
-  return (rxType == e_RxRetransmission || m_rx.Decrypt(frame)) ? OpalRTPSession::OnReceiveData(frame, rxType) : e_IgnorePacket;
+  return (rxType == e_RxFromRTX || m_rx.Decrypt(frame)) ? OpalRTPSession::OnReceiveData(frame, rxType, now) : e_IgnorePacket;
 }
 
 

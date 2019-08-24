@@ -8,6 +8,48 @@
                   Source='main_menu.vxml'
                   KeyPath='yes' />
         </Component>
+        <Component Id='webrtc_test.html'
+                   Win64="$(var.IsWin64)"
+                   Guid='*'>
+            <File Id='webrtc_test.html'
+                  Name='webrtc_test.html'
+                  Source='webrtc_test.html'
+                  KeyPath='yes' />
+        </Component>
+        <Component Id='VXMLTest.exe'
+                   Win64="$(var.IsWin64)"
+                   Guid='*'>
+            <File Id='VXMLTest.exe'
+                  Name='VXMLTest.exe'
+                  Source='$(var.PTLibDir)\bin\VXML Test\x64\Release\VXMLTest.exe'
+                  KeyPath='yes' />
+        </Component>
+        <Component Id='callgen.exe'
+                   Win64="$(var.IsWin64)"
+                   Guid='*'>
+            <File Id='callgen.exe'
+                  Name='callgen.exe'
+                  Source='$(var.OPALDir)\bin\Call Generator\x64\Release\callgen.exe'
+                  KeyPath='yes' />
+        </Component>
+        <?if $(var.CustomHTML) != "" ?>
+            <Component Id='welcome.html'
+                         Win64="$(var.IsWin64)"
+                         Guid='*'>
+                <File Id='welcome.html'
+                      Name='welcome.html'
+                      Source='welcome.html'
+                      KeyPath='yes' />
+            </Component>
+            <Directory Id='DataDirectory'
+                       Name='data' >
+                <Component Id='DataFiles'
+                           Win64="$(var.IsWin64)"
+                           Guid='7bd9c136-4022-4399-80a3-d0b83c91f1c4'>
+                    <?include $(var.CustomHTML) ?>
+                </Component>
+            </Directory>
+        <?endif ?>
     </DirectoryRef>
 
     <DirectoryRef Id="ApplicationProgramMenuFolder">
@@ -66,6 +108,13 @@
     <Feature Id='AdditionalFiles'
                 Title="Additional files for $(var.ProductName)"
                 Level='1'>
+        <?if $(var.CustomHTML) != "" ?>
+            <ComponentRef Id='welcome.html' />
+            <ComponentRef Id='DataFiles' />
+        <?endif ?>
         <ComponentRef Id='main_menu.vxml' />
+        <ComponentRef Id='webrtc_test.html' />
+        <ComponentRef Id='VXMLTest.exe' />
+        <ComponentRef Id='callgen.exe' />
     </Feature>
 </Include>

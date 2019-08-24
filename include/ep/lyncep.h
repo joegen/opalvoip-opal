@@ -330,7 +330,7 @@ class OpalLyncEndPoint : public OpalEndPoint, public OpalLyncShimBase
 
     typedef std::map<PString, UserEndpoint *> RegistrationMap;
     RegistrationMap m_registrations;
-    PMutex          m_registrationMutex;
+    PDECLARE_MUTEX( m_registrationMutex);
 
     PTimeInterval m_transferDelay;
 };

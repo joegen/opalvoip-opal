@@ -450,6 +450,12 @@ class OpusPluginEncoder : public OpusPluginCodec
                              unsigned & toLen,
                              unsigned & flags)
     {
+      if (fromLen == 0) {
+        static const short silence[20 * 48] = { };
+        fromPtr = silence;
+        fromLen = sizeof(silence);;
+      }
+
       opus_int32 result = opus_encode(m_encoder,
                                       (const opus_int16 *)fromPtr, fromLen/m_channels/2,
                                       (opus_uint8 *)toPtr, toLen);
@@ -476,15 +482,24 @@ class OpusPluginDecoder : public OpusPluginCodec
 
     enum {
       AwaitingInitialPacket,
-      NoLostPackets,
+      NormalPacketFlow,
+      FirstLostPacket,
+      SecondLostPacket,
+      TooManyLostPackets
+    } m_decodeState;
+
+    enum DecodeOption {
+      SingleFrame,
+      PreSilentFrame,
+      OneSilentFrame,
       UseFEC
-    } m_lostPacketState;
+    };
 
   public:
     OpusPluginDecoder(const PluginCodec_Definition * defn)
       : OpusPluginCodec(defn)
       , m_decoder(NULL)
-      , m_lostPacketState(AwaitingInitialPacket)
+      , m_decodeState(AwaitingInitialPacket)
     {
       PTRACE(4, MY_CODEC_LOG, "Decoder created: version \"" << opus_get_version_string() << '"');
     }
@@ -514,66 +529,118 @@ class OpusPluginDecoder : public OpusPluginCodec
                              unsigned & toLen,
                              unsigned & flags)
     {
+      if (m_decodeState == AwaitingInitialPacket && fromLen == 0) {
+        /* We need at least one packet for OPUS_GET_LAST_PACKET_DURATION to work,
+            so just return with nothing, and no bytes pushed up the pipeline. When
+            using sound device this means silencem for transcoding it means no
+            packets are emitted. */
+        toLen = 0;
+        return true;
+      }
+
       int samples;
-      const opus_uint8 * packet;
       if (fromLen == 0) {
-        switch (m_lostPacketState) {
-          default :
-            break;
-
-          case NoLostPackets :
-            if (!m_useInBandFEC)
-              break;
-
-            m_lostPacketState = UseFEC;
-            // Do next case
-
-          case AwaitingInitialPacket :
-            toLen = 0;
-            return true;
-        }
-
-        packet = NULL; // As per opus_decode() API
+        // Must have had at least one non-empty packet, so can do this
         opus_decoder_ctl(m_decoder, OPUS_GET_LAST_PACKET_DURATION(&samples));
+        fromPtr = NULL; // As per opus_decode() API
       }
       else {
-        if (m_lostPacketState == AwaitingInitialPacket) {
-          PTRACE(4, MY_CODEC_LOG, "First non-empty packet received for decoding.");
-          m_lostPacketState = NoLostPackets;
-        }
-
-        packet = (const opus_uint8 *)fromPtr;
-        samples = opus_decoder_get_nb_samples(m_decoder, packet, fromLen);
+        samples = opus_decoder_get_nb_samples(m_decoder, (const opus_uint8 *)fromPtr, fromLen);
         if (samples < 0) {
           PTRACE(1, MY_CODEC_LOG, "Decoding error " << samples << ' ' << opus_strerror(samples));
           return false;
         }
       }
 
-      unsigned outputBytes = samples*m_channels*2U;
-      if (outputBytes*2 > toLen) {
-        PTRACE(1, MY_CODEC_LOG, "Provided sample buffer too small, " << toLen << " bytes, need " << outputBytes);
+      if (!m_useInBandFEC) {
+        // No FEC keeps things simple, one frame at a time, pass in the data or NULL for basic PLC
+        m_decodeState = NormalPacketFlow;
+        return DecodeFrames(fromPtr, fromLen, toPtr, toLen, samples, SingleFrame);
+      }
+
+      // FEC decoding needs a one packet delay.
+
+      switch (m_decodeState) {
+        case AwaitingInitialPacket :
+          PTRACE(4, MY_CODEC_LOG, "First non-empty packet received for decoding.");
+          m_decodeState = NormalPacketFlow;
+          /* We output a frames worth of silence, then the decoded frame, outputting double
+             the usual PCM data so we end up with a packet delay. */
+          return DecodeFrames(fromPtr, fromLen, toPtr, toLen, samples, PreSilentFrame);
+
+        case NormalPacketFlow :
+          if (fromLen == 0) {
+            /* For the first lost packet, we return zero which outputs nothing,
+               and we lose out one packet delay. */
+            toLen = 0;
+            m_decodeState = FirstLostPacket;
+            return true;
+          }
+
+          /* One packet in, one packet's worth of PCM out, which after the initial
+             double output, will maintain the one packet delay */
+          return DecodeFrames(fromPtr, fromLen, toPtr, toLen, samples, SingleFrame);
+
+        default : // first & second lost packets
+          if (fromLen == 0) {
+            /* Lost two or three in a row, output one packet of possible PLC, we are still
+               without out one packet delay. */
+            m_decodeState = m_decodeState == FirstLostPacket ? SecondLostPacket : TooManyLostPackets;
+            return DecodeFrames(NULL, 0, toPtr, toLen, samples, SingleFrame);
+          }
+          break;
+
+        case TooManyLostPackets :
+          if (fromLen == 0) {
+            /* Lost too many in a row, can't trust PLC, output silence, we are still
+               without out one packet delay. */
+            return DecodeFrames(NULL, 0, toPtr, toLen, samples, OneSilentFrame);
+          }
+      }
+
+      /* Have a packet, now output double PCM from FEC restored data and the data
+         from new packet, getting back out one packet delay. */
+      m_decodeState = NormalPacketFlow;
+      return DecodeFrames(fromPtr, fromLen, toPtr, toLen, samples, UseFEC);
+    }
+
+
+    bool DecodeFrames(const void * fromPtr, unsigned fromLen,
+                      void * toPtr, unsigned & toLen,
+                      unsigned samples, DecodeOption option)
+    {
+      unsigned outputFrameBytes = samples*2;
+
+      unsigned outputTotalBytes = outputFrameBytes;
+      if (option == UseFEC || option == PreSilentFrame)
+        outputTotalBytes *= 2;
+
+      if (outputTotalBytes > toLen) {
+        PTRACE(1, MY_CODEC_LOG, "Provided sample buffer too small, " << toLen << " bytes, need " << outputTotalBytes);
         return false;
       }
-      toLen = outputBytes;
 
-      if (m_lostPacketState == NoLostPackets)
-        return DecodeFrame(packet, fromLen, toPtr, samples, false);
+      toLen = outputTotalBytes;
 
-      m_lostPacketState = NoLostPackets;
-      toLen = outputBytes*2;
+      switch (option) {
+        case SingleFrame :
+          return DecodeFrame(fromPtr, fromLen, toPtr, samples, false);
 
-      if (PacketHasFec(packet, fromLen)) {
-        if (!DecodeFrame(packet, fromLen, toPtr, samples, true))
-          return false;
+        case UseFEC :
+          if (!DecodeFrame(fromPtr, fromLen, toPtr, samples, true))
+            return false;
+          break;
+
+        default :
+          // No FEC so just have silence
+          memset(toPtr, 0, outputFrameBytes);
+          if (option == OneSilentFrame)
+            return true;
       }
-      else {
-        if (!DecodeFrame(NULL, fromLen, toPtr, samples, false))
-          return false;
-      }
 
-      return DecodeFrame(packet, fromLen, ((char *)toPtr)+outputBytes, samples, false);
+      return DecodeFrame(fromPtr, fromLen, ((char *)toPtr)+outputFrameBytes, samples, false);
     }
+
 
     bool DecodeFrame(const void * packet, unsigned bytes, void * pcm, unsigned samples, bool fec)
     {

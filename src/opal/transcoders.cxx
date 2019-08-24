@@ -87,6 +87,22 @@ OpalTranscoder::OpalTranscoder(const OpalMediaFormat & inputMediaFormat,
 }
 
 
+bool OpalTranscoder::OnCreated(const OpalMediaFormat & srcFormat,
+                               const OpalMediaFormat & destFormat,
+                               const BYTE * /*instance*/, unsigned /*instanceLen*/)
+{
+  /* Set the actual media formats used to create the transcoder.
+     This information got lost as OpalTranscoderKey is just two PStrings
+     and not OpalMediaFormats. Need to copy all of the actual options
+     over the top of the global ones just created. */
+  inputMediaFormat = srcFormat;
+  outputMediaFormat = destFormat;
+
+  // This is called to make sure options are sent to plug ins.
+  return UpdateMediaFormats(srcFormat, destFormat);
+}
+
+
 bool OpalTranscoder::UpdateMediaFormats(const OpalMediaFormat & input, const OpalMediaFormat & output)
 {
   PWaitAndSignal mutex(updateMutex);
@@ -137,11 +153,6 @@ void OpalTranscoder::NotifyCommand(const OpalMediaCommand & command) const
     commandNotifier(const_cast<OpalMediaCommand &>(command), m_sessionID);
   else
     PTRACE(4, "No command notifier available for transcoder " << this);
-}
-
-
-void OpalTranscoder::SetInstanceID(const BYTE * /*instance*/, unsigned /*instanceLen*/)
-{
 }
 
 
@@ -242,6 +253,7 @@ OpalTranscoder * OpalTranscoder::Create(const OpalMediaFormat & srcFormat,
     return NULL;
   }
 
+<<<<<<< HEAD
   transcoder->SetInstanceID(instance, instanceLen); // Make sure this is done first
 
   /* Set the actual media formats used to create the transcoder.
@@ -255,6 +267,9 @@ OpalTranscoder * OpalTranscoder::Create(const OpalMediaFormat & srcFormat,
   if (transcoder->UpdateMediaFormats(srcFormat, destFormat))
   {
     PTRACE2(5, NULL, "Created transcoder instance from " << srcFormat << " to " << destFormat);
+=======
+  if (transcoder->OnCreated(srcFormat, destFormat, instance, instanceLen))
+>>>>>>> master
     return transcoder;
   }
 

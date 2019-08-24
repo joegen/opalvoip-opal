@@ -239,7 +239,7 @@ bool Q922_Frame::EncodeHDLC(BYTE *buffer, PINDEX & size, PINDEX & theBitIndex) c
   // since the FLAG sequences may be not byte-aligned, the first FLAG sequence is encoded
   // into a dummy buffer and extracted from there
   buffer[0] = 0;
-  BYTE dummy[3];
+  BYTE dummy[3] = { 0, 0, 0 };
   EncodeOctetNoEscape(Q922_FLAG, dummy, octetIndex, bitIndex);
   EncodeOctetNoEscape(Q922_FLAG, dummy, octetIndex, bitIndex);
   buffer[0] = dummy[1];

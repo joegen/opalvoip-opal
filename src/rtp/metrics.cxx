@@ -39,6 +39,8 @@
 
 class RTP_DataFrame;
 
+// RFC3611
+
 RTCP_XR_Metrics::RTCP_XR_Metrics(float    Ie,
                                  float    Bpl,
                                  float    lookAheadTime,
@@ -733,10 +735,10 @@ void RTCP_XR_Metrics::InsertMetricsReport(RTP_ControlFrame & report,
 
 RTP_MetricsReport::RTP_MetricsReport(const RTP_ControlFrame::MetricsReport & mr)
   : sourceIdentifier(mr.ssrc)
-  , lossRate(mr.loss_rate)
-  , discardRate(mr.discard_rate)
-  , burstDensity(mr.burst_density)
-  , gapDensity(mr.gap_density)
+  , lossRate(mr.loss_rate*100.0f/256.0f)
+  , discardRate(mr.discard_rate*100.0f/256.0f)
+  , burstDensity(mr.burst_density*100.0f/256.0f)
+  , gapDensity(mr.gap_density*100.0f/256.0f)
   , roundTripDelay(mr.round_trip_delay)
   , RFactor(mr.r_factor)
   , mosLQ(mr.mos_lq)
@@ -748,9 +750,14 @@ RTP_MetricsReport::RTP_MetricsReport(const RTP_ControlFrame::MetricsReport & mr)
 }
 
 
-void OpalRTPSession::OnRxMetricsReport(RTP_SyncSourceId PTRACE_PARAM(src), const RTP_MetricsReport & PTRACE_PARAM(report))
+void OpalRTPSession::OnRxMetricsReport(RTP_SyncSourceId PTRACE_PARAM(ssrc), const RTP_MetricsReport & report)
 {
-  PTRACE(4, "RTP", *this << "OnMetricsReport: ssrc=" << RTP_TRACE_SRC(src) << ' ' << report);
+  PTRACE(4, "RTP", *this << "OnMetricsReport: ssrc=" << RTP_TRACE_SRC(ssrc) << ' ' << report);
+  SyncSource * info;
+  if (GetSyncSource(report.sourceIdentifier, e_Sender, info)) {
+    info->m_rtcpDiscardRate = report.discardRate;
+    info->m_rtcpJitterBufferDelay = report.jbNominal;
+  }
 }
 
 

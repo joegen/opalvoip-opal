@@ -57,13 +57,8 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 
-#ifndef _WIN32_WCE
 HINSTANCE PDllInstance;
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID)
-#else
-HANDLE PDllInstance;
-BOOL WINAPI DllMain(HANDLE hinstDLL, DWORD fdwReason, LPVOID)
-#endif
 {
   if (fdwReason == DLL_PROCESS_ATTACH)
     PDllInstance = hinstDLL;

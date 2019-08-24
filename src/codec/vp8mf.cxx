@@ -77,12 +77,7 @@ class OpalVP8Format : public OpalVideoFormatInternal
 
 const OpalVideoFormat & GetOpalVP8()
 {
-  static OpalVideoFormat const plugin(VP8FormatName);
-  if (plugin.IsValid())
-    return plugin;
-
-  static OpalVideoFormat const format(new OpalVP8Format());
-
+  static OpalMediaFormatStatic<OpalVideoFormat> const format(new OpalVP8Format());
   return format;
 }
 

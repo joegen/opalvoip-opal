@@ -93,11 +93,11 @@ class H323_G729CapabilityTemplate : public H323AudioCapability
 
 /////////////////////////////////////////////////////////////////////////////
 
-class OpalG729Format : public OpalAudioFormat
+class OpalG729Format : public OpalAudioFormatInternal
 {
   public:
     OpalG729Format(const char * variant)
-      : OpalAudioFormat(variant, RTP_DataFrame::G729, "G729", 10, 80, 24, 5, 256, 8000)
+      : OpalAudioFormatInternal(variant, RTP_DataFrame::G729, "G729", 10, 80, 24, 5, 256, 8000)
     {
       // As per RFC3555
       bool isAnnexB = strchr(variant, 'B') != NULL;
@@ -121,8 +121,7 @@ class OpalG729Format : public OpalAudioFormat
 #define FORMAT(name) \
   const OpalAudioFormat & GetOpal##name() \
   { \
-    static OpalAudioFormat const plugin(G729Name[name]); if (plugin.IsValid()) return plugin; \
-    static const OpalG729Format format(G729Name[name]); \
+    static const OpalMediaFormatStatic<OpalAudioFormat> format(new OpalG729Format(G729Name[name])); \
     CAPABILITY(name); \
     return format; \
   }

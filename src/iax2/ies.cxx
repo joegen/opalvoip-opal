@@ -789,12 +789,11 @@ void IAX2IeMd5Result::InitializeChallengePassword(const PString &newChallenge, c
   PMessageDigest5::Code digester;
   stomach.Complete(digester);
 
-  dataBlock.SetSize(sizeof(digester));
-  memcpy(dataBlock.GetPointer(), &digester, dataBlock.GetSize());
+  dataBlock = digester;
   
   PStringStream res;
-  for (PINDEX i = 0; i < (PINDEX)sizeof(digester); i++) 
-    res  << ::hex << ::setfill('0') << ::setw(2) << (int)(*(((BYTE *)&digester)+i));
+  for (PINDEX i = 0; i < digester.GetSize(); i++) 
+    res  << ::hex << ::setfill('0') << ::setw(2) << digester.GetAs<int>(i);
 
   res.Trim();
   res.MakeMinimumSize();

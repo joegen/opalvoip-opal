@@ -324,7 +324,7 @@ class IAX2SequenceNumbers
   PINDEX outSeqNo; 
 
   /**Mutex to protect access to this structrue while doing seqno changes*/
-  PMutex mutex;
+  PDECLARE_MUTEX(mutex);
 
   /**Last sent time stamp - ensure 3 ms gap between time stamps. */
   PINDEX lastSentTimeStamp;

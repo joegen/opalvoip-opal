@@ -1,0 +1,488 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectName>libspandsp</ProjectName>
+    <ProjectGuid>{1CBB0077-18C5-455F-801C-0A0CE7B0BBF5}</ProjectGuid>
+    <RootNamespace>libspandsp</RootNamespace>
+    <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>14.0.25431.1</_ProjectFileVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>..\..\..\bin\plugins\$(Platform)\$(Configuration)\$(ProjectName)\</OutDir>
+    <IntDir>$(OutDir)</IntDir>
+    <LinkIncremental>true</LinkIncremental>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules />
+    <CodeAnalysisRuleAssemblies />
+    <IncludePath>compat_headers;spandsp-0.0.6\src\spandsp;spandsp-0.0.6\src;tiff-3.8.2\libtiff;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <TargetName>spandsp</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>..\..\..\bin\plugins\$(Platform)\$(Configuration)\$(ProjectName)\</OutDir>
+    <IntDir>$(OutDir)</IntDir>
+    <LinkIncremental>false</LinkIncremental>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules />
+    <CodeAnalysisRuleAssemblies />
+    <IncludePath>compat_headers;spandsp-0.0.6\src\spandsp;spandsp-0.0.6\src;tiff-3.8.2\libtiff;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <TargetName>spandsp</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <OutDir>..\..\..\bin\plugins\$(Platform)\$(Configuration)\$(ProjectName)\</OutDir>
+    <IntDir>$(OutDir)</IntDir>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules />
+    <CodeAnalysisRuleAssemblies />
+    <IncludePath>compat_headers;spandsp-0.0.6\src\spandsp;spandsp-0.0.6\src;tiff-3.8.2\libtiff;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <TargetName>spandsp</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <OutDir>..\..\..\bin\plugins\$(Platform)\$(Configuration)\$(ProjectName)\</OutDir>
+    <IntDir>$(OutDir)</IntDir>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules />
+    <CodeAnalysisRuleAssemblies />
+    <IncludePath>compat_headers;spandsp-0.0.6\src\spandsp;spandsp-0.0.6\src;tiff-3.8.2\libtiff;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <TargetName>spandsp</TargetName>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <BuildLog>
+      <Path>$(IntDir)BuildLog $(ProjectName).htm</Path>
+    </BuildLog>
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBSPANDSP_EXPORTS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;HAVE_CONFIG_H;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <PrecompiledHeader />
+      <ProgramDataBaseFileName>$(IntDir)$(TargetName).pdb</ProgramDataBaseFileName>
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <CompileAs>CompileAsC</CompileAs>
+      <UndefinePreprocessorDefinitions>
+      </UndefinePreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <DataExecutionPrevention />
+      <TargetMachine>MachineX86</TargetMachine>
+    </Link>
+    <PreBuildEvent>
+      <Command>if exist "$(ProjectDir)spandsp-0.0.6" goto done
+cscript /nologo "$(ProjectDir)..\..\..\make\downloader.vbs" GetUnzip https://www.soft-switch.org/downloads/spandsp/spandsp-0.0.6.tar.gz "$(ProjectDir)"
+copy "$(ProjectDir)config.h.vc" "$(ProjectDir)spandsp-0.0.6\src\config.h"
+copy "$(ProjectDir)spandsp.h.vc" "$(ProjectDir)spandsp-0.0.6\src\spandsp.h"
+:done</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <BuildLog>
+      <Path>$(IntDir)BuildLog $(ProjectName).htm</Path>
+    </BuildLog>
+    <ClCompile>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBSPANDSP_EXPORTS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;HAVE_CONFIG_H;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <PrecompiledHeader />
+      <ProgramDataBaseFileName>$(IntDir)$(TargetName).pdb</ProgramDataBaseFileName>
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <UndefinePreprocessorDefinitions>
+      </UndefinePreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <DataExecutionPrevention />
+      <TargetMachine>MachineX86</TargetMachine>
+    </Link>
+    <PreBuildEvent>
+      <Command>if exist "$(ProjectDir)spandsp-0.0.6" goto done
+cscript /nologo "$(ProjectDir)..\..\..\make\downloader.vbs" GetUnzip https://www.soft-switch.org/downloads/spandsp/spandsp-0.0.6.tar.gz "$(ProjectDir)"
+copy "$(ProjectDir)config.h.vc" "$(ProjectDir)spandsp-0.0.6\src\config.h"
+copy "$(ProjectDir)spandsp.h.vc" "$(ProjectDir)spandsp-0.0.6\src\spandsp.h"
+:done</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <BuildLog>
+      <Path>$(IntDir)BuildLog $(ProjectName).htm</Path>
+    </BuildLog>
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBSPANDSP_EXPORTS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;HAVE_CONFIG_H;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <PrecompiledHeader />
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <CompileAs>CompileAsC</CompileAs>
+      <UndefinePreprocessorDefinitions>
+      </UndefinePreprocessorDefinitions>
+      <ProgramDataBaseFileName>$(IntDir)/$(ProjectName).pdb</ProgramDataBaseFileName>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <DataExecutionPrevention />
+      <TargetMachine>MachineX64</TargetMachine>
+    </Link>
+    <PreBuildEvent>
+      <Command>if exist "$(ProjectDir)spandsp-0.0.6" goto done
+cscript /nologo "$(ProjectDir)..\..\..\make\downloader.vbs" GetUnzip https://www.soft-switch.org/downloads/spandsp/spandsp-0.0.6.tar.gz "$(ProjectDir)"
+copy "$(ProjectDir)config.h.vc" "$(ProjectDir)spandsp-0.0.6\src\config.h"
+copy "$(ProjectDir)spandsp.h.vc" "$(ProjectDir)spandsp-0.0.6\src\spandsp.h"
+:done</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <BuildLog>
+      <Path>$(IntDir)BuildLog $(ProjectName).htm</Path>
+    </BuildLog>
+    <ClCompile>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBSPANDSP_EXPORTS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;HAVE_CONFIG_H;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <PrecompiledHeader />
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <UndefinePreprocessorDefinitions>
+      </UndefinePreprocessorDefinitions>
+      <ProgramDataBaseFileName>$(IntDir)/$(ProjectName).pdb</ProgramDataBaseFileName>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <DataExecutionPrevention />
+      <TargetMachine>MachineX64</TargetMachine>
+    </Link>
+    <PreBuildEvent>
+      <Command>if exist "$(ProjectDir)spandsp-0.0.6" goto done
+cscript /nologo "$(ProjectDir)..\..\..\make\downloader.vbs" GetUnzip https://www.soft-switch.org/downloads/spandsp/spandsp-0.0.6.tar.gz "$(ProjectDir)"
+copy "$(ProjectDir)config.h.vc" "$(ProjectDir)spandsp-0.0.6\src\config.h"
+copy "$(ProjectDir)spandsp.h.vc" "$(ProjectDir)spandsp-0.0.6\src\spandsp.h"
+:done</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="spandsp-0.0.6\src\ademco_contactid.c" />
+    <ClCompile Include="spandsp-0.0.6\src\adsi.c" />
+    <ClCompile Include="spandsp-0.0.6\src\async.c" />
+    <ClCompile Include="spandsp-0.0.6\src\at_interpreter.c" />
+    <ClCompile Include="spandsp-0.0.6\src\awgn.c" />
+    <ClCompile Include="spandsp-0.0.6\src\bell_r2_mf.c" />
+    <ClCompile Include="spandsp-0.0.6\src\bert.c" />
+    <ClCompile Include="spandsp-0.0.6\src\bitstream.c" />
+    <ClCompile Include="spandsp-0.0.6\src\bit_operations.c" />
+    <ClCompile Include="spandsp-0.0.6\src\complex_filters.c" />
+    <ClCompile Include="spandsp-0.0.6\src\complex_vector_float.c" />
+    <ClCompile Include="spandsp-0.0.6\src\complex_vector_int.c" />
+    <ClCompile Include="spandsp-0.0.6\src\crc.c" />
+    <ClCompile Include="spandsp-0.0.6\src\dds_float.c" />
+    <ClCompile Include="spandsp-0.0.6\src\dds_int.c" />
+    <ClCompile Include="spandsp-0.0.6\src\dtmf.c" />
+    <ClCompile Include="spandsp-0.0.6\src\echo.c" />
+    <ClCompile Include="spandsp-0.0.6\src\fax.c" />
+    <ClCompile Include="spandsp-0.0.6\src\fax_modems.c" />
+    <ClCompile Include="spandsp-0.0.6\src\fsk.c" />
+    <ClCompile Include="spandsp-0.0.6\src\g711.c" />
+    <ClCompile Include="spandsp-0.0.6\src\g722.c" />
+    <ClCompile Include="spandsp-0.0.6\src\g726.c" />
+    <ClCompile Include="spandsp-0.0.6\src\gsm0610_decode.c" />
+    <ClCompile Include="spandsp-0.0.6\src\gsm0610_encode.c" />
+    <ClCompile Include="spandsp-0.0.6\src\gsm0610_long_term.c" />
+    <ClCompile Include="spandsp-0.0.6\src\gsm0610_lpc.c" />
+    <ClCompile Include="spandsp-0.0.6\src\gsm0610_preprocess.c" />
+    <ClCompile Include="spandsp-0.0.6\src\gsm0610_rpe.c" />
+    <ClCompile Include="spandsp-0.0.6\src\gsm0610_short_term.c" />
+    <ClCompile Include="spandsp-0.0.6\src\hdlc.c" />
+    <ClCompile Include="spandsp-0.0.6\src\image_translate.c" />
+    <ClCompile Include="spandsp-0.0.6\src\ima_adpcm.c" />
+    <ClCompile Include="spandsp-0.0.6\src\logging.c" />
+    <ClCompile Include="spandsp-0.0.6\src\lpc10_analyse.c" />
+    <ClCompile Include="spandsp-0.0.6\src\lpc10_decode.c" />
+    <ClCompile Include="spandsp-0.0.6\src\lpc10_encode.c" />
+    <ClCompile Include="spandsp-0.0.6\src\lpc10_placev.c" />
+    <ClCompile Include="spandsp-0.0.6\src\lpc10_voicing.c" />
+    <ClCompile Include="spandsp-0.0.6\src\math_fixed.c" />
+    <ClCompile Include="spandsp-0.0.6\src\modem_connect_tones.c" />
+    <ClCompile Include="spandsp-0.0.6\src\modem_echo.c" />
+    <ClCompile Include="spandsp-0.0.6\src\msvc\gettimeofday.c" />
+    <ClCompile Include="spandsp-0.0.6\src\noise.c" />
+    <ClCompile Include="spandsp-0.0.6\src\oki_adpcm.c" />
+    <ClCompile Include="spandsp-0.0.6\src\playout.c" />
+    <ClCompile Include="spandsp-0.0.6\src\plc.c" />
+    <ClCompile Include="spandsp-0.0.6\src\power_meter.c" />
+    <ClCompile Include="spandsp-0.0.6\src\queue.c" />
+    <ClCompile Include="spandsp-0.0.6\src\schedule.c" />
+    <ClCompile Include="spandsp-0.0.6\src\sig_tone.c" />
+    <ClCompile Include="spandsp-0.0.6\src\silence_gen.c" />
+    <ClCompile Include="spandsp-0.0.6\src\super_tone_rx.c" />
+    <ClCompile Include="spandsp-0.0.6\src\super_tone_tx.c" />
+    <ClCompile Include="spandsp-0.0.6\src\swept_tone.c" />
+    <ClCompile Include="spandsp-0.0.6\src\t30.c" />
+    <ClCompile Include="spandsp-0.0.6\src\t30_api.c" />
+    <ClCompile Include="spandsp-0.0.6\src\t30_logging.c" />
+    <ClCompile Include="spandsp-0.0.6\src\t31.c" />
+    <ClCompile Include="spandsp-0.0.6\src\t35.c" />
+    <ClCompile Include="spandsp-0.0.6\src\t38_core.c" />
+    <ClCompile Include="spandsp-0.0.6\src\t38_gateway.c" />
+    <ClCompile Include="spandsp-0.0.6\src\t38_non_ecm_buffer.c" />
+    <ClCompile Include="spandsp-0.0.6\src\t38_terminal.c" />
+    <ClCompile Include="spandsp-0.0.6\src\t4_rx.c" />
+    <ClCompile Include="spandsp-0.0.6\src\t4_tx.c" />
+    <ClCompile Include="spandsp-0.0.6\src\testcpuid.c" />
+    <ClCompile Include="spandsp-0.0.6\src\timezone.c" />
+    <ClCompile Include="spandsp-0.0.6\src\time_scale.c" />
+    <ClCompile Include="spandsp-0.0.6\src\tone_detect.c" />
+    <ClCompile Include="spandsp-0.0.6\src\tone_generate.c" />
+    <ClCompile Include="spandsp-0.0.6\src\v17rx.c" />
+    <ClCompile Include="spandsp-0.0.6\src\v17tx.c" />
+    <ClCompile Include="spandsp-0.0.6\src\v18.c" />
+    <ClCompile Include="spandsp-0.0.6\src\v22bis_rx.c" />
+    <ClCompile Include="spandsp-0.0.6\src\v22bis_tx.c" />
+    <ClCompile Include="spandsp-0.0.6\src\v27ter_rx.c" />
+    <ClCompile Include="spandsp-0.0.6\src\v27ter_tx.c" />
+    <ClCompile Include="spandsp-0.0.6\src\v29rx.c" />
+    <ClCompile Include="spandsp-0.0.6\src\v29tx.c" />
+    <ClCompile Include="spandsp-0.0.6\src\v42.c" />
+    <ClCompile Include="spandsp-0.0.6\src\v42bis.c" />
+    <ClCompile Include="spandsp-0.0.6\src\v8.c" />
+    <ClCompile Include="spandsp-0.0.6\src\vector_float.c" />
+    <ClCompile Include="spandsp-0.0.6\src\vector_int.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="compat_headers\at_interpreter_dictionary.h" />
+    <ClInclude Include="compat_headers\config.h" />
+    <ClInclude Include="compat_headers\math_fixed_tables.h" />
+    <ClInclude Include="compat_headers\spandsp.h" />
+    <ClInclude Include="compat_headers\tgmath.h" />
+    <ClInclude Include="compat_headers\unistd.h" />
+    <ClInclude Include="compat_headers\v17_v32bis_rx_floating_rrc.h" />
+    <ClInclude Include="compat_headers\v17_v32bis_tx_floating_rrc.h" />
+    <ClInclude Include="compat_headers\v22bis_rx_1200_floating_rrc.h" />
+    <ClInclude Include="compat_headers\v22bis_rx_2400_floating_rrc.h" />
+    <ClInclude Include="compat_headers\v22bis_tx_floating_rrc.h" />
+    <ClInclude Include="compat_headers\v27ter_rx_2400_floating_rrc.h" />
+    <ClInclude Include="compat_headers\v27ter_rx_4800_floating_rrc.h" />
+    <ClInclude Include="compat_headers\v27ter_tx_2400_floating_rrc.h" />
+    <ClInclude Include="compat_headers\v27ter_tx_4800_floating_rrc.h" />
+    <ClInclude Include="compat_headers\v29rx_floating_rrc.h" />
+    <ClInclude Include="compat_headers\v29tx_floating_rrc.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\ademco_contactid.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\adsi.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\arctan2.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\async.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\at_interpreter.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\awgn.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\bell_r2_mf.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\bert.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\biquad.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\bitstream.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\bit_operations.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\complex.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\complex_filters.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\complex_vector_float.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\complex_vector_int.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\crc.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\dc_restore.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\dds.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\dtmf.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\echo.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\expose.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\fast_convert.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\fax.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\fax_modems.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\fir.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\fsk.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\g168models.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\g711.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\g722.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\g726.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\gsm0610.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\hdlc.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\image_translate.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\ima_adpcm.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\logging.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\lpc10.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\math_fixed.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\modem_connect_tones.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\modem_echo.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\noise.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\oki_adpcm.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\playout.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\plc.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\power_meter.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\ademco_contactid.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\adsi.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\async.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\at_interpreter.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\awgn.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\bell_r2_mf.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\bert.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\bitstream.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\dtmf.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\echo.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\fax.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\fax_modems.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\fsk.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\g711.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\g722.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\g726.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\gsm0610.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\hdlc.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\image_translate.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\ima_adpcm.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\logging.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\lpc10.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\modem_connect_tones.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\modem_echo.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\noise.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\oki_adpcm.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\queue.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\schedule.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\sig_tone.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\silence_gen.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\super_tone_rx.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\super_tone_tx.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\swept_tone.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\t30.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\t30_dis_dtc_dcs_bits.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\t31.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\t38_core.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\t38_gateway.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\t38_non_ecm_buffer.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\t38_terminal.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\t4_rx.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\t4_t6_decode.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\t4_t6_encode.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\t4_tx.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\timezone.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\time_scale.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\tone_detect.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\tone_generate.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\v17rx.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\v17tx.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\v18.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\v22bis.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\v27ter_rx.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\v27ter_tx.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\v29rx.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\v29tx.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\v42.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\v42bis.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\private\v8.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\queue.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\saturated.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\schedule.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\sig_tone.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\silence_gen.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\stdbool.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\super_tone_rx.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\super_tone_tx.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\swept_tone.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\t30.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\t30_api.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\t30_fcf.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\t30_logging.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\t31.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\t35.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\t38_core.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\t38_gateway.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\t38_non_ecm_buffer.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\t38_terminal.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\t4_rx.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\t4_t6_decode.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\t4_t6_encode.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\t4_tx.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\telephony.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\timezone.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\time_scale.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\timing.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\tone_detect.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\tone_generate.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\v17rx.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\v17tx.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\v18.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\v22bis.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\v27ter_rx.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\v27ter_tx.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\v29rx.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\v29tx.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\v42.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\v42bis.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\v8.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\vector_float.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\vector_int.h" />
+    <ClInclude Include="spandsp-0.0.6\src\spandsp\version.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="libtiff_2019.vcxproj">
+      <Project>{401a40cd-5db4-4e34-ac68-fa99e9fac014}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

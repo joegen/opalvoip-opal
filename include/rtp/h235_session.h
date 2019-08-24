@@ -119,11 +119,11 @@ class H2356_Session : public OpalRTPSession
     virtual bool ApplyCryptoKey(OpalMediaCryptoKeyList & keys, bool rx);
     virtual OpalMediaCryptoKeyInfo * IsCryptoSecured(bool rx) const;
 
-    virtual SendReceiveStatus OnSendData(RTP_DataFrame & frame, RewriteMode rewrite);
+    virtual SendReceiveStatus OnSendData(RewriteMode & rewrite, RTP_DataFrame & frame, const PTime & now);
 #if !H235_6_CODED_TO_CORRECT_SPECIFICATION
-    virtual SendReceiveStatus OnPreReceiveData(RTP_DataFrame & frame);
+    virtual SendReceiveStatus OnPreReceiveData(RTP_DataFrame & frame, const PTime & now);
 #endif
-    virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame, ReceiveType rxType);
+    virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame, ReceiveType rxType, const PTime & now);
 
   protected:
     struct Context {

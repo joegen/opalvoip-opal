@@ -48,20 +48,6 @@
 #define PTraceModule() "DTLS"
 
 
-// from srtp_profile_t
-static struct ProfileInfo
-{
-  const char *   m_dtlsName;
-  const char *   m_opalName;
-} const ProfileNames[] = {
-  { "SRTP_AES128_CM_SHA1_80", "AES_CM_128_HMAC_SHA1_80" },
-  { "SRTP_AES128_CM_SHA1_32", "AES_CM_128_HMAC_SHA1_32" },
-  { "SRTP_AES256_CM_SHA1_80", "AES_CM_256_HMAC_SHA1_80" },
-  { "SRTP_AES256_CM_SHA1_32", "AES_CM_256_HMAC_SHA1_32" },
-};
-
-
-
 class OpalDTLSContext : public PSSLContext
 {
     PCLASSINFO(OpalDTLSContext, PSSLContext);
@@ -81,20 +67,28 @@ class OpalDTLSContext : public PSSLContext
         return;
       }
 
-      PStringStream ext;
-      for (PINDEX i = 0; i < PARRAYSIZE(ProfileNames); ++i) {
-        const OpalMediaCryptoSuite* cryptoSuite = OpalMediaCryptoSuiteFactory::CreateInstance(ProfileNames[i].m_opalName);
-        if (cryptoSuite)
-        {
-          if (!ext.IsEmpty())
-            ext << ':';
-          ext << ProfileNames[i].m_dtlsName;
-        }
+      /* Place into the DTLS negotiation extension the crypto suites we support in order
+        of their strength. Especially 80 bit salt over 32 bit salt. */
+      std::map<unsigned, PString> cryptoSuitesByStrength;
+      OpalMediaCryptoSuiteFactory::KeyList_T all = OpalMediaCryptoSuiteFactory::GetKeyList();
+      for (OpalMediaCryptoSuiteFactory::KeyList_T::iterator it = all.begin(); it != all.end(); ++it) {
+        OpalMediaCryptoSuite & cryptoSuite = *OpalMediaCryptoSuiteFactory::CreateInstance(*it);
+        cryptoSuitesByStrength[cryptoSuite.GetCipherKeyBits()+cryptoSuite.GetAuthSaltBits()*1000] = cryptoSuite.GetDTLSName();
       }
-      if (!SetExtension(ext))
-      {
-        PTRACE(1, "Could not set TLS extension for SSL context.");
-        return;
+
+      PStringStream ext;
+      for (std::map<unsigned, PString>::reverse_iterator it = cryptoSuitesByStrength.rbegin(); it != cryptoSuitesByStrength.rend(); ++it) {
+        if (it->second.IsEmpty())
+          continue;
+        if (!ext.IsEmpty())
+          ext << ':';
+        ext << it->second;
+      }
+
+      if (SetExtension(ext))
+        PTRACE(4, "Extension set to \"" << ext << '"');
+      else {
+        PTRACE(1, "Could not set extension \"" << ext << "\" for SSL context.");
       }
     }
 };
@@ -108,11 +102,11 @@ OpalDTLSMediaTransport::DTLSChannel::DTLSChannel(OpalDTLSMediaTransport & transp
   SetMTU(m_transport.m_MTU);
   SetVerifyMode(PSSLContext::VerifyPeerMandatory,
                 PCREATE_NOTIFIER2_EXT(m_transport, OpalDTLSMediaTransport, OnVerify, PSSLChannel::VerifyInfo &));
-  Open(channel, false);
+  Open(channel);
 }
 
 
-bool OpalDTLSMediaTransport::DTLSChannel::Read(void * buf, PINDEX len)
+bool OpalDTLSMediaTransport::DTLSChannel::Read(void * buf, PINDEX size)
 {
   if (CheckNotOpen())
     return false;
@@ -123,7 +117,7 @@ bool OpalDTLSMediaTransport::DTLSChannel::Read(void * buf, PINDEX len)
     // Keep reading, and throwing stuff away, until we have remote address.
     while (!m_transport.OpalDTLSMediaTransportParent::IsEstablished()) {
       // Let lower protocol layers handle their packets
-      if (!PSSLChannelDTLS::Read(buf, len))
+      if (!PSSLChannelDTLS::Read(buf, size))
         return false;
     }
 
@@ -132,10 +126,56 @@ bool OpalDTLSMediaTransport::DTLSChannel::Read(void * buf, PINDEX len)
       return false;
   }
 
-  while (PSSLChannelDTLS::Read(buf, len)) {
-    unsigned firstByte = *static_cast<BYTE *>(buf);
-    if (firstByte < 0x20 || firstByte > 0x63)
+  while (PSSLChannelDTLS::Read(buf, size)) {
+    PINDEX len = GetLastReadCount();
+    if (len == 0)
+      return false; // Shouldn't happen, but just in case ...
+
+#pragma pack(1)
+    struct AlertFrame {
+      uint8_t  m_type;
+      int8_t   m_versionMajor;
+      int8_t   m_versionMinor;
+      PUInt16b m_epoch;
+      PUInt16b m_snHigh;
+      PUInt32b m_snLow;
+      PUInt16b m_length;
+      uint8_t  m_cipherType;
+      uint8_t  m_alertLevel;
+      uint8_t  m_alertDescription;
+    } * frame = reinterpret_cast<AlertFrame *>(buf);
+#pragma pack()
+
+    if (frame->m_type <= 19 || frame->m_type >= 64)
       return true; // Not a DTLS packet
+
+    if (len < sizeof(*frame)) {
+      PTRACE(2, "Truncated frame received: " << PHexDump(buf, len));
+      continue;
+    }
+
+    PTRACE(4, "Packet received after handshake completed:"
+           " type=" << (unsigned)frame->m_type << ","
+           " ver=" << ~frame->m_versionMajor << '.' << ~frame->m_versionMinor << ","
+           " epoch=" << frame->m_epoch << ","
+           " sn=" << (frame->m_snHigh*0x100000000ULL+frame->m_snLow) << ","
+           " cipher=" << (unsigned)frame->m_cipherType << ","
+           " len=" << frame->m_length << ","
+           " level=" << (unsigned)frame->m_alertLevel << ","
+           " desc=" << (unsigned)frame->m_alertDescription << '\n'
+           << setprecision(2) << PHexDump(buf, len, false));
+
+    if (frame->m_type == 21 /* DTLS Alert */ &&
+        frame->m_cipherType == 0 && /* stream cipher */
+        frame->m_length >= 2 &&
+        frame->m_alertLevel == 1 && /* Warning level */
+        frame->m_alertDescription == 0) /* close_notify */
+    {
+      PTRACE(2, "Received close_notify from remote.");
+      Shutdown(ShutdownReadAndWrite); // Does SSL_shutdown, sending a close_notify back
+      GetBaseReadChannel()->Close();  // Then close (most likely) socket
+      return false;
+    }
 
     /* In case remote didn't get our last response, send it again if we get
        a DTLS packet. This is a bit primitive, but we don't really want to
@@ -161,8 +201,14 @@ int OpalDTLSMediaTransport::DTLSChannel::BioRead(char * buf, int len)
   if (result < 0)
     PTRACE_IF(2, IsOpen(), "Read error: " << GetErrorText(PChannel::LastReadError));
   else {
-    PUDPSocket * udp = dynamic_cast<PUDPSocket *>(GetBaseReadChannel());
-    PTRACE_IF(5, udp != NULL, "Read " << result << " bytes from " << udp->GetLastReceiveAddress());
+#if PTRACING
+    static unsigned const Level = 5;
+    if (PTrace::CanTrace(Level)) {
+      PUDPSocket * udp = dynamic_cast<PUDPSocket *>(GetBaseReadChannel());
+      if (udp != NULL)
+        PTRACE_BEGIN(Level) << "Read " << result << " bytes from " << udp->GetLastReceiveAddress() << PTrace::End;
+    }
+#endif // PTRACING
   }
   return result;
 }
@@ -179,9 +225,13 @@ int OpalDTLSMediaTransport::DTLSChannel::BioWrite(const char * buf, int len)
     m_lastResponseLength = result;
 
 #if PTRACING
-    PUDPSocket * udp = dynamic_cast<PUDPSocket *>(GetBaseReadChannel());
-    PTRACE_IF(5, udp != NULL, "Written " << result << " bytes to " << udp->GetSendAddress());
-#endif
+    static unsigned const Level = 5;
+    if (PTrace::CanTrace(Level)) {
+      PUDPSocket * udp = dynamic_cast<PUDPSocket *>(GetBaseReadChannel());
+      if (udp != NULL)
+        PTRACE_BEGIN(Level) << "Written " << result << " bytes from " << udp->GetSendAddress() << PTrace::End;
+    }
+#endif // PTRACING
   }
   return result;
 }
@@ -302,16 +352,16 @@ bool OpalDTLSMediaTransport::PerformHandshake(DTLSChannel & channel)
 
   PCaselessString profileName = channel.GetSelectedProfile();
   const OpalMediaCryptoSuite* cryptoSuite = NULL;
-  for (PINDEX i = 0; i < PARRAYSIZE(ProfileNames); ++i) {
-    if (profileName == ProfileNames[i].m_dtlsName) {
-      cryptoSuite = OpalMediaCryptoSuiteFactory::CreateInstance(ProfileNames[i].m_opalName);
-      break;
+  OpalMediaCryptoSuiteFactory::KeyList_T all = OpalMediaCryptoSuiteFactory::GetKeyList();
+  for (OpalMediaCryptoSuiteFactory::KeyList_T::iterator it = all.begin(); ; ++it) {
+    if (it == all.end()) {
+      PTRACE(2, *this << "error in SRTP profile (" << profileName << ") after DTLS handshake.");
+      return false;
     }
-  }
 
-  if (cryptoSuite == NULL) {
-    PTRACE(2, *this << "error in SRTP profile (" << profileName << ") after DTLS handshake.");
-    return false;
+    cryptoSuite = OpalMediaCryptoSuiteFactory::CreateInstance(*it);
+    if (profileName == cryptoSuite->GetDTLSName())
+      break;
   }
 
   PINDEX keyLength = cryptoSuite->GetCipherKeyBytes();

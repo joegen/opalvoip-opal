@@ -8,7 +8,8 @@ AC_INIT([OPAL], m4_esyscmd([sed -n \
                             -e "s/ *#define *BUILD_TYPE *AlphaCode/alpha/p" \
                             -e "s/ *#define *BUILD_TYPE *BetaCode/beta/p" \
                             -e "s/ *#define *BUILD_TYPE *ReleaseCode/./p" \
-                            -e "s/ *#define *BUILD_NUMBER *\\(.*\\)/\\1/p" \
+                            -e "s/ *#define *PATCH_VERSION *\\(.*\\)/\\1/p" \
+                            -e "s/ *#define *OEM_VERSION *\\(.*\\)/\\1/p" \
                             version.h | tr -d '\n']))
 
 AC_PREREQ([2.65])
@@ -78,7 +79,7 @@ dnl Check for non-installed "environment variable" mode
 OPAL_DETERMINE_DIRECTORIES([.])
 
 if test "x$INTERNAL_OPALDIR" != "x"; then
-   CPPFLAGS="${CPPFLAGS} -I\${includedir}"
+   CPPFLAGS="${CPPFLAGS} -I\${libdir}/include -I\${includedir}"
 else
    CPPFLAGS="${CPPFLAGS} -I\${includedir}/opal"
 fi
@@ -90,7 +91,8 @@ dnl Extract OPAL version number
 dnl MSWIN_DISPLAY version,Version
 dnl MSWIN_VERSION version,OPAL_MAJOR=MAJOR_VERSION
 dnl MSWIN_VERSION version,OPAL_MINOR=MINOR_VERSION
-dnl MSWIN_VERSION version,OPAL_BUILD=BUILD_NUMBER
+dnl MSWIN_VERSION version,OPAL_PATCH=PATCH_VERSION
+dnl MSWIN_VERSION version,OPAL_OEM=OEM_VERSION
 dnl MSWIN_VERSION version,OPAL_VERSION=VERSION
 
 MY_VERSION_FILE([$VERSION_DIR/version.h], [OPAL])
@@ -130,7 +132,7 @@ AC_ARG_WITH(
 
 PKG_CHECK_MODULES(
    [PTLIB],
-   [ptlib >= 2.14.1],
+   [ptlib >= 2.19.3],
    [],
    [AC_MSG_ERROR([
       Cannot continue without PTLib!
@@ -180,6 +182,7 @@ dnl ########################################################################
 dnl SRTP
 dnl MSWIN_DISPLAY libsrtp,Cisco libSRTP support
 dnl MSWIN_DEFINE  libsrtp,OPAL_SRTP=2
+dnl MSWIN_DEFINE  libsrtp,OPAL_AEAD_CRYPTO_SUITES=0
 
 SRTP_MSG="no"
 OPAL_MODULE_OPTION(
@@ -196,9 +199,12 @@ OPAL_MODULE_OPTION(
    ],
    AS_VAR_IF([SRTP_SYSTEM],[yes],[
       AC_DEFINE(HAS_SRTP_SRTP_H,1)
+      AC_DEFINE(OPAL_AEAD_CRYPTO_SUITES,0)
       SRTP_MSG="yes (system)"
    ],[
       AC_CONFIG_SUBDIRS(src/rtp/libsrtp)
+      ac_configure_args="$ac_configure_args --enable-openssl"
+      AC_DEFINE(OPAL_AEAD_CRYPTO_SUITES,1)
       AC_DEFINE(HAS_SRTP_SRTP_H,0)
       SRTP_MSG="yes (internal)"
    ])

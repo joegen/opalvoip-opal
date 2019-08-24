@@ -165,12 +165,12 @@ class OpalCapiEndPoint : public OpalEndPoint
     };
     typedef std::vector<Controller> ControllerVector;
     ControllerVector m_controllers;
-    PMutex           m_controllerMutex;
+    PDECLARE_MUTEX(  m_controllerMutex);
 
     struct IdToConnMap : public std::map<unsigned, PSafePtr<OpalCapiConnection> >
     {
       bool Forward(const OpalCapiMessage & message, unsigned id);
-      PMutex m_mutex;
+      PDECLARE_MUTEX(m_mutex);
     };
 
     IdToConnMap m_cbciToConnection;

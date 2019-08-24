@@ -40,17 +40,22 @@ else ifndef OPALDIR
   OPAL_LIBDIR := $(shell pkg-config opal --variable=libdir)
 else
   ifeq (,$(target))
-    ifneq (,$(OS))
-      ifneq (,$(CPU))
-        target = $(OS)_$(CPU)
-      endif
+    ifeq (,$(OS))
+      OS := $(shell uname -s)
     endif
+    ifeq (,$(CPU))
+      CPU := $(shell uname -m)
+    endif
+    target := $(OS)_$(CPU)
   endif
-  ifneq (,$(wildcard $(OPALDIR)/lib_$(target)/make/$(OPAL_CONFIG_MAK)))
-    include $(OPALDIR)/lib_$(target)/make/$(OPAL_CONFIG_MAK)
-  else
-    include $(OPALDIR)/make/$(OPAL_CONFIG_MAK)
+
+  OPAL_CONFIG_MAK_PATH := $(OPALDIR)/lib_$(target)/make/$(OPAL_CONFIG_MAK)
+  ifeq (,$(wildcard $(OPAL_CONFIG_MAK_PATH)))
+    OPAL_CONFIG_MAK_PATH := $(OPALDIR)/make/$(OPAL_CONFIG_MAK)
   endif
+  #$(info Including $(OPAL_CONFIG_MAK_PATH))
+  include $(OPAL_CONFIG_MAK_PATH)
+
   OPAL_INCFLAGS := -I$(OPALDIR)/include
   OPAL_LIBDIR = $(OPALDIR)/lib_$(target)
   LIBDIRS := $(OPALDIR) $(LIBDIRS)  # Submodules built with make lib
@@ -74,7 +79,11 @@ OPAL_DEBUG_LIB_FILE_BASE = $(OPAL_LIBDIR)/$(OPAL_LIB_FILE_BASE)$(DEBUG_SUFFIX)
 OPAL_DEBUG_SHARED_LINK   = $(OPAL_DEBUG_LIB_FILE_BASE).$(SHAREDLIBEXT)
 OPAL_DEBUG_STATIC_FILE   = $(OPAL_DEBUG_LIB_FILE_BASE)$(STATIC_SUFFIX).$(STATICLIBEXT)
 
-OPAL_FILE_VERSION = $(OPAL_MAJOR).$(OPAL_MINOR)$(OPAL_STAGE)$(OPAL_BUILD)
+ifeq ($(OPAL_OEM),0)
+  OPAL_FILE_VERSION = $(OPAL_MAJOR).$(OPAL_MINOR)$(OPAL_STAGE)$(OPAL_PATCH)
+else
+  OPAL_FILE_VERSION = $(OPAL_MAJOR).$(OPAL_MINOR)$(OPAL_STAGE)$(OPAL_PATCH)-$(OPAL_OEM)
+endif
 
 ifneq (,$(findstring $(target_os),Darwin cygwin mingw))
   OPAL_OPT_SHARED_FILE   = $(OPAL_OPT_LIB_FILE_BASE).$(OPAL_FILE_VERSION).$(SHAREDLIBEXT)
@@ -98,7 +107,7 @@ OPAL_LIBS = -L$(OPAL_LIBDIR) -l$(OPAL_LIB_BASE)$(LIB_DEBUG_SUFFIX)$(LIB_STATIC_S
 
 BUNDLE_FILES += $(OPAL_SHARED_LIB_FILE) $(OPAL_SHARED_LIB_LINK)
 ifneq ($(OPAL_LIBDIR),$(PTLIB_LIBDIR))
-  BUNDLE_FILES += `find $(OPAL_LIBDIR) -name \*$(PTLIB_PLUGIN_SUFFIX).$(SHAREDLIBEXT)`
+  BUNDLE_FILES += `find $(OPAL_LIBDIR) -name \*$(PTLIB_PLUGIN_SUFFIX).$(SHAREDLIBEXT)` `find $(OPAL_LIBDIR) -name h264_video_pwplugin_helper`
 endif
 
 

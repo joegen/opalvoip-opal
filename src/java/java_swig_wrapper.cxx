@@ -326,7 +326,7 @@ SWIGEXPORT jint JNICALL Java_org_opalvoip_opal_OPALJNI_OPAL_1C_1API_1VERSION_1ge
   
   (void)jenv;
   (void)jcls;
-  result = (int)(36);
+  result = (int)(39);
   jresult = (jint)result; 
   return jresult;
 }
@@ -2608,6 +2608,74 @@ SWIGEXPORT jstring JNICALL Java_org_opalvoip_opal_OPALJNI_OpalParamProtocol_1all
   (void)jarg1_;
   arg1 = *(OpalParamProtocol **)&jarg1; 
   result = (char *) ((arg1)->m_allMediaCryptoSuites);
+  if (result) jresult = jenv->NewStringUTF((const char *)result);
+  return jresult;
+}
+
+
+SWIGEXPORT void JNICALL Java_org_opalvoip_opal_OPALJNI_OpalParamProtocol_1maxSizeUDP_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
+  OpalParamProtocol *arg1 = (OpalParamProtocol *) 0 ;
+  unsigned int arg2 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(OpalParamProtocol **)&jarg1; 
+  arg2 = (unsigned int)jarg2; 
+  if (arg1) (arg1)->m_maxSizeUDP = arg2;
+}
+
+
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_opal_OPALJNI_OpalParamProtocol_1maxSizeUDP_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+  jlong jresult = 0 ;
+  OpalParamProtocol *arg1 = (OpalParamProtocol *) 0 ;
+  unsigned int result;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(OpalParamProtocol **)&jarg1; 
+  result = (unsigned int) ((arg1)->m_maxSizeUDP);
+  jresult = (jlong)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void JNICALL Java_org_opalvoip_opal_OPALJNI_OpalParamProtocol_1protocolMessageIdentifiers_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+  OpalParamProtocol *arg1 = (OpalParamProtocol *) 0 ;
+  char *arg2 = (char *) 0 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(OpalParamProtocol **)&jarg1; 
+  arg2 = 0;
+  if (jarg2) {
+    arg2 = (char *)jenv->GetStringUTFChars(jarg2, 0);
+    if (!arg2) return ;
+  }
+  {
+    if (arg2) {
+      arg1->m_protocolMessageIdentifiers = (char const *) (new char[strlen((const char *)arg2)+1]);
+      strcpy((char *)arg1->m_protocolMessageIdentifiers, (const char *)arg2);
+    } else {
+      arg1->m_protocolMessageIdentifiers = 0;
+    }
+  }
+  if (arg2) jenv->ReleaseStringUTFChars(jarg2, (const char *)arg2);
+}
+
+
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_opal_OPALJNI_OpalParamProtocol_1protocolMessageIdentifiers_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+  jstring jresult = 0 ;
+  OpalParamProtocol *arg1 = (OpalParamProtocol *) 0 ;
+  char *result = 0 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(OpalParamProtocol **)&jarg1; 
+  result = (char *) ((arg1)->m_protocolMessageIdentifiers);
   if (result) jresult = jenv->NewStringUTF((const char *)result);
   return jresult;
 }
@@ -6802,6 +6870,204 @@ SWIGEXPORT void JNICALL Java_org_opalvoip_opal_OPALJNI_delete_1OpalStatusIVR(JNI
 }
 
 
+SWIGEXPORT void JNICALL Java_org_opalvoip_opal_OPALJNI_OpalProtocolMessage_1protocol_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+  OpalProtocolMessage *arg1 = (OpalProtocolMessage *) 0 ;
+  char *arg2 = (char *) 0 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(OpalProtocolMessage **)&jarg1; 
+  arg2 = 0;
+  if (jarg2) {
+    arg2 = (char *)jenv->GetStringUTFChars(jarg2, 0);
+    if (!arg2) return ;
+  }
+  {
+    if (arg2) {
+      arg1->m_protocol = (char const *) (new char[strlen((const char *)arg2)+1]);
+      strcpy((char *)arg1->m_protocol, (const char *)arg2);
+    } else {
+      arg1->m_protocol = 0;
+    }
+  }
+  if (arg2) jenv->ReleaseStringUTFChars(jarg2, (const char *)arg2);
+}
+
+
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_opal_OPALJNI_OpalProtocolMessage_1protocol_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+  jstring jresult = 0 ;
+  OpalProtocolMessage *arg1 = (OpalProtocolMessage *) 0 ;
+  char *result = 0 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(OpalProtocolMessage **)&jarg1; 
+  result = (char *) ((arg1)->m_protocol);
+  if (result) jresult = jenv->NewStringUTF((const char *)result);
+  return jresult;
+}
+
+
+SWIGEXPORT void JNICALL Java_org_opalvoip_opal_OPALJNI_OpalProtocolMessage_1callToken_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+  OpalProtocolMessage *arg1 = (OpalProtocolMessage *) 0 ;
+  char *arg2 = (char *) 0 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(OpalProtocolMessage **)&jarg1; 
+  arg2 = 0;
+  if (jarg2) {
+    arg2 = (char *)jenv->GetStringUTFChars(jarg2, 0);
+    if (!arg2) return ;
+  }
+  {
+    if (arg2) {
+      arg1->m_callToken = (char const *) (new char[strlen((const char *)arg2)+1]);
+      strcpy((char *)arg1->m_callToken, (const char *)arg2);
+    } else {
+      arg1->m_callToken = 0;
+    }
+  }
+  if (arg2) jenv->ReleaseStringUTFChars(jarg2, (const char *)arg2);
+}
+
+
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_opal_OPALJNI_OpalProtocolMessage_1callToken_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+  jstring jresult = 0 ;
+  OpalProtocolMessage *arg1 = (OpalProtocolMessage *) 0 ;
+  char *result = 0 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(OpalProtocolMessage **)&jarg1; 
+  result = (char *) ((arg1)->m_callToken);
+  if (result) jresult = jenv->NewStringUTF((const char *)result);
+  return jresult;
+}
+
+
+SWIGEXPORT void JNICALL Java_org_opalvoip_opal_OPALJNI_OpalProtocolMessage_1identifier_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+  OpalProtocolMessage *arg1 = (OpalProtocolMessage *) 0 ;
+  char *arg2 = (char *) 0 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(OpalProtocolMessage **)&jarg1; 
+  arg2 = 0;
+  if (jarg2) {
+    arg2 = (char *)jenv->GetStringUTFChars(jarg2, 0);
+    if (!arg2) return ;
+  }
+  {
+    if (arg2) {
+      arg1->m_identifier = (char const *) (new char[strlen((const char *)arg2)+1]);
+      strcpy((char *)arg1->m_identifier, (const char *)arg2);
+    } else {
+      arg1->m_identifier = 0;
+    }
+  }
+  if (arg2) jenv->ReleaseStringUTFChars(jarg2, (const char *)arg2);
+}
+
+
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_opal_OPALJNI_OpalProtocolMessage_1identifier_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+  jstring jresult = 0 ;
+  OpalProtocolMessage *arg1 = (OpalProtocolMessage *) 0 ;
+  char *result = 0 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(OpalProtocolMessage **)&jarg1; 
+  result = (char *) ((arg1)->m_identifier);
+  if (result) jresult = jenv->NewStringUTF((const char *)result);
+  return jresult;
+}
+
+
+SWIGEXPORT void JNICALL Java_org_opalvoip_opal_OPALJNI_OpalProtocolMessage_1payload_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
+  OpalProtocolMessage *arg1 = (OpalProtocolMessage *) 0 ;
+  void *arg2 = (void *) 0 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(OpalProtocolMessage **)&jarg1; 
+  arg2 = *(void **)&jarg2; 
+  if (arg1) (arg1)->m_payload = (void const *)arg2;
+}
+
+
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_opal_OPALJNI_OpalProtocolMessage_1payload_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+  jlong jresult = 0 ;
+  OpalProtocolMessage *arg1 = (OpalProtocolMessage *) 0 ;
+  void *result = 0 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(OpalProtocolMessage **)&jarg1; 
+  result = (void *) ((arg1)->m_payload);
+  *(void **)&jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void JNICALL Java_org_opalvoip_opal_OPALJNI_OpalProtocolMessage_1size_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
+  OpalProtocolMessage *arg1 = (OpalProtocolMessage *) 0 ;
+  unsigned int arg2 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(OpalProtocolMessage **)&jarg1; 
+  arg2 = (unsigned int)jarg2; 
+  if (arg1) (arg1)->m_size = arg2;
+}
+
+
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_opal_OPALJNI_OpalProtocolMessage_1size_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+  jlong jresult = 0 ;
+  OpalProtocolMessage *arg1 = (OpalProtocolMessage *) 0 ;
+  unsigned int result;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(OpalProtocolMessage **)&jarg1; 
+  result = (unsigned int) ((arg1)->m_size);
+  jresult = (jlong)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_opal_OPALJNI_new_1OpalProtocolMessage(JNIEnv *jenv, jclass jcls) {
+  jlong jresult = 0 ;
+  OpalProtocolMessage *result = 0 ;
+  
+  (void)jenv;
+  (void)jcls;
+  result = (OpalProtocolMessage *)new OpalProtocolMessage();
+  *(OpalProtocolMessage **)&jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void JNICALL Java_org_opalvoip_opal_OPALJNI_delete_1OpalProtocolMessage(JNIEnv *jenv, jclass jcls, jlong jarg1) {
+  OpalProtocolMessage *arg1 = (OpalProtocolMessage *) 0 ;
+  
+  (void)jenv;
+  (void)jcls;
+  arg1 = *(OpalProtocolMessage **)&jarg1; 
+  delete arg1;
+}
+
+
 SWIGEXPORT void JNICALL Java_org_opalvoip_opal_OPALJNI_OpalStatusCallCleared_1callToken_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   OpalStatusCallCleared *arg1 = (OpalStatusCallCleared *) 0 ;
   char *arg2 = (char *) 0 ;
@@ -6904,18 +7170,6 @@ SWIGEXPORT void JNICALL Java_org_opalvoip_opal_OPALJNI_delete_1OpalStatusCallCle
 }
 
 
-SWIGEXPORT jint JNICALL Java_org_opalvoip_opal_OPALJNI_OpalCallEndedWithQ931Code_1get(JNIEnv *jenv, jclass jcls) {
-  jint jresult = 0 ;
-  OpalCallEndReason result;
-  
-  (void)jenv;
-  (void)jcls;
-  result = (OpalCallEndReason)OpalCallEndedWithQ931Code;
-  jresult = (jint)result; 
-  return jresult;
-}
-
-
 SWIGEXPORT void JNICALL Java_org_opalvoip_opal_OPALJNI_OpalParamCallCleared_1callToken_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   OpalParamCallCleared *arg1 = (OpalParamCallCleared *) 0 ;
   char *arg2 = (char *) 0 ;
@@ -6980,6 +7234,34 @@ SWIGEXPORT jint JNICALL Java_org_opalvoip_opal_OPALJNI_OpalParamCallCleared_1rea
   arg1 = *(OpalParamCallCleared **)&jarg1; 
   result = (OpalCallEndReason) ((arg1)->m_reason);
   jresult = (jint)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void JNICALL Java_org_opalvoip_opal_OPALJNI_OpalParamCallCleared_1custom_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
+  OpalParamCallCleared *arg1 = (OpalParamCallCleared *) 0 ;
+  unsigned int arg2 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(OpalParamCallCleared **)&jarg1; 
+  arg2 = (unsigned int)jarg2; 
+  if (arg1) (arg1)->m_custom = arg2;
+}
+
+
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_opal_OPALJNI_OpalParamCallCleared_1custom_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+  jlong jresult = 0 ;
+  OpalParamCallCleared *arg1 = (OpalParamCallCleared *) 0 ;
+  unsigned int result;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(OpalParamCallCleared **)&jarg1; 
+  result = (unsigned int) ((arg1)->m_custom);
+  jresult = (jlong)result; 
   return jresult;
 }
 
@@ -7633,6 +7915,35 @@ SWIGEXPORT jlong JNICALL Java_org_opalvoip_opal_OPALJNI_OpalMessageParam_1instan
   arg1 = *(OpalMessageParam **)&jarg1; 
   result = (OpalInstantMessage *)& ((arg1)->m_instantMessage);
   *(OpalInstantMessage **)&jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void JNICALL Java_org_opalvoip_opal_OPALJNI_OpalMessageParam_1protocolMessage_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
+  OpalMessageParam *arg1 = (OpalMessageParam *) 0 ;
+  OpalProtocolMessage *arg2 = (OpalProtocolMessage *) 0 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  (void)jarg2_;
+  arg1 = *(OpalMessageParam **)&jarg1; 
+  arg2 = *(OpalProtocolMessage **)&jarg2; 
+  if (arg1) (arg1)->m_protocolMessage = *arg2;
+}
+
+
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_opal_OPALJNI_OpalMessageParam_1protocolMessage_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+  jlong jresult = 0 ;
+  OpalMessageParam *arg1 = (OpalMessageParam *) 0 ;
+  OpalProtocolMessage *result = 0 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(OpalMessageParam **)&jarg1; 
+  result = (OpalProtocolMessage *)& ((arg1)->m_protocolMessage);
+  *(OpalProtocolMessage **)&jresult = result; 
   return jresult;
 }
 

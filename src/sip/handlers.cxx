@@ -75,8 +75,8 @@ SIPHandler::SIPHandler(SIP_PDU::Methods method,
                        SIPEndPoint & ep,
                        const SIPParameters & params,
                        const PString & callID)
-  : SIPHandlerBase(callID)
-  , P_DISABLE_MSVC_WARNINGS(4355, SIPTransactionOwner(*this, ep))
+  : P_DISABLE_MSVC_WARNINGS(4355, SIPTransactionOwner(*this, ep))
+  , m_callID(callID)
   , m_username(params.m_authID)
   , m_password(params.m_password)
   , m_realm(params.m_realm)
@@ -123,13 +123,6 @@ SIPHandler::~SIPHandler()
 
   PTRACE_IF(4, !m_addressOfRecord.IsEmpty(),
             "Destroyed " << m_method << " handler for " << m_addressOfRecord);
-}
-
-
-PObject::Comparison SIPHandler::Compare(const PObject & obj) const
-{
-  const SIPHandlerBase * other = dynamic_cast<const SIPHandlerBase *>(&obj);
-  return PAssert(other != NULL, PInvalidCast) ? GetCallID().Compare(other->GetCallID()) : GreaterThan;
 }
 
 
@@ -1746,7 +1739,7 @@ PString SIPDialogNotification::GetEventName(Events state)
     "error",
     "timeout"
   };
-  if (state < PARRAYSIZE(Names) && Names[state] != NULL)
+  if ((PINDEX)state < PARRAYSIZE(Names) && Names[state] != NULL)
     return Names[state];
 
   return psprintf("<%u>", state);
@@ -2474,27 +2467,27 @@ SIPTransaction * SIPPingHandler::CreateTransaction(OpalTransport & transport)
    deadlocks can occur when locked handlers look for information
    from other handlers.
  */
-unsigned SIPHandlersList::GetCount(SIP_PDU::Methods meth, const PString & eventPackage) const
+unsigned SIPHandlers::GetCount(SIP_PDU::Methods meth, const PString & eventPackage) const
 {
   unsigned count = 0;
-  for (PSafePtr<SIPHandler> handler(m_handlersList, PSafeReference); handler != NULL; ++handler)
-    if (handler->GetState () == SIPHandler::Subscribed &&
-        handler->GetMethod() == meth &&
-        (eventPackage.IsEmpty() || handler->GetEventPackage() == eventPackage))
+  for (const_iterator it = begin(); it != end(); ++it)
+    if (it->second->GetState () == SIPHandler::Subscribed &&
+        it->second->GetMethod() == meth &&
+        (eventPackage.IsEmpty() || it->second->GetEventPackage() == eventPackage))
       count++;
   return count;
 }
 
 
-PStringList SIPHandlersList::GetAddresses(bool includeOffline, SIP_PDU::Methods meth, const PString & eventPackage) const
+PStringList SIPHandlers::GetAddresses(bool includeOffline, SIP_PDU::Methods meth, const PString & eventPackage) const
 {
   PStringList addresses;
-  for (PSafePtr<SIPHandler> handler(m_handlersList, PSafeReference); handler != NULL; ++handler)
-    if ((includeOffline ? handler->GetState () != SIPHandler::Unsubscribed
-                        : handler->GetState () == SIPHandler::Subscribed) &&
-        handler->GetMethod() == meth &&
-        (eventPackage.IsEmpty() || handler->GetEventPackage() == eventPackage))
-      addresses.AppendString(handler->GetAddressOfRecord().AsString());
+  for (const_iterator it = begin(); it != end(); ++it)
+    if ((includeOffline ? it->second->GetState() != SIPHandler::Unsubscribed
+                        : it->second->GetState() == SIPHandler::Subscribed) &&
+        it->second->GetMethod() == meth &&
+        (eventPackage.IsEmpty() || it->second->GetEventPackage() == eventPackage))
+      addresses.AppendString(it->second->GetAddressOfRecord().AsString());
   return addresses;
 }
 
@@ -2509,17 +2502,20 @@ static PString MakeUrlKey(const PString & aor, SIP_PDU::Methods method, const PS
   * called when a handler is added
   */
 
-void SIPHandlersList::Append(SIPHandler * newHandler)
+void SIPHandlers::Append(SIPHandler * newHandler)
 {
   if (newHandler == NULL)
     return;
 
-  PWaitAndSignal mutex(m_handlersList.GetMutex());
+  PWaitAndSignal mutex(GetMutex());
 
-  PSafePtr<SIPHandler> handler = PSafePtrCast<SIPHandlerBase, SIPHandler>(m_handlersList.FindWithLock(*newHandler, PSafeReference));
-  if (handler == NULL)
-    handler = PSafePtrCast<SIPHandlerBase, SIPHandler>(m_handlersList.Append(newHandler));
-  else if (handler != newHandler)
+  PSafePtr<SIPHandler> handler = Find(newHandler->GetCallID(), PSafeReference);
+  if (handler == NULL) {
+    SetAt(newHandler->GetCallID(), newHandler);
+    handler = Find(newHandler->GetCallID(), PSafeReference);
+  }
+
+  if (handler != newHandler)
     delete newHandler;
 
   // add entry to url and package map
@@ -2549,31 +2545,31 @@ void SIPHandlersList::Append(SIPHandler * newHandler)
 /**
   * Called when a handler is removed
   */
-void SIPHandlersList::Remove(SIPHandler * handler)
+void SIPHandlers::Remove(SIPHandler * handler)
 {
   if (handler == NULL)
     return;
 
-  PWaitAndSignal mutex(m_handlersList.GetMutex());
+  PWaitAndSignal mutex(GetMutex());
 
-  if (m_handlersList.Remove(handler))
+  if (RemoveAt(handler->GetCallID()))
     RemoveIndexes(handler);
 }
 
 
-void SIPHandlersList::Update(SIPHandler * handler)
+void SIPHandlers::Update(SIPHandler * handler)
 {
   if (handler == NULL)
     return;
 
-  PWaitAndSignal mutex(m_handlersList.GetMutex());
+  PWaitAndSignal mutex(GetMutex());
 
   RemoveIndexes(handler);
   Append(handler);
 }
 
 
-void SIPHandlersList::RemoveIndexes(SIPHandler * handler)
+void SIPHandlers::RemoveIndexes(SIPHandler * handler)
 {
   if (handler->m_byAorUserAndRealm.second)
     m_byAorUserAndRealm.erase(handler->m_byAorUserAndRealm.first);
@@ -2586,11 +2582,11 @@ void SIPHandlersList::RemoveIndexes(SIPHandler * handler)
 }
 
 
-PSafePtr<SIPHandler> SIPHandlersList::FindBy(IndexMap & by, const PString & key, PSafetyMode mode)
+PSafePtr<SIPHandler> SIPHandlers::FindBy(IndexMap & by, const PString & key, PSafetyMode mode)
 {
   PSafePtr<SIPHandler> ptr;
   {
-    PWaitAndSignal mutex(m_handlersList.GetMutex());
+    PWaitAndSignal mutex(GetMutex());
 
     IndexMap::iterator r = by.find(key);
     if (r == by.end())
@@ -2614,38 +2610,29 @@ PSafePtr<SIPHandler> SIPHandlersList::FindBy(IndexMap & by, const PString & key,
 }
 
 
-PSafePtr<SIPHandler> SIPHandlersList::FindFirstHandler(SIP_PDU::Methods meth, PSafetyMode mode) const
+PSafePtr<SIPHandler> SIPHandlers::FindSIPHandlerByCallID(const PString & callID, PSafetyMode mode)
 {
-  PSafePtr<SIPHandler> handler(m_handlersList, PSafeReference);
-  while (handler != NULL && handler->GetMethod() != meth)
-    ++handler;
-  handler.SetSafetyMode(mode);
-  return handler;
+  return Find(callID, mode);
 }
 
 
-PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByCallID(const PString & callID, PSafetyMode mode)
-{
-  return PSafePtrCast<SIPHandlerBase, SIPHandler>(m_handlersList.FindWithLock(callID, mode));
-}
-
-
-PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByUrl(const PString & aor, SIP_PDU::Methods method, PSafetyMode mode)
+PSafePtr<SIPHandler> SIPHandlers::FindSIPHandlerByUrl(const PString & aor, SIP_PDU::Methods method, PSafetyMode mode)
 {
   return FindBy(m_byAorAndPackage, MakeUrlKey(aor, method), mode);
 }
 
 
-PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByUrl(const PString & aor, SIP_PDU::Methods method, const PString & eventPackage, PSafetyMode mode)
+PSafePtr<SIPHandler> SIPHandlers::FindSIPHandlerByUrl(const PString & aor, SIP_PDU::Methods method, const PString & eventPackage, PSafetyMode mode)
 {
   return FindBy(m_byAorAndPackage, MakeUrlKey(aor, method, eventPackage), mode);
 }
 
 
-PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByAuthRealm(const PString & authRealm, PSafetyMode mode)
+PSafePtr<SIPHandler> SIPHandlers::FindSIPHandlerByAuthRealm(const PString & authRealm, PSafetyMode mode)
 {
   // look for a match to realm without users
-  for (PSafePtr<SIPHandler> handler(m_handlersList, PSafeReference); handler != NULL; ++handler) {
+  for (iterator it = begin(); it != end(); ++it) {
+    PSafePtr<SIPHandler> handler = it->second;
     if (  handler->GetRealm() == authRealm &&
           handler.SetSafetyMode(PSafeReadOnly) &&
          !handler->GetAuthID().IsEmpty() &&
@@ -2662,7 +2649,7 @@ PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByAuthRealm(const PString & 
 }
 
 
-PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByAuthRealm(const PString & authRealm, const PString & userName, PSafetyMode mode)
+PSafePtr<SIPHandler> SIPHandlers::FindSIPHandlerByAuthRealm(const PString & authRealm, const PString & userName, PSafetyMode mode)
 {
   PSafePtr<SIPHandler> handler;
 
@@ -2684,9 +2671,10 @@ PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByAuthRealm(const PString & 
  * For example, in the above case, the name parameter
  * could be "sip.seconix.com" or "seconix.com".
  */
-PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByDomain(const PString & name, SIP_PDU::Methods meth, PSafetyMode mode)
+PSafePtr<SIPHandler> SIPHandlers::FindSIPHandlerByDomain(const PString & name, SIP_PDU::Methods meth, PSafetyMode mode)
 {
-  for (PSafePtr<SIPHandler> handler(m_handlersList, PSafeReference); handler != NULL; ++handler) {
+  for (iterator it = begin(); it != end(); ++it) {
+    PSafePtr<SIPHandler> handler = it->second;
     if ( handler->GetMethod() == meth &&
          handler->GetState() != SIPHandler::Unsubscribed &&
         (handler->GetAddressOfRecord().GetHostName() == name ||

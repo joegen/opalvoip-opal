@@ -125,7 +125,15 @@ unsigned OpalRTPConnection::GetNextSessionID(const OpalMediaType & mediaType, bo
 
 OpalMediaCryptoSuite::KeyExchangeModes OpalRTPConnection::GetMediaCryptoKeyExchangeModes() const
 {
-  return OpalMediaCryptoSuite::KeyExchangeModes::All();
+  PCaselessString modeStr = m_stringOptions.GetString(OPAL_OPT_CRYPTO_EXCHANGE, OPAL_OPT_CRYPTO_EXCHANGE_ALLOW_CLEAR);
+  OpalMediaCryptoSuite::KeyExchangeModes modes = OpalMediaCryptoSuite::e_NoMode;
+  if (modeStr.Find(OPAL_OPT_CRYPTO_EXCHANGE_ALLOW_CLEAR) != P_MAX_INDEX)
+    modes |= OpalMediaCryptoSuite::e_AllowClear;
+  if (modeStr.Find(OPAL_OPT_CRYPTO_EXCHANGE_SECURE_SIGNALLING) != P_MAX_INDEX)
+    modes |= OpalMediaCryptoSuite::e_SecureSignalling;
+  if (modeStr.Find(OPAL_OPT_CRYPTO_EXCHANGE_INBAND_KEY_EXCHANGE) != P_MAX_INDEX)
+    modes |= OpalMediaCryptoSuite::e_InBandKeyEchange;
+  return modes;
 }
 
 
@@ -373,8 +381,9 @@ bool OpalRTPConnection::ChangeSessionID(unsigned fromSessionID, unsigned toSessi
     m_sessions.SetAt(toSessionID, session);
   }
 
-  for (OpalMediaStreamPtr stream(m_mediaStreams, PSafeReference); stream != NULL; ++stream) {
-    if (stream->GetSessionID() == fromSessionID) {
+  for (StreamDict::iterator it = m_mediaStreams.begin(); it != m_mediaStreams.end(); ++it) {
+    OpalMediaStreamPtr stream = it->second;
+    if (stream.SetSafetyMode(PSafeReadWrite) && stream->GetSessionID() == fromSessionID) {
       stream->SetSessionID(toSessionID);
       OpalMediaPatchPtr patch = stream->GetPatch();
       if (patch != NULL) {
@@ -407,7 +416,12 @@ void OpalRTPConnection::ReplaceMediaSession(unsigned sessionId, OpalMediaSession
 
     mediaSession->SetRemoteAddress(remoteMedia, true);
     mediaSession->SetRemoteAddress(remoteCtrl, false);
-    PTRACE(4, "Replacing session " << sessionId << " media=" << remoteMedia << " ctrl=" << remoteCtrl);
+    PTRACE(3, "Replacing " << it->second->GetMediaType() << " session " << sessionId
+           << " (" << it->second->GetSessionType() << ")"
+	      " with " << mediaSession->GetMediaType()
+           << " (" << mediaSession->GetSessionType() << ")"
+	      " using media=" << remoteMedia << ","
+              " ctrl=" << remoteCtrl);
   }
 
   OpalRTPSession * rtpSession = dynamic_cast<OpalRTPSession *>(mediaSession);
@@ -459,6 +473,24 @@ void OpalRTPConnection::AddAudioVideoGroup(const PString & id)
       it->second->AddGroup(id, it->second->GetMediaType(), false);
   }
 }
+
+
+void OpalRTPConnection::SetAudioVideoMediaStreamIDs(OpalRTPSession::Direction direction)
+{
+  OpalRTPSession * audioSession = dynamic_cast<OpalRTPSession *>(FindSessionByMediaType(OpalMediaType::Audio()));
+  if (audioSession == NULL || !audioSession->GetMediaStreamId(0, direction).IsEmpty())
+    return;
+
+  OpalRTPSession * videoSession = dynamic_cast<OpalRTPSession *>(FindSessionByMediaType(OpalMediaType::Video()));
+  if (videoSession == NULL || !videoSession->GetMediaStreamId(0, direction).IsEmpty())
+    return;
+
+  PString id = PGloballyUniqueID().AsString();
+  PTRACE(3, "Setting " << direction << " A/V media stream ID to \"" << id << "\" on " << *this);
+  audioSession->SetMediaStreamId(id, 0, direction);
+  videoSession->SetMediaStreamId(id, 0, direction);
+}
+
 #endif // OPAL_VIDEO
 
 
@@ -612,6 +644,7 @@ void OpalRTPConnection::AdjustMediaFormats(bool   local,
       rtxList.Remove(m_stringOptions(OPAL_OPT_REMOVE_CODEC).Lines());
       rtxList.Remove(GetEndPoint().GetManager().GetMediaFormatMask());
       mediaFormats += rtxList;
+      mediaFormats.OptimisePayloadTypes();
     }
     else {
       OpalMediaFormatList::iterator fmt = mediaFormats.begin();

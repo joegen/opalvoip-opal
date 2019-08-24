@@ -56,10 +56,10 @@ class OpalMPEG4ProfileAndLevel : public OpalMediaOptionUnsigned
 };
 
 
-class OpalMPEG4Format : public OpalVideoFormatInternal
+class OpalMPEG4FormatInternal : public OpalVideoFormatInternal
 {
   public:
-    OpalMPEG4Format()
+    OpalMPEG4FormatInternal()
       : OpalVideoFormatInternal(MPEG4FormatName, RTP_DataFrame::DynamicBase, MPEG4EncodingName,
                                 PVideoFrameInfo::MaxWidth, PVideoFrameInfo::MaxHeight, 30, 16000000)
     {
@@ -82,7 +82,7 @@ class OpalMPEG4Format : public OpalVideoFormatInternal
 
     virtual PObject * Clone() const
     {
-      return new OpalMPEG4Format(*this);
+      return new OpalMPEG4FormatInternal(*this);
     }
 
 
@@ -100,24 +100,16 @@ class OpalMPEG4Format : public OpalVideoFormatInternal
 
 #if OPAL_H323
 extern const char MPEG4_Identifer[] = OpalPluginCodec_Identifer_MPEG4;
+typedef OpalMediaFormatStaticH323<OpalVideoFormat, H323GenericVideoCapabilityTemplate<MPEG4_Identifer, GetOpalMPEG4> > OpalMPEG4Format;
+#else
+typedef OpalMediaFormatStatic<OpalVideoFormat> OpalMPEG4Format;
 #endif
 
 
 
 const OpalVideoFormat & GetOpalMPEG4()
 {
-  static OpalVideoFormat const plugin(MPEG4FormatName);
-  if (plugin.IsValid())
-    return plugin;
-
-  static OpalVideoFormat const format(new OpalMPEG4Format());
-
-#if OPAL_H323
-  static H323CapabilityFactory::Worker<
-    H323GenericVideoCapabilityTemplate<MPEG4_Identifer, GetOpalMPEG4>
-  > capability(MPEG4FormatName, true);
-#endif // OPAL_H323
-
+  static OpalMPEG4Format const format(new OpalMPEG4FormatInternal);
   return format;
 }
 

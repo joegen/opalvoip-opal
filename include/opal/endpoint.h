@@ -534,6 +534,9 @@ class OpalEndPoint : public PObject
        OpalCall instance. The first connection in that call that has this
        endpoint as it's endpoint is returned.
 
+       The \p string may also be the protocol specific identifier used, as
+       returned by OpalConnection::GetIdentifier().
+
        Finally, the \p token string may also be of the form prefix:name,
        e.g. ivr:fred, and the GetLocalPartyName() is used to locate the
        connection.
@@ -670,7 +673,9 @@ class OpalEndPoint : public PObject
        The \p security parameter is an array of names for security methods,
        e.g. { "Clear", "AES_CM_128_HMAC_SHA1_80", "AES_CM_128_HMAC_SHA1_32" }.
        Note "Clear" is not compulsory and if absent will mean that a secure
-       media is required or the call will not proceed.
+       media is required or the call will not proceed. The special value of
+       "!Clear" may also be used indicating all available crypto suites are
+       offered but there must be encryption.
 
        An empty list is assumed to be "Clear".
       */
@@ -823,6 +828,9 @@ class OpalEndPoint : public PObject
       const PString & name
     ) const;
 
+    /// Strip the prefix off the party name.
+    PString StripPrefixName(const PString & partyName) const;
+
     /** Execute garbage collection for endpoint.
         Returns true if all garbage has been collected.
         Default behaviour deletes the objects in the connectionsActive list.
@@ -895,7 +903,10 @@ class OpalEndPoint : public PObject
 
     /**Set the default options for created connections.
       */
-    void SetDefaultStringOptions(const OpalConnection::StringOptions & opts) { m_defaultStringOptions = opts; }
+    void SetDefaultStringOptions(
+      const OpalConnection::StringOptions & opts, ///< Options to set
+      bool overwrite = false
+    );
 
     /**Set the default option for created connections.
       */
@@ -934,6 +945,14 @@ class OpalEndPoint : public PObject
     /**Set the IP Quality of Service info for media (eg RTP) channels.
      */
     void SetMediaQoS(const OpalMediaType & type, const PIPSocket::QoS & qos);
+
+    /**Get the maximum size of a UDP packet that can be received.
+      */
+    PINDEX GetMaxSizeUDP() const { return m_maxSizeUDP; }
+
+    /**Set the maximum size of a UDP packet that can be received.
+      */
+    void SetMaxSizeUDP(PINDEX size) { m_maxSizeUDP = size; }
   //@}
 
   protected:

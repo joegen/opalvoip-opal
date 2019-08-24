@@ -35,7 +35,9 @@ PCREATE_PROCESS(MyProcess);
 const WORD DefaultHTTPPort = 1719;
 const WORD DefaultTelnetPort = 1718;
 static const PConstString TelnetPortKey("Console Port");
+static const PConstString AllowedOriginsKey("Allowed Origins");
 static const PConstString DisplayNameKey("Display Name");
+static const PConstString MaxSimultaneousCallsKey("Maximum Simultaneous Calls");
 static const PConstString MediaTransferModeKey("Media Transfer Mode");
 static const PConstString AutoStartKeyPrefix("Auto Start ");
 static const PConstString PreferredMediaKey("Preferred Media");
@@ -56,6 +58,7 @@ static const PConstString RTPTOSKey("RTP Type of Service");
 #if P_NAT
 static const PConstString NATActiveKey("Active");
 static const PConstString NATServerKey("Server");
+static const PConstString NATInterfaceKey("Interface");
 #endif
 
 static const PConstString OverrideProductInfoKey("Override Product Info");
@@ -109,12 +112,23 @@ static const PConstString EnableCAPIKey("CAPI ISDN");
 static const PConstString VXMLKey("VXML Script");
 static const PConstString IVRCacheKey("TTS Cache Directory");
 static const PConstString IVRRecordDirKey("Record Message Directory");
+static const PConstString SignLanguageAnalyserDLLKey("Sign Language Analyser DLL");
 #endif
 
 #if OPAL_HAS_MIXER
 static const PConstString ConfAudioOnlyKey("Conference Audio Only");
 static const PConstString ConfMediaPassThruKey("Conference Media Pass Through");
 static const PConstString ConfVideoResolutionKey("Conference Video Resolution");
+
+static const PConstString RecordAllCallsKey("Record All Calls");
+static const PConstString RecordFileTemplateKey("Record File Template");
+static const PConstString RecordStereoKey("Record Stereo");
+static const PConstString RecordAudioFormatKey("Record Audio Format");
+#if OPAL_VIDEO
+static const PConstString RecordVideoFormatKey("Record Video Format");
+static const PConstString RecordVideoMixingModeKey("Record Video Mixing Mode");
+static const PConstString RecordVideoResolutionKey("Record Video Resolution");
+#endif
 #endif
 
 #if OPAL_SCRIPT
@@ -175,11 +189,13 @@ struct NATInfo {
   PString m_friendly;
   bool    m_active;
   PString m_server;
+  PString m_interface;
   NATInfo(const PNatMethod & method)
     : m_method(method.GetMethodName())
     , m_friendly(method.GetFriendlyName())
     , m_active(method.IsActive())
     , m_server(method.GetServer())
+    , m_interface(method.GetInterface())
   { }
 
   __inline bool operator<(const NATInfo & other) const { return m_method < other.m_method; }
@@ -211,9 +227,7 @@ PBoolean MyProcess::OnStart()
 
   if (m_manager == NULL)
     m_manager = new MyManager();
-  return m_manager->PreInitialise(GetArguments(), false) &&
-         PHTTPServiceProcess::OnStart() &&
-         m_manager->Initialise(GetArguments(), false);
+  return m_manager->Initialise(GetArguments(), false) && PHTTPServiceProcess::OnStart();
 }
 
 
@@ -259,6 +273,9 @@ PBoolean MyProcess::Initialise(const char * initMsg)
   if (!InitialiseBase(params))
     return false;
 
+  PString allowedOrigins = params.m_configPage->AddStringField(AllowedOriginsKey, 80, NULL,
+                                                               "Cross-Origin Resource Sharing (CORS) Allowed Origins");
+
   // Configure the core of the system
   PConfig cfg(params.m_section);
   if (!m_manager->Configure(cfg, params.m_configPage))
@@ -273,8 +290,14 @@ PBoolean MyProcess::Initialise(const char * initMsg)
 #if OPAL_PTLIB_HTTP && OPAL_PTLIB_SSL
   m_httpNameSpace.AddResource(new OpalHTTPConnector(*m_manager, "/websocket", params.m_authority), PHTTPSpace::Overwrite);
 #endif // OPAL_PTLIB_HTTP && OPAL_PTLIB_SSL
+
 #if OPAL_SDP
-  m_httpNameSpace.AddResource(new OpalSDPHTTPResource(*m_manager->FindEndPointAs<OpalSDPHTTPEndPoint>(OPAL_PREFIX_SDP), "/sdp", params.m_authority), PHTTPSpace::Overwrite);
+  OpalSDPHTTPResource * sdp_http = new OpalSDPHTTPResource(*m_manager->FindEndPointAs<OpalSDPHTTPEndPoint>(OPAL_PREFIX_SDP), "/sdp", params.m_authority);
+  sdp_http->SetAllowedOrigins(allowedOrigins);
+  m_httpNameSpace.AddResource(sdp_http, PHTTPSpace::Overwrite);
+  PHTTPFile * webrtcTest = new PHTTPFile("/webrtc_test.html", GetFile().GetDirectory() + "webrtc_test.html", params.m_authority);
+  m_httpNameSpace.AddResource(webrtcTest, PHTTPSpace::Overwrite);
+  new OpalSockEndPoint(*m_manager);
 #endif
 
 
@@ -299,9 +322,9 @@ PBoolean MyProcess::Initialise(const char * initMsg)
   m_httpNameSpace.AddResource(new CDRPage(*m_manager, params.m_authority), PHTTPSpace::Overwrite);
 
   // Create the home page
-  static const char welcomeHtml[] = "welcome.html";
+  PFilePath welcomeHtml = GetFile().GetDirectory() + "welcome.html";
   if (PFile::Exists(welcomeHtml))
-    m_httpNameSpace.AddResource(new PServiceHTTPFile(welcomeHtml, true), PHTTPSpace::Overwrite);
+    m_httpNameSpace.AddResource(new PServiceHTTPFile(welcomeHtml.GetFileName(), welcomeHtml), PHTTPSpace::Overwrite);
   else {
     PHTML html;
     html << PHTML::Title("Welcome to " + GetName())
@@ -326,6 +349,10 @@ PBoolean MyProcess::Initialise(const char * initMsg)
 #endif // OPAL_SIP
          << PHTML::Paragraph()
          << PHTML::HotLink(cdrListPage->GetHotLink()) << "Call Detail Records" << PHTML::HotLink()
+#if OPAL_SDP
+         << PHTML::Paragraph()
+         << PHTML::HotLink(webrtcTest->GetHotLink()) << "WebRTC Test" << PHTML::HotLink()
+#endif
          << PHTML::Paragraph();
 
     if (params.m_fullLogPage != NULL)
@@ -338,11 +365,11 @@ PBoolean MyProcess::Initialise(const char * initMsg)
     html << PHTML::HRule()
          << GetCopyrightText()
          << PHTML::Body();
-    m_httpNameSpace.AddResource(new PServiceHTTPString(welcomeHtml, html), PHTTPSpace::Overwrite);
+    m_httpNameSpace.AddResource(new PServiceHTTPString(welcomeHtml.GetFileName(), html), PHTTPSpace::Overwrite);
   }
 
   // set up the HTTP port for listening & start the first HTTP thread
-  if (ListenForHTTP(params.m_httpPort))
+  if (ListenForHTTP(params.m_httpInterfaces, params.m_httpPort))
     PSYSTEMLOG(Info, "Opened master socket(s) for HTTP: " << m_httpListeningSockets.front().GetPort());
   else {
     PSYSTEMLOG(Fatal, "Cannot run without HTTP");
@@ -364,8 +391,10 @@ bool MyManager::ConfigureCommon(OpalEndPoint * ep,
   bool disabled = !rsrc->AddBooleanField(cfgPrefix & "Enabled", true);
   PStringArray listeners = rsrc->AddStringArrayField(cfgPrefix & "Interfaces", false, 25, PStringArray(),
                                       "Local network interfaces and ports to listen on, blank means all");
-  if (disabled)
+  if (disabled) {
+    PSYSTEMLOG(Info, "Disabled " << cfgPrefix);
     ep->RemoveListener(NULL);
+  }
   else if (!ep->StartListeners(listeners)) {
     PSYSTEMLOG(Error, "Could not open any listeners for " << cfgPrefix);
   }
@@ -432,6 +461,7 @@ bool MyManager::ConfigureCommon(OpalEndPoint * ep,
 MyManager::MyManager()
   : MyManagerParent(OPAL_CONSOLE_PREFIXES OPAL_PREFIX_PCSS " " OPAL_PREFIX_IVR " " OPAL_PREFIX_MIXER)
   , m_systemLog(PSystemLog::Info)
+  , m_maxCalls(9999)
   , m_mediaTransferMode(MediaTransferForward)
   , m_savedProductInfo(GetProductInfo())
 #if OPAL_CAPI
@@ -503,6 +533,7 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
 #endif //P_CLI && P_TELNET
 
   rsrc->Add(new PHTTPDividerField());
+  PSYSTEMLOG(Info, "Configuring Globals");
 
   // General parameters for all endpoint types
   SetDefaultDisplayName(rsrc->AddStringField(DisplayNameKey, 25, GetDefaultDisplayName(), "Display name used in various protocols"));
@@ -515,6 +546,8 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
     SetProductInfo(m_savedProductInfo);
 
   rsrc->Add(new PHTTPDividerField());
+
+  m_maxCalls = rsrc->AddIntegerField(MaxSimultaneousCallsKey, 1, 9999, m_maxCalls, "", "Maximum simultaneous calls");
 
   m_mediaTransferMode = cfg.GetEnum(MediaTransferModeKey, m_mediaTransferMode);
   static const char * const MediaTransferModeValues[] = { "0", "1", "2" };
@@ -627,7 +660,7 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
   SetTxMediaTimeout(PTimeInterval(0, rsrc->AddIntegerField(TxMediaTimeoutKey, 1, 365*24*60*60, GetTxMediaTimeout().GetSeconds(),
                                                            "seconds", "Clear call when no media can be sent to remote for this time")));
   SetTransportIdleTime(PTimeInterval(0, rsrc->AddIntegerField(TransportIdleTimeoutKey, 1, 365*24*60*60, GetTransportIdleTime().GetSeconds(),
-                                                              "seconds", "Disconnect cached singalling transport after no use for this time")));
+                                                              "seconds", "Disconnect cached signalling transport after no use for this time")));
 
   SetTCPPorts(rsrc->AddIntegerField(TCPPortBaseKey, 0, 65535, GetTCPPortBase(), "", "Base of port range for allocating TCP streams, e.g. H.323 signalling channel"),
               rsrc->AddIntegerField(TCPPortMaxKey, 0, 65535, GetTCPPortMax(), "", "Maximum of port range for allocating TCP streams"));
@@ -638,8 +671,41 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
 
   SetMediaTypeOfService(rsrc->AddIntegerField(RTPTOSKey, 0, 255, GetMediaTypeOfService(), "", "Value for DIFSERV Quality of Service"));
 
+#if OPAL_HAS_MIXER
+  rsrc->Add(new PHTTPDividerField());
+  m_recordingEnabled = rsrc->AddBooleanField(RecordAllCallsKey, false, "Enable recording of all calls");
+  m_recordingTemplate = rsrc->AddStringField(RecordFileTemplateKey, P_MAX_PATH, ".\\%DATE%_%TIME%_%FROM_%TO%.avi",
+    "Template for where recording files are placed, and what meta-information is used in it's name."
+    " Meta information is: %DATE%, %TIME%, %FROM%, %TO%, %HOST%"
+    " The file extension dictates the file container format, e.g. .avi, .mp4, etc.", 1, 50);
+  m_recordingOptions.m_stereo = rsrc->AddBooleanField(RecordStereoKey, m_recordingOptions.m_stereo,
+    "Record the two parties, each in their own channel of stereo audio. Otherwise mix them together in mono.");
+  m_recordingOptions.m_audioFormat = rsrc->AddStringField(RecordAudioFormatKey, 10, m_recordingOptions.m_audioFormat,
+    "Audio format: PCM-16, MP3, AAC etc. Note, not all file formats may be able to encode a given format.");
+#if OPAL_VIDEO
+  m_recordingOptions.m_videoFormat = rsrc->AddStringField(RecordVideoFormatKey, 10, m_recordingOptions.m_videoFormat,
+    "Video format: mpeg4video, h.264 etc. Note, not all file formats may be able to encode a given format.");
+
+  static const char * const MixingModes[] = { "SideBySideLetterbox", "SideBySideScaled", "StackedPillarbox", "StackedScaled" };
+  PString mode = rsrc->AddSelectField(RecordVideoMixingModeKey, PStringArray(PARRAYSIZE(MixingModes), MixingModes),
+    MixingModes[m_recordingOptions.m_videoMixing], "Video mixing mode.");
+  for (PINDEX i = 0; i < PARRAYSIZE(MixingModes); ++i) {
+    if (mode == MixingModes[i]) {
+      m_recordingOptions.m_videoMixing = (OpalRecordManager::VideoMode)i;
+      break;
+    }
+  }
+
+  PVideoFrameInfo::ParseSize(rsrc->AddStringField(RecordVideoResolutionKey, 10,
+    PVideoFrameInfo::AsString(m_recordingOptions.m_videoWidth, m_recordingOptions.m_videoHeight),
+    "Video resolution for recording, after mixing via the above mode"),
+    m_recordingOptions.m_videoWidth, m_recordingOptions.m_videoHeight);
+#endif
+#endif
+
 #if P_STUN
   rsrc->Add(new PHTTPDividerField());
+  PSYSTEMLOG(Info, "Configuring NAT");
 
   {
     std::set<NATInfo> natInfo;
@@ -653,48 +719,55 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
                    "Enable flag and Server IP/hostname for NAT traversal using " + it->m_friendly);
       fields->Append(new PHTTPBooleanField(NATActiveKey, it->m_active));
       fields->Append(new PHTTPStringField(NATServerKey, 0, 0, it->m_server, NULL, 1, 50));
+      fields->Append(new PHTTPStringField(NATInterfaceKey, 0, 0, it->m_interface, NULL, 1, 12));
       rsrc->Add(fields);
       if (!fields->LoadFromConfig(cfg))
-        SetNATServer(it->m_method, (*fields)[1].GetValue(), (*fields)[0].GetValue() *= "true");
+        SetNATServer(it->m_method, (*fields)[1].GetValue(), (*fields)[0].GetValue() *= "true", 0, (*fields)[2].GetValue());
     }
   }
 #endif // P_NAT
 
 #if OPAL_H323
   rsrc->Add(new PHTTPDividerField());
+  PSYSTEMLOG(Info, "Configuring H.323");
   if (!GetH323EndPoint().Configure(cfg, rsrc))
     return false;
 #endif // OPAL_H323
 
 #if OPAL_SIP
   rsrc->Add(new PHTTPDividerField());
+  PSYSTEMLOG(Info, "Configuring SIP");
   if (!GetSIPEndPoint().Configure(cfg, rsrc))
     return false;
 #endif // OPAL_SIP
 
 #if OPAL_SDP_HTTP
   rsrc->Add(new PHTTPDividerField());
+  PSYSTEMLOG(Info, "Configuring HTTP/SDP");
   {
     OpalSDPHTTPEndPoint * ep = FindEndPointAs<OpalSDPHTTPEndPoint>(OPAL_PREFIX_SDP);
-    if (!ConfigureCommon(ep, "SDP", cfg, rsrc))
+    if (!ConfigureCommon(ep, "WebRTC", cfg, rsrc))
       return false;
   }
 #endif // OPAL_SDP_HTTP
 
 #if OPAL_SKINNY
   rsrc->Add(new PHTTPDividerField());
+  PSYSTEMLOG(Info, "Configuring Skinny");
   if (!GetSkinnyEndPoint().Configure(cfg, rsrc))
     return false;
 #endif // OPAL_SKINNY
 
 #if OPAL_LYNC
   rsrc->Add(new PHTTPDividerField());
+  PSYSTEMLOG(Info, "Configuring Lync");
   if (!GetLyncEndPoint().Configure(cfg, rsrc))
     return false;
 #endif // OPAL_LYNC
 
 #if OPAL_LID
   rsrc->Add(new PHTTPDividerField());
+  PSYSTEMLOG(Info, "Configuring LIDs");
   // Add POTS and PSTN endpoints
   if (!FindEndPointAs<OpalLineEndPoint>(OPAL_PREFIX_POTS)->AddDeviceNames(rsrc->AddSelectArrayField(LIDKey, false,
     OpalLineInterfaceDevice::GetAllDevices(), PStringArray(), "Line Interface Devices (PSTN, ISDN etc) to monitor, if any"))) {
@@ -705,6 +778,7 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
 
 #if OPAL_CAPI
   rsrc->Add(new PHTTPDividerField());
+  PSYSTEMLOG(Info, "Configuring CAPI");
   m_enableCAPI = rsrc->AddBooleanField(EnableCAPIKey, m_enableCAPI, "Enable CAPI ISDN controller(s), if available");
   if (m_enableCAPI && FindEndPointAs<OpalCapiEndPoint>(OPAL_PREFIX_CAPI)->OpenControllers() == 0) {
     PSYSTEMLOG(Error, "No CAPI controllers!");
@@ -714,20 +788,27 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
 
 #if OPAL_IVR
   rsrc->Add(new PHTTPDividerField());
+  PSYSTEMLOG(Info, "Configuring IVR");
   {
     OpalIVREndPoint * ivrEP = FindEndPointAs<OpalIVREndPoint>(OPAL_PREFIX_IVR);
     // Set IVR protocol handler
     ivrEP->SetDefaultVXML(rsrc->AddStringField(VXMLKey, 0, ivrEP->GetDefaultVXML(),
-      "Interactive Voice Response VXML script, may be a URL or the actual VXML", 10, 80));
+          "Interactive Voice Response VXML script, may be a URL or the actual VXML", 10, 80));
     ivrEP->SetCacheDir(rsrc->AddStringField(IVRCacheKey, 0, ivrEP->GetCacheDir(),
-      "Interactive Voice Response directory to cache Text To Speech phrases", 1, 50));
+          "Interactive Voice Response directory to cache Text To Speech phrases", 1, 50));
     ivrEP->SetRecordDirectory(rsrc->AddStringField(IVRRecordDirKey, 0, ivrEP->GetRecordDirectory(),
-      "Interactive Voice Response directory to save recorded messages", 1, 50));
+          "Interactive Voice Response directory to save recorded messages", 1, 50));
+#if P_VXML_VIDEO
+    m_signLanguageAnalyserDLL = rsrc->AddStringField(SignLanguageAnalyserDLLKey, 0, m_signLanguageAnalyserDLL,
+          "Interactive Voice Response Sign Language Library", 1, 50);
+    PVXMLSession::SetSignLanguageAnalyser(m_signLanguageAnalyserDLL);
+#endif
   }
 #endif
 
 #if OPAL_HAS_MIXER
   rsrc->Add(new PHTTPDividerField());
+  PSYSTEMLOG(Info, "Configuring MCU");
   {
     OpalMixerEndPoint * mcuEP = FindEndPointAs<OpalMixerEndPoint>(OPAL_PREFIX_MIXER);
     OpalMixerNodeInfo adHoc;
@@ -769,6 +850,7 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
 
   // Routing
   rsrc->Add(new PHTTPDividerField());
+  PSYSTEMLOG(Info, "Configuring Routes");
 
   PHTTPCompositeField * routeFields = new PHTTPCompositeField(ROUTES_KEY, ROUTES_SECTION,
     "Internal routing of calls to varous sub-systems.<p>"
@@ -851,6 +933,7 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
   SetRouteTable(routes);
 
   rsrc->Add(new PHTTPDividerField());
+  PSYSTEMLOG(Info, "Configuring CDR");
 
   return ConfigureCDR(cfg, rsrc);
 }
@@ -858,7 +941,11 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
 
 OpalCall * MyManager::CreateCall(void *)
 {
-  return new MyCall(*this);
+  if (m_activeCalls.GetSize() < m_maxCalls)
+    return new MyCall(*this);
+
+  PTRACE(2, "Maximum simultaneous calls (" << m_maxCalls << ") exceeeded.");
+  return NULL;
 }
 
 
@@ -888,6 +975,16 @@ void MyManager::OnStopMediaPatch(OpalConnection & connection, OpalMediaPatch & p
 {
   dynamic_cast<MyCall &>(connection.GetCall()).OnStopMediaPatch(patch);
   OpalManager::OnStopMediaPatch(connection, patch);
+}
+
+
+void MyManager::StartRecordingCall(MyCall & call) const
+{
+  if (!m_recordingEnabled)
+    return;
+
+  PFilePath filepath = m_recordingTemplate;
+  call.StartRecording(filepath.GetDirectory(), filepath.GetTitle(), filepath.GetType(), m_recordingOptions);
 }
 
 
@@ -1030,6 +1127,8 @@ MyLyncEndPoint::MyLyncEndPoint(MyManager & mgr)
 
 bool MyLyncEndPoint::Configure(PConfig & cfg, PConfigPage * rsrc)
 {
+  bool disabled = !rsrc->AddBooleanField("Lync Enabled", true);
+
   enum {
     UserRegistrationMode,
     ApplicationRegistrationMode,
@@ -1075,49 +1174,54 @@ bool MyLyncEndPoint::Configure(PConfig & cfg, PConfigPage * rsrc)
   PString provisioningID = rsrc->AddStringField(LyncProvisioningIdKey, 0, PString::Empty(),
                                                     "Lync Provisioning Identifier. Note, 'Registration Mode' must be set to 'Provisioned'.", 1, 30);
 
-  switch (registrationMode) {
-    case UserRegistrationMode:
-      if (!registrationsArray->LoadFromConfig(cfg)) {
-        for (PINDEX i = 0; i < registrationsArray->GetSize(); ++i) {
-          PHTTPCompositeField & item = dynamic_cast<PHTTPCompositeField &>((*registrationsArray)[i]);
-
-          OpalLyncEndPoint::UserParams info;
-          info.m_uri = item[0].GetValue();
-          if (!info.m_uri.IsEmpty()) {
-            info.m_authID = item[1].GetValue();
-            info.m_domain = item[2].GetValue();
-            info.m_password = PHTTPPasswordField::Decrypt(item[3].GetValue());
-            if (RegisterUser(info).IsEmpty())
-              PSYSTEMLOG(Error, "Could not register Lync user " << info.m_uri);
-            else
-              PSYSTEMLOG(Info, "Registered Lync user " << info.m_uri);
-          }
-        }
-      }
-      break;
-
-    case ApplicationRegistrationMode:
-      if (!pparam.m_localHost.empty()) {
-        if (RegisterApplication(pparam, aparam))
-          PSYSTEMLOG(Info, "Registered Lync application " << pparam.m_localHost);
-        else
-          PSYSTEMLOG(Error, "Could not register Lync application " << pparam.m_localHost);
-      }
-      break;
-
-    case ProvisionedRegistrationMode:
-      if (!provisioningID.empty()) {
-        if (Register(provisioningID))
-          PSYSTEMLOG(Info, "Registered Lync via provisioning ID \"" << provisioningID << '"');
-        else
-          PSYSTEMLOG(Error, "Could not register Lync via provisioning ID \"" << provisioningID << '"');
-      }
-      break;
-  }
-
   m_transferDelay = rsrc->AddIntegerField(LyncCompleteTransferDelayKey, 0, 65535, 500, "milliseconds",
                                           "Optional delay before completing consultative transfer");
   PTRACE(4, "Config: m_transferDelay=" << m_transferDelay);
+
+  if (disabled) {
+    PSYSTEMLOG(Info, "Disabled Lync");
+  }
+  else {
+    switch (registrationMode) {
+      case UserRegistrationMode:
+        if (!registrationsArray->LoadFromConfig(cfg)) {
+          for (PINDEX i = 0; i < registrationsArray->GetSize(); ++i) {
+            PHTTPCompositeField & item = dynamic_cast<PHTTPCompositeField &>((*registrationsArray)[i]);
+
+            OpalLyncEndPoint::UserParams info;
+            info.m_uri = item[0].GetValue();
+            if (!info.m_uri.IsEmpty()) {
+              info.m_authID = item[1].GetValue();
+              info.m_domain = item[2].GetValue();
+              info.m_password = PHTTPPasswordField::Decrypt(item[3].GetValue());
+              if (RegisterUser(info).IsEmpty())
+                PSYSTEMLOG(Error, "Could not register Lync user " << info.m_uri);
+              else
+                PSYSTEMLOG(Info, "Registered Lync user " << info.m_uri);
+            }
+          }
+        }
+        break;
+
+      case ApplicationRegistrationMode:
+        if (!pparam.m_localHost.empty()) {
+          if (RegisterApplication(pparam, aparam))
+            PSYSTEMLOG(Info, "Registered Lync application " << pparam.m_localHost);
+          else
+            PSYSTEMLOG(Error, "Could not register Lync application " << pparam.m_localHost);
+        }
+        break;
+
+      case ProvisionedRegistrationMode:
+        if (!provisioningID.empty()) {
+          if (Register(provisioningID))
+            PSYSTEMLOG(Info, "Registered Lync via provisioning ID \"" << provisioningID << '"');
+          else
+            PSYSTEMLOG(Error, "Could not register Lync via provisioning ID \"" << provisioningID << '"');
+        }
+        break;
+    }
+  }
 
   return true;
 }

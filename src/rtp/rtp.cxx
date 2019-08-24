@@ -49,6 +49,8 @@ RTP_DataFrame::MetaData::MetaData()
   , m_transmitTime(0)
   , m_receivedTime(0)
   , m_discontinuity(0)
+  , m_audioLevel(INT_MAX)
+  , m_vad(UnknownVAD)
 {
 }
 
@@ -107,7 +109,8 @@ bool RTP_DataFrame::SetPacketSize(PINDEX sz)
 
   if (sz < m_headerSize) {
     PTRACE(2, "RTP\tInvalid RTP packet, "
-              "smaller than indicated header size, " << sz << " < " << m_headerSize);
+              "smaller than indicated header size, " << sz << " < " << m_headerSize << ": "
+           << PHexDump(GetPointer(), std::min(sz, (PINDEX)16)));
     m_payloadSize = m_paddingSize = 0;
     return false;
   }
@@ -125,7 +128,8 @@ bool RTP_DataFrame::SetPacketSize(PINDEX sz)
   m_paddingSize = theArray[sz-1] & 0xff;
   if (m_headerSize + m_paddingSize > sz) {
     PTRACE(2, "RTP\tInvalid RTP packet, padding indicated but not enough data, "
-              "size=" << sz << ", pad=" << m_paddingSize << ", header=" << m_headerSize);
+              "size=" << sz << ", pad=" << m_paddingSize << ", header=" << m_headerSize << ": "
+           << PHexDump(GetPointer(), std::min(sz, (PINDEX)16)));
     m_paddingSize = 0;
   }
 
@@ -328,6 +332,15 @@ BYTE * RTP_DataFrame::GetHeaderExtension(HeaderExtensionType type, unsigned idTo
   if (!GetExtension())
     return NULL;
 
+  if (type == RFC5285_Auto) {
+    if (idToFind <= MaxHeaderExtensionIdOneByte) {
+      BYTE * ext = GetHeaderExtension(RFC5285_OneByte, idToFind, length);
+      if (ext != NULL)
+        return ext;
+    }
+    type = RFC5285_TwoByte;
+  }
+
   BYTE * ptr = (BYTE *)&theArray[MinHeaderSize + 4*GetContribSrcCount()];
   unsigned idPresent = *(PUInt16b *)ptr;
   PINDEX extensionSize = *(PUInt16b *)(ptr += 2) * 4;
@@ -417,6 +430,9 @@ bool RTP_DataFrame::SetHeaderExtension(unsigned id, PINDEX length, const BYTE * 
     oldId = UINT_MAX; // definitely won't match anything
     extensionSize = 0;
   }
+
+  if (type == RFC5285_Auto)
+    type = id > MaxHeaderExtensionIdOneByte ? RFC5285_TwoByte : RFC5285_OneByte;
 
   switch (type) {
     case RFC3550 :
@@ -525,6 +541,10 @@ bool RTP_DataFrame::SetHeaderExtension(unsigned id, PINDEX length, const BYTE * 
           break;
         extensionSize -= currentLen;
       }
+      break;
+
+    default :
+      break;
   }
 
   // Calculate new RFC3550 header extension size, as we append new one to the end
@@ -599,7 +619,7 @@ void RTP_DataFrame::PrintOn(ostream & strm) const
        << " PT=" << GetPayloadType()
        << " SN=" << GetSequenceNumber()
        << " TS=" << GetTimestamp()
-       << " absT=" << GetAbsoluteTime().AsString(PTime::TodayFormat);
+       << " absT=" << GetAbsoluteTime().AsString(PTime::TodayFormat, PTrace::GetTimeZone());
   if (csrcCount > 0)
     strm  << " CSRS=" << csrcCount;
   strm << " hdr-sz=" << m_headerSize
@@ -641,12 +661,11 @@ void RTP_DataFrame::PrintOn(ostream & strm) const
           continue;
         break;
       }
-      strm << "  Header Extension: " << id << " (0x" << hex << id << ")\n"
-           << setfill('0') << PBYTEArray(ptr, len, false) << setfill(' ') << dec << '\n';
+      strm << "  Header Extension: " << id << " (0x" << hex << id << ")\n" << PHexDump(ptr, len) << '\n';
     }
   }
 
-  strm << "Payload:\n" << hex << setfill('0') << PBYTEArray(GetPayloadPtr(), GetPayloadSize(), false) << setfill(' ') << dec;
+  strm << "Payload:\n" << PHexDump(GetPayloadPtr(), GetPayloadSize(), false);
 }
 
 
@@ -700,7 +719,7 @@ void RTP_ReceiverReport::PrintOn(ostream & strm) const
        << " lost=" << totalLost
        << " last_seq=" << lastSequenceNumber
        << " jitter=" << jitter
-       << " lsr=" << lastTimestamp.AsString(PTime::TodayFormat)
+       << " lsr=" << lastTimestamp.AsString(PTime::TodayFormat PTRACE_PARAM(, PTrace::GetTimeZone()))
        << " dlsr=" << delay;
 }
 
@@ -708,7 +727,7 @@ void RTP_ReceiverReport::PrintOn(ostream & strm) const
 void RTP_SenderReport::PrintOn(ostream & strm) const
 {
   strm << "SSRC=" << RTP_TRACE_SRC(sourceIdentifier)
-       << " ntp=" << realTimestamp.AsString(PTime::TodayFormat)
+       << " ntp=" << realTimestamp.AsString(PTime::TodayFormat PTRACE_PARAM(, PTrace::GetTimeZone()))
        << " (" << (realTimestamp - PTime()) << ")"
           " rtp=" << rtpTimestamp
        << " psent=" << packetsSent
@@ -718,7 +737,7 @@ void RTP_SenderReport::PrintOn(ostream & strm) const
 
 void RTP_DelayLastReceiverReport::PrintOn(ostream & strm) const
 {
-  strm << "DLRR: lrr=" << m_lastTimestamp.AsString(PTime::LoggingFormat) << ", dlrr=" << m_delay;
+  strm << "DLRR: lrr=" << m_lastTimestamp.AsString(PTime::LoggingFormat PTRACE_PARAM(, PTrace::GetTimeZone())) << ", dlrr=" << m_delay;
 }
 
 
@@ -765,11 +784,8 @@ RTP_ControlFrame::RTP_ControlFrame(const BYTE * data, PINDEX size, bool dynamic)
 #if PTRACING
 void RTP_ControlFrame::PrintOn(ostream & strm) const
 {
-  char fill = strm.fill();
   strm << "RTCP frame, " << m_packetSize << " bytes:\n"
-       << hex << setprecision(2) << setfill('0')
-       << PBYTEArray((const BYTE *)theArray, m_packetSize, false)
-       << dec << setfill(fill);
+       << setprecision(2) << PHexDump(*this, false);
 }
 #endif
 

@@ -43,10 +43,25 @@ PString MyManager::GetArgumentSpec() const
 
 void MyManager::Usage(ostream & strm, const PArgList & args)
 {
-  args.Usage(strm, "<dir>\n-m <wav-file>")
-     << "\n"
-        "Record all incoming calls to a directory, or mix all incoming calls to\n"
-        " single WAV file.\n";
+  args.Usage(strm, "<file-template>") <<
+"\n"
+"Record all incoming calls using a file template. The template will usually\n"
+"have a directory path and an extension dictating the output container file\n"
+"format, e.g. \"/somewhere/%CALL-ID%.wav\". The available extensions are\n"
+"dependent on compile time options. The substitution macros may be:\n"
+"  %CALL-ID%   Call identifier\n"
+"  %FROM%      Calling party\n"
+"  %TO%        Answer party\n"
+"  %REMOTE%    Remote party\n"
+"  %LOCAL%     Local party\n"
+"  %DATE%      Date for call\n"
+"  %TIME%      Time for call\n"
+"  %TIMESTAMP% Date/Time for call in ISO9660 format\n"
+"  %HOST%      Host name of machine\n"
+"\n"
+"The mix option will force audio only calls and mix the audio into\n"
+"a single media file. Note in this case no template is used, the argument\n"
+"is a normal file path\n";
 }
 
 
@@ -63,6 +78,20 @@ bool MyManager::Initialise(PArgList & args, bool verbose, const PString & defaul
   if (!OpalManagerConsole::Initialise(args, verbose, defaultRoute))
     return false;
 
+  PFilePath arg(args[0]);
+  m_fileTemplate = arg.GetTitle();
+  m_fileType = arg.GetType();
+  if (m_fileTemplate.IsEmpty() || m_fileType.IsEmpty()) {
+    *LockedOutput() << "Invalid template \"" << args[0] << "\"." << endl;
+    return false;
+  }
+
+  m_outputDir = arg.GetDirectory();
+  if (!m_outputDir.Exists()) {
+    *LockedOutput() << "Directory for template \"" << args[0] << "\" does not exist." << endl;
+    return false;
+  }
+
   // Set up local endpoint, SIP/H.323 connect to this via OPAL routing engine
   MyLocalEndPoint * ep = new MyLocalEndPoint(*this);
 
@@ -71,6 +100,13 @@ bool MyManager::Initialise(PArgList & args, bool verbose, const PString & defaul
 
   *LockedOutput() << "\nAwaiting incoming calls, use ^C to exit ..." << endl;
   return true;
+}
+
+
+void MyManager::OnEstablishedCall(OpalCall & call)
+{
+  call.StartRecording(m_outputDir, m_fileTemplate, m_fileType,  m_options);
+  OpalManager::OnEstablishedCall(call);
 }
 
 
@@ -85,7 +121,10 @@ MyLocalEndPoint::MyLocalEndPoint(OpalManagerConsole & manager)
 
 OpalMediaFormatList MyLocalEndPoint::GetMediaFormats() const
 {
-  // Override default and force only audio at 8kHz
+  if (m_mixer.m_mediaFile.IsNULL())
+    return OpalLocalEndPoint::GetMediaFormats();
+
+  // Override default and force only audio
   OpalMediaFormatList formats;
   formats += OpalPCM16;
   formats += OpalRFC2833;
@@ -93,20 +132,13 @@ OpalMediaFormatList MyLocalEndPoint::GetMediaFormats() const
 }
 
 
-OpalLocalConnection * MyLocalEndPoint::CreateConnection(OpalCall & call,
-                                                        void * userData,
-                                                        unsigned options,
-                                                        OpalConnection::StringOptions * stringOptions)
-{
-  return new MyLocalConnection(call, *this, userData, options, stringOptions);
-}
-
-
 bool MyLocalEndPoint::Initialise(PArgList & args)
 {
   if (args.HasOption("mix")) {
-    if (!m_mixer.m_wavFile.Open(args[0], PFile::WriteOnly)) {
-      *m_manager.LockedOutput() << "Could not open WAV file \"" << args[0] << '"' << endl;
+    PFilePath filepath = args[0];
+    m_mixer.m_mediaFile = PMediaFile::Create(filepath);
+    if (m_mixer.m_mediaFile.IsNULL() || !m_mixer.m_mediaFile->OpenForWriting(filepath)) {
+      *m_manager.LockedOutput() << "Could not open media file \"" << args[0] << '"' << endl;
       return false;
     }
 
@@ -115,12 +147,6 @@ bool MyLocalEndPoint::Initialise(PArgList & args)
     SetDefaultAudioSynchronicity(OpalLocalEndPoint::e_Asynchronous);
   }
   else {
-    m_wavDir = args[0];
-    if (!m_wavDir.Exists()) {
-      *m_manager.LockedOutput() << "Directory \"" << m_wavDir << "\" does not exist." << endl;
-      return false;
-    }
-
     // Need to simulate blocking write when going to disk file or jitter buffer breaks
     SetDefaultAudioSynchronicity(OpalLocalEndPoint::e_SimulateSynchronous);
   }
@@ -143,7 +169,7 @@ bool MyLocalEndPoint::OnIncomingCall(OpalLocalConnection & connection)
 
 bool MyLocalEndPoint::OnOpenMediaStream(OpalConnection & connection, OpalMediaStream & stream)
 {
-  if (m_mixer.m_wavFile.IsOpen()) {
+  if (!m_mixer.m_mediaFile.IsNULL()) {
     // Arbitrary, but unique, string is the mixer key, use connections token
     OpalBaseMixer::Key_T mixerKey = connection.GetToken();
 
@@ -153,7 +179,10 @@ bool MyLocalEndPoint::OnOpenMediaStream(OpalConnection & connection, OpalMediaSt
        it in the mixer. Note that we do this so all the calls get their audio
        synchronised correctly before writing to the WAV file. Without this you
        get littly clicks and pops due to slight timing mismatches. */
-    m_mixer.SetJitterBufferSize(mixerKey, OpalJitterBuffer::Init(GetManager(), stream.GetMediaFormat().GetTimeUnits()));
+    OpalJitterBuffer::Init init(GetManager().GetJitterParameters(),
+                                stream.GetMediaFormat().GetTimeUnits(),
+                                GetManager().GetMaxRtpPacketSize());
+    m_mixer.SetJitterBufferSize(mixerKey, init);
   }
 
   return OpalLocalEndPoint::OnOpenMediaStream(connection, stream);
@@ -164,7 +193,7 @@ bool MyLocalEndPoint::OnWriteMediaFrame(const OpalLocalConnection & connection,
                                         const OpalMediaStream & /*mediaStream*/,
                                         RTP_DataFrame & frame)
 {
-  if (!m_mixer.m_wavFile.IsOpen())
+  if (m_mixer.m_mediaFile.IsNULL())
     return false; // false means OnWriteMediaData() will get called
 
   m_mixer.WriteStream(connection.GetToken(), frame);
@@ -174,56 +203,8 @@ bool MyLocalEndPoint::OnWriteMediaFrame(const OpalLocalConnection & connection,
 
 bool MyLocalEndPoint::Mixer::OnMixed(RTP_DataFrame * & output)
 {
-  return m_wavFile.Write(output->GetPayloadPtr(), output->GetPayloadSize());
-}
-
-
-bool MyLocalEndPoint::OpenWAVFile(const OpalCall & call, PWAVFile & wavFile)
-{
-  if (m_mixer.m_wavFile.IsOpen())
-    return true; // We are doing "mixed" mode
-
-  PFilePath uniqueFilename("Call_" + call.GetToken() + '_', m_wavDir);
-  uniqueFilename.SetType(".wav");
-  if (wavFile.Open(uniqueFilename, PFile::WriteOnly))
-    return true;
-
-  *m_manager.LockedOutput() << "Could not open WAV file \"" << uniqueFilename << "\""
-                               " for call from " << call.GetRemoteParty() << endl;
-  return false; // Refuse call
-}
-
-
-///////////////////////////////////////////////////////////////////////////////
-
-MyLocalConnection::MyLocalConnection(OpalCall & call,
-                                     MyLocalEndPoint & ep,
-                                     void * userData,
-                                     unsigned options,
-                                     OpalConnection::StringOptions * stringOptions)
-  : OpalLocalConnection(call, ep, userData, options, stringOptions)
-{
-}
-
-
-bool MyLocalConnection::OnIncoming()
-{
-  if (!dynamic_cast<MyLocalEndPoint &>(GetEndPoint()).OpenWAVFile(GetCall(), m_wavFile))
-    return false; // Refuse call
-
-  return OpalLocalConnection::OnIncoming();
-}
-
-
-bool MyLocalConnection::OnWriteMediaData(const OpalMediaStream & /*mediaStream*/,
-                                         const void * data,
-                                         PINDEX length,
-                                         PINDEX & written)
-{
-  if (m_wavFile.Write(data, length))
-    written = length;
-
-  return true;
+  PINDEX written;
+  return m_mediaFile != NULL && m_mediaFile->WriteAudio(0, output->GetPayloadPtr(), output->GetPayloadSize(), written);
 }
 
 

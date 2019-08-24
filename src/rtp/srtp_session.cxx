@@ -35,6 +35,7 @@
 
 #if OPAL_SRTP
 
+#include <opal.h>
 #include <rtp/dtls_srtp_session.h>
 #include <h323/h323caps.h>
 #include <ptclib/cypher.h>
@@ -55,7 +56,7 @@ static const unsigned MaxConsecutiveErrors = 100;
     uint64_t index = item|(dir<<3)|(subchannel<<5)|((uint64_t)ssrc<<8);
     map<uint64_t, PTrace::ThrottleBase>::iterator it = m_throttle.find(index);
     if (it == m_throttle.end())
-      it = m_throttle.insert(make_pair(index, PTrace::ThrottleBase(level))).first;
+      it = m_throttle.insert(make_pair(index, PTrace::ThrottleBase(level, item == 3 ? 3600000 : 60000))).first;
     return it->second;
   }
 #else
@@ -253,41 +254,47 @@ const PCaselessString & OpalSRTPSession::RTP_SAVPF() { static const PConstCasele
 PFACTORY_CREATE(OpalMediaSessionFactory, OpalSRTPSession, OpalSRTPSession::RTP_SAVP());
 PFACTORY_SYNONYM(OpalMediaSessionFactory, OpalSRTPSession, SAVPF, OpalSRTPSession::RTP_SAVPF());
 
-static PConstCaselessString AES_CM_128_HMAC_SHA1_80("AES_CM_128_HMAC_SHA1_80");
 
-class OpalSRTPCryptoSuite_AES_CM_128_HMAC_SHA1_80 : public OpalSRTPCryptoSuite
+template <const char FactoryName[],
+          const char Description[],
+          PINDEX CipherBits,
+          const char * DTLSName,
+          const char OID[],
+          void (*CryptoPolicySet)(struct srtp_crypto_policy_t *)>
+  class OpalSRTPCryptoSuiteTemplate : public OpalSRTPCryptoSuite
 {
-    PCLASSINFO(OpalSRTPCryptoSuite_AES_CM_128_HMAC_SHA1_80, OpalSRTPCryptoSuite);
+    PCLASSINFO(OpalSRTPCryptoSuiteTemplate, OpalSRTPCryptoSuite);
   public:
-    virtual const PCaselessString & GetFactoryName() const { return AES_CM_128_HMAC_SHA1_80; }
-    virtual const char * GetDescription() const { return "SRTP: AES-128 & SHA1-80"; }
+    static const PCaselessString & MyFactoryName() { static PConstCaselessString const s(FactoryName); return s; }
+    virtual const PCaselessString & GetFactoryName() const { return MyFactoryName(); }
+    virtual const char * GetDescription() const { return Description; }
+    virtual PINDEX GetCipherKeyBits() const { return CipherBits; }
+    virtual const char * GetDTLSName() const { return DTLSName; }
 #if OPAL_H235_6 || OPAL_H235_8
-    virtual const char * GetOID() const { return "0.0.8.235.0.4.91"; }
+    virtual const char * GetOID() const { return OID; }
 #endif
 
-    virtual void SetCryptoPolicy(struct srtp_crypto_policy_t & policy) const { srtp_crypto_policy_set_aes_cm_128_hmac_sha1_80(&policy); }
+    virtual void SetCryptoPolicy(struct srtp_crypto_policy_t & policy) const { CryptoPolicySet(&policy); }
 };
 
-PFACTORY_CREATE(OpalMediaCryptoSuiteFactory, OpalSRTPCryptoSuite_AES_CM_128_HMAC_SHA1_80, AES_CM_128_HMAC_SHA1_80, true);
+#define DEFINE_CRYPTO_SUITE(name, desc, bits, dtls, oid, libFn) \
+  namespace OpalSRTPCryptoSuite_##name { \
+    extern const char FactoryName[] = #name; \
+    extern const char Description[] = desc; \
+    extern const char DTLSName[] = dtls; \
+    extern const char OID[] = oid; \
+    typedef OpalSRTPCryptoSuiteTemplate<FactoryName, Description, bits, DTLSName, OID, libFn> Suite; \
+    PFACTORY_CREATE(OpalMediaCryptoSuiteFactory, Suite, Suite::MyFactoryName(), true); \
+  }
 
-
-static PConstCaselessString AES_CM_128_HMAC_SHA1_32("AES_CM_128_HMAC_SHA1_32");
-
-class OpalSRTPCryptoSuite_AES_CM_128_HMAC_SHA1_32 : public OpalSRTPCryptoSuite
-{
-    PCLASSINFO(OpalSRTPCryptoSuite_AES_CM_128_HMAC_SHA1_32, OpalSRTPCryptoSuite);
-  public:
-    virtual const PCaselessString & GetFactoryName() const { return AES_CM_128_HMAC_SHA1_32; }
-    virtual const char * GetDescription() const { return "SRTP: AES-128 & SHA1-32"; }
-#if OPAL_H235_6 || OPAL_H235_8
-    virtual const char * GetOID() const { return "0.0.8.235.0.4.92"; }
+DEFINE_CRYPTO_SUITE(AES_CM_128_HMAC_SHA1_80, "SRTP: AES-128 & SHA1-80", 128, "SRTP_AES128_CM_SHA1_80", "0.0.8.235.0.4.91", srtp_crypto_policy_set_rtp_default);
+DEFINE_CRYPTO_SUITE(AES_CM_128_HMAC_SHA1_32, "SRTP: AES-128 & SHA1-32", 128, "SRTP_AES128_CM_SHA1_32", "0.0.8.235.0.4.92", srtp_crypto_policy_set_aes_cm_128_hmac_sha1_32);
+DEFINE_CRYPTO_SUITE(AES_CM_256_HMAC_SHA1_80, "SRTP: AES-256 & SHA1-80", 256, "",                       "0.0.8.235.0.4.93", srtp_crypto_policy_set_aes_cm_256_hmac_sha1_80);
+DEFINE_CRYPTO_SUITE(AES_CM_256_HMAC_SHA1_32, "SRTP: AES-256 & SHA1-32", 256, "",                       "0.0.8.235.0.4.94", srtp_crypto_policy_set_aes_cm_256_hmac_sha1_32);
+#if OPAL_AEAD_CRYPTO_SUITES  // libsrtp2 header says these are there, but doesn't link
+DEFINE_CRYPTO_SUITE(AEAD_AES_128_GCM,        "SRTP: AES-128 GCM",       128, "",                       "0.0.8.235.0.4.95", srtp_crypto_policy_set_aes_gcm_128_16_auth);
+DEFINE_CRYPTO_SUITE(AEAD_AES_256_GCM,        "SRTP: AES-256 GCM",       256, "",                       "0.0.8.235.0.4.96", srtp_crypto_policy_set_aes_gcm_256_16_auth);
 #endif
-
-    virtual void SetCryptoPolicy(struct srtp_crypto_policy_t & policy) const { srtp_crypto_policy_set_aes_cm_128_hmac_sha1_32(&policy); }
-};
-
-PFACTORY_CREATE(OpalMediaCryptoSuiteFactory, OpalSRTPCryptoSuite_AES_CM_128_HMAC_SHA1_32, AES_CM_128_HMAC_SHA1_32, true);
-
 
 
 ///////////////////////////////////////////////////////
@@ -301,7 +308,7 @@ H235SecurityCapability * OpalSRTPCryptoSuite::CreateCapability(const H323Capabil
 
 bool OpalSRTPCryptoSuite::Supports(const PCaselessString & proto) const
 {
-  return proto == "sip" || proto == "h323";
+  return proto == OPAL_PREFIX_SIP || proto == OPAL_PREFIX_H323 || proto == OPAL_PREFIX_SDP;
 }
 
 
@@ -332,12 +339,6 @@ bool OpalSRTPCryptoSuite::ChangeSessionType(PCaselessString & mediaSession, KeyE
   }
 
   return false;
-}
-
-
-PINDEX OpalSRTPCryptoSuite::GetCipherKeyBits() const
-{
-  return 128;
 }
 
 
@@ -533,13 +534,15 @@ bool OpalSRTPSession::ApplyKeyToSRTP(const OpalMediaCryptoKeyInfo & keyInfo, Dir
     return false;
   }
 
-  BYTE tmp_key_salt[32];
-  memset(tmp_key_salt, 0, sizeof(tmp_key_salt));
-  memcpy(tmp_key_salt, keyInfo.GetCipherKey(), std::min((PINDEX)16, keyInfo.GetCipherKey().GetSize()));
-  memcpy(&tmp_key_salt[16], keyInfo.GetAuthSalt(), std::min((PINDEX)14, keyInfo.GetAuthSalt().GetSize()));
+  // Need a separate, combined, structure for libsrtp to use
+  PINDEX keySize = keyInfo.GetCryptoSuite().GetCipherKeyBytes();
+  PINDEX saltSize = keyInfo.GetCryptoSuite().GetAuthSaltBytes();
+  PBYTEArray tmp_key_salt(std::max((PINDEX)32, keySize + saltSize)); // libsrtp assumes at least 32 bytes
+  memcpy(tmp_key_salt.GetPointer(), keyInfo.GetCipherKey(), std::min(keySize, keyInfo.GetCipherKey().GetSize()));
+  memcpy(tmp_key_salt.GetPointer()+keySize, keyInfo.GetAuthSalt(), std::min(saltSize, keyInfo.GetAuthSalt().GetSize()));
 
   if (m_keyInfo[dir] != NULL) {
-    if (memcmp(tmp_key_salt, m_keyInfo[dir]->m_key_salt, 32) == 0) {
+    if (tmp_key_salt == m_keyInfo[dir]->m_key_salt) {
       PTRACE(3, *this << "crypto key for " << dir << " already set.");
       return true;
     }
@@ -562,7 +565,7 @@ bool OpalSRTPSession::ApplyKeyToSRTP(const OpalMediaCryptoKeyInfo & keyInfo, Dir
   }
 
   m_keyInfo[dir] = new OpalSRTPKeyInfo(*srtpKeyInfo);
-  memcpy(m_keyInfo[dir]->m_key_salt, tmp_key_salt, 32);
+  m_keyInfo[dir]->m_key_salt = tmp_key_salt;
 
   for (SyncSourceMap::iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
     if (it->second->m_direction == dir && !AddStreamToSRTP(it->first, dir))
@@ -604,7 +607,7 @@ RTP_SyncSourceId OpalSRTPSession::AddSyncSource(RTP_SyncSourceId ssrc, Direction
   if (AddStreamToSRTP(ssrc, dir))
     return ssrc;
 
-  m_SSRC.erase(m_SSRC.find(ssrc));
+  RemoveSyncSource(ssrc PTRACE_PARAM(, "Could not add SRTP stream"));
   return 0;
 }
 
@@ -629,7 +632,7 @@ bool OpalSRTPSession::AddStreamToSRTP(RTP_SyncSourceId ssrc, Direction dir)
   cryptoSuite.SetCryptoPolicy(policy.rtp);
   cryptoSuite.SetCryptoPolicy(policy.rtcp);
 
-  policy.key = m_keyInfo[dir]->m_key_salt;
+  policy.key = m_keyInfo[dir]->m_key_salt.GetPointer();
 
   if (!CHECK_ERROR(srtp_add_stream, (m_context, &policy), this, ssrc))
     return false;
@@ -671,11 +674,11 @@ void OpalSRTPSession::OnRxControlPacket(OpalMediaTransport & transport, PBYTEArr
 }
 
 
-OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnSendData(RTP_DataFrame & frame, RewriteMode rewrite)
+OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnSendData(RewriteMode & rewrite, RTP_DataFrame & frame, const PTime & now)
 {
   // Aleady locked on entry
 
-  SendReceiveStatus status = OpalRTPSession::OnSendData(frame, rewrite);
+  SendReceiveStatus status = OpalRTPSession::OnSendData(rewrite, frame, now);
   if (status != e_ProcessPacket)
     return status;
 
@@ -710,11 +713,11 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnSendData(RTP_DataFrame & fr
 }
 
 
-OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnSendControl(RTP_ControlFrame & frame)
+OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnSendControl(RTP_ControlFrame & frame, const PTime & now)
 {
   // Aleady locked on entry
 
-  SendReceiveStatus status = OpalRTPSession::OnSendControl(frame);
+  SendReceiveStatus status = OpalRTPSession::OnSendControl(frame, now);
   if (status != e_ProcessPacket)
     return status;
 
@@ -746,12 +749,12 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnSendControl(RTP_ControlFram
 }
 
 
-OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveData(RTP_DataFrame & frame, ReceiveType rxType)
+OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveData(RTP_DataFrame & frame, ReceiveType rxType, const PTime & now)
 {
   // Aleady locked on entry
 
-  if (rxType == e_RxRetransmission)
-    return OpalRTPSession::OnReceiveData(frame, rxType);
+  if (rxType == e_RxFromRTX)
+    return OpalRTPSession::OnReceiveData(frame, rxType, now);
 
   RTP_SyncSourceId ssrc = frame.GetSyncSource();
   if (!IsCryptoSecured(e_Receiver)) {
@@ -783,11 +786,11 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveData(RTP_DataFrame &
 
   frame.SetPayloadSize(len - frame.GetHeaderSize());
 
-  return OpalRTPSession::OnReceiveData(frame, rxType);
+  return OpalRTPSession::OnReceiveData(frame, rxType, now);
 }
 
 
-OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveControl(RTP_ControlFrame & encoded)
+OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveControl(RTP_ControlFrame & encoded, const PTime & now)
 {
   /* Aleady locked on entry */
 
@@ -829,13 +832,13 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveControl(RTP_ControlF
 
   decoded.SetPacketSize(len);
 
-  return OnReceiveDecodedControl(decoded);
+  return OnReceiveDecodedControl(decoded, now);
 }
 
 
-OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveDecodedControl(RTP_ControlFrame & frame)
+OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveDecodedControl(RTP_ControlFrame & frame, const PTime & now)
 {
-  return OpalRTPSession::OnReceiveControl(frame);
+  return OpalRTPSession::OnReceiveControl(frame, now);
 }
 
 

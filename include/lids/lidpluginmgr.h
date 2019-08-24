@@ -348,11 +348,12 @@ class OpalPluginLID : public OpalLineInterfaceDevice
     );
 
 
-    /**Get average signal level in last frame.
+    /**Get average signal level in last frame as dBov (-127 to 0).
+       @return INT_MAX if not supported
       */
-    virtual unsigned GetAverageSignalLevel(
+    virtual int GetAudioLevelDB(
       unsigned line,  ///<  Number of line
-      PBoolean playback   ///<  Get average playback or record level.
+      bool playback   ///<  Get average playback or record level.
     );
 
 

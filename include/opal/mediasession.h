@@ -116,8 +116,10 @@ struct OpalNetworkStatistics
   int      m_NACKs;             // (-1 is N/A)
   uint32_t m_rtxSSRC;           // Zero indicates no separate retransmit source
   int      m_rtxPackets;        // (-1 is N/A)
+  int      m_rtxDuplicates;     // (-1 is N/A)
   int      m_FEC;               // (-1 is N/A, for tx is number of FEC frame sent, for rx is number of frames recovered via FEC)
-  int      m_packetsLost;       // (-1 is N/A)
+  int      m_unrecovered;       // (-1 is N/A) Packets that failed to arrive and could not be recovered via NACK/FEC
+  int      m_packetsLost;       // (-1 is N/A) Packets that failed to arrive (as per RTCP Receiver Report specification)
   int      m_maxConsecutiveLost;// (-1 is N/A)
   int      m_packetsOutOfOrder; // (-1 is N/A)
   int      m_lateOutOfOrder;    // (-1 is N/A)
@@ -333,6 +335,9 @@ class OpalMediaCryptoSuite : public PObject
     virtual bool ChangeSessionType(PCaselessString & mediaSession, KeyExchangeModes modes) const = 0;
 
     virtual const char * GetDescription() const = 0;
+#if OPAL_SRTP
+    virtual const char * GetDTLSName() const;
+#endif
 #if OPAL_H235_6 || OPAL_H235_8
     virtual H235SecurityCapability * CreateCapability(const H323Capability & mediaCapability) const;
     virtual const char * GetOID() const = 0;
@@ -398,6 +403,9 @@ class OpalMediaTransport : public PSafeObject, public OpalMediaTransportChannelT
     /// Return name of the transport.
     const PString & GetName() const { return m_name; }
 
+    /// Return the type of the transport
+    virtual PString GetType();
+
     /**Open the media transport.
       */
     virtual bool Open(
@@ -460,8 +468,12 @@ class OpalMediaTransport : public PSafeObject, public OpalMediaTransportChannelT
       const void * data,
       PINDEX length,
       SubChannels subchannel = e_Media,
-      const PIPSocketAddressAndPort * remote = NULL
-    );
+      const PIPSocketAddressAndPort * remote = NULL,
+      int * mtu = NULL
+    ) = 0;
+
+    /// Get the error code for the last read operation on transport
+    PChannel::Errors GetLastError(SubChannels subchannel) const;
 
 #if OPAL_SRTP
     /**Get encryption keys.
@@ -500,6 +512,7 @@ class OpalMediaTransport : public PSafeObject, public OpalMediaTransportChannelT
       */
     PChannel * GetChannel(SubChannels subchannel = e_Media) const;
 
+    void SetDiscoverMTU(int mode) { m_mtuDiscoverMode = mode; }
     void SetMediaTimeout(const PTimeInterval & t);
     void SetRemoteBehindNAT(bool nat = true);
     void ResetHasSetRemoteMediaAddress();
@@ -529,19 +542,23 @@ class OpalMediaTransport : public PSafeObject, public OpalMediaTransportChannelT
 
   protected:
     virtual void InternalClose();
-    virtual void InternalStop();
-    virtual void InternalRxData(SubChannels subchannel, const PBYTEArray & data);
+    virtual bool GarbageCollection(); // Override from PSafeObject
+    virtual bool InternalRxData(SubChannels subchannel, const PBYTEArray & data);
 
     PString       m_name;
     bool          m_remoteBehindNAT;
+
     bool          m_hasSetNATControlAddress;
     bool          m_hasSetNATMediaAddress;
     bool          m_remoteAddressSet;
+
     PINDEX        m_packetSize;
+    int           m_mtuDiscoverMode;
     PTimeInterval m_mediaTimeout;
     PSimpleTimer  m_mediaTimer;
     PTimeInterval m_maxNoTransmitTime;
     atomic<bool>  m_opened;
+    atomic<bool>  m_established;
     atomic<bool>  m_started;
     PMutex m_closeMutex;
     bool m_closeInvoked;
@@ -549,6 +566,17 @@ class OpalMediaTransport : public PSafeObject, public OpalMediaTransportChannelT
     atomic<CongestionControl *> m_congestionControl;
     PTimer m_ccTimer;
     PDECLARE_NOTIFIER(PTimer, OpalMediaTransport, ProcessCongestionControl);
+
+    enum RemoteAddressSources {
+      e_RemoteAddressUnknown,
+      e_RemoteAddressFromSignalling,
+      e_RemoteAddressFromFirstPacket,
+      e_RemoteAddressFromProvisionalPair,
+      e_RemoteAddressFromICE
+    };
+#if PTRACING
+    friend ostream & operator<<(ostream & strm, RemoteAddressSources source);
+#endif
 
     struct ChannelInfo
     {
@@ -572,8 +600,12 @@ class OpalMediaTransport : public PSafeObject, public OpalMediaTransportChannelT
       PSimpleTimer         m_timeForUnavailableErrors;
       OpalTransportAddress m_localAddress;
       OpalTransportAddress m_remoteAddress;
+      RemoteAddressSources m_remoteAddressSource;
+      PChannel::Errors     m_lastError;
+      PChannel::Errors     m_remoteGoneError;  // Error to report if remote disappears
 
-      PTRACE_THROTTLE(m_throttleReadPacket,4,60000);
+      PTRACE_THROTTLE(m_throttleWritePacket,3,60000);
+      PTRACE_THROTTLE(m_throttleReadPacket,3,60000);
 
 #if defined(__GNUC__) && __cplusplus < 201103
       void operator=(const ChannelInfo &) { }
@@ -593,10 +625,10 @@ class OpalTCPMediaTransport : public OpalMediaTransport
 {
   public:
     OpalTCPMediaTransport(const PString & name);
-    ~OpalTCPMediaTransport() { InternalStop(); }
 
     virtual bool Open(OpalMediaSession & session, PINDEX count, const PString & localInterface, const OpalTransportAddress & remoteAddress);
     virtual bool SetRemoteAddress(const OpalTransportAddress & remoteAddress, PINDEX = e_Media);
+    virtual bool Write(const void * data, PINDEX length, SubChannels = e_Media, const PIPSocketAddressAndPort * = NULL, int * = NULL);
 };
 
 
@@ -607,17 +639,16 @@ class OpalUDPMediaTransport : public OpalMediaTransport
     PCLASSINFO(OpalUDPMediaTransport, OpalMediaTransport);
   public:
     OpalUDPMediaTransport(const PString & name);
-    ~OpalUDPMediaTransport() { InternalStop(); }
 
     virtual bool Open(OpalMediaSession & session, PINDEX count, const PString & localInterface, const OpalTransportAddress & remoteAddress);
     virtual bool SetRemoteAddress(const OpalTransportAddress & remoteAddress, SubChannels subchannel = e_Media);
-    virtual bool Write(const void * data, PINDEX length, SubChannels = e_Media, const PIPSocketAddressAndPort * = NULL);
+    virtual bool Write(const void * data, PINDEX length, SubChannels = e_Media, const PIPSocketAddressAndPort * = NULL, int * = NULL);
 
     PUDPSocket * GetSubChannelAsSocket(SubChannels subchannel = e_Media) const;
 
   protected:
-    virtual void InternalRxData(SubChannels subchannel, const PBYTEArray & data);
-    virtual bool InternalSetRemoteAddress(const PIPSocket::AddressAndPort & ap, SubChannels subchannel, bool dontOverride PTRACE_PARAM(, const char * source));
+    virtual bool InternalRxData(SubChannels subchannel, const PBYTEArray & data);
+    virtual bool InternalSetRemoteAddress(const PIPSocket::AddressAndPort & ap, SubChannels subchannel, RemoteAddressSources source);
     virtual bool InternalOpenPinHole(PUDPSocket & socket);
 
     bool m_localHasRestrictedNAT;

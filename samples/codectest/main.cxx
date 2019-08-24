@@ -108,7 +108,9 @@ void CodecTest::Main()
 
   PTRACE_INITIALISE(args);
 
+#ifdef OPAL_REGISTER_RAW_VIDEO
   OPAL_REGISTER_RAW_VIDEO();
+#endif
 
   if (args.HasOption("list")) {
     OpalPluginCodecManager & codecMgr = OpalPluginCodecManager::GetInstance();
@@ -213,6 +215,7 @@ void CodecTest::Main()
       if (cmd == "q" || cmd == "x" || cmd == "quit" || cmd == "exit")
         break;
 
+#if OPAL_VIDEO
       if (cmd == "vfu") {
         if (test.m_video.m_encoder == NULL)
           cout << "\nNo video encoder running!" << endl;
@@ -267,8 +270,11 @@ void CodecTest::Main()
               "  qcif   : Set size of grab & display to qcif\n"
               "  cif    : Set size of grab & display to cif\n"
               "  WxH    : Set size of grab & display W by H\n"
-              "  N      : Next video frame in sinlge step mode\n"
+              "  N      : Next video frame in single step mode\n"
               "  Q or X : Exit program\n" << endl;
+#else
+      cout << "Enter Q or X to exit program\n" << endl;
+#endif
     } // end for
 
     cout << "Exiting." << endl;
@@ -338,6 +344,29 @@ int TranscoderThread::InitialiseCodec(PArgList & args,
             mediaFormat.SetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption(), fpp);
         }
 
+        if (args.HasOption("bit-rate")) {
+          PString str = args.GetOptionString("bit-rate");
+          double bitrate = str.AsReal();
+          switch (str[str.GetLength()-1]) {
+            case 'K' :
+            case 'k' :
+              bitrate *= 1000;
+              break;
+            case 'M' :
+            case 'm' :
+              bitrate *= 1000000;
+              break;
+          }
+          if (bitrate < 100 || bitrate > INT_MAX) {
+            cerr << "Could not set bit rate to " << str << endl;
+            return false;
+          }
+          mediaFormat.SetOptionInteger(OpalMediaFormat::TargetBitRateOption(), (unsigned)bitrate);
+          if (mediaFormat.GetOptionInteger(OpalMediaFormat::MaxBitRateOption()) < bitrate)
+            mediaFormat.SetOptionInteger(OpalMediaFormat::MaxBitRateOption(), (unsigned)bitrate);
+        }
+        cout << "Target bit rate set to " << PString(PString::ScaleSI, mediaFormat.GetOptionInteger(OpalMediaFormat::TargetBitRateOption())) << "bps" << endl;
+
         PStringArray options = args.GetOptionString('O').Lines();
         for (PINDEX opt = 0; opt < options.GetSize(); ++opt) {
           PString option = options[opt];
@@ -374,28 +403,6 @@ int TranscoderThread::InitialiseCodec(PArgList & args,
   return 1;
 }
 
-
-static int udiff(unsigned int const subtrahend, unsigned int const subtractor) 
-{
-  return subtrahend - subtractor;
-}
-
-
-static double square(double const arg) 
-{
-  return(arg*arg);
-}
-
-static double CalcSNR(const BYTE * src1, const BYTE * src2, PINDEX dataLen)
-{
-  double diff2 = 0.0;
-  for (PINDEX i = 0; i < dataLen; ++i) 
-    diff2 += square(udiff(*src1++, *src2++));
-
-  double const snr = diff2 / dataLen / 255;
-
-  return snr;
-}
 
 bool AudioThread::Initialise(PArgList & args)
 {
@@ -495,6 +502,18 @@ bool AudioThread::Initialise(PArgList & args)
 }
 
 
+void AudioThread::Main()
+{
+  if (m_recorder == NULL || m_player == NULL) {
+    cerr << "Audio cannot open recorder or player" << endl;
+    return;
+  }
+
+  TranscoderThread::Main();
+}
+
+
+#if OPAL_VIDEO
 bool VideoThread::Initialise(PArgList & args)
 {
   OpalMediaFormat mediaFormat, rawFormat;
@@ -689,29 +708,6 @@ bool VideoThread::Initialise(PArgList & args)
   cout << ')' << endl;
 
 
-  if (args.HasOption("bit-rate")) {
-    PString str = args.GetOptionString("bit-rate");
-    double bitrate = str.AsReal();
-    switch (str[str.GetLength()-1]) {
-      case 'K' :
-      case 'k' :
-        bitrate *= 1000;
-        break;
-      case 'M' :
-      case 'm' :
-        bitrate *= 1000000;
-        break;
-    }
-    if (bitrate < 100 || bitrate > INT_MAX) {
-      cerr << "Could not set bit rate to " << str << endl;
-      return false;
-    }
-    mediaFormat.SetOptionInteger(OpalVideoFormat::TargetBitRateOption(), (unsigned)bitrate);
-    if (mediaFormat.GetOptionInteger(OpalVideoFormat::MaxBitRateOption()) < bitrate)
-      mediaFormat.SetOptionInteger(OpalVideoFormat::MaxBitRateOption(), (unsigned)bitrate);
-  }
-  cout << "Target bit rate set to " << mediaFormat.GetOptionInteger(OpalVideoFormat::TargetBitRateOption()) << " bps" << endl;
-
   if (args.HasOption('T'))
     m_frameFilename = "frame_stats.csv";
 
@@ -741,17 +737,6 @@ bool VideoThread::Initialise(PArgList & args)
 }
 
 
-void AudioThread::Main()
-{
-  if (m_recorder == NULL || m_player == NULL) {
-    cerr << "Audio cannot open recorder or player" << endl;
-    return;
-  }
-
-  TranscoderThread::Main();
-}
-
-
 void VideoThread::Main()
 {
   if (m_grabber == NULL || m_display == NULL) {
@@ -766,7 +751,7 @@ void VideoThread::Main()
   TranscoderThread::Main();
 }
 
-void TranscoderThread::OnTranscoderCommand(OpalMediaCommand & cmd, P_INT_PTR)
+void VideoThread::OnTranscoderCommand(OpalMediaCommand & cmd, P_INT_PTR)
 {
   if (PIsDescendant(&cmd, OpalVideoUpdatePicture)) {
     coutMutex.Wait();
@@ -786,6 +771,28 @@ void VideoThread::SaveSNRFrame(const RTP_DataFrame & src)
   m_snrSourceFrames.push(saved);
 }
 
+
+static int udiff(unsigned int const subtrahend, unsigned int const subtractor) 
+{
+  return subtrahend - subtractor;
+}
+
+
+static double square(double const arg) 
+{
+  return(arg*arg);
+}
+
+static double CalcSNR(const BYTE * src1, const BYTE * src2, PINDEX dataLen)
+{
+  double diff2 = 0.0;
+  for (PINDEX i = 0; i < dataLen; ++i) 
+    diff2 += square(udiff(*src1++, *src2++));
+
+  double const snr = diff2 / dataLen / 255;
+
+  return snr;
+}
 
 void VideoThread::CalcSNR(const RTP_DataFrame & dst)
 {
@@ -825,7 +832,7 @@ void VideoThread::CalcSNR(const RTP_DataFrame & src, const RTP_DataFrame & dst)
 
   unsigned size = m_snrHeight * m_snrWidth;
 
-  int tsize = sizeof(OpalVideoTranscoder::FrameHeader) + size*3/2;
+  PINDEX tsize = sizeof(OpalVideoTranscoder::FrameHeader) + size*3/2;
 
   if (src.GetPayloadSize() < tsize || dst.GetPayloadSize() < tsize)
     return;
@@ -884,6 +891,69 @@ void VideoThread::ReportSNR()
   coutMutex.Signal();
 }
 
+bool VideoThread::Read(RTP_DataFrame & data)
+{
+  if (m_singleStep) {
+    m_frameWait.Wait();
+    m_timestamp += m_frameTime;
+  }
+  else {
+    PTimeInterval currentGrabTime = PTimer::Tick();
+    m_timestamp += (int)((currentGrabTime - m_lastGrabTime).GetMilliSeconds()*OpalMediaFormat::VideoClockRate/1000);
+    m_lastGrabTime = currentGrabTime;
+  }
+
+  data.SetPayloadSize(m_grabber->GetMaxFrameBytes()+sizeof(OpalVideoTranscoder::FrameHeader));
+  data.SetMarker(TRUE);
+
+  unsigned width, height;
+  m_grabber->GetFrameSize(width, height);
+  OpalVideoTranscoder::FrameHeader * frame = (OpalVideoTranscoder::FrameHeader *)data.GetPayloadPtr();
+  frame->x = frame->y = 0;
+  frame->width = width;
+  frame->height = height;
+  data.SetPayloadSize(OpalVideoFrameDataLen(frame));
+
+  return m_grabber->GetFrameData(OpalVideoFrameDataPtr(frame));
+}
+
+
+bool VideoThread::Write(const RTP_DataFrame & data)
+{
+  if (m_display->GetColourFormat() != PVideoFrameInfo::YUV420P())
+    return m_display->SetFrameData(0, 0, 0, 0, data.GetPayloadPtr(), data.GetMarker());
+
+  const OpalVideoTranscoder::FrameHeader * frame = (const OpalVideoTranscoder::FrameHeader *)data.GetPayloadPtr();
+  m_display->SetFrameSize(frame->width, frame->height);
+  return m_display->SetFrameData(frame->x, frame->y,
+                                 frame->width, frame->height,
+                                 OpalVideoFrameDataPtr(frame), data.GetMarker());
+}
+
+
+void VideoThread::Stop()
+{
+  if (m_running) {
+    m_running = false;
+    m_frameWait.Signal();
+    WaitForTermination();
+  }
+}
+
+
+void VideoThread::WriteFrameStats(const PString & str)
+{
+  if (!m_frameFilename.IsEmpty()) {
+    m_frameStatFile.Open(m_frameFilename, PFile::WriteOnly);
+    m_frameFilename.MakeEmpty();
+  }
+
+  if (m_frameStatFile.IsOpen()) 
+    m_frameStatFile << str << endl;
+}
+#endif // OPAL_VIDEO
+
+
 struct FrameHistoryEntry {
   FrameHistoryEntry(unsigned size_, PInt64 timeStamp_, bool iFrame_)
     : size(size_), timeStamp(timeStamp_), iFrame(iFrame_)
@@ -911,8 +981,6 @@ void TranscoderThread::Main()
 
   WORD sequenceNumber = 0;
 
-  bool isVideo = PIsDescendant(m_encoder, OpalVideoTranscoder);
-
   PTimeInterval startTick = PTimer::Tick();
 
   //////////////////////////////////////////////
@@ -924,9 +992,12 @@ void TranscoderThread::Main()
 
   OpalAudioFormat audioFormat(m_encoder->GetOutputFormat());
   OpalAudioFormat::FrameDetectorPtr audioDetector;
+#if OPAL_VIDEO
   OpalVideoFormat videoFormat(m_encoder->GetOutputFormat());
   OpalVideoFormat::FrameDetectorPtr videoDetector;
+  bool isVideo = PIsDescendant(m_encoder, OpalVideoTranscoder);
   bool videoDetectorFailed = false;
+#endif
 
   while ((m_running && m_framesToTranscode < 0) || (m_framesToTranscode-- > 0)) {
 
@@ -958,6 +1029,7 @@ void TranscoderThread::Main()
     if (m_encoder == NULL) 
       encFrames.Append(new RTP_DataFrame(srcFrame)); 
     else {
+#if OPAL_VIDEO
       if (isVideo) {
         if (m_forceIFrame) {
           coutMutex.Wait();
@@ -967,6 +1039,7 @@ void TranscoderThread::Main()
         if (m_forceIFrame)
           m_encoder->ExecuteCommand(OpalVideoUpdatePicture());
       }
+#endif
 
       if (m_headerExtension != 255)
         srcFrame.SetHeaderExtension(1, 1, &m_headerExtension, RTP_DataFrame::RFC5285_OneByte);
@@ -978,8 +1051,10 @@ void TranscoderThread::Main()
         cerr << "Encoder " << (newInState ? "restor" : "fail") << "ed at input frame " << totalInputFrameCount-1 << endl;
         continue;
       }
+#if OPAL_VIDEO
       if (isVideo)
         encoderSaysIntra = ((OpalVideoTranscoder *)m_encoder)->WasLastFrameIFrame();
+#endif
     }
 
     //////////////////////////////////////////////
@@ -1028,8 +1103,10 @@ void TranscoderThread::Main()
 
     totalEncodedPacketCount += encFrames.GetSize();
 
+#if OPAL_VIDEO
     if (isVideo && m_calcSNR)
       ((VideoThread *)this)->SaveSNRFrame(srcFrame);
+#endif
 
     //////////////////////////////////////////////
     //
@@ -1042,9 +1119,12 @@ void TranscoderThread::Main()
           ++it;
         else {
           ++totalDroppedPacketCount;
+#if OPAL_VIDEO
           if (isVideo)
             encFrames.erase(it++);
-          else {
+          else
+#endif
+          {
             it->SetPayloadSize(0);
             it->SetDiscontinuity(1);
             ++it;
@@ -1088,6 +1168,7 @@ void TranscoderThread::Main()
         if (outFrames.GetSize() > 1) 
           cerr << "Non rate controlled video decoder returned != 1 output frame for input frame " << totalInputFrameCount-1 << endl;
         else if (outFrames.GetSize() == 1) {
+#if OPAL_VIDEO
           if (isVideo) {
             decoderSaysIntra = ((OpalVideoTranscoder *)m_decoder)->WasLastFrameIFrame();
             if (g_infoCount > 1) {
@@ -1095,18 +1176,20 @@ void TranscoderThread::Main()
               cout << "Decoder generated payload of size " << outFrames[0].GetPayloadSize() << endl;
               coutMutex.Signal();
             }
+            if (m_calcSNR) 
+              ((VideoThread *)this)->CalcSNR(outFrames[0]);
           }
+#endif
           bool newOutState = Write(outFrames[0]);
           if (oldOutState != newOutState) {
             oldOutState = newOutState;
             cerr << "Output write " << (state ? "restor" : "fail") << "ed at input frame " << totalInputFrameCount << endl;
           }
-          if (isVideo && m_calcSNR) 
-            ((VideoThread *)this)->CalcSNR(outFrames[0]);
           totalOutputFrameCount++;
         }
       }
 
+#if OPAL_VIDEO
       if (isVideo) {
         bool detectedInter = false;
         for (PINDEX i = 0; i < encFrames.GetSize(); i++) {
@@ -1128,7 +1211,9 @@ void TranscoderThread::Main()
           coutMutex.Signal();
         }
       }
-      else {
+      else
+#endif
+      {
         for (PINDEX i = 0; i < encFrames.GetSize(); i++) {
           OpalAudioFormat::FrameType type = audioFormat.GetFrameType(encFrames[i].GetPayloadPtr(), encFrames[i].GetPayloadSize(), audioDetector);
           if (type & OpalAudioFormat::e_SilenceFrame) {
@@ -1254,71 +1339,5 @@ void AudioThread::Stop()
   }
 }
 
-
-bool VideoThread::Read(RTP_DataFrame & data)
-{
-  if (m_singleStep) {
-    m_frameWait.Wait();
-    m_timestamp += m_frameTime;
-  }
-  else {
-    PTimeInterval currentGrabTime = PTimer::Tick();
-    m_timestamp += (int)((currentGrabTime - m_lastGrabTime).GetMilliSeconds()*OpalMediaFormat::VideoClockRate/1000);
-    m_lastGrabTime = currentGrabTime;
-  }
-
-  data.SetPayloadSize(m_grabber->GetMaxFrameBytes()+sizeof(OpalVideoTranscoder::FrameHeader));
-  data.SetMarker(TRUE);
-
-  unsigned width, height;
-  m_grabber->GetFrameSize(width, height);
-  OpalVideoTranscoder::FrameHeader * frame = (OpalVideoTranscoder::FrameHeader *)data.GetPayloadPtr();
-  frame->x = frame->y = 0;
-  frame->width = width;
-  frame->height = height;
-  data.SetPayloadSize(OpalVideoFrameDataLen(frame));
-
-  return m_grabber->GetFrameData(OpalVideoFrameDataPtr(frame));
-}
-
-
-bool VideoThread::Write(const RTP_DataFrame & data)
-{
-  if (m_display->GetColourFormat() != PVideoFrameInfo::YUV420P())
-    return m_display->SetFrameData(0, 0, 0, 0, data.GetPayloadPtr(), data.GetMarker());
-
-  const OpalVideoTranscoder::FrameHeader * frame = (const OpalVideoTranscoder::FrameHeader *)data.GetPayloadPtr();
-  m_display->SetFrameSize(frame->width, frame->height);
-  return m_display->SetFrameData(frame->x, frame->y,
-                                 frame->width, frame->height,
-                                 OpalVideoFrameDataPtr(frame), data.GetMarker());
-}
-
-
-void VideoThread::Stop()
-{
-  if (m_running) {
-    m_running = false;
-    m_frameWait.Signal();
-    WaitForTermination();
-  }
-}
-
-
-void VideoThread::WriteFrameStats(const PString & str)
-{
-  if (!m_frameFilename.IsEmpty()) {
-    m_frameStatFile.Open(m_frameFilename, PFile::WriteOnly);
-    m_frameFilename.MakeEmpty();
-  }
-
-  if (m_frameStatFile.IsOpen()) 
-    m_frameStatFile << str << endl;
-}
-
-PInt64 BpsTokbps(PInt64 Bps)
-{
-  return ((Bps * 8) + 500) / 1000;
-}
 
 // End of File ///////////////////////////////////////////////////////////////

@@ -76,7 +76,7 @@ typedef struct OpalHandleStruct * OpalHandle;
 typedef struct OpalMessage OpalMessage;
 
 /// Current API version
-#define OPAL_C_API_VERSION 36
+#define OPAL_C_API_VERSION 39
 
 
 ///////////////////////////////////////
@@ -495,6 +495,8 @@ typedef enum OpalMessageType {
   OpalIndSentIM,                /**<Get indication of the disposition of a sent instant message. This message
                                     is returned in the OpalGetMessage() function. See the OpalInstantMessage
                                     structure for more information. */
+  OpalIndProtocolMessage,       /**<Get indication of protocol specific messages. See the OpalProtocolMessage
+                                    structure for more information. */
 
 // Always add new messages to ethe end to maintain backward compatibility
   OpalMessageTypeCount
@@ -712,8 +714,9 @@ typedef struct OpalParamGeneral {
                                            only "STUN" is assumed, and if this is a host name or IP
                                            address, then a "Fixed" NAT router is used. */
   const char * m_natServer;           /**< The host name or IP address of the NAT (e.g. STUN) server which
-                                           may be used to determine the NAT router characteristics
-                                           automatically. If m_natMethod then this must have corresponding
+                                           may be used to determine the NAT router characteristics. The local
+                                           interface used may be optionally set after a '\t' characters. If
+                                           m_natMethod has multiple entries, then this must have corresponding
                                            '\n' separated entries. */
   unsigned     m_tcpPortBase;         /**< Base of range of ports to use for TCP communications. This may
                                            be required by some firewalls. */
@@ -921,10 +924,16 @@ typedef struct OpalParamProtocol {
                                            string is of the form key=value\nkey=value */
   const char * m_mediaCryptoSuites;   /**< A list of \n separated strings indicated enabled media
                                            crypto suites for this endpoint. Note, order of entries
-                                           indicates priority. */
+                                           indicates priority. The special value of "!Clear" may also
+                                           be used indicating all available crypto suites are offered
+                                           but there must be encryption. */
   const char * m_allMediaCryptoSuites;/**< This is only provided as a return value, and lists all of the
                                            crypto suites supported by this protocol in the form:
                                               "name1=description1\nname2=description2\n" */
+  unsigned m_maxSizeUDP;              /**< Maximum size of signalling UDP packet. */
+  const char * m_protocolMessageIdentifiers; /**< List of \n separated strings for protocol message identifers
+                                                  that OPAL will assume are successfully handled and a
+                                                  OpalIndProtocolMessage executed. */
 } OpalParamProtocol;
 
 
@@ -1577,6 +1586,19 @@ typedef struct OpalStatusIVR {
 } OpalStatusIVR;
 
 
+/**Indication of a protocol specific message.
+   In the case of SIP, this is an INFO message with a package type
+    indicated as the protocol message identifier.
+  */
+typedef struct OpalProtocolMessage {
+  const char * m_protocol;   ///< Protocol this message is from, e.g. "sip".
+  const char * m_callToken;  ///< Call token for context of the message.
+  const char * m_identifier; ///< Protocol specific indentifier for what this message is about.
+  const void * m_payload;    ///< Extra protocol and identifier specific data.
+  unsigned     m_size;       ///< Size of the above data.
+} OpalProtocolMessage;
+
+
 /**Call clearance information for the OpalIndCallCleared indication.
    This is only returned from the OpalGetMessage() function.
   */
@@ -1593,37 +1615,43 @@ typedef struct OpalStatusCallCleared {
 /**Type code for the reasons a call was ended.
   */
 typedef enum OpalCallEndReason {
-  OpalCallEndedByLocalUser,         /// Local endpoint application cleared call
-  OpalCallEndedByNoAccept,          /// Local endpoint did not accept call OnIncomingCall()=false
-  OpalCallEndedByAnswerDenied,      /// Local endpoint declined to answer call
-  OpalCallEndedByRemoteUser,        /// Remote endpoint application cleared call
-  OpalCallEndedByRefusal,           /// Remote endpoint refused call
-  OpalCallEndedByNoAnswer,          /// Remote endpoint did not answer in required time
-  OpalCallEndedByCallerAbort,       /// Remote endpoint stopped calling
-  OpalCallEndedByTransportFail,     /// Transport error cleared call
-  OpalCallEndedByConnectFail,       /// Transport connection failed to establish call
-  OpalCallEndedByGatekeeper,        /// Gatekeeper has cleared call
-  OpalCallEndedByNoUser,            /// Call failed as could not find user (in GK)
-  OpalCallEndedByNoBandwidth,       /// Call failed as could not get enough bandwidth
-  OpalCallEndedByCapabilityExchange,/// Could not find common capabilities
-  OpalCallEndedByCallForwarded,     /// Call was forwarded using FACILITY message
-  OpalCallEndedBySecurityDenial,    /// Call failed a security check and was ended
-  OpalCallEndedByLocalBusy,         /// Local endpoint busy
-  OpalCallEndedByLocalCongestion,   /// Local endpoint congested
-  OpalCallEndedByRemoteBusy,        /// Remote endpoint busy
-  OpalCallEndedByRemoteCongestion,  /// Remote endpoint congested
-  OpalCallEndedByUnreachable,       /// Could not reach the remote party
-  OpalCallEndedByNoEndPoint,        /// The remote party is not running an endpoint
-  OpalCallEndedByHostOffline,       /// The remote party host off line
-  OpalCallEndedByTemporaryFailure,  /// The remote failed temporarily app may retry
-  OpalCallEndedByQ931Cause,         /// The remote ended the call with unmapped Q.931 cause code
-  OpalCallEndedByDurationLimit,     /// Call cleared due to an enforced duration limit
-  OpalCallEndedByInvalidConferenceID, /// Call cleared due to invalid conference ID
-  OpalCallEndedByNoDialTone,        /// Call cleared due to missing dial tone
-  OpalCallEndedByNoRingBackTone,    /// Call cleared due to missing ringback tone
-  OpalCallEndedByOutOfService,      /// Call cleared because the line is out of service, 
-  OpalCallEndedByAcceptingCallWaiting, /// Call cleared because another call is answered
-  OpalCallEndedWithQ931Code = 0x100  /// Q931 code specified in MS byte
+    OpalCallEndedByLocalUser,              ///< Local endpoint application cleared call
+    OpalCallEndedByNoAccept,               ///< Local endpoint did not accept call OnIncomingCall()=false
+    OpalCallEndedByAnswerDenied,           ///< Local endpoint declined to answer call
+    OpalCallEndedByRemoteUser,             ///< Remote endpoint application cleared call
+    OpalCallEndedByRefusal,                ///< Remote endpoint refused call
+    OpalCallEndedByNoAnswer,               ///< Remote endpoint did not answer in required time
+    OpalCallEndedByCallerAbort,            ///< Remote endpoint stopped calling
+    OpalCallEndedByTransportFail,          ///< Transport error cleared call
+    OpalCallEndedByConnectFail,            ///< Transport connection failed to establish call
+    OpalCallEndedByGatekeeper,             ///< Gatekeeper has cleared call
+    OpalCallEndedByNoUser,                 ///< Call failed as could not find user (in GK)
+    OpalCallEndedByNoBandwidth,            ///< Call failed as could not get enough bandwidth
+    OpalCallEndedByCapabilityExchange,     ///< Could not find common capabilities
+    OpalCallEndedByCallForwarded,          ///< Call was forwarded using FACILITY message
+    OpalCallEndedBySecurityDenial,         ///< Call failed a security check and was ended
+    OpalCallEndedByLocalBusy,              ///< Local endpoint busy
+    OpalCallEndedByLocalCongestion,        ///< Local endpoint congested
+    OpalCallEndedByRemoteBusy,             ///< Remote endpoint busy
+    OpalCallEndedByRemoteCongestion,       ///< Remote endpoint congested
+    OpalCallEndedByUnreachable,            ///< Could not reach the remote party
+    OpalCallEndedByNoEndPoint,             ///< The remote party is not running an endpoint
+    OpalCallEndedByHostOffline,            ///< The remote party host off line
+    OpalCallEndedByTemporaryFailure,       ///< The remote failed temporarily app may retry
+    OpalCallEndedByQ931Cause,              ///< The remote ended the call with Q.931 cause code in MS byte
+    OpalCallEndedByDurationLimit,          ///< Call cleared due to an enforced duration limit
+    OpalCallEndedByInvalidConferenceID,    ///< Call cleared due to invalid conference ID
+    OpalCallEndedByNoDialTone,             ///< Call cleared due to missing dial tone
+    OpalCallEndedByNoRingBackTone,         ///< Call cleared due to missing ringback tone
+    OpalCallEndedByOutOfService,           ///< Call cleared because the line is out of service, 
+    OpalCallEndedByAcceptingCallWaiting,   ///< Call cleared because another call is answered
+    OpalCallEndedByGkAdmissionFailed,      ///< Call cleared because gatekeeper admission request failed.
+    OpalCallEndedByMediaFailed,            ///< Call cleared due to loss of media flow.
+    OpalCallEndedByCallCompletedElsewhere, ///< Call cleared because it was answered by another extension.
+    OpalCallEndedByCertificateAuthority,   ///< When using TLS, the remote certifcate was not authenticated
+    OpalCallEndedByIllegalAddress,         ///< Destination Address  format was incorrect format
+    OpalCallEndedByCustomCode,             ///< End call with custom protocol specific code (e.g. SIP)
+    OpalCallEndedByMediaTransportFail      ///< End call due to media transport failure, typically ICE error
 } OpalCallEndReason;
 
 
@@ -1633,6 +1661,8 @@ typedef struct OpalParamCallCleared {
   const char      * m_callToken;  ///< Call token for call being cleared.
   OpalCallEndReason m_reason;     /**< Code for the call termination to be provided to the
                                        remote system. */
+  unsigned          m_custom;     /**< Custom code for OpalCallEndedByQ931Cause &
+                                       OpalCallEndedByCustomCode reasons */
 } OpalParamCallCleared;
 
 
@@ -1658,6 +1688,7 @@ union OpalMessageParam {
   OpalStatusIVR            m_ivrStatus;          ///< Used by OpalIndCompletedIVR
   OpalPresenceStatus       m_presenceStatus;     ///< used by OpalCmdAuthorisePresence/OpalCmdSubscribePresence/OpalIndPresenceChange/OpalCmdSetLocalPresence
   OpalInstantMessage       m_instantMessage;     ///< Used by OpalCmdSendIM/OpalIndReceiveIM
+  OpalProtocolMessage      m_protocolMessage;    ///< Used by OpalIndProtocolMessage
 };
 
 

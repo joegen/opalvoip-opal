@@ -26,64 +26,10 @@
 #ifndef _RecodingCalls_MAIN_H
 #define _RecodingCalls_MAIN_H
 
-
 #define EXTERNAL_SCHEME "record"
 
 class MyLocalEndPoint;
-
-
-/* We create a derived class of OpalLocalConnection so we can keep some extra
-   context around what how it is recorded. */
-
-class MyLocalConnection : public OpalLocalConnection
-{
-    PCLASSINFO(MyLocalConnection, OpalLocalConnection)
-  public:
-    MyLocalConnection(
-      OpalCall & call,              ///<  Owner call for connection
-      MyLocalEndPoint & endpoint,   ///<  Owner endpoint for connection
-      void * userData,              ///<  Arbitrary data to pass to connection
-      unsigned options,             ///< Option bit mask to pass to connection
-      OpalConnection::StringOptions * stringOptions  ///< Options to pass to connection
-    );
-
-    /**Call back to indicate that there is an incoming call.
-       Note this function should not block or it will impede the operation of
-       the stack.
-
-       The default implementation call OpalLocalEndPoint::OnIncomingCall().
-
-       @return false if the call is to be aborted with status of EndedByLocalBusy.
-      */
-    virtual bool OnIncoming();
-
-    /**Call back to handle received media data.
-       If false is returned the media stream will be closed.
-
-       Note: For audio media, if \p data is NULL then that indicates there is
-       no incoming audio available from the jitter buffer. The application
-       should output silence for a time. The \p written value should still
-       contain the bytes of silence emitted, even though it will be larger
-       that \p length.
-
-       Also, it is expected that this function be real time. That is if 320
-       bytes of PCM-16 are written, this function should take 20ms to execute.
-       If not then the jitter buffer will not operate correctly and audio will
-       not be of high quality. This timing can be simulated if required, see
-       GetSynchronicity for more details.
-
-       The default implementation ignores the media data and returns true.
-      */
-    virtual bool OnWriteMediaData(
-      const OpalMediaStream & mediaStream,    ///<  Media stream data is required for
-      const void * data,                      ///<  Data received
-      PINDEX length,                          ///<  Amount of data available to write
-      PINDEX & written                        ///<  Amount of data written
-    );
-
-  protected:
-    PWAVFile m_wavFile;  // If writing to individual WAV file.
-};
+class PMediaFile;
 
 
 class MyLocalEndPoint : public OpalLocalEndPoint
@@ -104,16 +50,6 @@ class MyLocalEndPoint : public OpalLocalEndPoint
        and YUV420P video.
       */
     virtual OpalMediaFormatList GetMediaFormats() const;
-
-    /**Create a connection for the PCSS endpoint.
-       The default implementation is to create a OpalLocalConnection.
-      */
-    virtual OpalLocalConnection * CreateConnection(
-      OpalCall & call,    ///<  Owner of connection
-      void * userData,    ///<  Arbitrary data to pass to connection
-      unsigned options,   ///< Option bit mask to pass to connection
-      OpalConnection::StringOptions * stringOptions ///< Options to pass to connection
-    );
 
     /**Call back to indicate that there is an incoming call.
        Note this function should not block or it will impede the operation of
@@ -163,18 +99,16 @@ class MyLocalEndPoint : public OpalLocalEndPoint
     // New functions
     bool Initialise(PArgList & args);
 
-    bool OpenWAVFile(const OpalCall & call, PWAVFile & wavFile);
-
   protected:
     OpalManagerConsole & m_manager;
-    PDirectory           m_wavDir;
 
-    struct Mixer : public OpalAudioMixer {
+    struct Mixer : public OpalAudioMixer
+    {
       ~Mixer() { StopPushThread(); }
 
       virtual bool OnMixed(RTP_DataFrame * & output);
 
-      PWAVFile m_wavFile;
+      PSmartPtr<PMediaFile> m_mediaFile;
     } m_mixer;
 };
 
@@ -191,6 +125,24 @@ class MyManager : public OpalManagerConsole
       bool verbose,
       const PString & defaultRoute = EXTERNAL_SCHEME":"
     );
+
+    /**A call back function whenever a call is completed.
+       In telephony terminology a completed call is one where there is an
+       established link between two parties.
+
+       This called from the OpalCall::OnEstablished() function.
+
+       The default behaviour does nothing.
+      */
+    virtual void OnEstablishedCall(
+      OpalCall & call   ///<  Call that was completed
+    );
+
+  protected:
+    PDirectory m_outputDir;
+    PString    m_fileTemplate;
+    PString    m_fileType;
+    OpalRecordManager::Options m_options;
 };
 
 

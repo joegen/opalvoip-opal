@@ -1320,7 +1320,7 @@ PSafePtr<H323Connection> H323EndPoint::FindConnectionWithLock(const PString & to
 {
   PSafePtr<H323Connection> connection = PSafePtrCast<OpalConnection, H323Connection>(GetConnectionWithLock(token, mode));
   if (connection == NULL)
-    connection = m_connectionsByCallId.FindWithLock(token, mode);
+    connection = m_connectionsByCallId.Find(token, mode);
 
   return connection;
 }
@@ -1550,7 +1550,7 @@ void H323EndPoint::SetDefaultLocalPartyName(const PString & name)
 
 bool H323EndPoint::SetAliasNames(const PStringList & names)
 {
-  if (!PAssert(!names.IsEmpty() && !names.front().IsEmpty(), "Must have non-empty string in AliasAddress!"))
+  if (!PAssert(!names.IsEmpty() && !names.front().IsEmpty(), "Must have non-empty string in first AliasAddress!"))
     return false;
 
   m_aliasMutex.Wait();

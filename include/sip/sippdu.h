@@ -70,7 +70,7 @@ class SDPSessionDescription;
 
 class SIPURL : public PURL
 {
-  PCLASSINFO(SIPURL, PURL);
+    PCLASSINFO_WITH_CLONE(SIPURL, PURL);
   public:
     static const WORD DefaultPort;
     static const WORD DefaultSecurePort;
@@ -205,8 +205,8 @@ class SIPURL : public PURL
     static PString GenerateTag();
 
     /// Set a tag with a new unique ID.
-    void SetTag(
-      const PString & tag = PString::Empty(),
+    PString SetTag(
+      const PString & tag = GenerateTag(),
       bool force = false
     );
 
@@ -1005,7 +1005,7 @@ class SIPTransactionOwner
     SIPAuthentication * m_authentication;
     unsigned            m_authenticateErrors;
 
-    PSafeList<SIPTransaction> m_transactions;
+    PSafeArray<SIPTransaction> m_transactions;
     PDECLARE_MUTEX(m_forkMutex);
 
   friend class SIPTransaction;
@@ -1026,10 +1026,6 @@ class SIPTransactionBase : public SIP_PDU
     SIPTransactionBase(
       const PString & transactionID
     ) { m_transactionID = transactionID; }
-
-    Comparison Compare(
-      const PObject & other
-    ) const;
 
     virtual bool IsTerminated() const { return true; }
 };

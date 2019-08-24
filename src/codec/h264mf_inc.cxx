@@ -426,6 +426,7 @@ static bool MyToCustomised(PluginCodec_OptionMap & original, PluginCodec_OptionM
     PluginCodec_Utilities::ClampMax((maxMacroBlocks+SCALE_FS_H241-1)/SCALE_FS_H241, original, changed, MaxFS_H241_Name, true);
   }
   else {
+    // Use max value to prevent inclusion of parameter
     PluginCodec_Utilities::Change(MAX_FS_SDP, original, changed, MaxFS_SDP_Name);
     PluginCodec_Utilities::Change(MAX_FS_H241, original, changed, MaxFS_H241_Name);
   }
@@ -437,6 +438,7 @@ static bool MyToCustomised(PluginCodec_OptionMap & original, PluginCodec_OptionM
     PluginCodec_Utilities::ClampMax((bitRate+SCALE_BR_H241-1)/SCALE_BR_H241, original, changed, MaxBR_H241_Name, true);
   }
   else {
+    // Use max value to prevent inclusion of parameter
     PluginCodec_Utilities::Change(MAX_BR_SDP, original, changed, MaxBR_SDP_Name);
     PluginCodec_Utilities::Change(MAX_BR_H241, original, changed, MaxBR_H241_Name);
   }
@@ -447,6 +449,7 @@ static bool MyToCustomised(PluginCodec_OptionMap & original, PluginCodec_OptionM
     PluginCodec_Utilities::ClampMax((macroBlocksPerSecond+SCALE_MBPS_H241-1)/SCALE_MBPS_H241, original, changed, MaxMBPS_H241_Name, true);
   }
   else {
+    // Use max value to prevent inclusion of parameter
     PluginCodec_Utilities::Change(MAX_MBPS_SDP, original, changed, MaxMBPS_SDP_Name);
     PluginCodec_Utilities::Change(MAX_MBPS_H241, original, changed, MaxMBPS_H241_Name);
   }

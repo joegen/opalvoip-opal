@@ -84,7 +84,7 @@ class IAX2SoundList : public PBYTEArray *
   
  protected:
   /**Mutex to give thread safety. */
-  PMutex      mutex;     
+  PDECLARE_MUTEX(mutex);     
 };
 
 

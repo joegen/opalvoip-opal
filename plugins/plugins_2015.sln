@@ -67,12 +67,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Audio - Opus", "audio\Opus\
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "opus", "audio\Opus\opus\win32\VS2015\opus.vcxproj", "{219EC965-228A-1824-174D-96449D05F88A}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "celt", "audio\Opus\opus\win32\VS2015\celt.vcxproj", "{245603E3-F580-41A5-9632-B25FE3372CBF}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "silk_common", "audio\Opus\opus\win32\VS2015\silk_common.vcxproj", "{C303D2FC-FF97-49B8-9DDD-467B4C9A0B16}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "silk_float", "audio\Opus\opus\win32\VS2015\silk_float.vcxproj", "{9C4961D2-5DDB-40C7-9BE8-CA918DC4E782}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Audio - iSAC", "audio\iSAC\isaccodec_2015.vcxproj", "{851A8648-5021-4FC3-ACED-40D2802D9C5E}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Video - H.264 (Cisco OpenH264)", "video\openh264\openh264_2015.vcxproj", "{E513A4F2-5341-4CAE-A643-D47975AE291C}"

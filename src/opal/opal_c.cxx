@@ -144,7 +144,7 @@ class OpalMessageBuffer
     operator OpalMessage *() const   { return  (OpalMessage *)m_data; }
 
     void SetString(const char * * variable, const char * value);
-    void SetData(const char * * variable, const char * value, size_t len);
+    void SetData(const char * * variable, const void * value, size_t len);
     void SetMIME(unsigned & length, const OpalMIME * & variable, const PMultiPartList & mime);
     void SetError(const char * errorText);
 
@@ -279,9 +279,17 @@ class SIPEndPoint_C : public SIPEndPoint
     virtual void OnDialogInfoReceived(
       const SIPDialogNotification & info  ///< Information on dialog state change
     );
+    virtual bool OnReceivedInfoPackage(
+      SIPConnection & connection,
+      const PString & package,
+      const PString & body
+    );
+
+    void SetMessageIdentifiers(const PString & str) { m_messageIdentifiers = str.Lines(); }
 
   private:
     OpalManager_C & m_manager;
+    PStringSet      m_messageIdentifiers;
 };
 #endif
 
@@ -477,7 +485,7 @@ void OpalMessageBuffer::SetString(const char * * variable, const char * value)
 }
 
 
-void OpalMessageBuffer::SetData(const char * * variable, const char * value, size_t length)
+void OpalMessageBuffer::SetData(const char * * variable, const void * value, size_t length)
 {
   PAssert((char *)variable >= m_data && (char *)variable < m_data+m_size, PInvalidParameter);
 
@@ -513,13 +521,22 @@ void OpalMessageBuffer::SetMIME(unsigned & length, const OpalMIME * & variable, 
   if (mime.IsEmpty())
     return;
 
-  length = mime.GetSize();
+  length = mime.size();
   SetData((const char **)&variable, NULL, length*sizeof(OpalMIME));
-  OpalMIME * item = const_cast<OpalMIME *>(variable);
-  for (PMultiPartList::const_iterator it = mime.begin(); it != mime.end(); ++it) {
-    SetString(&item->m_type, it->m_mime.GetString(PMIMEInfo::ContentTypeTag));
-    item->m_length = it->m_textBody.GetLength();
-    SetData(&item->m_data, it->m_textBody.GetPointer(), item->m_length);
+  size_t offset = m_strPtrOffset.back();
+  size_t index = 0;
+  for (PMultiPartList::const_iterator it = mime.begin(); it != mime.end(); ++it, ++index) {
+    // Recalculate pointers as SetString/SetData can do realloc and they move.
+    SetString(&(*reinterpret_cast<OpalMIME **>(m_data+offset))[index].m_type, it->m_mime.GetString(PMIMEInfo::ContentTypeTag));
+    OpalMIME & item = (*reinterpret_cast<OpalMIME **>(m_data+offset))[index];
+    if (it->m_textBody.IsEmpty()) {
+      item.m_length = it->m_binaryBody.GetSize();
+      SetData(&item.m_data, it->m_binaryBody, item.m_length);
+    }
+    else {
+      item.m_length = it->m_textBody.GetLength();
+      SetData(&item.m_data, it->m_textBody.GetPointer(), item.m_length+1);
+    }
   }
 }
 
@@ -965,9 +982,32 @@ void SIPEndPoint_C::OnDialogInfoReceived(const SIPDialogNotification & info)
     SET_MESSAGE_STRING(message, m_param.m_lineAppearance.m_partyB, GetParticipantName(info.m_local));
   }
 
-  PTRACE(4, "OnDialogInfoReceived: entity=\"" << message->m_param.m_lineAppearance.m_line
-                                          << "\" callId=" << message->m_param.m_lineAppearance.m_callId);
+  PTRACE(4, "OnDialogInfoReceived: "
+            "entity=\"" << message->m_param.m_lineAppearance.m_line << "\" "
+            "callId=" << message->m_param.m_lineAppearance.m_callId);
   m_manager.PostMessage(message);
+}
+
+
+bool SIPEndPoint_C::OnReceivedInfoPackage(SIPConnection & connection, const PString & package, const PString & body)
+{
+  if (!m_messageIdentifiers.Contains(package))
+    return SIPEndPoint::OnReceivedInfoPackage(connection, package, body);
+
+  OpalMessageBuffer message(OpalIndProtocolMessage);
+  SET_MESSAGE_STRING(message, m_param.m_protocolMessage.m_protocol, connection.GetPrefixName());
+  SET_MESSAGE_STRING(message, m_param.m_protocolMessage.m_callToken, connection.GetCall().GetToken());
+  SET_MESSAGE_STRING(message, m_param.m_protocolMessage.m_identifier, package);
+  SET_MESSAGE_DATA(message, m_param.m_protocolMessage.m_payload, body.GetPointer(), body.GetLength());
+  message->m_param.m_protocolMessage.m_size = body.GetLength();
+
+  PTRACE(4, "OnReceivedInfoPackage: "
+            "package=\"" << message->m_param.m_protocolMessage.m_protocol << "\" "
+            "call-token=" << message->m_param.m_protocolMessage.m_callToken << " "
+            "payload-size=" << message->m_param.m_protocolMessage.m_size);
+  m_manager.PostMessage(message);
+
+  return true;
 }
 
 
@@ -1478,10 +1518,13 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
   // Note: in this case there is a difference between NULL and "".
   if (command.m_param.m_general.m_natMethod == NULL) {
 #if P_STUN
-    if (command.m_param.m_general.m_natServer != NULL &&
-        !SetNATServer(PSTUNClient::MethodName(), command.m_param.m_general.m_natServer)) {
-      response.SetError("Error setting STUN server.");
-      return;
+    if (command.m_param.m_general.m_natServer != NULL) {
+      PString server, iface;
+      PString(command.m_param.m_general.m_natServer).Split('\t', server, iface, PString::SplitDefaultToBefore);
+      if (!SetNATServer(PSTUNClient::MethodName(), server, true, 0, iface)) {
+        response.SetError("Error setting STUN server.");
+        return;
+      }
     }
 #endif
   }
@@ -1495,7 +1538,9 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
       PStringArray natMethods = PString(command.m_param.m_general.m_natMethod).Lines();
       PStringArray natServers = PString(command.m_param.m_general.m_natServer).Lines();
       for (PINDEX methodIndex = 0; methodIndex < natMethods.GetSize(); ++methodIndex) {
-        if (!SetNATServer(natMethods[methodIndex], natServers[methodIndex], true, (methodIndex+1)*10)) {
+        PString server, iface;
+        natServers[methodIndex].Split('\t', server, iface, PString::SplitDefaultToBefore);
+        if (!SetNATServer(natMethods[methodIndex], server, true, (methodIndex+1)*10, iface)) {
           error << "Error setting NAT method " << natMethods[methodIndex];
           if (!natServers[methodIndex].IsEmpty())
             error << " to server \"" << natServers[methodIndex] << '"';
@@ -1989,6 +2034,25 @@ void OpalManager_C::HandleSetProtocol(const OpalMessage & command, OpalMessageBu
     OpalMediaCryptoSuite * cryptoSuite = OpalMediaCryptoSuiteFactory::CreateInstance(allMediaCryptoSutes[i]);
     strm << cryptoSuite->GetFactoryName() << '=' << cryptoSuite->GetDescription() << 'n';
   }
+  SET_MESSAGE_STRING(response, m_param.m_protocol.m_allMediaCryptoSuites, strm);
+
+  if (m_apiVersion < 37)
+    return;
+
+  response->m_param.m_protocol.m_maxSizeUDP = ep->GetMaxSizeUDP();
+  if (command.m_param.m_protocol.m_maxSizeUDP > 0)
+    ep->SetMaxSizeUDP(command.m_param.m_protocol.m_maxSizeUDP);
+
+  if (m_apiVersion < 38)
+    return;
+
+#if OPAL_SIP
+  if (!IsNullString(command.m_param.m_protocol.m_protocolMessageIdentifiers)) {
+    SIPEndPoint_C * sipEP = dynamic_cast<SIPEndPoint_C *>(ep);
+    if (sipEP != NULL)
+      sipEP->SetMessageIdentifiers(command.m_param.m_protocol.m_protocolMessageIdentifiers);
+  }
+#endif
 }
 
 
@@ -2359,15 +2423,15 @@ void OpalManager_C::HandleUserInput(const OpalMessage & command, OpalMessageBuff
 void OpalManager_C::HandleClearCall(const OpalMessage & command, OpalMessageBuffer & response)
 {
   const char * callToken;
-  OpalConnection::CallEndReason reason;
+  OpalConnection::CallEndReason reason = OpalConnection::EndedByLocalUser;
 
-  if (m_apiVersion < 9) {
+  if (m_apiVersion < 9)
     callToken = command.m_param.m_callToken;
-    reason = OpalConnection::EndedByLocalUser;
-  }
   else {
     callToken = command.m_param.m_clearCall.m_callToken;
-    reason.code = (OpalConnection::CallEndReasonCodes)command.m_param.m_clearCall.m_reason;
+    reason.code = (OpalConnection::CallEndReason)command.m_param.m_clearCall.m_reason;
+    if (m_apiVersion >= 39)
+      reason.custom = command.m_param.m_clearCall.m_custom;
   }
 
   if (IsNullString(callToken)) {
@@ -2410,6 +2474,13 @@ void OpalManager_C::HandleRetrieveCall(const OpalMessage & command, OpalMessageB
 }
 
 
+static PString GetPrefixFromPartyAddress(const PString & party)
+{
+  PINDEX colon = party.Find(':');
+  return colon != P_MAX_INDEX ? party.Left(colon) : PString::Empty();
+}
+
+
 void OpalManager_C::HandleTransferCall(const OpalMessage & command, OpalMessageBuffer & response)
 {
   PString partyB = command.m_param.m_callSetUp.m_partyB;
@@ -2417,14 +2488,6 @@ void OpalManager_C::HandleTransferCall(const OpalMessage & command, OpalMessageB
     response.SetError("No transfer address provided.");
     return;
   }
-
-  PINDEX colon = partyB.Find(':');
-  if (colon == P_MAX_INDEX) {
-    response.SetError("Invalid transfer address provided, must have prefix.");
-    return;
-  }
-
-  PString prefixB = partyB.Left(colon);
 
   PSafePtr<OpalCall> call;
   if (!FindCall(command.m_param.m_callSetUp.m_callToken, response, call))
@@ -2434,6 +2497,11 @@ void OpalManager_C::HandleTransferCall(const OpalMessage & command, OpalMessageB
 
   PString search = command.m_param.m_callSetUp.m_partyA;
   if (search == "*") {
+	PString prefixB = GetPrefixFromPartyAddress(partyB);
+	if (prefixB.IsEmpty()) {
+      response.SetError("Invalid transfer address provided, must have prefix.");
+      return;
+	}
     OpalEndPoint * ep = FindEndPoint(prefixB);
     if (ep != NULL) {
       PTRACE(4, "Searching for local/network connection the same as " << *ep);
@@ -2444,8 +2512,13 @@ void OpalManager_C::HandleTransferCall(const OpalMessage & command, OpalMessageB
     }
   }
   else {
-    if (search.IsEmpty())
-      search = prefixB;
+    if (search.IsEmpty()) {
+      search = GetPrefixFromPartyAddress(partyB);
+      if (search.IsEmpty()) {
+        response.SetError("Invalid transfer address provided, must have prefix.");
+        return;
+      }
+    }
     else
       search.Delete(search.Find(':'), P_MAX_INDEX);
     search += ':';
@@ -2751,9 +2824,12 @@ void OpalManager_C::OnUserInputTone(OpalConnection & connection, char tone, int 
     PostMessage(message);
   }
 
-  connection.GetStringOptions().SetBoolean(AllowOnUserInputString, false);
+  OpalConnection::StringOptions options = connection.GetStringOptions();
+  options.SetBoolean(AllowOnUserInputString, false);
+  connection.SetStringOptions(options, true);
   OpalManager::OnUserInputTone(connection, tone, duration);
-  connection.GetStringOptions().Remove(AllowOnUserInputString);
+  options.Remove(AllowOnUserInputString);
+  connection.SetStringOptions(options, true);
 }
 
 

@@ -62,6 +62,8 @@ static const PConstCaselessString ApplicationDTMFKey("application/dtmf");
 static const char ApplicationMediaControlXMLKey[] = "application/media_control+xml";
 #endif
 
+static PConstCaselessString const ReferSubHeader("Refer-Sub");
+
 
 static SIP_PDU::StatusCodes GetStatusCodeFromReason(OpalConnection::CallEndReason reason)
 {
@@ -237,9 +239,9 @@ SIPConnection::SIPConnection(const Init & init)
   , m_responseRetryTimer(init.m_endpoint.GetThreadPool(), init.m_endpoint, init.m_token, &SIPConnection::OnInviteResponseRetry)
   , m_responseRetryCount(0)
   , m_inviteCollisionTimer(init.m_endpoint.GetThreadPool(), init.m_endpoint, init.m_token, &SIPConnection::OnInviteCollision)
-  , m_referOfRemoteInProgress(false)
   , m_delayedReferTimer(init.m_endpoint.GetThreadPool(), init.m_endpoint, init.m_token, &SIPConnection::OnDelayedRefer)
   , m_releaseMethod(ReleaseWithNothing)
+  , m_referOfRemoteState(eNoRemoteRefer)
   , m_receivedUserInputMethod(UserInputMethodUnknown)
 {
   SIPURL adjustedDestination = init.m_address;
@@ -324,21 +326,6 @@ void SIPConnection::OnReleased()
 {
   PTRACE(3, "OnReleased: " << *this);
 
-  if (!PAssert(LockReadWrite(),PLogicError))
-    return;
-
-  if (m_referOfRemoteInProgress) {
-    m_referOfRemoteInProgress = false;
-
-    PStringToString info;
-    info.SetAt("result", "blind");
-    info.SetAt("party", "B");
-    info.SetAt("Refer-To", m_sentReferTo);
-    OnTransferNotify(info, this);
-  }
-
-  UnlockReadWrite();
-
   // If forwardParty is a connection token, then must be INVITE with replaces scenario
   if (!m_forwardParty.IsEmpty()) {
     PSafePtr<SIPConnection> replacerConnection = GetEndPoint().GetSIPConnectionWithLock(m_forwardParty);
@@ -397,6 +384,13 @@ void SIPConnection::OnReleased()
 
       // create BYE now & delete it later to prevent memory access errors
       bye = new SIPBye(*this);
+
+      if (m_callEndReason == OpalConnection::EndedByQ931Cause)
+        bye->GetMIME().Set("Reason", PSTRSTRM("Q.850 ;cause=" << m_callEndReason.q931));
+      else if (m_callEndReason != OpalConnection::EndedByLocalUser)
+        bye->GetMIME().Set("Reason", PSTRSTRM("SIP ;cause=" << GetStatusCodeFromReason(m_callEndReason)
+                                              << "; text=" << GetCallEndReasonText().ToLiteral()));
+
       if (!bye->Start())
         bye.SetNULL();
 
@@ -459,6 +453,25 @@ void SIPConnection::OnReleased()
      server says so. Fail safe on call termination. */
   AbortPendingTransactions();
 
+  // We have a REFER in progress, wait for a while to get status indication
+  if (m_referOfRemoteState == eReferNotifyConfirmed) {
+    PTRACE(4, "Waiting for indication REFER completed on " << *this);
+    PSimpleTimer timeout = m_sipEndpoint.GetInviteTimeout();
+    while (m_referOfRemoteState == eReferNotifyConfirmed && timeout.IsRunning())
+      PThread::Sleep(250);
+
+    if (m_referOfRemoteState == eReferNotifyConfirmed && PAssert(LockReadWrite(), PLogicError)) {
+      PTRACE(2, "Timed out waiting for indication REFER completed on " << *this);
+      PStringToString info;
+      info.SetAt("result", "blind");
+      info.SetAt("party", "B");
+      info.SetAt("Refer-To", m_sentReferTo);
+      OnTransferNotify(info, this);
+
+      UnlockReadWrite();
+    }
+  }
+
   // Close media and indicate call ended, even though we have a little bit more
   // to go in clean up, don't let other bits wait for it.
   OpalRTPConnection::OnReleased();
@@ -471,7 +484,7 @@ bool SIPConnection::TransferConnection(const PString & remoteParty)
     return false;
 
   // There is still an ongoing REFER transaction 
-  if (m_referOfRemoteInProgress) {
+  if (m_referOfRemoteState != eNoRemoteRefer) {
     PTRACE(2, "Transfer already in progress for " << *this);
     return false;
   }
@@ -500,9 +513,12 @@ bool SIPConnection::TransferConnection(const PString & remoteParty)
     m_sentReferTo = remoteParty;
     m_sentReferTo.Sanitise(SIPURL::RedirectURI);
     PTRACE(3, "Blind transfer of " << *this << " to " << m_sentReferTo << ", referSubMode=" << referSubMode);
+    m_consultationTransferToken.MakeEmpty();
     PSafePtr<SIPTransaction> referTransaction = new SIPRefer(*this, m_sentReferTo, m_dialog.GetLocalURI(), referSubMode);
-    m_referOfRemoteInProgress = referTransaction->Start();
-    return m_referOfRemoteInProgress;
+    if (!referTransaction->Start())
+      return false;
+    m_referOfRemoteState = eReferStarted;
+    return true;
   }
 
   PSafePtr<OpalCall> call = m_endpoint.GetManager().FindCallWithLock(url.GetHostName(), PSafeReadOnly);
@@ -521,36 +537,51 @@ bool SIPConnection::TransferConnection(const PString & remoteParty)
   for (PSafePtr<OpalConnection> connection = call->GetConnection(0); connection != NULL; ++connection) {
     PSafePtr<SIPConnection> sip = PSafePtrCast<OpalConnection, SIPConnection>(connection);
     if (sip != NULL) {
-      /* Note that the order of to-tag and remote-tag is counter intuitive. This is because
-        the call being referred to by the call token in remoteParty is not the A party in
-        the consultation transfer, but the B party. */
-        PTRACE(4, "Transferring " << *this << " to remote of " << *sip << ", referSubMode=" << referSubMode);
-
-      /* The following is to compensate for Avaya who send a Contact without a
-         username in the URL and then get upset later in th REFER when we use
-         what they told us to use. They can't do the REFER without a username
-         part, but they never gave us a username to give them. Give me a break!
-       */
-      m_sentReferTo = sip->GetRemotePartyURL();
-      m_sentReferTo.Sanitise(SIPURL::RedirectURI);
-      if (m_remoteProductInfo.name == "Avaya" && m_sentReferTo.GetUserName().IsEmpty())
-        m_sentReferTo.SetUserName("anonymous");
-
-      PStringStream id;
-      id <<                 sip->GetDialog().GetCallID()
-         << ";to-tag="   << sip->GetDialog().GetRemoteTag()
-         << ";from-tag=" << sip->GetDialog().GetLocalTag();
-      m_sentReferTo.SetQueryVar("Replaces", id);
-
-      PSafePtr<SIPTransaction> referTransaction = new SIPRefer(*this, m_sentReferTo, m_dialog.GetLocalURI(), referSubMode);
-      referTransaction->GetMIME().AddSupported("replaces");
-      m_referOfRemoteInProgress = referTransaction->Start();
-      return m_referOfRemoteInProgress;
+      m_consultationTransferToken = sip->GetToken();
+      return ConsultationTransfer(*sip, referSubMode, false);
     }
   }
 
   PTRACE(2, "Consultation transfer requires other party to be SIP.");
   return false;
+}
+
+
+bool SIPConnection::ConsultationTransfer(SIPConnection & referee, SIPRefer::ReferSubMode referSubMode, bool useIdentity)
+{
+  /* Note that the order of to-tag and remote-tag is counter intuitive. This is because
+    the call being referred to by the call token in remoteParty is not the A party in
+    the consultation transfer, but the B party. */
+  PTRACE(4, "Transferring " << *this << " to remote of " << referee << ", referSubMode=" << referSubMode);
+
+  /* Get the base URL to refer. This should normally be the Contact field, which is in
+     GetRemotePartyURL() of the original INVITE, however not everyone gets that right,
+     so if the REFER fails, we try again using GetRemoteIdentity() which is a "best
+     guess" from several header fields in the INVITE. */
+  m_sentReferTo = useIdentity ? referee.GetRemoteIdentity() : referee.GetRemotePartyURL();
+  m_sentReferTo.Sanitise(SIPURL::RedirectURI);
+
+  /* The following is to compensate for Avaya who send a Contact without a
+     username in the URL and then get upset later in th REFER when we use
+     what they told us to use. They can't do the REFER without a username
+     part, but they never gave us a username to give them. Give me a break!
+   */
+  if (m_remoteProductInfo.name == "Avaya" && m_sentReferTo.GetUserName().IsEmpty())
+    m_sentReferTo.SetUserName("anonymous");
+
+  PStringStream id;
+  id << referee.GetDialog().GetCallID()
+    << ";to-tag=" << referee.GetDialog().GetRemoteTag()
+    << ";from-tag=" << referee.GetDialog().GetLocalTag();
+  m_sentReferTo.SetQueryVar("Replaces", id);
+
+  PSafePtr<SIPTransaction> referTransaction = new SIPRefer(*this, m_sentReferTo, m_dialog.GetLocalURI(), referSubMode);
+  referTransaction->GetMIME().AddSupported("replaces");
+  if (!referTransaction->Start())
+    return false;
+
+  m_referOfRemoteState = eReferStarted;
+  return true;
 }
 
 
@@ -645,7 +676,7 @@ bool SIPConnection::InternalSetConnected(bool transfer)
   NotifyDialogState(SIPDialogNotification::Confirmed);
 
   // switch phase and if media was previously set up, then move to Established
-  return OpalConnection::SetConnected();
+  return OpalSDPConnection::SetConnected();
 }
 
 
@@ -725,7 +756,7 @@ OpalMediaFormatList SIPConnection::GetMediaFormats() const
 }
 
 
-int SIPConnection::SetRemoteMediaFormats(SIP_PDU & pdu)
+int SIPConnection::SetRemoteMediaFormatsFromPDU(SIP_PDU & pdu)
 {
   /* As SIP does not really do capability exchange, if we don't have an initial
      INVITE from the remote (indicated by sdp == NULL) then all we can do is
@@ -736,25 +767,7 @@ int SIPConnection::SetRemoteMediaFormats(SIP_PDU & pdu)
   if (!pdu.DecodeSDP(*this, m_multiPartMIME))
     return 0;
 
-  m_remoteFormatList = pdu.GetSDP()->GetMediaFormats();
-  AdjustMediaFormats(false, NULL, m_remoteFormatList);
-
-  if (m_remoteFormatList.IsEmpty()) {
-    PTRACE(2, "All possible media formats to offer were removed.");
-    return -1;
-  }
-
-#if OPAL_T38_CAPABILITY
-  /* We default to having T.38 included as most UAs do not actually
-     tell you that they support it or not. For the re-INVITE mechanism
-     to work correctly, the rest ofthe system has to assume that the
-     UA is capable of it, even it it isn't. */
-  m_remoteFormatList += OpalT38;
-#endif
-
-  PTRACE(4, "Remote media formats set:\n    " << setfill(',') << m_remoteFormatList << setfill(' '));
-
-  return 1;
+  return  SetRemoteMediaFormats(pdu.GetSDP()->GetMediaFormats()) ? 1 : -1;
 }
 
 
@@ -778,8 +791,21 @@ bool SIPConnection::SwitchFaxMediaStreams(bool toT38)
 
   m_ownerCall.SetSwitchingT38(toT38);
 
-  PTRACE(3, "Switching to " << (toT38 ? "T.38" : "audio") << " on " << *this);
-  OpalMediaFormat format = toT38 ? OpalT38 : OpalG711uLaw;
+  OpalMediaFormat format;
+  if (toT38)
+    format = OpalT38;
+  else {
+    for (OpalMediaFormatList::iterator it = m_remoteFormatList.begin(); it != m_remoteFormatList.end(); ++it) {
+      if (it->GetMediaType() == OpalMediaType::Audio()) {
+        format = *it;
+        break;
+      }
+    }
+    if (format.IsEmpty())
+      format = OpalG711uLaw;
+  }
+  PTRACE(3, "Switching to " << format << " on " << *this);
+
   if (m_ownerCall.OpenSourceMediaStreams(*this,
                                          format.GetMediaType(),
                                          1,
@@ -836,7 +862,6 @@ OpalMediaStream * SIPConnection::CreateMediaStream(const OpalMediaFormat & media
   }
 
   if (mediaSession->GetMediaType() != mediaType) {
-    PTRACE(3, "Replacing " << mediaSession->GetMediaType() << " session " << sessionID << " with " << mediaType);
     mediaSession = CreateMediaSession(sessionID, mediaType, sessionType);
     ReplaceMediaSession(sessionID, mediaSession);
   }
@@ -1203,7 +1228,7 @@ void SIPConnection::OnCreatingINVITE(SIPInvite & request)
   PString externalSDP = m_stringOptions(OPAL_OPT_EXTERNAL_SDP);
   if (!externalSDP.IsEmpty())
     request.SetEntityBody(externalSDP);
-  else if ((m_needReINVITE || m_stringOptions.GetBoolean(OPAL_OPT_INITIAL_OFFER, true)) && !m_localMediaFormats.IsEmpty()) {
+  else if ((m_needReINVITE || m_stringOptions.GetBoolean(OPAL_OPT_INITIAL_OFFER, true)) && !GetLocalMediaFormats().IsEmpty()) {
     if (m_needReINVITE)
       ++m_sdpVersion;
 
@@ -1247,10 +1272,6 @@ PBoolean SIPConnection::SetUpConnection()
   }
 
   ++m_sdpVersion;
-
-  m_remoteFormatList = GetLocalMediaFormats();
-  m_remoteFormatList.MakeUnique();
-  AdjustMediaFormats(false, NULL, m_remoteFormatList);
 
   PSafePtr<OpalConnection> other = GetOtherPartyConnection();
   if (other != NULL && other->GetConferenceState(NULL))
@@ -1335,6 +1356,16 @@ PString SIPConnection::GetSupportedFeatures() const
 }
 
 
+bool SIPConnection::AllowMusicOnHold() const
+{
+  for (PMultiPartList::const_iterator it = m_multiPartMIME.begin(); it != m_multiPartMIME.end(); ++it) {
+    if (it->m_disposition == "recording-session")
+      return false;
+  }
+  return OpalSDPConnection::AllowMusicOnHold();
+}
+
+
 bool SIPConnection::OnHoldStateChanged(bool PTRACE_PARAM(placeOnHold))
 {
   return SendReINVITE(PTRACE_PARAM(placeOnHold ? "put connection on hold" : "retrieve connection from hold"));
@@ -1368,7 +1399,7 @@ void SIPConnection::OnTransactionFailed(SIPTransaction & transaction)
       break;
 
     case SIP_PDU::Method_REFER :
-      m_referOfRemoteInProgress = false;
+      m_referOfRemoteState = eNoRemoteRefer;
       // Do next case
 
     default :
@@ -1644,7 +1675,7 @@ bool SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
     return statusCode >= 200; // Don't send ACK if only provisional response
 
   // Empty INVITE means offer in remotes response, get the media formats out of it
-  if (SetRemoteMediaFormats(response) <= 0) {
+  if (SetRemoteMediaFormatsFromPDU(response) <= 0) {
     Release(EndedByCapabilityExchange);
     return true;
   }
@@ -1862,11 +1893,14 @@ void SIPConnection::NotifyDialogState(SIPDialogNotification::States state, SIPDi
   if (GetPhase() == EstablishedPhase)
     info.m_local.m_rendering = info.m_remote.m_rendering = SIPDialogNotification::NotRenderingMedia;
 
-  for (OpalMediaStreamPtr mediaStream(m_mediaStreams, PSafeReference); mediaStream != NULL; ++mediaStream) {
-    if (mediaStream->IsSource())
-      info.m_remote.m_rendering = SIPDialogNotification::RenderingMedia;
-    else
-      info.m_local.m_rendering = SIPDialogNotification::RenderingMedia;
+  for (StreamDict::iterator it = m_mediaStreams.begin(); it != m_mediaStreams.end(); ++it) {
+    OpalMediaStreamPtr mediaStream = it->second;
+    if (mediaStream != NULL) {
+      if (mediaStream->IsSource())
+        info.m_remote.m_rendering = SIPDialogNotification::RenderingMedia;
+      else
+        info.m_local.m_rendering = SIPDialogNotification::RenderingMedia;
+    }
   }
 
   GetEndPoint().SendNotifyDialogInfo(info);
@@ -1896,6 +1930,7 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
   m_allowedMethods |= response.GetMIME().GetAllowBitMask();
 
   if (transaction.GetMethod() != SIP_PDU::Method_INVITE) {
+    const SIPMIMEInfo & transactionMIME = transaction.GetMIME();
     switch (response.GetStatusCode()) {
       case SIP_PDU::Failure_UnAuthorised :
       case SIP_PDU::Failure_ProxyAuthenticationRequired :
@@ -1915,9 +1950,25 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
           default :
             switch (transaction.GetMethod()) {
               case SIP_PDU::Method_REFER :
-                if (m_referOfRemoteInProgress) {
-                  m_referOfRemoteInProgress = false;
+                if (!m_consultationTransferToken.IsEmpty()) {
+                  // Deal with remote (e.g. Broadsoft) not setting Contact field correctly for REFER
+                  PSafePtr<SIPConnection> sip = m_sipEndpoint.GetSIPConnectionWithLock(m_consultationTransferToken, PSafeReadOnly);
+                  if (sip == NULL)
+                    PTRACE(2, "Could not find consultation transfer of " << m_consultationTransferToken << " from " << *this);
+                  else {
+                    m_consultationTransferToken.MakeEmpty(); // Clear token so after one retry, we don't try again
+                    SIPRefer::ReferSubMode referSubMode = SIPRefer::SubModeFromBooleans(!transactionMIME.Has(ReferSubHeader),
+                                                                                         transactionMIME.GetBoolean(ReferSubHeader));
+                    PTRACE(3, "Retry consultation transfer of " <<  *sip << " from " << *this);
+                    if (ConsultationTransfer(*sip, referSubMode, true))
+                      return;
+                  }
+                }
 
+                if (m_referOfRemoteState != eNoRemoteRefer) {
+                  m_referOfRemoteState = eNoRemoteRefer;
+
+                  PTRACE(3, "Failed transfer of " << *this);
                   PStringToString info;
                   info.SetAt("result", "error");
                   info.SetAt("party", "B");
@@ -1929,7 +1980,7 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
 
 #if OPAL_VIDEO
               case SIP_PDU::Method_INFO :
-                if (transaction.GetMIME().GetContentType().NumCompare(ApplicationMediaControlXMLKey) == EqualTo) {
+                if (transactionMIME.GetContentType().NumCompare(ApplicationMediaControlXMLKey) == EqualTo) {
                   PTRACE(3, "Error response to video fast update INFO, not sending another.");
                   m_canDoVideoFastUpdateINFO = false;
                 }
@@ -2011,7 +2062,7 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
 
   // For 180/183 may have some SDP that can be used as early remote media capbility
   if (responseClass == 1)
-    SetRemoteMediaFormats(response);
+    SetRemoteMediaFormatsFromPDU(response);
 
   bool handled = false;
 
@@ -2325,7 +2376,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
 
     PTRACE(3, "OnIncomingConnection succeeded for INVITE from " << request.GetURI() << " for " << *this);
 
-    if (SetRemoteMediaFormats(*m_lastReceivedINVITE) < 0) {
+    if (SetRemoteMediaFormatsFromPDU(*m_lastReceivedINVITE) < 0) {
       Release(EndedByCapabilityExchange);
       return;
     }
@@ -2375,7 +2426,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
     }
   }
 
-  if (SetRemoteMediaFormats(*m_lastReceivedINVITE) < 0) {
+  if (SetRemoteMediaFormatsFromPDU(*m_lastReceivedINVITE) < 0) {
     Release(EndedByCapabilityExchange);
     return;
   }
@@ -2422,8 +2473,8 @@ void SIPConnection::OnReceivedReINVITE(SIP_PDU & request)
   SIPURL newRemotePartyID(request.GetMIME(), RemotePartyID);
   if (newRemotePartyID.IsEmpty())
     UpdateRemoteAddresses();
-  else if (m_referOfRemoteInProgress) {
-    m_referOfRemoteInProgress = false;
+  else if (m_referOfRemoteState != eNoRemoteRefer) {
+    m_referOfRemoteState = eNoRemoteRefer;
 
     UpdateRemoteAddresses();
     PStringToString info = m_ciscoRemotePartyID.GetParamVars();
@@ -2547,7 +2598,7 @@ void SIPConnection::OnReceivedNOTIFY(SIP_PDU & request)
     return;
   }
 
-  if (!m_referOfRemoteInProgress) {
+  if (m_referOfRemoteState == eNoRemoteRefer) {
     PTRACE(2, "NOTIFY for REFER we never sent.");
     response->SetStatusCode(SIP_PDU::Failure_TransactionDoesNotExist);
     response->Send();
@@ -2574,12 +2625,12 @@ void SIPConnection::OnReceivedNOTIFY(SIP_PDU & request)
 
   PStringToString info;
   PCaselessString state = mime.GetSubscriptionState(info);
-  m_referOfRemoteInProgress = state != "terminated";
+  m_referOfRemoteState = state != "terminated" ? eReferNotifyConfirmed : eNoRemoteRefer;
   info.SetAt("party", "B"); // We are B party in consultation transfer
   info.SetAt("Refer-To", m_sentReferTo);
   info.SetAt("state", state);
   info.SetAt("code", psprintf("%u", code));
-  info.SetAt("result", m_referOfRemoteInProgress ? "progress" : (code < 300 ? "success" : "failed"));
+  info.SetAt("result", m_referOfRemoteState != eNoRemoteRefer ? "progress" : (code < 300 ? "success" : "failed"));
 
   if (OnTransferNotify(info, this))
     return;
@@ -2623,7 +2674,6 @@ void SIPConnection::OnReceivedREFER(SIP_PDU & request)
 
   // Comply to RFC4488
   bool referSub = true;
-  static PConstCaselessString const ReferSubHeader("Refer-Sub");
   if (requestMIME.Contains(ReferSubHeader)) {
     referSub = requestMIME.GetBoolean(ReferSubHeader, true);
     response->GetMIME().SetBoolean(ReferSubHeader, referSub);
@@ -2967,10 +3017,16 @@ void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & respons
      return;
 
     case SIP_PDU::Method_REFER :
-      if (m_referOfRemoteInProgress && !response.GetMIME().GetBoolean("Refer-Sub", true)) {
+      if (m_referOfRemoteState == eNoRemoteRefer)
+        return; // Ignore
+      if (response.GetStatusCode() == SIP_PDU::Successful_Accepted && response.GetMIME().GetBoolean(ReferSubHeader, true)) {
+        PTRACE(3, "Transfer accepted, with NOTIFY.");
+        m_referOfRemoteState = eReferNotifyConfirmed;
+      }
+      else {
         // Used RFC4488 to indicate we are NOT doing NOTIFYs, release now
         PTRACE(3, "Blind transfer accepted, without NOTIFY so ending local call.");
-        m_referOfRemoteInProgress = false;
+        m_referOfRemoteState = eNoRemoteRefer;
 
         PStringToString info;
         info.SetAt("result", "blind");
@@ -3339,8 +3395,14 @@ void SIPConnection::OnReceivedINFO(SIP_PDU & request)
           if (tokens.GetSize() > 1)
             val = tokens[1].Trim();
           if (tokens.GetSize() > 0) {
-            if (tokens[0] *= "signal")
-              tone = val[0];   // DTMF relay does not use RFC2833 encoding
+            if (tokens[0] *= "signal") {
+              if (val == "10")
+                tone = '*';
+              else if (val == "11")
+                tone = '#';
+              else
+                tone = val[0];   // DTMF relay does not use RFC2833 encoding
+            }
             else if (tokens[0] *= "duration")
               duration = val.AsInteger();
           }
@@ -3378,6 +3440,11 @@ void SIPConnection::OnReceivedINFO(SIP_PDU & request)
       return;
   }
 #endif
+  else {
+    PString package = mimeInfo("Info-Package");
+    if (!package.IsEmpty() && OnReceivedInfoPackage(package, request.GetEntityBody()))
+      status = SIP_PDU::Successful_OK;
+  }
 
   request.SendResponse(status);
 
@@ -3391,6 +3458,12 @@ void SIPConnection::OnReceivedINFO(SIP_PDU & request)
     }
 #endif
   }
+}
+
+
+bool SIPConnection::OnReceivedInfoPackage(const PString & package, const PString & body)
+{
+  return m_sipEndpoint.OnReceivedInfoPackage(*this, package, body);
 }
 
 

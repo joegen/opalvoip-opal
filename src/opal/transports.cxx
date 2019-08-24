@@ -48,32 +48,35 @@
 #include <ptclib/http.h>
 
 
-const PCaselessString & OpalTransportAddress::IpPrefix()  { static PConstCaselessString s("ip$" ); return s; }  // For backward compatibility with OpenH323
-PFACTORY_CREATE(PFactory<OpalInternalTransport>, OpalInternalTCPTransport, OpalTransportAddress::IpPrefix(), true);
-
-const PCaselessString & OpalTransportAddress::UdpPrefix() { static PConstCaselessString s("udp$"); return s; }
-PFACTORY_CREATE(PFactory<OpalInternalTransport>, OpalInternalUDPTransport, OpalTransportAddress::UdpPrefix(), true);
-
-const PCaselessString & OpalTransportAddress::TcpPrefix() { static PConstCaselessString s("tcp$"); return s; }
-PFACTORY_SYNONYM(PFactory<OpalInternalTransport>, OpalInternalTCPTransport, TCP, OpalTransportAddress::TcpPrefix ());
+typedef PFactory<OpalInternalTransport, PCaselessString> OpalInternalTransportFactory;
 
 #if OPAL_PTLIB_SSL
 
 #include <ptclib/pssl.h>
-const PCaselessString & OpalTransportAddress::TlsPrefix() { static PConstCaselessString s("tls$"); return s; }
-PFACTORY_CREATE(PFactory<OpalInternalTransport>, OpalInternalTLSTransport, OpalTransportAddress::TlsPrefix(), true);
+const PCaselessString & OpalTransportAddress::TlsPrefix() { static PConstCaselessString const s("tls$"); return s; }
+PFACTORY_CREATE(OpalInternalTransportFactory, OpalInternalTLSTransport, OpalTransportAddress::TlsPrefix(), true);
 
 #if OPAL_PTLIB_HTTP
 
-const PCaselessString & OpalTransportAddress::WsPrefix()  { static PConstCaselessString s("ws$");  return s; }
-PFACTORY_CREATE(PFactory<OpalInternalTransport>, OpalInternalWSTransport, OpalTransportAddress::WsPrefix(), true);
+const PCaselessString & OpalTransportAddress::WsPrefix()  { static PConstCaselessString const s("ws$");  return s; }
+PFACTORY_CREATE(OpalInternalTransportFactory, OpalInternalWSTransport, OpalTransportAddress::WsPrefix(), true);
 
-const PCaselessString & OpalTransportAddress::WssPrefix() { static PConstCaselessString s("wss$"); return s; }
-PFACTORY_CREATE(PFactory<OpalInternalTransport>, OpalInternalWSSTransport, OpalTransportAddress::WssPrefix(), true);
+const PCaselessString & OpalTransportAddress::WssPrefix() { static PConstCaselessString const s("wss$"); return s; }
+PFACTORY_CREATE(OpalInternalTransportFactory, OpalInternalWSSTransport, OpalTransportAddress::WssPrefix(), true);
 
 #endif // OPAL_PTLIB_HTTP
 
 #endif // OPAL_PTLIB_SSL
+
+const PCaselessString & OpalTransportAddress::UdpPrefix() { static PConstCaselessString const s("udp$"); return s; }
+PFACTORY_CREATE(OpalInternalTransportFactory, OpalInternalUDPTransport, OpalTransportAddress::UdpPrefix(), true);
+
+const PCaselessString & OpalTransportAddress::TcpPrefix() { static PConstCaselessString const s("tcp$"); return s; }
+PFACTORY_CREATE(OpalInternalTransportFactory, OpalInternalTCPTransport, OpalTransportAddress::TcpPrefix(), true);
+
+const PCaselessString & OpalTransportAddress::IpPrefix()  { static PConstCaselessString const s("ip$" ); return s; }  // For backward compatibility with OpenH323
+PFACTORY_SYNONYM(OpalInternalTransportFactory, OpalInternalTCPTransport, IP, OpalTransportAddress::IpPrefix());
+
 
 /////////////////////////////////////////////////////////////////
 
@@ -265,7 +268,7 @@ void OpalTransportAddress::SetInternalTransport(WORD port, const char * proto)
 #endif
 
   // use factory to create transport types
-  m_transport = PFactory<OpalInternalTransport>::CreateInstance(GetProtoPrefix().ToLower());
+  m_transport = OpalInternalTransportFactory::CreateInstance(GetProtoPrefix().ToLower());
   if (m_transport != NULL && m_transport->Parse(*this, port))
     return;
 
@@ -890,7 +893,7 @@ OpalListenerUDP::OpalListenerUDP(OpalEndPoint & endpoint,
   , m_listenerBundle(PMonitoredSockets::Create(binding.GetHostName(),
                                                !m_exclusiveListener
                                                P_NAT_PARAM(&endpoint.GetManager().GetNatMethods())))
-  , m_bufferSize(32768)
+  , m_bufferSize(endpoint.GetMaxSizeUDP())
 {
   if (binding.GetHostName() == "*")
     m_binding.SetAddress(PIPSocket::GetInvalidAddress()); // Set invalid to distinguish between "*", "0.0.0.0" and "[::]"
@@ -947,7 +950,7 @@ OpalTransport * OpalListenerUDP::Accept(const PTimeInterval & timeout)
   param.m_timeout = timeout;
   m_listenerBundle->ReadFromBundle(param);
 
-  if (param.m_errorCode != PChannel::NoError)
+  if (param.m_errorCode != PChannel::NoError && param.m_errorCode != PChannel::BufferTooSmall)
     return NULL;
 
   pdu.SetSize(param.m_lastCount);
@@ -1051,6 +1054,8 @@ bool OpalTransport::SetInterface(const PString &)
 
 PBoolean OpalTransport::Close()
 {
+  m_keepAliveTimer.Stop();
+
   /* Do not use PIndirectChannel::Close() as this deletes the sub-channel
      member field crashing the background thread. Just close the base
      sub-channel so breaks the threads I/O block.
@@ -1065,6 +1070,7 @@ void OpalTransport::CloseWait()
   PTRACE_IF(3, m_thread != NULL, "Transport clean up on termination for " << *this);
 
   Close();
+<<<<<<< HEAD
 
   if (!LockReadWrite())
     return;
@@ -1081,6 +1087,9 @@ void OpalTransport::CloseWait()
   m_keepAliveTimer.Stop();
 
   PThread::WaitAndDelete(exitingThread, m_endpoint.GetManager().GetSignalingTimeout()+2000);
+=======
+  AttachThread(NULL);
+>>>>>>> master
 }
 
 
@@ -1120,18 +1129,24 @@ void OpalTransport::AttachThread(PThread * thrd)
 {
   PTRACE_CONTEXT_ID_TO(thrd);
 
-  PThread::WaitAndDelete(m_thread);
+  // Can't use atomic<> due to IsRunning()
+  m_threadMutex.Wait();
+  PThread * oldThread = m_thread;
+  m_thread = NULL;
+  m_threadMutex.Signal();
 
+  PThread::WaitAndDelete(oldThread, m_endpoint.GetManager().GetSignalingTimeout()+2000);
+
+  m_threadMutex.Wait();
   m_thread = thrd;
+  m_threadMutex.Signal();
 }
 
 
 PBoolean OpalTransport::IsRunning() const
 {
-  if (m_thread == NULL)
-    return false;
-
-  return !m_thread->IsTerminated();
+  PWaitAndSignal lock(m_threadMutex);
+  return m_thread != NULL && !m_thread->IsTerminated();
 }
 
 
@@ -1381,11 +1396,11 @@ PBoolean OpalTransportTCP::ReadPDU(PBYTEArray & pdu)
   m_channel->SetReadTimeout(m_endpoint.GetManager().GetSignalingTimeout());
 
   bool ok = false;
-  PINDEX packetLength = 0;
+  int packetLength = 0;
 
   if (m_pduLengthFormat != 0) {
-    PINDEX count = std::abs(m_pduLengthFormat);
-    if (PAssert(count > 0 && count <= (PINDEX)sizeof(header), "Invalid PDU length") && m_channel->Read(header + 1, count - 1)) {
+    size_t count = std::abs(m_pduLengthFormat);
+    if (PAssert(count > 0 && count <= sizeof(header), "Invalid PDU length") && m_channel->Read(header + 1, count - 1)) {
       packetLength = 0;
       while (count-- > 0)
         packetLength |= header[count] << (8 * (m_pduLengthFormat < 0 ? count : (m_pduLengthFormat - count - 1)));
@@ -1507,7 +1522,7 @@ OpalTransportUDP::OpalTransportUDP(OpalEndPoint & ep,
                                    bool preOpen)
   : OpalTransportIP(ep, NULL, binding, localPort)
   , m_manager(ep.GetManager())
-  , m_bufferSize(8192)
+  , m_bufferSize(ep.GetMaxSizeUDP())
   , m_preReadOK(false)
 {
   PMonitoredSockets * sockets = PMonitoredSockets::Create(binding.AsString(),
@@ -1525,7 +1540,7 @@ OpalTransportUDP::OpalTransportUDP(OpalEndPoint & ep,
                                    const OpalTransportAddress & remoteAddress)
   : OpalTransportIP(ep, new PMonitoredSocketChannel(listener, true), PIPSocket::GetDefaultIpAny(), 0)
   , m_manager(ep.GetManager())
-  , m_bufferSize(8192)
+  , m_bufferSize(ep.GetMaxSizeUDP())
   , m_preReadOK(true)
 {
   if (!remoteAddress.GetIpAndPort(m_remoteAP)) {

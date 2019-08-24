@@ -229,31 +229,36 @@ OpalPCSSConnection * OpalPCSSEndPoint::CreateConnection(OpalCall & call,
 
 PSoundChannel * OpalPCSSEndPoint::CreateSoundChannel(const OpalPCSSConnection & connection,
                                                         const OpalMediaFormat & mediaFormat,
-                                                                     PBoolean   isSource)
+                                                                     unsigned   sessionID,
+                                                                         bool   isSource)
 {
   if (!isSource)
-    return CreateSoundChannel(connection, mediaFormat, connection.GetSoundChannelPlayDevice(), isSource);
+    return CreateSoundChannel(connection, mediaFormat, sessionID, isSource, connection.GetSoundChannelPlayDevice());
 
   if (connection.GetCall().IsOnHold())
-    return CreateSoundChannel(connection, mediaFormat, connection.GetSoundChannelOnHoldDevice(), isSource);
+    return CreateSoundChannel(connection, mediaFormat, sessionID, isSource, connection.GetSoundChannelOnHoldDevice());
 
   if (connection.GetPhase() < OpalConnection::AlertingPhase && !connection.GetSoundChannelOnRingDevice().IsEmpty())
-    return CreateSoundChannel(connection, mediaFormat, connection.GetSoundChannelOnRingDevice(), isSource);
+    return CreateSoundChannel(connection, mediaFormat, sessionID, isSource, connection.GetSoundChannelOnRingDevice());
 
-  return CreateSoundChannel(connection, mediaFormat, connection.GetSoundChannelRecordDevice(), isSource);
+  return CreateSoundChannel(connection, mediaFormat, sessionID, isSource, connection.GetSoundChannelRecordDevice());
 }
 
 
-PSoundChannel * OpalPCSSEndPoint::CreateSoundChannel(const OpalPCSSConnection & PTRACE_PARAM(connection),
+PSoundChannel * OpalPCSSEndPoint::CreateSoundChannel(const OpalPCSSConnection & connection,
                                                         const OpalMediaFormat & mediaFormat,
-                                                                const PString & device,
-                                                                         bool   isSource)
+                                                                     unsigned   sessionID,
+                                                                         bool   isSource,
+                                                                const PString & device)
 {
   PSoundChannel::Params params;
   params.m_device = device;
   params.m_direction = isSource ? PSoundChannel::Recorder : PSoundChannel::Player;
   params.m_channels = mediaFormat.GetOptionInteger(OpalAudioFormat::ChannelsOption());
   params.m_sampleRate = mediaFormat.GetClockRate();
+
+  params.m_device.Replace("%token%", connection.GetCall().GetToken(), true);
+  params.m_device.Replace("%session%", sessionID, true);
 
   PSoundChannel * soundChannel = PSoundChannel::CreateOpenedChannel(params);
   if (soundChannel == NULL)
@@ -568,7 +573,7 @@ void OpalPCSSConnection::RingbackMain()
 {
   PTRACE(4, "Started ringback thread");
 
-  PSoundChannel * channel = CreateSoundChannel(OpalPCM16, false);
+  PSoundChannel * channel = CreateSoundChannel(OpalPCM16, 0, false);
 
   if (PFile::Exists(m_localRingbackTone)) {
     do {
@@ -647,7 +652,7 @@ OpalMediaStream * OpalPCSSConnection::CreateMediaStream(const OpalMediaFormat & 
   if (mediaFormat.GetMediaType() != OpalMediaType::Audio() || m_endpoint.UseCallback(mediaFormat, isSource))
     return OpalLocalConnection::CreateMediaStream(mediaFormat, sessionID, isSource);
 
-  PSoundChannel * soundChannel = CreateSoundChannel(mediaFormat, isSource);
+  PSoundChannel * soundChannel = CreateSoundChannel(mediaFormat, sessionID, isSource);
   if (soundChannel == NULL)
     return NULL;
 
@@ -658,15 +663,16 @@ OpalMediaStream * OpalPCSSConnection::CreateMediaStream(const OpalMediaFormat & 
 
 PBoolean OpalPCSSConnection::SetAudioVolume(PBoolean source, unsigned percentage)
 {
-  PSafePtr<OpalAudioMediaStream> stream = PSafePtrCast<OpalMediaStream, OpalAudioMediaStream>(GetMediaStream(OpalMediaType::Audio(), source));
-  if (stream == NULL)
-    return false;
-
-  PSoundChannel * channel = dynamic_cast<PSoundChannel *>(stream->GetChannel());
-  if (channel == NULL)
-    return false;
-
-  return channel->SetVolume(percentage);
+  bool oneOK = false;
+  for (StreamDict::iterator it = m_mediaStreams.begin(); it != m_mediaStreams.end(); ++it) {
+    OpalAudioMediaStream * stream = dynamic_cast<OpalAudioMediaStream *>(&*it->second);
+    if (stream != NULL && stream->IsSource() == source) {
+      PSoundChannel * channel = dynamic_cast<PSoundChannel *>(stream->GetChannel());
+      if (channel != NULL && channel->SetVolume(percentage))
+        oneOK = true;
+    }
+  }
+  return oneOK;
 }
 
 PBoolean OpalPCSSConnection::GetAudioVolume(PBoolean source, unsigned & percentage)
@@ -685,15 +691,16 @@ PBoolean OpalPCSSConnection::GetAudioVolume(PBoolean source, unsigned & percenta
 
 bool OpalPCSSConnection::SetAudioMute(bool source, bool mute)
 {
-  PSafePtr<OpalAudioMediaStream> stream = PSafePtrCast<OpalMediaStream, OpalAudioMediaStream>(GetMediaStream(OpalMediaType::Audio(), source));
-  if (stream == NULL)
-    return false;
-
-  PSoundChannel * channel = dynamic_cast<PSoundChannel *>(stream->GetChannel());
-  if (channel == NULL)
-    return false;
-
-  return channel->SetMute(mute);
+  bool oneOK = false;
+  for (StreamDict::iterator it = m_mediaStreams.begin(); it != m_mediaStreams.end(); ++it) {
+    OpalAudioMediaStream * stream = dynamic_cast<OpalAudioMediaStream *>(&*it->second);
+    if (stream != NULL && stream->IsSource() == source) {
+      PSoundChannel * channel = dynamic_cast<PSoundChannel *>(stream->GetChannel());
+      if (channel != NULL && channel->SetMute(mute))
+        oneOK = true;
+    }
+  }
+  return oneOK;
 }
 
 
@@ -711,28 +718,41 @@ bool OpalPCSSConnection::GetAudioMute(bool source, bool & mute)
 }
 
 
-unsigned OpalPCSSConnection::GetAudioSignalLevel(PBoolean source)
+int OpalPCSSConnection::GetAudioLevelDB(bool source)
 {
   PSafePtr<OpalAudioMediaStream> stream = PSafePtrCast<OpalMediaStream, OpalAudioMediaStream>(GetMediaStream(OpalMediaType::Audio(), source));
   if (stream == NULL)
-    return UINT_MAX;
+    return INT_MAX;
 
-  return stream->GetAverageSignalLevel();
+  return stream->GetAudioLevelDB();
 }
 
 
-PSoundChannel * OpalPCSSConnection::CreateSoundChannel(const OpalMediaFormat & mediaFormat, PBoolean isSource)
+PSoundChannel * OpalPCSSConnection::CreateSoundChannel(const OpalMediaFormat & mediaFormat, unsigned sessionID, bool isSource)
 {
-  return m_endpoint.CreateSoundChannel(*this, mediaFormat, isSource);
+  return m_endpoint.CreateSoundChannel(*this, mediaFormat, sessionID, isSource);
 }
 
 
 bool OpalPCSSConnection::ChangeSoundChannel(const PString & device, bool isSource, unsigned sessionID)
 {
-  PSafePtr<OpalAudioMediaStream> stream = PSafePtrCast<OpalMediaStream, OpalAudioMediaStream>(
-                      sessionID != 0 ? GetMediaStream(sessionID, isSource) : GetMediaStream(OpalMediaType::Audio(), isSource));
+  if (sessionID != 0)
+    return ChangeSoundChannel(device, PSafePtrCast<OpalMediaStream, OpalAudioMediaStream>(GetMediaStream(sessionID, isSource)));
+
+  bool allOK = true;
+  for (StreamDict::iterator it = m_mediaStreams.begin(); it != m_mediaStreams.end(); ++it) {
+    OpalAudioMediaStream * stream = dynamic_cast<OpalAudioMediaStream *>(&*it->second);
+    if (stream != NULL && stream->IsSource() == isSource && !ChangeSoundChannel(device, stream))
+      allOK = false;
+  }
+  return allOK;
+}
+
+
+bool OpalPCSSConnection::ChangeSoundChannel(const PString & device, OpalAudioMediaStream * stream)
+{
   if (stream == NULL) {
-    PTRACE(4, "No audio stream for change of sound channel to " << device);
+    PTRACE(3, "No audio stream for change of sound channel to " << device);
     return false;
   }
 
@@ -742,8 +762,11 @@ bool OpalPCSSConnection::ChangeSoundChannel(const PString & device, bool isSourc
     return true;
   }
 
-  stream->SetChannel(m_endpoint.CreateSoundChannel(*this, stream->GetMediaFormat(), device, isSource));
-  return true;
+  if (stream->SetChannel(m_endpoint.CreateSoundChannel(*this, stream->GetMediaFormat(), stream->GetSessionID(), stream->IsSource(), device)))
+    return true;
+
+  PTRACE(2, "Could not change sound channel to " << device);
+  return false;
 }
 
 

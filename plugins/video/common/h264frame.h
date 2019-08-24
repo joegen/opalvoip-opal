@@ -51,6 +51,8 @@
 #define H264_NAL_TYPE_END_OF_STREAM 0xb
 #define H264_NAL_TYPE_FILLER_DATA 0xc
 #define H264_NAL_TYPE_SEQ_EXTENSION 0xd
+#define H264_NAL_TYPE_STAP 24
+#define H264_NAL_TYPE_FU 28
 
 
 
@@ -129,6 +131,14 @@ private:
 
   // for deencapsulation
   uint16_t m_currentFU;
+
+  // State machine for missing packet handling
+  enum
+  {
+    e_NormalProcessing,
+    e_AwaitingMarker,
+    e_AwaitingIntra
+  } m_receiverState;
 };
 
 #endif /* __H264FRAME_H__ */

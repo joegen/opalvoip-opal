@@ -43,37 +43,12 @@
 #include <sip/sippdu.h>
 
 
-/// Separate base class to allow searching sorted list
-class SIPHandlerBase : public PSafeObject 
-{
-    PCLASSINFO(SIPHandlerBase, PSafeObject);
-
-  protected:
-    SIPHandlerBase(const PString & callID) : m_callID(callID) { }
-
-  public:
-    const PString & GetCallID() const
-      { return m_callID; }
-
-  protected:
-    const PString m_callID;
-
-    // Keep a copy of the keys used for easy removal on destruction
-    typedef std::map<PString, PSafePtr<SIPHandler> > IndexMap;
-    std::pair<IndexMap::iterator, bool> m_byAorAndPackage;
-    std::pair<IndexMap::iterator, bool> m_byAuthIdAndRealm;
-    std::pair<IndexMap::iterator, bool> m_byAorUserAndRealm;
-
-  friend class SIPHandlersList;
-};
-
-
 /* Class to handle SIP REGISTER, SUBSCRIBE, MESSAGE, and renew
  * the 'bindings' before they expire.
  */
-class SIPHandler : public SIPHandlerBase, public SIPTransactionOwner
+class SIPHandler : public PSafeObject, public SIPTransactionOwner
 {
-  PCLASSINFO(SIPHandler, SIPHandlerBase);
+  PCLASSINFO(SIPHandler, PSafeObject);
 
 protected:
   SIPHandler(
@@ -85,8 +60,6 @@ protected:
 
 public:
   ~SIPHandler();
-
-  virtual Comparison Compare(const PObject & other) const;
 
   // Overrides from SIPTransactionOwner
   virtual PString GetAuthID() const        { return m_username; }
@@ -107,6 +80,9 @@ public:
 
   inline SIPHandler::State GetState() const
   { return m_state; }
+
+  const PString & GetCallID() const
+    { return m_callID; }
 
   virtual const SIPURL & GetAddressOfRecord() const
     { return m_addressOfRecord; }
@@ -156,6 +132,8 @@ protected:
   void OnExpireTimeout();
   PDECLARE_WriteConnectCallback(SIPHandler, WriteTransaction);
 
+  const PString m_callID;
+
   PString                     m_username;
   PString                     m_password;
   PString                     m_realm;
@@ -175,6 +153,14 @@ protected:
   SIPPoolTimer<SIPHandler>    m_expireTimer; 
   OpalProductInfo             m_productInfo;
   bool                        m_retryForbidden;
+
+  // Keep a copy of the keys used for easy removal on destruction
+  typedef std::map<PString, PSafePtr<SIPHandler> > IndexMap;
+  std::pair<IndexMap::iterator, bool> m_byAorAndPackage;
+  std::pair<IndexMap::iterator, bool> m_byAuthIdAndRealm;
+  std::pair<IndexMap::iterator, bool> m_byAorUserAndRealm;
+
+  friend class SIPHandlers;
 };
 
 #if PTRACING
@@ -336,7 +322,7 @@ public:
 /** This dictionary is used both to contain the active and successful
  * registrations, and subscriptions. 
  */
-class SIPHandlersList
+class SIPHandlers : public PSafeDictionary<PString, SIPHandler>
 {
   public:
     /** Append a new handler to the list
@@ -353,11 +339,6 @@ class SIPHandlersList
       */
     void Update(SIPHandler * handler);
 
-    /** Clean up lists of handler.
-      */
-    bool DeleteObjectsToBeRemoved()
-      { return m_handlersList.DeleteObjectsToBeRemoved(); }
-
     /**
      * Return the number of registered accounts
      */
@@ -367,17 +348,6 @@ class SIPHandlersList
      * Return a list of the active address of records for each handler.
      */
     PStringList GetAddresses(bool includeOffline, SIP_PDU::Methods meth, const PString & eventPackage = PString::Empty()) const;
-
-    /** Get the first handler in the list. Further enumeration may be done by
-        the ++operator on the safe pointer.
-     */
-    PSafePtr<SIPHandler> GetFirstHandler(PSafetyMode mode = PSafeReference) const
-      { return PSafePtr<SIPHandler>(m_handlersList, mode); }
-
-    /** Get the first handler in the list for the specified method. Further enumeration may be done by
-        the ++operator on the safe pointer.
-     */
-    PSafePtr<SIPHandler> FindFirstHandler(SIP_PDU::Methods meth, PSafetyMode mode = PSafeReference) const;
 
     /**
      * Find the SIPHandler object with the specified callID
@@ -413,8 +383,6 @@ class SIPHandlersList
 
   protected:
     void RemoveIndexes(SIPHandler * handler);
-
-    PSafeSortedList<SIPHandlerBase> m_handlersList;
 
     typedef SIPHandler::IndexMap IndexMap;
     PSafePtr<SIPHandler> FindBy(IndexMap & by, const PString & key, PSafetyMode m);

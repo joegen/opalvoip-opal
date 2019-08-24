@@ -35,6 +35,7 @@
 #if OPAL_HAS_MIXER
 
 #include <ptlib/vconvert.h>
+#include <ptlib/pfactory.h>
 
 
 class OpalMediaFormat;

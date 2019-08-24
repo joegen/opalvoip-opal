@@ -203,7 +203,7 @@ class OpalH281Client : public OpalH224Client
     PDECLARE_NOTIFIER(PTimer, OpalH281Client, ReceiveActionTimeout);
     void SendStopAction();
 
-    PMutex m_mutex;
+    PDECLARE_MUTEX(m_mutex);
 
     PNotifier      m_capabilityChanged;
     PNotifier      m_onAction;

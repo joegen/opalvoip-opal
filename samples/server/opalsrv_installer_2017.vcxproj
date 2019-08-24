@@ -13,7 +13,7 @@
   <PropertyGroup Label="Globals">
     <ProjectName>OPAL Server Installer</ProjectName>
     <RootNamespace>OpenPhoneInstaller</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
     <ProjectGuid>{AE1C39FD-A03D-4947-9127-ABE9FE7EDF3A}</ProjectGuid>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -81,12 +81,12 @@
       <SubType>Designer</SubType>
       <FileType>Document</FileType>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">PATH "$(WIX)\bin";%PATH%
-candle -nologo -dMSVCRT_VER=$(PlatformToolsetVersion) -dPlatform=$(Platform) -dArchitecture=$(PlatformTargetAsMSBuildArchitecture) -out "$(IntDir)%(Filename).wixobj" "%(FullPath)"
+candle -nologo -dProjectDir=$(ProjectDir) -dMSVCRT_VER=$(PlatformToolsetVersion) -dPlatform=$(Platform) -dArchitecture=$(PlatformTargetAsMSBuildArchitecture) -out "$(IntDir)%(Filename).wixobj" "%(FullPath)"
 light -nologo -sice:ICE03 -sice:ICE60 -sice:ICE61 -sice:ICE82 -ext WixUIExtension -pdbout "$(IntDir)%(Filename).wixpdb" -out "$(OutDir)$(TargetName).msi" "$(IntDir)%(Filename).wixobj"</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)$(TargetName).msi</Outputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(RootDir)%(Directory)version.wxs;%(RootDir)%(Directory)config.wxs</AdditionalInputs>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">PATH "$(WIX)\bin";%PATH%
-candle -nologo -dMSVCRT_VER=$(PlatformToolsetVersion) -dPlatform=$(Platform) -dArchitecture=$(PlatformTargetAsMSBuildArchitecture) -out "$(IntDir)%(Filename).wixobj" "%(FullPath)"
+candle -nologo -dProjectDir=$(ProjectDir) -dMSVCRT_VER=$(PlatformToolsetVersion) -dPlatform=$(Platform) -dArchitecture=$(PlatformTargetAsMSBuildArchitecture) -out "$(IntDir)%(Filename).wixobj" "%(FullPath)"
 light -nologo -sice:ICE03 -sice:ICE60 -sice:ICE61 -sice:ICE82 -ext WixUIExtension -pdbout "$(IntDir)%(Filename).wixpdb" -out "$(OutDir)$(TargetName).msi" "$(IntDir)%(Filename).wixobj"</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)$(TargetName).msi</Outputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(RootDir)%(Directory)version.wxs;%(RootDir)%(Directory)config.wxs</AdditionalInputs>
@@ -104,6 +104,9 @@ light -nologo -sice:ICE03 -sice:ICE60 -sice:ICE61 -sice:ICE82 -ext WixUIExtensio
     </None>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\ptlib\samples\vxmltest\vxmltest_2017.vcxproj">
+      <Project>{7e636b64-da9d-4711-9f5d-4e1c2efa8db2}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\..\plugins\audio\G.722.1\G.722.1_2017.vcxproj">
       <Project>{3c127609-b3a6-47fd-9b94-8fd2cb2d6623}</Project>
     </ProjectReference>
@@ -134,9 +137,6 @@ light -nologo -sice:ICE03 -sice:ICE60 -sice:ICE61 -sice:ICE82 -ext WixUIExtensio
     <ProjectReference Include="..\..\plugins\audio\Speex\Speex_2017.vcxproj">
       <Project>{02afb070-a9d5-4fb7-a041-311722c9f8d4}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\plugins\fax\fax_spandsp\spandsp_fax_2017.vcxproj">
-      <Project>{d875ec01-6bbf-48ee-93f8-800bd6d76443}</Project>
-    </ProjectReference>
     <ProjectReference Include="..\..\plugins\video\H.261-vic\h261vic_2017.vcxproj">
       <Project>{4a1b92cb-ca8e-4511-a1d5-b0a322fde67c}</Project>
     </ProjectReference>
@@ -151,6 +151,9 @@ light -nologo -sice:ICE03 -sice:ICE60 -sice:ICE61 -sice:ICE82 -ext WixUIExtensio
     </ProjectReference>
     <ProjectReference Include="..\..\plugins\video\VP8-WebM\vp8_webm_2017.vcxproj">
       <Project>{f663f1b8-24d5-4baa-8a3c-e76a5ac619d4}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\callgen\callgen_2017.vcxproj">
+      <Project>{23696513-8fea-4b89-b8bf-ed0e9debe2ea}</Project>
     </ProjectReference>
     <ProjectReference Include="opalsrv_2017.vcxproj">
       <Project>{48a0e613-0a49-4c11-900d-fdbbca2b0591}</Project>

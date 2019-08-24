@@ -899,12 +899,7 @@ bool OpalMixerEndPoint::GetConferenceStates(OpalConferenceStates & states, const
     }
   }
   else {
-    PSafePtr<OpalMixerNode> node;
-    if (name.NumCompare(GetPrefixName()+':') == EqualTo)
-      node = m_nodesByUID.FindWithLock(name.Mid(GetPrefixName().GetLength()+1), PSafeReadOnly);
-    else
-      node = m_nodesByName.FindWithLock(name, PSafeReadOnly);
-
+    PSafePtr<OpalMixerNode> node = m_nodesByName.Find(StripPrefixName(name), PSafeReadOnly);
     if (node != NULL) {
       states.push_back(OpalConferenceState());
       node->GetConferenceState(states.back());
@@ -1107,8 +1102,8 @@ void OpalMixerConnection::SetListenOnly(bool listenOnly)
 
   m_listenOnly = listenOnly;
 
-  for (PSafePtr<OpalMediaStream> mediaStream(m_mediaStreams, PSafeReference); mediaStream != NULL; ++mediaStream) {
-    OpalMixerMediaStream * mixerStream = dynamic_cast<OpalMixerMediaStream *>(&*mediaStream);
+  for (StreamDict::iterator it = m_mediaStreams.begin(); it != m_mediaStreams.end(); ++it) {
+    OpalMixerMediaStream * mixerStream = dynamic_cast<OpalMixerMediaStream *>(&*it->second);
     if (mixerStream != NULL && mixerStream->IsSink()) {
       mixerStream->SetPaused(listenOnly);
       if (listenOnly)
@@ -1692,11 +1687,11 @@ OpalMediaStreamMixer::OpalMediaStreamMixer()
 
 void OpalMediaStreamMixer::Append(const PSafePtr<OpalMixerMediaStream> & stream)
 {
-  for (PSafePtr<OpalMixerMediaStream> s(m_outputStreams); s != NULL; ++s) {
-    if (s == stream)
+  for (StreamDict::iterator it = m_outputStreams.begin(); it != m_outputStreams.end(); ++it) {
+    if (it->second == stream)
       return;
   }
-  m_outputStreams.Append(stream);
+  m_outputStreams.SetAt(stream->GetID(), stream);
 }
 
 
@@ -1704,7 +1699,7 @@ void OpalMediaStreamMixer::CloseOne(const PSafePtr<OpalMixerMediaStream> & strea
 {
   stream->GetConnection().GetEndPoint().GetManager().QueueDecoupledEvent(
                             new PSafeWorkNoArg<OpalMixerMediaStream, bool>(stream, &OpalMediaStream::Close));
-  m_outputStreams.Remove(stream);
+  m_outputStreams.RemoveAt(stream->GetID());
 }
 
 
@@ -1825,11 +1820,12 @@ bool OpalAudioStreamMixer::OnPush()
   PreMixStreams();
   m_mutex.Signal();
 
-  for (PSafePtr<OpalMixerMediaStream> stream(m_outputStreams, PSafeReadOnly); stream != NULL; ++stream) {
+  for (StreamDict::iterator it = m_outputStreams.begin(); it != m_outputStreams.end(); ++it) {
+    PSafePtr<OpalMixerMediaStream> stream = it->second;
     m_mutex.Wait(); // Signal() call for this mutex is inside PushOne()
 
     // Check for full participant, so can subtract their signal
-    StreamMap_T::iterator inputStream = m_inputStreams.find(stream->GetID());
+    StreamMap_T::iterator inputStream = m_inputStreams.find(it->first);
     if (inputStream != m_inputStreams.end())
       PushOne(stream, m_cache[stream->GetID()], ((AudioStream *)inputStream->second)->m_cacheSamples);
     else {
@@ -1914,7 +1910,8 @@ bool OpalVideoStreamMixer::OnMixed(RTP_DataFrame * & output)
   typedef std::map<unsigned, RTP_DataFrame> CachedFrameStore;
   CachedFrameStore cachedFrameStore;
 
-  for (PSafePtr<OpalMixerMediaStream> stream(m_outputStreams, PSafeReadOnly); stream != NULL; ++stream) {
+  for (StreamDict::iterator it = m_outputStreams.begin(); it != m_outputStreams.end(); ++it) {
+    PSafePtr<OpalMixerMediaStream> stream = it->second;
     if (stream->IsPaused())
       continue;
 
@@ -2083,7 +2080,7 @@ void OpalMixerNodeManager::AddNode(OpalMixerNode * node)
 PSafePtr<OpalMixerNode> OpalMixerNodeManager::FindNode(const PString & name, PSafetyMode mode)
 {
   PGloballyUniqueID guid(name);
-  return guid.IsNULL() ? m_nodesByName.FindWithLock(name, mode) : m_nodesByUID.FindWithLock(guid, mode);
+  return guid.IsNULL() ? m_nodesByName.Find(name, mode) : m_nodesByUID.Find(guid, mode);
 }
 
 
@@ -2096,7 +2093,7 @@ void OpalMixerNodeManager::RemoveNode(OpalMixerNode & node)
 
 bool OpalMixerNodeManager::AddNodeName(PString name, OpalMixerNode * node)
 {
-  if (m_nodesByName.FindWithLock(name, PSafeReference) != NULL)
+  if (m_nodesByName.Find(name, PSafeReference) != NULL)
     return false;
 
   m_nodesByName.SetAt(name, node);

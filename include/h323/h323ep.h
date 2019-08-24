@@ -1388,7 +1388,7 @@ class H323EndPoint : public OpalRTPEndPoint
     typedef map<PString, OpalTransportAddress> AliasToGkMap;
     AliasToGkMap    m_localAliasNames;
     AliasToGkMap    m_localAliasPatterns;
-    PTimedMutex     m_aliasMutex;
+    PDECLARE_MUTEX( m_aliasMutex);
     PBoolean        autoCallForward;
     PBoolean        disableFastStart;
     PBoolean        disableH245Tunneling;
@@ -1431,7 +1431,7 @@ class H323EndPoint : public OpalRTPEndPoint
     bool          m_sendGRQ;
     bool          m_oneSignalAddressInRRQ;
     PTime         m_nextGatekeeperDiscovery;
-    PMutex        m_delayGatekeeperMutex;
+    PDECLARE_MUTEX(m_delayGatekeeperMutex);
 
     /* Protect against absence of a response to the ctIdentify reqest
        (Transferring Endpoint - Call Transfer with a secondary Call) */
@@ -1457,7 +1457,7 @@ class H323EndPoint : public OpalRTPEndPoint
     // Dynamic variables
     PSafeDictionary<PString, H323Connection> m_connectionsByCallId;
     std::set<OpalTransportPtr> m_reusableTransports;
-    PMutex                     m_reusableTransportMutex;
+    PDECLARE_MUTEX(            m_reusableTransportMutex);
 
     H323Capabilities m_capabilities;
 
@@ -1471,7 +1471,7 @@ class H323EndPoint : public OpalRTPEndPoint
     PINDEX                    m_gatekeeperAliasLimit;
     bool                      m_gatekeeperSimulatePattern;
     bool                      m_gatekeeperRasRedirect;
-    PTimedMutex               m_gatekeeperMutex;
+    PDECLARE_MUTEX(           m_gatekeeperMutex);
     PStringToString           m_aliasPasswords;
     PString                   m_aliasPwdDefaultAddress;
 

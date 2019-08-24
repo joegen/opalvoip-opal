@@ -39,6 +39,7 @@
 
 #include <opal/mediafmt.h>
 #include <opal/mediastrm.h>
+#include <opal/mediasession.h>
 #include <opal/guid.h>
 #include <opal/transports.h>
 #include <ptclib/dtmf.h>
@@ -450,7 +451,8 @@ class OpalConnection : public PSafeObject
       EndedByCallCompletedElsewhere, ///< Call cleared because it was answered by another extension.
       EndedByCertificateAuthority,   ///< When using TLS, the remote certifcate was not authenticated
       EndedByIllegalAddress,         ///< Destination Address  format was incorrect format
-      EndedByCustomCode              ///< End call with custom protocol specific code (e.g. SIP)
+      EndedByCustomCode,             ///< End call with custom protocol specific code (e.g. SIP)
+      EndedByMediaTransportFail      ///< End call due to media transport failure, typically ICE error
     );
 
     struct CallEndReason {
@@ -1302,7 +1304,8 @@ class OpalConnection : public PSafeObject
        @Return true if the specific media session is to be aborted.
       */
     virtual bool OnMediaFailed(
-      unsigned sessionId   ///< Session ID of media that stopped.
+      unsigned sessionId,    ///< Session ID of media that stopped.
+      PChannel::Errors error ///< Error code for failure
     );
 
     /**Indicate all media sessions have failed.
@@ -1375,11 +1378,11 @@ class OpalConnection : public PSafeObject
       bool & mute         ///< Flag for muted audio
     );
 
-    /**Get the average signal level (0..32767) for the audio media channel.
-       A return value of UINT_MAX indicates no valid signal, eg no audio channel opened.
+    /**Get the signal level in dBov (-127 to 0) for the audio media channel.
+       A return value of INT_MAX indicates no valid signal, eg no audio channel opened.
       */
-    virtual unsigned GetAudioSignalLevel(
-      PBoolean source                   ///< true for source (microphone), false for sink (speaker)
+    virtual int GetAudioLevelDB(
+      bool source   ///< true for source (microphone), false for sink (speaker)
     );
   //@}
 
@@ -1861,6 +1864,10 @@ class OpalConnection : public PSafeObject
       */
     virtual PString GetSupportedFeatures() const;
 
+    /**Get the audio jitter parameters.
+    */
+    const OpalJitterBuffer::Params & GetJitterParameters() const { return m_jitterParams; }
+
     /**Get the default maximum audio jitter delay parameter.
        Defaults to 50ms
      */
@@ -1906,7 +1913,6 @@ class OpalConnection : public PSafeObject
 
     /// Get the string options associated with this connection.
     const StringOptions & GetStringOptions() const { return m_stringOptions; }
-          StringOptions & GetStringOptions()       { return m_stringOptions; }
 
     /// Set the string options associated with this connection.
     void SetStringOptions(
@@ -1940,13 +1946,15 @@ class OpalConnection : public PSafeObject
     void InternalOnReleased();
     void InternalExecuteMediaCommand(OpalMediaCommand * command);
 
+    void InternalCreatedMediaTransport(const OpalMediaTransportPtr & transport) { m_mediaTransports.Append(transport); }
+
   protected:
   // Member variables
     OpalCall           & m_ownerCall;
     OpalEndPoint       & m_endpoint;
 
   private:
-    PMutex               m_phaseMutex;
+    PDECLARE_MUTEX(      m_phaseMutex);
     Phases               m_phase;
 
   protected:
@@ -1975,7 +1983,21 @@ class OpalConnection : public PSafeObject
     OpalMediaFormat       m_filterMediaFormat;
 
     OpalMediaFormatList        m_localMediaFormats;
-    PSafeList<OpalMediaStream> m_mediaStreams;
+
+    struct StreamKey : PKey<uint64_t>
+    {
+      StreamKey(unsigned sessionID, bool isSource)
+        : PKey<uint64_t>(sessionID + (isSource ? 0x100000000ULL : 0x200000000ULL))
+      { }
+      StreamKey(const OpalMediaStream & stream)
+        : PKey<uint64_t>(stream.GetSessionID() + (stream.IsSource() ? 0x100000000ULL : 0x200000000ULL))
+      { }
+      PObject * Clone() const { return new StreamKey(*this); }
+    };
+    typedef PSafeDictionary<StreamKey, OpalMediaStream> StreamDict;
+    StreamDict m_mediaStreams;
+
+    PSafeList<OpalMediaTransport> m_mediaTransports;
 
     OpalJitterBuffer::Params m_jitterParams;
 
@@ -2032,7 +2054,7 @@ class OpalConnection : public PSafeObject
     ZeroTime m_phaseTime[NumPhases];
 
     std::set<unsigned> m_mediaSessionFailed;
-    PMutex             m_mediaSessionFailedMutex;
+    PDECLARE_MUTEX(    m_mediaSessionFailedMutex);
 
 
   private:
@@ -2064,6 +2086,7 @@ class OpalConnection : public PSafeObject
     P_REMOVE_VIRTUAL(bool,Hold(bool,bool),false);
     P_REMOVE_VIRTUAL(bool,ExecuteMediaCommand(const OpalMediaCommand &,unsigned,const OpalMediaType &) const,0);
     P_REMOVE_VIRTUAL(bool,OnMediaFailed(unsigned,bool),false);
+    P_REMOVE_VIRTUAL(bool,OnMediaFailed(unsigned),false);
 };
 
 #endif // OPAL_OPAL_CONNECTION_H

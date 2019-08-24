@@ -46,14 +46,14 @@ static BYTE CapabilityAttributeBits[OpalH281Client::Capability::NumAttributes] =
 
 const OpalMediaFormat & GetOpalFECC_RTP()
 {
-  static OpalH224MediaFormat h224_rtp(new OpalH224MediaFormatInternal(OPAL_FECC_RTP, "Far End Camera Control (H.224 over RTP)", false));
+  static OpalMediaFormatStatic<OpalH224MediaFormat> h224_rtp(new OpalH224MediaFormat::Internal(OPAL_FECC_RTP, "Far End Camera Control (H.224 over RTP)", false));
   return h224_rtp;
 };
 
 
 const OpalMediaFormat & GetOpalFECC_HDLC()
 {
-  static OpalH224MediaFormat h224_hdlc(new OpalH224MediaFormatInternal(OPAL_FECC_HDLC, "Far End Camera Control (H.224 over HDLC)", true));
+  static OpalMediaFormatStatic<OpalH224MediaFormat> h224_hdlc(new OpalH224MediaFormat::Internal(OPAL_FECC_HDLC, "Far End Camera Control (H.224 over HDLC)", true));
   return h224_hdlc;
 }
 
@@ -73,7 +73,7 @@ ostream & operator<<(ostream & strm, const OpalH281Client::Capability & cap)
   strm << '"' << cap.m_name << '"';
   if (cap.m_available) {
     bool nothing = true;
-    for (int i = 0; i < PARRAYSIZE(cap.m_attribute); ++i) {
+    for (PINDEX i = 0; i < PARRAYSIZE(cap.m_attribute); ++i) {
       if (cap.m_attribute[i]) {
         nothing = false;
 

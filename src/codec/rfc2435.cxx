@@ -86,7 +86,7 @@ class RFC2435VideoFormatInternal : public OpalVideoFormatInternal
 
 const OpalVideoFormat & GetOpalRFC2435_JPEG()
 {
-  static OpalVideoFormat RFC2435(new RFC2435VideoFormatInternal(OPAL_RFC2435_JPEG, "RFC2435_JPEG", (FRAME_WIDTH*FRAME_HEIGHT*3/2)*FRAME_RATE));
+  static OpalMediaFormatStatic<OpalVideoFormat> RFC2435(new RFC2435VideoFormatInternal(OPAL_RFC2435_JPEG, "RFC2435_JPEG", (FRAME_WIDTH*FRAME_HEIGHT*3/2)*FRAME_RATE));
   return RFC2435;
 }
 

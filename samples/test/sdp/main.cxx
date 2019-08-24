@@ -40,7 +40,7 @@ PCREATE_PROCESS(Test);
 
 
 Test::Test()
-  : PProcess("Open Phone Abstraction Library", "SDP Test", OPAL_MAJOR, OPAL_MINOR, ReleaseCode, OPAL_BUILD)
+  : PProcess("Open Phone Abstraction Library", "SDP Test", OPAL_MAJOR, OPAL_MINOR, ReleaseCode, OPAL_PATCH, false, false, OPAL_OEM)
 {
 }
 

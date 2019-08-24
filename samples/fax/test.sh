@@ -17,9 +17,13 @@ else
   mkdir $RESULT_DIR || exit $?
 fi
 
-IFACE=`/sbin/ifconfig | head -1 | cut -d ' ' -f 1`
+if [ `uname` = Darwin ]; then
+  IFACE=`netstat -rnf inet | sed -nE 's/default +[^ ]+ +[^ ]+ +[^ ]+ +[^ ]+ +//p'`
+else
+  IFACE=`ip route | sed -n 's/default.*dev //p'`
+fi
 if [ -n "$IFACE" ]; then
-  HOST=`/sbin/ifconfig $IFACE 2>/dev/null | grep 'inet addr' | sed -e 's/ *inet addr://' -e 's/ *Bcast.*$//'`
+  HOST=`/sbin/ifconfig $IFACE 2>/dev/null | grep 'inet ' | sed -E 's/.*inet[^0-9]*([0-9\.]+).*/\1/'`
 fi
 if [ -z "$HOST" ]; then
   HOST=`hostname`
@@ -50,10 +54,14 @@ function test_fax()
 
   if [ "$2" = "g711" ]; then
     TX_ARG+=" --audio"
+  elif [ "$2" = "rtp" ]; then
+    TX_ARG+=" --RTP"
   fi
 
   if [ "$3" = "g711" ]; then
     RX_ARG+=" --audio"
+  elif [ "$3" = "rtp" ]; then
+    RX_ARG+=" --RTP"
   fi
 
   if [ "$4" = "slow" ]; then
@@ -106,6 +114,10 @@ elif [ $# = 0 ]; then
   test_fax sip g711 t38
   test_fax sip t38  g711
   test_fax sip g711 g711
+  test_fax sip rtp  t38
+  test_fax sip t38  rtp
+  test_fax sip g711 rtp
+  test_fax sip rtp  g711
 
   test_fax h323 t38  t38  fast
   test_fax h323 g711 t38  fast

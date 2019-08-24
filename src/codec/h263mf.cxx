@@ -97,11 +97,11 @@ class OpalCustomSizeOption : public OpalMediaOptionString
 };
 
 
-class OpalH263Format : public OpalVideoFormatInternal
+class OpalH263FormatInternal : public OpalVideoFormatInternal
 {
   public:
-    OpalH263Format(const char * formatName, const char * encodingName)
-      : OpalVideoFormatInternal(formatName, RTP_DataFrame::DynamicBase, encodingName,
+    OpalH263FormatInternal(const char * formatName, const char * encodingName, RTP_DataFrame::PayloadTypes payloadType)
+      : OpalVideoFormatInternal(formatName, payloadType, encodingName,
                                 PVideoFrameInfo::CIF16Width, PVideoFrameInfo::CIF16Height, 30, H263_BITRATE)
     {
       OpalMediaOption * option;
@@ -174,7 +174,7 @@ class OpalH263Format : public OpalVideoFormatInternal
 
     virtual PObject * Clone() const
     {
-      return new OpalH263Format(*this);
+      return new OpalH263FormatInternal(*this);
     }
 
 
@@ -190,34 +190,24 @@ class OpalH263Format : public OpalVideoFormatInternal
 };
 
 
+#if OPAL_H323
+typedef OpalMediaFormatStaticH323<OpalVideoFormat, H323H263baseCapability> OpalH263Format;
+typedef OpalMediaFormatStaticH323<OpalVideoFormat, H323H263plusCapability> OpalH263plusFormat;
+#else
+typedef OpalMediaFormatStatic<OpalVideoFormat> OpalH263Format;
+typedef OpalMediaFormatStatic<OpalVideoFormat> OpalH263plusFormat;
+#endif
+
 const OpalVideoFormat & GetOpalH263()
 {
-  static OpalVideoFormat const plugin(H263FormatName);
-  if (plugin.IsValid())
-    return plugin;
-
-  static OpalVideoFormat const format(new OpalH263Format(H263FormatName, H263EncodingName));
-
-#if OPAL_H323
-  static H323CapabilityFactory::Worker<H323H263baseCapability> capability(H263FormatName, true);
-#endif // OPAL_H323
-
+  static OpalH263Format const format(new OpalH263FormatInternal(H263FormatName, H263EncodingName, RTP_DataFrame::H263));
   return format;
 }
 
 
 const OpalVideoFormat & GetOpalH263plus()
 {
-  static OpalVideoFormat const plugin(H263plusFormatName);
-  if (plugin.IsValid())
-    return plugin;
-
-  static OpalVideoFormat const format(new OpalH263Format(H263plusFormatName, H263plusEncodingName));
-
-#if OPAL_H323
-  static H323CapabilityFactory::Worker<H323H263plusCapability> capability(H263plusFormatName, true);
-#endif // OPAL_H323
-
+  static OpalH263plusFormat const format(new OpalH263FormatInternal(H263plusFormatName, H263plusEncodingName, RTP_DataFrame::DynamicBase));
   return format;
 }
 

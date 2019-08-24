@@ -172,7 +172,7 @@ typedef struct PluginLID_Definition
   PluginLID_Errors (*ReadFrame)(void * context, unsigned line, void * buffer, unsigned * count);
   PluginLID_Errors (*WriteFrame)(void * context, unsigned line, const void * buffer, unsigned count, unsigned * written);
 
-  PluginLID_Errors (*GetAverageSignalLevel)(void * context, unsigned line, PluginLID_Boolean playback, unsigned * signal);
+  PluginLID_Errors (*GetAudioLevelDB)(void * context, unsigned line, PluginLID_Boolean playback, int * signal);
 
   PluginLID_Errors (*EnableAudio)(void * context, unsigned line, PluginLID_Boolean enable);
   PluginLID_Errors (*IsAudioEnabled)(void * context, unsigned line, PluginLID_Boolean * enable);

@@ -60,7 +60,7 @@ class RFC4175VideoFormatInternal : public OpalVideoFormatInternal
 
     virtual PObject * Clone() const
     {
-      PWaitAndSignal m(media_format_mutex);
+      PWaitAndSignal m(m_mutex);
       return new RFC4175VideoFormatInternal(*this);
     }
 
@@ -81,14 +81,14 @@ class RFC4175VideoFormatInternal : public OpalVideoFormatInternal
 
 const OpalVideoFormat & GetOpalRFC4175_YCbCr420()
 {
-  static OpalVideoFormat RFC4175_YCbCr420(new RFC4175VideoFormatInternal(OPAL_RFC4175_YCbCr420, "YCbCr-4:2:0", (FRAME_WIDTH*FRAME_HEIGHT*3/2)*FRAME_RATE));
+  static OpalMediaFormatStatic<OpalVideoFormat> RFC4175_YCbCr420(new RFC4175VideoFormatInternal(OPAL_RFC4175_YCbCr420, "YCbCr-4:2:0", (FRAME_WIDTH*FRAME_HEIGHT*3/2)*FRAME_RATE));
   return RFC4175_YCbCr420;
 }
 
 
 const OpalVideoFormat & GetOpalRFC4175_RGB()
 {
-  static OpalVideoFormat RFC4175_RGB(new RFC4175VideoFormatInternal(OPAL_RFC4175_RGB, "RGB", FRAME_WIDTH*FRAME_HEIGHT*3*FRAME_RATE));
+  static OpalMediaFormatStatic<OpalVideoFormat> RFC4175_RGB(new RFC4175VideoFormatInternal(OPAL_RFC4175_RGB, "RGB", FRAME_WIDTH*FRAME_HEIGHT*3*FRAME_RATE));
   return RFC4175_RGB;
 }
 
@@ -190,7 +190,7 @@ bool OpalRFC4175Encoder::ConvertFrames(const RTP_DataFrame & input, RTP_DataFram
   m_frameWidth        = header->width;
 
   // make sure the incoming frame is big enough for the specified frame size
-  if (input.GetPayloadSize() < (int)(sizeof(PluginCodec_Video_FrameHeader) + PixelsToBytes(m_frameWidth*m_frameHeight))) {
+  if (input.GetPayloadSize() < (PINDEX)(sizeof(PluginCodec_Video_FrameHeader) + PixelsToBytes(m_frameWidth*m_frameHeight))) {
     PTRACE(1,"RFC4175\tPayload of grabbed frame too small for full frame");
     return false;
   }

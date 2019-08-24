@@ -141,10 +141,10 @@ istream & operator>>(istream & strm, OpalRFC2833EventsMask & mask)
 
 
 #if OPAL_SDP
-static void AddEventsOption(OpalMediaFormat & mediaFormat, const char * defaultValues, const char * fmtpDefaults)
+static void AddEventsOption(OpalMediaFormatInternal & mediaFormat, const char * defaultValues, const char * fmtpDefaults)
 #else
 #define AddEventsOption(mf,dv,fd) AddEventsOption2(mf,dv)
-static void AddEventsOption2(OpalMediaFormat & mediaFormat, const char * defaultValues)
+static void AddEventsOption2(OpalMediaFormatInternal & mediaFormat, const char * defaultValues)
 #endif
 {
   OpalRFC288EventsOption * option = new OpalRFC288EventsOption(OpalRFC288EventsName(),
@@ -161,43 +161,45 @@ static void AddEventsOption2(OpalMediaFormat & mediaFormat, const char * default
 
 const OpalMediaFormat & GetOpalRFC2833()
 {
-  static struct OpalRFC2833MediaFormat : public OpalMediaFormat {
-    OpalRFC2833MediaFormat()
-      : OpalMediaFormat(OPAL_RFC2833,
-                        "userinput",
-                        (RTP_DataFrame::PayloadTypes)101,  // Set to this for Cisco compatibility
-                        "telephone-event",
-                        true,   // Needs jitter
-                        32*(1000/50), // bits/sec  (32 bits every 50ms)
-                        4,      // bytes/frame
-                        10*8,   // 10 millisecond
-                        OpalMediaFormat::AudioClockRate)
+  struct OpalRFC2833MediaFormatInternal : public OpalMediaFormatInternal {
+    OpalRFC2833MediaFormatInternal()
+      : OpalMediaFormatInternal(OPAL_RFC2833,
+                                "userinput",
+                                (RTP_DataFrame::PayloadTypes)101,  // Set to this for Cisco compatibility
+                                "telephone-event",
+                                true,   // Needs jitter
+                                32*(1000/50), // bits/sec  (32 bits every 50ms)
+                                4,      // bytes/frame
+                                10*8,   // 10 millisecond
+                                OpalMediaFormat::AudioClockRate)
     {
       SetOptionString(OpalMediaFormat::DescriptionOption(), "RFC 2833 - telephone event");
       AddEventsOption(*this, "0-16,32,36", "0-15");  // Support DTMF 0-9,*,#,A-D & hookflash, CNG, CED
     }
-  } const RFC2833;
+  };
+  static OpalMediaFormatStatic<OpalMediaFormat> RFC2833(new OpalRFC2833MediaFormatInternal);
   return RFC2833;
 }
 
 const OpalMediaFormat & GetOpalCiscoNSE()
 {
-  static struct OpalCiscoNSEMediaFormat : public OpalMediaFormat {
-    OpalCiscoNSEMediaFormat()
-      : OpalMediaFormat(OPAL_CISCONSE,
-                        "userinput",
-                        (RTP_DataFrame::PayloadTypes)100,  // Set to this for Cisco compatibility
-                        "NSE",
-                        true,   // Needs jitter
-                        32*(1000/50), // bits/sec  (32 bits every 50ms)
-                        4,      // bytes/frame
-                        10*8,   // 10 millisecond
-                        OpalMediaFormat::AudioClockRate)
+  struct OpalCiscoNSEMediaFormatInternal : public OpalMediaFormatInternal {
+    OpalCiscoNSEMediaFormatInternal()
+      : OpalMediaFormatInternal(OPAL_CISCONSE,
+                                "userinput",
+                                (RTP_DataFrame::PayloadTypes)100,  // Set to this for Cisco compatibility
+                                "NSE",
+                                true,   // Needs jitter
+                                32*(1000/50), // bits/sec  (32 bits every 50ms)
+                                4,      // bytes/frame
+                                10*8,   // 10 millisecond
+                                OpalMediaFormat::AudioClockRate)
     {
       SetOptionString(OpalMediaFormat::DescriptionOption(), "Cisco NSE - fax event");
       AddEventsOption(*this, "192,193", "192,193");
     }
-  } const CiscoNSE;
+  };
+  static OpalMediaFormatStatic<OpalMediaFormat> CiscoNSE(new OpalCiscoNSEMediaFormatInternal);
   return CiscoNSE;
 }
 

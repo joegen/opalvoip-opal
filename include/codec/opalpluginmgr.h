@@ -126,7 +126,6 @@ class OpalPluginCodecManager : public PPluginModuleManager
     void OnLoadPlugin(PDynaLink & dll, P_INT_PTR code);
 
     virtual void OnStartup();
-    virtual void OnShutdown();
 
 #if OPAL_H323
     H323Capability * CreateCapability(
@@ -138,9 +137,6 @@ class OpalPluginCodecManager : public PPluginModuleManager
 #endif
 
   protected:
-    // Note the below MUST NOT be an OpalMediaFormatList
-    PList<OpalMediaFormat> mediaFormatsOnHeap;
-
     void RegisterCodecPlugins  (unsigned int count, const PluginCodec_Definition * codecList, OpalPluginCodecHandler * handler);
     void UnregisterCodecPlugins(unsigned int count, const PluginCodec_Definition * codecList, OpalPluginCodecHandler * handler);
 
@@ -224,15 +220,20 @@ class OpalPluginTranscoder
     }
 
   protected:
+    bool CreateContext(const BYTE * instance, unsigned instanceLen);
+    bool SetCodecOption(const PString & optionName, const PString & optionValue);
+
     const PluginCodec_Definition * codecDef;
     bool   isEncoder;
     void * context;
+    unsigned m_maxPayloadSize;
 
     OpalPluginControl setCodecOptionsControl;
     OpalPluginControl getActiveOptionsControl;
     OpalPluginControl freeOptionsControl;
     OpalPluginControl getOutputDataSizeControl;
     OpalPluginControl getCodecStatistics;
+    OpalPluginControl setInstanceId;
 #if PTRACING
     bool m_firstLoggedUpdateOptions[2];
 #endif
@@ -273,6 +274,9 @@ class OpalPluginFramedAudioTranscoder : public OpalFramedTranscoder, public Opal
     virtual PBoolean ConvertSilentFrame(BYTE * buffer);
     virtual bool AcceptComfortNoise() const { return comfortNoise; }
   protected:
+    virtual bool OnCreated(const OpalMediaFormat & srcFormat,
+                           const OpalMediaFormat & destFormat,
+                           const BYTE * instance, unsigned instanceLen);
     bool comfortNoise;
 };
 
@@ -287,6 +291,9 @@ class OpalPluginStreamedAudioTranscoder : public OpalStreamedTranscoder, public 
     virtual bool AcceptComfortNoise() const { return comfortNoise; }
     virtual int ConvertOne(int from) const;
   protected:
+    virtual bool OnCreated(const OpalMediaFormat & srcFormat,
+                           const OpalMediaFormat & destFormat,
+                           const BYTE * instance, unsigned instanceLen);
     bool comfortNoise;
 };
 
@@ -327,6 +334,9 @@ class OpalPluginVideoTranscoder : public OpalVideoTranscoder, public OpalPluginT
     PBoolean ExecuteCommand(const OpalMediaCommand & command);
 
   protected:
+    virtual bool OnCreated(const OpalMediaFormat & srcFormat,
+                           const OpalMediaFormat & destFormat,
+                           const BYTE * instance, unsigned instanceLen);
     bool EncodeFrames(const RTP_DataFrame & src, RTP_DataFrameList & dstList);
     bool DecodeFrames(const RTP_DataFrame & src, RTP_DataFrameList & dstList);
     bool DecodeFrame(const RTP_DataFrame & src, RTP_DataFrameList & dstList);

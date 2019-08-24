@@ -632,8 +632,9 @@ wxIMPLEMENT_APP(OpenPhoneApp);
 
 OpenPhoneApp::OpenPhoneApp()
   : PProcess(MANUFACTURER_TEXT, PRODUCT_NAME_TEXT,
-             MAJOR_VERSION, MINOR_VERSION, BUILD_TYPE, BUILD_NUMBER)
+             MAJOR_VERSION, MINOR_VERSION, BUILD_TYPE, PATCH_VERSION)
 {
+  m_version.m_oem = OEM_VERSION;
 }
 
 
@@ -1562,15 +1563,16 @@ bool MyManager::Initialise(bool startMinimised)
     sipEP->SetRegistrarTimeToLive(PTimeInterval(0, value1));
 
   // Original backward compatibility entry
-  RegistrationInfo registration;
-  if (config->Read(RegistrarUsedKey, &registration.m_Active, false) &&
+  {
+    PWaitAndSignal lock(m_registrationsMutex);
+    RegistrationInfo registration;
+    if (config->Read(RegistrarUsedKey, &registration.m_Active, false) &&
       config->Read(RegistrarNameKey, &registration.m_Domain) &&
       config->Read(RegistrarUsernameKey, &registration.m_User) &&
       config->Read(RegistrarPasswordKey, &registration.m_Password) &&
       config->Read(RegistrarProxyKey, &registration.m_Proxy))
-    m_registrations.push_back(registration);
+      m_registrations.push_back(registration);
 
-  {
     config->SetPath(RegistrarGroup);
     wxString groupName;
     long groupIndex;
@@ -1845,7 +1847,9 @@ void MyManager::OnClose(wxCloseEvent & /*event*/)
   potsEP = NULL;
   m_activeCall.SetNULL();
   m_callsOnHold.clear();
+  m_registrationsMutex.Wait();
   m_registrations.clear();
+  m_registrationsMutex.Signal();
   m_tabs->DeleteAllPages();
   ShutDownEndpoints();
 
@@ -2972,7 +2976,10 @@ void MyManager::OnClosedMediaStream(const OpalMediaStream & stream)
   if (videoStream == NULL)
     return;
 
-  VideoWindowInfo newWindowInfo(videoStream->GetVideoOutputDevice());
+  PVideoOutputDevice * device = videoStream->GetVideoOutputDevice();
+  VideoWindowInfo newWindowInfo(device);
+  device->Close();
+
   if (newWindowInfo.x == INT_MIN)
     return;
 
@@ -3708,6 +3715,8 @@ void MyManager::StartRegistrations()
 
   bool gotOne = false;
 
+  PWaitAndSignal lock(m_registrationsMutex);
+
   for (RegistrationList::iterator iter = m_registrations.begin(); iter != m_registrations.end(); ++iter) {
     if (iter->Start(*sipEP))
       gotOne = true;
@@ -3720,6 +3729,8 @@ void MyManager::StartRegistrations()
 
 void MyManager::ReplaceRegistrations(const RegistrationList & newRegistrations)
 {
+  PWaitAndSignal lock(m_registrationsMutex);
+
   for (RegistrationList::iterator iter = m_registrations.begin(); iter != m_registrations.end(); ) {
     RegistrationList::const_iterator newReg = std::find(newRegistrations.begin(), newRegistrations.end(), *iter);
     if (newReg != newRegistrations.end())
@@ -4762,7 +4773,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   INIT_FIELD(AudioRecordingMode, m_manager.m_recordingOptions.m_stereo);
   INIT_FIELD(AudioRecordingFormat, m_manager.m_recordingOptions.m_audioFormat);
   if (m_AudioRecordingFormat.empty())
-    m_AudioRecordingFormat = OpalPCM16.GetName();
+    m_AudioRecordingFormat = "<default>";
   INIT_FIELD(VideoRecordingMode, m_manager.m_recordingOptions.m_videoMixing);
   m_VideoRecordingSize = PVideoFrameInfo::AsString(m_manager.m_recordingOptions.m_videoWidth,
                                                    m_manager.m_recordingOptions.m_videoHeight);
@@ -4771,6 +4782,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
     combo->Append(PwxString(knownSizes[i]));
 
   FindWindowByNameAs(choice, this, AudioRecordingFormatKey);
+  choice->Append("<default>");
   PWAVFileFormatByFormatFactory::KeyList_T wavFileFormats = PWAVFileFormatByFormatFactory::GetKeyList();
   for (PWAVFileFormatByFormatFactory::KeyList_T::iterator iterFmt = wavFileFormats.begin(); iterFmt != wavFileFormats.end(); ++iterFmt)
     choice->Append(PwxString(*iterFmt));
@@ -4949,7 +4961,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   for (i = 0; i < routeTable.GetSize(); i++)
     AddRouteTableEntry(routeTable[i]);
 
-  for (i = 0; i < m_Routes->GetColumnCount(); i++)
+  for (i = 0; i < (PINDEX)m_Routes->GetColumnCount(); i++)
     m_Routes->SetColumnWidth(i, wxLIST_AUTOSIZE_USEHEADER);
 
   {
@@ -5070,8 +5082,11 @@ bool OptionsDialog::TransferDataFromWindow()
 #endif
 
   SAVE_FIELD(AudioRecordingMode, m_manager.m_recordingOptions.m_stereo = 0 != );
-  m_manager.m_recordingOptions.m_audioFormat = m_AudioRecordingFormat.p_str();
-  config->Write(AudioRecordingFormatKey, m_AudioRecordingFormat);
+  PwxString fmt;
+  if (m_AudioRecordingFormat != "<default>")
+    fmt = m_AudioRecordingFormat;
+  m_manager.m_recordingOptions.m_audioFormat = fmt.p_str();
+  config->Write(AudioRecordingFormatKey, fmt);
   SAVE_FIELD(VideoRecordingMode, m_manager.m_recordingOptions.m_videoMixing = (OpalRecordManager::VideoMode));
   PVideoFrameInfo::ParseSize(m_VideoRecordingSize,
                              m_manager.m_recordingOptions.m_videoWidth,
@@ -5725,7 +5740,7 @@ void OptionsDialog::RemoveInterface(wxCommandEvent & /*event*/)
 {
   wxString iface = m_LocalInterfaces->GetStringSelection();
 
-  for (int i = 0; i < PARRAYSIZE(InterfacePrefixes); i++) {
+  for (PINDEX i = 0; i < PARRAYSIZE(InterfacePrefixes); i++) {
     if (iface.StartsWith(PwxString(InterfacePrefixes[i]))) {
       m_InterfaceProtocol->SetSelection(i);
       iface.Remove(0, strlen(InterfacePrefixes[i]));
@@ -7871,17 +7886,12 @@ void InCallPanel::SetVolume(bool isMicrophone, int value, bool muted)
 
 static void SetGauge(wxGauge * gauge, int level)
 {
-  if (level < 0 || level > 32767) {
+  if (level > 0)
     gauge->Show(false);
-    return;
+  else {
+    gauge->Show();
+    gauge->SetValue(val+127);
   }
-  gauge->Show();
-  int val = (int)(100*log10(1.0 + 9.0*level/8192.0)); // Convert to logarithmic scale
-  if (val < 0)
-    val = 0;
-  else if (val > 100)
-    val = 100;
-  gauge->SetValue(val);
 }
 
 
@@ -7895,8 +7905,8 @@ void InCallPanel::OnUpdateVU(wxTimerEvent & WXUNUSED(event))
     int spkLevel = -1;
     PSafePtr<OpalLocalConnection> connection;
     if (m_manager.GetConnection(connection, PSafeReadOnly)) {
-      spkLevel = connection->GetAudioSignalLevel(false);
-      micLevel = connection->GetAudioSignalLevel(true);
+      spkLevel = connection->GetAudioLevelDB(false);
+      micLevel = connection->GetAudioLevelDB(true);
 
       if (m_updateStatistics % 3 == 0) {
         PTime established = connection->GetPhaseTime(OpalConnection::EstablishedPhase);
@@ -8312,9 +8322,10 @@ PBoolean MyPCSSEndPoint::OnShowOutgoing(const OpalPCSSConnection & connection)
 
 PSoundChannel * MyPCSSEndPoint::CreateSoundChannel(const OpalPCSSConnection & connection,
                                                    const OpalMediaFormat & mediaFormat,
-                                                   PBoolean isSource)
+                                                   unsigned sessionID,
+                                                   bool isSource)
 {
-  PSoundChannel * channel = OpalPCSSEndPoint::CreateSoundChannel(connection, mediaFormat, isSource);
+  PSoundChannel * channel = OpalPCSSEndPoint::CreateSoundChannel(connection, mediaFormat, sessionID, isSource);
   if (channel != NULL)
     return channel;
 

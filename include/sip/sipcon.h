@@ -615,6 +615,13 @@ class SIPConnection : public OpalSDPConnection, public SIPTransactionOwner
       const SIPInfo::Params & params,  ///< Parameters for OPTIONS command
       SIP_PDU * reply = NULL              ///< Reply to message
     );
+
+    /**Call back for received an INFO message with a package.
+      */
+    virtual bool OnReceivedInfoPackage(
+      const PString & package,
+      const PString & body
+    );
   //@}
 
     OpalTransportAddress GetDefaultSDPConnectAddress(WORD port = 0) const;
@@ -686,6 +693,7 @@ class SIPConnection : public OpalSDPConnection, public SIPTransactionOwner
     void OnInviteResponseTimeout();
     void OnInviteCollision();
     void OnDelayedRefer();
+    virtual bool AllowMusicOnHold() const;
     virtual bool OnHoldStateChanged(bool placeOnHold);
     virtual void OnMediaStreamOpenFailed(bool rx);
 
@@ -771,13 +779,12 @@ class SIPConnection : public OpalSDPConnection, public SIPTransactionOwner
     PoolTimer             m_responseRetryTimer;
     unsigned              m_responseRetryCount;
     PoolTimer             m_inviteCollisionTimer;
-    bool                  m_referOfRemoteInProgress;
     PoolTimer             m_delayedReferTimer;
     SIPURL                m_delayedReferTo;
     SIPURL                m_sentReferTo;
 
-    PSafeList<SIPTransaction> m_forkedInvitations; // Not for re-INVITE
-    PSafeList<SIPTransaction> m_pendingInvitations; // For re-INVITE
+    PSafeArray<SIPTransaction> m_forkedInvitations; // Not for re-INVITE
+    PSafeArray<SIPTransaction> m_pendingInvitations; // For re-INVITE
 
     enum {
       ReleaseWithBYE,
@@ -786,7 +793,15 @@ class SIPConnection : public OpalSDPConnection, public SIPTransactionOwner
       ReleaseWithNothing,
     } m_releaseMethod;
 
-    int SetRemoteMediaFormats(SIP_PDU & pdu);
+    enum {
+      eNoRemoteRefer,
+      eReferStarted,
+      eReferNotifyConfirmed
+    } m_referOfRemoteState;
+    PString m_consultationTransferToken;
+    bool ConsultationTransfer(SIPConnection & referee, SIPRefer::ReferSubMode referSubMode, bool useIdentity);
+
+    int SetRemoteMediaFormatsFromPDU(SIP_PDU & pdu);
 
     std::map<std::string, SIP_PDU *> m_responses;
 

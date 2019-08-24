@@ -140,6 +140,7 @@ SOURCES += $(OPAL_SRCDIR)/opal/manager.cxx \
            $(OPAL_SRCDIR)/rtp/rtpep.cxx \
            $(OPAL_SRCDIR)/rtp/rtpconn.cxx \
            $(OPAL_SRCDIR)/ep/localep.cxx \
+           $(OPAL_SRCDIR)/ep/sockep.cxx \
            $(OPAL_SRCDIR)/opal/opal_c.cxx \
            $(OPAL_SRCDIR)/opal/pres_ent.cxx
 
@@ -542,7 +543,7 @@ install:
 	           $(OPAL_DEBUG_STATIC_FILE) ; \
 	do \
 	   if test -e $$lib ; then \
-	      $(INSTALL) -m 644 $$lib $(DESTDIR)$(libdir); \
+	      $(INSTALL) -m 755 $$lib $(DESTDIR)$(libdir); \
 	   fi \
 	done
 	cd $(DESTDIR)$(libdir) ; \

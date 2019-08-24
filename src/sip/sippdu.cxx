@@ -658,10 +658,30 @@ PString SIPURL::GenerateTag()
 }
 
 
-void SIPURL::SetTag(const PString & tag, bool force)
+PString SIPURL::SetTag(const PString & newTag, bool force)
 {
-  if (force || !m_fieldParameters.Contains(TagStr))
-    m_fieldParameters.SetAt(TagStr, tag.IsEmpty() ? GenerateTag() : tag);
+  PString existingTag = m_fieldParameters(TagStr);
+
+  PString misplacedTag = m_paramVars(TagStr);
+  if (existingTag.IsEmpty() && !misplacedTag.IsEmpty()) {
+    PTRACE(4, "Misplaced tag in " << *this);
+    m_fieldParameters.SetAt(TagStr, existingTag);
+    m_paramVars.Remove(TagStr);
+    existingTag = misplacedTag;
+  }
+
+  if (!force && !existingTag.IsEmpty())
+    return existingTag;
+
+  if (newTag.IsEmpty()) {
+    PTRACE_IF(4, !existingTag.IsEmpty(), "Removing tag in " << *this);
+    m_fieldParameters.RemoveAt(TagStr);
+  }
+  else {
+    PTRACE_IF(4, !existingTag.IsEmpty() && existingTag != newTag, "Updating tag to \"" << newTag << "\" in " << *this);
+    m_fieldParameters.SetAt(TagStr, newTag);
+  }
+  return newTag;
 }
 
 
@@ -2640,41 +2660,17 @@ SIPDialogContext::SIPDialogContext()
 }
 
 
-static void SetWithTag(const SIPURL & url, SIPURL & uri, PString & tag, bool local)
-{
-  uri = url;
-
-  PString newTag = url.GetParamVars()(TagStr);
-  if (newTag.IsEmpty())
-    newTag = uri.GetFieldParameters().Get(TagStr);
-  else
-    uri.SetParamVar(TagStr, PString::Empty());
-
-  if (!newTag.IsEmpty() && tag != newTag) {
-    PTRACE(4, "Updating dialog tag from \"" << tag << "\" to \"" << newTag << '"');
-    tag = newTag;
-  }
-
-  if (tag.IsEmpty() && local)
-    tag = SIPURL::GenerateTag();
-
-  if (!tag.IsEmpty())
-    uri.GetFieldParameters().Set(TagStr, tag);
-
-  uri.Sanitise(local ? SIPURL::FromURI : SIPURL::ToURI);
-}
-
-
 SIPDialogContext::SIPDialogContext(const SIPMIMEInfo & mime)
   : m_callId(mime.GetCallID())
   , m_requestURI(mime.GetContact())
+  , m_localURI(mime.GetTo())
+  , m_localTag(m_localURI.SetTag())
+  , m_remoteURI(mime.GetFrom())
+  , m_remoteTag(m_remoteURI.SetTag())
   , m_lastSentCSeq(0)
   , m_lastReceivedCSeq(mime.GetCSeqIndex())
   , m_forking(false)
 {
-  SetWithTag(mime.GetTo(), m_localURI, m_localTag, false);
-  SetWithTag(mime.GetFrom(), m_remoteURI, m_remoteTag, false);
-
   mime.GetRecordRoute(m_routeSet, true);
 }
 
@@ -2733,13 +2729,19 @@ void SIPDialogContext::SetRequestURI(const SIPURL & url)
 
 void SIPDialogContext::SetLocalURI(const SIPURL & url)
 {
-  SetWithTag(url, m_localURI, m_localTag, true);
+  m_localURI = url;
+  m_localURI.Sanitise(SIPURL::FromURI);
+  m_localTag = m_localURI.SetTag(m_localTag);
+  PTRACE(4, "Set dialog local URI to " << m_localURI.AsQuotedString());
 }
 
 
 void SIPDialogContext::SetRemoteURI(const SIPURL & url)
 {
-  SetWithTag(url, m_remoteURI, m_remoteTag, false);
+  m_remoteURI = url;
+  m_remoteURI.Sanitise(SIPURL::ToURI);
+  m_remoteTag = m_remoteURI.SetTag(m_remoteTag);
+  PTRACE(4, "Set dialog remote URI to " << m_remoteURI.AsQuotedString());
 }
 
 
@@ -2800,13 +2802,19 @@ void SIPDialogContext::Update(const SIP_PDU & pdu)
     if (pdu.GetStatusCode() == 100)
       PTRACE(4, "Not updating remote URI from 100 Trying response To header");
     else {
-      SetRemoteURI(mime.GetTo());
-      SetLocalURI(mime.GetFrom());
+      // Response from our INVITE/SUSBCRIBE etc
+      m_remoteURI = mime.GetTo();
+      m_remoteTag = m_remoteURI.GetTag();
+      PTRACE(4, "Set dialog URIs from response: local is " << m_localURI.AsQuotedString() << ", remote is " << m_remoteURI.AsQuotedString());
     }
   }
   else {
-    SetLocalURI(mime.GetTo()); // Will add a tag
-    SetRemoteURI(mime.GetFrom());
+    // e.g. INVITE coming in, set (if not there) our local tag, use tag the provided
+    m_localURI = mime.GetTo();
+    m_localTag = m_localURI.SetTag(m_localTag);
+    m_remoteURI = mime.GetFrom();
+    m_remoteTag = m_remoteURI.GetTag();
+    PTRACE(4, "Set dialog URIs from command: local is " << m_localURI.AsQuotedString() << ", remote is " << m_remoteURI.AsQuotedString());
   }
 
   m_fixedTransportAddress = pdu.GetExternalTransportAddress();
@@ -3143,14 +3151,6 @@ SIP_PDU::StatusCodes SIPTransactionOwner::HandleAuthentication(const SIP_PDU & r
   m_authentication = newAuthentication;
   ++m_authenticateErrors;
   return SIP_PDU::Successful_OK;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////////
-
-PObject::Comparison SIPTransactionBase::Compare(const PObject & other) const
-{
-  return GetTransactionID().Compare(dynamic_cast<const SIPTransactionBase&>(other).GetTransactionID());
 }
 
 

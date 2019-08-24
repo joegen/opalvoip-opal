@@ -374,16 +374,16 @@ class OpalIMContext : public PSafeObject
     PSafePtr<OpalCall> m_call;
     bool               m_weStartedCall;
 
-    PMutex                        m_notificationMutex;
+    PDECLARE_MUTEX(               m_notificationMutex);
     MessageDispositionNotifier    m_messageDispositionNotifier;
     MessageReceivedNotifier       m_messageReceivedNotifier;
     CompositionIndicationNotifier m_compositionIndicationNotifier;
 
-    PMutex         m_outgoingMessagesMutex;
+    PDECLARE_MUTEX(m_outgoingMessagesMutex);
     OpalIM       * m_currentOutgoingMessage;
     PQueue<OpalIM> m_outgoingMessages;
 
-    PMutex m_lastUsedMutex;
+    PDECLARE_MUTEX(m_lastUsedMutex);
     PTime  m_lastUsed;
 
     PString m_conversationId;

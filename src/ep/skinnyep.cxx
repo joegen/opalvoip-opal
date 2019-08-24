@@ -1362,7 +1362,8 @@ void OpalSkinnyConnection::OpenSimulatedMediaChannel(const MediaInfo & info, con
     return;
   }
 
-  m_mediaStreams.Append(sourceStream.release());
+  StreamKey key(*sourceStream);
+  m_mediaStreams.SetAt(key, sourceStream.release());
 
   PTRACE(3, "Simulating transmit " << mediaFormat << " stream, session=" << info.m_sessionId << ", file=" << simulatedAudioFile);
   StartMediaStreams();
